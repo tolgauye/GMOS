@@ -1,0 +1,29 @@
+TO_DO list for version 1.5
+------------------------------
+
+ As of version 1.5.70, the major to-do item list is complete.
+
+Possible useful additions (not critical)
+----------------------
+
+ 1) Add automatic file format guessing from file extension for "write" command
+ 2) Incorporate into Tcl-based xcircuit
+ 3) Extend 2-terminal device handling (namely R and C) to more formats
+    (where appropriate).
+ 4) Generate feedback in the form of a .mag file to facilitate interactive
+    netlist comparison in conjunction with magic.  This may be an error
+    file, but it may also make use of magic 7.2's "element" command to
+    build rat's nests or outline areas of interest or anything else that
+    might be helpful to interactive comparison.
+ 5) Handle the hierarchy of ".ext" files automatically.
+ 6) Retain position information from ".ext" files for the purpose of writing
+    feedback information into magic and for matching devices in the element
+    list to their counterparts in the original layout [note---done for .sim
+    format, which contains position information.  Usefulness of improving
+    the .ext parsing is questionable.  Ditto for item 8].
+ 7) Expand upon the details of format-to-format translation, (especially
+    ntk and ext formats, SPICE format writing, and sim format reading).
+ 8) Add a "subcircuit" command to mimic a SPICE ".SUBCKT ... .ENDS" card
+    (i.e., the ability to add subcircuit "stub" definitions from the
+    command line or from a setup file).
+

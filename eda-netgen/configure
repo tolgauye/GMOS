@@ -1,0 +1,9 @@
+#!/bin/sh
+#
+# This script is a workaround to GNU autoconf which can't deal with having
+# all of its config scripts in a different directory than the configure
+# script itself.
+
+export CFLAGS="$CFLAGS -g"
+cd scripts
+exec ./configure "$@"

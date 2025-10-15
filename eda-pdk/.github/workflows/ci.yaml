@@ -1,0 +1,62 @@
+name: Build
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-and-test:
+    strategy:
+      matrix:
+        os:
+          [
+            {
+              name: "macOS 14",
+              family: "macOS",
+              runner: "macos-14",
+              archs: "arm64",
+            },
+          ]
+        pdk-family: [sky130, gf180mcu]
+    name: Build ${{ matrix.pdk-family }} with Ciel | ${{ matrix.os.name }} | ${{ matrix.os.archs }}
+    runs-on: ${{ matrix.os.runner }}
+    steps:
+      - name: Clear Build Space
+        run: |
+          echo "== Before =="
+          df -h
+          for xcode in /Applications/Xcode*; do
+            echo "== Removing $xcode … =="
+            rm -rf $xcode
+          done
+          echo "== After =="
+          df -h
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: DeterminateSystems/nix-installer-action@main
+        with:
+          extra-conf: |
+            extra-substituters = https://nix-cache.fossi-foundation.org
+            extra-trusted-public-keys = nix-cache.fossi-foundation.org:3+K59iFwXqKsL7BNu6Guy0v+uTlwsxYQxjspXzqLYQs=
+      - name: Install Magic, Ciel, GHR
+        run: |
+          nix profile install github:fossi-foundation/nix-eda#{ghr,magic-vlsi} github:fossi-foundation/ciel
+          ciel --version
+          magic --version
+          ghr --version
+      - name: Set PDK root
+        run: |
+          mkdir -p root
+          echo "PDK_ROOT=$PWD/root" >> $GITHUB_ENV
+      - name: Build with Ciel
+        run: |
+          ciel build --include-libraries all --pdk-family ${{ matrix.pdk-family }} --use-repo-at open_pdks=$PWD --jobs $(sysctl -n hw.logicalcpu) --clear-build-artifacts $(git rev-parse HEAD)
+      - name: Push if New Tag
+        if: github.ref_type == 'tag'
+        run: |
+          if [ "${{ secrets.BOT_GH_TOKEN }}" != "" ]; then
+            ciel push --github-token ${{ secrets.BOT_GH_TOKEN }} --pdk-family ${{ matrix.pdk-family }} --repository ciel-releases $(git rev-parse HEAD)
+          else
+            echo "Secret BOT_GH_TOKEN unset. Not attempting to push."
+          fi

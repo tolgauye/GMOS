@@ -1,0 +1,17 @@
+netgen
+netgenexec
+defs.mak
+scripts/defs.mak
+config.cache
+config.log
+scripts/config.log
+config.status
+scripts/config.status
+python/lvs_manager.py
+*.o
+*.so
+*~
+*.log
+UPDATE_ME
+tcltk/netgen.sh
+tcltk/netgen.tcl

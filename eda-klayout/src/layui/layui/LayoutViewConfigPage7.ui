@@ -1,0 +1,405 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>LayoutViewConfigPage7</class>
+ <widget class="QFrame" name="LayoutViewConfigPage7">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>613</width>
+    <height>559</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Application Settings</string>
+  </property>
+  <layout class="QVBoxLayout">
+   <property name="spacing">
+    <number>6</number>
+   </property>
+   <property name="leftMargin">
+    <number>9</number>
+   </property>
+   <property name="topMargin">
+    <number>9</number>
+   </property>
+   <property name="rightMargin">
+    <number>9</number>
+   </property>
+   <property name="bottomMargin">
+    <number>9</number>
+   </property>
+   <item>
+    <widget class="QGroupBox" name="groupBox">
+     <property name="title">
+      <string>Display Quality</string>
+     </property>
+     <layout class="QGridLayout">
+      <property name="leftMargin">
+       <number>9</number>
+      </property>
+      <property name="topMargin">
+       <number>9</number>
+      </property>
+      <property name="rightMargin">
+       <number>9</number>
+      </property>
+      <property name="bottomMargin">
+       <number>9</number>
+      </property>
+      <property name="spacing">
+       <number>6</number>
+      </property>
+      <item row="0" column="0" colspan="3">
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string>Oversampling increases the image quality by using an internal resolution larger than the image resolution. Drawing speed is somewhat reduced.</string>
+        </property>
+        <property name="wordWrap">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="0" colspan="3">
+       <widget class="QLabel" name="label_5">
+        <property name="text">
+         <string>High resolution mode utilizes the full pixel density on high-DPI displays. Features may look smaller, but richer in details.</string>
+        </property>
+        <property name="wordWrap">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="label_2">
+        <property name="text">
+         <string>Oversampling mode</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QComboBox" name="oversampling">
+        <item>
+         <property name="text">
+          <string>No oversampling</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>2x oversampling</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>3x oversampling</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+      <item row="6" column="0" colspan="3">
+       <widget class="QCheckBox" name="highres_mode">
+        <property name="text">
+         <string>High resolution mode enabled</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="2">
+       <spacer>
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item row="2" column="0" colspan="3">
+       <widget class="QLabel" name="label_6">
+        <property name="text">
+         <string>With small rendering, the line widths and stipples are scaled down - a single pixel line becomes half a pixel wide with 2x oversampling. This provides a virtual sub-pixel resolution with finer details.</string>
+        </property>
+        <property name="wordWrap">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0" colspan="3">
+       <widget class="QCheckBox" name="subres_mode">
+        <property name="text">
+         <string>Small rendering in oversampling mode</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="0" colspan="3">
+       <widget class="Line" name="line">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="groupBox_4">
+     <property name="title">
+      <string>Default Font Size</string>
+     </property>
+     <layout class="QHBoxLayout">
+      <property name="spacing">
+       <number>6</number>
+      </property>
+      <property name="leftMargin">
+       <number>9</number>
+      </property>
+      <property name="topMargin">
+       <number>9</number>
+      </property>
+      <property name="rightMargin">
+       <number>9</number>
+      </property>
+      <property name="bottomMargin">
+       <number>9</number>
+      </property>
+      <item>
+       <widget class="QLabel" name="label_4">
+        <property name="text">
+         <string>Font size for &quot;Default&quot; font and rulers</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QComboBox" name="default_font_size">
+        <item>
+         <property name="text">
+          <string>Small</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Medium</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Large</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+      <item>
+       <spacer>
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="groupBox_2">
+     <property name="title">
+      <string>Global Transformation</string>
+     </property>
+     <layout class="QHBoxLayout">
+      <property name="spacing">
+       <number>6</number>
+      </property>
+      <property name="leftMargin">
+       <number>9</number>
+      </property>
+      <property name="topMargin">
+       <number>9</number>
+      </property>
+      <property name="rightMargin">
+       <number>9</number>
+      </property>
+      <property name="bottomMargin">
+       <number>9</number>
+      </property>
+      <item>
+       <widget class="QLabel" name="label_3">
+        <property name="text">
+         <string>Transform the view globally with</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QComboBox" name="global_trans">
+        <item>
+         <property name="text">
+          <string>(r0)</string>
+         </property>
+         <property name="icon">
+          <iconset resource="../../icons/icons.qrc">
+           <normaloff>:/r0_24px.png</normaloff>:/r0_24px.png</iconset>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>(r90)</string>
+         </property>
+         <property name="icon">
+          <iconset resource="../../icons/icons.qrc">
+           <normaloff>:/r90_24px.png</normaloff>:/r90_24px.png</iconset>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>(r180)</string>
+         </property>
+         <property name="icon">
+          <iconset resource="../../icons/icons.qrc">
+           <normaloff>:/r180_24px.png</normaloff>:/r180_24px.png</iconset>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>(r270)</string>
+         </property>
+         <property name="icon">
+          <iconset resource="../../icons/icons.qrc">
+           <normaloff>:/r270_24px.png</normaloff>:/r270_24px.png</iconset>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>(m0)</string>
+         </property>
+         <property name="icon">
+          <iconset resource="../../icons/icons.qrc">
+           <normaloff>:/m0_24px.png</normaloff>:/m0_24px.png</iconset>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>(m45)</string>
+         </property>
+         <property name="icon">
+          <iconset resource="../../icons/icons.qrc">
+           <normaloff>:/m45_24px.png</normaloff>:/m45_24px.png</iconset>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>(m90)</string>
+         </property>
+         <property name="icon">
+          <iconset resource="../../icons/icons.qrc">
+           <normaloff>:/m90_24px.png</normaloff>:/m90_24px.png</iconset>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>(m135)</string>
+         </property>
+         <property name="icon">
+          <iconset resource="../../icons/icons.qrc">
+           <normaloff>:/m135_24px.png</normaloff>:/m135_24px.png</iconset>
+         </property>
+        </item>
+       </widget>
+      </item>
+      <item>
+       <spacer>
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="groupBox_3">
+     <property name="title">
+      <string>Hierarchy Depth</string>
+     </property>
+     <layout class="QGridLayout">
+      <property name="leftMargin">
+       <number>9</number>
+      </property>
+      <property name="topMargin">
+       <number>9</number>
+      </property>
+      <property name="rightMargin">
+       <number>9</number>
+      </property>
+      <property name="bottomMargin">
+       <number>9</number>
+      </property>
+      <property name="spacing">
+       <number>6</number>
+      </property>
+      <item row="0" column="0">
+       <widget class="QLabel" name="label_13">
+        <property name="text">
+         <string>Initial hierarchy depth when opening a new panel</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QSpinBox" name="def_depth">
+        <property name="maximum">
+         <number>1000</number>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2">
+       <spacer>
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item row="1" column="0" colspan="3">
+       <widget class="QLabel" name="label_14">
+        <property name="text">
+         <string>(This setting is not active if &quot;select all hierarchy levels on new cell&quot; is checked on the &quot;Navigation/New Cell&quot; tab)</string>
+        </property>
+        <property name="wordWrap">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <layoutdefault spacing="6" margin="11"/>
+ <tabstops>
+  <tabstop>oversampling</tabstop>
+  <tabstop>subres_mode</tabstop>
+  <tabstop>highres_mode</tabstop>
+  <tabstop>default_font_size</tabstop>
+  <tabstop>global_trans</tabstop>
+  <tabstop>def_depth</tabstop>
+ </tabstops>
+ <resources>
+  <include location="../../icons/icons.qrc"/>
+ </resources>
+ <connections/>
+</ui>

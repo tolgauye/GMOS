@@ -1,0 +1,337 @@
+/*  objlist.h -- core allocation, list generation by regexps */
+
+#ifndef _OBJLIST_H
+#define _OBJLIST_H
+
+#ifndef _HASH_H
+#include "hash.h"
+#endif
+
+#define SEPARATOR "/"
+#define INSTANCE_DELIMITER "#"
+#define PORT_DELIMITER "."
+#define PHYSICALPIN "("
+#define ENDPHYSICALPIN ")"
+
+#define PORT (-1)
+#define GLOBAL (-2)
+#define UNIQUEGLOBAL (-3)
+#define PROPERTY (-4)		/* For element properties; e.g., length, width */
+#define ALLELEMENTS (-5)	/* for doing searches; e.g., Fanout() */
+#define ALLOBJECTS (-6)		/* for doing searches; e.g., Fanout() */
+#define UNKNOWN (-7)		/* for error checking */
+#define NODE 0
+#define FIRSTPIN 1
+#define IsPort(a) ((a)->type == PORT)
+#define IsNonProxyPort(a) (((a)->type == PORT) && ((a)->model.port != PROXY))
+#define IsGlobal(a) (((a)->type == GLOBAL) || ((a)->type == UNIQUEGLOBAL))
+
+#define PROXY (0)		/* Used in model.port record of ports */
+
+#define NO_CONNECT	1	/* Use in object list to flag an isolated net */
+
+/* Lists of device properties.  Order is defined at the time of	*/
+/* the cell definition; values are sorted at the time instances	*/
+/* are read.							*/
+
+/* Part 1a: Define the types of tokens used in an expression */
+
+#define TOK_NONE        0
+#define TOK_DOUBLE      1
+#define TOK_STRING      2
+#define TOK_MULTIPLY    3
+#define TOK_DIVIDE      4
+#define TOK_PLUS        5
+#define TOK_MINUS       6
+#define TOK_FUNC_OPEN   7
+#define TOK_FUNC_CLOSE  8
+#define TOK_GT          9
+#define TOK_LT          10
+#define TOK_GE          11
+#define TOK_LE          12
+#define TOK_EQ          13
+#define TOK_NE          14
+#define TOK_GROUP_OPEN  15
+#define TOK_GROUP_CLOSE 16
+#define TOK_FUNC_IF     17
+#define TOK_FUNC_THEN   18
+#define TOK_FUNC_ELSE   19
+#define TOK_SGL_QUOTE	20
+#define TOK_DBL_QUOTE	21
+
+/* Part 1b: Stack structure used to hold expressions in tokenized form */
+
+struct tokstack {
+   int toktype;
+   union {
+       double dvalue;
+       char *string;
+   } data;
+   struct tokstack *next;
+   struct tokstack *last;
+};
+
+/* Part 1c: Define the types of property values */
+
+#define PROP_STRING	0
+#define PROP_EXPRESSION 1	/* Same as STRING, handled differently */
+#define PROP_INTEGER	2
+#define PROP_DOUBLE	3
+#define PROP_VALUE	4	/* Same as DOUBLE, handled differently */
+#define PROP_ENDLIST	5	/* End of the property record. */
+
+/* Part 1d:  Linked list of values for temporary unordered storage when	*/
+/* reading a netlist.  Values are string only, to be promoted later if	*/
+/* needed.								*/
+
+struct keyvalue {
+  char *key;
+  char *value;
+  struct keyvalue *next;
+};
+
+/* Part 2:  Values (corresponding to the keys, and kept in the instance record) */
+
+struct valuelist {
+  char *key;
+  unsigned char type;		/* string, integer, double, value, expression */
+  union {
+     char *string;
+     double dval;
+     int ival;
+     struct tokstack *stack;	/* expression in tokenized form */
+  } value;
+};
+
+/* Part 3:  Keys & Defaults (kept in the cell record as a hash table) */
+
+#define MERGE_NONE	 0x00	/* Property does not change when devices merge */
+
+#define MERGE_P_ADD	 0x01	/* Properties sum with device parallel merge */
+#define MERGE_P_PAR	 0x02	/* Properties add in parallel with parallel merge */
+#define MERGE_P_CRIT 	 0x04	/* This property enables parallel merging */
+#define MERGE_P_XCRIT 	 0x08	/* Old "critical" behavior (deprecated) */
+
+#define MERGE_S_ADD	 0x10	/* Properties sum with device series merge */
+#define MERGE_S_PAR	 0x20	/* Properties add in parallel with series merge */
+#define MERGE_S_CRIT 	 0x40	/* This property enables series merging */
+#define MERGE_S_XCRIT 	 0x80	/* Old "critical" behavior (deprecated) */
+
+#define MERGE_P_MASK	(MERGE_P_ADD | MERGE_P_PAR | MERGE_P_CRIT | MERGE_P_XCRIT)
+#define MERGE_S_MASK	(MERGE_S_ADD | MERGE_S_PAR | MERGE_S_CRIT | MERGE_S_XCRIT)
+#define MERGE_ALL_MASK	(MERGE_P_MASK | MERGE_S_MASK)
+
+/* Although the above are flags, "ADD" and "PAR" are mutually exclusive.	*/
+
+/* Note:  A "critical" merge means that the property causes the number of	*/
+/* devices to change.  e.g., transistor width is critical;  transistor drain	*/
+/* area sums when devices are merged, but does not change the number of devices.*/
+/* More than one property can be critical.  e.g., width and number of fingers.	*/
+/* Also it is possible for a property (e.g., "value") to be critical for both	*/
+/* series and parallel merging.							*/
+
+struct property {
+  char *key;			/* name of the property */
+  unsigned char idx;		/* index into valuelist */
+  unsigned char type;		/* string, integer, double, value, expression */
+  unsigned char merge;		/* how property changes when devices are merged */
+  char *pin;			/* associated pin (or NULL if not associated)	*/
+  union {
+     char *string;
+     double dval;
+     int ival;
+     struct tokstack *stack;
+  } pdefault;			/* Default value */
+  union {
+     double dval;
+     int ival;
+  } slop;			/* slop allowance in property */
+};
+
+/*-------------------------------*/
+/* list of objects within a cell */
+/*-------------------------------*/
+
+struct objlist {
+  char *name;		/* unique name for the port/node/pin/property */
+  int type;		/* -1 for port,  0 for internal node,
+			   else index of the pin on element */
+  union {
+     char *class;		/* name of element class; nullstr for nodes */
+     int   port;		/* Port number, if type is a port */
+  } model;
+  union {
+     char *name;		/* unique name for the instance, or */
+				/* (string) value of property for properties */
+     struct valuelist *props;	/* Property record */
+  } instance;
+  unsigned char flags;	/* Used by NODE type to flag isolated net */
+  int node;		/* the electrical node number of the port/node/pin */
+  struct objlist *next;
+};
+
+extern struct objlist *LastPlaced; 
+
+/* Record structure for maintaining lists of cell classes to ignore */
+
+struct IgnoreList {
+    char *class;
+    int file;
+    unsigned char type;
+    struct IgnoreList *next;
+};
+
+/* Types used by IgnoreList above */
+
+#define IGNORE_NONE	(unsigned char)0
+#define IGNORE_CLASS	(unsigned char)1
+#define IGNORE_SHORTED	(unsigned char)2
+
+/* Record structure for handling pin permutations in a cell	*/
+/* Linked list structure allows multiple permutations per cell.	*/
+
+struct Permutation {
+    char *pin1;
+    char *pin2;
+    struct Permutation *next;
+};
+
+#define OBJHASHSIZE 42073 /* the size of the object and instance hash lists */
+                        /* prime numbers are good choices as hash sizes */
+
+/* cell definition for hash table */
+/* NOTE: "file" must come first for the hash matching by name and file */
+
+struct nlist {
+  int file;		/* internally ordered file to which cell belongs, or -1 */
+  char *name;
+  int number;		/* number of instances defined */
+  int dumped;		/* instance count, and general-purpose marker */
+  unsigned short flags;
+  unsigned char class;
+  unsigned long classhash;	/* randomized hash value for cell class */
+  struct Permutation *permutes;	/* list of permuting pins */
+  struct objlist *cell;
+  struct hashdict objdict;  /* hash table of object names */
+  struct hashdict instdict; /* hash table of instance names */
+  struct hashdict propdict; /* hash table of property keys */
+  struct objlist **nodename_cache;
+  long nodename_cache_maxnodenum;  /* largest node number in cache */
+  void *embedding;   /* this will be cast to the appropriate data structure */
+  struct nlist *next;
+};
+
+/* Defined nlist structure flags */
+
+#define CELL_MATCHED		0x001	/* cell matched to another */
+#define CELL_NOCASE		0x002	/* cell is case-insensitive (e.g., SPICE) */
+#define CELL_TOP		0x004	/* cell is a top-level cell */
+#define CELL_PLACEHOLDER	0x008	/* cell is a placeholder cell */
+#define CELL_PROPSMATCHED	0x010	/* properties matched to matching cell */
+#define CELL_DUPLICATE		0x020	/* cell has a duplicate */
+#define CELL_VERILOG		0x040	/* cell is verilog module */
+
+/* Flags for combination allowances and prohibitions */
+
+#define COMB_SERIES		0x100
+#define COMB_NO_PARALLEL	0x200
+
+extern struct nlist *CurrentCell;
+extern struct objlist *CurrentTail;
+extern void AddToCurrentCell(struct objlist *ob);
+extern void AddToCurrentCellNoHash(struct objlist *ob);
+extern void AddInstanceToCurrentCell(struct objlist *ob);
+extern void FreeObject(struct objlist *ob);
+extern void FreeObjectAndHash(struct objlist *ob, struct nlist *ptr);
+extern void FreePorts(char *cellname);
+extern struct IgnoreList *ClassIgnore;
+
+extern int NumberOfPorts(char *cellname, int file);
+extern struct objlist *InstanceNumber(struct nlist *tp, int inst);
+
+extern struct objlist *List(char *list_template);
+extern struct objlist *ListExact(char *list_template);
+extern struct objlist *ListCat(struct objlist *ls1, struct objlist *ls2);
+extern int ListLen(struct objlist *head);
+extern int ListLength(char *list_template);
+extern struct nlist *LookupPrematchedClass(struct nlist *, int);
+extern struct objlist *LookupObject(char *name, struct nlist *WhichCell);
+extern struct objlist *LookupInstance(char *name, struct nlist *WhichCell);
+extern struct objlist *CopyObjList(struct objlist *oldlist, unsigned char doforall);
+extern void UpdateNodeNumbers(struct objlist *lst, int from, int to);
+
+/* Function pointer to List or ListExact, allowing regular expressions	*/
+/* to be enabled/disabled.						*/
+
+extern struct objlist * (*ListPtr)();
+
+extern void PrintCellHashTable(int full, int file);
+extern struct nlist *LookupCell(char *s);
+extern struct nlist *LookupCellFile(char *s, int f);
+extern struct nlist *InstallInCellHashTable(char *name, int f);
+extern void InitCellHashTable(void);
+extern void ClearDumpedList(void);
+extern int RecurseCellHashTable(int (*foo)(struct hashlist *np));
+extern int RecurseCellFileHashTable(int (*foo)(struct hashlist *, int), int);
+extern struct nlist *RecurseCellHashTable2(struct nlist *(*foo)(struct hashlist *,
+		void *), void *);
+extern struct nlist *FirstCell(void);
+extern struct nlist *NextCell(void);
+
+extern char *NodeName(struct nlist *tp, int node);
+extern char *NodeAlias(struct nlist *tp, struct objlist *ob);
+extern void FreeNodeNames(struct nlist *tp);
+extern void CacheNodeNames(struct nlist *tp);
+
+
+/* enable the following line to debug the core allocator */
+/* #define DEBUG_GARBAGE */
+   
+#ifdef DEBUG_GARBAGE
+extern struct objlist *GetObject(void);
+extern struct keyvalue *NewKeyValue(void);
+extern struct property *NewProperty(void);
+extern struct valuelist *NewPropValue(int entries);
+extern void FreeString(char *foo);
+extern char *strsave(char *s);
+#else /* not DEBUG_GARBAGE */
+#define GetObject() ((struct objlist*)CALLOC(1,sizeof(struct objlist)))
+#define NewProperty() ((struct property*)CALLOC(1,sizeof(struct property)))
+#define NewPropValue(a) ((struct valuelist*)CALLOC((a),sizeof(struct valuelist)))
+#define NewKeyValue() ((struct keyvalue*)CALLOC(1,sizeof(struct keyvalue)))
+#define FreeString(a) (FREE(a))
+#define strsave(a) (STRDUP(a))
+#endif /* not DEBUG_GARBAGE */
+
+extern int freeprop(struct hashlist *p);
+
+extern int  match(char *, char *);
+extern int  matchnocase(char *, char *);
+extern int  matchfile(char *, char *, int, int);
+extern int  matchfilenocase(char *, char *, int, int);
+
+extern void GarbageCollect(void);
+extern void InitGarbageCollection(void);
+extern void AddToGarbageList(struct objlist *head);
+
+extern void DeleteProperties(struct keyvalue **topptr);
+extern void AddProperty(struct keyvalue **topptr, char *key, char *value);
+extern void AddScaledProperty(struct keyvalue **topptr, char *key, char *value, double scale);
+extern void DeleteProperties(struct keyvalue **topptr);
+extern struct objlist *LinkProperties(char *model, struct keyvalue *topptr);
+
+extern void ClassDelete(char *class, int file);
+extern void RemoveShorted(char *class, int file);
+extern void CellRehash(char *name, char *newname, int file);
+
+/* defined in netgen.c */
+extern int ConvertStringToInteger(char *string, int *ival);
+
+#ifdef HAVE_MALLINFO
+void PrintMemoryStats(void);
+#endif
+
+#endif  /* _OBJLIST_H */
+
+
+
