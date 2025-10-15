@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -20,31 +20,36 @@
 
 */
 
+
+
 #ifndef HDR_layMove
 #define HDR_layMove
 
-#include "laybasicCommon.h"
-#include "layEditorServiceBase.h"
 #include "dbManager.h"
+#include "layViewObject.h"
+
+#include <QTimer>
+#include <QObject>
 
 #include <memory>
 
 namespace lay {
 
-class LayoutViewBase;
+class Editables;
+class LayoutView;
 
-class LAYBASIC_PUBLIC MoveService :
-    public lay::EditorServiceBase
+class MoveService
+  : public QObject,
+    public lay::ViewService
 {
+Q_OBJECT 
+
 public: 
-  MoveService (lay::LayoutViewBase *view);
+  MoveService (lay::LayoutView *view);
   ~MoveService ();
 
-  bool start_move (db::Transaction *transaction = 0, bool transient_selection = false);
-
-  bool configure (const std::string &name, const std::string &value);
-  void finish ();
-  void cancel ();
+  virtual bool configure (const std::string &name, const std::string &value);
+  bool begin_move (db::Transaction *transaction = 0, bool selected_after_move = true);
 
 private:
   virtual bool mouse_press_event (const db::DPoint &p, unsigned int buttons, bool prio);
@@ -52,22 +57,21 @@ private:
   virtual bool mouse_move_event (const db::DPoint &p, unsigned int buttons, bool prio);
   virtual bool mouse_double_click_event (const db::DPoint &p, unsigned int buttons, bool prio);
   virtual bool mouse_release_event (const db::DPoint &p, unsigned int /*buttons*/, bool prio);
-  virtual bool wheel_event (int delta, bool horizontal, const db::DPoint &p, unsigned int buttons, bool prio);
+  virtual bool wheel_event (int delta, bool horizonal, const db::DPoint &p, unsigned int buttons, bool prio);
   virtual bool key_event (unsigned int key, unsigned int buttons);
   virtual void drag_cancel ();
   virtual void deactivated ();
-  int focus_page_open ();
 
-  bool handle_click (const db::DPoint &p, unsigned int buttons, bool drag_transient, db::Transaction *transaction);
+  bool handle_dragging (const db::DPoint &p, unsigned int buttons, bool drag_transient, db::Transaction *transaction);
 
   bool m_dragging;
   bool m_dragging_transient;
   lay::Editables *mp_editables;
-  lay::LayoutViewBase *mp_view;
+  lay::LayoutView *mp_view;
   double m_global_grid;
   db::DPoint m_shift;
   db::DPoint m_mouse_pos;
-  std::unique_ptr<db::Transaction> mp_transaction;
+  std::auto_ptr<db::Transaction> mp_transaction;
 };
 
 }

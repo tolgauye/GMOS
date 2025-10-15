@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -45,13 +45,12 @@ QTextCodec *ms_system_codec = 0;
 
 QString to_qstring (const std::string &s)
 {
-  return QString::fromUtf8 (s.c_str (), s.size ());
+  return QString::fromUtf8 (s.c_str ());
 }
 
 std::string to_string (const QString &s)
 {
-  auto utf8 = s.toUtf8 ();
-  return std::string (utf8.constData (), utf8.size ());
+  return std::string (s.toUtf8 ().constData ());
 }
 
 #if !defined(_WIN32)
@@ -71,7 +70,7 @@ std::string string_to_system (const std::string &s)
     initialize_codecs ();
   }
 
-  QString qs = QString::fromUtf8 (s.c_str (), s.size ());
+  QString qs = QString::fromUtf8 (s.c_str ());
   return std::string (ms_system_codec->fromUnicode (qs).constData ());
 }
 #endif
@@ -117,15 +116,14 @@ std::string tr (const char *s)
 
 #endif
 
-std::string tr_fallback (const char *s)
+}
+
+#if ! defined(HAVE_QT)
+
+std::string tr (const char *s)
 {
-#if defined(HAVE_QT)
-  return tl::to_string (QObject::tr (s));
-#else
   //  TODO: this is a fallback implementation without translation
   return std::string (s);
+}
+
 #endif
-}
-
-}
-

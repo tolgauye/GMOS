@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -36,6 +36,7 @@
 #include <QTimerEvent>
 #include "gsiQt.h"
 #include "gsiQtMultimediaCommon.h"
+#include "gsiDeclQtMultimediaTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -174,7 +175,7 @@ static void _init_f_tr_4013 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("s");
   decl->add_arg<const char * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("c", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("c", true, "__null");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("n", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -186,7 +187,7 @@ static void _call_f_tr_4013 (const qt_gsi::GenericStaticMethod * /*decl*/, gsi::
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (__null, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QCameraZoomControl::tr (arg1, arg2, arg3));
 }
@@ -199,7 +200,7 @@ static void _init_f_trUtf8_4013 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("s");
   decl->add_arg<const char * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("c", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("c", true, "__null");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("n", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -211,7 +212,7 @@ static void _call_f_trUtf8_4013 (const qt_gsi::GenericStaticMethod * /*decl*/, g
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (__null, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QCameraZoomControl::trUtf8 (arg1, arg2, arg3));
 }
@@ -235,7 +236,6 @@ static gsi::Methods methods_QCameraZoomControl () {
   methods += gsi::qt_signal<QObject * > ("destroyed(QObject *)", "destroyed", gsi::arg("arg1"), "@brief Signal declaration for QCameraZoomControl::destroyed(QObject *)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<double > ("maximumDigitalZoomChanged(double)", "maximumDigitalZoomChanged", gsi::arg("arg1"), "@brief Signal declaration for QCameraZoomControl::maximumDigitalZoomChanged(double)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<double > ("maximumOpticalZoomChanged(double)", "maximumOpticalZoomChanged", gsi::arg("arg1"), "@brief Signal declaration for QCameraZoomControl::maximumOpticalZoomChanged(double)\nYou can bind a procedure to this signal.");
-  methods += gsi::qt_signal<const QString & > ("objectNameChanged(const QString &)", "objectNameChanged", gsi::arg("objectName"), "@brief Signal declaration for QCameraZoomControl::objectNameChanged(const QString &objectName)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<double > ("requestedDigitalZoomChanged(double)", "requestedDigitalZoomChanged", gsi::arg("digitalZoom"), "@brief Signal declaration for QCameraZoomControl::requestedDigitalZoomChanged(double digitalZoom)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<double > ("requestedOpticalZoomChanged(double)", "requestedOpticalZoomChanged", gsi::arg("opticalZoom"), "@brief Signal declaration for QCameraZoomControl::requestedOpticalZoomChanged(double opticalZoom)\nYou can bind a procedure to this signal.");
   methods += new qt_gsi::GenericStaticMethod ("tr", "@brief Static method QString QCameraZoomControl::tr(const char *s, const char *c, int n)\nThis method is static and can be called without an instance.", &_init_f_tr_4013, &_call_f_tr_4013);
@@ -334,33 +334,33 @@ public:
     emit QCameraZoomControl::destroyed(arg1);
   }
 
-  //  [adaptor impl] bool QCameraZoomControl::event(QEvent *event)
-  bool cbs_event_1217_0(QEvent *_event)
+  //  [adaptor impl] bool QCameraZoomControl::event(QEvent *)
+  bool cbs_event_1217_0(QEvent *arg1)
   {
-    return QCameraZoomControl::event(_event);
+    return QCameraZoomControl::event(arg1);
   }
 
-  virtual bool event(QEvent *_event)
+  virtual bool event(QEvent *arg1)
   {
     if (cb_event_1217_0.can_issue()) {
-      return cb_event_1217_0.issue<QCameraZoomControl_Adaptor, bool, QEvent *>(&QCameraZoomControl_Adaptor::cbs_event_1217_0, _event);
+      return cb_event_1217_0.issue<QCameraZoomControl_Adaptor, bool, QEvent *>(&QCameraZoomControl_Adaptor::cbs_event_1217_0, arg1);
     } else {
-      return QCameraZoomControl::event(_event);
+      return QCameraZoomControl::event(arg1);
     }
   }
 
-  //  [adaptor impl] bool QCameraZoomControl::eventFilter(QObject *watched, QEvent *event)
-  bool cbs_eventFilter_2411_0(QObject *watched, QEvent *event)
+  //  [adaptor impl] bool QCameraZoomControl::eventFilter(QObject *, QEvent *)
+  bool cbs_eventFilter_2411_0(QObject *arg1, QEvent *arg2)
   {
-    return QCameraZoomControl::eventFilter(watched, event);
+    return QCameraZoomControl::eventFilter(arg1, arg2);
   }
 
-  virtual bool eventFilter(QObject *watched, QEvent *event)
+  virtual bool eventFilter(QObject *arg1, QEvent *arg2)
   {
     if (cb_eventFilter_2411_0.can_issue()) {
-      return cb_eventFilter_2411_0.issue<QCameraZoomControl_Adaptor, bool, QObject *, QEvent *>(&QCameraZoomControl_Adaptor::cbs_eventFilter_2411_0, watched, event);
+      return cb_eventFilter_2411_0.issue<QCameraZoomControl_Adaptor, bool, QObject *, QEvent *>(&QCameraZoomControl_Adaptor::cbs_eventFilter_2411_0, arg1, arg2);
     } else {
-      return QCameraZoomControl::eventFilter(watched, event);
+      return QCameraZoomControl::eventFilter(arg1, arg2);
     }
   }
 
@@ -404,13 +404,6 @@ public:
   void emitter_QCameraZoomControl_maximumOpticalZoomChanged_1071(double arg1)
   {
     emit QCameraZoomControl::maximumOpticalZoomChanged(arg1);
-  }
-
-  //  [emitter impl] void QCameraZoomControl::objectNameChanged(const QString &objectName)
-  void emitter_QCameraZoomControl_objectNameChanged_4567(const QString &objectName)
-  {
-    __SUPPRESS_UNUSED_WARNING (objectName);
-    throw tl::Exception ("Can't emit private signal 'void QCameraZoomControl::objectNameChanged(const QString &objectName)'");
   }
 
   //  [adaptor impl] double QCameraZoomControl::requestedDigitalZoom()
@@ -472,33 +465,33 @@ public:
     }
   }
 
-  //  [adaptor impl] void QCameraZoomControl::childEvent(QChildEvent *event)
-  void cbs_childEvent_1701_0(QChildEvent *event)
+  //  [adaptor impl] void QCameraZoomControl::childEvent(QChildEvent *)
+  void cbs_childEvent_1701_0(QChildEvent *arg1)
   {
-    QCameraZoomControl::childEvent(event);
+    QCameraZoomControl::childEvent(arg1);
   }
 
-  virtual void childEvent(QChildEvent *event)
+  virtual void childEvent(QChildEvent *arg1)
   {
     if (cb_childEvent_1701_0.can_issue()) {
-      cb_childEvent_1701_0.issue<QCameraZoomControl_Adaptor, QChildEvent *>(&QCameraZoomControl_Adaptor::cbs_childEvent_1701_0, event);
+      cb_childEvent_1701_0.issue<QCameraZoomControl_Adaptor, QChildEvent *>(&QCameraZoomControl_Adaptor::cbs_childEvent_1701_0, arg1);
     } else {
-      QCameraZoomControl::childEvent(event);
+      QCameraZoomControl::childEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QCameraZoomControl::customEvent(QEvent *event)
-  void cbs_customEvent_1217_0(QEvent *event)
+  //  [adaptor impl] void QCameraZoomControl::customEvent(QEvent *)
+  void cbs_customEvent_1217_0(QEvent *arg1)
   {
-    QCameraZoomControl::customEvent(event);
+    QCameraZoomControl::customEvent(arg1);
   }
 
-  virtual void customEvent(QEvent *event)
+  virtual void customEvent(QEvent *arg1)
   {
     if (cb_customEvent_1217_0.can_issue()) {
-      cb_customEvent_1217_0.issue<QCameraZoomControl_Adaptor, QEvent *>(&QCameraZoomControl_Adaptor::cbs_customEvent_1217_0, event);
+      cb_customEvent_1217_0.issue<QCameraZoomControl_Adaptor, QEvent *>(&QCameraZoomControl_Adaptor::cbs_customEvent_1217_0, arg1);
     } else {
-      QCameraZoomControl::customEvent(event);
+      QCameraZoomControl::customEvent(arg1);
     }
   }
 
@@ -517,18 +510,18 @@ public:
     }
   }
 
-  //  [adaptor impl] void QCameraZoomControl::timerEvent(QTimerEvent *event)
-  void cbs_timerEvent_1730_0(QTimerEvent *event)
+  //  [adaptor impl] void QCameraZoomControl::timerEvent(QTimerEvent *)
+  void cbs_timerEvent_1730_0(QTimerEvent *arg1)
   {
-    QCameraZoomControl::timerEvent(event);
+    QCameraZoomControl::timerEvent(arg1);
   }
 
-  virtual void timerEvent(QTimerEvent *event)
+  virtual void timerEvent(QTimerEvent *arg1)
   {
     if (cb_timerEvent_1730_0.can_issue()) {
-      cb_timerEvent_1730_0.issue<QCameraZoomControl_Adaptor, QTimerEvent *>(&QCameraZoomControl_Adaptor::cbs_timerEvent_1730_0, event);
+      cb_timerEvent_1730_0.issue<QCameraZoomControl_Adaptor, QTimerEvent *>(&QCameraZoomControl_Adaptor::cbs_timerEvent_1730_0, arg1);
     } else {
-      QCameraZoomControl::timerEvent(event);
+      QCameraZoomControl::timerEvent(arg1);
     }
   }
 
@@ -563,11 +556,11 @@ static void _call_ctor_QCameraZoomControl_Adaptor_0 (const qt_gsi::GenericStatic
 }
 
 
-// void QCameraZoomControl::childEvent(QChildEvent *event)
+// void QCameraZoomControl::childEvent(QChildEvent *)
 
 static void _init_cbs_childEvent_1701_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QChildEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -661,11 +654,11 @@ static void _call_emitter_currentOpticalZoomChanged_1071 (const qt_gsi::GenericM
 }
 
 
-// void QCameraZoomControl::customEvent(QEvent *event)
+// void QCameraZoomControl::customEvent(QEvent *)
 
 static void _init_cbs_customEvent_1217_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -689,7 +682,7 @@ static void _set_callback_cbs_customEvent_1217_0 (void *cls, const gsi::Callback
 
 static void _init_emitter_destroyed_1302 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("arg1", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("arg1", true, "0");
   decl->add_arg<QObject * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -698,7 +691,7 @@ static void _call_emitter_destroyed_1302 (const qt_gsi::GenericMethod * /*decl*/
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (nullptr, heap);
+  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (0, heap);
   ((QCameraZoomControl_Adaptor *)cls)->emitter_QCameraZoomControl_destroyed_1302 (arg1);
 }
 
@@ -727,11 +720,11 @@ static void _set_callback_cbs_disconnectNotify_2394_0 (void *cls, const gsi::Cal
 }
 
 
-// bool QCameraZoomControl::event(QEvent *event)
+// bool QCameraZoomControl::event(QEvent *)
 
 static void _init_cbs_event_1217_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QEvent * > (argspec_0);
   decl->set_return<bool > ();
 }
@@ -750,13 +743,13 @@ static void _set_callback_cbs_event_1217_0 (void *cls, const gsi::Callback &cb)
 }
 
 
-// bool QCameraZoomControl::eventFilter(QObject *watched, QEvent *event)
+// bool QCameraZoomControl::eventFilter(QObject *, QEvent *)
 
 static void _init_cbs_eventFilter_2411_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("watched");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QObject * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("event");
+  static gsi::ArgSpecBase argspec_1 ("arg2");
   decl->add_arg<QEvent * > (argspec_1);
   decl->set_return<bool > ();
 }
@@ -865,24 +858,6 @@ static void _call_emitter_maximumOpticalZoomChanged_1071 (const qt_gsi::GenericM
   tl::Heap heap;
   double arg1 = gsi::arg_reader<double >() (args, heap);
   ((QCameraZoomControl_Adaptor *)cls)->emitter_QCameraZoomControl_maximumOpticalZoomChanged_1071 (arg1);
-}
-
-
-// emitter void QCameraZoomControl::objectNameChanged(const QString &objectName)
-
-static void _init_emitter_objectNameChanged_4567 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("objectName");
-  decl->add_arg<const QString & > (argspec_0);
-  decl->set_return<void > ();
-}
-
-static void _call_emitter_objectNameChanged_4567 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs & /*ret*/) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const QString &arg1 = gsi::arg_reader<const QString & >() (args, heap);
-  ((QCameraZoomControl_Adaptor *)cls)->emitter_QCameraZoomControl_objectNameChanged_4567 (arg1);
 }
 
 
@@ -1006,11 +981,11 @@ static void _call_fp_senderSignalIndex_c0 (const qt_gsi::GenericMethod * /*decl*
 }
 
 
-// void QCameraZoomControl::timerEvent(QTimerEvent *event)
+// void QCameraZoomControl::timerEvent(QTimerEvent *)
 
 static void _init_cbs_timerEvent_1730_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QTimerEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1065,44 +1040,43 @@ gsi::Class<QCameraZoomControl> &qtdecl_QCameraZoomControl ();
 static gsi::Methods methods_QCameraZoomControl_Adaptor () {
   gsi::Methods methods;
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QCameraZoomControl::QCameraZoomControl()\nThis method creates an object of class QCameraZoomControl.", &_init_ctor_QCameraZoomControl_Adaptor_0, &_call_ctor_QCameraZoomControl_Adaptor_0);
-  methods += new qt_gsi::GenericMethod ("*childEvent", "@brief Virtual method void QCameraZoomControl::childEvent(QChildEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0);
-  methods += new qt_gsi::GenericMethod ("*childEvent", "@hide", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0, &_set_callback_cbs_childEvent_1701_0);
-  methods += new qt_gsi::GenericMethod ("currentDigitalZoom", "@brief Virtual method double QCameraZoomControl::currentDigitalZoom()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_currentDigitalZoom_c0_0, &_call_cbs_currentDigitalZoom_c0_0);
-  methods += new qt_gsi::GenericMethod ("currentDigitalZoom", "@hide", true, &_init_cbs_currentDigitalZoom_c0_0, &_call_cbs_currentDigitalZoom_c0_0, &_set_callback_cbs_currentDigitalZoom_c0_0);
+  methods += new qt_gsi::GenericMethod ("*childEvent", "@hide", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0);
+  methods += new qt_gsi::GenericMethod ("*childEvent", "@brief Virtual method void QCameraZoomControl::childEvent(QChildEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0, &_set_callback_cbs_childEvent_1701_0);
+  methods += new qt_gsi::GenericMethod ("currentDigitalZoom", "@hide", true, &_init_cbs_currentDigitalZoom_c0_0, &_call_cbs_currentDigitalZoom_c0_0);
+  methods += new qt_gsi::GenericMethod ("currentDigitalZoom", "@brief Virtual method double QCameraZoomControl::currentDigitalZoom()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_currentDigitalZoom_c0_0, &_call_cbs_currentDigitalZoom_c0_0, &_set_callback_cbs_currentDigitalZoom_c0_0);
   methods += new qt_gsi::GenericMethod ("emit_currentDigitalZoomChanged", "@brief Emitter for signal void QCameraZoomControl::currentDigitalZoomChanged(double digitalZoom)\nCall this method to emit this signal.", false, &_init_emitter_currentDigitalZoomChanged_1071, &_call_emitter_currentDigitalZoomChanged_1071);
-  methods += new qt_gsi::GenericMethod ("currentOpticalZoom", "@brief Virtual method double QCameraZoomControl::currentOpticalZoom()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_currentOpticalZoom_c0_0, &_call_cbs_currentOpticalZoom_c0_0);
-  methods += new qt_gsi::GenericMethod ("currentOpticalZoom", "@hide", true, &_init_cbs_currentOpticalZoom_c0_0, &_call_cbs_currentOpticalZoom_c0_0, &_set_callback_cbs_currentOpticalZoom_c0_0);
+  methods += new qt_gsi::GenericMethod ("currentOpticalZoom", "@hide", true, &_init_cbs_currentOpticalZoom_c0_0, &_call_cbs_currentOpticalZoom_c0_0);
+  methods += new qt_gsi::GenericMethod ("currentOpticalZoom", "@brief Virtual method double QCameraZoomControl::currentOpticalZoom()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_currentOpticalZoom_c0_0, &_call_cbs_currentOpticalZoom_c0_0, &_set_callback_cbs_currentOpticalZoom_c0_0);
   methods += new qt_gsi::GenericMethod ("emit_currentOpticalZoomChanged", "@brief Emitter for signal void QCameraZoomControl::currentOpticalZoomChanged(double opticalZoom)\nCall this method to emit this signal.", false, &_init_emitter_currentOpticalZoomChanged_1071, &_call_emitter_currentOpticalZoomChanged_1071);
-  methods += new qt_gsi::GenericMethod ("*customEvent", "@brief Virtual method void QCameraZoomControl::customEvent(QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*customEvent", "@hide", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0, &_set_callback_cbs_customEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*customEvent", "@hide", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*customEvent", "@brief Virtual method void QCameraZoomControl::customEvent(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0, &_set_callback_cbs_customEvent_1217_0);
   methods += new qt_gsi::GenericMethod ("emit_destroyed", "@brief Emitter for signal void QCameraZoomControl::destroyed(QObject *)\nCall this method to emit this signal.", false, &_init_emitter_destroyed_1302, &_call_emitter_destroyed_1302);
-  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@brief Virtual method void QCameraZoomControl::disconnectNotify(const QMetaMethod &signal)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0);
-  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@hide", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0, &_set_callback_cbs_disconnectNotify_2394_0);
-  methods += new qt_gsi::GenericMethod ("event", "@brief Virtual method bool QCameraZoomControl::event(QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0);
-  methods += new qt_gsi::GenericMethod ("event", "@hide", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0, &_set_callback_cbs_event_1217_0);
-  methods += new qt_gsi::GenericMethod ("eventFilter", "@brief Virtual method bool QCameraZoomControl::eventFilter(QObject *watched, QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0);
-  methods += new qt_gsi::GenericMethod ("eventFilter", "@hide", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0, &_set_callback_cbs_eventFilter_2411_0);
+  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@hide", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0);
+  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@brief Virtual method void QCameraZoomControl::disconnectNotify(const QMetaMethod &signal)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0, &_set_callback_cbs_disconnectNotify_2394_0);
+  methods += new qt_gsi::GenericMethod ("event", "@hide", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0);
+  methods += new qt_gsi::GenericMethod ("event", "@brief Virtual method bool QCameraZoomControl::event(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0, &_set_callback_cbs_event_1217_0);
+  methods += new qt_gsi::GenericMethod ("eventFilter", "@hide", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0);
+  methods += new qt_gsi::GenericMethod ("eventFilter", "@brief Virtual method bool QCameraZoomControl::eventFilter(QObject *, QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0, &_set_callback_cbs_eventFilter_2411_0);
   methods += new qt_gsi::GenericMethod ("*isSignalConnected", "@brief Method bool QCameraZoomControl::isSignalConnected(const QMetaMethod &signal)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_isSignalConnected_c2394, &_call_fp_isSignalConnected_c2394);
-  methods += new qt_gsi::GenericMethod ("maximumDigitalZoom", "@brief Virtual method double QCameraZoomControl::maximumDigitalZoom()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_maximumDigitalZoom_c0_0, &_call_cbs_maximumDigitalZoom_c0_0);
-  methods += new qt_gsi::GenericMethod ("maximumDigitalZoom", "@hide", true, &_init_cbs_maximumDigitalZoom_c0_0, &_call_cbs_maximumDigitalZoom_c0_0, &_set_callback_cbs_maximumDigitalZoom_c0_0);
+  methods += new qt_gsi::GenericMethod ("maximumDigitalZoom", "@hide", true, &_init_cbs_maximumDigitalZoom_c0_0, &_call_cbs_maximumDigitalZoom_c0_0);
+  methods += new qt_gsi::GenericMethod ("maximumDigitalZoom", "@brief Virtual method double QCameraZoomControl::maximumDigitalZoom()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_maximumDigitalZoom_c0_0, &_call_cbs_maximumDigitalZoom_c0_0, &_set_callback_cbs_maximumDigitalZoom_c0_0);
   methods += new qt_gsi::GenericMethod ("emit_maximumDigitalZoomChanged", "@brief Emitter for signal void QCameraZoomControl::maximumDigitalZoomChanged(double)\nCall this method to emit this signal.", false, &_init_emitter_maximumDigitalZoomChanged_1071, &_call_emitter_maximumDigitalZoomChanged_1071);
-  methods += new qt_gsi::GenericMethod ("maximumOpticalZoom", "@brief Virtual method double QCameraZoomControl::maximumOpticalZoom()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_maximumOpticalZoom_c0_0, &_call_cbs_maximumOpticalZoom_c0_0);
-  methods += new qt_gsi::GenericMethod ("maximumOpticalZoom", "@hide", true, &_init_cbs_maximumOpticalZoom_c0_0, &_call_cbs_maximumOpticalZoom_c0_0, &_set_callback_cbs_maximumOpticalZoom_c0_0);
+  methods += new qt_gsi::GenericMethod ("maximumOpticalZoom", "@hide", true, &_init_cbs_maximumOpticalZoom_c0_0, &_call_cbs_maximumOpticalZoom_c0_0);
+  methods += new qt_gsi::GenericMethod ("maximumOpticalZoom", "@brief Virtual method double QCameraZoomControl::maximumOpticalZoom()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_maximumOpticalZoom_c0_0, &_call_cbs_maximumOpticalZoom_c0_0, &_set_callback_cbs_maximumOpticalZoom_c0_0);
   methods += new qt_gsi::GenericMethod ("emit_maximumOpticalZoomChanged", "@brief Emitter for signal void QCameraZoomControl::maximumOpticalZoomChanged(double)\nCall this method to emit this signal.", false, &_init_emitter_maximumOpticalZoomChanged_1071, &_call_emitter_maximumOpticalZoomChanged_1071);
-  methods += new qt_gsi::GenericMethod ("emit_objectNameChanged", "@brief Emitter for signal void QCameraZoomControl::objectNameChanged(const QString &objectName)\nCall this method to emit this signal.", false, &_init_emitter_objectNameChanged_4567, &_call_emitter_objectNameChanged_4567);
   methods += new qt_gsi::GenericMethod ("*receivers", "@brief Method int QCameraZoomControl::receivers(const char *signal)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_receivers_c1731, &_call_fp_receivers_c1731);
-  methods += new qt_gsi::GenericMethod ("requestedDigitalZoom", "@brief Virtual method double QCameraZoomControl::requestedDigitalZoom()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_requestedDigitalZoom_c0_0, &_call_cbs_requestedDigitalZoom_c0_0);
-  methods += new qt_gsi::GenericMethod ("requestedDigitalZoom", "@hide", true, &_init_cbs_requestedDigitalZoom_c0_0, &_call_cbs_requestedDigitalZoom_c0_0, &_set_callback_cbs_requestedDigitalZoom_c0_0);
+  methods += new qt_gsi::GenericMethod ("requestedDigitalZoom", "@hide", true, &_init_cbs_requestedDigitalZoom_c0_0, &_call_cbs_requestedDigitalZoom_c0_0);
+  methods += new qt_gsi::GenericMethod ("requestedDigitalZoom", "@brief Virtual method double QCameraZoomControl::requestedDigitalZoom()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_requestedDigitalZoom_c0_0, &_call_cbs_requestedDigitalZoom_c0_0, &_set_callback_cbs_requestedDigitalZoom_c0_0);
   methods += new qt_gsi::GenericMethod ("emit_requestedDigitalZoomChanged", "@brief Emitter for signal void QCameraZoomControl::requestedDigitalZoomChanged(double digitalZoom)\nCall this method to emit this signal.", false, &_init_emitter_requestedDigitalZoomChanged_1071, &_call_emitter_requestedDigitalZoomChanged_1071);
-  methods += new qt_gsi::GenericMethod ("requestedOpticalZoom", "@brief Virtual method double QCameraZoomControl::requestedOpticalZoom()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_requestedOpticalZoom_c0_0, &_call_cbs_requestedOpticalZoom_c0_0);
-  methods += new qt_gsi::GenericMethod ("requestedOpticalZoom", "@hide", true, &_init_cbs_requestedOpticalZoom_c0_0, &_call_cbs_requestedOpticalZoom_c0_0, &_set_callback_cbs_requestedOpticalZoom_c0_0);
+  methods += new qt_gsi::GenericMethod ("requestedOpticalZoom", "@hide", true, &_init_cbs_requestedOpticalZoom_c0_0, &_call_cbs_requestedOpticalZoom_c0_0);
+  methods += new qt_gsi::GenericMethod ("requestedOpticalZoom", "@brief Virtual method double QCameraZoomControl::requestedOpticalZoom()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_requestedOpticalZoom_c0_0, &_call_cbs_requestedOpticalZoom_c0_0, &_set_callback_cbs_requestedOpticalZoom_c0_0);
   methods += new qt_gsi::GenericMethod ("emit_requestedOpticalZoomChanged", "@brief Emitter for signal void QCameraZoomControl::requestedOpticalZoomChanged(double opticalZoom)\nCall this method to emit this signal.", false, &_init_emitter_requestedOpticalZoomChanged_1071, &_call_emitter_requestedOpticalZoomChanged_1071);
   methods += new qt_gsi::GenericMethod ("*sender", "@brief Method QObject *QCameraZoomControl::sender()\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_sender_c0, &_call_fp_sender_c0);
   methods += new qt_gsi::GenericMethod ("*senderSignalIndex", "@brief Method int QCameraZoomControl::senderSignalIndex()\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_senderSignalIndex_c0, &_call_fp_senderSignalIndex_c0);
-  methods += new qt_gsi::GenericMethod ("*timerEvent", "@brief Virtual method void QCameraZoomControl::timerEvent(QTimerEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0);
-  methods += new qt_gsi::GenericMethod ("*timerEvent", "@hide", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0, &_set_callback_cbs_timerEvent_1730_0);
-  methods += new qt_gsi::GenericMethod ("zoomTo", "@brief Virtual method void QCameraZoomControl::zoomTo(double optical, double digital)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_zoomTo_2034_0, &_call_cbs_zoomTo_2034_0);
-  methods += new qt_gsi::GenericMethod ("zoomTo", "@hide", false, &_init_cbs_zoomTo_2034_0, &_call_cbs_zoomTo_2034_0, &_set_callback_cbs_zoomTo_2034_0);
+  methods += new qt_gsi::GenericMethod ("*timerEvent", "@hide", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0);
+  methods += new qt_gsi::GenericMethod ("*timerEvent", "@brief Virtual method void QCameraZoomControl::timerEvent(QTimerEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0, &_set_callback_cbs_timerEvent_1730_0);
+  methods += new qt_gsi::GenericMethod ("zoomTo", "@hide", false, &_init_cbs_zoomTo_2034_0, &_call_cbs_zoomTo_2034_0);
+  methods += new qt_gsi::GenericMethod ("zoomTo", "@brief Virtual method void QCameraZoomControl::zoomTo(double optical, double digital)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_zoomTo_2034_0, &_call_cbs_zoomTo_2034_0, &_set_callback_cbs_zoomTo_2034_0);
   return methods;
 }
 

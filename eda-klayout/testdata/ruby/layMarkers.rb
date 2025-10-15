@@ -1,7 +1,7 @@
 # encoding: UTF-8
 
 # KLayout Layout Viewer
-# Copyright (C) 2006-2025 Matthias Koefferlein
+# Copyright (C) 2006-2019 Matthias Koefferlein
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -74,29 +74,6 @@ class LAYMarkers_TestClass < TestBase
 
     # Keep the marker alive after GC.start:
     # $marker = m
-
-  end
-
-  # persistent markers
-  def test_2
-
-    if !RBA.constants.member?(:Application)
-      return
-    end
-
-    app = RBA::Application.instance
-    mw = app.main_window
-    mw.create_layout(0)
-    cv = mw.current_view
-
-    m = RBA::Marker.new
-    m.set(RBA::DBox.new(1, 2, 3, 4))
-    m.vertex_size = 3
-    cv.add_marker(m)
-
-    cv.clear_markers
-
-    assert_equal(m.destroyed?, true)
 
   end
 

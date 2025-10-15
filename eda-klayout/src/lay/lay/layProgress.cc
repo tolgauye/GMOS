@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -28,7 +28,6 @@
 #include "layProgress.h"
 #include "layMainWindow.h"
 #include "layProgressWidget.h"
-#include "layApplication.h"
 #include "tlProgress.h"
 #include "tlDeferredExecution.h"
 
@@ -58,10 +57,8 @@ static bool is_marked_alive (QObject *obj)
 
 // --------------------------------------------------------------------
 
-const double visibility_delay = 1.0;
-
 ProgressReporter::ProgressReporter ()
-  : mp_pb (0), m_pw_visible (false)
+  : m_start_time (), mp_pb (0), m_pw_visible (false)
 {
   //  .. nothing yet ..
 }
@@ -89,131 +86,103 @@ ProgressReporter::set_progress_bar (lay::ProgressBar *pb)
 void 
 ProgressReporter::register_object (tl::Progress *progress)
 {
-  if (begin () == end ()) {
+  if (mp_objects.empty ()) {
     //  to avoid recursions of any kind, disallow any user interaction except
     //  cancelling the operation
     QApplication::instance ()->installEventFilter (this);
   }
 
-  tl::ProgressAdaptor::register_object (progress);
+  mp_objects.push_back (*progress); // this keeps the outmost one visible. push_front would make the latest one visible.
+  // mp_objects.push_front (progress);
 
-  if (progress->is_abstract ()) {
-
-    m_active.insert (progress);
-
-    if (! m_pw_visible) {
-      set_visible (true);
-    }
-
-    if (mp_pb) {
-      mp_pb->update_progress (progress);
-    }
-    process_events ();
-
-  } else {
-    m_queued.insert (std::make_pair (progress, tl::Clock::current ()));
+  if (m_start_time == tl::Clock () && ! m_pw_visible) {
+    m_start_time = tl::Clock::current ();
   }
+
+  //  make dialog visible after some time has passed
+  if (! m_pw_visible && (tl::Clock::current () - m_start_time).seconds () > 1.0) {
+    set_visible (true);
+  }
+
+  update_and_yield ();
 }
 
 void 
 ProgressReporter::unregister_object (tl::Progress *progress)
 {
-  tl::ProgressAdaptor::unregister_object (progress);
+  progress->unlink ();
 
   //  close or refresh window
-  if (begin () == end ()) {
-
-    m_queued.clear ();
-    m_active.clear ();
-
+  if (mp_objects.empty ()) {
     if (m_pw_visible) {
       set_visible (false);
     }
+    m_start_time = tl::Clock ();
+  }
 
-    if (mp_pb) {
-      mp_pb->update_progress (0);
-    }
-    process_events ();
+  update_and_yield ();
 
+  if (mp_objects.empty ()) {
     QApplication::instance ()->removeEventFilter (this);
-
-  } else {
-
-    m_queued.erase (progress);
-
-    std::set<tl::Progress *>::iterator a = m_active.find (progress);
-    if (a != m_active.end ()) {
-      m_active.erase (a);
-      update_and_yield ();
-    }
-
   }
 }
 
 void 
-ProgressReporter::trigger (tl::Progress *progress)
+ProgressReporter::trigger (tl::Progress * /*progress*/)
 {
-  std::map<tl::Progress *, tl::Clock>::iterator q = m_queued.find (progress);
-  if (q != m_queued.end () && (tl::Clock::current () - q->second).seconds () > visibility_delay) {
-    if (! m_pw_visible) {
+  if (! mp_objects.empty ()) {
+    //  make dialog visible after some time has passed
+    if (! m_pw_visible && (tl::Clock::current () - m_start_time).seconds () > 1.0) {
       set_visible (true);
     }
-    m_active.insert (progress);
-    m_queued.erase (q);
-  }
-
-  if (m_active.find (progress) != m_active.end ()) {
     update_and_yield ();
   }
 }
 
 void 
-ProgressReporter::yield (tl::Progress *progress)
+ProgressReporter::yield (tl::Progress * /*progress*/)
 {
-  std::map<tl::Progress *, tl::Clock>::iterator q = m_queued.find (progress);
-  if (q != m_queued.end () && (tl::Clock::current () - q->second).seconds () > visibility_delay) {
-    if (! m_pw_visible) {
-      set_visible (true);
-    }
-    m_active.insert (progress);
-    m_queued.erase (q);
+  //  make dialog visible after some time has passed
+  if (! m_pw_visible && (tl::Clock::current () - m_start_time).seconds () > 1.0) {
+    set_visible (true);
     update_and_yield ();
-  }
-
-  if (m_active.find (progress) != m_active.end ()) {
+  } else if (m_pw_visible) {
+    //  process events if necessary
     process_events ();
+  }
+}
+
+void 
+ProgressReporter::signal_break ()
+{
+  for (tl::list<tl::Progress>::iterator k = mp_objects.begin (); k != mp_objects.end (); ++k) {
+    k->signal_break ();
   }
 }
 
 void
 ProgressReporter::update_and_yield ()
 {
-  if (! m_pw_visible) {
-    return;
-  }
-
-  if (mp_pb) {
-    if (first ()) {
-      mp_pb->update_progress (first ());
+  if (m_pw_visible && ! mp_objects.empty ()) {
+    if (mp_pb) {
+      mp_pb->update_progress (mp_objects.first ());
       QWidget *w = mp_pb->progress_get_widget ();
       if (w) {
-        first ()->render_progress (w);
+        mp_objects.first ()->render_progress (w);
       }
-    } else if (begin () != end ()) {
-      mp_pb->update_progress (begin ().operator-> ());
-    } else {
-      mp_pb->update_progress (0);
     }
+    process_events (); // Qt4 seems to need this
   }
-
-  process_events (); // Qt4 seems to need this
 }
 
 void
 ProgressReporter::process_events ()
 {
-  if (m_pw_visible && lay::MainWindow::instance () && lay::ApplicationBase::instance ()) {
-    lay::ApplicationBase::instance ()->process_events (QEventLoop::AllEvents, true /* no deferred methods */);
+  //  Don't execute deferred methods during progress handling (undesired side effects)
+  tl::NoDeferredMethods silent;
+
+  if (m_pw_visible && lay::MainWindow::instance () && QApplication::instance ()) {
+    QApplication::instance ()->processEvents (QEventLoop::AllEvents);
   }
 }
 
@@ -233,8 +202,8 @@ ProgressReporter::set_visible (bool vis)
     if (mp_pb) {
       if (!vis) {
         mp_pb->progress_remove_widget ();
-      } else if (mp_pb->progress_wants_widget () && first ()) {
-        mp_pb->progress_add_widget (first ()->progress_widget ());
+      } else if (mp_pb->progress_wants_widget () && mp_objects.first ()) {
+        mp_pb->progress_add_widget (mp_objects.first ()->progress_widget ());
       }
     }
 

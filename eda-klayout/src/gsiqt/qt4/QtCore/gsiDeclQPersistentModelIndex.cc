@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -32,21 +32,15 @@
 #include <QModelIndex>
 #include "gsiQt.h"
 #include "gsiQtCoreCommon.h"
+#include "gsiDeclQtCoreTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
 // class QPersistentModelIndex
-#if QT_VERSION < 0x60000
   static const QModelIndex &castToQModelIndex(const QPersistentModelIndex *m)
   {
     return m->operator const QModelIndex &();
   }
-#else
-  static QModelIndex castToQModelIndex(const QPersistentModelIndex *m)
-  {
-    return m->operator QModelIndex();
-  }
-#endif
 
 //  Constructor QPersistentModelIndex::QPersistentModelIndex()
 

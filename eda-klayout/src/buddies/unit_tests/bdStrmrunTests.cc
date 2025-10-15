@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -27,7 +27,6 @@
 //  Testing the converter main implementation (CIF)
 TEST(1)
 {
-#if defined(HAVE_PYTHON)
   std::string fp (tl::testsrc ());
   fp += "/testdata/bd/strmrun.py";
 
@@ -52,6 +51,5 @@ TEST(1)
   tl::info << data;
 
   EXPECT_EQ (data, "Hello, world (0,-42;42,0)!\n");
-#endif
 }
 

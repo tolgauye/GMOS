@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -32,6 +32,7 @@
 #include <QObject>
 #include "gsiQt.h"
 #include "gsiQtNetworkCommon.h"
+#include "gsiDeclQtNetworkTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -269,26 +270,6 @@ static void _call_f_setLookupId_767 (const qt_gsi::GenericMethod * /*decl*/, voi
 }
 
 
-// void QHostInfo::swap(QHostInfo &other)
-
-
-static void _init_f_swap_1509 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("other");
-  decl->add_arg<QHostInfo & > (argspec_0);
-  decl->set_return<void > ();
-}
-
-static void _call_f_swap_1509 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  QHostInfo &arg1 = gsi::arg_reader<QHostInfo & >() (args, heap);
-  __SUPPRESS_UNUSED_WARNING(ret);
-  ((QHostInfo *)cls)->swap (arg1);
-}
-
-
 // static void QHostInfo::abortHostLookup(int lookupId)
 
 
@@ -402,7 +383,6 @@ static gsi::Methods methods_QHostInfo () {
   methods += new qt_gsi::GenericMethod ("setErrorString|errorString=", "@brief Method void QHostInfo::setErrorString(const QString &errorString)\n", false, &_init_f_setErrorString_2025, &_call_f_setErrorString_2025);
   methods += new qt_gsi::GenericMethod ("setHostName|hostName=", "@brief Method void QHostInfo::setHostName(const QString &name)\n", false, &_init_f_setHostName_2025, &_call_f_setHostName_2025);
   methods += new qt_gsi::GenericMethod ("setLookupId|lookupId=", "@brief Method void QHostInfo::setLookupId(int id)\n", false, &_init_f_setLookupId_767, &_call_f_setLookupId_767);
-  methods += new qt_gsi::GenericMethod ("swap", "@brief Method void QHostInfo::swap(QHostInfo &other)\n", false, &_init_f_swap_1509, &_call_f_swap_1509);
   methods += new qt_gsi::GenericStaticMethod ("abortHostLookup", "@brief Static method void QHostInfo::abortHostLookup(int lookupId)\nThis method is static and can be called without an instance.", &_init_f_abortHostLookup_767, &_call_f_abortHostLookup_767);
   methods += new qt_gsi::GenericStaticMethod ("fromName", "@brief Static method QHostInfo QHostInfo::fromName(const QString &name)\nThis method is static and can be called without an instance.", &_init_f_fromName_2025, &_call_f_fromName_2025);
   methods += new qt_gsi::GenericStaticMethod ("localDomainName", "@brief Static method QString QHostInfo::localDomainName()\nThis method is static and can be called without an instance.", &_init_f_localDomainName_0, &_call_f_localDomainName_0);

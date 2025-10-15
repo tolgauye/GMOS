@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -26,7 +26,6 @@
 #include "dbCommon.h"
 #include "dbTrans.h"
 #include "dbNet.h"
-#include "dbMemStatistics.h"
 
 #include "tlObject.h"
 
@@ -173,41 +172,12 @@ public:
   }
 
   /**
-   *  @brief Gets the net attached to a specific pin as a subcircuit pin ref object
-   *  Returns 0 if no net is attached.
-   */
-  const NetSubcircuitPinRef *netref_for_pin (size_t pin_id) const;
-
-  /**
-   *  @brief Gets the net attached to a specific pin as a subcircuit pin ref object (non-const version)
-   *  Returns 0 if no net is attached.
-   */
-  NetSubcircuitPinRef *netref_for_pin (size_t pin_id)
-  {
-    return const_cast<NetSubcircuitPinRef *> (((const SubCircuit *) this)->netref_for_pin (pin_id));
-  }
-
-  /**
    *  @brief Connects the given pin to the given net
    *  If the net is 0 the pin is disconnected.
    *  If non-null, a NetPinRef object will be inserted into the
    *  net and connected with the given pin.
    */
   void connect_pin (size_t pin_id, Net *net);
-
-  /**
-   *  @brief Generate memory statistics
-   */
-  void mem_stat (MemStatistics *stat, MemStatistics::purpose_t purpose, int cat, bool no_self = false, void *parent = 0) const
-  {
-    if (! no_self) {
-      stat->add (typeid (*this), (void *) this, sizeof (*this), sizeof (*this), parent, purpose, cat);
-    }
-
-    db::mem_stat (stat, purpose, cat, m_name, true, (void *) this);
-    db::mem_stat (stat, purpose, cat, m_trans, true, (void *) this);
-    db::mem_stat (stat, purpose, cat, m_pin_refs, true, (void *) this);
-  }
 
 private:
   friend class Circuit;
@@ -231,11 +201,6 @@ private:
   void set_circuit_ref (Circuit *c);
 
   /**
-   *  @brief Erases the given pin reference
-   */
-  void erase_pin (size_t pin_id);
-
-  /**
    *  @brief Sets the circuit the subcircuit belongs to
    */
   void set_circuit (Circuit *c)
@@ -251,14 +216,6 @@ private:
     m_id = id;
   }
 };
-
-/**
- *  @brief Memory statistics for SubCircuit
- */
-inline void mem_stat (MemStatistics *stat, MemStatistics::purpose_t purpose, int cat, const SubCircuit &x, bool no_self, void *parent)
-{
-  x.mem_stat (stat, purpose, cat, no_self, parent);
-}
 
 }
 

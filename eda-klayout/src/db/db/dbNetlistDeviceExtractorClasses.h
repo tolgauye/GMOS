@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -24,63 +24,9 @@
 #define _HDR_dbNetlistDeviceExtractorClasses
 
 #include "dbNetlistDeviceExtractor.h"
-#include "gsiObject.h"
 
 namespace db
 {
-
-/**
- *  @brief A device class factory base class
- */
-class DB_PUBLIC DeviceClassFactory
-  : public gsi::ObjectBase
-{
-public:
-  DeviceClassFactory () { }
-  ~DeviceClassFactory () { }
-  virtual db::DeviceClass *create_class () const = 0;
-};
-
-/**
- *  @brief A specific factory
- */
-template <class C>
-class DB_PUBLIC_TEMPLATE device_class_factory
-  : public DeviceClassFactory
-{
-public:
-  virtual db::DeviceClass *create_class () const { return new C (); }
-};
-
-/**
- *  @brief A base class for the specialized device extractors
- *
- *  The main feature of this class is to supply a device class factory
- *  which actually creates the device class object.
- *
- *  The NetlistDeviceExtractorImplBase object will own the factory object.
- */
-class DB_PUBLIC NetlistDeviceExtractorImplBase
-  : public db::NetlistDeviceExtractor
-{
-public:
-  NetlistDeviceExtractorImplBase (const std::string &name, DeviceClassFactory *factory)
-    : db::NetlistDeviceExtractor (name), mp_factory (factory)
-  {
-    mp_factory->keep ();
-  }
-
-  /**
-   *  @brief Creates the device class object
-   */
-  db::DeviceClass *make_class ()
-  {
-    return mp_factory->create_class ();
-  }
-
-private:
-  std::unique_ptr<DeviceClassFactory> mp_factory;
-};
 
 /**
  *  @brief A device extractor for a three-terminal MOS transistor
@@ -99,10 +45,10 @@ private:
  *  the particular source or drain area.
  */
 class DB_PUBLIC NetlistDeviceExtractorMOS3Transistor
-  : public db::NetlistDeviceExtractorImplBase
+  : public db::NetlistDeviceExtractor
 {
 public:
-  NetlistDeviceExtractorMOS3Transistor (const std::string &name, bool strict = false, DeviceClassFactory *factory = 0);
+  NetlistDeviceExtractorMOS3Transistor (const std::string &name, bool strict = false);
 
   virtual void setup ();
   virtual db::Connectivity get_connectivity (const db::Layout &layout, const std::vector<unsigned int> &layers) const;
@@ -148,7 +94,7 @@ class DB_PUBLIC NetlistDeviceExtractorMOS4Transistor
   : public NetlistDeviceExtractorMOS3Transistor
 {
 public:
-  NetlistDeviceExtractorMOS4Transistor (const std::string &name, bool strict = false, DeviceClassFactory *factory = 0);
+  NetlistDeviceExtractorMOS4Transistor (const std::string &name, bool strict = false);
 
   virtual void setup ();
 
@@ -175,10 +121,10 @@ private:
  *  terminals are produced.
  */
 class DB_PUBLIC NetlistDeviceExtractorResistor
-  : public db::NetlistDeviceExtractorImplBase
+  : public db::NetlistDeviceExtractor
 {
 public:
-  NetlistDeviceExtractorResistor (const std::string &name, double sheet_rho, DeviceClassFactory *factory = 0);
+  NetlistDeviceExtractorResistor (const std::string &name, double sheet_rho);
 
   virtual void setup ();
   virtual db::Connectivity get_connectivity (const db::Layout &layout, const std::vector<unsigned int> &layers) const;
@@ -216,7 +162,7 @@ class DB_PUBLIC NetlistDeviceExtractorResistorWithBulk
   : public db::NetlistDeviceExtractorResistor
 {
 public:
-  NetlistDeviceExtractorResistorWithBulk (const std::string &name, double sheet_rho, DeviceClassFactory *factory = 0);
+  NetlistDeviceExtractorResistorWithBulk (const std::string &name, double sheet_rho);
 
   virtual void setup ();
   virtual void modify_device (const db::Polygon &res, const std::vector<db::Region> & /*layer_geometry*/, db::Device *device);
@@ -240,10 +186,10 @@ public:
  *  the terminals for A and B are produced respectively.
  */
 class DB_PUBLIC NetlistDeviceExtractorCapacitor
-  : public db::NetlistDeviceExtractorImplBase
+  : public db::NetlistDeviceExtractor
 {
 public:
-  NetlistDeviceExtractorCapacitor (const std::string &name, double area_cap, DeviceClassFactory *factory = 0);
+  NetlistDeviceExtractorCapacitor (const std::string &name, double area_cap);
 
   virtual void setup ();
   virtual db::Connectivity get_connectivity (const db::Layout &layout, const std::vector<unsigned int> &layers) const;
@@ -281,7 +227,7 @@ class DB_PUBLIC NetlistDeviceExtractorCapacitorWithBulk
   : public db::NetlistDeviceExtractorCapacitor
 {
 public:
-  NetlistDeviceExtractorCapacitorWithBulk (const std::string &name, double cap_area, DeviceClassFactory *factory = 0);
+  NetlistDeviceExtractorCapacitorWithBulk (const std::string &name, double cap_area);
 
   virtual void setup ();
   virtual void modify_device (const db::Polygon &cap, const std::vector<db::Region> & /*layer_geometry*/, db::Device *device);
@@ -310,10 +256,10 @@ public:
  *  The terminal output layer names are 'tC' (collector), 'tB' (base) and 'tE' (emitter).
  */
 class DB_PUBLIC NetlistDeviceExtractorBJT3Transistor
-  : public db::NetlistDeviceExtractorImplBase
+  : public db::NetlistDeviceExtractor
 {
 public:
-  NetlistDeviceExtractorBJT3Transistor (const std::string &name, DeviceClassFactory *factory = 0);
+  NetlistDeviceExtractorBJT3Transistor (const std::string &name);
 
   virtual void setup ();
   virtual db::Connectivity get_connectivity (const db::Layout &layout, const std::vector<unsigned int> &layers) const;
@@ -350,7 +296,7 @@ class DB_PUBLIC NetlistDeviceExtractorBJT4Transistor
   : public NetlistDeviceExtractorBJT3Transistor
 {
 public:
-  NetlistDeviceExtractorBJT4Transistor (const std::string &name, DeviceClassFactory *factory = 0);
+  NetlistDeviceExtractorBJT4Transistor (const std::string &name);
 
   virtual void setup ();
 
@@ -375,10 +321,10 @@ private:
  *  cathode respectively.
  */
 class DB_PUBLIC NetlistDeviceExtractorDiode
-  : public db::NetlistDeviceExtractorImplBase
+  : public db::NetlistDeviceExtractor
 {
 public:
-  NetlistDeviceExtractorDiode (const std::string &name, DeviceClassFactory *factory = 0);
+  NetlistDeviceExtractorDiode (const std::string &name);
 
   virtual void setup ();
   virtual db::Connectivity get_connectivity (const db::Layout &layout, const std::vector<unsigned int> &layers) const;
@@ -401,6 +347,65 @@ protected:
   {
     //  .. no specific implementation ..
   }
+};
+
+}
+
+namespace tl
+{
+
+template<> struct type_traits<db::NetlistDeviceExtractorMOS3Transistor> : public tl::type_traits<void>
+{
+  typedef tl::false_tag has_copy_constructor;
+  typedef tl::false_tag has_default_constructor;
+};
+
+template<> struct type_traits<db::NetlistDeviceExtractorMOS4Transistor> : public tl::type_traits<void>
+{
+  typedef tl::false_tag has_copy_constructor;
+  typedef tl::false_tag has_default_constructor;
+};
+
+template<> struct type_traits<db::NetlistDeviceExtractorCapacitor> : public tl::type_traits<void>
+{
+  typedef tl::false_tag has_copy_constructor;
+  typedef tl::false_tag has_default_constructor;
+};
+
+template<> struct type_traits<db::NetlistDeviceExtractorCapacitorWithBulk> : public tl::type_traits<void>
+{
+  typedef tl::false_tag has_copy_constructor;
+  typedef tl::false_tag has_default_constructor;
+};
+
+template<> struct type_traits<db::NetlistDeviceExtractorResistor> : public tl::type_traits<void>
+{
+  typedef tl::false_tag has_copy_constructor;
+  typedef tl::false_tag has_default_constructor;
+};
+
+template<> struct type_traits<db::NetlistDeviceExtractorResistorWithBulk> : public tl::type_traits<void>
+{
+  typedef tl::false_tag has_copy_constructor;
+  typedef tl::false_tag has_default_constructor;
+};
+
+template<> struct type_traits<db::NetlistDeviceExtractorBJT3Transistor> : public tl::type_traits<void>
+{
+  typedef tl::false_tag has_copy_constructor;
+  typedef tl::false_tag has_default_constructor;
+};
+
+template<> struct type_traits<db::NetlistDeviceExtractorBJT4Transistor> : public tl::type_traits<void>
+{
+  typedef tl::false_tag has_copy_constructor;
+  typedef tl::false_tag has_default_constructor;
+};
+
+template<> struct type_traits<db::NetlistDeviceExtractorDiode> : public tl::type_traits<void>
+{
+  typedef tl::false_tag has_copy_constructor;
+  typedef tl::false_tag has_default_constructor;
 };
 
 }

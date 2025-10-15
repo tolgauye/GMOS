@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -268,23 +268,6 @@ public:
     } else {
       return &lb->second;
     }
-  }
-
-  /**
-   *  @brief Returns the iterator for a given index
-   *
-   *  This will return the iterator for the interval which contains the index. If there is no such interval, this method
-   *  will return end().
-   *
-   *  If there is no interval for the given index (not set), the returned iterator will not be end(), but it's
-   *  start value will not be less or equal to the index.
-   *
-   *  @param i The index to search for
-   *  @return The iterator to the corresponding interval or end() if there is no such interval
-   */
-  const_iterator find (I i) const
-  {
-    return std::lower_bound (m_index_map.begin (), m_index_map.end (), i, iv_compare_f<I, T> ());
   }
 
   /**

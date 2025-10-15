@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -32,6 +32,7 @@
 #include <QSurfaceFormat>
 #include "gsiQt.h"
 #include "gsiQtGuiCommon.h"
+#include "gsiDeclQtGuiTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -163,10 +164,7 @@ namespace qt_gsi
 static gsi::Enum<QSurface::SurfaceType> decl_QSurface_SurfaceType_Enum ("QtGui", "QSurface_SurfaceType",
     gsi::enum_const ("RasterSurface", QSurface::RasterSurface, "@brief Enum constant QSurface::RasterSurface") +
     gsi::enum_const ("OpenGLSurface", QSurface::OpenGLSurface, "@brief Enum constant QSurface::OpenGLSurface") +
-    gsi::enum_const ("RasterGLSurface", QSurface::RasterGLSurface, "@brief Enum constant QSurface::RasterGLSurface") +
-    gsi::enum_const ("OpenVGSurface", QSurface::OpenVGSurface, "@brief Enum constant QSurface::OpenVGSurface") +
-    gsi::enum_const ("VulkanSurface", QSurface::VulkanSurface, "@brief Enum constant QSurface::VulkanSurface") +
-    gsi::enum_const ("MetalSurface", QSurface::MetalSurface, "@brief Enum constant QSurface::MetalSurface"),
+    gsi::enum_const ("RasterGLSurface", QSurface::RasterGLSurface, "@brief Enum constant QSurface::RasterGLSurface"),
   "@qt\n@brief This class represents the QSurface::SurfaceType enum");
 
 static gsi::QFlagsClass<QSurface::SurfaceType > decl_QSurface_SurfaceType_Enums ("QtGui", "QSurface_QFlags_SurfaceType",

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -85,7 +85,6 @@ public:
    */
   void invalidate_hier ()
   {
-    ++m_hier_generation_id;
     if (! m_hier_dirty || m_busy) {
       do_invalidate_hier ();  //  must be called before the hierarchy is invalidated (stopping of redraw thread requires this)
       m_hier_dirty = true;
@@ -102,14 +101,6 @@ public:
    *  applies to all layers.
    */
   void invalidate_bboxes (unsigned int index);
-
-  /**
-   *  @brief Invalidate the properties IDs
-   *
-   *  This method is supposed to be called by shape containers for example if
-   *  a property ID has been changed.
-   */
-  void invalidate_prop_ids ();
 
   /**
    *  @brief Signal that the database unit has changed
@@ -137,33 +128,11 @@ public:
   }
 
   /**
-   *  @brief Gets the hierarchy generation ID
-   *
-   *  The hierarchy generation ID is a number which is incremented on every hierarchy
-   *  change.
-   */
-  size_t hier_generation_id () const
-  {
-    return m_hier_generation_id;
-  }
-
-  /**
    *  @brief The "dirty bounding box" attribute
    *
    *  This attribute is true, if the bounding boxes have changed since the last "update" call
    */
   bool bboxes_dirty () const;
-
-  /**
-   *  @brief The "dirty property IDs" attribute
-   *
-   *  This attribute is true, if a properties ID has been changed on a shape, instance, cell or
-   *  the layout itself.
-   */
-  bool prop_ids_dirty () const
-  {
-    return m_prop_ids_dirty;
-  }
 
   /**
    *  @brief Sets or resets busy mode
@@ -194,6 +163,14 @@ protected:
   /**
    *  @brief Issue a "prop id's changed event"
    */
+  void prop_ids_changed ()
+  {
+    prop_ids_changed_event ();
+  }
+
+  /**
+   *  @brief Issue a "prop id's changed event"
+   */
   void cell_name_changed ()
   {
     cell_name_changed_event ();
@@ -213,30 +190,17 @@ public:
   tl::Event bboxes_changed_any_event;
   tl::Event dbu_changed_event;
   tl::Event cell_name_changed_event;
-  tl::Event layer_properties_changed_event;
-
-  /**
-   *  @brief The "properties IDs change event"
-   *
-   *  This event is issued before a change of properties IDs
-   *  in shapes, instances, cells or the layout itself.
-   *  Inserting a shape or instance implies a properties ID change.
-   *
-   *  After such a change, "prop_ids_dirty" is true until "update" is called.
-   */
   tl::Event prop_ids_changed_event;
+  tl::Event layer_properties_changed_event;
 
 private:
   bool m_hier_dirty;
-  size_t m_hier_generation_id;
   std::vector<bool> m_bboxes_dirty;
-  bool m_all_bboxes_dirty, m_some_bboxes_dirty;
-  bool m_prop_ids_dirty;
+  bool m_all_bboxes_dirty;
   bool m_busy;
 
   void do_invalidate_hier ();
   void do_invalidate_bboxes (unsigned int index);
-  void do_invalidate_prop_ids ();
 };
 
 }

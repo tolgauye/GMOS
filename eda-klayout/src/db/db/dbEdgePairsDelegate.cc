@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -30,12 +30,10 @@ namespace db
 
 EdgePairsDelegate::EdgePairsDelegate ()
 {
-  m_base_verbosity = 30;
   m_report_progress = false;
 }
 
 EdgePairsDelegate::EdgePairsDelegate (const EdgePairsDelegate &other)
-  : ShapeCollectionDelegateBase ()
 {
   operator= (other);
 }
@@ -44,7 +42,6 @@ EdgePairsDelegate &
 EdgePairsDelegate::operator= (const EdgePairsDelegate &other)
 {
   if (this != &other) {
-    m_base_verbosity = other.m_base_verbosity;
     m_report_progress = other.m_report_progress;
   }
   return *this;
@@ -53,11 +50,6 @@ EdgePairsDelegate::operator= (const EdgePairsDelegate &other)
 EdgePairsDelegate::~EdgePairsDelegate ()
 {
   //  .. nothing yet ..
-}
-
-void EdgePairsDelegate::set_base_verbosity (int vb)
-{
-  m_base_verbosity = vb;
 }
 
 void EdgePairsDelegate::enable_progress (const std::string &progress_desc)

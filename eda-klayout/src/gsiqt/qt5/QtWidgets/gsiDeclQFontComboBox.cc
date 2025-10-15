@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -89,6 +89,7 @@
 #include <QWindow>
 #include "gsiQt.h"
 #include "gsiQtWidgetsCommon.h"
+#include "gsiDeclQtWidgetsTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -234,7 +235,7 @@ static void _init_f_tr_4013 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("s");
   decl->add_arg<const char * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("c", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("c", true, "__null");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("n", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -246,7 +247,7 @@ static void _call_f_tr_4013 (const qt_gsi::GenericStaticMethod * /*decl*/, gsi::
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (__null, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QFontComboBox::tr (arg1, arg2, arg3));
 }
@@ -259,7 +260,7 @@ static void _init_f_trUtf8_4013 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("s");
   decl->add_arg<const char * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("c", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("c", true, "__null");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("n", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -271,7 +272,7 @@ static void _call_f_trUtf8_4013 (const qt_gsi::GenericStaticMethod * /*decl*/, g
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (__null, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QFontComboBox::trUtf8 (arg1, arg2, arg3));
 }
@@ -301,7 +302,6 @@ static gsi::Methods methods_QFontComboBox () {
   methods += gsi::qt_signal<const QString & > ("editTextChanged(const QString &)", "editTextChanged", gsi::arg("arg1"), "@brief Signal declaration for QFontComboBox::editTextChanged(const QString &)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<int > ("highlighted(int)", "highlighted", gsi::arg("index"), "@brief Signal declaration for QFontComboBox::highlighted(int index)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<const QString & > ("highlighted(const QString &)", "highlighted_qs", gsi::arg("arg1"), "@brief Signal declaration for QFontComboBox::highlighted(const QString &)\nYou can bind a procedure to this signal.");
-  methods += gsi::qt_signal<const QString & > ("objectNameChanged(const QString &)", "objectNameChanged", gsi::arg("objectName"), "@brief Signal declaration for QFontComboBox::objectNameChanged(const QString &objectName)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<const QIcon & > ("windowIconChanged(const QIcon &)", "windowIconChanged", gsi::arg("icon"), "@brief Signal declaration for QFontComboBox::windowIconChanged(const QIcon &icon)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<const QString & > ("windowIconTextChanged(const QString &)", "windowIconTextChanged", gsi::arg("iconText"), "@brief Signal declaration for QFontComboBox::windowIconTextChanged(const QString &iconText)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<const QString & > ("windowTitleChanged(const QString &)", "windowTitleChanged", gsi::arg("title"), "@brief Signal declaration for QFontComboBox::windowTitleChanged(const QString &title)\nYou can bind a procedure to this signal.");
@@ -443,18 +443,18 @@ public:
     emit QFontComboBox::editTextChanged(arg1);
   }
 
-  //  [adaptor impl] bool QFontComboBox::eventFilter(QObject *watched, QEvent *event)
-  bool cbs_eventFilter_2411_0(QObject *watched, QEvent *event)
+  //  [adaptor impl] bool QFontComboBox::eventFilter(QObject *, QEvent *)
+  bool cbs_eventFilter_2411_0(QObject *arg1, QEvent *arg2)
   {
-    return QFontComboBox::eventFilter(watched, event);
+    return QFontComboBox::eventFilter(arg1, arg2);
   }
 
-  virtual bool eventFilter(QObject *watched, QEvent *event)
+  virtual bool eventFilter(QObject *arg1, QEvent *arg2)
   {
     if (cb_eventFilter_2411_0.can_issue()) {
-      return cb_eventFilter_2411_0.issue<QFontComboBox_Adaptor, bool, QObject *, QEvent *>(&QFontComboBox_Adaptor::cbs_eventFilter_2411_0, watched, event);
+      return cb_eventFilter_2411_0.issue<QFontComboBox_Adaptor, bool, QObject *, QEvent *>(&QFontComboBox_Adaptor::cbs_eventFilter_2411_0, arg1, arg2);
     } else {
-      return QFontComboBox::eventFilter(watched, event);
+      return QFontComboBox::eventFilter(arg1, arg2);
     }
   }
 
@@ -545,13 +545,6 @@ public:
     }
   }
 
-  //  [emitter impl] void QFontComboBox::objectNameChanged(const QString &objectName)
-  void emitter_QFontComboBox_objectNameChanged_4567(const QString &objectName)
-  {
-    __SUPPRESS_UNUSED_WARNING (objectName);
-    throw tl::Exception ("Can't emit private signal 'void QFontComboBox::objectNameChanged(const QString &objectName)'");
-  }
-
   //  [adaptor impl] QPaintEngine *QFontComboBox::paintEngine()
   QPaintEngine * cbs_paintEngine_c0_0() const
   {
@@ -630,18 +623,18 @@ public:
     emit QFontComboBox::windowTitleChanged(title);
   }
 
-  //  [adaptor impl] void QFontComboBox::actionEvent(QActionEvent *event)
-  void cbs_actionEvent_1823_0(QActionEvent *event)
+  //  [adaptor impl] void QFontComboBox::actionEvent(QActionEvent *)
+  void cbs_actionEvent_1823_0(QActionEvent *arg1)
   {
-    QFontComboBox::actionEvent(event);
+    QFontComboBox::actionEvent(arg1);
   }
 
-  virtual void actionEvent(QActionEvent *event)
+  virtual void actionEvent(QActionEvent *arg1)
   {
     if (cb_actionEvent_1823_0.can_issue()) {
-      cb_actionEvent_1823_0.issue<QFontComboBox_Adaptor, QActionEvent *>(&QFontComboBox_Adaptor::cbs_actionEvent_1823_0, event);
+      cb_actionEvent_1823_0.issue<QFontComboBox_Adaptor, QActionEvent *>(&QFontComboBox_Adaptor::cbs_actionEvent_1823_0, arg1);
     } else {
-      QFontComboBox::actionEvent(event);
+      QFontComboBox::actionEvent(arg1);
     }
   }
 
@@ -660,33 +653,33 @@ public:
     }
   }
 
-  //  [adaptor impl] void QFontComboBox::childEvent(QChildEvent *event)
-  void cbs_childEvent_1701_0(QChildEvent *event)
+  //  [adaptor impl] void QFontComboBox::childEvent(QChildEvent *)
+  void cbs_childEvent_1701_0(QChildEvent *arg1)
   {
-    QFontComboBox::childEvent(event);
+    QFontComboBox::childEvent(arg1);
   }
 
-  virtual void childEvent(QChildEvent *event)
+  virtual void childEvent(QChildEvent *arg1)
   {
     if (cb_childEvent_1701_0.can_issue()) {
-      cb_childEvent_1701_0.issue<QFontComboBox_Adaptor, QChildEvent *>(&QFontComboBox_Adaptor::cbs_childEvent_1701_0, event);
+      cb_childEvent_1701_0.issue<QFontComboBox_Adaptor, QChildEvent *>(&QFontComboBox_Adaptor::cbs_childEvent_1701_0, arg1);
     } else {
-      QFontComboBox::childEvent(event);
+      QFontComboBox::childEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QFontComboBox::closeEvent(QCloseEvent *event)
-  void cbs_closeEvent_1719_0(QCloseEvent *event)
+  //  [adaptor impl] void QFontComboBox::closeEvent(QCloseEvent *)
+  void cbs_closeEvent_1719_0(QCloseEvent *arg1)
   {
-    QFontComboBox::closeEvent(event);
+    QFontComboBox::closeEvent(arg1);
   }
 
-  virtual void closeEvent(QCloseEvent *event)
+  virtual void closeEvent(QCloseEvent *arg1)
   {
     if (cb_closeEvent_1719_0.can_issue()) {
-      cb_closeEvent_1719_0.issue<QFontComboBox_Adaptor, QCloseEvent *>(&QFontComboBox_Adaptor::cbs_closeEvent_1719_0, event);
+      cb_closeEvent_1719_0.issue<QFontComboBox_Adaptor, QCloseEvent *>(&QFontComboBox_Adaptor::cbs_closeEvent_1719_0, arg1);
     } else {
-      QFontComboBox::closeEvent(event);
+      QFontComboBox::closeEvent(arg1);
     }
   }
 
@@ -705,18 +698,18 @@ public:
     }
   }
 
-  //  [adaptor impl] void QFontComboBox::customEvent(QEvent *event)
-  void cbs_customEvent_1217_0(QEvent *event)
+  //  [adaptor impl] void QFontComboBox::customEvent(QEvent *)
+  void cbs_customEvent_1217_0(QEvent *arg1)
   {
-    QFontComboBox::customEvent(event);
+    QFontComboBox::customEvent(arg1);
   }
 
-  virtual void customEvent(QEvent *event)
+  virtual void customEvent(QEvent *arg1)
   {
     if (cb_customEvent_1217_0.can_issue()) {
-      cb_customEvent_1217_0.issue<QFontComboBox_Adaptor, QEvent *>(&QFontComboBox_Adaptor::cbs_customEvent_1217_0, event);
+      cb_customEvent_1217_0.issue<QFontComboBox_Adaptor, QEvent *>(&QFontComboBox_Adaptor::cbs_customEvent_1217_0, arg1);
     } else {
-      QFontComboBox::customEvent(event);
+      QFontComboBox::customEvent(arg1);
     }
   }
 
@@ -735,78 +728,78 @@ public:
     }
   }
 
-  //  [adaptor impl] void QFontComboBox::dragEnterEvent(QDragEnterEvent *event)
-  void cbs_dragEnterEvent_2109_0(QDragEnterEvent *event)
+  //  [adaptor impl] void QFontComboBox::dragEnterEvent(QDragEnterEvent *)
+  void cbs_dragEnterEvent_2109_0(QDragEnterEvent *arg1)
   {
-    QFontComboBox::dragEnterEvent(event);
+    QFontComboBox::dragEnterEvent(arg1);
   }
 
-  virtual void dragEnterEvent(QDragEnterEvent *event)
+  virtual void dragEnterEvent(QDragEnterEvent *arg1)
   {
     if (cb_dragEnterEvent_2109_0.can_issue()) {
-      cb_dragEnterEvent_2109_0.issue<QFontComboBox_Adaptor, QDragEnterEvent *>(&QFontComboBox_Adaptor::cbs_dragEnterEvent_2109_0, event);
+      cb_dragEnterEvent_2109_0.issue<QFontComboBox_Adaptor, QDragEnterEvent *>(&QFontComboBox_Adaptor::cbs_dragEnterEvent_2109_0, arg1);
     } else {
-      QFontComboBox::dragEnterEvent(event);
+      QFontComboBox::dragEnterEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QFontComboBox::dragLeaveEvent(QDragLeaveEvent *event)
-  void cbs_dragLeaveEvent_2092_0(QDragLeaveEvent *event)
+  //  [adaptor impl] void QFontComboBox::dragLeaveEvent(QDragLeaveEvent *)
+  void cbs_dragLeaveEvent_2092_0(QDragLeaveEvent *arg1)
   {
-    QFontComboBox::dragLeaveEvent(event);
+    QFontComboBox::dragLeaveEvent(arg1);
   }
 
-  virtual void dragLeaveEvent(QDragLeaveEvent *event)
+  virtual void dragLeaveEvent(QDragLeaveEvent *arg1)
   {
     if (cb_dragLeaveEvent_2092_0.can_issue()) {
-      cb_dragLeaveEvent_2092_0.issue<QFontComboBox_Adaptor, QDragLeaveEvent *>(&QFontComboBox_Adaptor::cbs_dragLeaveEvent_2092_0, event);
+      cb_dragLeaveEvent_2092_0.issue<QFontComboBox_Adaptor, QDragLeaveEvent *>(&QFontComboBox_Adaptor::cbs_dragLeaveEvent_2092_0, arg1);
     } else {
-      QFontComboBox::dragLeaveEvent(event);
+      QFontComboBox::dragLeaveEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QFontComboBox::dragMoveEvent(QDragMoveEvent *event)
-  void cbs_dragMoveEvent_2006_0(QDragMoveEvent *event)
+  //  [adaptor impl] void QFontComboBox::dragMoveEvent(QDragMoveEvent *)
+  void cbs_dragMoveEvent_2006_0(QDragMoveEvent *arg1)
   {
-    QFontComboBox::dragMoveEvent(event);
+    QFontComboBox::dragMoveEvent(arg1);
   }
 
-  virtual void dragMoveEvent(QDragMoveEvent *event)
+  virtual void dragMoveEvent(QDragMoveEvent *arg1)
   {
     if (cb_dragMoveEvent_2006_0.can_issue()) {
-      cb_dragMoveEvent_2006_0.issue<QFontComboBox_Adaptor, QDragMoveEvent *>(&QFontComboBox_Adaptor::cbs_dragMoveEvent_2006_0, event);
+      cb_dragMoveEvent_2006_0.issue<QFontComboBox_Adaptor, QDragMoveEvent *>(&QFontComboBox_Adaptor::cbs_dragMoveEvent_2006_0, arg1);
     } else {
-      QFontComboBox::dragMoveEvent(event);
+      QFontComboBox::dragMoveEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QFontComboBox::dropEvent(QDropEvent *event)
-  void cbs_dropEvent_1622_0(QDropEvent *event)
+  //  [adaptor impl] void QFontComboBox::dropEvent(QDropEvent *)
+  void cbs_dropEvent_1622_0(QDropEvent *arg1)
   {
-    QFontComboBox::dropEvent(event);
+    QFontComboBox::dropEvent(arg1);
   }
 
-  virtual void dropEvent(QDropEvent *event)
+  virtual void dropEvent(QDropEvent *arg1)
   {
     if (cb_dropEvent_1622_0.can_issue()) {
-      cb_dropEvent_1622_0.issue<QFontComboBox_Adaptor, QDropEvent *>(&QFontComboBox_Adaptor::cbs_dropEvent_1622_0, event);
+      cb_dropEvent_1622_0.issue<QFontComboBox_Adaptor, QDropEvent *>(&QFontComboBox_Adaptor::cbs_dropEvent_1622_0, arg1);
     } else {
-      QFontComboBox::dropEvent(event);
+      QFontComboBox::dropEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QFontComboBox::enterEvent(QEvent *event)
-  void cbs_enterEvent_1217_0(QEvent *event)
+  //  [adaptor impl] void QFontComboBox::enterEvent(QEvent *)
+  void cbs_enterEvent_1217_0(QEvent *arg1)
   {
-    QFontComboBox::enterEvent(event);
+    QFontComboBox::enterEvent(arg1);
   }
 
-  virtual void enterEvent(QEvent *event)
+  virtual void enterEvent(QEvent *arg1)
   {
     if (cb_enterEvent_1217_0.can_issue()) {
-      cb_enterEvent_1217_0.issue<QFontComboBox_Adaptor, QEvent *>(&QFontComboBox_Adaptor::cbs_enterEvent_1217_0, event);
+      cb_enterEvent_1217_0.issue<QFontComboBox_Adaptor, QEvent *>(&QFontComboBox_Adaptor::cbs_enterEvent_1217_0, arg1);
     } else {
-      QFontComboBox::enterEvent(event);
+      QFontComboBox::enterEvent(arg1);
     }
   }
 
@@ -945,18 +938,18 @@ public:
     }
   }
 
-  //  [adaptor impl] void QFontComboBox::leaveEvent(QEvent *event)
-  void cbs_leaveEvent_1217_0(QEvent *event)
+  //  [adaptor impl] void QFontComboBox::leaveEvent(QEvent *)
+  void cbs_leaveEvent_1217_0(QEvent *arg1)
   {
-    QFontComboBox::leaveEvent(event);
+    QFontComboBox::leaveEvent(arg1);
   }
 
-  virtual void leaveEvent(QEvent *event)
+  virtual void leaveEvent(QEvent *arg1)
   {
     if (cb_leaveEvent_1217_0.can_issue()) {
-      cb_leaveEvent_1217_0.issue<QFontComboBox_Adaptor, QEvent *>(&QFontComboBox_Adaptor::cbs_leaveEvent_1217_0, event);
+      cb_leaveEvent_1217_0.issue<QFontComboBox_Adaptor, QEvent *>(&QFontComboBox_Adaptor::cbs_leaveEvent_1217_0, arg1);
     } else {
-      QFontComboBox::leaveEvent(event);
+      QFontComboBox::leaveEvent(arg1);
     }
   }
 
@@ -975,33 +968,33 @@ public:
     }
   }
 
-  //  [adaptor impl] void QFontComboBox::mouseDoubleClickEvent(QMouseEvent *event)
-  void cbs_mouseDoubleClickEvent_1738_0(QMouseEvent *event)
+  //  [adaptor impl] void QFontComboBox::mouseDoubleClickEvent(QMouseEvent *)
+  void cbs_mouseDoubleClickEvent_1738_0(QMouseEvent *arg1)
   {
-    QFontComboBox::mouseDoubleClickEvent(event);
+    QFontComboBox::mouseDoubleClickEvent(arg1);
   }
 
-  virtual void mouseDoubleClickEvent(QMouseEvent *event)
+  virtual void mouseDoubleClickEvent(QMouseEvent *arg1)
   {
     if (cb_mouseDoubleClickEvent_1738_0.can_issue()) {
-      cb_mouseDoubleClickEvent_1738_0.issue<QFontComboBox_Adaptor, QMouseEvent *>(&QFontComboBox_Adaptor::cbs_mouseDoubleClickEvent_1738_0, event);
+      cb_mouseDoubleClickEvent_1738_0.issue<QFontComboBox_Adaptor, QMouseEvent *>(&QFontComboBox_Adaptor::cbs_mouseDoubleClickEvent_1738_0, arg1);
     } else {
-      QFontComboBox::mouseDoubleClickEvent(event);
+      QFontComboBox::mouseDoubleClickEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QFontComboBox::mouseMoveEvent(QMouseEvent *event)
-  void cbs_mouseMoveEvent_1738_0(QMouseEvent *event)
+  //  [adaptor impl] void QFontComboBox::mouseMoveEvent(QMouseEvent *)
+  void cbs_mouseMoveEvent_1738_0(QMouseEvent *arg1)
   {
-    QFontComboBox::mouseMoveEvent(event);
+    QFontComboBox::mouseMoveEvent(arg1);
   }
 
-  virtual void mouseMoveEvent(QMouseEvent *event)
+  virtual void mouseMoveEvent(QMouseEvent *arg1)
   {
     if (cb_mouseMoveEvent_1738_0.can_issue()) {
-      cb_mouseMoveEvent_1738_0.issue<QFontComboBox_Adaptor, QMouseEvent *>(&QFontComboBox_Adaptor::cbs_mouseMoveEvent_1738_0, event);
+      cb_mouseMoveEvent_1738_0.issue<QFontComboBox_Adaptor, QMouseEvent *>(&QFontComboBox_Adaptor::cbs_mouseMoveEvent_1738_0, arg1);
     } else {
-      QFontComboBox::mouseMoveEvent(event);
+      QFontComboBox::mouseMoveEvent(arg1);
     }
   }
 
@@ -1035,18 +1028,18 @@ public:
     }
   }
 
-  //  [adaptor impl] void QFontComboBox::moveEvent(QMoveEvent *event)
-  void cbs_moveEvent_1624_0(QMoveEvent *event)
+  //  [adaptor impl] void QFontComboBox::moveEvent(QMoveEvent *)
+  void cbs_moveEvent_1624_0(QMoveEvent *arg1)
   {
-    QFontComboBox::moveEvent(event);
+    QFontComboBox::moveEvent(arg1);
   }
 
-  virtual void moveEvent(QMoveEvent *event)
+  virtual void moveEvent(QMoveEvent *arg1)
   {
     if (cb_moveEvent_1624_0.can_issue()) {
-      cb_moveEvent_1624_0.issue<QFontComboBox_Adaptor, QMoveEvent *>(&QFontComboBox_Adaptor::cbs_moveEvent_1624_0, event);
+      cb_moveEvent_1624_0.issue<QFontComboBox_Adaptor, QMoveEvent *>(&QFontComboBox_Adaptor::cbs_moveEvent_1624_0, arg1);
     } else {
-      QFontComboBox::moveEvent(event);
+      QFontComboBox::moveEvent(arg1);
     }
   }
 
@@ -1140,33 +1133,33 @@ public:
     }
   }
 
-  //  [adaptor impl] void QFontComboBox::tabletEvent(QTabletEvent *event)
-  void cbs_tabletEvent_1821_0(QTabletEvent *event)
+  //  [adaptor impl] void QFontComboBox::tabletEvent(QTabletEvent *)
+  void cbs_tabletEvent_1821_0(QTabletEvent *arg1)
   {
-    QFontComboBox::tabletEvent(event);
+    QFontComboBox::tabletEvent(arg1);
   }
 
-  virtual void tabletEvent(QTabletEvent *event)
+  virtual void tabletEvent(QTabletEvent *arg1)
   {
     if (cb_tabletEvent_1821_0.can_issue()) {
-      cb_tabletEvent_1821_0.issue<QFontComboBox_Adaptor, QTabletEvent *>(&QFontComboBox_Adaptor::cbs_tabletEvent_1821_0, event);
+      cb_tabletEvent_1821_0.issue<QFontComboBox_Adaptor, QTabletEvent *>(&QFontComboBox_Adaptor::cbs_tabletEvent_1821_0, arg1);
     } else {
-      QFontComboBox::tabletEvent(event);
+      QFontComboBox::tabletEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QFontComboBox::timerEvent(QTimerEvent *event)
-  void cbs_timerEvent_1730_0(QTimerEvent *event)
+  //  [adaptor impl] void QFontComboBox::timerEvent(QTimerEvent *)
+  void cbs_timerEvent_1730_0(QTimerEvent *arg1)
   {
-    QFontComboBox::timerEvent(event);
+    QFontComboBox::timerEvent(arg1);
   }
 
-  virtual void timerEvent(QTimerEvent *event)
+  virtual void timerEvent(QTimerEvent *arg1)
   {
     if (cb_timerEvent_1730_0.can_issue()) {
-      cb_timerEvent_1730_0.issue<QFontComboBox_Adaptor, QTimerEvent *>(&QFontComboBox_Adaptor::cbs_timerEvent_1730_0, event);
+      cb_timerEvent_1730_0.issue<QFontComboBox_Adaptor, QTimerEvent *>(&QFontComboBox_Adaptor::cbs_timerEvent_1730_0, arg1);
     } else {
-      QFontComboBox::timerEvent(event);
+      QFontComboBox::timerEvent(arg1);
     }
   }
 
@@ -1240,7 +1233,7 @@ QFontComboBox_Adaptor::~QFontComboBox_Adaptor() { }
 
 static void _init_ctor_QFontComboBox_Adaptor_1315 (qt_gsi::GenericStaticMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("parent", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("parent", true, "0");
   decl->add_arg<QWidget * > (argspec_0);
   decl->set_return_new<QFontComboBox_Adaptor> ();
 }
@@ -1249,16 +1242,16 @@ static void _call_ctor_QFontComboBox_Adaptor_1315 (const qt_gsi::GenericStaticMe
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  QWidget *arg1 = args ? gsi::arg_reader<QWidget * >() (args, heap) : gsi::arg_maker<QWidget * >() (nullptr, heap);
+  QWidget *arg1 = args ? gsi::arg_reader<QWidget * >() (args, heap) : gsi::arg_maker<QWidget * >() (0, heap);
   ret.write<QFontComboBox_Adaptor *> (new QFontComboBox_Adaptor (arg1));
 }
 
 
-// void QFontComboBox::actionEvent(QActionEvent *event)
+// void QFontComboBox::actionEvent(QActionEvent *)
 
 static void _init_cbs_actionEvent_1823_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QActionEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1338,11 +1331,11 @@ static void _set_callback_cbs_changeEvent_1217_0 (void *cls, const gsi::Callback
 }
 
 
-// void QFontComboBox::childEvent(QChildEvent *event)
+// void QFontComboBox::childEvent(QChildEvent *)
 
 static void _init_cbs_childEvent_1701_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QChildEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1362,11 +1355,11 @@ static void _set_callback_cbs_childEvent_1701_0 (void *cls, const gsi::Callback 
 }
 
 
-// void QFontComboBox::closeEvent(QCloseEvent *event)
+// void QFontComboBox::closeEvent(QCloseEvent *)
 
 static void _init_cbs_closeEvent_1719_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QCloseEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1525,11 +1518,11 @@ static void _call_emitter_customContextMenuRequested_1916 (const qt_gsi::Generic
 }
 
 
-// void QFontComboBox::customEvent(QEvent *event)
+// void QFontComboBox::customEvent(QEvent *)
 
 static void _init_cbs_customEvent_1217_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1575,7 +1568,7 @@ static void _call_fp_destroy_1620 (const qt_gsi::GenericMethod * /*decl*/, void 
 
 static void _init_emitter_destroyed_1302 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("arg1", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("arg1", true, "0");
   decl->add_arg<QObject * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1584,7 +1577,7 @@ static void _call_emitter_destroyed_1302 (const qt_gsi::GenericMethod * /*decl*/
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (nullptr, heap);
+  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (0, heap);
   ((QFontComboBox_Adaptor *)cls)->emitter_QFontComboBox_destroyed_1302 (arg1);
 }
 
@@ -1613,11 +1606,11 @@ static void _set_callback_cbs_disconnectNotify_2394_0 (void *cls, const gsi::Cal
 }
 
 
-// void QFontComboBox::dragEnterEvent(QDragEnterEvent *event)
+// void QFontComboBox::dragEnterEvent(QDragEnterEvent *)
 
 static void _init_cbs_dragEnterEvent_2109_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QDragEnterEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1637,11 +1630,11 @@ static void _set_callback_cbs_dragEnterEvent_2109_0 (void *cls, const gsi::Callb
 }
 
 
-// void QFontComboBox::dragLeaveEvent(QDragLeaveEvent *event)
+// void QFontComboBox::dragLeaveEvent(QDragLeaveEvent *)
 
 static void _init_cbs_dragLeaveEvent_2092_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QDragLeaveEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1661,11 +1654,11 @@ static void _set_callback_cbs_dragLeaveEvent_2092_0 (void *cls, const gsi::Callb
 }
 
 
-// void QFontComboBox::dragMoveEvent(QDragMoveEvent *event)
+// void QFontComboBox::dragMoveEvent(QDragMoveEvent *)
 
 static void _init_cbs_dragMoveEvent_2006_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QDragMoveEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1685,11 +1678,11 @@ static void _set_callback_cbs_dragMoveEvent_2006_0 (void *cls, const gsi::Callba
 }
 
 
-// void QFontComboBox::dropEvent(QDropEvent *event)
+// void QFontComboBox::dropEvent(QDropEvent *)
 
 static void _init_cbs_dropEvent_1622_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QDropEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1727,11 +1720,11 @@ static void _call_emitter_editTextChanged_2025 (const qt_gsi::GenericMethod * /*
 }
 
 
-// void QFontComboBox::enterEvent(QEvent *event)
+// void QFontComboBox::enterEvent(QEvent *)
 
 static void _init_cbs_enterEvent_1217_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1774,13 +1767,13 @@ static void _set_callback_cbs_event_1217_0 (void *cls, const gsi::Callback &cb)
 }
 
 
-// bool QFontComboBox::eventFilter(QObject *watched, QEvent *event)
+// bool QFontComboBox::eventFilter(QObject *, QEvent *)
 
 static void _init_cbs_eventFilter_2411_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("watched");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QObject * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("event");
+  static gsi::ArgSpecBase argspec_1 ("arg2");
   decl->add_arg<QEvent * > (argspec_1);
   decl->set_return<bool > ();
 }
@@ -2177,11 +2170,11 @@ static void _set_callback_cbs_keyReleaseEvent_1514_0 (void *cls, const gsi::Call
 }
 
 
-// void QFontComboBox::leaveEvent(QEvent *event)
+// void QFontComboBox::leaveEvent(QEvent *)
 
 static void _init_cbs_leaveEvent_1217_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -2243,11 +2236,11 @@ static void _set_callback_cbs_minimumSizeHint_c0_0 (void *cls, const gsi::Callba
 }
 
 
-// void QFontComboBox::mouseDoubleClickEvent(QMouseEvent *event)
+// void QFontComboBox::mouseDoubleClickEvent(QMouseEvent *)
 
 static void _init_cbs_mouseDoubleClickEvent_1738_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QMouseEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -2267,11 +2260,11 @@ static void _set_callback_cbs_mouseDoubleClickEvent_1738_0 (void *cls, const gsi
 }
 
 
-// void QFontComboBox::mouseMoveEvent(QMouseEvent *event)
+// void QFontComboBox::mouseMoveEvent(QMouseEvent *)
 
 static void _init_cbs_mouseMoveEvent_1738_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QMouseEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -2339,11 +2332,11 @@ static void _set_callback_cbs_mouseReleaseEvent_1738_0 (void *cls, const gsi::Ca
 }
 
 
-// void QFontComboBox::moveEvent(QMoveEvent *event)
+// void QFontComboBox::moveEvent(QMoveEvent *)
 
 static void _init_cbs_moveEvent_1624_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QMoveEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -2389,24 +2382,6 @@ static void _call_cbs_nativeEvent_4678_0 (const qt_gsi::GenericMethod * /*decl*/
 static void _set_callback_cbs_nativeEvent_4678_0 (void *cls, const gsi::Callback &cb)
 {
   ((QFontComboBox_Adaptor *)cls)->cb_nativeEvent_4678_0 = cb;
-}
-
-
-// emitter void QFontComboBox::objectNameChanged(const QString &objectName)
-
-static void _init_emitter_objectNameChanged_4567 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("objectName");
-  decl->add_arg<const QString & > (argspec_0);
-  decl->set_return<void > ();
-}
-
-static void _call_emitter_objectNameChanged_4567 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs & /*ret*/) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const QString &arg1 = gsi::arg_reader<const QString & >() (args, heap);
-  ((QFontComboBox_Adaptor *)cls)->emitter_QFontComboBox_objectNameChanged_4567 (arg1);
 }
 
 
@@ -2652,11 +2627,11 @@ static void _set_callback_cbs_sizeHint_c0_0 (void *cls, const gsi::Callback &cb)
 }
 
 
-// void QFontComboBox::tabletEvent(QTabletEvent *event)
+// void QFontComboBox::tabletEvent(QTabletEvent *)
 
 static void _init_cbs_tabletEvent_1821_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QTabletEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -2676,11 +2651,11 @@ static void _set_callback_cbs_tabletEvent_1821_0 (void *cls, const gsi::Callback
 }
 
 
-// void QFontComboBox::timerEvent(QTimerEvent *event)
+// void QFontComboBox::timerEvent(QTimerEvent *)
 
 static void _init_cbs_timerEvent_1730_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QTimerEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -2801,122 +2776,121 @@ gsi::Class<QFontComboBox> &qtdecl_QFontComboBox ();
 static gsi::Methods methods_QFontComboBox_Adaptor () {
   gsi::Methods methods;
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QFontComboBox::QFontComboBox(QWidget *parent)\nThis method creates an object of class QFontComboBox.", &_init_ctor_QFontComboBox_Adaptor_1315, &_call_ctor_QFontComboBox_Adaptor_1315);
-  methods += new qt_gsi::GenericMethod ("*actionEvent", "@brief Virtual method void QFontComboBox::actionEvent(QActionEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_actionEvent_1823_0, &_call_cbs_actionEvent_1823_0);
-  methods += new qt_gsi::GenericMethod ("*actionEvent", "@hide", false, &_init_cbs_actionEvent_1823_0, &_call_cbs_actionEvent_1823_0, &_set_callback_cbs_actionEvent_1823_0);
+  methods += new qt_gsi::GenericMethod ("*actionEvent", "@hide", false, &_init_cbs_actionEvent_1823_0, &_call_cbs_actionEvent_1823_0);
+  methods += new qt_gsi::GenericMethod ("*actionEvent", "@brief Virtual method void QFontComboBox::actionEvent(QActionEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_actionEvent_1823_0, &_call_cbs_actionEvent_1823_0, &_set_callback_cbs_actionEvent_1823_0);
   methods += new qt_gsi::GenericMethod ("emit_activated", "@brief Emitter for signal void QFontComboBox::activated(int index)\nCall this method to emit this signal.", false, &_init_emitter_activated_767, &_call_emitter_activated_767);
   methods += new qt_gsi::GenericMethod ("emit_activated_qs", "@brief Emitter for signal void QFontComboBox::activated(const QString &)\nCall this method to emit this signal.", false, &_init_emitter_activated_2025, &_call_emitter_activated_2025);
-  methods += new qt_gsi::GenericMethod ("*changeEvent", "@brief Virtual method void QFontComboBox::changeEvent(QEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_changeEvent_1217_0, &_call_cbs_changeEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*changeEvent", "@hide", false, &_init_cbs_changeEvent_1217_0, &_call_cbs_changeEvent_1217_0, &_set_callback_cbs_changeEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*childEvent", "@brief Virtual method void QFontComboBox::childEvent(QChildEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0);
-  methods += new qt_gsi::GenericMethod ("*childEvent", "@hide", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0, &_set_callback_cbs_childEvent_1701_0);
-  methods += new qt_gsi::GenericMethod ("*closeEvent", "@brief Virtual method void QFontComboBox::closeEvent(QCloseEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_closeEvent_1719_0, &_call_cbs_closeEvent_1719_0);
-  methods += new qt_gsi::GenericMethod ("*closeEvent", "@hide", false, &_init_cbs_closeEvent_1719_0, &_call_cbs_closeEvent_1719_0, &_set_callback_cbs_closeEvent_1719_0);
-  methods += new qt_gsi::GenericMethod ("*contextMenuEvent", "@brief Virtual method void QFontComboBox::contextMenuEvent(QContextMenuEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_contextMenuEvent_2363_0, &_call_cbs_contextMenuEvent_2363_0);
-  methods += new qt_gsi::GenericMethod ("*contextMenuEvent", "@hide", false, &_init_cbs_contextMenuEvent_2363_0, &_call_cbs_contextMenuEvent_2363_0, &_set_callback_cbs_contextMenuEvent_2363_0);
-  methods += new qt_gsi::GenericMethod ("*create|qt_create", "@brief Method void QFontComboBox::create(WId, bool initializeWindow, bool destroyOldWindow)\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_create_2208, &_call_fp_create_2208);
+  methods += new qt_gsi::GenericMethod ("*changeEvent", "@hide", false, &_init_cbs_changeEvent_1217_0, &_call_cbs_changeEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*changeEvent", "@brief Virtual method void QFontComboBox::changeEvent(QEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_changeEvent_1217_0, &_call_cbs_changeEvent_1217_0, &_set_callback_cbs_changeEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*childEvent", "@hide", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0);
+  methods += new qt_gsi::GenericMethod ("*childEvent", "@brief Virtual method void QFontComboBox::childEvent(QChildEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0, &_set_callback_cbs_childEvent_1701_0);
+  methods += new qt_gsi::GenericMethod ("*closeEvent", "@hide", false, &_init_cbs_closeEvent_1719_0, &_call_cbs_closeEvent_1719_0);
+  methods += new qt_gsi::GenericMethod ("*closeEvent", "@brief Virtual method void QFontComboBox::closeEvent(QCloseEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_closeEvent_1719_0, &_call_cbs_closeEvent_1719_0, &_set_callback_cbs_closeEvent_1719_0);
+  methods += new qt_gsi::GenericMethod ("*contextMenuEvent", "@hide", false, &_init_cbs_contextMenuEvent_2363_0, &_call_cbs_contextMenuEvent_2363_0);
+  methods += new qt_gsi::GenericMethod ("*contextMenuEvent", "@brief Virtual method void QFontComboBox::contextMenuEvent(QContextMenuEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_contextMenuEvent_2363_0, &_call_cbs_contextMenuEvent_2363_0, &_set_callback_cbs_contextMenuEvent_2363_0);
+  methods += new qt_gsi::GenericMethod ("*qt_create", "@brief Method void QFontComboBox::create(WId, bool initializeWindow, bool destroyOldWindow)\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_create_2208, &_call_fp_create_2208);
   methods += new qt_gsi::GenericMethod ("emit_currentFontChanged", "@brief Emitter for signal void QFontComboBox::currentFontChanged(const QFont &f)\nCall this method to emit this signal.", false, &_init_emitter_currentFontChanged_1801, &_call_emitter_currentFontChanged_1801);
   methods += new qt_gsi::GenericMethod ("emit_currentIndexChanged", "@brief Emitter for signal void QFontComboBox::currentIndexChanged(int index)\nCall this method to emit this signal.", false, &_init_emitter_currentIndexChanged_767, &_call_emitter_currentIndexChanged_767);
   methods += new qt_gsi::GenericMethod ("emit_currentIndexChanged_qs", "@brief Emitter for signal void QFontComboBox::currentIndexChanged(const QString &)\nCall this method to emit this signal.", false, &_init_emitter_currentIndexChanged_2025, &_call_emitter_currentIndexChanged_2025);
   methods += new qt_gsi::GenericMethod ("emit_currentTextChanged", "@brief Emitter for signal void QFontComboBox::currentTextChanged(const QString &)\nCall this method to emit this signal.", false, &_init_emitter_currentTextChanged_2025, &_call_emitter_currentTextChanged_2025);
   methods += new qt_gsi::GenericMethod ("emit_customContextMenuRequested", "@brief Emitter for signal void QFontComboBox::customContextMenuRequested(const QPoint &pos)\nCall this method to emit this signal.", false, &_init_emitter_customContextMenuRequested_1916, &_call_emitter_customContextMenuRequested_1916);
-  methods += new qt_gsi::GenericMethod ("*customEvent", "@brief Virtual method void QFontComboBox::customEvent(QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*customEvent", "@hide", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0, &_set_callback_cbs_customEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*destroy|qt_destroy", "@brief Method void QFontComboBox::destroy(bool destroyWindow, bool destroySubWindows)\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_destroy_1620, &_call_fp_destroy_1620);
+  methods += new qt_gsi::GenericMethod ("*customEvent", "@hide", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*customEvent", "@brief Virtual method void QFontComboBox::customEvent(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0, &_set_callback_cbs_customEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*qt_destroy", "@brief Method void QFontComboBox::destroy(bool destroyWindow, bool destroySubWindows)\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_destroy_1620, &_call_fp_destroy_1620);
   methods += new qt_gsi::GenericMethod ("emit_destroyed", "@brief Emitter for signal void QFontComboBox::destroyed(QObject *)\nCall this method to emit this signal.", false, &_init_emitter_destroyed_1302, &_call_emitter_destroyed_1302);
-  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@brief Virtual method void QFontComboBox::disconnectNotify(const QMetaMethod &signal)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0);
-  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@hide", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0, &_set_callback_cbs_disconnectNotify_2394_0);
-  methods += new qt_gsi::GenericMethod ("*dragEnterEvent", "@brief Virtual method void QFontComboBox::dragEnterEvent(QDragEnterEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_dragEnterEvent_2109_0, &_call_cbs_dragEnterEvent_2109_0);
-  methods += new qt_gsi::GenericMethod ("*dragEnterEvent", "@hide", false, &_init_cbs_dragEnterEvent_2109_0, &_call_cbs_dragEnterEvent_2109_0, &_set_callback_cbs_dragEnterEvent_2109_0);
-  methods += new qt_gsi::GenericMethod ("*dragLeaveEvent", "@brief Virtual method void QFontComboBox::dragLeaveEvent(QDragLeaveEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_dragLeaveEvent_2092_0, &_call_cbs_dragLeaveEvent_2092_0);
-  methods += new qt_gsi::GenericMethod ("*dragLeaveEvent", "@hide", false, &_init_cbs_dragLeaveEvent_2092_0, &_call_cbs_dragLeaveEvent_2092_0, &_set_callback_cbs_dragLeaveEvent_2092_0);
-  methods += new qt_gsi::GenericMethod ("*dragMoveEvent", "@brief Virtual method void QFontComboBox::dragMoveEvent(QDragMoveEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_dragMoveEvent_2006_0, &_call_cbs_dragMoveEvent_2006_0);
-  methods += new qt_gsi::GenericMethod ("*dragMoveEvent", "@hide", false, &_init_cbs_dragMoveEvent_2006_0, &_call_cbs_dragMoveEvent_2006_0, &_set_callback_cbs_dragMoveEvent_2006_0);
-  methods += new qt_gsi::GenericMethod ("*dropEvent", "@brief Virtual method void QFontComboBox::dropEvent(QDropEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_dropEvent_1622_0, &_call_cbs_dropEvent_1622_0);
-  methods += new qt_gsi::GenericMethod ("*dropEvent", "@hide", false, &_init_cbs_dropEvent_1622_0, &_call_cbs_dropEvent_1622_0, &_set_callback_cbs_dropEvent_1622_0);
+  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@hide", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0);
+  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@brief Virtual method void QFontComboBox::disconnectNotify(const QMetaMethod &signal)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0, &_set_callback_cbs_disconnectNotify_2394_0);
+  methods += new qt_gsi::GenericMethod ("*dragEnterEvent", "@hide", false, &_init_cbs_dragEnterEvent_2109_0, &_call_cbs_dragEnterEvent_2109_0);
+  methods += new qt_gsi::GenericMethod ("*dragEnterEvent", "@brief Virtual method void QFontComboBox::dragEnterEvent(QDragEnterEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_dragEnterEvent_2109_0, &_call_cbs_dragEnterEvent_2109_0, &_set_callback_cbs_dragEnterEvent_2109_0);
+  methods += new qt_gsi::GenericMethod ("*dragLeaveEvent", "@hide", false, &_init_cbs_dragLeaveEvent_2092_0, &_call_cbs_dragLeaveEvent_2092_0);
+  methods += new qt_gsi::GenericMethod ("*dragLeaveEvent", "@brief Virtual method void QFontComboBox::dragLeaveEvent(QDragLeaveEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_dragLeaveEvent_2092_0, &_call_cbs_dragLeaveEvent_2092_0, &_set_callback_cbs_dragLeaveEvent_2092_0);
+  methods += new qt_gsi::GenericMethod ("*dragMoveEvent", "@hide", false, &_init_cbs_dragMoveEvent_2006_0, &_call_cbs_dragMoveEvent_2006_0);
+  methods += new qt_gsi::GenericMethod ("*dragMoveEvent", "@brief Virtual method void QFontComboBox::dragMoveEvent(QDragMoveEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_dragMoveEvent_2006_0, &_call_cbs_dragMoveEvent_2006_0, &_set_callback_cbs_dragMoveEvent_2006_0);
+  methods += new qt_gsi::GenericMethod ("*dropEvent", "@hide", false, &_init_cbs_dropEvent_1622_0, &_call_cbs_dropEvent_1622_0);
+  methods += new qt_gsi::GenericMethod ("*dropEvent", "@brief Virtual method void QFontComboBox::dropEvent(QDropEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_dropEvent_1622_0, &_call_cbs_dropEvent_1622_0, &_set_callback_cbs_dropEvent_1622_0);
   methods += new qt_gsi::GenericMethod ("emit_editTextChanged", "@brief Emitter for signal void QFontComboBox::editTextChanged(const QString &)\nCall this method to emit this signal.", false, &_init_emitter_editTextChanged_2025, &_call_emitter_editTextChanged_2025);
-  methods += new qt_gsi::GenericMethod ("*enterEvent", "@brief Virtual method void QFontComboBox::enterEvent(QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_enterEvent_1217_0, &_call_cbs_enterEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*enterEvent", "@hide", false, &_init_cbs_enterEvent_1217_0, &_call_cbs_enterEvent_1217_0, &_set_callback_cbs_enterEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*event", "@brief Virtual method bool QFontComboBox::event(QEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0);
-  methods += new qt_gsi::GenericMethod ("*event", "@hide", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0, &_set_callback_cbs_event_1217_0);
-  methods += new qt_gsi::GenericMethod ("eventFilter", "@brief Virtual method bool QFontComboBox::eventFilter(QObject *watched, QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0);
-  methods += new qt_gsi::GenericMethod ("eventFilter", "@hide", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0, &_set_callback_cbs_eventFilter_2411_0);
-  methods += new qt_gsi::GenericMethod ("*focusInEvent", "@brief Virtual method void QFontComboBox::focusInEvent(QFocusEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_focusInEvent_1729_0, &_call_cbs_focusInEvent_1729_0);
-  methods += new qt_gsi::GenericMethod ("*focusInEvent", "@hide", false, &_init_cbs_focusInEvent_1729_0, &_call_cbs_focusInEvent_1729_0, &_set_callback_cbs_focusInEvent_1729_0);
+  methods += new qt_gsi::GenericMethod ("*enterEvent", "@hide", false, &_init_cbs_enterEvent_1217_0, &_call_cbs_enterEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*enterEvent", "@brief Virtual method void QFontComboBox::enterEvent(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_enterEvent_1217_0, &_call_cbs_enterEvent_1217_0, &_set_callback_cbs_enterEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*event", "@hide", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0);
+  methods += new qt_gsi::GenericMethod ("*event", "@brief Virtual method bool QFontComboBox::event(QEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0, &_set_callback_cbs_event_1217_0);
+  methods += new qt_gsi::GenericMethod ("eventFilter", "@hide", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0);
+  methods += new qt_gsi::GenericMethod ("eventFilter", "@brief Virtual method bool QFontComboBox::eventFilter(QObject *, QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0, &_set_callback_cbs_eventFilter_2411_0);
+  methods += new qt_gsi::GenericMethod ("*focusInEvent", "@hide", false, &_init_cbs_focusInEvent_1729_0, &_call_cbs_focusInEvent_1729_0);
+  methods += new qt_gsi::GenericMethod ("*focusInEvent", "@brief Virtual method void QFontComboBox::focusInEvent(QFocusEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_focusInEvent_1729_0, &_call_cbs_focusInEvent_1729_0, &_set_callback_cbs_focusInEvent_1729_0);
   methods += new qt_gsi::GenericMethod ("*focusNextChild", "@brief Method bool QFontComboBox::focusNextChild()\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_focusNextChild_0, &_call_fp_focusNextChild_0);
-  methods += new qt_gsi::GenericMethod ("*focusNextPrevChild", "@brief Virtual method bool QFontComboBox::focusNextPrevChild(bool next)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_focusNextPrevChild_864_0, &_call_cbs_focusNextPrevChild_864_0);
-  methods += new qt_gsi::GenericMethod ("*focusNextPrevChild", "@hide", false, &_init_cbs_focusNextPrevChild_864_0, &_call_cbs_focusNextPrevChild_864_0, &_set_callback_cbs_focusNextPrevChild_864_0);
-  methods += new qt_gsi::GenericMethod ("*focusOutEvent", "@brief Virtual method void QFontComboBox::focusOutEvent(QFocusEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_focusOutEvent_1729_0, &_call_cbs_focusOutEvent_1729_0);
-  methods += new qt_gsi::GenericMethod ("*focusOutEvent", "@hide", false, &_init_cbs_focusOutEvent_1729_0, &_call_cbs_focusOutEvent_1729_0, &_set_callback_cbs_focusOutEvent_1729_0);
+  methods += new qt_gsi::GenericMethod ("*focusNextPrevChild", "@hide", false, &_init_cbs_focusNextPrevChild_864_0, &_call_cbs_focusNextPrevChild_864_0);
+  methods += new qt_gsi::GenericMethod ("*focusNextPrevChild", "@brief Virtual method bool QFontComboBox::focusNextPrevChild(bool next)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_focusNextPrevChild_864_0, &_call_cbs_focusNextPrevChild_864_0, &_set_callback_cbs_focusNextPrevChild_864_0);
+  methods += new qt_gsi::GenericMethod ("*focusOutEvent", "@hide", false, &_init_cbs_focusOutEvent_1729_0, &_call_cbs_focusOutEvent_1729_0);
+  methods += new qt_gsi::GenericMethod ("*focusOutEvent", "@brief Virtual method void QFontComboBox::focusOutEvent(QFocusEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_focusOutEvent_1729_0, &_call_cbs_focusOutEvent_1729_0, &_set_callback_cbs_focusOutEvent_1729_0);
   methods += new qt_gsi::GenericMethod ("*focusPreviousChild", "@brief Method bool QFontComboBox::focusPreviousChild()\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_focusPreviousChild_0, &_call_fp_focusPreviousChild_0);
-  methods += new qt_gsi::GenericMethod ("hasHeightForWidth", "@brief Virtual method bool QFontComboBox::hasHeightForWidth()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_hasHeightForWidth_c0_0, &_call_cbs_hasHeightForWidth_c0_0);
-  methods += new qt_gsi::GenericMethod ("hasHeightForWidth", "@hide", true, &_init_cbs_hasHeightForWidth_c0_0, &_call_cbs_hasHeightForWidth_c0_0, &_set_callback_cbs_hasHeightForWidth_c0_0);
-  methods += new qt_gsi::GenericMethod ("heightForWidth", "@brief Virtual method int QFontComboBox::heightForWidth(int)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_heightForWidth_c767_0, &_call_cbs_heightForWidth_c767_0);
-  methods += new qt_gsi::GenericMethod ("heightForWidth", "@hide", true, &_init_cbs_heightForWidth_c767_0, &_call_cbs_heightForWidth_c767_0, &_set_callback_cbs_heightForWidth_c767_0);
-  methods += new qt_gsi::GenericMethod ("*hideEvent", "@brief Virtual method void QFontComboBox::hideEvent(QHideEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_hideEvent_1595_0, &_call_cbs_hideEvent_1595_0);
-  methods += new qt_gsi::GenericMethod ("*hideEvent", "@hide", false, &_init_cbs_hideEvent_1595_0, &_call_cbs_hideEvent_1595_0, &_set_callback_cbs_hideEvent_1595_0);
-  methods += new qt_gsi::GenericMethod ("hidePopup", "@brief Virtual method void QFontComboBox::hidePopup()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_hidePopup_0_0, &_call_cbs_hidePopup_0_0);
-  methods += new qt_gsi::GenericMethod ("hidePopup", "@hide", false, &_init_cbs_hidePopup_0_0, &_call_cbs_hidePopup_0_0, &_set_callback_cbs_hidePopup_0_0);
+  methods += new qt_gsi::GenericMethod ("hasHeightForWidth", "@hide", true, &_init_cbs_hasHeightForWidth_c0_0, &_call_cbs_hasHeightForWidth_c0_0);
+  methods += new qt_gsi::GenericMethod ("hasHeightForWidth", "@brief Virtual method bool QFontComboBox::hasHeightForWidth()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_hasHeightForWidth_c0_0, &_call_cbs_hasHeightForWidth_c0_0, &_set_callback_cbs_hasHeightForWidth_c0_0);
+  methods += new qt_gsi::GenericMethod ("heightForWidth", "@hide", true, &_init_cbs_heightForWidth_c767_0, &_call_cbs_heightForWidth_c767_0);
+  methods += new qt_gsi::GenericMethod ("heightForWidth", "@brief Virtual method int QFontComboBox::heightForWidth(int)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_heightForWidth_c767_0, &_call_cbs_heightForWidth_c767_0, &_set_callback_cbs_heightForWidth_c767_0);
+  methods += new qt_gsi::GenericMethod ("*hideEvent", "@hide", false, &_init_cbs_hideEvent_1595_0, &_call_cbs_hideEvent_1595_0);
+  methods += new qt_gsi::GenericMethod ("*hideEvent", "@brief Virtual method void QFontComboBox::hideEvent(QHideEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_hideEvent_1595_0, &_call_cbs_hideEvent_1595_0, &_set_callback_cbs_hideEvent_1595_0);
+  methods += new qt_gsi::GenericMethod ("hidePopup", "@hide", false, &_init_cbs_hidePopup_0_0, &_call_cbs_hidePopup_0_0);
+  methods += new qt_gsi::GenericMethod ("hidePopup", "@brief Virtual method void QFontComboBox::hidePopup()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_hidePopup_0_0, &_call_cbs_hidePopup_0_0, &_set_callback_cbs_hidePopup_0_0);
   methods += new qt_gsi::GenericMethod ("emit_highlighted", "@brief Emitter for signal void QFontComboBox::highlighted(int index)\nCall this method to emit this signal.", false, &_init_emitter_highlighted_767, &_call_emitter_highlighted_767);
   methods += new qt_gsi::GenericMethod ("emit_highlighted_qs", "@brief Emitter for signal void QFontComboBox::highlighted(const QString &)\nCall this method to emit this signal.", false, &_init_emitter_highlighted_2025, &_call_emitter_highlighted_2025);
-  methods += new qt_gsi::GenericMethod ("*initPainter", "@brief Virtual method void QFontComboBox::initPainter(QPainter *painter)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_initPainter_c1426_0, &_call_cbs_initPainter_c1426_0);
-  methods += new qt_gsi::GenericMethod ("*initPainter", "@hide", true, &_init_cbs_initPainter_c1426_0, &_call_cbs_initPainter_c1426_0, &_set_callback_cbs_initPainter_c1426_0);
+  methods += new qt_gsi::GenericMethod ("*initPainter", "@hide", true, &_init_cbs_initPainter_c1426_0, &_call_cbs_initPainter_c1426_0);
+  methods += new qt_gsi::GenericMethod ("*initPainter", "@brief Virtual method void QFontComboBox::initPainter(QPainter *painter)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_initPainter_c1426_0, &_call_cbs_initPainter_c1426_0, &_set_callback_cbs_initPainter_c1426_0);
   methods += new qt_gsi::GenericMethod ("*initStyleOption", "@brief Method void QFontComboBox::initStyleOption(QStyleOptionComboBox *option)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_initStyleOption_c2658, &_call_fp_initStyleOption_c2658);
-  methods += new qt_gsi::GenericMethod ("*inputMethodEvent", "@brief Virtual method void QFontComboBox::inputMethodEvent(QInputMethodEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_inputMethodEvent_2354_0, &_call_cbs_inputMethodEvent_2354_0);
-  methods += new qt_gsi::GenericMethod ("*inputMethodEvent", "@hide", false, &_init_cbs_inputMethodEvent_2354_0, &_call_cbs_inputMethodEvent_2354_0, &_set_callback_cbs_inputMethodEvent_2354_0);
-  methods += new qt_gsi::GenericMethod ("inputMethodQuery", "@brief Virtual method QVariant QFontComboBox::inputMethodQuery(Qt::InputMethodQuery)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_inputMethodQuery_c2420_0, &_call_cbs_inputMethodQuery_c2420_0);
-  methods += new qt_gsi::GenericMethod ("inputMethodQuery", "@hide", true, &_init_cbs_inputMethodQuery_c2420_0, &_call_cbs_inputMethodQuery_c2420_0, &_set_callback_cbs_inputMethodQuery_c2420_0);
+  methods += new qt_gsi::GenericMethod ("*inputMethodEvent", "@hide", false, &_init_cbs_inputMethodEvent_2354_0, &_call_cbs_inputMethodEvent_2354_0);
+  methods += new qt_gsi::GenericMethod ("*inputMethodEvent", "@brief Virtual method void QFontComboBox::inputMethodEvent(QInputMethodEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_inputMethodEvent_2354_0, &_call_cbs_inputMethodEvent_2354_0, &_set_callback_cbs_inputMethodEvent_2354_0);
+  methods += new qt_gsi::GenericMethod ("inputMethodQuery", "@hide", true, &_init_cbs_inputMethodQuery_c2420_0, &_call_cbs_inputMethodQuery_c2420_0);
+  methods += new qt_gsi::GenericMethod ("inputMethodQuery", "@brief Virtual method QVariant QFontComboBox::inputMethodQuery(Qt::InputMethodQuery)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_inputMethodQuery_c2420_0, &_call_cbs_inputMethodQuery_c2420_0, &_set_callback_cbs_inputMethodQuery_c2420_0);
   methods += new qt_gsi::GenericMethod ("*isSignalConnected", "@brief Method bool QFontComboBox::isSignalConnected(const QMetaMethod &signal)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_isSignalConnected_c2394, &_call_fp_isSignalConnected_c2394);
-  methods += new qt_gsi::GenericMethod ("*keyPressEvent", "@brief Virtual method void QFontComboBox::keyPressEvent(QKeyEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_keyPressEvent_1514_0, &_call_cbs_keyPressEvent_1514_0);
-  methods += new qt_gsi::GenericMethod ("*keyPressEvent", "@hide", false, &_init_cbs_keyPressEvent_1514_0, &_call_cbs_keyPressEvent_1514_0, &_set_callback_cbs_keyPressEvent_1514_0);
-  methods += new qt_gsi::GenericMethod ("*keyReleaseEvent", "@brief Virtual method void QFontComboBox::keyReleaseEvent(QKeyEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_keyReleaseEvent_1514_0, &_call_cbs_keyReleaseEvent_1514_0);
-  methods += new qt_gsi::GenericMethod ("*keyReleaseEvent", "@hide", false, &_init_cbs_keyReleaseEvent_1514_0, &_call_cbs_keyReleaseEvent_1514_0, &_set_callback_cbs_keyReleaseEvent_1514_0);
-  methods += new qt_gsi::GenericMethod ("*leaveEvent", "@brief Virtual method void QFontComboBox::leaveEvent(QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_leaveEvent_1217_0, &_call_cbs_leaveEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*leaveEvent", "@hide", false, &_init_cbs_leaveEvent_1217_0, &_call_cbs_leaveEvent_1217_0, &_set_callback_cbs_leaveEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*metric", "@brief Virtual method int QFontComboBox::metric(QPaintDevice::PaintDeviceMetric)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_metric_c3445_0, &_call_cbs_metric_c3445_0);
-  methods += new qt_gsi::GenericMethod ("*metric", "@hide", true, &_init_cbs_metric_c3445_0, &_call_cbs_metric_c3445_0, &_set_callback_cbs_metric_c3445_0);
-  methods += new qt_gsi::GenericMethod ("minimumSizeHint", "@brief Virtual method QSize QFontComboBox::minimumSizeHint()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_minimumSizeHint_c0_0, &_call_cbs_minimumSizeHint_c0_0);
-  methods += new qt_gsi::GenericMethod ("minimumSizeHint", "@hide", true, &_init_cbs_minimumSizeHint_c0_0, &_call_cbs_minimumSizeHint_c0_0, &_set_callback_cbs_minimumSizeHint_c0_0);
-  methods += new qt_gsi::GenericMethod ("*mouseDoubleClickEvent", "@brief Virtual method void QFontComboBox::mouseDoubleClickEvent(QMouseEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_mouseDoubleClickEvent_1738_0, &_call_cbs_mouseDoubleClickEvent_1738_0);
-  methods += new qt_gsi::GenericMethod ("*mouseDoubleClickEvent", "@hide", false, &_init_cbs_mouseDoubleClickEvent_1738_0, &_call_cbs_mouseDoubleClickEvent_1738_0, &_set_callback_cbs_mouseDoubleClickEvent_1738_0);
-  methods += new qt_gsi::GenericMethod ("*mouseMoveEvent", "@brief Virtual method void QFontComboBox::mouseMoveEvent(QMouseEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_mouseMoveEvent_1738_0, &_call_cbs_mouseMoveEvent_1738_0);
-  methods += new qt_gsi::GenericMethod ("*mouseMoveEvent", "@hide", false, &_init_cbs_mouseMoveEvent_1738_0, &_call_cbs_mouseMoveEvent_1738_0, &_set_callback_cbs_mouseMoveEvent_1738_0);
-  methods += new qt_gsi::GenericMethod ("*mousePressEvent", "@brief Virtual method void QFontComboBox::mousePressEvent(QMouseEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_mousePressEvent_1738_0, &_call_cbs_mousePressEvent_1738_0);
-  methods += new qt_gsi::GenericMethod ("*mousePressEvent", "@hide", false, &_init_cbs_mousePressEvent_1738_0, &_call_cbs_mousePressEvent_1738_0, &_set_callback_cbs_mousePressEvent_1738_0);
-  methods += new qt_gsi::GenericMethod ("*mouseReleaseEvent", "@brief Virtual method void QFontComboBox::mouseReleaseEvent(QMouseEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_mouseReleaseEvent_1738_0, &_call_cbs_mouseReleaseEvent_1738_0);
-  methods += new qt_gsi::GenericMethod ("*mouseReleaseEvent", "@hide", false, &_init_cbs_mouseReleaseEvent_1738_0, &_call_cbs_mouseReleaseEvent_1738_0, &_set_callback_cbs_mouseReleaseEvent_1738_0);
-  methods += new qt_gsi::GenericMethod ("*moveEvent", "@brief Virtual method void QFontComboBox::moveEvent(QMoveEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_moveEvent_1624_0, &_call_cbs_moveEvent_1624_0);
-  methods += new qt_gsi::GenericMethod ("*moveEvent", "@hide", false, &_init_cbs_moveEvent_1624_0, &_call_cbs_moveEvent_1624_0, &_set_callback_cbs_moveEvent_1624_0);
-  methods += new qt_gsi::GenericMethod ("*nativeEvent", "@brief Virtual method bool QFontComboBox::nativeEvent(const QByteArray &eventType, void *message, long int *result)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_nativeEvent_4678_0, &_call_cbs_nativeEvent_4678_0);
-  methods += new qt_gsi::GenericMethod ("*nativeEvent", "@hide", false, &_init_cbs_nativeEvent_4678_0, &_call_cbs_nativeEvent_4678_0, &_set_callback_cbs_nativeEvent_4678_0);
-  methods += new qt_gsi::GenericMethod ("emit_objectNameChanged", "@brief Emitter for signal void QFontComboBox::objectNameChanged(const QString &objectName)\nCall this method to emit this signal.", false, &_init_emitter_objectNameChanged_4567, &_call_emitter_objectNameChanged_4567);
-  methods += new qt_gsi::GenericMethod ("paintEngine", "@brief Virtual method QPaintEngine *QFontComboBox::paintEngine()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_paintEngine_c0_0, &_call_cbs_paintEngine_c0_0);
-  methods += new qt_gsi::GenericMethod ("paintEngine", "@hide", true, &_init_cbs_paintEngine_c0_0, &_call_cbs_paintEngine_c0_0, &_set_callback_cbs_paintEngine_c0_0);
-  methods += new qt_gsi::GenericMethod ("*paintEvent", "@brief Virtual method void QFontComboBox::paintEvent(QPaintEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_paintEvent_1725_0, &_call_cbs_paintEvent_1725_0);
-  methods += new qt_gsi::GenericMethod ("*paintEvent", "@hide", false, &_init_cbs_paintEvent_1725_0, &_call_cbs_paintEvent_1725_0, &_set_callback_cbs_paintEvent_1725_0);
+  methods += new qt_gsi::GenericMethod ("*keyPressEvent", "@hide", false, &_init_cbs_keyPressEvent_1514_0, &_call_cbs_keyPressEvent_1514_0);
+  methods += new qt_gsi::GenericMethod ("*keyPressEvent", "@brief Virtual method void QFontComboBox::keyPressEvent(QKeyEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_keyPressEvent_1514_0, &_call_cbs_keyPressEvent_1514_0, &_set_callback_cbs_keyPressEvent_1514_0);
+  methods += new qt_gsi::GenericMethod ("*keyReleaseEvent", "@hide", false, &_init_cbs_keyReleaseEvent_1514_0, &_call_cbs_keyReleaseEvent_1514_0);
+  methods += new qt_gsi::GenericMethod ("*keyReleaseEvent", "@brief Virtual method void QFontComboBox::keyReleaseEvent(QKeyEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_keyReleaseEvent_1514_0, &_call_cbs_keyReleaseEvent_1514_0, &_set_callback_cbs_keyReleaseEvent_1514_0);
+  methods += new qt_gsi::GenericMethod ("*leaveEvent", "@hide", false, &_init_cbs_leaveEvent_1217_0, &_call_cbs_leaveEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*leaveEvent", "@brief Virtual method void QFontComboBox::leaveEvent(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_leaveEvent_1217_0, &_call_cbs_leaveEvent_1217_0, &_set_callback_cbs_leaveEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*metric", "@hide", true, &_init_cbs_metric_c3445_0, &_call_cbs_metric_c3445_0);
+  methods += new qt_gsi::GenericMethod ("*metric", "@brief Virtual method int QFontComboBox::metric(QPaintDevice::PaintDeviceMetric)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_metric_c3445_0, &_call_cbs_metric_c3445_0, &_set_callback_cbs_metric_c3445_0);
+  methods += new qt_gsi::GenericMethod ("minimumSizeHint", "@hide", true, &_init_cbs_minimumSizeHint_c0_0, &_call_cbs_minimumSizeHint_c0_0);
+  methods += new qt_gsi::GenericMethod ("minimumSizeHint", "@brief Virtual method QSize QFontComboBox::minimumSizeHint()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_minimumSizeHint_c0_0, &_call_cbs_minimumSizeHint_c0_0, &_set_callback_cbs_minimumSizeHint_c0_0);
+  methods += new qt_gsi::GenericMethod ("*mouseDoubleClickEvent", "@hide", false, &_init_cbs_mouseDoubleClickEvent_1738_0, &_call_cbs_mouseDoubleClickEvent_1738_0);
+  methods += new qt_gsi::GenericMethod ("*mouseDoubleClickEvent", "@brief Virtual method void QFontComboBox::mouseDoubleClickEvent(QMouseEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_mouseDoubleClickEvent_1738_0, &_call_cbs_mouseDoubleClickEvent_1738_0, &_set_callback_cbs_mouseDoubleClickEvent_1738_0);
+  methods += new qt_gsi::GenericMethod ("*mouseMoveEvent", "@hide", false, &_init_cbs_mouseMoveEvent_1738_0, &_call_cbs_mouseMoveEvent_1738_0);
+  methods += new qt_gsi::GenericMethod ("*mouseMoveEvent", "@brief Virtual method void QFontComboBox::mouseMoveEvent(QMouseEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_mouseMoveEvent_1738_0, &_call_cbs_mouseMoveEvent_1738_0, &_set_callback_cbs_mouseMoveEvent_1738_0);
+  methods += new qt_gsi::GenericMethod ("*mousePressEvent", "@hide", false, &_init_cbs_mousePressEvent_1738_0, &_call_cbs_mousePressEvent_1738_0);
+  methods += new qt_gsi::GenericMethod ("*mousePressEvent", "@brief Virtual method void QFontComboBox::mousePressEvent(QMouseEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_mousePressEvent_1738_0, &_call_cbs_mousePressEvent_1738_0, &_set_callback_cbs_mousePressEvent_1738_0);
+  methods += new qt_gsi::GenericMethod ("*mouseReleaseEvent", "@hide", false, &_init_cbs_mouseReleaseEvent_1738_0, &_call_cbs_mouseReleaseEvent_1738_0);
+  methods += new qt_gsi::GenericMethod ("*mouseReleaseEvent", "@brief Virtual method void QFontComboBox::mouseReleaseEvent(QMouseEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_mouseReleaseEvent_1738_0, &_call_cbs_mouseReleaseEvent_1738_0, &_set_callback_cbs_mouseReleaseEvent_1738_0);
+  methods += new qt_gsi::GenericMethod ("*moveEvent", "@hide", false, &_init_cbs_moveEvent_1624_0, &_call_cbs_moveEvent_1624_0);
+  methods += new qt_gsi::GenericMethod ("*moveEvent", "@brief Virtual method void QFontComboBox::moveEvent(QMoveEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_moveEvent_1624_0, &_call_cbs_moveEvent_1624_0, &_set_callback_cbs_moveEvent_1624_0);
+  methods += new qt_gsi::GenericMethod ("*nativeEvent", "@hide", false, &_init_cbs_nativeEvent_4678_0, &_call_cbs_nativeEvent_4678_0);
+  methods += new qt_gsi::GenericMethod ("*nativeEvent", "@brief Virtual method bool QFontComboBox::nativeEvent(const QByteArray &eventType, void *message, long int *result)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_nativeEvent_4678_0, &_call_cbs_nativeEvent_4678_0, &_set_callback_cbs_nativeEvent_4678_0);
+  methods += new qt_gsi::GenericMethod ("paintEngine", "@hide", true, &_init_cbs_paintEngine_c0_0, &_call_cbs_paintEngine_c0_0);
+  methods += new qt_gsi::GenericMethod ("paintEngine", "@brief Virtual method QPaintEngine *QFontComboBox::paintEngine()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_paintEngine_c0_0, &_call_cbs_paintEngine_c0_0, &_set_callback_cbs_paintEngine_c0_0);
+  methods += new qt_gsi::GenericMethod ("*paintEvent", "@hide", false, &_init_cbs_paintEvent_1725_0, &_call_cbs_paintEvent_1725_0);
+  methods += new qt_gsi::GenericMethod ("*paintEvent", "@brief Virtual method void QFontComboBox::paintEvent(QPaintEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_paintEvent_1725_0, &_call_cbs_paintEvent_1725_0, &_set_callback_cbs_paintEvent_1725_0);
   methods += new qt_gsi::GenericMethod ("*receivers", "@brief Method int QFontComboBox::receivers(const char *signal)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_receivers_c1731, &_call_fp_receivers_c1731);
-  methods += new qt_gsi::GenericMethod ("*redirected", "@brief Virtual method QPaintDevice *QFontComboBox::redirected(QPoint *offset)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_redirected_c1225_0, &_call_cbs_redirected_c1225_0);
-  methods += new qt_gsi::GenericMethod ("*redirected", "@hide", true, &_init_cbs_redirected_c1225_0, &_call_cbs_redirected_c1225_0, &_set_callback_cbs_redirected_c1225_0);
-  methods += new qt_gsi::GenericMethod ("*resizeEvent", "@brief Virtual method void QFontComboBox::resizeEvent(QResizeEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_resizeEvent_1843_0, &_call_cbs_resizeEvent_1843_0);
-  methods += new qt_gsi::GenericMethod ("*resizeEvent", "@hide", false, &_init_cbs_resizeEvent_1843_0, &_call_cbs_resizeEvent_1843_0, &_set_callback_cbs_resizeEvent_1843_0);
+  methods += new qt_gsi::GenericMethod ("*redirected", "@hide", true, &_init_cbs_redirected_c1225_0, &_call_cbs_redirected_c1225_0);
+  methods += new qt_gsi::GenericMethod ("*redirected", "@brief Virtual method QPaintDevice *QFontComboBox::redirected(QPoint *offset)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_redirected_c1225_0, &_call_cbs_redirected_c1225_0, &_set_callback_cbs_redirected_c1225_0);
+  methods += new qt_gsi::GenericMethod ("*resizeEvent", "@hide", false, &_init_cbs_resizeEvent_1843_0, &_call_cbs_resizeEvent_1843_0);
+  methods += new qt_gsi::GenericMethod ("*resizeEvent", "@brief Virtual method void QFontComboBox::resizeEvent(QResizeEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_resizeEvent_1843_0, &_call_cbs_resizeEvent_1843_0, &_set_callback_cbs_resizeEvent_1843_0);
   methods += new qt_gsi::GenericMethod ("*sender", "@brief Method QObject *QFontComboBox::sender()\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_sender_c0, &_call_fp_sender_c0);
   methods += new qt_gsi::GenericMethod ("*senderSignalIndex", "@brief Method int QFontComboBox::senderSignalIndex()\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_senderSignalIndex_c0, &_call_fp_senderSignalIndex_c0);
-  methods += new qt_gsi::GenericMethod ("setVisible", "@brief Virtual method void QFontComboBox::setVisible(bool visible)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setVisible_864_0, &_call_cbs_setVisible_864_0);
-  methods += new qt_gsi::GenericMethod ("setVisible", "@hide", false, &_init_cbs_setVisible_864_0, &_call_cbs_setVisible_864_0, &_set_callback_cbs_setVisible_864_0);
-  methods += new qt_gsi::GenericMethod ("*sharedPainter", "@brief Virtual method QPainter *QFontComboBox::sharedPainter()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_sharedPainter_c0_0, &_call_cbs_sharedPainter_c0_0);
-  methods += new qt_gsi::GenericMethod ("*sharedPainter", "@hide", true, &_init_cbs_sharedPainter_c0_0, &_call_cbs_sharedPainter_c0_0, &_set_callback_cbs_sharedPainter_c0_0);
-  methods += new qt_gsi::GenericMethod ("*showEvent", "@brief Virtual method void QFontComboBox::showEvent(QShowEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_showEvent_1634_0, &_call_cbs_showEvent_1634_0);
-  methods += new qt_gsi::GenericMethod ("*showEvent", "@hide", false, &_init_cbs_showEvent_1634_0, &_call_cbs_showEvent_1634_0, &_set_callback_cbs_showEvent_1634_0);
-  methods += new qt_gsi::GenericMethod ("showPopup", "@brief Virtual method void QFontComboBox::showPopup()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_showPopup_0_0, &_call_cbs_showPopup_0_0);
-  methods += new qt_gsi::GenericMethod ("showPopup", "@hide", false, &_init_cbs_showPopup_0_0, &_call_cbs_showPopup_0_0, &_set_callback_cbs_showPopup_0_0);
-  methods += new qt_gsi::GenericMethod ("sizeHint", "@brief Virtual method QSize QFontComboBox::sizeHint()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_sizeHint_c0_0, &_call_cbs_sizeHint_c0_0);
-  methods += new qt_gsi::GenericMethod ("sizeHint", "@hide", true, &_init_cbs_sizeHint_c0_0, &_call_cbs_sizeHint_c0_0, &_set_callback_cbs_sizeHint_c0_0);
-  methods += new qt_gsi::GenericMethod ("*tabletEvent", "@brief Virtual method void QFontComboBox::tabletEvent(QTabletEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_tabletEvent_1821_0, &_call_cbs_tabletEvent_1821_0);
-  methods += new qt_gsi::GenericMethod ("*tabletEvent", "@hide", false, &_init_cbs_tabletEvent_1821_0, &_call_cbs_tabletEvent_1821_0, &_set_callback_cbs_tabletEvent_1821_0);
-  methods += new qt_gsi::GenericMethod ("*timerEvent", "@brief Virtual method void QFontComboBox::timerEvent(QTimerEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0);
-  methods += new qt_gsi::GenericMethod ("*timerEvent", "@hide", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0, &_set_callback_cbs_timerEvent_1730_0);
+  methods += new qt_gsi::GenericMethod ("setVisible", "@hide", false, &_init_cbs_setVisible_864_0, &_call_cbs_setVisible_864_0);
+  methods += new qt_gsi::GenericMethod ("setVisible", "@brief Virtual method void QFontComboBox::setVisible(bool visible)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setVisible_864_0, &_call_cbs_setVisible_864_0, &_set_callback_cbs_setVisible_864_0);
+  methods += new qt_gsi::GenericMethod ("*sharedPainter", "@hide", true, &_init_cbs_sharedPainter_c0_0, &_call_cbs_sharedPainter_c0_0);
+  methods += new qt_gsi::GenericMethod ("*sharedPainter", "@brief Virtual method QPainter *QFontComboBox::sharedPainter()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_sharedPainter_c0_0, &_call_cbs_sharedPainter_c0_0, &_set_callback_cbs_sharedPainter_c0_0);
+  methods += new qt_gsi::GenericMethod ("*showEvent", "@hide", false, &_init_cbs_showEvent_1634_0, &_call_cbs_showEvent_1634_0);
+  methods += new qt_gsi::GenericMethod ("*showEvent", "@brief Virtual method void QFontComboBox::showEvent(QShowEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_showEvent_1634_0, &_call_cbs_showEvent_1634_0, &_set_callback_cbs_showEvent_1634_0);
+  methods += new qt_gsi::GenericMethod ("showPopup", "@hide", false, &_init_cbs_showPopup_0_0, &_call_cbs_showPopup_0_0);
+  methods += new qt_gsi::GenericMethod ("showPopup", "@brief Virtual method void QFontComboBox::showPopup()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_showPopup_0_0, &_call_cbs_showPopup_0_0, &_set_callback_cbs_showPopup_0_0);
+  methods += new qt_gsi::GenericMethod ("sizeHint", "@hide", true, &_init_cbs_sizeHint_c0_0, &_call_cbs_sizeHint_c0_0);
+  methods += new qt_gsi::GenericMethod ("sizeHint", "@brief Virtual method QSize QFontComboBox::sizeHint()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_sizeHint_c0_0, &_call_cbs_sizeHint_c0_0, &_set_callback_cbs_sizeHint_c0_0);
+  methods += new qt_gsi::GenericMethod ("*tabletEvent", "@hide", false, &_init_cbs_tabletEvent_1821_0, &_call_cbs_tabletEvent_1821_0);
+  methods += new qt_gsi::GenericMethod ("*tabletEvent", "@brief Virtual method void QFontComboBox::tabletEvent(QTabletEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_tabletEvent_1821_0, &_call_cbs_tabletEvent_1821_0, &_set_callback_cbs_tabletEvent_1821_0);
+  methods += new qt_gsi::GenericMethod ("*timerEvent", "@hide", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0);
+  methods += new qt_gsi::GenericMethod ("*timerEvent", "@brief Virtual method void QFontComboBox::timerEvent(QTimerEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0, &_set_callback_cbs_timerEvent_1730_0);
   methods += new qt_gsi::GenericMethod ("*updateMicroFocus", "@brief Method void QFontComboBox::updateMicroFocus()\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_updateMicroFocus_0, &_call_fp_updateMicroFocus_0);
-  methods += new qt_gsi::GenericMethod ("*wheelEvent", "@brief Virtual method void QFontComboBox::wheelEvent(QWheelEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_wheelEvent_1718_0, &_call_cbs_wheelEvent_1718_0);
-  methods += new qt_gsi::GenericMethod ("*wheelEvent", "@hide", false, &_init_cbs_wheelEvent_1718_0, &_call_cbs_wheelEvent_1718_0, &_set_callback_cbs_wheelEvent_1718_0);
+  methods += new qt_gsi::GenericMethod ("*wheelEvent", "@hide", false, &_init_cbs_wheelEvent_1718_0, &_call_cbs_wheelEvent_1718_0);
+  methods += new qt_gsi::GenericMethod ("*wheelEvent", "@brief Virtual method void QFontComboBox::wheelEvent(QWheelEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_wheelEvent_1718_0, &_call_cbs_wheelEvent_1718_0, &_set_callback_cbs_wheelEvent_1718_0);
   methods += new qt_gsi::GenericMethod ("emit_windowIconChanged", "@brief Emitter for signal void QFontComboBox::windowIconChanged(const QIcon &icon)\nCall this method to emit this signal.", false, &_init_emitter_windowIconChanged_1787, &_call_emitter_windowIconChanged_1787);
   methods += new qt_gsi::GenericMethod ("emit_windowIconTextChanged", "@brief Emitter for signal void QFontComboBox::windowIconTextChanged(const QString &iconText)\nCall this method to emit this signal.", false, &_init_emitter_windowIconTextChanged_2025, &_call_emitter_windowIconTextChanged_2025);
   methods += new qt_gsi::GenericMethod ("emit_windowTitleChanged", "@brief Emitter for signal void QFontComboBox::windowTitleChanged(const QString &title)\nCall this method to emit this signal.", false, &_init_emitter_windowTitleChanged_2025, &_call_emitter_windowTitleChanged_2025);

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -20,52 +20,22 @@
 
 */
 
-#if defined(HAVE_QT)
 
 #include "antPropertiesPage.h"
-#include "layLayoutViewBase.h"
+#include "layLayoutView.h"
 #include "layQtTools.h"
-#include "tlException.h"
 
 namespace ant
 {
 
 // -------------------------------------------------------------------------
-//  A ruler that tells us if he was modified
-
-class RulerWithModifiedProperty
-  : public ant::Object
-{
-public:
-  RulerWithModifiedProperty ()
-    : ant::Object (), m_modified (false)
-  {
-    //  .. nothing yet ..
-  }
-
-  bool is_modified () const
-  {
-    return m_modified;
-  }
-
-protected:
-  void property_changed ()
-  {
-    m_modified = true;
-    ant::Object::property_changed ();
-  }
-
-  bool m_modified;
-};
-
-// -------------------------------------------------------------------------
 //  PropertiesPage implementation
 
 PropertiesPage::PropertiesPage (ant::Service *rulers, db::Manager *manager, QWidget *parent)
-  : lay::PropertiesPage (parent, manager, rulers), mp_rulers (rulers), m_enable_cb_callback (true), m_in_something_changed (false)
+  : lay::PropertiesPage (parent, manager, rulers), mp_rulers (rulers), m_enable_cb_callback (true)
 {
   mp_rulers->get_selection (m_selection);
-  m_index = 0;
+  m_pos = m_selection.begin ();
 
   setupUi (this);
 
@@ -80,42 +50,6 @@ PropertiesPage::PropertiesPage (ant::Service *rulers, db::Manager *manager, QWid
   p2_to_layout->setEnabled (! readonly());
   both_to_layout->setEnabled (! readonly());
 
-  if (! readonly ()) {
-
-    connect (fmt_le, SIGNAL (editingFinished ()), this, SLOT (something_changed ()));
-    connect (fmt_x_le, SIGNAL (editingFinished ()), this, SLOT (something_changed ()));
-    connect (fmt_y_le, SIGNAL (editingFinished ()), this, SLOT (something_changed ()));
-    connect (x0, SIGNAL (editingFinished ()), this, SLOT (something_changed ()));
-    connect (x1, SIGNAL (editingFinished ()), this, SLOT (something_changed ()));
-    connect (x2, SIGNAL (editingFinished ()), this, SLOT (something_changed ()));
-    connect (y0, SIGNAL (editingFinished ()), this, SLOT (something_changed ()));
-    connect (y1, SIGNAL (editingFinished ()), this, SLOT (something_changed ()));
-    connect (y2, SIGNAL (editingFinished ()), this, SLOT (something_changed ()));
-
-    connect (style_cb, SIGNAL (activated (int)), this, SLOT (something_changed ()));
-    connect (outline_cb, SIGNAL (activated (int)), this, SLOT (something_changed ()));
-    connect (main_position, SIGNAL (activated (int)), this, SLOT (something_changed ()));
-    connect (main_xalign, SIGNAL (activated (int)), this, SLOT (something_changed ()));
-    connect (main_yalign, SIGNAL (activated (int)), this, SLOT (something_changed ()));
-    connect (xlabel_xalign, SIGNAL (activated (int)), this, SLOT (something_changed ()));
-    connect (xlabel_yalign, SIGNAL (activated (int)), this, SLOT (something_changed ()));
-    connect (ylabel_xalign, SIGNAL (activated (int)), this, SLOT (something_changed ()));
-    connect (ylabel_yalign, SIGNAL (activated (int)), this, SLOT (something_changed ()));
-
-    connect (points_edit, SIGNAL (textChanged ()), this, SLOT (something_changed ()));
-
-  } else {
-
-    fmt_le->setReadOnly (true);
-    fmt_x_le->setReadOnly (true);
-    fmt_y_le->setReadOnly (true);
-    x1->setReadOnly (true);
-    x2->setReadOnly (true);
-    y1->setReadOnly (true);
-    y2->setReadOnly (true);
-
-  }
-
   lay::activate_help_links (help_label);
 
   mp_rulers->clear_highlights ();
@@ -124,6 +58,18 @@ PropertiesPage::PropertiesPage (ant::Service *rulers, db::Manager *manager, QWid
 PropertiesPage::~PropertiesPage ()
 {
   mp_rulers->restore_highlights ();
+}
+
+void 
+PropertiesPage::back ()
+{
+  m_pos = m_selection.end ();
+}
+
+void 
+PropertiesPage::front ()
+{
+  m_pos = m_selection.begin ();
 }
 
 void
@@ -144,136 +90,8 @@ PropertiesPage::swap_points_clicked ()
   y1->setText (ty1);
   y2->setText (ty2);
 
-  emit edited ();
-}
-
-void
-PropertiesPage::get_points (db::DPoint &p1, db::DPoint &p2)
-{
-  double dx1 = 0.0, dy1 = 0.0, dx2 = 0.0, dy2 = 0.0;
-  bool has_error = false;
-
-  try {
-    tl::from_string_ext (tl::to_string (x1->text ()), dx1);
-    lay::indicate_error (x1, (tl::Exception *) 0);
-  } catch (tl::Exception &ex) {
-    lay::indicate_error (x1, &ex);
-    has_error = true;
-  }
-
-  try {
-    tl::from_string_ext (tl::to_string (x2->text ()), dx2);
-    lay::indicate_error (x2, (tl::Exception *) 0);
-  } catch (tl::Exception &ex) {
-    lay::indicate_error (x2, &ex);
-    has_error = true;
-  }
-
-  try {
-    tl::from_string_ext (tl::to_string (y1->text ()), dy1);
-    lay::indicate_error (y1, (tl::Exception *) 0);
-  } catch (tl::Exception &ex) {
-    lay::indicate_error (y1, &ex);
-    has_error = true;
-  }
-
-  try {
-    tl::from_string_ext (tl::to_string (y2->text ()), dy2);
-    lay::indicate_error (y2, (tl::Exception *) 0);
-  } catch (tl::Exception &ex) {
-    lay::indicate_error (y2, &ex);
-    has_error = true;
-  }
-
-  if (has_error) {
-    throw tl::Exception (tl::to_string (tr ("At least one value is invalid - see highlighted entry fields")));
-  }
-
-  p1 = db::DPoint (dx1, dy1);
-  p2 = db::DPoint (dx2, dy2);
-}
-
-void
-PropertiesPage::get_point (db::DPoint &p)
-{
-  double dx = 0.0, dy = 0.0;
-  bool has_error = false;
-
-  try {
-    tl::from_string_ext (tl::to_string (x0->text ()), dx);
-    lay::indicate_error (x0, (tl::Exception *) 0);
-  } catch (tl::Exception &ex) {
-    lay::indicate_error (x0, &ex);
-    has_error = true;
-  }
-
-  try {
-    tl::from_string_ext (tl::to_string (y0->text ()), dy);
-    lay::indicate_error (y0, (tl::Exception *) 0);
-  } catch (tl::Exception &ex) {
-    lay::indicate_error (y0, &ex);
-    has_error = true;
-  }
-
-  if (has_error) {
-    throw tl::Exception (tl::to_string (tr ("At least one value is invalid - see highlighted entry fields")));
-  }
-
-  p = db::DPoint (dx, dy);
-}
-
-void
-PropertiesPage::get_points (ant::Object::point_list &points)
-{
-  std::string coordinates = tl::to_string (points_edit->toPlainText ());
-  points.clear ();
-
-  try {
-
-    tl::Extractor ex (coordinates.c_str ());
-    while (! ex.at_end ()) {
-      double x = 0.0, y = 0.0;
-      ex.read (x);
-      ex.test (",");
-      ex.read (y);
-      ex.test (";");
-      ex.test (",");
-      points.push_back (db::DPoint (x, y));
-    }
-
-    lay::indicate_error (points_edit, (tl::Exception *) 0);
-
-  } catch (tl::Exception &ex) {
-    lay::indicate_error (points_edit, &ex);
-    throw tl::Exception (tl::to_string (tr ("At least one value is invalid - see highlighted entry fields")));
-  }
-}
-
-void
-PropertiesPage::something_changed ()
-{
-  if (m_in_something_changed) {
-    return;
-  }
-
-  try {
-
-    m_in_something_changed = true;
-
-    RulerWithModifiedProperty obj;
-    obj.ant::Object::operator= (current ());
-    get_object (obj);
-    if (obj.is_modified ()) {
-      update_with (obj);
-      emit edited ();
-    }
-
-    m_in_something_changed = false;
-
-  } catch (...) {
-    m_in_something_changed = false;
-    //  ignore exceptions - the edit field will be highlighted anyway
-  }
+  db::Transaction t (manager (), tl::to_string (QObject::tr ("Swap ruler points")));
+  apply ();
 }
 
 void
@@ -286,8 +104,13 @@ PropertiesPage::snap_to_layout_clicked ()
   ant::Service *service = dynamic_cast<ant::Service *> (editable ());
   tl_assert (service != 0);
 
-  db::DPoint p1, p2;
-  get_points (p1, p2);
+  double dx1 = 0.0, dy1 = 0.0, dx2 = 0.0, dy2 = 0.0;
+  tl::from_string (tl::to_string (x1->text ()), dx1);
+  tl::from_string (tl::to_string (x2->text ()), dx2);
+  tl::from_string (tl::to_string (y1->text ()), dy1);
+  tl::from_string (tl::to_string (y2->text ()), dy2);
+
+  db::DPoint p1 (dx1, dy1), p2 (dx2, dy2);
 
   ant::Object r = current ();
 
@@ -309,16 +132,16 @@ PropertiesPage::snap_to_layout_clicked ()
 
     bool snap_p1 = sender () == p1_to_layout;
 
-    double snap_range = service->ui ()->mouse_event_trans ().inverted ().ctrans (service->snap_range ());
+    double snap_range = service->widget ()->mouse_event_trans ().inverted ().ctrans (service->snap_range ());
     double max_range = 1000 * snap_range;
 
     while (snap_range < max_range) {
 
-      lay::PointSnapToObjectResult pp = lay::obj_snap (service->view (), snap_p1 ? p2 : p1, snap_p1 ? p1 : p2, g, ac, snap_range);
-      if (pp.object_snap != lay::PointSnapToObjectResult::NoObject) {
+      std::pair<bool, db::DPoint> pp = lay::obj_snap (service->view (), snap_p1 ? p2 : p1, snap_p1 ? p1 : p2, g, ac, snap_range);
+      if (pp.first) {
 
-        QString xs = tl::to_qstring (tl::micron_to_string (pp.snapped_point.x ()));
-        QString ys = tl::to_qstring (tl::micron_to_string (pp.snapped_point.y ()));
+        QString xs = tl::to_qstring (tl::micron_to_string (pp.second.x ()));
+        QString ys = tl::to_qstring (tl::micron_to_string (pp.second.y ()));
 
         if (sender () == p1_to_layout) {
           x1->setText (xs);
@@ -328,7 +151,8 @@ PropertiesPage::snap_to_layout_clicked ()
           y2->setText (ys);
         }
 
-        emit edited ();
+        db::Transaction t (manager (), tl::to_string (snap_p1 ? QObject::tr ("Snap first ruler point") : QObject::tr ("Snap second ruler point")));
+        apply ();
 
         break;
 
@@ -341,18 +165,19 @@ PropertiesPage::snap_to_layout_clicked ()
 
   } else {
 
-    double snap_range = service->ui ()->mouse_event_trans ().inverted ().ctrans (service->snap_range ());
+    double snap_range = service->widget ()->mouse_event_trans ().inverted ().ctrans (service->snap_range ());
     snap_range *= 0.5;
 
-    lay::TwoPointSnapToObjectResult ee = lay::obj_snap2 (service->view (), p1, p2, g, ac, snap_range, snap_range * 1000.0);
-    if (ee.any) {
+    std::pair<bool, db::DEdge> ee = lay::obj_snap2 (service->view (), p1, p2, g, ac, snap_range, snap_range * 1000.0);
+    if (ee.first) {
 
-      x1->setText (tl::to_qstring (tl::micron_to_string (ee.first.x ())));
-      y1->setText (tl::to_qstring (tl::micron_to_string (ee.first.y ())));
-      x2->setText (tl::to_qstring (tl::micron_to_string (ee.second.x ())));
-      y2->setText (tl::to_qstring (tl::micron_to_string (ee.second.y ())));
+      x1->setText (tl::to_qstring (tl::micron_to_string (ee.second.p1 ().x ())));
+      y1->setText (tl::to_qstring (tl::micron_to_string (ee.second.p1 ().y ())));
+      x2->setText (tl::to_qstring (tl::micron_to_string (ee.second.p2 ().x ())));
+      y2->setText (tl::to_qstring (tl::micron_to_string (ee.second.p2 ().y ())));
 
-      emit edited ();
+      db::Transaction t (manager (), tl::to_string (QObject::tr ("Snap both ruler points")));
+      apply ();
 
     }
 
@@ -362,74 +187,32 @@ PropertiesPage::snap_to_layout_clicked ()
 const ant::Object &
 PropertiesPage::current () const
 {
-  const ant::Object *ruler = dynamic_cast <const ant::Object *> (m_selection [m_index]->ptr ());
+  const ant::Object *ruler = dynamic_cast <const ant::Object *> ((*m_pos)->ptr ());
   return *ruler;
 }
 
-size_t
-PropertiesPage::count () const
+bool 
+PropertiesPage::at_begin () const
 {
-  return m_selection.size ();
+  return (m_pos == m_selection.begin ());
 }
 
-void
-PropertiesPage::select_entries (const std::vector<size_t> &entries)
+bool 
+PropertiesPage::at_end () const
 {
-  tl_assert (entries.size () == 1);
-  m_index = entries.front ();
+  return (m_pos == m_selection.end ());
 }
 
-std::string
-PropertiesPage::description (size_t entry) const
+void 
+PropertiesPage::operator-- ()
 {
-  const ant::Object *obj = dynamic_cast <const ant::Object *> (m_selection [entry]->ptr ());
-  if (! obj) {
-    return std::string ("nil");
-  }
-
-  std::string d = tl::to_string (tr ("Ruler"));
-  if (! obj->category ().empty ()) {
-    std::string cat = obj->category ();
-    //  category is "_ruler" for example. Turn in into "Ruler".
-    if (cat.size () >= 2 && cat [0] == '_') {
-      cat = tl::to_upper_case (std::string (cat.begin () + 1, cat.begin () + 2)) + std::string (cat.begin () + 2, cat.end ());
-    }
-    d += "[" + cat + "]";
-  }
-
-  if (obj->points ().size () > 3) {
-    d += tl::sprintf (tl::to_string (tr ("(%d points)")), obj->points ().size ());
-  } else {
-    d += "(";
-    for (auto p = obj->points ().begin (); p != obj->points ().end (); ++p) {
-      if (p != obj->points ().begin ()) {
-        d += ";";
-      }
-      d += p->to_string ();
-    }
-    d += ")";
-  }
-
-  return d;
+  --m_pos;
 }
 
-std::string
-PropertiesPage::description () const
+void 
+PropertiesPage::operator++ ()
 {
-  return tl::to_string (tr ("Rulers and Annotations"));
-}
-
-void
-PropertiesPage::confine_selection (const std::vector<size_t> &remaining_entries)
-{
-  std::vector <ant::Service::obj_iterator> org_selection;
-  m_selection.swap (org_selection);
-  for (auto i = remaining_entries.begin (); i != remaining_entries.end (); ++i) {
-    m_selection.push_back (org_selection [*i]);
-  }
-
-  mp_rulers->set_selection (m_selection);
-  mp_rulers->clear_highlights ();
+  ++m_pos;
 }
 
 void
@@ -441,80 +224,33 @@ PropertiesPage::leave ()
 void 
 PropertiesPage::update ()
 {
-  mp_rulers->highlight (m_index);
-  update_with (current ());
-}
+  mp_rulers->highlight (std::distance (m_selection.begin (), m_pos));
 
-void
-PropertiesPage::update_with (const ant::Object &obj)
-{
-  fmt_le->setText (tl::to_qstring (obj.fmt ()));
-  fmt_x_le->setText (tl::to_qstring (obj.fmt_x ()));
-  fmt_y_le->setText (tl::to_qstring (obj.fmt_y ()));
-  style_cb->setCurrentIndex (obj.style ());
-  outline_cb->setCurrentIndex (obj.outline ());
+  fmt_le->setText (tl::to_qstring (current ().fmt ()));
+  fmt_x_le->setText (tl::to_qstring (current ().fmt_x ()));
+  fmt_y_le->setText (tl::to_qstring (current ().fmt_y ()));
+  style_cb->setCurrentIndex (current ().style ());
+  outline_cb->setCurrentIndex (current ().outline ());
 
-  main_position->setCurrentIndex (obj.main_position ());
-  main_xalign->setCurrentIndex (obj.main_xalign ());
-  main_yalign->setCurrentIndex (obj.main_yalign ());
-  xlabel_xalign->setCurrentIndex (obj.xlabel_xalign ());
-  xlabel_yalign->setCurrentIndex (obj.xlabel_yalign ());
-  ylabel_xalign->setCurrentIndex (obj.ylabel_xalign ());
-  ylabel_yalign->setCurrentIndex (obj.ylabel_yalign ());
-
-  //  change tabs if required
-  if (segments_tab->currentIndex () == 1) {
-    if (obj.points ().size () > 2 || obj.points ().size () == 0) {
-      segments_tab->setCurrentIndex (2);
-    }
-  } else if (segments_tab->currentIndex () == 0) {
-    if (obj.points ().size () > 2 || obj.points ().size () == 0) {
-      segments_tab->setCurrentIndex (2);
-    } else if (obj.points ().size () > 1) {
-      segments_tab->setCurrentIndex (1);
-    }
-  }
-  segments_tab->setTabEnabled (0, obj.points ().size () == 1);
-  segments_tab->setTabEnabled (1, obj.points ().size () <= 2 && obj.points ().size () > 0);
-
-  point_list->clear ();
-  for (auto p = obj.points ().begin (); p != obj.points ().end (); ++p) {
-    QTreeWidgetItem *item = new QTreeWidgetItem (point_list);
-    item->setData (0, Qt::DisplayRole, QVariant (tl::to_qstring (tl::micron_to_string (p->x ()))));
-    item->setData (1, Qt::DisplayRole, QVariant (tl::to_qstring (tl::micron_to_string (p->y ()))));
-  }
-
-  if (! m_in_something_changed || segments_tab->currentIndex () != 3) {
-
-    std::string text;
-    for (auto p = obj.points ().begin (); p != obj.points ().end (); ++p) {
-      text += tl::micron_to_string (p->x ());
-      text += ", ";
-      text += tl::micron_to_string (p->y ());
-      text += "\n";
-    }
-
-    lay::SignalBlocker blocker (points_edit);
-    points_edit->setPlainText (tl::to_qstring (text));
-
-  }
-
-  x0->setText (tl::to_qstring (tl::micron_to_string (obj.p1 ().x ())));
-  x0->setCursorPosition (0);
-  y0->setText (tl::to_qstring (tl::micron_to_string (obj.p1 ().y ())));
-  y0->setCursorPosition (0);
-
-  x1->setText (tl::to_qstring (tl::micron_to_string (obj.p1 ().x ())));
+  x1->setText (tl::to_qstring (tl::micron_to_string (current ().p1 ().x ())));
   x1->setCursorPosition (0);
-  x2->setText (tl::to_qstring (tl::micron_to_string (obj.p2 ().x ())));
+  x2->setText (tl::to_qstring (tl::micron_to_string (current ().p2 ().x ())));
   x2->setCursorPosition (0);
-  y1->setText (tl::to_qstring (tl::micron_to_string (obj.p1 ().y ())));
+  y1->setText (tl::to_qstring (tl::micron_to_string (current ().p1 ().y ())));
   y1->setCursorPosition (0);
-  y2->setText (tl::to_qstring (tl::micron_to_string (obj.p2 ().y ())));
+  y2->setText (tl::to_qstring (tl::micron_to_string (current ().p2 ().y ())));
   y2->setCursorPosition (0);
 
-  double sx = (obj.p2 ().x () - obj.p1 ().x ());
-  double sy = (obj.p2 ().y () - obj.p1 ().y ());
+  main_position->setCurrentIndex (current ().main_position ());
+  main_xalign->setCurrentIndex (current ().main_xalign ());
+  main_yalign->setCurrentIndex (current ().main_yalign ());
+  xlabel_xalign->setCurrentIndex (current ().xlabel_xalign ());
+  xlabel_yalign->setCurrentIndex (current ().xlabel_yalign ());
+  ylabel_xalign->setCurrentIndex (current ().ylabel_xalign ());
+  ylabel_yalign->setCurrentIndex (current ().ylabel_yalign ());
+
+  double sx = (current ().p2 ().x () - current ().p1 ().x ());
+  double sy = (current ().p2 ().y () - current ().p1 ().y ());
   dx->setText (tl::to_qstring (tl::micron_to_string (sx)));
   dx->setCursorPosition (0);
   dy->setText (tl::to_qstring (tl::micron_to_string (sy)));
@@ -530,53 +266,45 @@ PropertiesPage::readonly ()
 }
 
 void 
-PropertiesPage::apply (bool /*commit*/)
+PropertiesPage::apply ()
 {
-  ant::Object obj;
-  get_object (obj);
-  mp_rulers->change_ruler (m_selection [m_index], obj);
-}
+  double dx1 = current ().p1 ().x (), dy1 = current ().p1 ().y ();
+  double dx2 = current ().p2 ().x (), dy2 = current ().p2 ().y ();
 
-void PropertiesPage::get_object(ant::Object &obj)
-{
+  //  only adjust the values if the text has changed
+  if (tl::to_qstring (tl::micron_to_string (dx1)) != x1->text ()) {
+    tl::from_string (tl::to_string (x1->text ()), dx1);
+  }
+  if (tl::to_qstring (tl::micron_to_string (dx2)) != x2->text ()) {
+    tl::from_string (tl::to_string (x2->text ()), dx2);
+  }
+  if (tl::to_qstring (tl::micron_to_string (dy1)) != y1->text ()) {
+    tl::from_string (tl::to_string (y1->text ()), dy1);
+  }
+  if (tl::to_qstring (tl::micron_to_string (dy2)) != y2->text ()) {
+    tl::from_string (tl::to_string (y2->text ()), dy2);
+  }
+
   std::string fmt = tl::to_string (fmt_le->text ());
   std::string fmt_x = tl::to_string (fmt_x_le->text ());
   std::string fmt_y = tl::to_string (fmt_y_le->text ());
   Object::style_type style = Object::style_type (style_cb->currentIndex ());
   Object::outline_type outline = Object::outline_type (outline_cb->currentIndex ());
 
-  if (segments_tab->currentIndex () == 0 || segments_tab->currentIndex () == 1) {
+  ant::Object ruler (db::DPoint (dx1, dy1), db::DPoint (dx2, dy2), current ().id (), fmt_x, fmt_y, fmt, style, outline, current ().snap (), current ().angle_constraint ());
 
-    db::DPoint p1, p2;
-    if (segments_tab->currentIndex () == 1) {
-      get_points (p1, p2);
-    } else {
-      get_point (p1);
-      p2 = p1;
-    }
+  ruler.set_main_position (Object::position_type (main_position->currentIndex ()));
+  ruler.set_main_xalign (Object::alignment_type (main_xalign->currentIndex ()));
+  ruler.set_main_yalign (Object::alignment_type (main_yalign->currentIndex ()));
+  ruler.set_xlabel_xalign (Object::alignment_type (xlabel_xalign->currentIndex ()));
+  ruler.set_xlabel_yalign (Object::alignment_type (xlabel_yalign->currentIndex ()));
+  ruler.set_ylabel_xalign (Object::alignment_type (ylabel_xalign->currentIndex ()));
+  ruler.set_ylabel_yalign (Object::alignment_type (ylabel_yalign->currentIndex ()));
 
-    obj = ant::Object (p1, p2, current ().id (), fmt_x, fmt_y, fmt, style, outline, current ().snap (), current ().angle_constraint ());
+  ruler.set_category (current ().category ());
 
-  } else if (segments_tab->currentIndex () == 2 || segments_tab->currentIndex () == 3) {
-
-    ant::Object::point_list points;
-    get_points (points);
-
-    obj = ant::Object (points, current ().id (), fmt_x, fmt_y, fmt, style, outline, current ().snap (), current ().angle_constraint ());
-
-  }
-
-  obj.set_main_position (Object::position_type (main_position->currentIndex ()));
-  obj.set_main_xalign (Object::alignment_type (main_xalign->currentIndex ()));
-  obj.set_main_yalign (Object::alignment_type (main_yalign->currentIndex ()));
-  obj.set_xlabel_xalign (Object::alignment_type (xlabel_xalign->currentIndex ()));
-  obj.set_xlabel_yalign (Object::alignment_type (xlabel_yalign->currentIndex ()));
-  obj.set_ylabel_xalign (Object::alignment_type (ylabel_xalign->currentIndex ()));
-  obj.set_ylabel_yalign (Object::alignment_type (ylabel_yalign->currentIndex ()));
-
-  obj.set_category (current ().category ());
+  mp_rulers->change_ruler (*m_pos, ruler);
 }
 
 }
 
-#endif

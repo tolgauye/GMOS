@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -62,31 +62,8 @@ public:
     /**
      *  @brief The ruler is auto-metric: a single click will place a ruler and the ruler will extend to the next adjacent structures
      */
-    RulerAutoMetric = 2,
-
-    /**
-     *  @brief The ruler is auto-metric along an edge: a single click will place a ruler and the ruler will extend to the edge below
-     */
-    RulerAutoMetricEdge = 3,
-
-    /**
-     *  @brief The ruler an angle type (two segments, three mouse clicks) for angle and circle radius measurements
-     */
-    RulerThreeClicks = 4,
-
-    /**
-     *  @brief The ruler is a multi-segment type
-     */
-    RulerMultiSegment = 5
+    RulerAutoMetric = 2
   };
-
-  /**
-   *  @brief Creates a template from a ruler object
-   *
-   *  This will ignore the positions of the ruler but use the properties to
-   *  initialize the template.
-   */
-  static ant::Template from_object (const ant::Object &object, const std::string &title, int mode);
 
   /**
    *  @brief Default constructor
@@ -111,27 +88,6 @@ public:
    *  @brief Assignment
    */
   Template &operator= (const ant::Template &d);
-
-  /**
-   *  @brief Gets the current version
-   */
-  static int current_version ();
-  /**
-   *  @brief Gets the version
-   *  The version is used to provide a migration path for KLayout versions.
-   */
-  int version () const
-  {
-    return m_version;
-  }
-
-  /**
-   *  @brief Sets the version
-   */
-  void version (int v)
-  {
-    m_version = v;
-  }
 
   /**
    *  @brief Gets the category string
@@ -450,7 +406,6 @@ public:
   static std::string to_string (const std::vector<Template> &v);
 
 private:
-  int m_version;
   std::string m_title;
   std::string m_category;
   std::string m_fmt_x;

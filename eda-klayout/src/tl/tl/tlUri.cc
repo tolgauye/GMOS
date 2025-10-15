@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -41,7 +41,7 @@ static char hex2int (char c)
     return c - '0';
   } else if (c >= 'A' && c <= 'F') {
     return (c - 'A') + 10;
-  } else if (c >= 'a' && c <= 'f') {
+  } else if (c >= 'a' || c <= 'f') {
     return (c - 'a') + 10;
   } else {
     return 0;
@@ -111,9 +111,12 @@ URI::URI (const std::string &uri)
   }
   m_scheme = unescape (m_scheme);
 
-  bool prefer_authority = false;
-  if (m_scheme == "http" || m_scheme == "https") {
-    prefer_authority = true;
+  bool prefer_authority = true;
+  if (m_scheme == "file") {
+    prefer_authority = false;
+    //  other schemes?
+  } else if (m_scheme.empty ()) {
+    prefer_authority = false;
   }
 
   ex0 = ex;
@@ -206,16 +209,6 @@ URI::to_string () const
   return res;
 }
 
-std::string
-URI::to_abstract_path () const
-{
-  if (m_scheme.empty ()) {
-    return path ();
-  } else {
-    return to_string ();
-  }
-}
-
 URI
 URI::resolved (const URI &other) const
 {
@@ -234,9 +227,7 @@ URI::resolved (const URI &other) const
     if (other.path ()[0] == '/') {
       res.m_path = other.path ();
     } else {
-      if (! res.m_path.empty ()) {
-        res.m_path += "/";
-      }
+      res.m_path += "/";
       res.m_path += other.path ();
     }
   }

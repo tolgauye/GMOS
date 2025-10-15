@@ -8,7 +8,6 @@ include($$PWD/../../lib_ut.pri)
 
 SOURCES = \
   imgObject.cc \
-    imgFile.cc
 
 INCLUDEPATH += $$IMG_INC $$DB_INC $$TL_INC $$LAYBASIC_INC $$GSI_INC
 DEPENDPATH += $$IMG_INC $$DB_INC $$TL_INC $$LAYBASIC_INC $$GSI_INC

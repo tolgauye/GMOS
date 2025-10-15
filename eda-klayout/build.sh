@@ -2,7 +2,7 @@
 
 #
 # KLayout Layout Viewer
-# Copyright (C) 2006-2025 Matthias Koefferlein
+# Copyright (C) 2006-2019 Matthias Koefferlein
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,20 +26,11 @@ IS_WINDOWS="no"
 IS_LINUX="no"
 
 HAVE_QTBINDINGS=1
-HAVE_QT_UITOOLS=1
-HAVE_QT_NETWORK=1
-HAVE_QT_SQL=1
-HAVE_QT_SVG=1
-HAVE_QT_PRINTSUPPORT=1
-HAVE_QT_MULTIMEDIA=1
-HAVE_QT_DESIGNER=1
-HAVE_QT_XML=1
 HAVE_64BIT_COORD=0
 HAVE_QT=1
-HAVE_PNG=0
+HAVE_QT5="" # not set
 HAVE_CURL=0
 HAVE_EXPAT=0
-HAVE_GIT2=1
 
 RUBYINCLUDE=""
 RUBYINCLUDE2=""
@@ -92,38 +83,14 @@ while [ "$*" != "" ]; do
   shift
 
   case $a in
-  -without-qt)
-    HAVE_QT=0
-    ;;
   -with-qtbinding)
     HAVE_QTBINDINGS=1
     ;;
+  -without-qt)
+    HAVE_QT=0
+    ;;
   -without-qtbinding)
     HAVE_QTBINDINGS=0
-    ;;
-  -without-qt-uitools)
-    HAVE_QT_UITOOLS=0
-    ;;
-  -without-qt-network)
-    HAVE_QT_NETWORK=0
-    ;;
-  -without-qt-sql)
-    HAVE_QT_SQL=0
-    ;;
-  -without-qt-svg)
-    HAVE_QT_SVG=0
-    ;;
-  -without-qt-printsupport)
-    HAVE_QT_PRINTSUPPORT=0
-    ;;
-  -without-qt-multimedia)
-    HAVE_QT_MULTIMEDIA=0
-    ;;
-  -without-qt-designer)
-    HAVE_QT_DESIGNER=0
-    ;;
-  -without-qt-xml)
-    HAVE_QT_XML=0
     ;;
   -with-64bit-coord)
     HAVE_64BIT_COORD=1
@@ -198,26 +165,20 @@ while [ "$*" != "" ]; do
     RPATH="$1"
     shift
     ;;
+  -qt4)
+    HAVE_QT5=0
+    ;;
+  -qt5)
+    HAVE_QT5=1
+    ;;
   -dry-run)
     RUN_MAKE=0
-    ;;
-  -libpng)
-    HAVE_PNG=1
     ;;
   -libcurl)
     HAVE_CURL=1
     ;;
   -libexpat)
     HAVE_EXPAT=1
-    ;;
-  -nolibgit2)
-    HAVE_GIT2=0
-    ;;
-  -qt5)
-    echo "*** WARNING: -qt5 option is ignored - Qt version is auto-detected now."
-    ;;
-  -qt4)
-    echo "*** WARNING: -qt4 option is ignored - Qt version is auto-detected now."
     ;;
   -option)
     MAKE_OPT="$MAKE_OPT $1"
@@ -246,7 +207,6 @@ while [ "$*" != "" ]; do
     echo ""
     echo "  -with-qtbinding       Create Qt bindings for ruby scripts [default]"
     echo "  -without-qtbinding    Don't create Qt bindings for ruby scripts"
-    echo "  -without-qt-uitools   Don't include uitools in Qt binding"
     echo "  -with-64bit-coord     Use long (64bit) coordinates - EXPERIMENTAL FEATURE"
     echo "                          (only available for gcc>=4.4 for 64bit build)"
     echo "  -without-64bit-coord  Don't use long (64bit) coordinates [default]"
@@ -256,6 +216,8 @@ while [ "$*" != "" ]; do
     echo "  -dry-run              Don't build, just run qmake"
     echo ""
     echo "Special options (usually auto-selected from ruby/python/Qt installation):"
+    echo ""
+    echo "  -qt4|-qt5             Use Qt4 or Qt5 API [default: auto detect]"
     echo ""
     echo "  -rblib <file>         Location of the .so/.dll to link for Ruby support"
     echo "  -rbinc <dir>          Location of the Ruby headers (in particular 'ruby.h')"
@@ -268,8 +230,6 @@ while [ "$*" != "" ]; do
     echo ""
     echo "  -libcurl              Use libcurl instead of QtNetwork (for Qt<4.7)"
     echo "  -libexpat             Use libexpat instead of QtXml"
-    echo "  -libpng               Use libpng instead of Qt for PNG generation"
-    echo "  -nolibgit2            Do not include libgit2 for Git package support"
     echo ""
     echo "Environment Variables:"
     echo ""
@@ -307,6 +267,19 @@ fi
 if [ "$QMAKE" = "" ]; then
   echo "*** ERROR: unable to find qmake tool in path"
   exit 1
+fi
+
+# if not given, try to detect the qt major version to use
+if [ "$HAVE_QT5" = "" ]; then
+  qt_major=`$QMAKE -v | grep 'Using Qt version' | sed 's/.*version  *\([0-9][0-9]*\).*/\1/'`
+  if [ "$qt_major" = "4" ]; then
+    HAVE_QT5=0
+  elif [ "$qt_major" = "5" ]; then
+    HAVE_QT5=1
+  else
+    echo "*** ERROR: could not determine Qt version from '$QMAKE -v'"
+    exit 1
+  fi
 fi
 
 echo "Using qmake: $QMAKE"
@@ -486,7 +459,11 @@ if [ $HAVE_QT = 0 ]; then
   echo "    Qt not used at all"
 fi
 if [ $HAVE_QTBINDINGS != 0 ]; then
-  echo "    Qt bindings enabled"
+  if [ "$HAVE_QT5" != "0" ]; then
+    echo "    Qt bindings enabled (Qt 5 API)"
+  else
+    echo "    Qt bindings enabled (Qt 4 API)"
+  fi
 fi
 if [ $HAVE_64BIT_COORD != 0 ]; then
   echo "    64 bit coordinates enabled"
@@ -496,12 +473,6 @@ if [ $HAVE_EXPAT != 0 ]; then
 fi
 if [ $HAVE_CURL != 0 ]; then
   echo "    Uses libcurl for network access"
-fi
-if [ $HAVE_PNG != 0 ]; then
-  echo "    Uses libpng for PNG generation"
-fi
-if [ $HAVE_GIT2 != 0 ]; then
-  echo "    Uses libgit2 for Git access"
 fi
 if [ "$RPATH" = "" ]; then
   RPATH="$BIN"
@@ -561,33 +532,8 @@ if [ "$BIN" = "" ]; then
   BIN=$CURR_DIR/bin-$CONFIG
 fi
 
-if [ "$QMAKE_CCACHE" = 1 ]; then
-  echo "    Compilation caching is activated."
-else
-  echo "    Compilation caching is deactivated!"
-fi
 echo "    Installation target: $BIN"
 echo "    Build directory: $BUILD"
-echo ""
-echo "    Build flags:"
-echo "      HAVE_RUBY=$HAVE_RUBY"
-echo "      HAVE_PYTHON=$HAVE_PYTHON"
-echo "      HAVE_QTBINDINGS=$HAVE_QTBINDINGS"
-echo "      HAVE_QT=$HAVE_QT"
-echo "      HAVE_QT_UITOOLS=$HAVE_QT_UITOOLS"
-echo "      HAVE_QT_NETWORK=$HAVE_QT_NETWORK"
-echo "      HAVE_QT_SQL=$HAVE_QT_SQL"
-echo "      HAVE_QT_SVG=$HAVE_QT_SVG"
-echo "      HAVE_QT_PRINTSUPPORT=$HAVE_QT_PRINTSUPPORT"
-echo "      HAVE_QT_MULTIMEDIA=$HAVE_QT_MULTIMEDIA"
-echo "      HAVE_QT_DESIGNER=$HAVE_QT_DESIGNER"
-echo "      HAVE_QT_XML=$HAVE_QT_XML"
-echo "      HAVE_64BIT_COORD=$HAVE_64BIT_COORD"
-echo "      HAVE_CURL=$HAVE_CURL"
-echo "      HAVE_PNG=$HAVE_PNG"
-echo "      HAVE_EXPAT=$HAVE_EXPAT"
-echo "      HAVE_GIT2=$HAVE_GIT2"
-echo "      RPATH=$RPATH"
 
 mkdir -p $BUILD
 
@@ -629,6 +575,13 @@ echo ""
 echo "Running $QMAKE .."
 cd $BUILD
 
+# chose the right qmake
+if [ $HAVE_QT5 = 0 ]; then
+  export QT_SELECT=4
+else
+  export QT_SELECT=5
+fi
+
 $QMAKE -v
 
 # Force a minimum rebuild because of version info
@@ -638,6 +591,8 @@ qmake_options=(
   -recursive
   CONFIG+="$CONFIG"
   RUBYLIBFILE="$RUBYLIBFILE"
+  RUBYINCLUDE="$RUBYINCLUDE"
+  RUBYINCLUDE2="$RUBYINCLUDE2"
   RUBYVERSIONCODE="$RUBYVERSIONCODE"
   HAVE_RUBY="$HAVE_RUBY"
   PYTHON="$PYTHON"
@@ -646,36 +601,17 @@ qmake_options=(
   PYTHONEXTSUFFIX="$PYTHONEXTSUFFIX"
   HAVE_PYTHON="$HAVE_PYTHON"
   HAVE_QTBINDINGS="$HAVE_QTBINDINGS"
-  HAVE_QT_UITOOLS="$HAVE_QT_UITOOLS"
-  HAVE_QT_NETWORK="$HAVE_QT_NETWORK"
-  HAVE_QT_SQL="$HAVE_QT_SQL"
-  HAVE_QT_SVG="$HAVE_QT_SVG"
-  HAVE_QT_PRINTSUPPORT="$HAVE_QT_PRINTSUPPORT"
-  HAVE_QT_MULTIMEDIA="$HAVE_QT_MULTIMEDIA"
-  HAVE_QT_DESIGNER="$HAVE_QT_DESIGNER"
-  HAVE_QT_XML="$HAVE_QT_XML"
   HAVE_64BIT_COORD="$HAVE_64BIT_COORD"
   HAVE_QT="$HAVE_QT"
+  HAVE_QT5="$HAVE_QT5"
   HAVE_CURL="$HAVE_CURL"
   HAVE_EXPAT="$HAVE_EXPAT"
-  HAVE_PNG="$HAVE_PNG"
-  HAVE_GIT2="$HAVE_GIT2"
   PREFIX="$BIN"
   RPATH="$RPATH"
   KLAYOUT_VERSION="$KLAYOUT_VERSION"
   KLAYOUT_VERSION_DATE="$KLAYOUT_VERSION_DATE"
   KLAYOUT_VERSION_REV="$KLAYOUT_VERSION_REV"
 )
-
-# NOTE: qmake does not like include paths which clash with paths built into the compiler
-# hence we don't add RUBYINCLUDE or RUBYINCLUDE2 in this case (found on CentOS 8 where Ruby
-# headers are installed in /usr/include)
-if [ "$RUBYINCLUDE" != "/usr/include" ] && [  "$RUBYINCLUDE" != "/usr/local/include" ]; then
-  qmake_options+=( RUBYINCLUDE="$RUBYINCLUDE" )
-fi
-if [ "$RUBYINCLUDE2" != "/usr/include" ] && [  "$RUBYINCLUDE2" != "/usr/local/include" ]; then
-  qmake_options+=( RUBYINCLUDE2="$RUBYINCLUDE2" )
-fi
 
 # This should speed up build time considerably
 # https://ortogonal.github.io/ccache-and-qmake-qtcreator/
@@ -703,7 +639,6 @@ if [ $BUILD_EXPERT = 1 ]; then
     QMAKE_CXXFLAGS="$CXXFLAGS"
     QMAKE_CXXFLAGS_RELEASE=
     QMAKE_CXXFLAGS_DEBUG=
-    QMAKE_LIBS="$LIBS"
     QMAKE_LFLAGS="$LDFLAGS"
     QMAKE_LFLAGS_RELEASE=
     QMAKE_LFLAGS_DEBUG=

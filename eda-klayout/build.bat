@@ -17,9 +17,6 @@ set HAVE_64BIT_COORD=0
 set HAVE_PYTHON=1
 set HAVE_RUBY=1
 set MAKE_OPT=
-set HAVE_CURL=0
-set HAVE_EXPAT=0
-set HAVE_PTHREADS=0
 
 set arch=x64
 set compiler=msvc2017
@@ -67,10 +64,6 @@ for %%a in (%*) do (
           set "HAVE_QTBINDINGS=0"
         ) else if "!arg!" equ "-without-qt" (
           set "HAVE_QT=0"
-	        set "HAVE_CURL=1"
-	        set "HAVE_EXPAT=1"
-	        set "HAVE_PTHREADS=1"
-          set "HAVE_QTBINDINGS=0"
         ) else if "!arg!" equ "-with-64bit-coord" (
           set "HAVE_64BIT_COORD=1"
         ) else if "!arg!" equ "-without-64bit-coord" (
@@ -126,41 +119,31 @@ echo Analysing installation ...
 echo.
 
 rem ----------------------------------------------------------
-rem locate MSVC on the system
+rem locate MSVC 2017 on the system
 
-set MSVC_COMPILER_INST=notfound
+set MSVC2017_COMPILER_INST=notfound
 rem VS 2017 sets exactly one install as the "main" install, so we may find MSBuild in there.
 reg query "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\SxS\VS7" /v 15.0 /reg:32 >nul 2>nul
 if NOT ERRORLEVEL 1 (
-  for /F "tokens=1,2*" %%i in ('reg query "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\SxS\VS7" /v 15.0 /reg:32') do (
+  for /F "tokens=1,2*" %%i in ('reg query "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\SxS\VS7" /v 15.0 /reg:32') DO (
     if "%%i"=="15.0" (
       if exist "%%k\VC\Auxiliary\Build" (
-        set "MSVC_COMPILER_INST=%%k\VC\Auxiliary\Build"
-        set "msg=Found MSVC installation at !MSVC_COMPILER_INST!"
+        set "MSVC2017_COMPILER_INST=%%k\VC\Auxiliary\Build"
+        set "msg=Found MSVC installation at !MSVC2017_COMPILER_INST!"
         echo !msg!
       )
     )
   )
 )
 
-rem alternative way (VS2019)
-if "%MSVC_COMPILER_INST%" == "notfound" (
-  set vs_path=notfound
-  for /f "delims=" %%i in ('"c:\program files (x86)\microsoft visual studio\installer\vswhere" -latest -prerelease -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath -products *') do (
-    set "vs_path=%%i"
-  )
-  if not "vs_path" == "notfound" (
-    set "MSVC_COMPILER_INST=!vs_path!\vc\Auxiliary\Build"
-  )
-)
-if "%MSVC_COMPILER_INST%" == "notfound" (
-  echo ERROR: Unable to find MSVC installation
+if "%MSVC2017_COMPILER_INST%" == "notfound" (
+  echo ERROR: Unable to find MSVC 2017 installation
   goto :eof
 )
 if %arch% equ x64 (
-  call "%MSVC_COMPILER_INST%\vcvars64"
+  call "%MSVC2017_COMPILER_INST%\vcvars64"
 ) else (
-  call "%MSVC_COMPILER_INST%\vcvars32"
+  call "%MSVC2017_COMPILER_INST%\vcvars32"
 )
 
 rem ----------------------------------------------------------
@@ -228,9 +211,6 @@ echo HAVE_QT:                  %HAVE_QT%
 echo HAVE_64BIT_COORD:         %HAVE_64BIT_COORD%
 echo HAVE_PYTHON:              %HAVE_PYTHON%
 echo HAVE_RUBY:                %HAVE_RUBY%
-echo HAVE_CURL:                %HAVE_CURL%
-echo HAVE_PTHREADS:            %HAVE_PTHREADS%
-echo HAVE_EXPAT:               %HAVE_EXPAT%
 echo MAKE_OPT:                 %MAKE_OPT%
 echo.
 echo qmake binary:             %option-qmake%
@@ -254,18 +234,9 @@ if not exist "%option-build%" (
   goto :eof
 )
 
-touch %inst_path%\src\version\version.h
-
 echo on
 "%option-qmake%" ^
-  HAVE_QT_UITOOLS=1 ^
-  HAVE_QT_NETWORK=1 ^
-  HAVE_QT_SQL=1 ^
-  HAVE_QT_SVG=1 ^
-  HAVE_QT_PRINTSUPPORT=1 ^
-  HAVE_QT_MULTIMEDIA=1 ^
-  HAVE_QT_DESIGNER=1 ^
-  HAVE_QT_XML=1 ^
+  HAVE_QT5=1 ^
   -recursive ^
   -spec win32-msvc ^
   "CONFIG+=%CONFIG%" ^
@@ -274,9 +245,6 @@ echo on
   "KLAYOUT_VERSION_REV=%KLAYOUT_VERSION_REV%" ^
   "HAVE_QTBINDINGS=%HAVE_QTBINDINGS%" ^
   "HAVE_QT=%HAVE_QT%" ^
-  "HAVE_EXPAT=%HAVE_EXPAT%" ^
-  "HAVE_CURL=%HAVE_CURL%" ^
-  "HAVE_PTHREADS=%HAVE_PTHREADS%" ^
   "HAVE_RUBY=%HAVE_RUBY%" ^
   "HAVE_PYTHON=%HAVE_PYTHON%" ^
   "HAVE_64BIT_COORD=%HAVE_64BIT_COORD%" ^

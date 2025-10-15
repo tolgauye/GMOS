@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -37,17 +37,14 @@
 #include <set>
 #include <limits>
 
-#if defined(HAVE_QT)
 class QWidget;
-#endif
 
 namespace lay
 {
 
 class Editables;
-#if defined(HAVE_QT)
 class PropertiesPage;
-#endif
+class PropertiesDialog;
 
 /**
  *  @brief The "editable" interface
@@ -70,11 +67,6 @@ public:
    *                   object. Can be 0 for not inserting it somewhere.
    */
   Editable (Editables *editables = 0);
-
-  /**
-   *  @brief Initializes after constructor with a null pointer was called
-   */
-  void init (Editables *editables);
 
   /**
    *  @brief The constructor
@@ -164,23 +156,12 @@ public:
   }
 
   /**
-   *  @brief The catch distance (for single click)
+   *  @brief The catch distance
    *
    *  The catch distance is a typical value for the "fuzzyness" of a mouse click.
    *  It is given in micron.
    */
   virtual double catch_distance ()
-  {
-    return 0.0;
-  }
-
-  /**
-   *  @brief The catch distance (for box)
-   *
-   *  The catch distance is a typical value for the "fuzzyness" of a box selection.
-   *  It is given in micron.
-   */
-  virtual double catch_distance_box ()
   {
     return 0.0;
   }
@@ -225,7 +206,7 @@ public:
    *  This method is used by the single-point selection cycling protocol to clear the 
    *  plugin's single-point selection state. The cycling protocol is used when a certain
    *  point is clicked at multiple times. A plugin is supposed to remember such selections and
-   *  exclude them from further checks. If all objects in question are selected, no further 
+   *  exlcude them from further checks. If all objects in question are selected, no further 
    *  object would be selected. clear_previous_selection is called in that case to indicate that
    *  the previous selection should be cleared and a new cycle is about to begin
    */
@@ -338,44 +319,16 @@ public:
   }
 
   /**
-   *  @brief Finishes any pending operations
+   *  @brief Tell how many objects are selected
    *
-   *  This event is sent whenever a pending operation such as
-   *  a move operation should be finished.
-   *  In contrast to "edit_cancel", this version is supposed
-   *  not to rollback, for example if transactions are involved.
-   */
-  virtual void edit_finish ()
-  {
-    //  by default maps to edit_cancel
-    edit_cancel ();
-  }
-
-  /**
-   *  @brief Indicates if any objects are selected
-   */
-  virtual bool has_selection ()
-  {
-    return false;
-  }
-
-  /**
-   *  @brief Indicates how many objects are selected
+   *  This method is used to determine if anything is selected - i.e.
+   *  anything can be copied.
    */
   virtual size_t selection_size ()
   {
     return 0;
   }
 
-  /**
-   *  @brief Indicates if any objects are selected in the transient selection
-   */
-  virtual bool has_transient_selection ()
-  {
-    return false;
-  }
-
-#if defined(HAVE_QT)
   /**
    *  @brief Create a "properties page" object
    *
@@ -387,11 +340,10 @@ public:
    *  by the caller. The return value is 0 if the Editable object does
    *  not support a properties page.
    */
-  virtual std::vector<lay::PropertiesPage *> properties_pages (db::Manager * /*manager*/, QWidget * /*parent*/)
+  virtual lay::PropertiesPage *properties_page (db::Manager * /*manager*/, QWidget * /*parent*/)
   {
-    return std::vector<lay::PropertiesPage *> ();
+    return 0;
   }
-#endif
 
   /**
    *  @brief Destruction callback by the properties page
@@ -476,11 +428,14 @@ public:
   db::DBox selection_bbox ();
 
   /**
-   *  @brief Transforms the selection
+   *  @brief transform the selection
    *
    *  The transformation is given in micron units.
+   *
+   *  If a transaction is given, the operation will be appended to this pending transaction.
+   *  The Editables object takes ownership over the Transaction object.
    */
-  virtual void transform (const db::DCplxTrans &tr);
+  void transform (const db::DCplxTrans &tr, db::Transaction *transaction = 0);
 
   /**
    *  @brief Enable or disable a certain editable
@@ -524,6 +479,11 @@ public:
   void clear_previous_selection ();
 
   /**
+   *  @brief Select "all"
+   */
+  void select ();
+
+  /**
    *  @brief Select geometrically by a rectangle
    */
   void select (const db::DBox &box, Editable::SelectionMode mode);
@@ -532,13 +492,6 @@ public:
    *  @brief Select geometrically by a point
    */
   void select (const db::DPoint &pt, Editable::SelectionMode mode);
-
-  /**
-   *  @brief Repeat the previous selection
-   *
-   *  This method will not do anything if there is no previous, click-at selection.
-   */
-  void repeat_selection (Editable::SelectionMode mode);
 
   /**
    *  @brief Start "move" operation
@@ -568,30 +521,16 @@ public:
   void end_move (const db::DPoint &p, lay::angle_constraint_type ac, db::Transaction *transaction = 0);
 
   /**
-   *  @brief Indicates how many objects are selected.
+   *  @brief Tell how many objects are selected.
    *
    *  This method will return the number of selected objects.
    */
   size_t selection_size ();
   
   /**
-   *  @brief Indicates whether any object is selected.
-   */
-  bool has_selection ();
-
-  /**
    *  @brief Cancel any pending operations
-   *
-   *  This method calls "edit_cancel" on all services and resets selection tracking.
    */
   void edit_cancel ();
-
-  /**
-   *  @brief Finishes any pending operations
-   *
-   *  This method calls "edit_finish" on all services and resets selection tracking.
-   */
-  void edit_finish ();
 
   /**
    *  @brief Editable iterator: begin
@@ -612,7 +551,7 @@ public:
   /**
    *  @brief The "show properties" operation
    */
-  virtual void show_properties ();
+  void show_properties (QWidget *parent);
 
   /**
    *  @brief An event triggered if the selection changed
@@ -658,26 +597,17 @@ protected:
    *  @brief Cancel all edit operations
    *
    *  This method can be overridden in order to implement special behaviour on cancel
-   *  of edits (e.g. clean up markers).
+   *  of edits (i.e. release the mouse).
    *  Make sure, the base implementation is called as well.
    */
   virtual void cancel_edits ();
-
-  /**
-   *  @brief Finishes all edit operations
-   *
-   *  This method can be overridden in order to implement special behaviour on finishing
-   *  of edits (e.g. clean up markers). In contrast to "cancel_edits", this method
-   *  is expected not to rollback any operations - i.e. undo transactions.
-   *  Make sure, the base implementation is called as well.
-   */
-  virtual void finish_edits ();
 
 private:
   friend class Editable;
 
   tl::shared_collection<lay::Editable> m_editables;
   std::set<lay::Editable *> m_enabled;
+  lay::PropertiesDialog *mp_properties_dialog;
   bool m_move_selection;
   bool m_any_move_operation;
   db::DBox m_last_selected_point;

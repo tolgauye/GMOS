@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -84,6 +84,7 @@
 #include <QWindow>
 #include "gsiQt.h"
 #include "gsiQtWidgetsCommon.h"
+#include "gsiDeclQtWidgetsTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -295,7 +296,7 @@ static void _init_f_tr_4013 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("s");
   decl->add_arg<const char * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("c", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("c", true, "__null");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("n", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -307,7 +308,7 @@ static void _call_f_tr_4013 (const qt_gsi::GenericStaticMethod * /*decl*/, gsi::
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (__null, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QPushButton::tr (arg1, arg2, arg3));
 }
@@ -320,7 +321,7 @@ static void _init_f_trUtf8_4013 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("s");
   decl->add_arg<const char * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("c", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("c", true, "__null");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("n", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -332,7 +333,7 @@ static void _call_f_trUtf8_4013 (const qt_gsi::GenericStaticMethod * /*decl*/, g
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (__null, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QPushButton::trUtf8 (arg1, arg2, arg3));
 }
@@ -358,7 +359,6 @@ static gsi::Methods methods_QPushButton () {
   methods += gsi::qt_signal<bool > ("clicked(bool)", "clicked", gsi::arg("checked"), "@brief Signal declaration for QPushButton::clicked(bool checked)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<const QPoint & > ("customContextMenuRequested(const QPoint &)", "customContextMenuRequested", gsi::arg("pos"), "@brief Signal declaration for QPushButton::customContextMenuRequested(const QPoint &pos)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<QObject * > ("destroyed(QObject *)", "destroyed", gsi::arg("arg1"), "@brief Signal declaration for QPushButton::destroyed(QObject *)\nYou can bind a procedure to this signal.");
-  methods += gsi::qt_signal<const QString & > ("objectNameChanged(const QString &)", "objectNameChanged", gsi::arg("objectName"), "@brief Signal declaration for QPushButton::objectNameChanged(const QString &objectName)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal ("pressed()", "pressed", "@brief Signal declaration for QPushButton::pressed()\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal ("released()", "released", "@brief Signal declaration for QPushButton::released()\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<bool > ("toggled(bool)", "toggled", gsi::arg("checked"), "@brief Signal declaration for QPushButton::toggled(bool checked)\nYou can bind a procedure to this signal.");
@@ -491,18 +491,18 @@ public:
     emit QPushButton::destroyed(arg1);
   }
 
-  //  [adaptor impl] bool QPushButton::eventFilter(QObject *watched, QEvent *event)
-  bool cbs_eventFilter_2411_0(QObject *watched, QEvent *event)
+  //  [adaptor impl] bool QPushButton::eventFilter(QObject *, QEvent *)
+  bool cbs_eventFilter_2411_0(QObject *arg1, QEvent *arg2)
   {
-    return QPushButton::eventFilter(watched, event);
+    return QPushButton::eventFilter(arg1, arg2);
   }
 
-  virtual bool eventFilter(QObject *watched, QEvent *event)
+  virtual bool eventFilter(QObject *arg1, QEvent *arg2)
   {
     if (cb_eventFilter_2411_0.can_issue()) {
-      return cb_eventFilter_2411_0.issue<QPushButton_Adaptor, bool, QObject *, QEvent *>(&QPushButton_Adaptor::cbs_eventFilter_2411_0, watched, event);
+      return cb_eventFilter_2411_0.issue<QPushButton_Adaptor, bool, QObject *, QEvent *>(&QPushButton_Adaptor::cbs_eventFilter_2411_0, arg1, arg2);
     } else {
-      return QPushButton::eventFilter(watched, event);
+      return QPushButton::eventFilter(arg1, arg2);
     }
   }
 
@@ -564,13 +564,6 @@ public:
     } else {
       return QPushButton::minimumSizeHint();
     }
-  }
-
-  //  [emitter impl] void QPushButton::objectNameChanged(const QString &objectName)
-  void emitter_QPushButton_objectNameChanged_4567(const QString &objectName)
-  {
-    __SUPPRESS_UNUSED_WARNING (objectName);
-    throw tl::Exception ("Can't emit private signal 'void QPushButton::objectNameChanged(const QString &objectName)'");
   }
 
   //  [adaptor impl] QPaintEngine *QPushButton::paintEngine()
@@ -654,18 +647,18 @@ public:
     emit QPushButton::windowTitleChanged(title);
   }
 
-  //  [adaptor impl] void QPushButton::actionEvent(QActionEvent *event)
-  void cbs_actionEvent_1823_0(QActionEvent *event)
+  //  [adaptor impl] void QPushButton::actionEvent(QActionEvent *)
+  void cbs_actionEvent_1823_0(QActionEvent *arg1)
   {
-    QPushButton::actionEvent(event);
+    QPushButton::actionEvent(arg1);
   }
 
-  virtual void actionEvent(QActionEvent *event)
+  virtual void actionEvent(QActionEvent *arg1)
   {
     if (cb_actionEvent_1823_0.can_issue()) {
-      cb_actionEvent_1823_0.issue<QPushButton_Adaptor, QActionEvent *>(&QPushButton_Adaptor::cbs_actionEvent_1823_0, event);
+      cb_actionEvent_1823_0.issue<QPushButton_Adaptor, QActionEvent *>(&QPushButton_Adaptor::cbs_actionEvent_1823_0, arg1);
     } else {
-      QPushButton::actionEvent(event);
+      QPushButton::actionEvent(arg1);
     }
   }
 
@@ -699,63 +692,63 @@ public:
     }
   }
 
-  //  [adaptor impl] void QPushButton::childEvent(QChildEvent *event)
-  void cbs_childEvent_1701_0(QChildEvent *event)
+  //  [adaptor impl] void QPushButton::childEvent(QChildEvent *)
+  void cbs_childEvent_1701_0(QChildEvent *arg1)
   {
-    QPushButton::childEvent(event);
+    QPushButton::childEvent(arg1);
   }
 
-  virtual void childEvent(QChildEvent *event)
+  virtual void childEvent(QChildEvent *arg1)
   {
     if (cb_childEvent_1701_0.can_issue()) {
-      cb_childEvent_1701_0.issue<QPushButton_Adaptor, QChildEvent *>(&QPushButton_Adaptor::cbs_childEvent_1701_0, event);
+      cb_childEvent_1701_0.issue<QPushButton_Adaptor, QChildEvent *>(&QPushButton_Adaptor::cbs_childEvent_1701_0, arg1);
     } else {
-      QPushButton::childEvent(event);
+      QPushButton::childEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QPushButton::closeEvent(QCloseEvent *event)
-  void cbs_closeEvent_1719_0(QCloseEvent *event)
+  //  [adaptor impl] void QPushButton::closeEvent(QCloseEvent *)
+  void cbs_closeEvent_1719_0(QCloseEvent *arg1)
   {
-    QPushButton::closeEvent(event);
+    QPushButton::closeEvent(arg1);
   }
 
-  virtual void closeEvent(QCloseEvent *event)
+  virtual void closeEvent(QCloseEvent *arg1)
   {
     if (cb_closeEvent_1719_0.can_issue()) {
-      cb_closeEvent_1719_0.issue<QPushButton_Adaptor, QCloseEvent *>(&QPushButton_Adaptor::cbs_closeEvent_1719_0, event);
+      cb_closeEvent_1719_0.issue<QPushButton_Adaptor, QCloseEvent *>(&QPushButton_Adaptor::cbs_closeEvent_1719_0, arg1);
     } else {
-      QPushButton::closeEvent(event);
+      QPushButton::closeEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QPushButton::contextMenuEvent(QContextMenuEvent *event)
-  void cbs_contextMenuEvent_2363_0(QContextMenuEvent *event)
+  //  [adaptor impl] void QPushButton::contextMenuEvent(QContextMenuEvent *)
+  void cbs_contextMenuEvent_2363_0(QContextMenuEvent *arg1)
   {
-    QPushButton::contextMenuEvent(event);
+    QPushButton::contextMenuEvent(arg1);
   }
 
-  virtual void contextMenuEvent(QContextMenuEvent *event)
+  virtual void contextMenuEvent(QContextMenuEvent *arg1)
   {
     if (cb_contextMenuEvent_2363_0.can_issue()) {
-      cb_contextMenuEvent_2363_0.issue<QPushButton_Adaptor, QContextMenuEvent *>(&QPushButton_Adaptor::cbs_contextMenuEvent_2363_0, event);
+      cb_contextMenuEvent_2363_0.issue<QPushButton_Adaptor, QContextMenuEvent *>(&QPushButton_Adaptor::cbs_contextMenuEvent_2363_0, arg1);
     } else {
-      QPushButton::contextMenuEvent(event);
+      QPushButton::contextMenuEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QPushButton::customEvent(QEvent *event)
-  void cbs_customEvent_1217_0(QEvent *event)
+  //  [adaptor impl] void QPushButton::customEvent(QEvent *)
+  void cbs_customEvent_1217_0(QEvent *arg1)
   {
-    QPushButton::customEvent(event);
+    QPushButton::customEvent(arg1);
   }
 
-  virtual void customEvent(QEvent *event)
+  virtual void customEvent(QEvent *arg1)
   {
     if (cb_customEvent_1217_0.can_issue()) {
-      cb_customEvent_1217_0.issue<QPushButton_Adaptor, QEvent *>(&QPushButton_Adaptor::cbs_customEvent_1217_0, event);
+      cb_customEvent_1217_0.issue<QPushButton_Adaptor, QEvent *>(&QPushButton_Adaptor::cbs_customEvent_1217_0, arg1);
     } else {
-      QPushButton::customEvent(event);
+      QPushButton::customEvent(arg1);
     }
   }
 
@@ -774,78 +767,78 @@ public:
     }
   }
 
-  //  [adaptor impl] void QPushButton::dragEnterEvent(QDragEnterEvent *event)
-  void cbs_dragEnterEvent_2109_0(QDragEnterEvent *event)
+  //  [adaptor impl] void QPushButton::dragEnterEvent(QDragEnterEvent *)
+  void cbs_dragEnterEvent_2109_0(QDragEnterEvent *arg1)
   {
-    QPushButton::dragEnterEvent(event);
+    QPushButton::dragEnterEvent(arg1);
   }
 
-  virtual void dragEnterEvent(QDragEnterEvent *event)
+  virtual void dragEnterEvent(QDragEnterEvent *arg1)
   {
     if (cb_dragEnterEvent_2109_0.can_issue()) {
-      cb_dragEnterEvent_2109_0.issue<QPushButton_Adaptor, QDragEnterEvent *>(&QPushButton_Adaptor::cbs_dragEnterEvent_2109_0, event);
+      cb_dragEnterEvent_2109_0.issue<QPushButton_Adaptor, QDragEnterEvent *>(&QPushButton_Adaptor::cbs_dragEnterEvent_2109_0, arg1);
     } else {
-      QPushButton::dragEnterEvent(event);
+      QPushButton::dragEnterEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QPushButton::dragLeaveEvent(QDragLeaveEvent *event)
-  void cbs_dragLeaveEvent_2092_0(QDragLeaveEvent *event)
+  //  [adaptor impl] void QPushButton::dragLeaveEvent(QDragLeaveEvent *)
+  void cbs_dragLeaveEvent_2092_0(QDragLeaveEvent *arg1)
   {
-    QPushButton::dragLeaveEvent(event);
+    QPushButton::dragLeaveEvent(arg1);
   }
 
-  virtual void dragLeaveEvent(QDragLeaveEvent *event)
+  virtual void dragLeaveEvent(QDragLeaveEvent *arg1)
   {
     if (cb_dragLeaveEvent_2092_0.can_issue()) {
-      cb_dragLeaveEvent_2092_0.issue<QPushButton_Adaptor, QDragLeaveEvent *>(&QPushButton_Adaptor::cbs_dragLeaveEvent_2092_0, event);
+      cb_dragLeaveEvent_2092_0.issue<QPushButton_Adaptor, QDragLeaveEvent *>(&QPushButton_Adaptor::cbs_dragLeaveEvent_2092_0, arg1);
     } else {
-      QPushButton::dragLeaveEvent(event);
+      QPushButton::dragLeaveEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QPushButton::dragMoveEvent(QDragMoveEvent *event)
-  void cbs_dragMoveEvent_2006_0(QDragMoveEvent *event)
+  //  [adaptor impl] void QPushButton::dragMoveEvent(QDragMoveEvent *)
+  void cbs_dragMoveEvent_2006_0(QDragMoveEvent *arg1)
   {
-    QPushButton::dragMoveEvent(event);
+    QPushButton::dragMoveEvent(arg1);
   }
 
-  virtual void dragMoveEvent(QDragMoveEvent *event)
+  virtual void dragMoveEvent(QDragMoveEvent *arg1)
   {
     if (cb_dragMoveEvent_2006_0.can_issue()) {
-      cb_dragMoveEvent_2006_0.issue<QPushButton_Adaptor, QDragMoveEvent *>(&QPushButton_Adaptor::cbs_dragMoveEvent_2006_0, event);
+      cb_dragMoveEvent_2006_0.issue<QPushButton_Adaptor, QDragMoveEvent *>(&QPushButton_Adaptor::cbs_dragMoveEvent_2006_0, arg1);
     } else {
-      QPushButton::dragMoveEvent(event);
+      QPushButton::dragMoveEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QPushButton::dropEvent(QDropEvent *event)
-  void cbs_dropEvent_1622_0(QDropEvent *event)
+  //  [adaptor impl] void QPushButton::dropEvent(QDropEvent *)
+  void cbs_dropEvent_1622_0(QDropEvent *arg1)
   {
-    QPushButton::dropEvent(event);
+    QPushButton::dropEvent(arg1);
   }
 
-  virtual void dropEvent(QDropEvent *event)
+  virtual void dropEvent(QDropEvent *arg1)
   {
     if (cb_dropEvent_1622_0.can_issue()) {
-      cb_dropEvent_1622_0.issue<QPushButton_Adaptor, QDropEvent *>(&QPushButton_Adaptor::cbs_dropEvent_1622_0, event);
+      cb_dropEvent_1622_0.issue<QPushButton_Adaptor, QDropEvent *>(&QPushButton_Adaptor::cbs_dropEvent_1622_0, arg1);
     } else {
-      QPushButton::dropEvent(event);
+      QPushButton::dropEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QPushButton::enterEvent(QEvent *event)
-  void cbs_enterEvent_1217_0(QEvent *event)
+  //  [adaptor impl] void QPushButton::enterEvent(QEvent *)
+  void cbs_enterEvent_1217_0(QEvent *arg1)
   {
-    QPushButton::enterEvent(event);
+    QPushButton::enterEvent(arg1);
   }
 
-  virtual void enterEvent(QEvent *event)
+  virtual void enterEvent(QEvent *arg1)
   {
     if (cb_enterEvent_1217_0.can_issue()) {
-      cb_enterEvent_1217_0.issue<QPushButton_Adaptor, QEvent *>(&QPushButton_Adaptor::cbs_enterEvent_1217_0, event);
+      cb_enterEvent_1217_0.issue<QPushButton_Adaptor, QEvent *>(&QPushButton_Adaptor::cbs_enterEvent_1217_0, arg1);
     } else {
-      QPushButton::enterEvent(event);
+      QPushButton::enterEvent(arg1);
     }
   }
 
@@ -909,18 +902,18 @@ public:
     }
   }
 
-  //  [adaptor impl] void QPushButton::hideEvent(QHideEvent *event)
-  void cbs_hideEvent_1595_0(QHideEvent *event)
+  //  [adaptor impl] void QPushButton::hideEvent(QHideEvent *)
+  void cbs_hideEvent_1595_0(QHideEvent *arg1)
   {
-    QPushButton::hideEvent(event);
+    QPushButton::hideEvent(arg1);
   }
 
-  virtual void hideEvent(QHideEvent *event)
+  virtual void hideEvent(QHideEvent *arg1)
   {
     if (cb_hideEvent_1595_0.can_issue()) {
-      cb_hideEvent_1595_0.issue<QPushButton_Adaptor, QHideEvent *>(&QPushButton_Adaptor::cbs_hideEvent_1595_0, event);
+      cb_hideEvent_1595_0.issue<QPushButton_Adaptor, QHideEvent *>(&QPushButton_Adaptor::cbs_hideEvent_1595_0, arg1);
     } else {
-      QPushButton::hideEvent(event);
+      QPushButton::hideEvent(arg1);
     }
   }
 
@@ -999,18 +992,18 @@ public:
     }
   }
 
-  //  [adaptor impl] void QPushButton::leaveEvent(QEvent *event)
-  void cbs_leaveEvent_1217_0(QEvent *event)
+  //  [adaptor impl] void QPushButton::leaveEvent(QEvent *)
+  void cbs_leaveEvent_1217_0(QEvent *arg1)
   {
-    QPushButton::leaveEvent(event);
+    QPushButton::leaveEvent(arg1);
   }
 
-  virtual void leaveEvent(QEvent *event)
+  virtual void leaveEvent(QEvent *arg1)
   {
     if (cb_leaveEvent_1217_0.can_issue()) {
-      cb_leaveEvent_1217_0.issue<QPushButton_Adaptor, QEvent *>(&QPushButton_Adaptor::cbs_leaveEvent_1217_0, event);
+      cb_leaveEvent_1217_0.issue<QPushButton_Adaptor, QEvent *>(&QPushButton_Adaptor::cbs_leaveEvent_1217_0, arg1);
     } else {
-      QPushButton::leaveEvent(event);
+      QPushButton::leaveEvent(arg1);
     }
   }
 
@@ -1029,18 +1022,18 @@ public:
     }
   }
 
-  //  [adaptor impl] void QPushButton::mouseDoubleClickEvent(QMouseEvent *event)
-  void cbs_mouseDoubleClickEvent_1738_0(QMouseEvent *event)
+  //  [adaptor impl] void QPushButton::mouseDoubleClickEvent(QMouseEvent *)
+  void cbs_mouseDoubleClickEvent_1738_0(QMouseEvent *arg1)
   {
-    QPushButton::mouseDoubleClickEvent(event);
+    QPushButton::mouseDoubleClickEvent(arg1);
   }
 
-  virtual void mouseDoubleClickEvent(QMouseEvent *event)
+  virtual void mouseDoubleClickEvent(QMouseEvent *arg1)
   {
     if (cb_mouseDoubleClickEvent_1738_0.can_issue()) {
-      cb_mouseDoubleClickEvent_1738_0.issue<QPushButton_Adaptor, QMouseEvent *>(&QPushButton_Adaptor::cbs_mouseDoubleClickEvent_1738_0, event);
+      cb_mouseDoubleClickEvent_1738_0.issue<QPushButton_Adaptor, QMouseEvent *>(&QPushButton_Adaptor::cbs_mouseDoubleClickEvent_1738_0, arg1);
     } else {
-      QPushButton::mouseDoubleClickEvent(event);
+      QPushButton::mouseDoubleClickEvent(arg1);
     }
   }
 
@@ -1089,18 +1082,18 @@ public:
     }
   }
 
-  //  [adaptor impl] void QPushButton::moveEvent(QMoveEvent *event)
-  void cbs_moveEvent_1624_0(QMoveEvent *event)
+  //  [adaptor impl] void QPushButton::moveEvent(QMoveEvent *)
+  void cbs_moveEvent_1624_0(QMoveEvent *arg1)
   {
-    QPushButton::moveEvent(event);
+    QPushButton::moveEvent(arg1);
   }
 
-  virtual void moveEvent(QMoveEvent *event)
+  virtual void moveEvent(QMoveEvent *arg1)
   {
     if (cb_moveEvent_1624_0.can_issue()) {
-      cb_moveEvent_1624_0.issue<QPushButton_Adaptor, QMoveEvent *>(&QPushButton_Adaptor::cbs_moveEvent_1624_0, event);
+      cb_moveEvent_1624_0.issue<QPushButton_Adaptor, QMoveEvent *>(&QPushButton_Adaptor::cbs_moveEvent_1624_0, arg1);
     } else {
-      QPushButton::moveEvent(event);
+      QPushButton::moveEvent(arg1);
     }
   }
 
@@ -1164,18 +1157,18 @@ public:
     }
   }
 
-  //  [adaptor impl] void QPushButton::resizeEvent(QResizeEvent *event)
-  void cbs_resizeEvent_1843_0(QResizeEvent *event)
+  //  [adaptor impl] void QPushButton::resizeEvent(QResizeEvent *)
+  void cbs_resizeEvent_1843_0(QResizeEvent *arg1)
   {
-    QPushButton::resizeEvent(event);
+    QPushButton::resizeEvent(arg1);
   }
 
-  virtual void resizeEvent(QResizeEvent *event)
+  virtual void resizeEvent(QResizeEvent *arg1)
   {
     if (cb_resizeEvent_1843_0.can_issue()) {
-      cb_resizeEvent_1843_0.issue<QPushButton_Adaptor, QResizeEvent *>(&QPushButton_Adaptor::cbs_resizeEvent_1843_0, event);
+      cb_resizeEvent_1843_0.issue<QPushButton_Adaptor, QResizeEvent *>(&QPushButton_Adaptor::cbs_resizeEvent_1843_0, arg1);
     } else {
-      QPushButton::resizeEvent(event);
+      QPushButton::resizeEvent(arg1);
     }
   }
 
@@ -1194,33 +1187,33 @@ public:
     }
   }
 
-  //  [adaptor impl] void QPushButton::showEvent(QShowEvent *event)
-  void cbs_showEvent_1634_0(QShowEvent *event)
+  //  [adaptor impl] void QPushButton::showEvent(QShowEvent *)
+  void cbs_showEvent_1634_0(QShowEvent *arg1)
   {
-    QPushButton::showEvent(event);
+    QPushButton::showEvent(arg1);
   }
 
-  virtual void showEvent(QShowEvent *event)
+  virtual void showEvent(QShowEvent *arg1)
   {
     if (cb_showEvent_1634_0.can_issue()) {
-      cb_showEvent_1634_0.issue<QPushButton_Adaptor, QShowEvent *>(&QPushButton_Adaptor::cbs_showEvent_1634_0, event);
+      cb_showEvent_1634_0.issue<QPushButton_Adaptor, QShowEvent *>(&QPushButton_Adaptor::cbs_showEvent_1634_0, arg1);
     } else {
-      QPushButton::showEvent(event);
+      QPushButton::showEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QPushButton::tabletEvent(QTabletEvent *event)
-  void cbs_tabletEvent_1821_0(QTabletEvent *event)
+  //  [adaptor impl] void QPushButton::tabletEvent(QTabletEvent *)
+  void cbs_tabletEvent_1821_0(QTabletEvent *arg1)
   {
-    QPushButton::tabletEvent(event);
+    QPushButton::tabletEvent(arg1);
   }
 
-  virtual void tabletEvent(QTabletEvent *event)
+  virtual void tabletEvent(QTabletEvent *arg1)
   {
     if (cb_tabletEvent_1821_0.can_issue()) {
-      cb_tabletEvent_1821_0.issue<QPushButton_Adaptor, QTabletEvent *>(&QPushButton_Adaptor::cbs_tabletEvent_1821_0, event);
+      cb_tabletEvent_1821_0.issue<QPushButton_Adaptor, QTabletEvent *>(&QPushButton_Adaptor::cbs_tabletEvent_1821_0, arg1);
     } else {
-      QPushButton::tabletEvent(event);
+      QPushButton::tabletEvent(arg1);
     }
   }
 
@@ -1239,18 +1232,18 @@ public:
     }
   }
 
-  //  [adaptor impl] void QPushButton::wheelEvent(QWheelEvent *event)
-  void cbs_wheelEvent_1718_0(QWheelEvent *event)
+  //  [adaptor impl] void QPushButton::wheelEvent(QWheelEvent *)
+  void cbs_wheelEvent_1718_0(QWheelEvent *arg1)
   {
-    QPushButton::wheelEvent(event);
+    QPushButton::wheelEvent(arg1);
   }
 
-  virtual void wheelEvent(QWheelEvent *event)
+  virtual void wheelEvent(QWheelEvent *arg1)
   {
     if (cb_wheelEvent_1718_0.can_issue()) {
-      cb_wheelEvent_1718_0.issue<QPushButton_Adaptor, QWheelEvent *>(&QPushButton_Adaptor::cbs_wheelEvent_1718_0, event);
+      cb_wheelEvent_1718_0.issue<QPushButton_Adaptor, QWheelEvent *>(&QPushButton_Adaptor::cbs_wheelEvent_1718_0, arg1);
     } else {
-      QPushButton::wheelEvent(event);
+      QPushButton::wheelEvent(arg1);
     }
   }
 
@@ -1310,7 +1303,7 @@ QPushButton_Adaptor::~QPushButton_Adaptor() { }
 
 static void _init_ctor_QPushButton_Adaptor_1315 (qt_gsi::GenericStaticMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("parent", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("parent", true, "0");
   decl->add_arg<QWidget * > (argspec_0);
   decl->set_return_new<QPushButton_Adaptor> ();
 }
@@ -1319,7 +1312,7 @@ static void _call_ctor_QPushButton_Adaptor_1315 (const qt_gsi::GenericStaticMeth
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  QWidget *arg1 = args ? gsi::arg_reader<QWidget * >() (args, heap) : gsi::arg_maker<QWidget * >() (nullptr, heap);
+  QWidget *arg1 = args ? gsi::arg_reader<QWidget * >() (args, heap) : gsi::arg_maker<QWidget * >() (0, heap);
   ret.write<QPushButton_Adaptor *> (new QPushButton_Adaptor (arg1));
 }
 
@@ -1330,7 +1323,7 @@ static void _init_ctor_QPushButton_Adaptor_3232 (qt_gsi::GenericStaticMethod *de
 {
   static gsi::ArgSpecBase argspec_0 ("text");
   decl->add_arg<const QString & > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("parent", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("parent", true, "0");
   decl->add_arg<QWidget * > (argspec_1);
   decl->set_return_new<QPushButton_Adaptor> ();
 }
@@ -1340,7 +1333,7 @@ static void _call_ctor_QPushButton_Adaptor_3232 (const qt_gsi::GenericStaticMeth
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const QString &arg1 = gsi::arg_reader<const QString & >() (args, heap);
-  QWidget *arg2 = args ? gsi::arg_reader<QWidget * >() (args, heap) : gsi::arg_maker<QWidget * >() (nullptr, heap);
+  QWidget *arg2 = args ? gsi::arg_reader<QWidget * >() (args, heap) : gsi::arg_maker<QWidget * >() (0, heap);
   ret.write<QPushButton_Adaptor *> (new QPushButton_Adaptor (arg1, arg2));
 }
 
@@ -1353,7 +1346,7 @@ static void _init_ctor_QPushButton_Adaptor_4911 (qt_gsi::GenericStaticMethod *de
   decl->add_arg<const QIcon & > (argspec_0);
   static gsi::ArgSpecBase argspec_1 ("text");
   decl->add_arg<const QString & > (argspec_1);
-  static gsi::ArgSpecBase argspec_2 ("parent", true, "nullptr");
+  static gsi::ArgSpecBase argspec_2 ("parent", true, "0");
   decl->add_arg<QWidget * > (argspec_2);
   decl->set_return_new<QPushButton_Adaptor> ();
 }
@@ -1364,16 +1357,16 @@ static void _call_ctor_QPushButton_Adaptor_4911 (const qt_gsi::GenericStaticMeth
   tl::Heap heap;
   const QIcon &arg1 = gsi::arg_reader<const QIcon & >() (args, heap);
   const QString &arg2 = gsi::arg_reader<const QString & >() (args, heap);
-  QWidget *arg3 = args ? gsi::arg_reader<QWidget * >() (args, heap) : gsi::arg_maker<QWidget * >() (nullptr, heap);
+  QWidget *arg3 = args ? gsi::arg_reader<QWidget * >() (args, heap) : gsi::arg_maker<QWidget * >() (0, heap);
   ret.write<QPushButton_Adaptor *> (new QPushButton_Adaptor (arg1, arg2, arg3));
 }
 
 
-// void QPushButton::actionEvent(QActionEvent *event)
+// void QPushButton::actionEvent(QActionEvent *)
 
 static void _init_cbs_actionEvent_1823_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QActionEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1437,11 +1430,11 @@ static void _set_callback_cbs_checkStateSet_0_0 (void *cls, const gsi::Callback 
 }
 
 
-// void QPushButton::childEvent(QChildEvent *event)
+// void QPushButton::childEvent(QChildEvent *)
 
 static void _init_cbs_childEvent_1701_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QChildEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1479,11 +1472,11 @@ static void _call_emitter_clicked_864 (const qt_gsi::GenericMethod * /*decl*/, v
 }
 
 
-// void QPushButton::closeEvent(QCloseEvent *event)
+// void QPushButton::closeEvent(QCloseEvent *)
 
 static void _init_cbs_closeEvent_1719_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QCloseEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1503,11 +1496,11 @@ static void _set_callback_cbs_closeEvent_1719_0 (void *cls, const gsi::Callback 
 }
 
 
-// void QPushButton::contextMenuEvent(QContextMenuEvent *event)
+// void QPushButton::contextMenuEvent(QContextMenuEvent *)
 
 static void _init_cbs_contextMenuEvent_2363_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QContextMenuEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1570,11 +1563,11 @@ static void _call_emitter_customContextMenuRequested_1916 (const qt_gsi::Generic
 }
 
 
-// void QPushButton::customEvent(QEvent *event)
+// void QPushButton::customEvent(QEvent *)
 
 static void _init_cbs_customEvent_1217_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1620,7 +1613,7 @@ static void _call_fp_destroy_1620 (const qt_gsi::GenericMethod * /*decl*/, void 
 
 static void _init_emitter_destroyed_1302 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("arg1", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("arg1", true, "0");
   decl->add_arg<QObject * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1629,7 +1622,7 @@ static void _call_emitter_destroyed_1302 (const qt_gsi::GenericMethod * /*decl*/
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (nullptr, heap);
+  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (0, heap);
   ((QPushButton_Adaptor *)cls)->emitter_QPushButton_destroyed_1302 (arg1);
 }
 
@@ -1658,11 +1651,11 @@ static void _set_callback_cbs_disconnectNotify_2394_0 (void *cls, const gsi::Cal
 }
 
 
-// void QPushButton::dragEnterEvent(QDragEnterEvent *event)
+// void QPushButton::dragEnterEvent(QDragEnterEvent *)
 
 static void _init_cbs_dragEnterEvent_2109_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QDragEnterEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1682,11 +1675,11 @@ static void _set_callback_cbs_dragEnterEvent_2109_0 (void *cls, const gsi::Callb
 }
 
 
-// void QPushButton::dragLeaveEvent(QDragLeaveEvent *event)
+// void QPushButton::dragLeaveEvent(QDragLeaveEvent *)
 
 static void _init_cbs_dragLeaveEvent_2092_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QDragLeaveEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1706,11 +1699,11 @@ static void _set_callback_cbs_dragLeaveEvent_2092_0 (void *cls, const gsi::Callb
 }
 
 
-// void QPushButton::dragMoveEvent(QDragMoveEvent *event)
+// void QPushButton::dragMoveEvent(QDragMoveEvent *)
 
 static void _init_cbs_dragMoveEvent_2006_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QDragMoveEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1730,11 +1723,11 @@ static void _set_callback_cbs_dragMoveEvent_2006_0 (void *cls, const gsi::Callba
 }
 
 
-// void QPushButton::dropEvent(QDropEvent *event)
+// void QPushButton::dropEvent(QDropEvent *)
 
 static void _init_cbs_dropEvent_1622_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QDropEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1754,11 +1747,11 @@ static void _set_callback_cbs_dropEvent_1622_0 (void *cls, const gsi::Callback &
 }
 
 
-// void QPushButton::enterEvent(QEvent *event)
+// void QPushButton::enterEvent(QEvent *)
 
 static void _init_cbs_enterEvent_1217_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1801,13 +1794,13 @@ static void _set_callback_cbs_event_1217_0 (void *cls, const gsi::Callback &cb)
 }
 
 
-// bool QPushButton::eventFilter(QObject *watched, QEvent *event)
+// bool QPushButton::eventFilter(QObject *, QEvent *)
 
 static void _init_cbs_eventFilter_2411_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("watched");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QObject * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("event");
+  static gsi::ArgSpecBase argspec_1 ("arg2");
   decl->add_arg<QEvent * > (argspec_1);
   decl->set_return<bool > ();
 }
@@ -1968,11 +1961,11 @@ static void _set_callback_cbs_heightForWidth_c767_0 (void *cls, const gsi::Callb
 }
 
 
-// void QPushButton::hideEvent(QHideEvent *event)
+// void QPushButton::hideEvent(QHideEvent *)
 
 static void _init_cbs_hideEvent_1595_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QHideEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -2171,11 +2164,11 @@ static void _set_callback_cbs_keyReleaseEvent_1514_0 (void *cls, const gsi::Call
 }
 
 
-// void QPushButton::leaveEvent(QEvent *event)
+// void QPushButton::leaveEvent(QEvent *)
 
 static void _init_cbs_leaveEvent_1217_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -2237,11 +2230,11 @@ static void _set_callback_cbs_minimumSizeHint_c0_0 (void *cls, const gsi::Callba
 }
 
 
-// void QPushButton::mouseDoubleClickEvent(QMouseEvent *event)
+// void QPushButton::mouseDoubleClickEvent(QMouseEvent *)
 
 static void _init_cbs_mouseDoubleClickEvent_1738_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QMouseEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -2333,11 +2326,11 @@ static void _set_callback_cbs_mouseReleaseEvent_1738_0 (void *cls, const gsi::Ca
 }
 
 
-// void QPushButton::moveEvent(QMoveEvent *event)
+// void QPushButton::moveEvent(QMoveEvent *)
 
 static void _init_cbs_moveEvent_1624_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QMoveEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -2403,24 +2396,6 @@ static void _call_cbs_nextCheckState_0_0 (const qt_gsi::GenericMethod * /*decl*/
 static void _set_callback_cbs_nextCheckState_0_0 (void *cls, const gsi::Callback &cb)
 {
   ((QPushButton_Adaptor *)cls)->cb_nextCheckState_0_0 = cb;
-}
-
-
-// emitter void QPushButton::objectNameChanged(const QString &objectName)
-
-static void _init_emitter_objectNameChanged_4567 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("objectName");
-  decl->add_arg<const QString & > (argspec_0);
-  decl->set_return<void > ();
-}
-
-static void _call_emitter_objectNameChanged_4567 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs & /*ret*/) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const QString &arg1 = gsi::arg_reader<const QString & >() (args, heap);
-  ((QPushButton_Adaptor *)cls)->emitter_QPushButton_objectNameChanged_4567 (arg1);
 }
 
 
@@ -2536,11 +2511,11 @@ static void _call_emitter_released_0 (const qt_gsi::GenericMethod * /*decl*/, vo
 }
 
 
-// void QPushButton::resizeEvent(QResizeEvent *event)
+// void QPushButton::resizeEvent(QResizeEvent *)
 
 static void _init_cbs_resizeEvent_1843_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QResizeEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -2631,11 +2606,11 @@ static void _set_callback_cbs_sharedPainter_c0_0 (void *cls, const gsi::Callback
 }
 
 
-// void QPushButton::showEvent(QShowEvent *event)
+// void QPushButton::showEvent(QShowEvent *)
 
 static void _init_cbs_showEvent_1634_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QShowEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -2674,11 +2649,11 @@ static void _set_callback_cbs_sizeHint_c0_0 (void *cls, const gsi::Callback &cb)
 }
 
 
-// void QPushButton::tabletEvent(QTabletEvent *event)
+// void QPushButton::tabletEvent(QTabletEvent *)
 
 static void _init_cbs_tabletEvent_1821_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QTabletEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -2755,11 +2730,11 @@ static void _call_fp_updateMicroFocus_0 (const qt_gsi::GenericMethod * /*decl*/,
 }
 
 
-// void QPushButton::wheelEvent(QWheelEvent *event)
+// void QPushButton::wheelEvent(QWheelEvent *)
 
 static void _init_cbs_wheelEvent_1718_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QWheelEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -2843,119 +2818,118 @@ static gsi::Methods methods_QPushButton_Adaptor () {
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QPushButton::QPushButton(QWidget *parent)\nThis method creates an object of class QPushButton.", &_init_ctor_QPushButton_Adaptor_1315, &_call_ctor_QPushButton_Adaptor_1315);
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QPushButton::QPushButton(const QString &text, QWidget *parent)\nThis method creates an object of class QPushButton.", &_init_ctor_QPushButton_Adaptor_3232, &_call_ctor_QPushButton_Adaptor_3232);
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QPushButton::QPushButton(const QIcon &icon, const QString &text, QWidget *parent)\nThis method creates an object of class QPushButton.", &_init_ctor_QPushButton_Adaptor_4911, &_call_ctor_QPushButton_Adaptor_4911);
-  methods += new qt_gsi::GenericMethod ("*actionEvent", "@brief Virtual method void QPushButton::actionEvent(QActionEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_actionEvent_1823_0, &_call_cbs_actionEvent_1823_0);
-  methods += new qt_gsi::GenericMethod ("*actionEvent", "@hide", false, &_init_cbs_actionEvent_1823_0, &_call_cbs_actionEvent_1823_0, &_set_callback_cbs_actionEvent_1823_0);
-  methods += new qt_gsi::GenericMethod ("*changeEvent", "@brief Virtual method void QPushButton::changeEvent(QEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_changeEvent_1217_0, &_call_cbs_changeEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*changeEvent", "@hide", false, &_init_cbs_changeEvent_1217_0, &_call_cbs_changeEvent_1217_0, &_set_callback_cbs_changeEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*checkStateSet", "@brief Virtual method void QPushButton::checkStateSet()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_checkStateSet_0_0, &_call_cbs_checkStateSet_0_0);
-  methods += new qt_gsi::GenericMethod ("*checkStateSet", "@hide", false, &_init_cbs_checkStateSet_0_0, &_call_cbs_checkStateSet_0_0, &_set_callback_cbs_checkStateSet_0_0);
-  methods += new qt_gsi::GenericMethod ("*childEvent", "@brief Virtual method void QPushButton::childEvent(QChildEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0);
-  methods += new qt_gsi::GenericMethod ("*childEvent", "@hide", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0, &_set_callback_cbs_childEvent_1701_0);
+  methods += new qt_gsi::GenericMethod ("*actionEvent", "@hide", false, &_init_cbs_actionEvent_1823_0, &_call_cbs_actionEvent_1823_0);
+  methods += new qt_gsi::GenericMethod ("*actionEvent", "@brief Virtual method void QPushButton::actionEvent(QActionEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_actionEvent_1823_0, &_call_cbs_actionEvent_1823_0, &_set_callback_cbs_actionEvent_1823_0);
+  methods += new qt_gsi::GenericMethod ("*changeEvent", "@hide", false, &_init_cbs_changeEvent_1217_0, &_call_cbs_changeEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*changeEvent", "@brief Virtual method void QPushButton::changeEvent(QEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_changeEvent_1217_0, &_call_cbs_changeEvent_1217_0, &_set_callback_cbs_changeEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*checkStateSet", "@hide", false, &_init_cbs_checkStateSet_0_0, &_call_cbs_checkStateSet_0_0);
+  methods += new qt_gsi::GenericMethod ("*checkStateSet", "@brief Virtual method void QPushButton::checkStateSet()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_checkStateSet_0_0, &_call_cbs_checkStateSet_0_0, &_set_callback_cbs_checkStateSet_0_0);
+  methods += new qt_gsi::GenericMethod ("*childEvent", "@hide", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0);
+  methods += new qt_gsi::GenericMethod ("*childEvent", "@brief Virtual method void QPushButton::childEvent(QChildEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0, &_set_callback_cbs_childEvent_1701_0);
   methods += new qt_gsi::GenericMethod ("emit_clicked", "@brief Emitter for signal void QPushButton::clicked(bool checked)\nCall this method to emit this signal.", false, &_init_emitter_clicked_864, &_call_emitter_clicked_864);
-  methods += new qt_gsi::GenericMethod ("*closeEvent", "@brief Virtual method void QPushButton::closeEvent(QCloseEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_closeEvent_1719_0, &_call_cbs_closeEvent_1719_0);
-  methods += new qt_gsi::GenericMethod ("*closeEvent", "@hide", false, &_init_cbs_closeEvent_1719_0, &_call_cbs_closeEvent_1719_0, &_set_callback_cbs_closeEvent_1719_0);
-  methods += new qt_gsi::GenericMethod ("*contextMenuEvent", "@brief Virtual method void QPushButton::contextMenuEvent(QContextMenuEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_contextMenuEvent_2363_0, &_call_cbs_contextMenuEvent_2363_0);
-  methods += new qt_gsi::GenericMethod ("*contextMenuEvent", "@hide", false, &_init_cbs_contextMenuEvent_2363_0, &_call_cbs_contextMenuEvent_2363_0, &_set_callback_cbs_contextMenuEvent_2363_0);
-  methods += new qt_gsi::GenericMethod ("*create|qt_create", "@brief Method void QPushButton::create(WId, bool initializeWindow, bool destroyOldWindow)\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_create_2208, &_call_fp_create_2208);
+  methods += new qt_gsi::GenericMethod ("*closeEvent", "@hide", false, &_init_cbs_closeEvent_1719_0, &_call_cbs_closeEvent_1719_0);
+  methods += new qt_gsi::GenericMethod ("*closeEvent", "@brief Virtual method void QPushButton::closeEvent(QCloseEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_closeEvent_1719_0, &_call_cbs_closeEvent_1719_0, &_set_callback_cbs_closeEvent_1719_0);
+  methods += new qt_gsi::GenericMethod ("*contextMenuEvent", "@hide", false, &_init_cbs_contextMenuEvent_2363_0, &_call_cbs_contextMenuEvent_2363_0);
+  methods += new qt_gsi::GenericMethod ("*contextMenuEvent", "@brief Virtual method void QPushButton::contextMenuEvent(QContextMenuEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_contextMenuEvent_2363_0, &_call_cbs_contextMenuEvent_2363_0, &_set_callback_cbs_contextMenuEvent_2363_0);
+  methods += new qt_gsi::GenericMethod ("*qt_create", "@brief Method void QPushButton::create(WId, bool initializeWindow, bool destroyOldWindow)\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_create_2208, &_call_fp_create_2208);
   methods += new qt_gsi::GenericMethod ("emit_customContextMenuRequested", "@brief Emitter for signal void QPushButton::customContextMenuRequested(const QPoint &pos)\nCall this method to emit this signal.", false, &_init_emitter_customContextMenuRequested_1916, &_call_emitter_customContextMenuRequested_1916);
-  methods += new qt_gsi::GenericMethod ("*customEvent", "@brief Virtual method void QPushButton::customEvent(QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*customEvent", "@hide", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0, &_set_callback_cbs_customEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*destroy|qt_destroy", "@brief Method void QPushButton::destroy(bool destroyWindow, bool destroySubWindows)\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_destroy_1620, &_call_fp_destroy_1620);
+  methods += new qt_gsi::GenericMethod ("*customEvent", "@hide", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*customEvent", "@brief Virtual method void QPushButton::customEvent(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0, &_set_callback_cbs_customEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*qt_destroy", "@brief Method void QPushButton::destroy(bool destroyWindow, bool destroySubWindows)\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_destroy_1620, &_call_fp_destroy_1620);
   methods += new qt_gsi::GenericMethod ("emit_destroyed", "@brief Emitter for signal void QPushButton::destroyed(QObject *)\nCall this method to emit this signal.", false, &_init_emitter_destroyed_1302, &_call_emitter_destroyed_1302);
-  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@brief Virtual method void QPushButton::disconnectNotify(const QMetaMethod &signal)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0);
-  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@hide", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0, &_set_callback_cbs_disconnectNotify_2394_0);
-  methods += new qt_gsi::GenericMethod ("*dragEnterEvent", "@brief Virtual method void QPushButton::dragEnterEvent(QDragEnterEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_dragEnterEvent_2109_0, &_call_cbs_dragEnterEvent_2109_0);
-  methods += new qt_gsi::GenericMethod ("*dragEnterEvent", "@hide", false, &_init_cbs_dragEnterEvent_2109_0, &_call_cbs_dragEnterEvent_2109_0, &_set_callback_cbs_dragEnterEvent_2109_0);
-  methods += new qt_gsi::GenericMethod ("*dragLeaveEvent", "@brief Virtual method void QPushButton::dragLeaveEvent(QDragLeaveEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_dragLeaveEvent_2092_0, &_call_cbs_dragLeaveEvent_2092_0);
-  methods += new qt_gsi::GenericMethod ("*dragLeaveEvent", "@hide", false, &_init_cbs_dragLeaveEvent_2092_0, &_call_cbs_dragLeaveEvent_2092_0, &_set_callback_cbs_dragLeaveEvent_2092_0);
-  methods += new qt_gsi::GenericMethod ("*dragMoveEvent", "@brief Virtual method void QPushButton::dragMoveEvent(QDragMoveEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_dragMoveEvent_2006_0, &_call_cbs_dragMoveEvent_2006_0);
-  methods += new qt_gsi::GenericMethod ("*dragMoveEvent", "@hide", false, &_init_cbs_dragMoveEvent_2006_0, &_call_cbs_dragMoveEvent_2006_0, &_set_callback_cbs_dragMoveEvent_2006_0);
-  methods += new qt_gsi::GenericMethod ("*dropEvent", "@brief Virtual method void QPushButton::dropEvent(QDropEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_dropEvent_1622_0, &_call_cbs_dropEvent_1622_0);
-  methods += new qt_gsi::GenericMethod ("*dropEvent", "@hide", false, &_init_cbs_dropEvent_1622_0, &_call_cbs_dropEvent_1622_0, &_set_callback_cbs_dropEvent_1622_0);
-  methods += new qt_gsi::GenericMethod ("*enterEvent", "@brief Virtual method void QPushButton::enterEvent(QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_enterEvent_1217_0, &_call_cbs_enterEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*enterEvent", "@hide", false, &_init_cbs_enterEvent_1217_0, &_call_cbs_enterEvent_1217_0, &_set_callback_cbs_enterEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*event", "@brief Virtual method bool QPushButton::event(QEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0);
-  methods += new qt_gsi::GenericMethod ("*event", "@hide", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0, &_set_callback_cbs_event_1217_0);
-  methods += new qt_gsi::GenericMethod ("eventFilter", "@brief Virtual method bool QPushButton::eventFilter(QObject *watched, QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0);
-  methods += new qt_gsi::GenericMethod ("eventFilter", "@hide", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0, &_set_callback_cbs_eventFilter_2411_0);
-  methods += new qt_gsi::GenericMethod ("*focusInEvent", "@brief Virtual method void QPushButton::focusInEvent(QFocusEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_focusInEvent_1729_0, &_call_cbs_focusInEvent_1729_0);
-  methods += new qt_gsi::GenericMethod ("*focusInEvent", "@hide", false, &_init_cbs_focusInEvent_1729_0, &_call_cbs_focusInEvent_1729_0, &_set_callback_cbs_focusInEvent_1729_0);
+  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@hide", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0);
+  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@brief Virtual method void QPushButton::disconnectNotify(const QMetaMethod &signal)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0, &_set_callback_cbs_disconnectNotify_2394_0);
+  methods += new qt_gsi::GenericMethod ("*dragEnterEvent", "@hide", false, &_init_cbs_dragEnterEvent_2109_0, &_call_cbs_dragEnterEvent_2109_0);
+  methods += new qt_gsi::GenericMethod ("*dragEnterEvent", "@brief Virtual method void QPushButton::dragEnterEvent(QDragEnterEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_dragEnterEvent_2109_0, &_call_cbs_dragEnterEvent_2109_0, &_set_callback_cbs_dragEnterEvent_2109_0);
+  methods += new qt_gsi::GenericMethod ("*dragLeaveEvent", "@hide", false, &_init_cbs_dragLeaveEvent_2092_0, &_call_cbs_dragLeaveEvent_2092_0);
+  methods += new qt_gsi::GenericMethod ("*dragLeaveEvent", "@brief Virtual method void QPushButton::dragLeaveEvent(QDragLeaveEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_dragLeaveEvent_2092_0, &_call_cbs_dragLeaveEvent_2092_0, &_set_callback_cbs_dragLeaveEvent_2092_0);
+  methods += new qt_gsi::GenericMethod ("*dragMoveEvent", "@hide", false, &_init_cbs_dragMoveEvent_2006_0, &_call_cbs_dragMoveEvent_2006_0);
+  methods += new qt_gsi::GenericMethod ("*dragMoveEvent", "@brief Virtual method void QPushButton::dragMoveEvent(QDragMoveEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_dragMoveEvent_2006_0, &_call_cbs_dragMoveEvent_2006_0, &_set_callback_cbs_dragMoveEvent_2006_0);
+  methods += new qt_gsi::GenericMethod ("*dropEvent", "@hide", false, &_init_cbs_dropEvent_1622_0, &_call_cbs_dropEvent_1622_0);
+  methods += new qt_gsi::GenericMethod ("*dropEvent", "@brief Virtual method void QPushButton::dropEvent(QDropEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_dropEvent_1622_0, &_call_cbs_dropEvent_1622_0, &_set_callback_cbs_dropEvent_1622_0);
+  methods += new qt_gsi::GenericMethod ("*enterEvent", "@hide", false, &_init_cbs_enterEvent_1217_0, &_call_cbs_enterEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*enterEvent", "@brief Virtual method void QPushButton::enterEvent(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_enterEvent_1217_0, &_call_cbs_enterEvent_1217_0, &_set_callback_cbs_enterEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*event", "@hide", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0);
+  methods += new qt_gsi::GenericMethod ("*event", "@brief Virtual method bool QPushButton::event(QEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0, &_set_callback_cbs_event_1217_0);
+  methods += new qt_gsi::GenericMethod ("eventFilter", "@hide", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0);
+  methods += new qt_gsi::GenericMethod ("eventFilter", "@brief Virtual method bool QPushButton::eventFilter(QObject *, QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0, &_set_callback_cbs_eventFilter_2411_0);
+  methods += new qt_gsi::GenericMethod ("*focusInEvent", "@hide", false, &_init_cbs_focusInEvent_1729_0, &_call_cbs_focusInEvent_1729_0);
+  methods += new qt_gsi::GenericMethod ("*focusInEvent", "@brief Virtual method void QPushButton::focusInEvent(QFocusEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_focusInEvent_1729_0, &_call_cbs_focusInEvent_1729_0, &_set_callback_cbs_focusInEvent_1729_0);
   methods += new qt_gsi::GenericMethod ("*focusNextChild", "@brief Method bool QPushButton::focusNextChild()\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_focusNextChild_0, &_call_fp_focusNextChild_0);
-  methods += new qt_gsi::GenericMethod ("*focusNextPrevChild", "@brief Virtual method bool QPushButton::focusNextPrevChild(bool next)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_focusNextPrevChild_864_0, &_call_cbs_focusNextPrevChild_864_0);
-  methods += new qt_gsi::GenericMethod ("*focusNextPrevChild", "@hide", false, &_init_cbs_focusNextPrevChild_864_0, &_call_cbs_focusNextPrevChild_864_0, &_set_callback_cbs_focusNextPrevChild_864_0);
-  methods += new qt_gsi::GenericMethod ("*focusOutEvent", "@brief Virtual method void QPushButton::focusOutEvent(QFocusEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_focusOutEvent_1729_0, &_call_cbs_focusOutEvent_1729_0);
-  methods += new qt_gsi::GenericMethod ("*focusOutEvent", "@hide", false, &_init_cbs_focusOutEvent_1729_0, &_call_cbs_focusOutEvent_1729_0, &_set_callback_cbs_focusOutEvent_1729_0);
+  methods += new qt_gsi::GenericMethod ("*focusNextPrevChild", "@hide", false, &_init_cbs_focusNextPrevChild_864_0, &_call_cbs_focusNextPrevChild_864_0);
+  methods += new qt_gsi::GenericMethod ("*focusNextPrevChild", "@brief Virtual method bool QPushButton::focusNextPrevChild(bool next)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_focusNextPrevChild_864_0, &_call_cbs_focusNextPrevChild_864_0, &_set_callback_cbs_focusNextPrevChild_864_0);
+  methods += new qt_gsi::GenericMethod ("*focusOutEvent", "@hide", false, &_init_cbs_focusOutEvent_1729_0, &_call_cbs_focusOutEvent_1729_0);
+  methods += new qt_gsi::GenericMethod ("*focusOutEvent", "@brief Virtual method void QPushButton::focusOutEvent(QFocusEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_focusOutEvent_1729_0, &_call_cbs_focusOutEvent_1729_0, &_set_callback_cbs_focusOutEvent_1729_0);
   methods += new qt_gsi::GenericMethod ("*focusPreviousChild", "@brief Method bool QPushButton::focusPreviousChild()\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_focusPreviousChild_0, &_call_fp_focusPreviousChild_0);
-  methods += new qt_gsi::GenericMethod ("hasHeightForWidth", "@brief Virtual method bool QPushButton::hasHeightForWidth()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_hasHeightForWidth_c0_0, &_call_cbs_hasHeightForWidth_c0_0);
-  methods += new qt_gsi::GenericMethod ("hasHeightForWidth", "@hide", true, &_init_cbs_hasHeightForWidth_c0_0, &_call_cbs_hasHeightForWidth_c0_0, &_set_callback_cbs_hasHeightForWidth_c0_0);
-  methods += new qt_gsi::GenericMethod ("heightForWidth", "@brief Virtual method int QPushButton::heightForWidth(int)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_heightForWidth_c767_0, &_call_cbs_heightForWidth_c767_0);
-  methods += new qt_gsi::GenericMethod ("heightForWidth", "@hide", true, &_init_cbs_heightForWidth_c767_0, &_call_cbs_heightForWidth_c767_0, &_set_callback_cbs_heightForWidth_c767_0);
-  methods += new qt_gsi::GenericMethod ("*hideEvent", "@brief Virtual method void QPushButton::hideEvent(QHideEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_hideEvent_1595_0, &_call_cbs_hideEvent_1595_0);
-  methods += new qt_gsi::GenericMethod ("*hideEvent", "@hide", false, &_init_cbs_hideEvent_1595_0, &_call_cbs_hideEvent_1595_0, &_set_callback_cbs_hideEvent_1595_0);
-  methods += new qt_gsi::GenericMethod ("*hitButton", "@brief Virtual method bool QPushButton::hitButton(const QPoint &pos)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_hitButton_c1916_0, &_call_cbs_hitButton_c1916_0);
-  methods += new qt_gsi::GenericMethod ("*hitButton", "@hide", true, &_init_cbs_hitButton_c1916_0, &_call_cbs_hitButton_c1916_0, &_set_callback_cbs_hitButton_c1916_0);
-  methods += new qt_gsi::GenericMethod ("*initPainter", "@brief Virtual method void QPushButton::initPainter(QPainter *painter)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_initPainter_c1426_0, &_call_cbs_initPainter_c1426_0);
-  methods += new qt_gsi::GenericMethod ("*initPainter", "@hide", true, &_init_cbs_initPainter_c1426_0, &_call_cbs_initPainter_c1426_0, &_set_callback_cbs_initPainter_c1426_0);
+  methods += new qt_gsi::GenericMethod ("hasHeightForWidth", "@hide", true, &_init_cbs_hasHeightForWidth_c0_0, &_call_cbs_hasHeightForWidth_c0_0);
+  methods += new qt_gsi::GenericMethod ("hasHeightForWidth", "@brief Virtual method bool QPushButton::hasHeightForWidth()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_hasHeightForWidth_c0_0, &_call_cbs_hasHeightForWidth_c0_0, &_set_callback_cbs_hasHeightForWidth_c0_0);
+  methods += new qt_gsi::GenericMethod ("heightForWidth", "@hide", true, &_init_cbs_heightForWidth_c767_0, &_call_cbs_heightForWidth_c767_0);
+  methods += new qt_gsi::GenericMethod ("heightForWidth", "@brief Virtual method int QPushButton::heightForWidth(int)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_heightForWidth_c767_0, &_call_cbs_heightForWidth_c767_0, &_set_callback_cbs_heightForWidth_c767_0);
+  methods += new qt_gsi::GenericMethod ("*hideEvent", "@hide", false, &_init_cbs_hideEvent_1595_0, &_call_cbs_hideEvent_1595_0);
+  methods += new qt_gsi::GenericMethod ("*hideEvent", "@brief Virtual method void QPushButton::hideEvent(QHideEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_hideEvent_1595_0, &_call_cbs_hideEvent_1595_0, &_set_callback_cbs_hideEvent_1595_0);
+  methods += new qt_gsi::GenericMethod ("*hitButton", "@hide", true, &_init_cbs_hitButton_c1916_0, &_call_cbs_hitButton_c1916_0);
+  methods += new qt_gsi::GenericMethod ("*hitButton", "@brief Virtual method bool QPushButton::hitButton(const QPoint &pos)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_hitButton_c1916_0, &_call_cbs_hitButton_c1916_0, &_set_callback_cbs_hitButton_c1916_0);
+  methods += new qt_gsi::GenericMethod ("*initPainter", "@hide", true, &_init_cbs_initPainter_c1426_0, &_call_cbs_initPainter_c1426_0);
+  methods += new qt_gsi::GenericMethod ("*initPainter", "@brief Virtual method void QPushButton::initPainter(QPainter *painter)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_initPainter_c1426_0, &_call_cbs_initPainter_c1426_0, &_set_callback_cbs_initPainter_c1426_0);
   methods += new qt_gsi::GenericMethod ("*initStyleOption", "@brief Method void QPushButton::initStyleOption(QStyleOptionButton *option)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_initStyleOption_c2501, &_call_fp_initStyleOption_c2501);
-  methods += new qt_gsi::GenericMethod ("*inputMethodEvent", "@brief Virtual method void QPushButton::inputMethodEvent(QInputMethodEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_inputMethodEvent_2354_0, &_call_cbs_inputMethodEvent_2354_0);
-  methods += new qt_gsi::GenericMethod ("*inputMethodEvent", "@hide", false, &_init_cbs_inputMethodEvent_2354_0, &_call_cbs_inputMethodEvent_2354_0, &_set_callback_cbs_inputMethodEvent_2354_0);
-  methods += new qt_gsi::GenericMethod ("inputMethodQuery", "@brief Virtual method QVariant QPushButton::inputMethodQuery(Qt::InputMethodQuery)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_inputMethodQuery_c2420_0, &_call_cbs_inputMethodQuery_c2420_0);
-  methods += new qt_gsi::GenericMethod ("inputMethodQuery", "@hide", true, &_init_cbs_inputMethodQuery_c2420_0, &_call_cbs_inputMethodQuery_c2420_0, &_set_callback_cbs_inputMethodQuery_c2420_0);
+  methods += new qt_gsi::GenericMethod ("*inputMethodEvent", "@hide", false, &_init_cbs_inputMethodEvent_2354_0, &_call_cbs_inputMethodEvent_2354_0);
+  methods += new qt_gsi::GenericMethod ("*inputMethodEvent", "@brief Virtual method void QPushButton::inputMethodEvent(QInputMethodEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_inputMethodEvent_2354_0, &_call_cbs_inputMethodEvent_2354_0, &_set_callback_cbs_inputMethodEvent_2354_0);
+  methods += new qt_gsi::GenericMethod ("inputMethodQuery", "@hide", true, &_init_cbs_inputMethodQuery_c2420_0, &_call_cbs_inputMethodQuery_c2420_0);
+  methods += new qt_gsi::GenericMethod ("inputMethodQuery", "@brief Virtual method QVariant QPushButton::inputMethodQuery(Qt::InputMethodQuery)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_inputMethodQuery_c2420_0, &_call_cbs_inputMethodQuery_c2420_0, &_set_callback_cbs_inputMethodQuery_c2420_0);
   methods += new qt_gsi::GenericMethod ("*isSignalConnected", "@brief Method bool QPushButton::isSignalConnected(const QMetaMethod &signal)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_isSignalConnected_c2394, &_call_fp_isSignalConnected_c2394);
-  methods += new qt_gsi::GenericMethod ("*keyPressEvent", "@brief Virtual method void QPushButton::keyPressEvent(QKeyEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_keyPressEvent_1514_0, &_call_cbs_keyPressEvent_1514_0);
-  methods += new qt_gsi::GenericMethod ("*keyPressEvent", "@hide", false, &_init_cbs_keyPressEvent_1514_0, &_call_cbs_keyPressEvent_1514_0, &_set_callback_cbs_keyPressEvent_1514_0);
-  methods += new qt_gsi::GenericMethod ("*keyReleaseEvent", "@brief Virtual method void QPushButton::keyReleaseEvent(QKeyEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_keyReleaseEvent_1514_0, &_call_cbs_keyReleaseEvent_1514_0);
-  methods += new qt_gsi::GenericMethod ("*keyReleaseEvent", "@hide", false, &_init_cbs_keyReleaseEvent_1514_0, &_call_cbs_keyReleaseEvent_1514_0, &_set_callback_cbs_keyReleaseEvent_1514_0);
-  methods += new qt_gsi::GenericMethod ("*leaveEvent", "@brief Virtual method void QPushButton::leaveEvent(QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_leaveEvent_1217_0, &_call_cbs_leaveEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*leaveEvent", "@hide", false, &_init_cbs_leaveEvent_1217_0, &_call_cbs_leaveEvent_1217_0, &_set_callback_cbs_leaveEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*metric", "@brief Virtual method int QPushButton::metric(QPaintDevice::PaintDeviceMetric)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_metric_c3445_0, &_call_cbs_metric_c3445_0);
-  methods += new qt_gsi::GenericMethod ("*metric", "@hide", true, &_init_cbs_metric_c3445_0, &_call_cbs_metric_c3445_0, &_set_callback_cbs_metric_c3445_0);
-  methods += new qt_gsi::GenericMethod ("minimumSizeHint", "@brief Virtual method QSize QPushButton::minimumSizeHint()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_minimumSizeHint_c0_0, &_call_cbs_minimumSizeHint_c0_0);
-  methods += new qt_gsi::GenericMethod ("minimumSizeHint", "@hide", true, &_init_cbs_minimumSizeHint_c0_0, &_call_cbs_minimumSizeHint_c0_0, &_set_callback_cbs_minimumSizeHint_c0_0);
-  methods += new qt_gsi::GenericMethod ("*mouseDoubleClickEvent", "@brief Virtual method void QPushButton::mouseDoubleClickEvent(QMouseEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_mouseDoubleClickEvent_1738_0, &_call_cbs_mouseDoubleClickEvent_1738_0);
-  methods += new qt_gsi::GenericMethod ("*mouseDoubleClickEvent", "@hide", false, &_init_cbs_mouseDoubleClickEvent_1738_0, &_call_cbs_mouseDoubleClickEvent_1738_0, &_set_callback_cbs_mouseDoubleClickEvent_1738_0);
-  methods += new qt_gsi::GenericMethod ("*mouseMoveEvent", "@brief Virtual method void QPushButton::mouseMoveEvent(QMouseEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_mouseMoveEvent_1738_0, &_call_cbs_mouseMoveEvent_1738_0);
-  methods += new qt_gsi::GenericMethod ("*mouseMoveEvent", "@hide", false, &_init_cbs_mouseMoveEvent_1738_0, &_call_cbs_mouseMoveEvent_1738_0, &_set_callback_cbs_mouseMoveEvent_1738_0);
-  methods += new qt_gsi::GenericMethod ("*mousePressEvent", "@brief Virtual method void QPushButton::mousePressEvent(QMouseEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_mousePressEvent_1738_0, &_call_cbs_mousePressEvent_1738_0);
-  methods += new qt_gsi::GenericMethod ("*mousePressEvent", "@hide", false, &_init_cbs_mousePressEvent_1738_0, &_call_cbs_mousePressEvent_1738_0, &_set_callback_cbs_mousePressEvent_1738_0);
-  methods += new qt_gsi::GenericMethod ("*mouseReleaseEvent", "@brief Virtual method void QPushButton::mouseReleaseEvent(QMouseEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_mouseReleaseEvent_1738_0, &_call_cbs_mouseReleaseEvent_1738_0);
-  methods += new qt_gsi::GenericMethod ("*mouseReleaseEvent", "@hide", false, &_init_cbs_mouseReleaseEvent_1738_0, &_call_cbs_mouseReleaseEvent_1738_0, &_set_callback_cbs_mouseReleaseEvent_1738_0);
-  methods += new qt_gsi::GenericMethod ("*moveEvent", "@brief Virtual method void QPushButton::moveEvent(QMoveEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_moveEvent_1624_0, &_call_cbs_moveEvent_1624_0);
-  methods += new qt_gsi::GenericMethod ("*moveEvent", "@hide", false, &_init_cbs_moveEvent_1624_0, &_call_cbs_moveEvent_1624_0, &_set_callback_cbs_moveEvent_1624_0);
-  methods += new qt_gsi::GenericMethod ("*nativeEvent", "@brief Virtual method bool QPushButton::nativeEvent(const QByteArray &eventType, void *message, long int *result)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_nativeEvent_4678_0, &_call_cbs_nativeEvent_4678_0);
-  methods += new qt_gsi::GenericMethod ("*nativeEvent", "@hide", false, &_init_cbs_nativeEvent_4678_0, &_call_cbs_nativeEvent_4678_0, &_set_callback_cbs_nativeEvent_4678_0);
-  methods += new qt_gsi::GenericMethod ("*nextCheckState", "@brief Virtual method void QPushButton::nextCheckState()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_nextCheckState_0_0, &_call_cbs_nextCheckState_0_0);
-  methods += new qt_gsi::GenericMethod ("*nextCheckState", "@hide", false, &_init_cbs_nextCheckState_0_0, &_call_cbs_nextCheckState_0_0, &_set_callback_cbs_nextCheckState_0_0);
-  methods += new qt_gsi::GenericMethod ("emit_objectNameChanged", "@brief Emitter for signal void QPushButton::objectNameChanged(const QString &objectName)\nCall this method to emit this signal.", false, &_init_emitter_objectNameChanged_4567, &_call_emitter_objectNameChanged_4567);
-  methods += new qt_gsi::GenericMethod ("paintEngine", "@brief Virtual method QPaintEngine *QPushButton::paintEngine()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_paintEngine_c0_0, &_call_cbs_paintEngine_c0_0);
-  methods += new qt_gsi::GenericMethod ("paintEngine", "@hide", true, &_init_cbs_paintEngine_c0_0, &_call_cbs_paintEngine_c0_0, &_set_callback_cbs_paintEngine_c0_0);
-  methods += new qt_gsi::GenericMethod ("*paintEvent", "@brief Virtual method void QPushButton::paintEvent(QPaintEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_paintEvent_1725_0, &_call_cbs_paintEvent_1725_0);
-  methods += new qt_gsi::GenericMethod ("*paintEvent", "@hide", false, &_init_cbs_paintEvent_1725_0, &_call_cbs_paintEvent_1725_0, &_set_callback_cbs_paintEvent_1725_0);
+  methods += new qt_gsi::GenericMethod ("*keyPressEvent", "@hide", false, &_init_cbs_keyPressEvent_1514_0, &_call_cbs_keyPressEvent_1514_0);
+  methods += new qt_gsi::GenericMethod ("*keyPressEvent", "@brief Virtual method void QPushButton::keyPressEvent(QKeyEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_keyPressEvent_1514_0, &_call_cbs_keyPressEvent_1514_0, &_set_callback_cbs_keyPressEvent_1514_0);
+  methods += new qt_gsi::GenericMethod ("*keyReleaseEvent", "@hide", false, &_init_cbs_keyReleaseEvent_1514_0, &_call_cbs_keyReleaseEvent_1514_0);
+  methods += new qt_gsi::GenericMethod ("*keyReleaseEvent", "@brief Virtual method void QPushButton::keyReleaseEvent(QKeyEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_keyReleaseEvent_1514_0, &_call_cbs_keyReleaseEvent_1514_0, &_set_callback_cbs_keyReleaseEvent_1514_0);
+  methods += new qt_gsi::GenericMethod ("*leaveEvent", "@hide", false, &_init_cbs_leaveEvent_1217_0, &_call_cbs_leaveEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*leaveEvent", "@brief Virtual method void QPushButton::leaveEvent(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_leaveEvent_1217_0, &_call_cbs_leaveEvent_1217_0, &_set_callback_cbs_leaveEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*metric", "@hide", true, &_init_cbs_metric_c3445_0, &_call_cbs_metric_c3445_0);
+  methods += new qt_gsi::GenericMethod ("*metric", "@brief Virtual method int QPushButton::metric(QPaintDevice::PaintDeviceMetric)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_metric_c3445_0, &_call_cbs_metric_c3445_0, &_set_callback_cbs_metric_c3445_0);
+  methods += new qt_gsi::GenericMethod ("minimumSizeHint", "@hide", true, &_init_cbs_minimumSizeHint_c0_0, &_call_cbs_minimumSizeHint_c0_0);
+  methods += new qt_gsi::GenericMethod ("minimumSizeHint", "@brief Virtual method QSize QPushButton::minimumSizeHint()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_minimumSizeHint_c0_0, &_call_cbs_minimumSizeHint_c0_0, &_set_callback_cbs_minimumSizeHint_c0_0);
+  methods += new qt_gsi::GenericMethod ("*mouseDoubleClickEvent", "@hide", false, &_init_cbs_mouseDoubleClickEvent_1738_0, &_call_cbs_mouseDoubleClickEvent_1738_0);
+  methods += new qt_gsi::GenericMethod ("*mouseDoubleClickEvent", "@brief Virtual method void QPushButton::mouseDoubleClickEvent(QMouseEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_mouseDoubleClickEvent_1738_0, &_call_cbs_mouseDoubleClickEvent_1738_0, &_set_callback_cbs_mouseDoubleClickEvent_1738_0);
+  methods += new qt_gsi::GenericMethod ("*mouseMoveEvent", "@hide", false, &_init_cbs_mouseMoveEvent_1738_0, &_call_cbs_mouseMoveEvent_1738_0);
+  methods += new qt_gsi::GenericMethod ("*mouseMoveEvent", "@brief Virtual method void QPushButton::mouseMoveEvent(QMouseEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_mouseMoveEvent_1738_0, &_call_cbs_mouseMoveEvent_1738_0, &_set_callback_cbs_mouseMoveEvent_1738_0);
+  methods += new qt_gsi::GenericMethod ("*mousePressEvent", "@hide", false, &_init_cbs_mousePressEvent_1738_0, &_call_cbs_mousePressEvent_1738_0);
+  methods += new qt_gsi::GenericMethod ("*mousePressEvent", "@brief Virtual method void QPushButton::mousePressEvent(QMouseEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_mousePressEvent_1738_0, &_call_cbs_mousePressEvent_1738_0, &_set_callback_cbs_mousePressEvent_1738_0);
+  methods += new qt_gsi::GenericMethod ("*mouseReleaseEvent", "@hide", false, &_init_cbs_mouseReleaseEvent_1738_0, &_call_cbs_mouseReleaseEvent_1738_0);
+  methods += new qt_gsi::GenericMethod ("*mouseReleaseEvent", "@brief Virtual method void QPushButton::mouseReleaseEvent(QMouseEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_mouseReleaseEvent_1738_0, &_call_cbs_mouseReleaseEvent_1738_0, &_set_callback_cbs_mouseReleaseEvent_1738_0);
+  methods += new qt_gsi::GenericMethod ("*moveEvent", "@hide", false, &_init_cbs_moveEvent_1624_0, &_call_cbs_moveEvent_1624_0);
+  methods += new qt_gsi::GenericMethod ("*moveEvent", "@brief Virtual method void QPushButton::moveEvent(QMoveEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_moveEvent_1624_0, &_call_cbs_moveEvent_1624_0, &_set_callback_cbs_moveEvent_1624_0);
+  methods += new qt_gsi::GenericMethod ("*nativeEvent", "@hide", false, &_init_cbs_nativeEvent_4678_0, &_call_cbs_nativeEvent_4678_0);
+  methods += new qt_gsi::GenericMethod ("*nativeEvent", "@brief Virtual method bool QPushButton::nativeEvent(const QByteArray &eventType, void *message, long int *result)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_nativeEvent_4678_0, &_call_cbs_nativeEvent_4678_0, &_set_callback_cbs_nativeEvent_4678_0);
+  methods += new qt_gsi::GenericMethod ("*nextCheckState", "@hide", false, &_init_cbs_nextCheckState_0_0, &_call_cbs_nextCheckState_0_0);
+  methods += new qt_gsi::GenericMethod ("*nextCheckState", "@brief Virtual method void QPushButton::nextCheckState()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_nextCheckState_0_0, &_call_cbs_nextCheckState_0_0, &_set_callback_cbs_nextCheckState_0_0);
+  methods += new qt_gsi::GenericMethod ("paintEngine", "@hide", true, &_init_cbs_paintEngine_c0_0, &_call_cbs_paintEngine_c0_0);
+  methods += new qt_gsi::GenericMethod ("paintEngine", "@brief Virtual method QPaintEngine *QPushButton::paintEngine()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_paintEngine_c0_0, &_call_cbs_paintEngine_c0_0, &_set_callback_cbs_paintEngine_c0_0);
+  methods += new qt_gsi::GenericMethod ("*paintEvent", "@hide", false, &_init_cbs_paintEvent_1725_0, &_call_cbs_paintEvent_1725_0);
+  methods += new qt_gsi::GenericMethod ("*paintEvent", "@brief Virtual method void QPushButton::paintEvent(QPaintEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_paintEvent_1725_0, &_call_cbs_paintEvent_1725_0, &_set_callback_cbs_paintEvent_1725_0);
   methods += new qt_gsi::GenericMethod ("emit_pressed", "@brief Emitter for signal void QPushButton::pressed()\nCall this method to emit this signal.", false, &_init_emitter_pressed_0, &_call_emitter_pressed_0);
   methods += new qt_gsi::GenericMethod ("*receivers", "@brief Method int QPushButton::receivers(const char *signal)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_receivers_c1731, &_call_fp_receivers_c1731);
-  methods += new qt_gsi::GenericMethod ("*redirected", "@brief Virtual method QPaintDevice *QPushButton::redirected(QPoint *offset)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_redirected_c1225_0, &_call_cbs_redirected_c1225_0);
-  methods += new qt_gsi::GenericMethod ("*redirected", "@hide", true, &_init_cbs_redirected_c1225_0, &_call_cbs_redirected_c1225_0, &_set_callback_cbs_redirected_c1225_0);
+  methods += new qt_gsi::GenericMethod ("*redirected", "@hide", true, &_init_cbs_redirected_c1225_0, &_call_cbs_redirected_c1225_0);
+  methods += new qt_gsi::GenericMethod ("*redirected", "@brief Virtual method QPaintDevice *QPushButton::redirected(QPoint *offset)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_redirected_c1225_0, &_call_cbs_redirected_c1225_0, &_set_callback_cbs_redirected_c1225_0);
   methods += new qt_gsi::GenericMethod ("emit_released", "@brief Emitter for signal void QPushButton::released()\nCall this method to emit this signal.", false, &_init_emitter_released_0, &_call_emitter_released_0);
-  methods += new qt_gsi::GenericMethod ("*resizeEvent", "@brief Virtual method void QPushButton::resizeEvent(QResizeEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_resizeEvent_1843_0, &_call_cbs_resizeEvent_1843_0);
-  methods += new qt_gsi::GenericMethod ("*resizeEvent", "@hide", false, &_init_cbs_resizeEvent_1843_0, &_call_cbs_resizeEvent_1843_0, &_set_callback_cbs_resizeEvent_1843_0);
+  methods += new qt_gsi::GenericMethod ("*resizeEvent", "@hide", false, &_init_cbs_resizeEvent_1843_0, &_call_cbs_resizeEvent_1843_0);
+  methods += new qt_gsi::GenericMethod ("*resizeEvent", "@brief Virtual method void QPushButton::resizeEvent(QResizeEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_resizeEvent_1843_0, &_call_cbs_resizeEvent_1843_0, &_set_callback_cbs_resizeEvent_1843_0);
   methods += new qt_gsi::GenericMethod ("*sender", "@brief Method QObject *QPushButton::sender()\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_sender_c0, &_call_fp_sender_c0);
   methods += new qt_gsi::GenericMethod ("*senderSignalIndex", "@brief Method int QPushButton::senderSignalIndex()\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_senderSignalIndex_c0, &_call_fp_senderSignalIndex_c0);
-  methods += new qt_gsi::GenericMethod ("setVisible", "@brief Virtual method void QPushButton::setVisible(bool visible)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setVisible_864_0, &_call_cbs_setVisible_864_0);
-  methods += new qt_gsi::GenericMethod ("setVisible", "@hide", false, &_init_cbs_setVisible_864_0, &_call_cbs_setVisible_864_0, &_set_callback_cbs_setVisible_864_0);
-  methods += new qt_gsi::GenericMethod ("*sharedPainter", "@brief Virtual method QPainter *QPushButton::sharedPainter()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_sharedPainter_c0_0, &_call_cbs_sharedPainter_c0_0);
-  methods += new qt_gsi::GenericMethod ("*sharedPainter", "@hide", true, &_init_cbs_sharedPainter_c0_0, &_call_cbs_sharedPainter_c0_0, &_set_callback_cbs_sharedPainter_c0_0);
-  methods += new qt_gsi::GenericMethod ("*showEvent", "@brief Virtual method void QPushButton::showEvent(QShowEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_showEvent_1634_0, &_call_cbs_showEvent_1634_0);
-  methods += new qt_gsi::GenericMethod ("*showEvent", "@hide", false, &_init_cbs_showEvent_1634_0, &_call_cbs_showEvent_1634_0, &_set_callback_cbs_showEvent_1634_0);
-  methods += new qt_gsi::GenericMethod ("sizeHint", "@brief Virtual method QSize QPushButton::sizeHint()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_sizeHint_c0_0, &_call_cbs_sizeHint_c0_0);
-  methods += new qt_gsi::GenericMethod ("sizeHint", "@hide", true, &_init_cbs_sizeHint_c0_0, &_call_cbs_sizeHint_c0_0, &_set_callback_cbs_sizeHint_c0_0);
-  methods += new qt_gsi::GenericMethod ("*tabletEvent", "@brief Virtual method void QPushButton::tabletEvent(QTabletEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_tabletEvent_1821_0, &_call_cbs_tabletEvent_1821_0);
-  methods += new qt_gsi::GenericMethod ("*tabletEvent", "@hide", false, &_init_cbs_tabletEvent_1821_0, &_call_cbs_tabletEvent_1821_0, &_set_callback_cbs_tabletEvent_1821_0);
-  methods += new qt_gsi::GenericMethod ("*timerEvent", "@brief Virtual method void QPushButton::timerEvent(QTimerEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0);
-  methods += new qt_gsi::GenericMethod ("*timerEvent", "@hide", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0, &_set_callback_cbs_timerEvent_1730_0);
+  methods += new qt_gsi::GenericMethod ("setVisible", "@hide", false, &_init_cbs_setVisible_864_0, &_call_cbs_setVisible_864_0);
+  methods += new qt_gsi::GenericMethod ("setVisible", "@brief Virtual method void QPushButton::setVisible(bool visible)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setVisible_864_0, &_call_cbs_setVisible_864_0, &_set_callback_cbs_setVisible_864_0);
+  methods += new qt_gsi::GenericMethod ("*sharedPainter", "@hide", true, &_init_cbs_sharedPainter_c0_0, &_call_cbs_sharedPainter_c0_0);
+  methods += new qt_gsi::GenericMethod ("*sharedPainter", "@brief Virtual method QPainter *QPushButton::sharedPainter()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_sharedPainter_c0_0, &_call_cbs_sharedPainter_c0_0, &_set_callback_cbs_sharedPainter_c0_0);
+  methods += new qt_gsi::GenericMethod ("*showEvent", "@hide", false, &_init_cbs_showEvent_1634_0, &_call_cbs_showEvent_1634_0);
+  methods += new qt_gsi::GenericMethod ("*showEvent", "@brief Virtual method void QPushButton::showEvent(QShowEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_showEvent_1634_0, &_call_cbs_showEvent_1634_0, &_set_callback_cbs_showEvent_1634_0);
+  methods += new qt_gsi::GenericMethod ("sizeHint", "@hide", true, &_init_cbs_sizeHint_c0_0, &_call_cbs_sizeHint_c0_0);
+  methods += new qt_gsi::GenericMethod ("sizeHint", "@brief Virtual method QSize QPushButton::sizeHint()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_sizeHint_c0_0, &_call_cbs_sizeHint_c0_0, &_set_callback_cbs_sizeHint_c0_0);
+  methods += new qt_gsi::GenericMethod ("*tabletEvent", "@hide", false, &_init_cbs_tabletEvent_1821_0, &_call_cbs_tabletEvent_1821_0);
+  methods += new qt_gsi::GenericMethod ("*tabletEvent", "@brief Virtual method void QPushButton::tabletEvent(QTabletEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_tabletEvent_1821_0, &_call_cbs_tabletEvent_1821_0, &_set_callback_cbs_tabletEvent_1821_0);
+  methods += new qt_gsi::GenericMethod ("*timerEvent", "@hide", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0);
+  methods += new qt_gsi::GenericMethod ("*timerEvent", "@brief Virtual method void QPushButton::timerEvent(QTimerEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0, &_set_callback_cbs_timerEvent_1730_0);
   methods += new qt_gsi::GenericMethod ("emit_toggled", "@brief Emitter for signal void QPushButton::toggled(bool checked)\nCall this method to emit this signal.", false, &_init_emitter_toggled_864, &_call_emitter_toggled_864);
   methods += new qt_gsi::GenericMethod ("*updateMicroFocus", "@brief Method void QPushButton::updateMicroFocus()\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_updateMicroFocus_0, &_call_fp_updateMicroFocus_0);
-  methods += new qt_gsi::GenericMethod ("*wheelEvent", "@brief Virtual method void QPushButton::wheelEvent(QWheelEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_wheelEvent_1718_0, &_call_cbs_wheelEvent_1718_0);
-  methods += new qt_gsi::GenericMethod ("*wheelEvent", "@hide", false, &_init_cbs_wheelEvent_1718_0, &_call_cbs_wheelEvent_1718_0, &_set_callback_cbs_wheelEvent_1718_0);
+  methods += new qt_gsi::GenericMethod ("*wheelEvent", "@hide", false, &_init_cbs_wheelEvent_1718_0, &_call_cbs_wheelEvent_1718_0);
+  methods += new qt_gsi::GenericMethod ("*wheelEvent", "@brief Virtual method void QPushButton::wheelEvent(QWheelEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_wheelEvent_1718_0, &_call_cbs_wheelEvent_1718_0, &_set_callback_cbs_wheelEvent_1718_0);
   methods += new qt_gsi::GenericMethod ("emit_windowIconChanged", "@brief Emitter for signal void QPushButton::windowIconChanged(const QIcon &icon)\nCall this method to emit this signal.", false, &_init_emitter_windowIconChanged_1787, &_call_emitter_windowIconChanged_1787);
   methods += new qt_gsi::GenericMethod ("emit_windowIconTextChanged", "@brief Emitter for signal void QPushButton::windowIconTextChanged(const QString &iconText)\nCall this method to emit this signal.", false, &_init_emitter_windowIconTextChanged_2025, &_call_emitter_windowIconTextChanged_2025);
   methods += new qt_gsi::GenericMethod ("emit_windowTitleChanged", "@brief Emitter for signal void QPushButton::windowTitleChanged(const QString &title)\nCall this method to emit this signal.", false, &_init_emitter_windowTitleChanged_2025, &_call_emitter_windowTitleChanged_2025);

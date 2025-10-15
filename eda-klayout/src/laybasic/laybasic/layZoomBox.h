@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -26,30 +26,24 @@
 #define HDR_layZoomBox
 
 #include "layViewObject.h"
-#include "layPlugin.h"
 
 namespace lay
 {
 
-class LayoutViewBase;
+class LayoutView;
 class LayoutCanvas;
 class RubberBox;
 
 class LAYBASIC_PUBLIC ZoomService
-  : public lay::ViewService, public lay::Plugin
+  : public lay::ViewService
 {
 public: 
-  ZoomService (lay::LayoutViewBase *view);
+  ZoomService (lay::LayoutView *view);
   ~ZoomService ();
 
-  void set_colors (tl::Color background, tl::Color text);
+  void set_colors (QColor background, QColor text);
   void begin (const db::DPoint &pos);
   void begin_pan (const db::DPoint &pos);
-
-  lay::ViewService *view_service_interface ()
-  {
-    return this;
-  }
 
 private:
   virtual bool mouse_move_event (const db::DPoint &p, unsigned int buttons, bool prio);
@@ -61,7 +55,7 @@ private:
 
   db::DPoint m_p1, m_p2;
   db::DBox m_vp;
-  lay::LayoutViewBase *mp_view;
+  lay::LayoutView *mp_view;
   lay::RubberBox *mp_box;
   unsigned int m_color;
 };

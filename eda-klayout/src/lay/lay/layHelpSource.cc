@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -23,7 +23,6 @@
 
 #include "layHelpSource.h"
 #include "layApplication.h"
-#include "layVersion.h"
 
 #include "tlLog.h"
 #include "tlTimer.h"
@@ -41,7 +40,6 @@
 #include <fstream>
 
 #include <QColor>
-#include <QRegExp>
 #include <QPalette>
 #include <QApplication>
 #include <QDir>
@@ -54,9 +52,6 @@
 
 namespace lay
 {
-
-static const std::string index_url ("/index.xml");
-static const std::string search_url ("/search.xml");
 
 // --------------------------------------------------------------------------------------
 //  Some utilities
@@ -218,7 +213,7 @@ static QString topic_element = QString::fromUtf8 ("topic");
 static QString topics_element = QString::fromUtf8 ("topics");
 
 /**
- *  @brief A specialization of tl::make_element that is capable of taking a std::map::const_iterator 
+ *  @brief A specialisation of tl::make_element that is capable of taking a std::map::const_iterator 
  *
  *  The original tl::make_element gives a compiler warning (taking address of temporary)
  *  TODO: consolidate this version and tl::make_element.
@@ -274,36 +269,22 @@ HelpSource::initialize_index ()
 
     bool ok = false;
 
-    int qt = int (QT_VERSION >> 16);
-    QString help_index_cache_file = tl::to_qstring (tl::sprintf ("help-index-%s-qt%d.xml.gz", lay::Version::version (), qt));
-
-    std::string per_user_cache_file;
-    if (! lay::ApplicationBase::instance ()->appdata_path ().empty ()) {
-      per_user_cache_file = tl::to_string (QDir (tl::to_qstring (lay::ApplicationBase::instance ()->appdata_path ())).absoluteFilePath (help_index_cache_file));
-    }
+    const QString help_index_cache_file = QString::fromUtf8 ("help-index.xml");
+    std::string per_user_cache_file = tl::to_string (QDir (tl::to_qstring (lay::ApplicationBase::instance ()->appdata_path ())).absoluteFilePath (help_index_cache_file));
 
     //  Try to obtain the help index from the installation or application path
 
     std::vector<std::string> cache_files;
     cache_files.push_back (tl::to_string (QDir (tl::to_qstring (lay::ApplicationBase::instance ()->inst_path ())).absoluteFilePath (help_index_cache_file)));
-    if (! per_user_cache_file.empty ()) {
-      cache_files.push_back (per_user_cache_file);
-    }
+    cache_files.push_back (per_user_cache_file);
 
     for (std::vector<std::string>::const_iterator c = cache_files.begin (); ! ok && c != cache_files.end (); ++c) {
 
       try {
         tl::XMLFileSource in (*c);
         help_index_structure.parse (in, *this);
-        if (m_klayout_version == lay::ApplicationBase::version ()) {
-          if (tl::verbosity () >= 10) {
-            tl::info << tl::to_string (tr ("Help index initialized from ")) << *c;
-          }
+        if (m_klayout_version == lay::ApplicationBase::instance ()->version ()) {
           ok = true;
-        } else {
-          if (tl::verbosity () >= 10) {
-            tl::warn << tl::to_string (tr ("Help index ignored (wrong version) from ")) << *c;
-          }
         }
       } catch (tl::Exception &ex) {
         tl::warn << ex.msg ();
@@ -315,7 +296,7 @@ HelpSource::initialize_index ()
 
     }
 
-    if (! ok && ! per_user_cache_file.empty ()) {
+    if (! ok) {
       //  If no index is found, create one in "per_user_cache_file"
       produce_index_file (per_user_cache_file);
     }
@@ -340,11 +321,17 @@ HelpSource::~HelpSource()
 void
 HelpSource::produce_index_file (const std::string &path)
 {
-  scan ();
+  m_index.clear ();
+  m_titles.clear ();
+  m_title_map.clear ();
+  m_parent_of.clear ();
 
+  tl::AbsoluteProgress progress (tl::to_string (QObject::tr ("Initializing help index")), 1);
+  progress.can_cancel (false);
+  scan ("/index.xml", progress);
   try {
 
-    tl::OutputStream os (path, tl::OutputStream::OM_Zlib);
+    tl::OutputStream os (path, tl::OutputStream::OM_Plain);
     help_index_structure.write (os, *this);
 
   } catch (tl::Exception &ex) {
@@ -363,22 +350,10 @@ HelpSource::create_index_file (const std::string &path)
   source.produce_index_file (path);
 }
 
-void
-HelpSource::scan ()
-{
-  m_index.clear ();
-  m_titles.clear ();
-  m_title_map.clear ();
-  m_parent_of.clear ();
-
-  tl::AbsoluteProgress progress (tl::to_string (QObject::tr ("Initializing help index")), 1);
-  scan (index_url, progress);
-}
-
 std::string
 HelpSource::klayout_version () const
 {
-  return lay::ApplicationBase::version ();
+  return lay::ApplicationBase::instance ()->version ();
 }
 
 void
@@ -486,21 +461,21 @@ HelpSource::get_dom (const std::string &u)
   QString path = url.path ();
 
   for (tl::Registrar<lay::HelpProvider>::iterator cls = tl::Registrar<lay::HelpProvider>::begin (); cls != tl::Registrar<lay::HelpProvider>::end (); ++cls) {
-    if (path.startsWith (tl::to_qstring ("/" + cls->folder (this) + "/"))) {
+    if (path.startsWith (tl::to_qstring ("/" + cls->folder () + "/"))) {
       if (tl::verbosity () >= 20) {
         tl::info << "Help provider: create content for " << u;
       }
-      return cls->get (this, u);
+      return cls->get (u);
     }
   }
 
-  if (path == tl::to_qstring (search_url)) {
+  if (path == QString::fromUtf8 ("/search.xml")) {
 #if QT_VERSION >= 0x050000
     return produce_search (tl::to_string (QUrlQuery (url.query ()).queryItemValue (QString::fromUtf8 ("string")).toLower ()));
 #else
     return produce_search (tl::to_string (url.queryItemValue (QString::fromUtf8 ("string")).toLower ()));
 #endif
-  } else if (path == tl::to_qstring (index_url)) {
+  } else if (path == QString::fromUtf8 ("/index.xml")) {
     if (tl::verbosity () >= 20) {
       tl::info << "Help provider: create content for " << u;
     }
@@ -522,15 +497,11 @@ HelpSource::get_image (const std::string &u)
 {
   QResource res (resource_url (QUrl::fromEncoded (u.c_str ()).path ()));
   if (res.size () == 0) {
-    throw tl::Exception (tl::to_string (QObject::tr ("No data found for resource ")) + u);
+    throw tl::Exception (tl::to_string (QObject::tr ("ERROR: no data found for resource ")) + u);
   }
 
   QByteArray data;
-#if QT_VERSION >= 0x60000
-  if (res.compressionAlgorithm () == QResource::ZlibCompression) {
-#else
   if (res.isCompressed ()) {
-#endif
     data = qUncompress ((const unsigned char *)res.data (), (int)res.size ());
   } else {
     data = QByteArray ((const char *)res.data (), (int)res.size ());
@@ -555,15 +526,11 @@ HelpSource::get_css (const std::string &u)
 
   QResource res (resource_url (QUrl::fromEncoded (u.c_str ()).path ()));
   if (res.size () == 0) {
-    throw tl::Exception (tl::to_string (QObject::tr ("No data found for resource ")) + u);
+    throw tl::Exception (tl::to_string (QObject::tr ("ERROR: no data found for resource ")) + u);
   }
 
   QByteArray data;
-#if QT_VERSION >= 0x60000
-  if (res.compressionAlgorithm () == QResource::ZlibCompression) {
-#else
   if (res.isCompressed ()) {
-#endif
     data = qUncompress ((const unsigned char *)res.data (), (int)res.size ());
   } else {
     data = QByteArray ((const char *)res.data (), (int)res.size ());
@@ -587,33 +554,13 @@ HelpSource::get_outline (const std::string &u)
   return ol;
 }
 
-void
-HelpSource::search_completers (const std::string &string, std::list<std::string> &completers)
-{
-  size_t n = 0;
-  const size_t max_completers = 100;
-
-  //  first produce all hits with match
-  for (std::vector <IndexEntry>::const_iterator i = m_index.begin (); i < m_index.end () && n < max_completers; ++i) {
-    if (i->normalized_key.find (string) != std::string::npos) {
-      completers.push_back (i->key);
-      ++n;
-    }
-  }
-}
-
 std::string
 HelpSource::next_topic (const std::string &url)
 {
   std::string u = tl::to_string (QUrl::fromEncoded (url.c_str ()).path ());
-  for (size_t t = m_titles.size (); t > 0; ) {
-    --t;
+  for (size_t t = 0; t + 1 < m_titles.size (); ++t) {
     if (m_titles [t].first == u) {
-      if (t + 1 >= m_titles.size ()) {
-        return std::string ();
-      } else {
-        return "int:" + m_titles [t + 1].first;
-      }
+      return "int:" + m_titles [t + 1].first;
     }
   }
   return std::string ();
@@ -640,7 +587,7 @@ HelpSource::produce_main_index ()
 
   os << "<p>" << tl::to_string (QObject::tr ("Welcome to KLayout's documentation")) << "</p>" << std::endl;
   os << "<p>" << tl::to_string (QObject::tr (
-    "The documentation is organized in chapters.\n"
+    "The documentation is organised in chapters.\n"
     "For a brief introduction read the User Manual. 'Various Topics' is a collection of brief articles about specific topics.\n"
     "For Ruby programming see the 'Programming Ruby Scripts' chapter and for a complete Ruby class reference see the 'Class Index'.\n"
   ));
@@ -648,7 +595,7 @@ HelpSource::produce_main_index ()
 
   os << "<topics>" << std::endl;
   for (tl::Registrar<lay::HelpProvider>::iterator cls = tl::Registrar<lay::HelpProvider>::begin (); cls != tl::Registrar<lay::HelpProvider>::end (); ++cls) {
-    os << "<topic href=\"" << cls->index (this) << "\"/>" << std::endl;
+    os << "<topic href=\"" << cls->index () << "\"/>" << std::endl;
   }
   os << "</topics>" << std::endl;
 
@@ -1086,29 +1033,11 @@ std::vector<std::string>
 HelpSource::urls ()
 {
   std::vector<std::string> u;
-  u.push_back (index_url);
+  u.push_back ("/index.xml");
   for (std::map<std::string, std::string>::const_iterator p = m_parent_of.begin (); p != m_parent_of.end (); ++p) {
     u.push_back (p->first);
   }
   return u;
-}
-
-void
-HelpSource::set_option (const std::string &key, const tl::Variant &value)
-{
-  s_global_options[key] = value;
-}
-
-const tl::Variant &
-HelpSource::get_option (const std::string &key) const
-{
-  auto i = s_global_options.find (key);
-  if (i != s_global_options.end ()) {
-    return i->second;
-  } else {
-    static tl::Variant nil;
-    return nil;
-  }
 }
 
 }

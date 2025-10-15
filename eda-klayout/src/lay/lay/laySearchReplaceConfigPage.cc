@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,6 @@
 
 
 #include "laySearchReplaceConfigPage.h"
-#include "layDispatcher.h"
 
 namespace lay
 {
@@ -77,7 +76,7 @@ SearchReplaceConfigPage::SearchReplaceConfigPage (QWidget *parent)
 }
 
 void 
-SearchReplaceConfigPage::setup (lay::Dispatcher *root)
+SearchReplaceConfigPage::setup (lay::PluginRoot *root)
 {
   std::string value;
 
@@ -87,9 +86,9 @@ SearchReplaceConfigPage::setup (lay::Dispatcher *root)
   cbx_window->setCurrentIndex (int (wmode));
 
   //  window dimension
-  std::string wdim_str;
-  root->config_get (cfg_sr_window_dim, wdim_str);
-  mrg_window->set_margin (lay::Margin::from_string (wdim_str));
+  double wdim = 1.0;
+  root->config_get (cfg_sr_window_dim, wdim);
+  le_window->setText (tl::to_qstring (tl::to_string (wdim)));
     
   //  max. instance count
   unsigned int max_item_count = 1000;
@@ -103,19 +102,20 @@ SearchReplaceConfigPage::setup (lay::Dispatcher *root)
 void
 SearchReplaceConfigPage::window_changed (int m)
 {
-  mrg_window->setEnabled (m == int (SearchReplaceDialog::FitMarker) || m == int (SearchReplaceDialog::CenterSize));
+  le_window->setEnabled (m == int (SearchReplaceDialog::FitMarker) || m == int (SearchReplaceDialog::CenterSize));
 }
 
 void 
-SearchReplaceConfigPage::commit (lay::Dispatcher *root)
+SearchReplaceConfigPage::commit (lay::PluginRoot *root)
 {
-  lay::Margin dim = mrg_window->get_margin ();
+  double dim = 1.0;
+  tl::from_string (tl::to_string (le_window->text ()), dim);
 
   unsigned int max_item_count = 1000;
-  tl::from_string_ext (tl::to_string (le_max_items->text ()), max_item_count);
+  tl::from_string (tl::to_string (le_max_items->text ()), max_item_count);
 
   root->config_set (cfg_sr_window_mode, SearchReplaceDialog::window_type (cbx_window->currentIndex ()), SearchReplaceWindowModeConverter ());
-  root->config_set (cfg_sr_window_dim, dim.to_string ());
+  root->config_set (cfg_sr_window_dim, dim);
   root->config_set (cfg_sr_max_item_count, max_item_count);
 }
 

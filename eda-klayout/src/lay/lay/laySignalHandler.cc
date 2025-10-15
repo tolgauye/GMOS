@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -27,8 +27,6 @@
 #include "tlException.h"
 #include "tlString.h"
 #include "tlLog.h"
-#include "tlFileUtils.h"
-#include "tlStream.h"
 
 #ifdef _WIN32
 #  include <windows.h>
@@ -299,6 +297,16 @@ void signal_handler (int signo, siginfo_t *si, void *)
             lay::Version::name () + " " +
             lay::Version::version () + " (" + lay::Version::subversion () + ")\n";
 
+  std::auto_ptr<CrashMessage> msg;
+
+  bool has_gui = s_sh_has_gui && lay::ApplicationBase::instance () && lay::ApplicationBase::instance ()->has_gui ();
+
+  if (has_gui) {
+    msg.reset (new CrashMessage (0, false, tl::to_qstring (text) + QObject::tr ("\nCollecting backtrace ..")));
+    msg->show ();
+    lay::ApplicationBase::instance ()->qapp_gui ()->setOverrideCursor (Qt::WaitCursor);
+  }
+
   text += std::string ("\nBacktrace:\n");
 
 #if 0
@@ -324,6 +332,14 @@ void signal_handler (int signo, siginfo_t *si, void *)
   bool has_addr2line = true;
   for (size_t i = 0; i < nptrs; ++i) {
 
+    if (has_gui) {
+      lay::ApplicationBase::instance ()->qapp_gui ()->processEvents ();
+      if (msg->is_cancel_pressed ()) {
+        text += "...\n";
+        break;
+      }
+    }
+
     Dl_info info;
     dladdr (array [i], &info);
 
@@ -335,7 +351,7 @@ void signal_handler (int signo, siginfo_t *si, void *)
 
       if (has_addr2line) {
 
-        //  two tries: one with the relative address (for shared object) and one with
+        //  two tries: one with the relativew address (for shared object) and one with
         //  absolute address.
         //  TODO: is there a better way to decide how to use addr2line (with executables)?
         for (int abs_addr = 0; abs_addr < 2; ++abs_addr) {
@@ -391,25 +407,9 @@ void signal_handler (int signo, siginfo_t *si, void *)
 
 #endif
 
-  try {
-
-    //  write crash log
-
-    std::string crash_log = tl::combine_path (lay::ApplicationBase::instance () ? lay::ApplicationBase::instance ()->appdata_path () : ".", "klayout_crash.log");
-
-    tl::OutputStream os (crash_log, tl::OutputStream::OM_Plain, true);
-    os << text;
-
-    text += "\nCrash log written to " + crash_log;
-
-  } catch (...) {
-    //  .. ignore errors
-  }
-
-  tl::error << text << tl::noendl;
-
-  bool has_gui = s_sh_has_gui && lay::ApplicationBase::instance () && lay::ApplicationBase::instance ()->has_gui ();
   if (has_gui) {
+
+    lay::ApplicationBase::instance ()->qapp_gui ()->setOverrideCursor (QCursor ());
 
     //  YES! I! KNOW!
     //  In a signal handler you shall not do fancy stuff (in particular not
@@ -418,10 +418,8 @@ void signal_handler (int signo, siginfo_t *si, void *)
     //  from our stack frames) and everything is better than just core dumping.
     //  Isn't it?
 
-    lay::ApplicationBase::instance ()->qapp_gui ()->setOverrideCursor (QCursor ());
-
-    std::unique_ptr<CrashMessage> msg;
-    msg.reset (new CrashMessage (0, can_resume, tl::to_qstring (text)));
+    msg->set_text (tl::to_qstring (text));
+    msg->set_can_resume (can_resume);
 
     if (! msg->exec ()) {
 
@@ -440,6 +438,7 @@ void signal_handler (int signo, siginfo_t *si, void *)
 
   } else {
 
+    tl::error << text << tl::noendl;
     _exit (signo);
 
   }
@@ -448,10 +447,12 @@ void signal_handler (int signo, siginfo_t *si, void *)
 void install_signal_handlers ()
 {
   struct sigaction act;
-  memset(&act, 0, sizeof(struct sigaction));
   act.sa_sigaction = signal_handler;
   sigemptyset (&act.sa_mask);
   act.sa_flags = SA_SIGINFO;
+#if !defined(__APPLE__) && !defined(__OpenBSD__)
+  act.sa_restorer = 0;
+#endif
 
   sigaction (SIGSEGV, &act, NULL);
   sigaction (SIGILL, &act, NULL);

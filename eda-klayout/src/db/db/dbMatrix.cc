@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -37,16 +37,14 @@ inline double mnorm (double x)
   return fabs (x) < 1e-14 ? 0.0 : x;
 }
 
-template <class C>
 std::string 
-matrix_2d<C>::to_string () const
+Matrix2d::to_string () const
 {
   return tl::sprintf ("(%.12g,%.12g) (%.12g,%.12g)", mnorm (m_m11), mnorm (m_m12), mnorm (m_m21), mnorm (m_m22));
 }
 
-template <class C>
-std::pair<double, double>
-matrix_2d<C>::mag2 () const
+std::pair<double, double> 
+Matrix2d::mag () const
 {
   double s1 = sqrt (m_m11 * m_m11 + m_m21 * m_m21);
   double s2 = sqrt (m_m12 * m_m12 + m_m22 * m_m22);
@@ -54,18 +52,16 @@ matrix_2d<C>::mag2 () const
   return std::make_pair (n * s1, n * s2);
 }
 
-template <class C>
 bool
-matrix_2d<C>::has_rotation () const
+Matrix2d::has_rotation () const
 {
   return fabs (m_m11 - 1.0) > 1e-10 || fabs (m_m12) > 1e-10 || fabs (m_m21) > 1e-10 || fabs (m_m22 - 1.0) > 1e-10;
 }
 
-template <class C>
-double
-matrix_2d<C>::angle () const
+double 
+Matrix2d::angle () const
 {
-  std::pair <double, double> m = mag2 ();
+  std::pair <double, double> m = mag ();
   double u1 = m.first;
   double u2 = is_mirror () ? -m.second : m.second;
   double n11 = m_m11 / u1;
@@ -86,19 +82,17 @@ matrix_2d<C>::angle () const
   return 180.0 * atan2 (sin_a, cos_a) / M_PI;
 }
 
-template <class C>
-matrix_2d<C>
-matrix_2d<C>::rotation (double a)
+Matrix2d
+Matrix2d::rotation (double a)
 {
   a *= M_PI / 180.0;
   return Matrix2d (cos (a), -sin (a), sin (a), cos (a));
 }
 
-template <class C>
-bool
-matrix_2d<C>::has_shear () const
+bool 
+Matrix2d::has_shear () const
 {
-  std::pair <double, double> m = mag2 ();
+  std::pair <double, double> m = mag ();
   double u1 = m.first;
   double u2 = is_mirror () ? -m.second : m.second;
   double n11 = m_m11 / u1;
@@ -110,11 +104,10 @@ matrix_2d<C>::has_shear () const
   return fabs (fsin_a) > 1e-10;
 }
 
-template <class C>
-double
-matrix_2d<C>::shear_angle () const
+double 
+Matrix2d::shear_angle () const
 {
-  std::pair <double, double> m = mag2 ();
+  std::pair <double, double> m = mag ();
   double u1 = m.first;
   double u2 = is_mirror () ? -m.second : m.second;
   double n11 = m_m11 / u1;
@@ -131,9 +124,8 @@ matrix_2d<C>::shear_angle () const
   return 180.0 * atan2 (fsin_a, fcos_a) / M_PI;
 }
 
-template <class C>
-matrix_2d<C>
-matrix_2d<C>::shear (double a)
+Matrix2d
+Matrix2d::shear (double a)
 {
   a *= M_PI / 180.0;
   double cos_a = cos (a);
@@ -142,32 +134,21 @@ matrix_2d<C>::shear (double a)
   return Matrix2d (f * cos_a, f * sin_a, f * sin_a, f * cos_a);
 }
 
-template <class C>
-bool
-matrix_2d<C>::is_ortho () const
+bool 
+Matrix2d::is_ortho () const
 {
   return fabs (m_m11 * m_m12 + m_m21 * m_m22) < 1e-10 && fabs (m_m11 * m_m12) < 1e-10 && fabs (m_m21 * m_m22) < 1e-10; 
 }
 
-template <class C>
-bool
-matrix_2d<C>::is_unity () const
-{
-  static matrix_2d<C> u;
-  return equal (u);
-}
-
-template <class C>
-bool
-matrix_2d<C>::equal (const matrix_2d<C> &d) const
+bool 
+Matrix2d::equal (const Matrix2d &d) const
 {
   return fabs (m_m11 - d.m_m11) < 1e-10 && fabs (m_m12 - d.m_m12) < 1e-10 && 
          fabs (m_m21 - d.m_m21) < 1e-10 && fabs (m_m22 - d.m_m22) < 1e-10;
 }
 
-template <class C>
-bool
-matrix_2d<C>::less (const matrix_2d<C> &d) const
+bool 
+Matrix2d::less (const Matrix2d &d) const
 {
   if (fabs (m_m11 - d.m_m11) > 1e-10) {
     return m_m11 < d.m_m11;
@@ -184,14 +165,10 @@ matrix_2d<C>::less (const matrix_2d<C> &d) const
   return false;
 }
 
-template class matrix_2d<db::Coord>;
-template class matrix_2d<db::DCoord>;
-
 // --------------------------------------------------------------------------------------------
 
-template <class C>
-double
-matrix_3d<C>::det () const
+double 
+Matrix3d::det () const
 {
   double d = 0.0;
   for (int i0 = 0; i0 < 3; ++i0) {
@@ -205,9 +182,8 @@ matrix_3d<C>::det () const
   return d;
 }
 
-template <class C>
-db::vector<C>
-matrix_3d<C>::trans (const db::point<C> &p, const db::vector<C> &v) const
+db::DVector
+Matrix3d::trans (const db::DPoint &p, const db::DVector &v) const
 {
   double t[2][2];
   for (int i = 0; i < 2; ++i) {
@@ -215,12 +191,11 @@ matrix_3d<C>::trans (const db::point<C> &p, const db::vector<C> &v) const
       t[i][j] = (m_m[i][j] * m_m[2][1 - j] - m_m[i][1 - j] * m_m[2][j]) * (j == 0 ? p.y() : p.x()) + (m_m[2][2] * m_m[i][j] - m_m[i][2] * m_m[2][j]);
     }
   }
-  return db::vector<C>(v.x() * t[0][0] + v.y() * t[0][1], v.x() * t[1][0] + v.y() * t[1][1]);
+  return db::DVector(v.x() * t[0][0] + v.y() * t[0][1], v.x() * t[1][0] + v.y() * t[1][1]);
 }
 
-template <class C>
 bool
-matrix_3d<C>::can_transform (const db::point<C> &p) const
+Matrix3d::can_transform (const db::DPoint &p) const
 {
   double r[3] = { 0, 0, 0 };
   for (int i = 0; i < 3; ++i) {
@@ -230,9 +205,8 @@ matrix_3d<C>::can_transform (const db::point<C> &p) const
   return (r[2] > (std::abs (r[0]) + std::abs (r[1])) * 1e-10);
 }
 
-template <class C>
-db::point<C>
-matrix_3d<C>::trans (const db::point<C> &p) const
+db::DPoint 
+Matrix3d::trans (const db::DPoint &p) const
 {
   double r[3] = { 0, 0, 0 };
   for (int i = 0; i < 3; ++i) {
@@ -241,15 +215,14 @@ matrix_3d<C>::trans (const db::point<C> &p) const
 
   //  safe approximation to the forbidden area where z <= 0
   double z = std::max (r [2], (std::abs (r[0]) + std::abs (r[1])) * 1e-10);
-  return db::point<C> (r[0] / z, r[1] / z);
+  return db::DPoint (r[0] / z, r[1] / z);
 }
 
-template <class C>
-matrix_3d<C>
-matrix_3d<C>::inverted () const
+Matrix3d 
+Matrix3d::inverted () const
 {
   double m[3][3];
-  matrix_3d<C> r (1.0);
+  Matrix3d r (1.0);
 
   for (int i = 0; i < 3; ++i) {
     for (int j = 0; j < 3; ++j) {
@@ -295,88 +268,71 @@ matrix_3d<C>::inverted () const
   return r;
 }
 
-template <class C>
-db::vector<C>
-matrix_3d<C>::disp () const
+db::DVector
+Matrix3d::disp () const
 {
-  return db::vector<C> (m_m[0][2] / m_m[2][2], m_m[1][2] / m_m[2][2]);
+  return db::DVector (m_m[0][2] / m_m[2][2], m_m[1][2] / m_m[2][2]);
 }
 
-template <class C>
-double
-matrix_3d<C>::perspective_tilt_x (double z) const
+double 
+Matrix3d::perspective_tilt_x (double z) const
 {
-  db::vector<C> d = disp ();
-  db::matrix_3d<C> m = db::matrix_3d<C>::disp (-d) * *this;
+  db::DVector d = disp ();
+  db::Matrix3d m = db::Matrix3d::disp (-d) * *this;
   return 180 * atan (z * (m.m ()[2][0] * m.m ()[1][1] - m.m ()[2][1] * m.m ()[1][0]) / (m.m ()[0][0] * m.m ()[1][1] - m.m ()[0][1] * m.m ()[1][0])) / M_PI;
 }
 
-template <class C>
-double
-matrix_3d<C>::perspective_tilt_y (double z) const
+double 
+Matrix3d::perspective_tilt_y (double z) const
 {
-  db::vector<C> d = disp ();
-  db::matrix_3d<C> m = db::matrix_3d<C>::disp (-d) * *this;
+  db::DVector d = disp ();
+  db::Matrix3d m = db::Matrix3d::disp (-d) * *this;
   return 180 * atan (z * (m.m ()[2][1] * m.m ()[0][0] - m.m ()[2][0] * m.m ()[0][1]) / (m.m ()[0][0] * m.m ()[1][1] - m.m ()[0][1] * m.m ()[1][0])) / M_PI;
 }
 
-template <class C>
-bool
-matrix_3d<C>::has_perspective () const
+bool 
+Matrix3d::has_perspective () const
 {
   return fabs (m_m[2][0]) + fabs (m_m[2][1]) > 1e-10;
 }
 
-template <class C>
-matrix_3d<C>
-matrix_3d<C>::perspective (double tx, double ty, double z)
+Matrix3d 
+Matrix3d::perspective (double tx, double ty, double z)
 {
   tx *= M_PI / 180.0;
   ty *= M_PI / 180.0;
-  return matrix_3d<C> (1.0, 0.0, 0.0, 1.0, 0.0, 0.0, tan (tx) / z, tan (ty) / z);
+  return Matrix3d (1.0, 0.0, 0.0, 1.0, 0.0, 0.0, tan (tx) / z, tan (ty) / z);
 }
 
-template <class C>
-matrix_2d<C>
-matrix_3d<C>::m2d () const
+Matrix2d 
+Matrix3d::m2d () const
 {
-  db::vector<C> d = disp ();
-  db::matrix_3d<C> m = db::matrix_3d<C>::disp (-d) * *this;
+  db::DVector d = disp ();
+  db::Matrix3d m = db::Matrix3d::disp (-d) * *this;
 
   if (has_perspective ()) {
-    m = matrix_3d<C>::perspective (-perspective_tilt_x (1.0), -perspective_tilt_y (1.0), 1.0) * m;
+    m = Matrix3d::perspective (-perspective_tilt_x (1.0), -perspective_tilt_y (1.0), 1.0) * m;
   }
 
-  return matrix_2d<C> (m.m_m[0][0] / m.m_m[2][2], m.m_m[0][1] / m.m_m[2][2], m.m_m[1][0] / m.m_m[2][2], m.m_m[1][1] / m.m_m[2][2]);
+  return Matrix2d (m.m_m[0][0] / m.m_m[2][2], m.m_m[0][1] / m.m_m[2][2], m.m_m[1][0] / m.m_m[2][2], m.m_m[1][1] / m.m_m[2][2]);
 }
 
-template <class C>
-std::string
-matrix_3d<C>::to_string () const
+std::string 
+Matrix3d::to_string () const
 {
   return tl::sprintf ("(%.12g,%.12g,%.12g)", mnorm (m_m[0][0]), mnorm (m_m[0][1]), mnorm (m_m[0][2])) + " " 
        + tl::sprintf ("(%.12g,%.12g,%.12g)", mnorm (m_m[1][0]), mnorm (m_m[1][1]), mnorm (m_m[1][2])) + " "
        + tl::sprintf ("(%.12g,%.12g,%.12g)", mnorm (m_m[2][0]), mnorm (m_m[2][1]), mnorm (m_m[2][2]));
 }
 
-template <class C>
-bool
-matrix_3d<C>::is_ortho () const
+bool 
+Matrix3d::is_ortho () const
 {
   return ! has_perspective () && m2d ().is_ortho ();
 }
 
-template <class C>
-bool
-matrix_3d<C>::is_unity () const
-{
-  static matrix_3d<C> u;
-  return equal (u);
-}
-
-template <class C>
-bool
-matrix_3d<C>::equal (const matrix_3d<C> &d) const
+bool 
+Matrix3d::equal (const Matrix3d &d) const
 {
   for (unsigned int i = 0; i < 3; ++i) {
     for (unsigned int j = 0; j < 3; ++j) {
@@ -388,9 +344,8 @@ matrix_3d<C>::equal (const matrix_3d<C> &d) const
   return true;
 }
 
-template <class C>
-bool
-matrix_3d<C>::less (const matrix_3d<C> &d) const
+bool 
+Matrix3d::less (const Matrix3d &d) const
 {
   for (unsigned int i = 0; i < 3; ++i) {
     for (unsigned int j = 0; j < 3; ++j) {
@@ -401,9 +356,6 @@ matrix_3d<C>::less (const matrix_3d<C> &d) const
   }
   return false;
 }
-
-template class matrix_3d<db::Coord>;
-template class matrix_3d<db::DCoord>;
 
 // --------------------------------------------------------------------------------------------
 
@@ -823,7 +775,7 @@ adjust_matrix (Matrix3d &matrix, const std::vector <db::DPoint> &landmarks_befor
 
 namespace tl
 {
-  template<class C> bool test_extractor_impl_matrix2d (tl::Extractor &ex, db::matrix_2d<C> &m)
+  template<> bool test_extractor_impl (tl::Extractor &ex, db::Matrix2d &m)
   {
     double m11 = 0.0, m12 = 0.0, m21 = 0.0, m22 = 0.0;
 
@@ -859,18 +811,18 @@ namespace tl
       return false;
     }
 
-    m = db::matrix_2d<C> (m11, m12, m21, m22);
+    m = db::Matrix2d (m11, m12, m21, m22);
     return true;
   }
 
-  template<class C> void extractor_impl_matrix2d (tl::Extractor &ex, db::matrix_2d<C> &m)
+  template<> void extractor_impl (tl::Extractor &ex, db::Matrix2d &m)
   {
     if (! test_extractor_impl (ex, m)) {
       ex.error (tl::to_string (tr ("Expected a 2d matrix specification")));
     }
   }
 
-  template<class C> bool test_extractor_impl_matrix3d (tl::Extractor &ex, db::matrix_3d<C> &m)
+  template<> bool test_extractor_impl (tl::Extractor &ex, db::Matrix3d &m)
   {
     double m11 = 0.0, m12 = 0.0, m13 = 0.0, m21 = 0.0, m22 = 0.0, m23 = 0.0, m31 = 0.0, m32 = 0.0, m33 = 0.0;
 
@@ -940,55 +892,15 @@ namespace tl
       return false;
     }
 
-    m = db::matrix_3d<C> (m11, m12, m13, m21, m22, m23, m31, m32, m33);
+    m = db::Matrix3d (m11, m12, m13, m21, m22, m23, m31, m32, m33);
     return true;
   }
 
-  template<class C> void extractor_impl_matrix3d (tl::Extractor &ex, db::matrix_3d<C> &m)
+  template<> void extractor_impl (tl::Extractor &ex, db::Matrix3d &m)
   {
     if (! test_extractor_impl (ex, m)) {
       ex.error (tl::to_string (tr ("Expected a 3d matrix specification")));
     }
-  }
-
-  template<> void extractor_impl<db::matrix_2d<db::Coord> > (tl::Extractor &ex, db::matrix_2d<db::Coord> &m)
-  {
-    extractor_impl_matrix2d (ex, m);
-  }
-
-  template<> void extractor_impl<db::matrix_2d<db::DCoord> > (tl::Extractor &ex, db::matrix_2d<db::DCoord> &m)
-  {
-    extractor_impl_matrix2d (ex, m);
-  }
-
-  template<> void extractor_impl<db::matrix_3d<db::Coord> > (tl::Extractor &ex, db::matrix_3d<db::Coord> &m)
-  {
-    extractor_impl_matrix3d (ex, m);
-  }
-
-  template<> void extractor_impl<db::matrix_3d<db::DCoord> > (tl::Extractor &ex, db::matrix_3d<db::DCoord> &m)
-  {
-    extractor_impl_matrix3d (ex, m);
-  }
-
-  template<> bool test_extractor_impl<db::matrix_2d<db::Coord> > (tl::Extractor &ex, db::matrix_2d<db::Coord> &m)
-  {
-    return test_extractor_impl_matrix2d (ex, m);
-  }
-
-  template<> bool test_extractor_impl<db::matrix_2d<db::DCoord> > (tl::Extractor &ex, db::matrix_2d<db::DCoord> &m)
-  {
-    return test_extractor_impl_matrix2d (ex, m);
-  }
-
-  template<> bool test_extractor_impl<db::matrix_3d<db::Coord> > (tl::Extractor &ex, db::matrix_3d<db::Coord> &m)
-  {
-    return test_extractor_impl_matrix3d (ex, m);
-  }
-
-  template<> bool test_extractor_impl<db::matrix_3d<db::DCoord> > (tl::Extractor &ex, db::matrix_3d<db::DCoord> &m)
-  {
-    return test_extractor_impl_matrix3d (ex, m);
   }
 }
 

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -30,10 +30,9 @@
 #include <QObject>
 #include <QBuffer>
 #include <QByteArray>
-#include <QTimer>
-#include <QNetworkAccessManager>
 #include <memory>
 
+class QNetworkAccessManager;
 class QNetworkReply;
 class QNetworkProxy;
 class QAuthenticator;
@@ -42,7 +41,6 @@ namespace tl
 {
 
 class HttpCredentialProvider;
-class InputHttpStream;
 
 class AuthenticationHandler
   : public QObject
@@ -67,7 +65,7 @@ class InputHttpStreamPrivateData
 Q_OBJECT
 
 public:
-  InputHttpStreamPrivateData (InputHttpStream *stream, const std::string &url);
+  InputHttpStreamPrivateData (const std::string &url);
 
   virtual ~InputHttpStreamPrivateData ();
 
@@ -77,8 +75,6 @@ public:
   void set_data (const char *data);
   void set_data (const char *data, size_t n);
   void add_header (const std::string &name, const std::string &value);
-  void set_timeout (double to);
-  double timeout () const;
 
   tl::Event &ready ()
   {
@@ -107,24 +103,16 @@ public:
 
 private slots:
   void finished (QNetworkReply *);
-  void resend ();
-#if !defined(QT_NO_SSL)
-  void sslErrors (QNetworkReply *reply, const QList<QSslError> &errors);
-#endif
 
 private:
   std::string m_url;
   QNetworkReply *mp_reply;
-  std::unique_ptr<QNetworkReply> mp_active_reply;
+  std::auto_ptr<QNetworkReply> mp_active_reply;
   QByteArray m_request;
   QByteArray m_data;
   QBuffer *mp_buffer;
   std::map<std::string, std::string> m_headers;
   tl::Event m_ready;
-  QTimer *mp_resend_timer;
-  std::string m_ssl_errors;
-  double m_timeout;
-  InputHttpStream *mp_stream;
 
   void issue_request (const QUrl &url);
 };

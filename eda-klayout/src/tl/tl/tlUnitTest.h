@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -86,24 +86,18 @@ TL_PUBLIC bool is_debug_mode ();
 TL_PUBLIC void set_debug_mode (bool f);
 
 /**
- *  @brief Gets the path of the test source directory
+ *  @brief Gets the path of the test data
  *  This path is specified through the environment variable $TESTSRC
  */
 TL_PUBLIC std::string testsrc ();
 
 /**
- *  @brief Gets the path of the test data
- *  This path is given by "$TESTSRC/testdata"
- */
-TL_PUBLIC std::string testdata ();
-
-/**
  *  @brief Gets the path of the private test data
- *  This path is specified through the environment variable $TESTSRC, "testdata" subdirectory and the
+ *  This path is specified through the environment variable $TESTSRC and the
  *  private testdata directory. If no private test data is available, this
  *  method will throw a CancelException which makes the test skipped.
  */
-TL_PUBLIC std::string testdata_private ();
+TL_PUBLIC std::string testsrc_private ();
 
 /**
  *  @brief Gets the path to the temporary data
@@ -188,54 +182,6 @@ inline bool equals (const char *a, const std::string &b)
 }
 
 /**
- *  @brief A generic compare operator
- */
-template <class X, class Y>
-inline bool is_less (const X &a, const Y &b)
-{
-  return a < b;
-}
-
-/**
- *  @brief A specialization of the compare operator for doubles
- */
-inline bool is_less (double a, double b)
-{
-  if (equals (a, b)) {
-    return false;
-  } else {
-    return a < b;
-  }
-}
-
-/**
- *  @brief Specialization of comparison of pointers vs. integers (specifically "0")
- */
-template <class X>
-inline bool is_less (X *a, int b)
-{
-  return a == (X *) size_t (b);
-}
-
-/**
- *  @brief A specialization of comparison of double vs "anything"
- */
-template <class Y>
-inline bool is_less (double a, const Y &b)
-{
-  return is_less (a, double (b));
-}
-
-/**
- *  @brief A specialization of comparison of "anything" vs. double
- */
-template <class X>
-inline bool is_less (const X &a, double b)
-{
-  return is_less (double (a), b);
-}
-
-/**
  *  @brief A utility class to capture the warning, error and info channels
  *
  *  Instantiate this class inside a test. Then run the test and finally
@@ -245,7 +191,6 @@ class TL_PUBLIC CaptureChannel : public tl::Channel
 {
 public:
   CaptureChannel ();
-  ~CaptureChannel ();
 
   std::string captured_text () const
   {
@@ -262,11 +207,9 @@ protected:
   virtual void endl ();
   virtual void end ();
   virtual void begin ();
-  virtual void yield () { }
 
 private:
   std::ostringstream m_text;
-  int m_saved_verbosity;
 };
 
 /**
@@ -495,20 +438,6 @@ public:
     }
   }
 
-  /**
-   *  @brief Main entry point for the compare feature (EXPECT_LE, _LT, _GE, _GT)
-   */
-  template <class T1, class T2>
-  void cmp_helper (bool less, bool eq, const T1 &a, const T2 &b, const char *what_expr, const char *equals_expr, const char *file, int line)
-  {
-    bool res = (less ? tl::is_less (a, b) : tl::is_less (b, a)) || (eq && tl::equals (a, b));
-    if (! res) {
-      std::ostringstream sstr;
-      sstr << what_expr << " is not " << (less ? "less" : "greater") << (eq ? " or equal" : "") << " than " << equals_expr;
-      diff (file, line, sstr.str (), a, b);
-    }
-  }
-
 protected:
   /**
    *  @brief Returns a value indicating whether the test runs in editable mode
@@ -572,22 +501,6 @@ struct TestImpl##NAME \
     static TestImpl##NAME TestImpl_Inst##NAME; \
   } \
   void TestImpl##NAME::execute (tl::TestBase *_this)
-
-#define EXPECT_LE(WHAT,EQUALS) \
-  _this->checkpoint (__FILE__, __LINE__); \
-  _this->cmp_helper (true, true, (WHAT), (EQUALS), #WHAT, #EQUALS, __FILE__, __LINE__);
-
-#define EXPECT_LT(WHAT,EQUALS) \
-  _this->checkpoint (__FILE__, __LINE__); \
-  _this->cmp_helper (true, false, (WHAT), (EQUALS), #WHAT, #EQUALS, __FILE__, __LINE__);
-
-#define EXPECT_GE(WHAT,EQUALS) \
-  _this->checkpoint (__FILE__, __LINE__); \
-  _this->cmp_helper (false, true, (WHAT), (EQUALS), #WHAT, #EQUALS, __FILE__, __LINE__);
-
-#define EXPECT_GT(WHAT,EQUALS) \
-  _this->checkpoint (__FILE__, __LINE__); \
-  _this->cmp_helper (false, false, (WHAT), (EQUALS), #WHAT, #EQUALS, __FILE__, __LINE__);
 
 #define EXPECT_EQ(WHAT,EQUALS) \
   _this->checkpoint (__FILE__, __LINE__); \

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@
 #include <QNetworkProxy>
 #include "gsiQt.h"
 #include "gsiQtNetworkCommon.h"
+#include "gsiDeclQtNetworkTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -627,9 +628,7 @@ static gsi::Enum<QNetworkProxy::Capability> decl_QNetworkProxy_Capability_Enum (
     gsi::enum_const ("ListeningCapability", QNetworkProxy::ListeningCapability, "@brief Enum constant QNetworkProxy::ListeningCapability") +
     gsi::enum_const ("UdpTunnelingCapability", QNetworkProxy::UdpTunnelingCapability, "@brief Enum constant QNetworkProxy::UdpTunnelingCapability") +
     gsi::enum_const ("CachingCapability", QNetworkProxy::CachingCapability, "@brief Enum constant QNetworkProxy::CachingCapability") +
-    gsi::enum_const ("HostNameLookupCapability", QNetworkProxy::HostNameLookupCapability, "@brief Enum constant QNetworkProxy::HostNameLookupCapability") +
-    gsi::enum_const ("SctpTunnelingCapability", QNetworkProxy::SctpTunnelingCapability, "@brief Enum constant QNetworkProxy::SctpTunnelingCapability") +
-    gsi::enum_const ("SctpListeningCapability", QNetworkProxy::SctpListeningCapability, "@brief Enum constant QNetworkProxy::SctpListeningCapability"),
+    gsi::enum_const ("HostNameLookupCapability", QNetworkProxy::HostNameLookupCapability, "@brief Enum constant QNetworkProxy::HostNameLookupCapability"),
   "@qt\n@brief This class represents the QNetworkProxy::Capability enum");
 
 static gsi::QFlagsClass<QNetworkProxy::Capability > decl_QNetworkProxy_Capability_Enums ("QtNetwork", "QNetworkProxy_QFlags_Capability",

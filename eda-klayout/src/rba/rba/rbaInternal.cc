@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -54,7 +54,7 @@ public:
   void mark_this ();
 
 private:
-  std::map<VALUE, size_t> m_objects;
+  std::set<VALUE> m_objects;
 
   static VALUE m_klass;
   static VALUE m_instance;
@@ -84,31 +84,20 @@ LockedObjectVault::~LockedObjectVault ()
 void
 LockedObjectVault::add (VALUE object)
 {
-  auto i = m_objects.find (object);
-  if (i != m_objects.end ()) {
-    i->second += 1;
-  } else {
-    m_objects.insert (std::make_pair (object, size_t (1)));
-  }
+  m_objects.insert (object);
 }
 
 void
 LockedObjectVault::remove (VALUE object)
 {
-  auto i = m_objects.find (object);
-  if (i != m_objects.end ()) {
-    i->second -= 1;
-    if (i->second == 0) {
-      m_objects.erase (i);
-    }
-  }
+  m_objects.erase (object);
 }
 
 void
 LockedObjectVault::mark_this ()
 {
-  for (auto o = m_objects.begin (); o != m_objects.end (); ++o) {
-    rb_gc_mark (o->first);
+  for (std::set<VALUE>::iterator o = m_objects.begin (); o != m_objects.end (); ++o) {
+    rb_gc_mark (*o);
   }
 }
 
@@ -168,6 +157,90 @@ gc_unlock_object (VALUE value)
     LockedObjectVault::instance ()->remove (value);
   }
 }
+
+// --------------------------------------------------------------------------
+
+/**
+ *  @brief A final finalizer
+ *  Final destruction of finalized objects is delegated to this class.
+ *  It's main purpose is to temporarily disable C++ destruction while
+ *  in a callback. Deleting C++ objects in a callback leads to unpredictable
+ *  side effects and must be avoided.
+ */
+class InternalGC
+{
+public:
+  InternalGC ()
+    : m_enabled (true)
+  {
+    //  .. nothing yet ..
+  }
+
+  /**
+   *  @brief Enables or disables the GC
+   *  Returns the previous state
+   */
+  bool enable (bool e)
+  {
+    std::swap (e, m_enabled);
+    return e;
+  }
+
+  /**
+   *  @brief Queues (if disabled) or deletes the given object (plus all queued ones) if enabled
+   */
+  void destroy_maybe (const gsi::ClassBase *cls, void *obj)
+  {
+    if (! m_enabled) {
+      m_queue.push_back (std::make_pair (cls, obj));
+    } else {
+      m_queue.clear ();
+      cls->destroy (obj);
+      for (std::vector<std::pair<const gsi::ClassBase *, void *> >::const_iterator q = m_queue.begin (); q != m_queue.end (); ++q) {
+        q->first->destroy (q->second);
+      }
+    }
+  }
+
+private:
+  std::vector<std::pair<const gsi::ClassBase *, void *> > m_queue;
+  bool m_enabled;
+};
+
+static InternalGC s_gc;
+
+/**
+ *  @brief Destroys the object through the internal GC
+ */
+inline void destroy_object (const gsi::ClassBase *cls, void *obj)
+{
+  s_gc.destroy_maybe (cls, obj);
+}
+
+/**
+ *  @brief A GC disabler
+ *  By instantiating this object, the gc is disabled while the object is alife.
+ *  Specifically in callbacks it's important to disable the GC to avoid undesired
+ *  side effects.
+ */
+class GCDisabler
+{
+public:
+  GCDisabler (InternalGC *gc = 0)
+    : mp_gc (gc ? gc : &s_gc)
+  {
+    m_was_enabled = mp_gc->enable (false);
+  }
+
+  ~GCDisabler()
+  {
+    mp_gc->enable (m_was_enabled);
+  }
+
+private:
+  bool m_was_enabled;
+  InternalGC *mp_gc;
+};
 
 // --------------------------------------------------------------------------
 //  Proxy implementation
@@ -236,6 +309,8 @@ bool Proxy::can_call () const
 void
 Proxy::call (int id, gsi::SerialArgs &args, gsi::SerialArgs &ret) const
 {
+  GCDisabler gc_disabler;
+
   tl_assert (id < int (m_cbfuncs.size ()) && id >= 0);
 
   const gsi::MethodBase *meth = m_cbfuncs [id].method;
@@ -250,7 +325,7 @@ Proxy::call (int id, gsi::SerialArgs &args, gsi::SerialArgs &ret) const
 
     //  TODO: callbacks with default arguments?
     for (gsi::MethodBase::argument_iterator a = meth->begin_arguments (); args && a != meth->end_arguments (); ++a) {
-      rb_ary_push (argv, pull_arg (*a, 0, args, heap));
+      rb_ary_push (argv, pop_arg (*a, 0, args, heap));
     }
 
     VALUE rb_ret = rba_funcall2_checked (m_self, mid, RARRAY_LEN (argv), RARRAY_PTR (argv));
@@ -327,11 +402,7 @@ Proxy::detach ()
     }
   }
 
-  //  NOTE: m_owned = false might mean the C++ object is already destroyed. We must not
-  //  modify in this case and without is_managed() there is no way of knowing the state.
-  if (m_owned) {
-    clear_callbacks ();
-  }
+  clear_callbacks ();
 
   m_self = Qnil;
   m_obj = 0;
@@ -560,7 +631,7 @@ Proxy::set (void *obj, bool owned, bool const_ref, bool can_destroy, VALUE self)
       //  Destroy the object if we are owner. We don't destroy the object if it was locked
       //  (either because we are not owner or from C++ side using keep())
       if (prev_owned) {
-        cls->destroy (prev_obj);
+        destroy_object (cls, prev_obj);
       }
 
     }
@@ -811,15 +882,13 @@ SignalHandler::define_class (VALUE module, const char *name)
   rb_define_method (klass, "set", (ruby_func) &SignalHandler::static_assign, 1);
   rb_define_method (klass, "clear", (ruby_func) &SignalHandler::static_clear, 0);
   rb_define_method (klass, "+", (ruby_func) &SignalHandler::static_add, 1);
-  rb_define_method (klass, "add", (ruby_func) &SignalHandler::static_add, 1);
-  rb_define_method (klass, "connect", (ruby_func) &SignalHandler::static_add, 1);
   rb_define_method (klass, "-", (ruby_func) &SignalHandler::static_remove, 1);
-  rb_define_method (klass, "remove", (ruby_func) &SignalHandler::static_remove, 1);
-  rb_define_method (klass, "disconnect", (ruby_func) &SignalHandler::static_remove, 1);
 }
 
 void SignalHandler::call (const gsi::MethodBase *meth, gsi::SerialArgs &args, gsi::SerialArgs &ret) const
 {
+  GCDisabler gc_disabler;
+
   VALUE argv = rb_ary_new2 (long (std::distance (meth->begin_arguments (), meth->end_arguments ())));
   RB_GC_GUARD (argv);
 
@@ -827,7 +896,7 @@ void SignalHandler::call (const gsi::MethodBase *meth, gsi::SerialArgs &args, gs
 
   //  TODO: signals with default arguments?
   for (gsi::MethodBase::argument_iterator a = meth->begin_arguments (); args && a != meth->end_arguments (); ++a) {
-    rb_ary_push (argv, pull_arg (*a, 0, args, heap));
+    rb_ary_push (argv, pop_arg (*a, 0, args, heap));
   }
 
   //  call the signal handlers ... the last one will deliver the return value
@@ -846,34 +915,27 @@ void SignalHandler::call (const gsi::MethodBase *meth, gsi::SerialArgs &args, gs
 //  Class map management
 
 static std::map <VALUE, const gsi::ClassBase *> cls_map;
-static std::map <std::pair<const gsi::ClassBase *, bool>, VALUE> rev_cls_map;
+static std::map <const gsi::ClassBase *, VALUE> rev_cls_map;
 
-void register_class (VALUE ruby_cls, const gsi::ClassBase *gsi_cls, bool as_static)
+void register_class (VALUE ruby_cls, const gsi::ClassBase *gsi_cls)
 {
   cls_map.insert (std::make_pair (ruby_cls, gsi_cls));
-  rev_cls_map.insert (std::make_pair (std::make_pair (gsi_cls, as_static), ruby_cls));
+  rev_cls_map.insert (std::make_pair (gsi_cls, ruby_cls));
 }
 
-VALUE ruby_cls (const gsi::ClassBase *cls, bool as_static)
+VALUE ruby_cls (const gsi::ClassBase *cls)
 {
-  auto c = rev_cls_map.find (std::make_pair (cls, as_static));
+  std::map <const gsi::ClassBase *, VALUE>::const_iterator c = rev_cls_map.find (cls);
   tl_assert (c != rev_cls_map.end ());
   return c->second;
 }
 
-bool is_registered (const gsi::ClassBase *cls, bool as_static)
+bool is_registered (const gsi::ClassBase *cls)
 {
-  return rev_cls_map.find (std::make_pair (cls, as_static)) != rev_cls_map.end ();
+  return rev_cls_map.find (cls) != rev_cls_map.end ();
 }
 
 const gsi::ClassBase *find_cclass (VALUE k)
-{
-  const gsi::ClassBase *cls = find_cclass_maybe_null (k);
-  tl_assert (cls != 0);
-  return cls;
-}
-
-const gsi::ClassBase *find_cclass_maybe_null (VALUE k)
 {
   std::map <VALUE, const gsi::ClassBase *>::const_iterator cls;
 
@@ -888,7 +950,8 @@ const gsi::ClassBase *find_cclass_maybe_null (VALUE k)
     }
   }
 
-  return cls != cls_map.end () ? cls->second : 0;
+  tl_assert (cls != cls_map.end ());
+  return cls->second;
 }
 
 }

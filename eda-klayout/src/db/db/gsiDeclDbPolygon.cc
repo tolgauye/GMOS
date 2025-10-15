@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -22,233 +22,14 @@
 
 
 #include "gsiDecl.h"
-#include "gsiDeclDbPropertiesSupport.h"
 #include "dbPoint.h"
 #include "dbPolygon.h"
 #include "dbPolygonTools.h"
 #include "dbPolygonGenerators.h"
 #include "dbHash.h"
-#include "dbPLCTriangulation.h"
-#include "dbPLCConvexDecomposition.h"
 
 namespace gsi
 {
-
-const std::string hm_docstring =
-  "The Hertel-Mehlhorn decomposition starts with a Delaunay triangulation of the polygons and recombines the "
-  "triangles into convex polygons.\n"
-  "\n"
-  "The decomposition is controlled by two parameters: 'with_segments' and 'split_edges'.\n"
-  "\n"
-  "If 'with_segments' is true (the default), new segments are introduced perpendicular to the edges forming "
-  "a concave corner. If false, only diagonals (edges connecting original vertexes) are used.\n"
-  "\n"
-  "If 'split_edges' is true, the algorithm is allowed to create collinear edges in the output. In this case, "
-  "the resulting polygons may contain edges that are split into collinear partial edges. Such edges usually recombine "
-  "into longer edges when processing the polygon further. When such a recombination happens, the edges no "
-  "longer correspond to original edges or diagonals. When 'split_edges' is false (the default), the resulting "
-  "polygons will not contain collinear edges, but the decomposition will be constrained to fewer cut lines."
-  "\n"
-  "'max_area' and 'min_b' are the corresponding parameters used for the triangulation (see \\delaunay).\n"
-;
-
-const std::string delaunay_docstring =
-  "Refinement is implemented by Chew's second algorithm. A maximum area can be given. Triangles "
-  "larger than this area will be split. In addition 'skinny' triangles will be resolved where "
-  "possible. 'skinny' is defined in terms of shortest edge to circumcircle radius ratio (b). "
-  "A minimum number for b can be given. A value of 1.0 corresponds to a minimum angle of 30 degree "
-  "and is usually a good choice. The algorithm is stable up to roughly 1.2 which corresponds to "
-  "a minimum angle of abouth 37 degree.\n"
-  "\n"
-  "The minimum angle of the resulting triangles relates to the 'b' parameter as: @t min_angle = arcsin(B/2) @/t.\n"
-  "\n"
-  "Picking a value of 0.0 for max_area and min_b will "
-  "make the implementation skip the refinement step. In that case, the results are identical to "
-  "the standard constrained Delaunay triangulation.\n"
-;
-
-const std::string dbu_docstring =
-  "The 'dbu' parameter a numerical scaling parameter. It should be choosen in a way that the polygon dimensions "
-  "are \"in the order of 1\" (very roughly) after multiplication with the dbu parameter. A value of 0.001 is suitable "
-  "for polygons with typical dimensions in the order to 1000 DBU. Usually the default value is good enough.\n"
-;
-
-template <class T>
-static db::Region region_from_graph (const db::plc::Graph &plc, const T &trans)
-{
-  db::Region result;
-  result.set_merged_semantics (false);
-
-  for (auto t = plc.begin (); t != plc.end (); ++t) {
-    db::DPolygon dp = t->polygon ();
-    db::SimplePolygon sp;
-    sp.assign_hull (dp.hull ().begin (), dp.hull ().end (), trans, false);
-    result.insert (sp);
-  }
-
-  return result;
-}
-
-template <class P, class T>
-static std::vector<P> polygons_from_graph (const db::plc::Graph &plc, const T &trans)
-{
-  std::vector<P> result;
-  result.reserve (plc.num_polygons ());
-
-  for (auto t = plc.begin (); t != plc.end (); ++t) {
-    db::DPolygon dp = t->polygon ();
-    result.push_back (P ());
-    result.back ().assign_hull (dp.hull ().begin (), dp.hull ().end (), trans, false);
-  }
-
-  return result;
-}
-
-template <class C>
-static db::polygon<C> to_polygon (const db::simple_polygon<C> &sp)
-{
-  db::polygon<C> p;
-  p.assign_hull (sp.begin_hull (), sp.end_hull ());
-  return p;
-}
-
-template <class C>
-static db::polygon<C> to_polygon (const db::polygon<C> &p)
-{
-  return p;
-}
-
-template <class P>
-static db::Region hm_decompose_ipolygon (const P *p, bool with_segments, bool split_edges, double max_area, double min_b, double dbu)
-{
-  db::plc::Graph plc;
-  db::plc::ConvexDecomposition decomp (&plc);
-  db::plc::ConvexDecompositionParameters param;
-  param.with_segments = with_segments;
-  param.split_edges = split_edges;
-  param.tri_param.max_area = max_area;
-  param.tri_param.min_b = min_b;
-
-  db::CplxTrans trans = db::CplxTrans (dbu) * db::ICplxTrans (db::Trans (db::Point () - p->box ().center ()));
-
-  decomp.decompose (to_polygon (*p), param, trans);
-
-  return region_from_graph (plc, trans.inverted ());
-}
-
-template <class P>
-static std::vector<P> hm_decompose_dpolygon (const P *p, bool with_segments, bool split_edges, double max_area, double min_b)
-{
-  db::plc::Graph plc;
-  db::plc::ConvexDecomposition decomp (&plc);
-  db::plc::ConvexDecompositionParameters param;
-  param.with_segments = with_segments;
-  param.split_edges = split_edges;
-  param.tri_param.max_area = max_area;
-  param.tri_param.min_b = min_b;
-
-  db::DCplxTrans trans = db::DCplxTrans (db::DTrans (db::DPoint () - p->box ().center ()));
-
-  decomp.decompose (to_polygon (*p), param, trans);
-
-  return polygons_from_graph<P, db::DCplxTrans> (plc, trans.inverted ());
-}
-
-template <class P>
-static db::Region triangulate_ipolygon (const P *p, double max_area, double min_b, double dbu)
-{
-  db::plc::Graph tris;
-  db::plc::Triangulation triangulation (&tris);
-  db::plc::TriangulationParameters param;
-  param.min_b = min_b;
-  param.max_area = max_area * dbu * dbu;
-
-  db::CplxTrans trans = db::CplxTrans (dbu) * db::ICplxTrans (db::Trans (db::Point () - p->box ().center ()));
-
-  triangulation.triangulate (to_polygon (*p), param, trans);
-
-  return region_from_graph (tris, trans.inverted ());
-}
-
-template <class P>
-static db::Region triangulate_ipolygon_v (const P *p, const std::vector<db::Point> &vertexes, double max_area, double min_b, double dbu)
-{
-  db::plc::Graph tris;
-  db::plc::Triangulation triangulation (&tris);
-  db::plc::TriangulationParameters param;
-  param.min_b = min_b;
-  param.max_area = max_area * dbu * dbu;
-
-  db::CplxTrans trans = db::CplxTrans (dbu) * db::ICplxTrans (db::Trans (db::Point () - p->box ().center ()));
-
-  triangulation.triangulate (to_polygon (*p), vertexes, param, trans);
-
-  return region_from_graph (tris, trans.inverted ());
-}
-
-template <class P>
-static std::vector<P> triangulate_dpolygon (const P *p, double max_area = 0.0, double min_b = 0.0)
-{
-  db::plc::Graph tris;
-  db::plc::Triangulation triangulation (&tris);
-  db::plc::TriangulationParameters param;
-  param.min_b = min_b;
-  param.max_area = max_area;
-
-  db::DCplxTrans trans = db::DCplxTrans (db::DTrans (db::DPoint () - p->box ().center ()));
-
-  triangulation.triangulate (to_polygon (*p), param, trans);
-
-  return polygons_from_graph<P, db::DCplxTrans> (tris, trans.inverted ());
-}
-
-template <class P>
-static std::vector<P> triangulate_dpolygon_v (const P *p, const std::vector<db::DPoint> &vertexes, double max_area = 0.0, double min_b = 0.0)
-{
-  db::plc::Graph tris;
-  db::plc::Triangulation triangulation (&tris);
-  db::plc::TriangulationParameters param;
-  param.min_b = min_b;
-  param.max_area = max_area;
-
-  db::DCplxTrans trans = db::DCplxTrans (db::DTrans (db::DPoint () - p->box ().center ()));
-
-  triangulation.triangulate (to_polygon (*p), vertexes, param, trans);
-
-  return polygons_from_graph<P, db::DCplxTrans> (tris, trans.inverted ());
-}
-
-template <class C>
-static std::vector<C> split_poly (const C *p)
-{
-  std::vector<C> parts;
-  db::split_polygon (*p, parts);
-  return parts;
-}
-
-template <class C>
-static void break_polygon (const C &poly, size_t max_vertex_count, double max_area_ratio, std::vector<C> &result)
-{
-  if (db::suggest_split_polygon (poly, max_vertex_count, max_area_ratio)) {
-
-    std::vector<C> split_polygons;
-    db::split_polygon (poly, split_polygons);
-    for (auto p = split_polygons.begin (); p != split_polygons.end (); ++p) {
-      break_polygon (*p, max_vertex_count, max_area_ratio, result);
-    }
-
-  } else {
-    result.push_back (poly);
-  }
-}
-
-template <class C>
-static std::vector<C> break_poly (const C *p, size_t max_vertex_count, double max_area_ratio)
-{
-  std::vector<C> parts;
-  break_polygon (*p, max_vertex_count, max_area_ratio, parts);
-  return parts;
-}
 
 // ---------------------------------------------------------------
 //  simple polygon binding
@@ -280,7 +61,7 @@ struct simple_polygon_defs
     }
   }
 
-  static point_type point (const C *c, size_t p)
+  static point_type point (C *c, size_t p)
   {
     if (c->hull ().size () > p) {
       return c->hull ()[p];
@@ -289,12 +70,17 @@ struct simple_polygon_defs
     }
   }
 
-  static size_t num_points (const C *c)
+  static size_t num_points (C *c)
   {
     return c->hull ().size ();
   }
 
-  static bool is_empty (const C *c)
+  static bool is_rectilinear (C *c)
+  {
+    return c->hull ().is_rectilinear ();
+  }
+
+  static bool is_empty (C *c)
   {
     return c->hull ().size () == 0;
   }
@@ -302,7 +88,7 @@ struct simple_polygon_defs
   static C *from_string (const char *s)
   {
     tl::Extractor ex (s);
-    std::unique_ptr<C> c (new C ());
+    std::auto_ptr<C> c (new C ());
     ex.read (*c.get ());
     return c.release ();
   }
@@ -369,7 +155,7 @@ struct simple_polygon_defs
 
   static C scale (const C *p, double s)
   {
-    return C (p->transformed_ext (icomplex_trans_type (s), false /*don't compress*/));
+    return C (p->transformed (icomplex_trans_type (s), false /*don't compress*/));
   }
 
   static C *transform (C *poly, const simple_trans_type &t)
@@ -380,12 +166,12 @@ struct simple_polygon_defs
 
   static C transformed (const C *poly, const simple_trans_type &t)
   {
-    return poly->transformed_ext (t, false /*don't compress*/);
+    return poly->transformed (t, false /*don't compress*/);
   }
 
   static db::simple_polygon<double> transformed_cplx (const C *poly, const complex_trans_type &t)
   {
-    return poly->transformed_ext (t, false /*don't compress*/);
+    return poly->transformed (t, false /*don't compress*/);
   }
 
 #if defined(HAVE_64BIT_COORD)
@@ -406,26 +192,6 @@ struct simple_polygon_defs
 #endif
   {
     return poly->area2 ();
-  }
-
-#if defined(HAVE_64BIT_COORD)
-  //  workaround for missing 128bit binding of GSI
-  static double area_upper_manhattan_bound (const C *poly)
-#else
-  static area_type area_upper_manhattan_bound (const C *poly)
-#endif
-  {
-    return poly->area_upper_manhattan_bound ();
-  }
-
-#if defined(HAVE_64BIT_COORD)
-  //  workaround for missing 128bit binding of GSI
-  static double area_upper_manhattan_bound2 (const C *poly)
-#else
-  static area_type area_upper_manhattan_bound2 (const C *poly)
-#endif
-  {
-    return poly->area_upper_manhattan_bound2 ();
   }
 
   static std::vector<tl::Variant> extract_rad (const C *sp)
@@ -461,7 +227,7 @@ struct simple_polygon_defs
 
   static size_t hash_value (const C *p)
   {
-    return tl::hfunc (*p);
+    return std::hfunc (*p);
   }
 
   static bool touches_box (const C *p, const db::box<coord_type> &box)
@@ -482,6 +248,13 @@ struct simple_polygon_defs
   static bool touches_spoly (const C *p, const db::simple_polygon<coord_type> &spoly)
   {
     return db::interact (*p, spoly);
+  }
+
+  static std::vector<C> split_poly (const C *p)
+  {
+    std::vector<C> parts;
+    db::split_polygon (*p, parts);
+    return parts;
   }
 
   static gsi::Methods methods ()
@@ -513,7 +286,7 @@ struct simple_polygon_defs
       "@param box The box to convert to a polygon\n"
     ) +
     constructor ("ellipse", &ellipse, gsi::arg ("box"), gsi::arg ("n"),
-      "@brief Creates a simple polygon approximating an ellipse\n"
+      "@brief Creates a simple polygon appoximating an ellipse\n"
       "\n"
       "@param box The bounding box of the ellipse\n"
       "@param n The number of points that will be used to approximate the ellipse\n"
@@ -576,15 +349,8 @@ struct simple_polygon_defs
     method_ext ("is_empty?", &is_empty,
       "@brief Returns a value indicating whether the polygon is empty\n"
     ) +
-    method ("is_rectilinear?", &C::is_rectilinear,
+    method_ext ("is_rectilinear?", &is_rectilinear,
       "@brief Returns a value indicating whether the polygon is rectilinear\n"
-    ) +
-    method ("is_halfmanhattan?", &C::is_halfmanhattan,
-      "@brief Returns a value indicating whether the polygon is half-manhattan\n"
-      "Half-manhattan polygons have edges which are multiples of 45 degree. These polygons can be clipped at a rectangle without "
-      "potential grid snapping.\n"
-      "\n"
-      "This predicate was introduced in version 0.27.\n"
     ) +
     method_ext ("inside?", &inside, gsi::arg ("p"),
       "@brief Gets a value indicating whether the given point is inside the polygon\n"
@@ -604,7 +370,7 @@ struct simple_polygon_defs
     method ("is_box?", &C::is_box,
       "@brief Returns a value indicating whether the polygon is a simple box.\n"
       "\n"
-      "A polygon is a box if it is identical to its bounding box.\n"
+      "A polygon is a box if it is identical to it's bounding box.\n"
       "\n"
       "@return True if the polygon is a box.\n"
       "\n"
@@ -616,45 +382,45 @@ struct simple_polygon_defs
       "Returns the scaled object. All coordinates are multiplied with the given factor and if "
       "necessary rounded."
     ) +
-    method ("move", &C::move, gsi::arg ("v"),
+    method ("move", &C::move, gsi::arg ("p"),
       "@brief Moves the simple polygon.\n"
       "\n"
       "Moves the simple polygon by the given offset and returns the \n"
       "moved simple polygon. The polygon is overwritten.\n"
       "\n"
-      "@param v The distance to move the simple polygon.\n"
+      "@param p The distance to move the simple polygon.\n"
       "\n"
       "@return The moved simple polygon.\n"
     ) +
-    method_ext ("move", &move_xy, gsi::arg ("dx", 0), gsi::arg ("dy", 0),
+    method_ext ("move", &move_xy, gsi::arg ("x"), gsi::arg ("y"),
       "@brief Moves the polygon.\n"
       "\n"
       "Moves the polygon by the given offset and returns the \n"
       "moved polygon. The polygon is overwritten.\n"
       "\n"
-      "@param dx The x distance to move the polygon.\n"
-      "@param dy The y distance to move the polygon.\n"
+      "@param x The x distance to move the polygon.\n"
+      "@param y The y distance to move the polygon.\n"
       "\n"
       "@return The moved polygon (self).\n"
     ) +
-    method ("moved", &C::moved, gsi::arg ("v"),
+    method ("moved", &C::moved, gsi::arg ("p"),
       "@brief Returns the moved simple polygon\n"
       "\n"
       "Moves the simple polygon by the given offset and returns the \n"
       "moved simple polygon. The polygon is not modified.\n"
       "\n"
-      "@param v The distance to move the simple polygon.\n"
+      "@param p The distance to move the simple polygon.\n"
       "\n"
       "@return The moved simple polygon.\n"
     ) +
-    method_ext ("moved", &moved_xy, gsi::arg ("dx", 0), gsi::arg ("dy", 0),
+    method_ext ("moved", &moved_xy, gsi::arg ("x"), gsi::arg ("y"),
       "@brief Returns the moved polygon (does not modify self)\n"
       "\n"
       "Moves the polygon by the given offset and returns the \n"
       "moved polygon. The polygon is not modified.\n"
       "\n"
-      "@param dx The x distance to move the polygon.\n"
-      "@param dy The y distance to move the polygon.\n"
+      "@param x The x distance to move the polygon.\n"
+      "@param y The y distance to move the polygon.\n"
       "\n"
       "@return The moved polygon.\n"
       "\n"
@@ -740,7 +506,7 @@ struct simple_polygon_defs
       "\n"
       "This method was introduced in version 0.25.\n"
     ) +
-    method_ext ("split", &split_poly<C>,
+    method_ext ("split", &split_poly,
       "@brief Splits the polygon into two or more parts\n"
       "This method will break the polygon into parts. The exact breaking algorithm is unspecified, the "
       "result are smaller polygons of roughly equal number of points and 'less concave' nature. "
@@ -753,20 +519,6 @@ struct simple_polygon_defs
       "\n"
       "This method has been introduced in version 0.25.3."
     ) +
-    method_ext ("break", &break_poly<C>, gsi::arg ("max_vertex_count"), gsi::arg ("max_area_ratio"),
-      "@brief Splits the polygon into parts with a maximum vertex count and area ratio\n"
-      "The area ratio is the ratio between the bounding box area and the polygon area. Higher values "
-      "mean more 'skinny' polygons.\n"
-      "\n"
-      "This method will split the input polygon into pieces having a maximum of 'max_vertex_count' vertices "
-      "and an area ratio less than 'max_area_ratio'. 'max_vertex_count' can be zero. In this case the "
-      "limit is ignored. Also 'max_area_ratio' can be zero, in which case it is ignored as well.\n"
-      "\n"
-      "The method of splitting is unspecified. The algorithm will apply 'split' recursively until the "
-      "parts satisfy the limits.\n"
-      "\n"
-      "This method has been introduced in version 0.29."
-    ) +
     method_ext ("area", &area,
       "@brief Gets the area of the polygon\n"
       "The area is correct only if the polygon is not self-overlapping and the polygon is oriented clockwise."
@@ -777,12 +529,6 @@ struct simple_polygon_defs
       "Hence the double area can be expresses precisely as an integer for these types.\n"
       "\n"
       "This method has been introduced in version 0.26.1\n"
-    ) +
-    method_ext ("area_upper_manhattan_bound", &area_upper_manhattan_bound,
-      "@hide"  //  too special
-    ) +
-    method_ext ("area_upper_manhattan_bound2", &area_upper_manhattan_bound2,
-      "@hide"  //  too special
     ) +
     method ("perimeter", &C::perimeter,
       "@brief Gets the perimeter of the polygon\n"
@@ -819,34 +565,34 @@ struct simple_polygon_defs
   }
 };
 
-static db::Polygon sp_minkowski_sum_pe (const db::SimplePolygon *sp, const db::Edge &e, bool rh)
+static db::Polygon sp_minkowsky_sum_pe (const db::SimplePolygon *sp, const db::Edge &e, bool rh)
 {
   db::Polygon p;
   p.assign_hull (sp->begin_hull (), sp->end_hull (), false);
-  return db::minkowski_sum (p, e, rh);
+  return db::minkowsky_sum (p, e, rh);
 }
 
-static db::Polygon sp_minkowski_sum_pp (const db::SimplePolygon *sp, const db::SimplePolygon &spp, bool rh)
+static db::Polygon sp_minkowsky_sum_pp (const db::SimplePolygon *sp, const db::SimplePolygon &spp, bool rh)
 {
   db::Polygon p;
   p.assign_hull (sp->begin_hull (), sp->end_hull (), false);
   db::Polygon pp;
   pp.assign_hull (spp.begin_hull (), spp.end_hull (), false);
-  return db::minkowski_sum (p, pp, rh);
+  return db::minkowsky_sum (p, pp, rh);
 }
 
-static db::Polygon sp_minkowski_sum_pb (const db::SimplePolygon *sp, const db::Box &b, bool rh)
+static db::Polygon sp_minkowsky_sum_pb (const db::SimplePolygon *sp, const db::Box &b, bool rh)
 {
   db::Polygon p;
   p.assign_hull (sp->begin_hull (), sp->end_hull (), false);
-  return db::minkowski_sum (p, b, rh);
+  return db::minkowsky_sum (p, b, rh);
 }
 
-static db::Polygon sp_minkowski_sum_pc (const db::SimplePolygon *sp, const std::vector<db::Point> &c, bool rh)
+static db::Polygon sp_minkowsky_sum_pc (const db::SimplePolygon *sp, const std::vector<db::Point> &c, bool rh)
 {
   db::Polygon p;
   p.assign_hull (sp->begin_hull (), sp->end_hull (), false);
-  return db::minkowski_sum (p, c, rh);
+  return db::minkowsky_sum (p, c, rh);
 }
 
 static db::DSimplePolygon *transform_cplx_sp (db::DSimplePolygon *p, const db::DCplxTrans &t)
@@ -863,17 +609,17 @@ static db::SimplePolygon *transform_icplx_sp (db::SimplePolygon *p, const db::IC
 
 static db::SimplePolygon transformed_icplx_sp (const db::SimplePolygon *p, const db::ICplxTrans &t)
 {
-  return p->transformed_ext (t, false /*no compression*/);
+  return p->transformed (t, false /*no compression*/);
 }
 
 static db::SimplePolygon *spolygon_from_dspolygon (const db::DSimplePolygon &p)
 {
-  return new db::SimplePolygon (p, false, false /*don't remove reflected*/, false /*no normalize*/);
+  return new db::SimplePolygon (p, false);
 }
 
 static db::DSimplePolygon spolygon_to_dspolygon (const db::SimplePolygon *p, double dbu)
 {
-  return db::DSimplePolygon (*p, db::CplxTrans (dbu), false, false /*don't remove reflected*/, false /*no normalize*/);
+  return db::DSimplePolygon (*p * dbu, false);
 }
 
 Class<db::SimplePolygon> decl_SimplePolygon ("db", "SimplePolygon",
@@ -890,43 +636,43 @@ Class<db::SimplePolygon> decl_SimplePolygon ("db", "SimplePolygon",
     "\n"
     "This method has been introduced in version 0.25."
   ) +
-  method_ext ("minkowski_sum|#minkowsky_sum", &sp_minkowski_sum_pe, gsi::arg ("e"), gsi::arg ("resolve_holes"),
-    "@brief Computes the Minkowski sum of a polygon and an edge\n"
+  method_ext ("minkowsky_sum", &sp_minkowsky_sum_pe, gsi::arg ("e"), gsi::arg ("resolve_holes"),
+    "@brief Computes the Minkowsky sum of a polygon and an edge\n"
     "\n"
     "@param e The edge.\n"
     "@param resolve_holes If true, the output polygon will not contain holes, but holes are resolved by joining the holes with the hull.\n"
     "\n"
-    "@return The new polygon representing the Minkowski sum of self and e.\n"
+    "@return The new polygon representing the Minkowsky sum of self and e.\n"
     "\n"
     "This method was introduced in version 0.22.\n"
   ) +
-  method_ext ("minkowski_sum|#minkowsky_sum", &sp_minkowski_sum_pp, gsi::arg ("p"), gsi::arg ("resolve_holes"),
-    "@brief Computes the Minkowski sum of a polygon and a polygon\n"
+  method_ext ("minkowsky_sum", &sp_minkowsky_sum_pp, gsi::arg ("p"), gsi::arg ("resolve_holes"),
+    "@brief Computes the Minkowsky sum of a polygon and a polygon\n"
     "\n"
     "@param p The other polygon.\n"
     "@param resolve_holes If true, the output polygon will not contain holes, but holes are resolved by joining the holes with the hull.\n"
     "\n"
-    "@return The new polygon representing the Minkowski sum of self and p.\n"
+    "@return The new polygon representing the Minkowsky sum of self and p.\n"
     "\n"
     "This method was introduced in version 0.22.\n"
   ) +
-  method_ext ("minkowski_sum|#minkowsky_sum", &sp_minkowski_sum_pb, gsi::arg ("b"), gsi::arg ("resolve_holes"),
-    "@brief Computes the Minkowski sum of a polygon and a box\n"
+  method_ext ("minkowsky_sum", &sp_minkowsky_sum_pb, gsi::arg ("b"), gsi::arg ("resolve_holes"),
+    "@brief Computes the Minkowsky sum of a polygon and a box\n"
     "\n"
     "@param b The box.\n"
     "@param resolve_holes If true, the output polygon will not contain holes, but holes are resolved by joining the holes with the hull.\n"
     "\n"
-    "@return The new polygon representing the Minkowski sum of self and b.\n"
+    "@return The new polygon representing the Minkowsky sum of self and b.\n"
     "\n"
     "This method was introduced in version 0.22.\n"
   ) +
-  method_ext ("minkowski_sum|#minkowsky_sum", &sp_minkowski_sum_pc, gsi::arg ("c"), gsi::arg ("resolve_holes"),
-    "@brief Computes the Minkowski sum of a polygon and a contour of points (a trace)\n"
+  method_ext ("minkowsky_sum", &sp_minkowsky_sum_pc, gsi::arg ("c"), gsi::arg ("resolve_holes"),
+    "@brief Computes the Minkowsky sum of a polygon and a contour of points (a trace)\n"
     "\n"
     "@param c The contour (a series of points forming the trace).\n"
     "@param resolve_holes If true, the output polygon will not contain holes, but holes are resolved by joining the holes with the hull.\n"
     "\n"
-    "@return The new polygon representing the Minkowski sum of self and c.\n"
+    "@return The new polygon representing the Minkowsky sum of self and c.\n"
     "\n"
     "This method was introduced in version 0.22.\n"
   ) +
@@ -952,36 +698,6 @@ Class<db::SimplePolygon> decl_SimplePolygon ("db", "SimplePolygon",
     "\n"
     "This method has been introduced in version 0.18.\n"
   ) +
-  method_ext ("hm_decomposition", &hm_decompose_ipolygon<db::SimplePolygon>,
-              gsi::arg ("with_segments", true), gsi::arg ("split_edges", false),
-              gsi::arg ("max_area", 0.0), gsi::arg ("min_b", 0.0),
-              gsi::arg ("dbu", 0.001),
-    "@brief Performs a Hertel-Mehlhorn convex decomposition.\n"
-    "\n"
-    "@return A \\Region holding the polygons of the decomposition.\n"
-    "The resulting region is in 'no merged semantics' mode, "
-    "to avoid re-merging of the polygons during following operations.\n"
-    "\n" + hm_docstring + "\n" + dbu_docstring + "\n"
-    "This method has been introduced in version 0.30.1."
-  ) +
-  method_ext ("delaunay", &triangulate_ipolygon<db::SimplePolygon>, gsi::arg ("max_area", 0.0), gsi::arg ("min_b", 0.0), gsi::arg ("dbu", 0.001),
-    "@brief Performs a Delaunay triangulation of the polygon.\n"
-    "\n"
-    "@return A \\Region holding the triangles of the refined, constrained Delaunay triangulation.\n"
-    "\n" + delaunay_docstring + "\n"
-    "The area value is given in terms of DBU units.\n"
-    "\n" + dbu_docstring + "\n"
-    "This method has been introduced in version 0.30. Since version 0.30.1, the resulting region is in 'no merged semantics' mode, "
-    "to avoid re-merging of the triangles during following operations."
-  ) +
-  method_ext ("delaunay", &triangulate_ipolygon_v<db::SimplePolygon>, gsi::arg ("vertexes"), gsi::arg ("max_area", 0.0), gsi::arg ("min_b", 0.0), gsi::arg ("dbu", 0.001),
-    "@brief Performs a Delaunay triangulation of the polygon.\n"
-    "\n"
-    "This variant of the triangulation function accepts an array of additional vertexes for the triangulation.\n"
-    "\n"
-    "This method has been introduced in version 0.30. Since version 0.30.1, the resulting region is in 'no merged semantics' mode, "
-    "to avoid re-merging of the triangles during following operations."
-  ) +
   simple_polygon_defs<db::SimplePolygon>::methods (),
   "@brief A simple polygon class\n"
   "\n"
@@ -1002,46 +718,19 @@ Class<db::SimplePolygon> decl_SimplePolygon ("db", "SimplePolygon",
   "database objects."
 );
 
-static db::SimplePolygonWithProperties *new_simple_polygon_with_properties (const db::SimplePolygon &poly, db::properties_id_type pid)
-{
-  return new db::SimplePolygonWithProperties (poly, pid);
-}
-
-static db::SimplePolygonWithProperties *new_simple_polygon_with_properties2 (const db::SimplePolygon &poly, const std::map<tl::Variant, tl::Variant> &properties)
-{
-  return new db::SimplePolygonWithProperties (poly, db::properties_id (db::PropertiesSet (properties.begin (), properties.end ())));
-}
-
-Class<db::SimplePolygonWithProperties> decl_SimplePolygonWithProperties (decl_SimplePolygon, "db", "SimplePolygonWithProperties",
-  gsi::properties_support_methods<db::SimplePolygonWithProperties> () +
-  constructor ("new", &new_simple_polygon_with_properties, gsi::arg ("polygon"), gsi::arg ("properties_id", db::properties_id_type (0)),
-    "@brief Creates a new object from a property-less object and a properties ID."
-  ) +
-  constructor ("new", &new_simple_polygon_with_properties2, gsi::arg ("polygon"), gsi::arg ("properties"),
-    "@brief Creates a new object from a property-less object and a properties hash."
-  )
-  ,
-  "@brief A SimplePolygon object with properties attached.\n"
-  "This class represents a combination of a SimplePolygon object an user properties. User properties are "
-  "stored in form of a properties ID. Convenience methods are provided to manipulate or retrieve "
-  "user properties directly.\n"
-  "\n"
-  "This class has been introduced in version 0.30."
-);
-
 static db::DSimplePolygon *dspolygon_from_ispolygon (const db::SimplePolygon &p)
 {
-  return new db::DSimplePolygon (p, false, false /*don't remove reflected*/, false /*no normalize*/);
+  return new db::DSimplePolygon (p, false);
 }
 
 static db::SimplePolygon dspolygon_to_spolygon (const db::DSimplePolygon *p, double dbu)
 {
-  return db::SimplePolygon (*p, db::VCplxTrans (1.0 / dbu), false, false /*don't remove reflected*/, false /*no normalize*/);
+  return db::SimplePolygon (*p * (1.0 / dbu), false);
 }
 
 static db::SimplePolygon transformed_vplx_sp (const db::DSimplePolygon *p, const db::VCplxTrans &t)
 {
-  return p->transformed_ext (t, false /*no compression*/);
+  return p->transformed (t, false /*no compression*/);
 }
 
 Class<db::DSimplePolygon> decl_DSimplePolygon ("db", "DSimplePolygon",
@@ -1077,29 +766,6 @@ Class<db::DSimplePolygon> decl_DSimplePolygon ("db", "DSimplePolygon",
     "\n"
     "This method has been introduced in version 0.25.\n"
   ) +
-  method_ext ("hm_decomposition", &hm_decompose_dpolygon<db::DSimplePolygon>,
-              gsi::arg ("with_segments", true), gsi::arg ("split_edges", false),
-              gsi::arg ("max_area", 0.0), gsi::arg ("min_b", 0.0),
-    "@brief Performs a Hertel-Mehlhorn convex decomposition.\n"
-    "\n"
-    "@return An array holding the polygons of the decomposition.\n"
-    "\n" + hm_docstring + "\n"
-    "This method has been introduced in version 0.30.1."
-  ) +
-  method_ext ("delaunay", &triangulate_dpolygon<db::DSimplePolygon>, gsi::arg ("max_area", 0.0), gsi::arg ("min_b", 0.0),
-    "@brief Performs a Delaunay triangulation of the polygon.\n"
-    "\n"
-    "@return An array of triangular polygons of the refined, constrained Delaunay triangulation.\n"
-    "\n" + delaunay_docstring + "\n"
-    "This method has been introduced in version 0.30."
-  ) +
-  method_ext ("delaunay", &triangulate_dpolygon_v<db::DSimplePolygon>, gsi::arg ("vertexes"), gsi::arg ("max_area", 0.0), gsi::arg ("min_b", 0.0),
-    "@brief Performs a Delaunay triangulation of the polygon.\n"
-    "\n"
-    "This variant of the triangulation function accepts an array of additional vertexes for the triangulation.\n"
-    "\n"
-    "This method has been introduced in version 0.30."
-  ) +
   simple_polygon_defs<db::DSimplePolygon>::methods (),
   "@brief A simple polygon class\n"
   "\n"
@@ -1118,33 +784,6 @@ Class<db::DSimplePolygon> decl_DSimplePolygon ("db", "DSimplePolygon",
   "\n"
   "See @<a href=\"/programming/database_api.xml\">The Database API@</a> for more details about the "
   "database objects."
-);
-
-static db::DSimplePolygonWithProperties *new_dsimple_polygon_with_properties (const db::DSimplePolygon &poly, db::properties_id_type pid)
-{
-  return new db::DSimplePolygonWithProperties (poly, pid);
-}
-
-static db::DSimplePolygonWithProperties *new_dsimple_polygon_with_properties2 (const db::DSimplePolygon &poly, const std::map<tl::Variant, tl::Variant> &properties)
-{
-  return new db::DSimplePolygonWithProperties (poly, db::properties_id (db::PropertiesSet (properties.begin (), properties.end ())));
-}
-
-Class<db::DSimplePolygonWithProperties> decl_DSimplePolygonWithProperties (decl_DSimplePolygon, "db", "DSimplePolygonWithProperties",
-  gsi::properties_support_methods<db::DSimplePolygonWithProperties> () +
-  constructor ("new", &new_dsimple_polygon_with_properties, gsi::arg ("polygon"), gsi::arg ("properties_id", db::properties_id_type (0)),
-    "@brief Creates a new object from a property-less object and a properties ID."
-  ) +
-  constructor ("new", &new_dsimple_polygon_with_properties2, gsi::arg ("polygon"), gsi::arg ("properties"),
-    "@brief Creates a new object from a property-less object and a properties hash."
-  )
-  ,
-  "@brief A DSimplePolygon object with properties attached.\n"
-  "This class represents a combination of a DSimplePolygon object an user properties. User properties are "
-  "stored in form of a properties ID. Convenience methods are provided to manipulate or retrieve "
-  "user properties directly.\n"
-  "\n"
-  "This class has been introduced in version 0.30."
 );
 
 // ---------------------------------------------------------------
@@ -1227,17 +866,22 @@ struct polygon_defs
     }
   }
 
-  static size_t num_points (const C *c)
+  static size_t num_points (C *c)
   {
     return c->vertices ();
   }
 
-  static bool is_empty (const C *c)
+  static bool is_rectilinear (C *c)
+  {
+    return c->is_rectilinear ();
+  }
+
+  static bool is_empty (C *c)
   {
     return c->vertices () == 0;
   }
 
-  static point_type point_hull (const C *c, size_t p)
+  static point_type point_hull (C *c, size_t p)
   {
     if (c->hull ().size () > p) {
       return c->hull ()[p];
@@ -1246,7 +890,7 @@ struct polygon_defs
     }
   }
 
-  static point_type point_hole (const C *c, unsigned int n, size_t p)
+  static point_type point_hole (C *c, unsigned int n, size_t p)
   {
     if (c->holes () > n && c->contour (n + 1).size () > p) {
       return c->contour (n + 1)[p];
@@ -1255,12 +899,12 @@ struct polygon_defs
     }
   }
 
-  static size_t num_points_hull (const C *c)
+  static size_t num_points_hull (C *c)
   {
     return c->hull ().size ();
   }
 
-  static size_t num_points_hole (const C *c, unsigned int n)
+  static size_t num_points_hole (C *c, unsigned int n)
   {
     return c->contour (n + 1).size ();
   }
@@ -1285,15 +929,10 @@ struct polygon_defs
     return c->insert_hole (&pts[0], &pts[0] + sizeof (pts) / sizeof (pts[0]));
   }
 
-  static void sort_holes (C *c)
-  {
-    c->sort_holes ();
-  }
-
   static C *from_string (const char *s)
   {
     tl::Extractor ex (s);
-    std::unique_ptr<C> c (new C ());
+    std::auto_ptr<C> c (new C ());
     ex.read (*c.get ());
     return c.release ();
   }
@@ -1329,9 +968,9 @@ struct polygon_defs
     poly->size (d, d, mode);
   }
 
-  static void size_dvm (C *poly, const db::Vector &dv, unsigned int mode)
+  static void size_d (C *poly, coord_type d)
   {
-    poly->size (dv.x (), dv.y (), mode);
+    poly->size (d, d, 2);
   }
 
   static C sized_xy (const C *poly, coord_type dx, coord_type dy, unsigned int mode)
@@ -1344,9 +983,9 @@ struct polygon_defs
     return poly->sized (d, d, mode);
   }
 
-  static C sized_dvm (const C *poly, const db::Vector &dv, unsigned int mode)
+  static C sized_d (const C *poly, coord_type d)
   {
-    return poly->sized (dv.x (), dv.y (), mode);
+    return poly->sized (d, d, 2);
   }
 
   static bool inside (const C *poly, point_type pt)
@@ -1366,7 +1005,7 @@ struct polygon_defs
 
   static C scale (const C *p, double s)
   {
-    return C (p->transformed_ext (icomplex_trans_type (s), false /*no compression*/));
+    return C (p->transformed (icomplex_trans_type (s), false /*no compression*/));
   }
 
   static void compress (C *poly, bool remove_reflected)
@@ -1382,12 +1021,12 @@ struct polygon_defs
 
   static C transformed (const C *poly, const simple_trans_type &t)
   {
-    return poly->transformed_ext (t, false /*no compression*/);
+    return poly->transformed (t, false /*no compression*/);
   }
 
   static db::polygon<double> transformed_cplx (const C *poly, const complex_trans_type &t)
   {
-    return poly->transformed_ext (t, false /*no compression*/);
+    return poly->transformed (t, false /*no compression*/);
   }
 
 #if defined(HAVE_64BIT_COORD)
@@ -1408,26 +1047,6 @@ struct polygon_defs
 #endif
   {
     return poly->area2 ();
-  }
-
-#if defined(HAVE_64BIT_COORD)
-  //  workaround for missing 128bit binding of GSI
-  static double area_upper_manhattan_bound (const C *poly)
-#else
-  static area_type area_upper_manhattan_bound (const C *poly)
-#endif
-  {
-    return poly->area_upper_manhattan_bound ();
-  }
-
-#if defined(HAVE_64BIT_COORD)
-  //  workaround for missing 128bit binding of GSI
-  static double area_upper_manhattan_bound2 (const C *poly)
-#else
-  static area_type area_upper_manhattan_bound2 (const C *poly)
-#endif
-  {
-    return poly->area_upper_manhattan_bound2 ();
   }
 
   static std::vector<tl::Variant> extract_rad (const C *p)
@@ -1454,7 +1073,7 @@ struct polygon_defs
 
   static size_t hash_value (const C *p)
   {
-    return tl::hfunc (*p);
+    return std::hfunc (*p);
   }
 
   static bool touches_box (const C *p, const db::box<coord_type> &box)
@@ -1475,6 +1094,13 @@ struct polygon_defs
   static bool touches_spoly (const C *p, const db::simple_polygon<coord_type> &spoly)
   {
     return db::interact (*p, spoly);
+  }
+
+  static std::vector<C> split_spoly (const C *p)
+  {
+    std::vector<C> parts;
+    db::split_polygon (*p, parts);
+    return parts;
   }
 
   static gsi::Methods methods ()
@@ -1502,7 +1128,7 @@ struct polygon_defs
       "@param box The box to convert to a polygon\n"
     ) +
     constructor ("ellipse", &ellipse, gsi::arg ("box"), gsi::arg ("n"),
-      "@brief Creates a simple polygon approximating an ellipse\n"
+      "@brief Creates a simple polygon appoximating an ellipse\n"
       "\n"
       "@param box The bounding box of the ellipse\n"
       "@param n The number of points that will be used to approximate the ellipse\n"
@@ -1525,15 +1151,8 @@ struct polygon_defs
     method_ext ("is_empty?", &is_empty,
       "@brief Returns a value indicating whether the polygon is empty\n"
     ) +
-    method ("is_rectilinear?", &C::is_rectilinear,
+    method_ext ("is_rectilinear?", &is_rectilinear,
       "@brief Returns a value indicating whether the polygon is rectilinear\n"
-    ) +
-    method ("is_halfmanhattan?", &C::is_halfmanhattan,
-      "@brief Returns a value indicating whether the polygon is half-manhattan\n"
-      "Half-manhattan polygons have edges which are multiples of 45 degree. These polygons can be clipped at a rectangle without "
-      "potential grid snapping.\n"
-      "\n"
-      "This predicate was introduced in version 0.27.\n"
     ) +
     method_ext ("hash", &hash_value,
       "@brief Computes a hash value\n"
@@ -1626,14 +1245,6 @@ struct polygon_defs
       "@brief Iterates over the points that make up the nth hole\n"
       "The hole number must be less than the number of holes (see \\holes)"
     ) +
-    method_ext ("sort_holes", &sort_holes,
-      "@brief Brings the holes in a specific order\n"
-      "This function is normalize the hole order so the comparison of two "
-      "polygons does not depend on the order the holes were inserted. "
-      "Polygons generated by KLayout's alorithms have their holes sorted.\n"
-      "\n"
-      "This method has been introduced in version 0.28.8."
-    ) +
     method_ext ("size", &size_xy, gsi::arg ("dx"), gsi::arg ("dy"), gsi::arg ("mode"),
       "@brief Sizes the polygon (biasing)\n"
       "\n"
@@ -1657,19 +1268,7 @@ struct polygon_defs
       "result = ep.simple_merge_p2p([ poly ], false, false, 1)\n"
       "@/code\n"
     ) +
-    method_ext ("size", &size_dvm, gsi::arg ("dv"), gsi::arg ("mode", (unsigned int) 2),
-      "@brief Sizes the polygon (biasing)\n"
-      "\n"
-      "This method is equivalent to\n"
-      "@code\n"
-      "size(dv.x, dv.y, mode)\n"
-      "@/code\n"
-      "\n"
-      "See \\size for a detailed description.\n"
-      "\n"
-      "This version has been introduced in version 0.28.\n"
-    ) +
-    method_ext ("size", &size_dm, gsi::arg ("d"), gsi::arg ("mode", (unsigned int) 2),
+    method_ext ("size", &size_dm, gsi::arg ("d"), gsi::arg ("mode"),
       "@brief Sizes the polygon (biasing)\n"
       "\n"
       "Shifts the contour outwards (d>0) or inwards (d<0).\n"
@@ -1691,19 +1290,7 @@ struct polygon_defs
       "\n"
       "This method has been introduced in version 0.23.\n"
     ) +
-    method_ext ("sized", &sized_dvm, gsi::arg ("dv"), gsi::arg ("mode", (unsigned int) 2),
-      "@brief Sizes the polygon (biasing) without modifying self\n"
-      "\n"
-      "This method is equivalent to\n"
-      "@code\n"
-      "sized(dv.x, dv.y, mode)\n"
-      "@/code\n"
-      "\n"
-      "See \\size and \\sized for a detailed description.\n"
-      "\n"
-      "This version has been introduced in version 0.28.\n"
-    ) +
-    method_ext ("sized", &sized_dm, gsi::arg ("d"), gsi::arg ("mode", (unsigned int) 2),
+    method_ext ("sized", &sized_dm, gsi::arg ("d"), gsi::arg ("mode"),
       "@brief Sizes the polygon (biasing) without modifying self\n"
       "\n"
       "Shifts the contour outwards (d>0) or inwards (d<0).\n"
@@ -1713,6 +1300,28 @@ struct polygon_defs
       "@/code\n"
       "\n"
       "See \\size and \\sized for a detailed description.\n"
+    ) +
+    method_ext ("sized", &sized_d, gsi::arg ("d"),
+      "@brief Sizes the polygon (biasing)\n"
+      "\n"
+      "@brief Sizing (biasing) without modifying self\n"
+      "This method is equivalent to\n"
+      "@code\n"
+      "sized(d, d, 2)\n"
+      "@/code\n"
+      "\n"
+      "See \\size and \\sized for a detailed description.\n"
+    ) +
+    method_ext ("size", &size_d, gsi::arg ("d"),
+      "@brief Sizes the polygon (biasing)\n"
+      "\n"
+      "Shifts the contour outwards (d>0) or inwards (d<0).\n"
+      "This method is equivalent to\n"
+      "@code\n"
+      "size(d, d, 2)\n"
+      "@/code\n"
+      "\n"
+      "See \\size for a detailed description.\n"
     ) +
     method ("holes", &C::holes,
       "@brief Returns the number of holes"
@@ -1752,7 +1361,7 @@ struct polygon_defs
     method ("is_box?", &C::is_box,
       "@brief Returns true, if the polygon is a simple box.\n"
       "\n"
-      "A polygon is a box if it is identical to its bounding box.\n"
+      "A polygon is a box if it is identical to it's bounding box.\n"
       "\n"
       "@return True if the polygon is a box.\n"
       "\n"
@@ -1764,30 +1373,30 @@ struct polygon_defs
       "Returns the scaled object. All coordinates are multiplied with the given factor and if "
       "necessary rounded."
     ) +
-    method ("move", &C::move, gsi::arg ("v"),
+    method ("move", &C::move, gsi::arg ("p"),
       "@brief Moves the polygon.\n"
       "\n"
       "Moves the polygon by the given offset and returns the \n"
       "moved polygon. The polygon is overwritten.\n"
       "\n"
-      "@param v The distance to move the polygon.\n"
+      "@param p The distance to move the polygon.\n"
       "\n"
       "@return The moved polygon (self).\n"
       "\n"
       "This method has been introduced in version 0.23.\n"
     ) +
-    method_ext ("move", &move_xy, gsi::arg ("dx", 0), gsi::arg ("dy", 0),
+    method_ext ("move", &move_xy, gsi::arg ("x"), gsi::arg ("y"),
       "@brief Moves the polygon.\n"
       "\n"
       "Moves the polygon by the given offset and returns the \n"
       "moved polygon. The polygon is overwritten.\n"
       "\n"
-      "@param dx The x distance to move the polygon.\n"
-      "@param dy The y distance to move the polygon.\n"
+      "@param x The x distance to move the polygon.\n"
+      "@param y The y distance to move the polygon.\n"
       "\n"
       "@return The moved polygon (self).\n"
     ) +
-    method ("moved", &C::moved, gsi::arg ("v"),
+    method ("moved", &C::moved, gsi::arg ("p"),
       "@brief Returns the moved polygon (does not modify self)\n"
       "\n"
       "Moves the polygon by the given offset and returns the \n"
@@ -1799,14 +1408,14 @@ struct polygon_defs
       "\n"
       "This method has been introduced in version 0.23.\n"
     ) +
-    method_ext ("moved", &moved_xy, gsi::arg ("dx", 0), gsi::arg ("dy", 0),
+    method_ext ("moved", &moved_xy, gsi::arg ("x"), gsi::arg ("y"),
       "@brief Returns the moved polygon (does not modify self)\n"
       "\n"
       "Moves the polygon by the given offset and returns the \n"
       "moved polygon. The polygon is not modified.\n"
       "\n"
-      "@param dx The x distance to move the polygon.\n"
-      "@param dy The y distance to move the polygon.\n"
+      "@param x The x distance to move the polygon.\n"
+      "@param y The y distance to move the polygon.\n"
       "\n"
       "@return The moved polygon.\n"
       "\n"
@@ -1892,7 +1501,7 @@ struct polygon_defs
       "\n"
       "This method was introduced in version 0.25.\n"
     ) +
-    method_ext ("split", &split_poly<C>,
+    method_ext ("split", &split_spoly,
       "@brief Splits the polygon into two or more parts\n"
       "This method will break the polygon into parts. The exact breaking algorithm is unspecified, the "
       "result are smaller polygons of roughly equal number of points and 'less concave' nature. "
@@ -1905,20 +1514,6 @@ struct polygon_defs
       "\n"
       "This method has been introduced in version 0.25.3."
     ) +
-    method_ext ("break", &break_poly<C>, gsi::arg ("max_vertex_count"), gsi::arg ("max_area_ratio"),
-      "@brief Splits the polygon into parts with a maximum vertex count and area ratio\n"
-      "The area ratio is the ratio between the bounding box area and the polygon area. Higher values "
-      "mean more 'skinny' polygons.\n"
-      "\n"
-      "This method will split the input polygon into pieces having a maximum of 'max_vertex_count' vertices "
-      "and an area ratio less than 'max_area_ratio'. 'max_vertex_count' can be zero. In this case the "
-      "limit is ignored. Also 'max_area_ratio' can be zero, in which case it is ignored as well.\n"
-      "\n"
-      "The method of splitting is unspecified. The algorithm will apply 'split' recursively until the "
-      "parts satisfy the limits.\n"
-      "\n"
-      "This method has been introduced in version 0.29."
-    ) +
     method_ext ("area", &area,
       "@brief Gets the area of the polygon\n"
       "The area is correct only if the polygon is not self-overlapping and the polygon is oriented clockwise."
@@ -1930,12 +1525,6 @@ struct polygon_defs
       "Hence the double area can be expresses precisely as an integer for these types.\n"
       "\n"
       "This method has been introduced in version 0.26.1\n"
-    ) +
-    method_ext ("area_upper_manhattan_bound", &area_upper_manhattan_bound,
-      "@hide"  //  too special
-    ) +
-    method_ext ("area_upper_manhattan_bound2", &area_upper_manhattan_bound2,
-      "@hide"  //  too special
     ) +
     method ("perimeter", &C::perimeter,
       "@brief Gets the perimeter of the polygon\n"
@@ -2006,42 +1595,42 @@ static db::Polygon *transform_icplx_dp (db::Polygon *p, const db::ICplxTrans &t)
 
 static db::Polygon transformed_icplx_dp (const db::Polygon *p, const db::ICplxTrans &t)
 {
-  return p->transformed_ext (t, false /*don't compress*/);
+  return p->transformed (t, false /*don't compress*/);
 }
 
-static db::Polygon smooth (const db::Polygon *p, db::Coord d, bool keep_hv)
+static db::Polygon smooth (const db::Polygon *p, db::Coord d)
 {
-  return db::smooth (*p, d, keep_hv);
+  return db::smooth (*p, d);
 }
 
-static db::Polygon minkowski_sum_pe (const db::Polygon *p, const db::Edge &e, bool rh)
+static db::Polygon minkowsky_sum_pe (const db::Polygon *p, const db::Edge &e, bool rh)
 {
-  return db::minkowski_sum (*p, e, rh);
+  return db::minkowsky_sum (*p, e, rh);
 }
 
-static db::Polygon minkowski_sum_pp (const db::Polygon *p, const db::Polygon &pp, bool rh)
+static db::Polygon minkowsky_sum_pp (const db::Polygon *p, const db::Polygon &pp, bool rh)
 {
-  return db::minkowski_sum (*p, pp, rh);
+  return db::minkowsky_sum (*p, pp, rh);
 }
 
-static db::Polygon minkowski_sum_pb (const db::Polygon *p, const db::Box &b, bool rh)
+static db::Polygon minkowsky_sum_pb (const db::Polygon *p, const db::Box &b, bool rh)
 {
-  return db::minkowski_sum (*p, b, rh);
+  return db::minkowsky_sum (*p, b, rh);
 }
 
-static db::Polygon minkowski_sum_pc (const db::Polygon *p, const std::vector<db::Point> &c, bool rh)
+static db::Polygon minkowsky_sum_pc (const db::Polygon *p, const std::vector<db::Point> &c, bool rh)
 {
-  return db::minkowski_sum (*p, c, rh);
+  return db::minkowsky_sum (*p, c, rh);
 }
 
 static db::Polygon *polygon_from_dpolygon (const db::DPolygon &p)
 {
-  return new db::Polygon (p, false, false /*don't remove reflected*/, false /*no normalize*/);
+  return new db::Polygon (p, false);
 }
 
 static db::DPolygon polygon_to_dpolygon (const db::Polygon *p, double dbu)
 {
-  return db::DPolygon (*p, db::CplxTrans (dbu), false, false /*don't remove reflected*/, false /*no normalize*/);
+  return db::DPolygon (*p * dbu, false);
 }
 
 static bool is_convex (const db::Polygon *p)
@@ -2073,27 +1662,27 @@ static gsi::Methods make_po_constants ()
 {
   return
     constant ("PO_any", po_any,
-      "@brief A value for the preferred orientation parameter of \\decompose_convex\n"
+      "@brief A value for the preferred orienation parameter of \\decompose_convex\n"
       "This value indicates that there is not cut preference\n"
       "This constant has been introduced in version 0.25."
     ) +
     constant ("PO_horizontal", po_horizontal,
-      "@brief A value for the preferred orientation parameter of \\decompose_convex\n"
+      "@brief A value for the preferred orienation parameter of \\decompose_convex\n"
       "This value indicates that there only horizontal cuts are allowed\n"
       "This constant has been introduced in version 0.25."
     ) +
     constant ("PO_vertical", po_vertical,
-      "@brief A value for the preferred orientation parameter of \\decompose_convex\n"
+      "@brief A value for the preferred orienation parameter of \\decompose_convex\n"
       "This value indicates that there only vertical cuts are allowed\n"
       "This constant has been introduced in version 0.25."
     ) +
     constant ("PO_htrapezoids", po_htrapezoids,
-      "@brief A value for the preferred orientation parameter of \\decompose_convex\n"
+      "@brief A value for the preferred orienation parameter of \\decompose_convex\n"
       "This value indicates that cuts shall favor decomposition into horizontal trapezoids\n"
       "This constant has been introduced in version 0.25."
     ) +
     constant ("PO_vtrapezoids", po_vtrapezoids,
-      "@brief A value for the preferred orientation parameter of \\decompose_convex\n"
+      "@brief A value for the preferred orienation parameter of \\decompose_convex\n"
       "This value indicates that cuts shall favor decomposition into vertical trapezoids\n"
       "This constant has been introduced in version 0.25."
     );
@@ -2194,60 +1783,59 @@ Class<db::Polygon> decl_Polygon ("db", "Polygon",
     "\n"
     "This method was introduced in version 0.22.\n"
   ) +
-  method_ext ("smooth", &smooth, gsi::arg ("d"), gsi::arg ("keep_hv", false),
-    "@brief Smooths a polygon\n"
+  method_ext ("smooth", &smooth, gsi::arg ("d"),
+    "@brief Smoothes a polygon\n"
     "\n"
     "Remove vertices that deviate by more than the distance d from the average contour.\n"
     "The value d is basically the roughness which is removed.\n"
     "\n"
     "@param d The smoothing \"roughness\".\n"
-    "@param keep_hv If true, horizontal and vertical edges will be preserved always.\n"
     "\n"
     "@return The smoothed polygon.\n"
     "\n"
-    "This method was introduced in version 0.23. The 'keep_hv' optional parameter was added in version 0.27.\n"
+    "This method was introduced in version 0.23.\n"
   ) +
-  method_ext ("minkowski_sum|#minkowsky_sum", &minkowski_sum_pe, gsi::arg ("e"), gsi::arg ("resolve_holes"),
-    "@brief Computes the Minkowski sum of the polygon and an edge\n"
+  method_ext ("minkowsky_sum", &minkowsky_sum_pe, gsi::arg ("e"), gsi::arg ("resolve_holes"),
+    "@brief Computes the Minkowsky sum of the polygon and an edge\n"
     "\n"
     "@param e The edge.\n"
     "@param resolve_holes If true, the output polygon will not contain holes, but holes are resolved by joining the holes with the hull.\n"
     "\n"
-    "@return The new polygon representing the Minkowski sum with the edge e.\n"
+    "@return The new polygon representing the Minkowsky sum with the edge e.\n"
     "\n"
-    "The Minkowski sum of a polygon and an edge basically results in the area covered when "
+    "The Minkowsky sum of a polygon and an edge basically results in the area covered when "
     "\"dragging\" the polygon along the line given by the edge. The effect is similar to drawing the line "
     "with a pencil that has the shape of the given polygon.\n"
     "\n"
     "This method was introduced in version 0.22.\n"
   ) +
-  method_ext ("minkowski_sum|#minkowsky_sum", &minkowski_sum_pp, gsi::arg ("b"), gsi::arg ("resolve_holes"),
-    "@brief Computes the Minkowski sum of the polygon and a polygon\n"
+  method_ext ("minkowsky_sum", &minkowsky_sum_pp, gsi::arg ("b"), gsi::arg ("resolve_holes"),
+    "@brief Computes the Minkowsky sum of the polygon and a polygon\n"
     "\n"
     "@param p The first argument.\n"
     "@param resolve_holes If true, the output polygon will not contain holes, but holes are resolved by joining the holes with the hull.\n"
     "\n"
-    "@return The new polygon representing the Minkowski sum of self and p.\n"
+    "@return The new polygon representing the Minkowsky sum of self and p.\n"
     "\n"
     "This method was introduced in version 0.22.\n"
   ) +
-  method_ext ("minkowski_sum|#minkowsky_sum", &minkowski_sum_pb, gsi::arg ("b"), gsi::arg ("resolve_holes"),
-    "@brief Computes the Minkowski sum of the polygon and a box\n"
+  method_ext ("minkowsky_sum", &minkowsky_sum_pb, gsi::arg ("b"), gsi::arg ("resolve_holes"),
+    "@brief Computes the Minkowsky sum of the polygon and a box\n"
     "\n"
     "@param b The box.\n"
     "@param resolve_holes If true, the output polygon will not contain holes, but holes are resolved by joining the holes with the hull.\n"
     "\n"
-    "@return The new polygon representing the Minkowski sum of self and the box.\n"
+    "@return The new polygon representing the Minkowsky sum of self and the box.\n"
     "\n"
     "This method was introduced in version 0.22.\n"
   ) +
-  method_ext ("minkowski_sum|#minkowsky_sum", &minkowski_sum_pc, gsi::arg ("b"), gsi::arg ("resolve_holes"),
-    "@brief Computes the Minkowski sum of the polygon and a contour of points (a trace)\n"
+  method_ext ("minkowsky_sum", &minkowsky_sum_pc, gsi::arg ("b"), gsi::arg ("resolve_holes"),
+    "@brief Computes the Minkowsky sum of the polygon and a contour of points (a trace)\n"
     "\n"
     "@param b The contour (a series of points forming the trace).\n"
     "@param resolve_holes If true, the output polygon will not contain holes, but holes are resolved by joining the holes with the hull.\n"
     "\n"
-    "@return The new polygon representing the Minkowski sum of self and the contour.\n"
+    "@return The new polygon representing the Minkowsky sum of self and the contour.\n"
     "\n"
     "This method was introduced in version 0.22.\n"
   ) +
@@ -2262,7 +1850,7 @@ Class<db::Polygon> decl_Polygon ("db", "Polygon",
     "\n"
     "This method was introduced in version 0.24.\n"
   ) +
-  method_ext ("#transformed", &transformed_icplx_dp, gsi::arg ("t"),
+  method_ext ("transformed", &transformed_icplx_dp, gsi::arg ("t"),
     "@brief Transforms the polygon with a complex transformation\n"
     "\n"
     "Transforms the polygon with the given complex transformation.\n"
@@ -2273,37 +1861,6 @@ Class<db::Polygon> decl_Polygon ("db", "Polygon",
     "@return The transformed polygon (in this case an integer coordinate polygon).\n"
     "\n"
     "This method was introduced in version 0.18.\n"
-  ) +
-  method_ext ("hm_decomposition", &hm_decompose_ipolygon<db::Polygon>,
-              gsi::arg ("with_segments", true), gsi::arg ("split_edges", false),
-              gsi::arg ("max_area", 0.0), gsi::arg ("min_b", 0.0),
-              gsi::arg ("dbu", 0.001),
-    "@brief Performs a Hertel-Mehlhorn convex decomposition.\n"
-    "\n"
-    "@return A \\Region holding the polygons of the decomposition.\n"
-    "\n"
-    "The resulting region is in 'no merged semantics' mode, "
-    "to avoid re-merging of the polygons during following operations.\n"
-    "\n" + hm_docstring + "\n" + dbu_docstring + "\n"
-    "This method has been introduced in version 0.30.1."
-  ) +
-  method_ext ("delaunay", &triangulate_ipolygon<db::Polygon>, gsi::arg ("max_area", 0.0), gsi::arg ("min_b", 0.0), gsi::arg ("dbu", 0.001),
-    "@brief Performs a Delaunay triangulation of the polygon.\n"
-    "\n"
-    "@return A \\Region holding the triangles of the refined, constrained Delaunay triangulation.\n"
-    "\n" + delaunay_docstring + "\n"
-    "The area value is given in terms of DBU units.\n"
-    "\n" + dbu_docstring + "\n"
-    "This method has been introduced in version 0.30. Since version 0.30.1, the resulting region is in 'no merged semantics' mode, "
-    "to avoid re-merging of the triangles during following operations."
-  ) +
-  method_ext ("delaunay", &triangulate_ipolygon_v<db::Polygon>, gsi::arg ("vertexes"), gsi::arg ("max_area", 0.0), gsi::arg ("min_b", 0.0), gsi::arg ("dbu", 0.001),
-    "@brief Performs a Delaunay triangulation of the polygon.\n"
-    "\n"
-    "This variant of the triangulation function accepts an array of additional vertexes for the triangulation.\n"
-    "\n"
-    "This method has been introduced in version 0.30. Since version 0.30.1, the resulting region is in 'no merged semantics' mode, "
-    "to avoid re-merging of the triangles during following operations."
   ) +
   polygon_defs<db::Polygon>::methods (),
   "@brief A polygon class\n"
@@ -2351,46 +1908,19 @@ Class<db::Polygon> decl_Polygon ("db", "Polygon",
   "database objects."
 );
 
-static db::PolygonWithProperties *new_polygon_with_properties (const db::Polygon &poly, db::properties_id_type pid)
-{
-  return new db::PolygonWithProperties (poly, pid);
-}
-
-static db::PolygonWithProperties *new_polygon_with_properties2 (const db::Polygon &poly, const std::map<tl::Variant, tl::Variant> &properties)
-{
-  return new db::PolygonWithProperties (poly, db::properties_id (db::PropertiesSet (properties.begin (), properties.end ())));
-}
-
-Class<db::PolygonWithProperties> decl_PolygonWithProperties (decl_Polygon, "db", "PolygonWithProperties",
-  gsi::properties_support_methods<db::PolygonWithProperties> () +
-  constructor ("new", &new_polygon_with_properties, gsi::arg ("polygon"), gsi::arg ("properties_id", db::properties_id_type (0)),
-    "@brief Creates a new object from a property-less object and a properties ID."
-  ) +
-  constructor ("new", &new_polygon_with_properties2, gsi::arg ("polygon"), gsi::arg ("properties"),
-    "@brief Creates a new object from a property-less object and a properties hash."
-  )
-  ,
-  "@brief A Polygon object with properties attached.\n"
-  "This class represents a combination of a Polygon object an user properties. User properties are "
-  "stored in form of a properties ID. Convenience methods are provided to manipulate or retrieve "
-  "user properties directly.\n"
-  "\n"
-  "This class has been introduced in version 0.30."
-);
-
 static db::DPolygon *dpolygon_from_ipolygon (const db::Polygon &p)
 {
-  return new db::DPolygon (p, false, false /*don't remove reflected*/, false /*no normalize*/);
+  return new db::DPolygon (p, false);
 }
 
 static db::Polygon dpolygon_to_polygon (const db::DPolygon *p, double dbu)
 {
-  return db::Polygon (*p, db::VCplxTrans (1.0 / dbu), false, false /*don't remove reflected*/, false /*no normalize*/);
+  return db::Polygon (*p * (1.0 / dbu), false);
 }
 
 static db::Polygon transformed_vcplx_dp (const db::DPolygon *p, const db::VCplxTrans &t)
 {
-  return p->transformed_ext (t, false /*don't compress*/);
+  return p->transformed (t, false /*don't compress*/);
 }
 
 Class<db::DPolygon> decl_DPolygon ("db", "DPolygon",
@@ -2408,8 +1938,9 @@ Class<db::DPolygon> decl_DPolygon ("db", "DPolygon",
     "\n"
     "This method has been introduced in version 0.25."
   ) +
-  method_ext ("transform", &transform_cplx_dp, gsi::arg ("t"),
+  method_ext ("transform", &transform_cplx_dp,
     "@brief Transforms the polygon with a complex transformation (in-place)\n"
+    "@args t\n"
     "\n"
     "Transforms the polygon with the given complex transformation.\n"
     "Modifies self and returns self. An out-of-place version which does not modify self is \\transformed.\n"
@@ -2418,37 +1949,15 @@ Class<db::DPolygon> decl_DPolygon ("db", "DPolygon",
     "\n"
     "This method has been introduced in version 0.24.\n"
   ) +
-  method_ext ("transformed", &transformed_vcplx_dp, gsi::arg ("t"),
+  method_ext ("transformed", &transformed_vcplx_dp,
     "@brief Transforms the polygon with the given complex transformation\n"
     "\n"
+    "@args t\n"
     "\n"
     "@param t The magnifying transformation to apply\n"
     "@return The transformed polygon (in this case an integer coordinate polygon)\n"
     "\n"
     "This method has been introduced in version 0.25.\n"
-  ) +
-  method_ext ("hm_decomposition", &hm_decompose_dpolygon<db::DPolygon>,
-              gsi::arg ("with_segments", true), gsi::arg ("split_edges", false),
-              gsi::arg ("max_area", 0.0), gsi::arg ("min_b", 0.0),
-    "@brief Performs a Hertel-Mehlhorn convex decomposition.\n"
-    "\n"
-    "@return An array holding the polygons of the decomposition.\n"
-    "\n" + hm_docstring + "\n"
-    "This method has been introduced in version 0.30.1."
-  ) +
-  method_ext ("delaunay", &triangulate_dpolygon<db::DPolygon>, gsi::arg ("max_area", 0.0), gsi::arg ("min_b", 0.0),
-    "@brief Performs a Delaunay triangulation of the polygon.\n"
-    "\n"
-    "@return An array of triangular polygons of the refined, constrained Delaunay triangulation.\n"
-    "\n" + delaunay_docstring + "\n"
-    "This method has been introduced in version 0.30."
-  ) +
-  method_ext ("delaunay", &triangulate_dpolygon_v<db::DPolygon>, gsi::arg ("vertexes"), gsi::arg ("max_area", 0.0), gsi::arg ("min_b", 0.0),
-    "@brief Performs a Delaunay triangulation of the polygon.\n"
-    "\n"
-    "This variant of the triangulation function accepts an array of additional vertexes for the triangulation.\n"
-    "\n"
-    "This method has been introduced in version 0.30."
   ) +
   polygon_defs<db::DPolygon>::methods (),
   "@brief A polygon class\n"
@@ -2496,31 +2005,5 @@ Class<db::DPolygon> decl_DPolygon ("db", "DPolygon",
   "database objects."
 );
 
-static db::DPolygonWithProperties *new_dpolygon_with_properties (const db::DPolygon &poly, db::properties_id_type pid)
-{
-  return new db::DPolygonWithProperties (poly, pid);
 }
 
-static db::DPolygonWithProperties *new_dpolygon_with_properties2 (const db::DPolygon &poly, const std::map<tl::Variant, tl::Variant> &properties)
-{
-  return new db::DPolygonWithProperties (poly, db::properties_id (db::PropertiesSet (properties.begin (), properties.end ())));
-}
-
-Class<db::DPolygonWithProperties> decl_DPolygonWithProperties (decl_DPolygon, "db", "DPolygonWithProperties",
-  gsi::properties_support_methods<db::DPolygonWithProperties> () +
-  constructor ("new", &new_dpolygon_with_properties, gsi::arg ("polygon"), gsi::arg ("properties_id", db::properties_id_type (0)),
-    "@brief Creates a new object from a property-less object and a properties ID."
-  ) +
-  constructor ("new", &new_dpolygon_with_properties2, gsi::arg ("polygon"), gsi::arg ("properties"),
-    "@brief Creates a new object from a property-less object and a properties hash."
-  )
-  ,
-  "@brief A DPolygon object with properties attached.\n"
-  "This class represents a combination of a DPolygon object an user properties. User properties are "
-  "stored in form of a properties ID. Convenience methods are provided to manipulate or retrieve "
-  "user properties directly.\n"
-  "\n"
-  "This class has been introduced in version 0.30."
-);
-
-}

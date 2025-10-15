@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -22,72 +22,9 @@
 
 #include "tlRecipe.h"
 #include "tlString.h"
-#include "tlLog.h"
-#include "tlException.h"
-
-#include <memory>
 
 namespace tl
 {
-
-// --------------------------------------------------------------------------------------
-//  Executable implementation
-
-Executable::Executable ()
-{
-  //  .. nothing yet ..
-}
-
-Executable::~Executable ()
-{
-  //  .. nothing yet ..
-}
-
-tl::Variant
-Executable::do_execute ()
-{
-  tl::Variant res;
-
-  try {
-    res = execute ();
-    do_cleanup ();
-  } catch (...) {
-    do_cleanup ();
-    throw;
-  }
-
-  return res;
-}
-
-void
-Executable::do_cleanup ()
-{
-  try {
-    cleanup ();
-  } catch (tl::Exception &ex) {
-    tl::error << ex.msg ();
-  } catch (std::runtime_error &ex) {
-    tl::error << ex.what ();
-  } catch (...) {
-    //  ignore exceptions here
-  }
-}
-
-tl::Variant
-Executable::execute ()
-{
-  //  .. the default implementation does nothing ..
-  return tl::Variant ();
-}
-
-void
-Executable::cleanup ()
-{
-  //  .. the default implementation does nothing ..
-}
-
-// --------------------------------------------------------------------------------------
-//  Recipe implementation
 
 Recipe::Recipe (const std::string &name, const std::string &description)
   : tl::RegisteredClass<tl::Recipe> (this, 0, name.c_str (), false)
@@ -146,14 +83,9 @@ tl::Variant Recipe::make (const std::string &generator, const std::map<std::stri
 
   if (! recipe_obj) {
     return tl::Variant ();
+  } else {
+    return recipe_obj->execute (params);
   }
-
-  std::unique_ptr<Executable> eo (recipe_obj->executable (params));
-  if (! eo.get ()) {
-    return tl::Variant ();
-  }
-
-  return eo->do_execute ();
 }
 
 } // namespace tl

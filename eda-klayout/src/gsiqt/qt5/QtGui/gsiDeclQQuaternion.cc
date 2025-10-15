@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -32,6 +32,7 @@
 #include <QVector4D>
 #include "gsiQt.h"
 #include "gsiQtGuiCommon.h"
+#include "gsiDeclQtGuiTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -941,49 +942,49 @@ static void _call_f_slerp_5666 (const qt_gsi::GenericStaticMethod * /*decl*/, gs
 }
 
 
-//  bool ::operator==(const QQuaternion &q1, const QQuaternion &q2)
-static bool op_QQuaternion_operator_eq__eq__4804(const QQuaternion *_self, const QQuaternion &q2) {
-  return operator==(*_self, q2);
-}
-
 //  const QQuaternion ::operator*(const QQuaternion &q1, const QQuaternion &q2)
 static const QQuaternion op_QQuaternion_operator_star__4804(const QQuaternion *_self, const QQuaternion &q2) {
-  return operator*(*_self, q2);
+  return ::operator*(*_self, q2);
+}
+
+//  bool ::operator==(const QQuaternion &q1, const QQuaternion &q2)
+static bool op_QQuaternion_operator_eq__eq__4804(const QQuaternion *_self, const QQuaternion &q2) {
+  return ::operator==(*_self, q2);
 }
 
 //  bool ::operator!=(const QQuaternion &q1, const QQuaternion &q2)
 static bool op_QQuaternion_operator_excl__eq__4804(const QQuaternion *_self, const QQuaternion &q2) {
-  return operator!=(*_self, q2);
+  return ::operator!=(*_self, q2);
 }
 
 //  const QQuaternion ::operator+(const QQuaternion &q1, const QQuaternion &q2)
 static const QQuaternion op_QQuaternion_operator_plus__4804(const QQuaternion *_self, const QQuaternion &q2) {
-  return operator+(*_self, q2);
+  return ::operator+(*_self, q2);
 }
 
 //  const QQuaternion ::operator-(const QQuaternion &q1, const QQuaternion &q2)
 static const QQuaternion op_QQuaternion_operator_minus__4804(const QQuaternion *_self, const QQuaternion &q2) {
-  return operator-(*_self, q2);
+  return ::operator-(*_self, q2);
 }
 
 //  const QQuaternion ::operator*(const QQuaternion &quaternion, float factor)
 static const QQuaternion op_QQuaternion_operator_star__3318(const QQuaternion *_self, float factor) {
-  return operator*(*_self, factor);
+  return ::operator*(*_self, factor);
 }
 
 //  const QQuaternion ::operator-(const QQuaternion &quaternion)
 static const QQuaternion op_QQuaternion_operator_minus__2456(const QQuaternion *_self) {
-  return operator-(*_self);
+  return ::operator-(*_self);
 }
 
 //  const QQuaternion ::operator/(const QQuaternion &quaternion, float divisor)
 static const QQuaternion op_QQuaternion_operator_slash__3318(const QQuaternion *_self, float divisor) {
-  return operator/(*_self, divisor);
+  return ::operator/(*_self, divisor);
 }
 
 //  QVector3D ::operator*(const QQuaternion &quaternion, const QVector3D &vec)
 static QVector3D op_QQuaternion_operator_star__4488(const QQuaternion *_self, const QVector3D &vec) {
-  return operator*(*_self, vec);
+  return ::operator*(*_self, vec);
 }
 
 
@@ -1038,8 +1039,8 @@ static gsi::Methods methods_QQuaternion () {
   methods += new qt_gsi::GenericStaticMethod ("nlerp", "@brief Static method QQuaternion QQuaternion::nlerp(const QQuaternion &q1, const QQuaternion &q2, float t)\nThis method is static and can be called without an instance.", &_init_f_nlerp_5666, &_call_f_nlerp_5666);
   methods += new qt_gsi::GenericStaticMethod ("rotationTo", "@brief Static method QQuaternion QQuaternion::rotationTo(const QVector3D &from, const QVector3D &to)\nThis method is static and can be called without an instance.", &_init_f_rotationTo_4172, &_call_f_rotationTo_4172);
   methods += new qt_gsi::GenericStaticMethod ("slerp", "@brief Static method QQuaternion QQuaternion::slerp(const QQuaternion &q1, const QQuaternion &q2, float t)\nThis method is static and can be called without an instance.", &_init_f_slerp_5666, &_call_f_slerp_5666);
-  methods += gsi::method_ext("==", &::op_QQuaternion_operator_eq__eq__4804, gsi::arg ("q2"), "@brief Operator bool ::operator==(const QQuaternion &q1, const QQuaternion &q2)\nThis is the mapping of the global operator to the instance method.");
   methods += gsi::method_ext("*", &::op_QQuaternion_operator_star__4804, gsi::arg ("q2"), "@brief Operator const QQuaternion ::operator*(const QQuaternion &q1, const QQuaternion &q2)\nThis is the mapping of the global operator to the instance method.");
+  methods += gsi::method_ext("==", &::op_QQuaternion_operator_eq__eq__4804, gsi::arg ("q2"), "@brief Operator bool ::operator==(const QQuaternion &q1, const QQuaternion &q2)\nThis is the mapping of the global operator to the instance method.");
   methods += gsi::method_ext("!=", &::op_QQuaternion_operator_excl__eq__4804, gsi::arg ("q2"), "@brief Operator bool ::operator!=(const QQuaternion &q1, const QQuaternion &q2)\nThis is the mapping of the global operator to the instance method.");
   methods += gsi::method_ext("+", &::op_QQuaternion_operator_plus__4804, gsi::arg ("q2"), "@brief Operator const QQuaternion ::operator+(const QQuaternion &q1, const QQuaternion &q2)\nThis is the mapping of the global operator to the instance method.");
   methods += gsi::method_ext("-", &::op_QQuaternion_operator_minus__4804, gsi::arg ("q2"), "@brief Operator const QQuaternion ::operator-(const QQuaternion &q1, const QQuaternion &q2)\nThis is the mapping of the global operator to the instance method.");

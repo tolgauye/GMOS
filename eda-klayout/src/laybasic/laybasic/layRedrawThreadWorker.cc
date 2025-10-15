@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -23,22 +23,12 @@
 
 #include "layRedrawThreadWorker.h"
 #include "layRedrawThread.h"
-#include "layBitmap.h"
 
 namespace lay
 {
 
 //  time delay until the first snapshot is taken
 const int first_snapshot_delay = 20;
-
-// -------------------------------------------------------------
-
-static inline db::Box safe_transformed_box (const db::Box &box, const db::ICplxTrans &t)
-{
-  db::DBox db = db::CplxTrans (t) * box;
-  db &= db::DBox (db::Box::world ());
-  return db::Box (db);
-}
 
 // -------------------------------------------------------------
 //  RedrawThreadWorker implementation 
@@ -70,7 +60,7 @@ RedrawThreadWorker::RedrawThreadWorker (RedrawThread *redraw_thread)
   m_default_text_size = 0.0;
   m_drop_small_cells = false;
   m_drop_small_cells_value = 0;
-  m_drop_small_cells_cond = lay::LayoutViewBase::DSC_Min;
+  m_drop_small_cells_cond = lay::LayoutView::DSC_Min;
   m_draw_array_border_instances = false;
   m_abstract_mode_width = 0;
   m_child_context_enabled = false;
@@ -195,16 +185,16 @@ RedrawThreadWorker::perform_task (tl::Task *task)
           m_layer = li.layer_index;
        
           if (tl::verbosity () >= 40) {
-            tl::info << tl::to_string (tr ("Drawing layer: ")) << mp_layout->get_properties (m_layer).name;
+            tl::info << tl::to_string (QObject::tr ("Drawing layer: ")) << mp_layout->get_properties (m_layer).name;
           }
-          tl::SelfTimer timer (tl::verbosity () >= 41, tl::to_string (tr ("Drawing layer")));
+          tl::SelfTimer timer (tl::verbosity () >= 41, tl::to_string (QObject::tr ("Drawing layer")));
 
           //  configure renderer ..
           mp_renderer->set_xfill (m_xfill);
           mp_renderer->draw_texts (m_text_visible);
           mp_renderer->draw_properties (m_show_properties);
           mp_renderer->draw_description_property (false);
-          mp_renderer->default_text_size (m_default_text_size / mp_layout->dbu ());
+          mp_renderer->default_text_size (db::Coord (m_default_text_size / mp_layout->dbu ()));
           mp_renderer->set_font (db::Font (m_text_font));
           mp_renderer->apply_text_trans (m_apply_text_trans);
 
@@ -221,9 +211,9 @@ RedrawThreadWorker::perform_task (tl::Task *task)
 
           //  if no specific layer is assigned, draw cell boxes with the style given
           if (tl::verbosity () >= 40) {
-            tl::info << tl::to_string (tr ("Drawing custom frames"));
+            tl::info << tl::to_string (QObject::tr ("Drawing custom frames"));
           }
-          tl::SelfTimer timer (tl::verbosity () >= 41, tl::to_string (tr ("Drawing frames")));
+          tl::SelfTimer timer (tl::verbosity () >= 41, tl::to_string (QObject::tr ("Drawing frames")));
 
           for (std::set< std::pair<db::DCplxTrans, int> >::const_iterator b = m_box_variants.begin (); b != m_box_variants.end (); ++b) {
             if (b->second == li.cellview_index) {
@@ -246,9 +236,9 @@ RedrawThreadWorker::perform_task (tl::Task *task)
 
     //  draw the bounding boxes
     if (tl::verbosity () >= 40) {
-      tl::info << tl::to_string (tr ("Drawing frames and guiding shapes"));
+      tl::info << tl::to_string (QObject::tr ("Drawing frames and guiding shapes"));
     }
-    tl::SelfTimer timer (tl::verbosity () >= 41, tl::to_string (tr ("Drawing frames and guiding shapes")));
+    tl::SelfTimer timer (tl::verbosity () >= 41, tl::to_string (QObject::tr ("Drawing frames and guiding shapes")));
 
     //  No xfill for cell boxes
     mp_renderer->set_xfill (false);
@@ -360,7 +350,7 @@ RedrawThreadWorker::perform_task (tl::Task *task)
       }
     }
 
-    //  draw the guiding and error shapes
+    //  draw the guiding shapes
     for (std::set< std::pair<db::DCplxTrans, int> >::const_iterator b = m_box_variants.begin (); b != m_box_variants.end (); ++b) {
 
       const lay::CellView &cv = m_cellviews [b->second];
@@ -375,6 +365,8 @@ RedrawThreadWorker::perform_task (tl::Task *task)
         //  draw one level more to show the guiding shapes as part of the instance
         m_to_level += 1; //  TODO: modifying this basic setting is a hack!
 
+        m_layer = mp_layout->guiding_shape_layer ();
+       
         //  configure renderer ..
         mp_renderer->draw_texts (m_text_visible);
         mp_renderer->draw_properties (false);
@@ -383,30 +375,13 @@ RedrawThreadWorker::perform_task (tl::Task *task)
         mp_renderer->set_font (db::Font (m_text_font));
         mp_renderer->apply_text_trans (m_apply_text_trans);
 
-        bool f = m_text_lazy_rendering;
-
         try {
-
-          m_text_lazy_rendering = false;
-
-          m_layer = mp_layout->guiding_shape_layer ();
           iterate_variants (m_redraw_region, cv.cell_index (), trans, &RedrawThreadWorker::draw_layer);
           iterate_variants (text_redraw_regions, cv.cell_index (), trans, &RedrawThreadWorker::draw_text_layer);
-
-          m_layer = mp_layout->error_layer ();
-          iterate_variants (m_redraw_region, cv.cell_index (), trans, &RedrawThreadWorker::draw_layer);
-          iterate_variants (text_redraw_regions, cv.cell_index (), trans, &RedrawThreadWorker::draw_text_layer);
-
-          m_text_lazy_rendering = f;
           m_to_level -= 1;
-
         } catch (...) {
-
-          m_text_lazy_rendering = f;
           m_to_level -= 1;
-
           throw;
-
         }
 
       }
@@ -417,9 +392,9 @@ RedrawThreadWorker::perform_task (tl::Task *task)
 
     //  draw the decorations
     if (tl::verbosity () >= 40) {
-      tl::info << tl::to_string (tr ("Drawing decorations"));
+      tl::info << tl::to_string (QObject::tr ("Drawing decorations"));
     }
-    tl::SelfTimer timer (tl::verbosity () >= 41, tl::to_string (tr ("Drawing decorations")));
+    tl::SelfTimer timer (tl::verbosity () >= 41, tl::to_string (QObject::tr ("Drawing decorations")));
 
     m_buffers.clear ();
     mp_canvas->initialize_plane (m_planes[0], m_nlayers * planes_per_layer + special_planes_before); 
@@ -497,7 +472,7 @@ RedrawThreadWorker::finish ()
 }
 
 void
-RedrawThreadWorker::setup (LayoutViewBase *view, RedrawThreadCanvas *canvas, const std::vector<db::Box> &redraw_region, const db::DCplxTrans &vp_trans)
+RedrawThreadWorker::setup (LayoutView *view, RedrawThreadCanvas *canvas, const std::vector<db::Box> &redraw_region, const db::DCplxTrans &vp_trans)
 {
   m_redraw_region = redraw_region;
   m_vp_trans = vp_trans;
@@ -555,18 +530,6 @@ RedrawThreadWorker::setup (LayoutViewBase *view, RedrawThreadCanvas *canvas, con
 
   m_hidden_cells = view->hidden_cells ();
 
-  //  collect the ghost cells
-  m_ghost_cells.resize (view->cellviews ());
-  for (unsigned int i = 0; i < view->cellviews (); ++i) {
-    std::set <lay::LayoutViewBase::cell_index_type> &gc = m_ghost_cells [i];
-    const db::Layout &ly = view->cellview (i)->layout ();
-    for (auto c = ly.begin (); c != ly.end (); ++c) {
-      if (c->is_ghost_cell ()) {
-        gc.insert (c->cell_index ());
-      }
-    }
-  }
-
   m_cellviews.clear ();
   m_cellviews.reserve (view->cellviews ());
   for (unsigned int i = 0; i < view->cellviews (); ++i) {
@@ -575,7 +538,7 @@ RedrawThreadWorker::setup (LayoutViewBase *view, RedrawThreadCanvas *canvas, con
 
   m_nlayers = mp_redraw_thread->num_layers (); 
 
-  m_box_variants = view->cv_transform_variants_with_empty ();
+  m_box_variants = view->cv_transform_variants ();
 }
 
 void
@@ -613,7 +576,7 @@ RedrawThreadWorker::test_snapshot (const UpdateSnapshotCallback *update_snapshot
 }
 
 void 
-RedrawThreadWorker::draw_cell (bool drawing_context, int level, const db::CplxTrans &trans, const db::Box &box, bool empty_cell, const std::string &txt)
+RedrawThreadWorker::draw_cell (bool drawing_context, int level, const db::CplxTrans &trans, const db::Box &box, const std::string &txt)
 {
   lay::Renderer &r = *mp_renderer;
 
@@ -628,20 +591,15 @@ RedrawThreadWorker::draw_cell (bool drawing_context, int level, const db::CplxTr
 
   lay::CanvasPlane *fill     = m_planes[0 + plane_group * (planes_per_layer / 3)];
   lay::CanvasPlane *contour  = m_planes[1 + plane_group * (planes_per_layer / 3)];
-  lay::CanvasPlane *vertices = m_planes[3 + plane_group * (planes_per_layer / 3)];
 
-  if (empty_cell) {
-    r.draw (dbox, 0, contour, vertices, 0);
-  } else {
-    r.draw (dbox, fill, contour, 0, 0);
-  }
+  r.draw (box, trans, fill, contour, 0, 0);
 
-  if (! txt.empty () && (empty_cell || (dbox.width () > m_min_size_for_label && dbox.height () > m_min_size_for_label))) {
+  if (! txt.empty () && dbox.width () > m_min_size_for_label && dbox.height () > m_min_size_for_label) {
     //  Hint: we render to contour because the texts plane is reserved for properties
-    r.draw (dbox, txt,
-            db::Font (m_box_font),
-            db::HAlignCenter,
-            db::VAlignCenter,
+    r.draw (dbox, txt, 
+            db::Font (m_box_font), 
+            db::HAlignCenter, 
+            db::VAlignCenter, 
             //  TODO: apply "real" transformation?
             db::DFTrans (m_box_text_transform ? trans.fp_trans ().rot () : db::DFTrans::r0), 0, 0, 0, contour);
   }
@@ -650,6 +608,10 @@ RedrawThreadWorker::draw_cell (bool drawing_context, int level, const db::CplxTr
 void 
 RedrawThreadWorker::draw_cell_properties (bool drawing_context, int level, const db::CplxTrans &trans, const db::Box &box, db::properties_id_type prop_id)
 {
+  if (prop_id == 0 || ! m_show_properties) {
+    return;
+  }
+
   lay::Renderer &r = *mp_renderer;
 
   unsigned int plane_group = 2;
@@ -661,9 +623,7 @@ RedrawThreadWorker::draw_cell_properties (bool drawing_context, int level, const
 
   lay::CanvasPlane *texts = m_planes[2 + plane_group * (planes_per_layer / 3)];
 
-  if (prop_id != 0 && m_show_properties) {
-    r.draw_propstring (prop_id, (trans * box).p1 (), texts, trans);
-  }
+  r.draw_propstring (prop_id, &mp_layout->properties_repository (), (trans * box).p1 (), texts, trans);
 }
 
 static bool
@@ -688,28 +648,21 @@ cells_in (const db::Layout *layout, const db::Cell &cell,
   return false;
 }
 
-bool
-RedrawThreadWorker::need_draw_box (const db::Layout *layout, const db::Cell &cell, int level)
+static bool 
+need_draw_box (const db::Layout *layout, const db::Cell &cell, 
+               int level, int to_level, 
+               const std::vector <std::set <db::cell_index_type> > &hidden_cells, unsigned int cv_index) 
 {
-  if (level > m_to_level) {
+  if (level > to_level) {
     return false;
   }
-
-  if (m_ghost_cells.size () > (size_t) m_cv_index && ! m_ghost_cells [m_cv_index].empty ()) {
+  if (hidden_cells.size () > cv_index && ! hidden_cells [cv_index].empty ()) {
     std::set <std::pair <int, db::cell_index_type> > cache;
-    if (cells_in (layout, cell, m_ghost_cells [m_cv_index], m_to_level - level, cache)) {
+    if (cells_in (layout, cell, hidden_cells [cv_index], to_level - level, cache)) {
       return true;
     }
   }
-
-  if (m_hidden_cells.size () > (size_t) m_cv_index && ! m_hidden_cells [m_cv_index].empty ()) {
-    std::set <std::pair <int, db::cell_index_type> > cache;
-    if (cells_in (layout, cell, m_hidden_cells [m_cv_index], m_to_level - level, cache)) {
-      return true;
-    }
-  }
-
-  return int (cell.hierarchy_levels ()) + level >= m_to_level;
+  return int (cell.hierarchy_levels ()) + level >= to_level;
 }
 
 void
@@ -723,7 +676,7 @@ RedrawThreadWorker::draw_boxes (bool drawing_context, db::cell_index_type ci, co
   const db::Cell &cell = mp_layout->cell (ci);
 
   //  we will never come to a valid level ..
-  if (! need_draw_box (mp_layout, cell, level)) {
+  if (! need_draw_box (mp_layout, cell, level, m_to_level, m_hidden_cells, m_cv_index)) {
     return;
   }
   if (cell_var_cached (ci, trans)) {
@@ -742,33 +695,36 @@ RedrawThreadWorker::draw_boxes (bool drawing_context, db::cell_index_type ci, co
   const db::Cell &cell = mp_layout->cell (ci);
 
   //  For small bboxes, the cell outline can be reduced ..
-  db::Box bbox = cell.bbox_with_empty ();
-  bool empty_cell = cell.bbox ().empty ();
+  db::Box bbox = cell.bbox ();
 
-  if (m_drop_small_cells && drop_cell (cell, trans)) {
+  if (bbox.empty ()) {
+
+    //  no shapes there and below ..
+
+  } else if (m_drop_small_cells && drop_cell (cell, trans)) {
 
     //  small cell dropped
 
-  } else if (level == m_to_level || cell.is_ghost_cell () || (m_cv_index < int (m_hidden_cells.size ()) && m_hidden_cells [m_cv_index].find (ci) != m_hidden_cells [m_cv_index].end ())) {
+  } else if (level == m_to_level || (m_cv_index < int (m_hidden_cells.size ()) && m_hidden_cells [m_cv_index].find (ci) != m_hidden_cells [m_cv_index].end ())) {
 
     //  paint the box on this level
-    draw_cell (drawing_context, level, trans, bbox, empty_cell, mp_layout->display_name (ci));
+    draw_cell (drawing_context, level, trans, bbox, mp_layout->display_name (ci));
 
   } else if (level < m_to_level) {
 
     db::DBox dbbox = trans * bbox;
-    if (!empty_cell && (dbbox.width () < 1.5 && dbbox.height () < 1.5)) {
+    if (dbbox.width () < 1.5 && dbbox.height () < 1.5) {
 
-      if (need_draw_box (mp_layout, cell, level)) {
+      if (need_draw_box (mp_layout, cell, level, m_to_level, m_hidden_cells, m_cv_index)) {
         //  the cell is a very small box and we know there must be
         //  some level at which to draw the boundary: just draw it
         //  here and stop looking further down ..
-        draw_cell (drawing_context, level, trans, bbox, empty_cell, std::string ());
+        draw_cell (drawing_context, level, trans, bbox, std::string ());
       }
 
     } else {
 
-      db::box_convert<db::CellInst, false> bc (*mp_layout);
+      db::box_convert <db::CellInst> bc (*mp_layout);
 
       //  create a set of boxes to look into
       db::Coord aw = db::coord_traits<db::Coord>::rounded (m_abstract_mode_width / mp_layout->dbu ());
@@ -798,8 +754,7 @@ RedrawThreadWorker::draw_boxes (bool drawing_context, db::cell_index_type ci, co
             const db::CellInstArray &cell_inst = inst->cell_inst ();
 
             db::cell_index_type new_ci = cell_inst.object ().cell_index ();
-            db::Box new_cell_box = cell_inst.bbox (bc);
-            bool empty_inst_cell = mp_layout->cell (new_ci).bbox ().empty ();
+            db::Box new_cell_box = mp_layout->cell (new_ci).bbox ();
 
             if (last_ci != new_ci) {
               //  Hint: don't use any_cell_box on partially visible cells because that will degrade performance
@@ -816,7 +771,7 @@ RedrawThreadWorker::draw_boxes (bool drawing_context, db::cell_index_type ci, co
               db::Vector a, b;
               unsigned long amax, bmax;
               bool simplify = false;
-              if (cell_inst.is_regular_array (a, b, amax, bmax) && (amax > 1 || bmax > 1)) {
+              if (cell_inst.is_regular_array (a, b, amax, bmax)) {
 
                 db::DBox inst_box;
                 if (cell_inst.is_complex ()) {
@@ -836,7 +791,9 @@ RedrawThreadWorker::draw_boxes (bool drawing_context, db::cell_index_type ci, co
               if (simplify) {
 
                 //  The array can be simplified if there are levels below to draw
-                if (need_draw_box (mp_layout, mp_layout->cell (new_ci), level + 1)) {
+                if (need_draw_box (mp_layout, mp_layout->cell (new_ci), level + 1, m_to_level, m_hidden_cells, m_cv_index)) {
+
+                  db::box_convert <db::CellInst> bc (*mp_layout);
 
                   unsigned int plane_group = 2;
                   if (drawing_context) {
@@ -845,42 +802,21 @@ RedrawThreadWorker::draw_boxes (bool drawing_context, db::cell_index_type ci, co
                     plane_group = 1;
                   }
 
-                  if (empty_inst_cell) {
-                    lay::CanvasPlane *vertices  = m_planes[3 + plane_group * (planes_per_layer / 3)];
-                    r.draw (cell_inst.bbox (bc), trans, 0, 0, vertices, 0);
-                  }
-
                   lay::CanvasPlane *contour  = m_planes[1 + plane_group * (planes_per_layer / 3)];
-                  r.draw (cell_inst.bbox (bc), trans, contour, contour, 0, 0);
+                  r.draw (cell_inst.bbox (bc), trans, contour, 0, 0, 0);
 
                 }
 
               } else {
 
-                size_t qid = 0;
-
-                //  The array (or single instance) must be iterated instance by instance
-                for (db::CellInstArray::iterator p = cell_inst.begin_touching (*v, bc); ! p.at_end (); ) {
+                //  The array (or single instance) must be iterated instance
+                //  by instance
+                for (db::CellInstArray::iterator p = cell_inst.begin_touching (*v, bc); ! p.at_end (); ++p) {
 
                   test_snapshot (0);
                   db::ICplxTrans t (cell_inst.complex_trans (*p));
-                  db::Box new_vp = safe_transformed_box (*v, t.inverted ());
+                  db::Box new_vp = db::Box (t.inverted () * *v);
                   draw_boxes (drawing_context, new_ci, trans * t, new_vp, level + 1);
-
-                  if (p.quad_id () > 0 && p.quad_id () != qid) {
-
-                    qid = p.quad_id ();
-
-                    //  if the quad is very small we don't gain anything from looking further into the quad - skip this one
-                    db::DBox qb = trans * cell_inst.quad_box (p, bc);
-                    if (qb.width () < 1.0 && qb.height () < 1.0) {
-                      p.skip_quad ();
-                      continue;
-                    }
-
-                  }
-
-                  ++p;
 
                 }
 
@@ -923,7 +859,7 @@ RedrawThreadWorker::draw_box_properties (bool drawing_context, db::cell_index_ty
   const db::Cell &cell = mp_layout->cell (ci);
 
   //  we will never come to a valid level ..
-  if (! need_draw_box (mp_layout, cell, level)) {
+  if (! need_draw_box (mp_layout, cell, level, m_to_level, m_hidden_cells, m_cv_index)) {
     return;
   }
   if (cell_var_cached (ci, trans)) {
@@ -941,14 +877,17 @@ RedrawThreadWorker::draw_box_properties (bool drawing_context, db::cell_index_ty
   const db::Cell &cell = mp_layout->cell (ci);
 
   //  For small bboxes, the cell outline can be reduced ..
-  db::Box bbox = cell.bbox_with_empty ();
-  bool empty_cell = cell.bbox ().empty ();
+  db::Box bbox = cell.bbox ();
 
-  if (m_drop_small_cells && drop_cell (cell, trans)) {
+  if (bbox.empty ()) {
+
+    //  no shapes there and below ..
+
+  } else if (m_drop_small_cells && drop_cell (cell, trans)) {
 
     //  small cell dropped
 
-  } else if (level == m_to_level || cell.is_ghost_cell () || (m_cv_index < int (m_hidden_cells.size ()) && m_hidden_cells [m_cv_index].find (ci) != m_hidden_cells [m_cv_index].end ())) {
+  } else if (level == m_to_level || (m_cv_index < int (m_hidden_cells.size ()) && m_hidden_cells [m_cv_index].find (ci) != m_hidden_cells [m_cv_index].end ())) {
 
     //  paint the box on this level
     draw_cell_properties (drawing_context, level, trans, bbox, prop_id);
@@ -956,13 +895,13 @@ RedrawThreadWorker::draw_box_properties (bool drawing_context, db::cell_index_ty
   } else if (level < m_to_level) {
 
     db::DBox dbbox = trans * bbox;
-    if (!empty_cell && (dbbox.width () < 1.5 && dbbox.height () < 1.5)) {
+    if (dbbox.width () < 1.5 && dbbox.height () < 1.5) {
 
       //  ignore cells which are small 
 
     } else {
 
-      db::box_convert <db::CellInst, false> bc (*mp_layout);
+      db::box_convert <db::CellInst> bc (*mp_layout);
      
       //  create a set of boxes to look into
       db::Coord aw = db::coord_traits<db::Coord>::rounded (m_abstract_mode_width / mp_layout->dbu ());
@@ -993,7 +932,7 @@ RedrawThreadWorker::draw_box_properties (bool drawing_context, db::cell_index_ty
             db::properties_id_type cell_inst_prop = inst->prop_id ();
 
             db::cell_index_type new_ci = cell_inst.object ().cell_index ();
-            db::Box new_cell_box = cell_inst.bbox (bc);
+            db::Box new_cell_box = mp_layout->cell (new_ci).bbox ();
 
             if (last_ci != new_ci) {
               //  Hint: don't use any_cell_box on partially visible cells because that will degrade performance 
@@ -1010,7 +949,7 @@ RedrawThreadWorker::draw_box_properties (bool drawing_context, db::cell_index_ty
               db::Vector a, b;
               unsigned long amax, bmax; 
               bool simplify = false;
-              if (cell_inst.is_regular_array (a, b, amax, bmax) && (amax > 1 || bmax > 1)) {
+              if (cell_inst.is_regular_array (a, b, amax, bmax)) {
 
                 db::DBox inst_box;
                 if (cell_inst.is_complex ()) {
@@ -1035,7 +974,7 @@ RedrawThreadWorker::draw_box_properties (bool drawing_context, db::cell_index_ty
               
                   test_snapshot (0); 
                   db::ICplxTrans t (cell_inst.complex_trans (*p));
-                  db::Box new_vp = safe_transformed_box (*v, t.inverted ());
+                  db::Box new_vp = db::Box (t.inverted () * *v);
                   draw_box_properties (drawing_context, new_ci, trans * t, new_vp, level + 1, cell_inst_prop);
 
                 }
@@ -1047,6 +986,7 @@ RedrawThreadWorker::draw_box_properties (bool drawing_context, db::cell_index_ty
             ++inst;
 
           }
+
         }
 
       }
@@ -1072,19 +1012,14 @@ RedrawThreadWorker::any_shapes (db::cell_index_type cell_index, unsigned int lev
     }
   }
 
-  //  Ghost cells are not drawn either
-  const db::Cell &cell = mp_layout->cell (cell_index);
-  if (cell.is_ghost_cell ()) {
-    return false;
-  }
-
   //  the cache contains all cells that are visited already
   RedrawThreadWorker::micro_instance_cache_t::const_iterator c = m_mi_cache.find (std::make_pair (cell_index, levels));
   if (c == m_mi_cache.end ()) {
 
     int ret = false;
 
-    if (! cell.shapes (m_layer).begin (db::ShapeIterator::Polygons | db::ShapeIterator::Edges | db::ShapeIterator::Paths | db::ShapeIterator::Boxes | db::ShapeIterator::Points, mp_prop_sel, m_inv_prop_sel).at_end ()) {
+    const db::Cell &cell = mp_layout->cell (cell_index);
+    if (! cell.shapes (m_layer).begin (db::ShapeIterator::Polygons | db::ShapeIterator::Edges | db::ShapeIterator::Paths | db::ShapeIterator::Boxes, mp_prop_sel, m_inv_prop_sel).at_end ()) {
       ret = true;
     } else if (levels > 1) {
       for (db::Cell::child_cell_iterator cc = cell.begin_child_cells (); !cc.at_end () && !ret; ++cc) {
@@ -1114,18 +1049,13 @@ RedrawThreadWorker::any_cell_box (db::cell_index_type cell_index, unsigned int l
     }
   }
 
-  //  ghost cells are also drawn
-  const db::Cell &cell = mp_layout->cell (cell_index);
-  if (cell.is_ghost_cell ()) {
-    return true;
-  }
-
   //  the cache contains all cells that are visited already
   RedrawThreadWorker::micro_instance_cache_t::const_iterator c = m_mi_cell_box_cache.find (std::make_pair (cell_index, levels));
   if (c == m_mi_cell_box_cache.end ()) {
 
     int ret = false;
     if (levels > 1) {
+      const db::Cell &cell = mp_layout->cell (cell_index);
       for (db::Cell::child_cell_iterator cc = cell.begin_child_cells (); !cc.at_end () && !ret; ++cc) {
         ret = any_cell_box (*cc, levels - 1);
       }
@@ -1155,18 +1085,13 @@ RedrawThreadWorker::any_text_shapes (db::cell_index_type cell_index, unsigned in
     }
   }
 
-  //  Ghost cells are not drawn either
-  const db::Cell &cell = mp_layout->cell (cell_index);
-  if (cell.is_ghost_cell ()) {
-    return false;
-  }
-
   //  the cache contains all cells that are visited already
   RedrawThreadWorker::micro_instance_cache_t::const_iterator c = m_mi_text_cache.find (std::make_pair (cell_index, levels));
   if (c == m_mi_text_cache.end ()) {
 
     bool ret = false;
 
+    const db::Cell &cell = mp_layout->cell (cell_index);
     if (! cell.shapes (m_layer).begin (db::ShapeIterator::Texts, mp_prop_sel, m_inv_prop_sel).at_end () ||
         (m_show_properties && ! cell.shapes (m_layer).begin (db::ShapeIterator::AllWithProperties, mp_prop_sel, m_inv_prop_sel).at_end ())) {
       ret = true;
@@ -1316,10 +1241,10 @@ RedrawThreadWorker::draw_text_layer (bool drawing_context, db::cell_index_type c
     return;
   }
 
-  std::unique_ptr<lay::Bitmap> opt_bitmap;
+  std::auto_ptr<lay::Bitmap> opt_bitmap;
   lay::Bitmap *vertex_bitmap = dynamic_cast<lay::Bitmap *> (vertex);
   if (m_text_lazy_rendering && vertex_bitmap) {
-    opt_bitmap.reset (new lay::Bitmap (vertex_bitmap->width (), vertex_bitmap->height (), vertex_bitmap->resolution (), vertex_bitmap->font_resolution ()));
+    opt_bitmap.reset (new lay::Bitmap (vertex_bitmap->width (), vertex_bitmap->height (), vertex_bitmap->resolution ()));
   }
 
   for (std::vector<db::Box>::const_iterator b = vp.begin (); b != vp.end (); ++b) {
@@ -1344,7 +1269,7 @@ RedrawThreadWorker::draw_text_layer (bool drawing_context, db::cell_index_type c
 
   } else if (! bbox.empty ()) {
 
-    bool hidden = cell.is_ghost_cell () || ((m_cv_index < int (m_hidden_cells.size ()) && m_hidden_cells [m_cv_index].find (ci) != m_hidden_cells [m_cv_index].end ()));
+    bool hidden = (m_cv_index < int (m_hidden_cells.size ()) && m_hidden_cells [m_cv_index].find (ci) != m_hidden_cells [m_cv_index].end ());
     bool need_to_dive = (level + 1 < m_to_level) && ! hidden;
 
     db::Box cell_bbox = cell.bbox ();
@@ -1376,7 +1301,7 @@ RedrawThreadWorker::draw_text_layer (bool drawing_context, db::cell_index_type c
 
       } else {
 
-        bool text_simplified = m_text_lazy_rendering && dbbox_tot.width () <= 8.0 && dbbox_tot.height () <= 8.0;
+        bool text_simplified = m_text_lazy_rendering && (dbbox_tot.width () <= 8.0 || dbbox_tot.height () <= 8.0);
             
         const db::Shapes &shapes = cell.shapes (m_layer);
 
@@ -1422,7 +1347,7 @@ RedrawThreadWorker::draw_text_layer (bool drawing_context, db::cell_index_type c
 
               test_snapshot (0); 
 
-              r.draw_propstring (*shape, text, trans);
+              r.draw_propstring (*shape, &mp_layout->properties_repository (), text, trans);
               ++shape;
 
               --ntexts;
@@ -1478,7 +1403,7 @@ RedrawThreadWorker::draw_text_layer (bool drawing_context, db::cell_index_type c
               ++inst;
 
               db::cell_index_type new_ci = cell_inst.object ().cell_index ();
-              bool hidden = mp_layout->cell (new_ci).is_ghost_cell () || ((m_cv_index < int (m_hidden_cells.size ()) && m_hidden_cells [m_cv_index].find (new_ci) != m_hidden_cells [m_cv_index].end ()));
+              bool hidden = (m_cv_index < int (m_hidden_cells.size ()) && m_hidden_cells [m_cv_index].find (new_ci) != m_hidden_cells [m_cv_index].end ());
 
               db::Box cell_box = mp_layout->cell (new_ci).bbox (m_layer);
               if (! cell_box.empty () && ! hidden) {
@@ -1534,7 +1459,7 @@ RedrawThreadWorker::draw_text_layer (bool drawing_context, db::cell_index_type c
                         p.index_a () <= 0 || (unsigned long)p.index_a () == amax - 1 || p.index_b () <= 0 || (unsigned long)p.index_b () == bmax - 1) {
 
                       db::ICplxTrans t (cell_inst.complex_trans (*p));
-                      db::Box new_vp = safe_transformed_box (*v, t.inverted ());
+                      db::Box new_vp = db::Box (t.inverted () * *v);
                       draw_text_layer (drawing_context, new_ci, trans * t, new_vp, level + 1, fill, frame, vertex, text, opt_bitmap);
 
                     } 
@@ -1582,9 +1507,9 @@ bool draw_array_simplified (lay::Renderer *r, const db::Shape &array_shape, lay:
           (na <= 1 || trans.ctrans (a.length ()) < 1.5) &&
           (nb <= 1 || trans.ctrans (b.length ()) < 1.5)) {
 
-        db::Box array_box = array_shape.bbox ();
-        r->draw (array_box, trans, frame, frame, 0, 0);
-        r->draw (array_box, trans, vertex, vertex, 0, 0);
+        db::DBox array_box_trans = trans * array_shape.bbox ();
+        r->draw (array_box_trans, frame, frame, 0, 0);
+        r->draw (array_box_trans, vertex, vertex, 0, 0);
         return true;
 
       } else if (is_regular && 
@@ -1657,9 +1582,7 @@ RedrawThreadWorker::draw_layer_wo_cache (int from_level, int to_level, db::cell_
       db::Shape last_array;
 
       size_t current_quad_id = 0;
-      size_t current_array_quad_id = 0;
-
-      db::ShapeIterator shape (shapes.begin_touching (*v, db::ShapeIterator::Boxes | db::ShapeIterator::Polygons | db::ShapeIterator::Edges | db::ShapeIterator::Paths | db::ShapeIterator::Points, mp_prop_sel, m_inv_prop_sel));
+      db::ShapeIterator shape (shapes.begin_touching (*v, db::ShapeIterator::Boxes | db::ShapeIterator::Polygons | db::ShapeIterator::Edges | db::ShapeIterator::Paths, mp_prop_sel, m_inv_prop_sel));
       while (! shape.at_end ()) {
 
         test_snapshot (update_snapshot); 
@@ -1673,18 +1596,16 @@ RedrawThreadWorker::draw_layer_wo_cache (int from_level, int to_level, db::cell_
         }
 
         if (skip) {
+
           shape.skip_quad ();
-          continue;
-        }
 
-        if (shape.in_array ()) {
+        } else {
 
-          if (last_array != shape.array ()) {
+          bool simplified = false;
+
+          if (shape.in_array () && last_array != shape.array ()) {
 
             last_array = shape.array ();
-            current_array_quad_id = 0;
-
-            bool simplified = false;
 
             if (last_array.type () == db::Shape::PolygonPtrArray) {
               simplified = draw_array_simplified<db::Shape::polygon_ptr_array_type> (mp_renderer.get (), last_array, frame, vertex, trans);
@@ -1698,41 +1619,16 @@ RedrawThreadWorker::draw_layer_wo_cache (int from_level, int to_level, db::cell_
               simplified = draw_array_simplified<db::Shape::short_box_array_type> (mp_renderer.get (), last_array, frame, vertex, trans);
             }
 
-            if (simplified) {
-              shape.finish_array ();
-              //  continue with the next shape, array or quad
-              continue;
-            }
-
           }
 
-        } else {
-          current_array_quad_id = 0;
-        }
-
-        //  try whether the array quad can be simplified
-
-        size_t aqid = shape.array_quad_id ();
-        if (aqid != 0 && aqid != current_array_quad_id) {
-
-          current_array_quad_id = aqid;
-
-          db::DBox qbbox = trans * shape.array_quad_box ();
-          if (qbbox.width () < 1.5 && qbbox.height () < 1.5) {
-
-            //  draw a single box instead of the quad
-            mp_renderer->draw (qbbox, fill, frame, vertex, text);
-            shape.skip_array_quad ();
-
-            //  continue with the next shape, array or quad
-            continue;
-
+          if (simplified) {
+            shape.finish_array ();
+          } else {
+            mp_renderer->draw (*shape, trans, fill, frame, vertex, text);
+            ++shape;
           }
 
         }
-
-        mp_renderer->draw (*shape, trans, fill, frame, vertex, text);
-        ++shape;
 
       }
 
@@ -1780,7 +1676,7 @@ RedrawThreadWorker::draw_layer_wo_cache (int from_level, int to_level, db::cell_
           ++inst;
 
           db::cell_index_type new_ci = cell_inst.object ().cell_index ();
-          bool hidden = mp_layout->cell (new_ci).is_ghost_cell () || ((m_cv_index < int (m_hidden_cells.size ()) && m_hidden_cells [m_cv_index].find (new_ci) != m_hidden_cells [m_cv_index].end ()));
+          bool hidden = (m_cv_index < int (m_hidden_cells.size ()) && m_hidden_cells [m_cv_index].find (new_ci) != m_hidden_cells [m_cv_index].end ());
 
           db::Box new_cell_box = mp_layout->cell (new_ci).bbox (m_layer);
           if (! new_cell_box.empty () && ! hidden) {
@@ -1831,33 +1727,16 @@ RedrawThreadWorker::draw_layer_wo_cache (int from_level, int to_level, db::cell_
 
             } else if (anything) {
 
-              size_t qid = 0;
-
-              for (db::CellInstArray::iterator p = cell_inst.begin_touching (*v, bc); ! p.at_end (); ) {
+              for (db::CellInstArray::iterator p = cell_inst.begin_touching (*v, bc); ! p.at_end (); ++p) {
 
                 if (! m_draw_array_border_instances || 
                     p.index_a () <= 0 || (unsigned long)p.index_a () == amax - 1 || p.index_b () <= 0 || (unsigned long)p.index_b () == bmax - 1) {
 
                   db::ICplxTrans t (cell_inst.complex_trans (*p));
-                  db::Box new_vp = safe_transformed_box (*v, t.inverted ());
+                  db::Box new_vp = db::Box (t.inverted () * *v);
                   draw_layer (from_level, to_level, new_ci, trans * t, new_vp, level + 1, fill, frame, vertex, text, update_snapshot);
 
-                  if (p.quad_id () > 0 && p.quad_id () != qid) {
-
-                    qid = p.quad_id ();
-
-                    //  if the quad is very small we don't gain anything from looking further into the quad - skip this one
-                    db::DBox qb = trans * cell_inst.quad_box (p, bc);
-                    if (qb.width () < 1.0 && qb.height () < 1.0) {
-                      p.skip_quad ();
-                      continue;
-                    }
-
-                  }
-
                 } 
-
-                ++p;
 
               }
 
@@ -1937,7 +1816,7 @@ RedrawThreadWorker::draw_layer (int from_level, int to_level, db::cell_index_typ
   db::Box cell_bbox = cell.bbox ();
 
   //  Nothing to draw
-  if (bbox.empty () || cell.is_ghost_cell ()) {
+  if (bbox.empty ()) {
     return;
   }
 
@@ -1960,21 +1839,17 @@ RedrawThreadWorker::draw_layer (int from_level, int to_level, db::cell_index_typ
     if ((dbbox.width () < 2.5 && dbbox.height () < 1.5) || 
         (dbbox.width () < 1.5 && dbbox.height () < 2.5)) {
 
-      if (bbox.touches (vp)) {
-
-        bool anything = true;
-        if (level == 0) {
-          //  Hint: on levels below 0 we know that there is anything. Otherwise we would not enter this procedure
-          //  Hint: don't use any_text_shapes on partially visible cells because that will degrade performance
-          anything = any_shapes (ci, m_to_level - level);
-        }
-
-        if (anything) {
-          //  any shapes here: paint bbox for simplification
-          mp_renderer->draw (dbbox, 0, frame, vertex, 0);
-        }
-
+      bool anything = true;
+      if (level == 0 && cell_bbox.inside (vp)) {
+        //  Hint: on levels below 0 we know that there is anything. Otherwise we would not enter this procedure
+        //  Hint: don't use any_text_shapes on partially visible cells because that will degrade performance 
+        anything = any_shapes (ci, m_to_level - level);
       }
+
+      if (anything) {
+        //  any shapes here: paint bbox for simplification
+        mp_renderer->draw (dbbox, 0, frame, vertex, 0);
+      } 
 
     } else {
 
@@ -2026,10 +1901,10 @@ RedrawThreadWorker::draw_layer (int from_level, int to_level, db::cell_index_typ
           int width = int (cell_box_trans.width () + 3);    //  +3 = one pixel for a one-pixel frame at both sides and one for safety
           int height = int (cell_box_trans.height () + 3);
 
-          cached_cell->second.fill   = new lay::Bitmap (width, height, 1.0, 1.0);
-          cached_cell->second.frame  = new lay::Bitmap (width, height, 1.0, 1.0);
-          cached_cell->second.vertex = new lay::Bitmap (width, height, 1.0, 1.0);
-          cached_cell->second.text   = new lay::Bitmap (width, height, 1.0, 1.0);
+          cached_cell->second.fill   = new lay::Bitmap (width, height, 1.0);
+          cached_cell->second.frame  = new lay::Bitmap (width, height, 1.0);
+          cached_cell->second.vertex = new lay::Bitmap (width, height, 1.0);
+          cached_cell->second.text   = new lay::Bitmap (width, height, 1.0);
 
           //  this object is responsible for doing updates when a snapshot is taken
           UpdateSnapshotWithCache update_cached_snapshot (update_snapshot, &trans, &cached_cell->second, fill, frame, vertex, text);
@@ -2130,14 +2005,11 @@ bool
 RedrawThreadWorker::drop_cell (const db::Cell &cell, const db::CplxTrans &trans)
 {
   db::DBox bbox = trans * cell.bbox ();
-  if (bbox.empty ()) {
-    return true;
-  }
 
   double value = 0;
-  if (m_drop_small_cells_cond == lay::LayoutViewBase::DSC_Min) {
+  if (m_drop_small_cells_cond == lay::LayoutView::DSC_Min) {
     value = std::min (bbox.width (), bbox.height ());
-  } else if (m_drop_small_cells_cond == lay::LayoutViewBase::DSC_Max) {
+  } else if (m_drop_small_cells_cond == lay::LayoutView::DSC_Max) {
     value = std::max (bbox.width (), bbox.height ());
   } else {
     value = bbox.width () + bbox.height ();
@@ -2211,7 +2083,7 @@ RedrawThreadWorker::iterate_variants (const std::vector <db::Box> &redraw_region
     m_from_level = fl;
 
     if (tl::verbosity () >= 40) {
-      tl::info << tl::to_string (tr ("Cell variant cache hits/misses: ")) << m_cache_hits << "/" << m_cache_misses;
+      tl::info << tl::to_string (QObject::tr ("Cell variant cache hits/misses: ")) << m_cache_hits << "/" << m_cache_misses;
     }
 
   } else {
@@ -2275,7 +2147,7 @@ RedrawThreadWorker::iterate_variants_rec (const std::vector <db::Box> &redraw_re
       db::Coord lim = std::numeric_limits<db::Coord>::max ();
       db::DBox world (trans * db::Box (db::Point (-lim, -lim), db::Point (lim, lim)));
       db::Box vp = db::Box (trans.inverted () * (world & db::DBox (*rr)));
-      vp &= mp_layout->cell (ci).bbox_with_empty (); // this avoids problems when accessing designs through very large viewports
+      vp &= mp_layout->cell (ci).bbox (); // this avoids problems when accessing designs through very large viewports
       if (! vp.empty ()) {
         actual_regions.push_back (vp);
       }

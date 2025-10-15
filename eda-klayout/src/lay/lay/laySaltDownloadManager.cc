@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -26,8 +26,6 @@
 #include "tlProgress.h"
 #include "tlFileUtils.h"
 #include "tlWebDAV.h"
-#include "tlLog.h"
-#include "tlEnv.h"
 
 #include <memory>
 #include <QTreeWidgetItem>
@@ -40,18 +38,16 @@ namespace lay
 // ----------------------------------------------------------------------------------
 
 ConfirmationDialog::ConfirmationDialog (QWidget *parent)
-  : QDialog (parent), m_confirmed (false), m_cancelled (false), m_aborted (false), m_file (50000, true)
+  : QDialog (parent), m_confirmed (false), m_cancelled (false), m_file (50000, true)
 {
   Ui::SaltManagerInstallConfirmationDialog::setupUi (this);
 
   connect (ok_button, SIGNAL (clicked ()), this, SLOT (confirm_pressed ()));
   connect (cancel_button, SIGNAL (clicked ()), this, SLOT (cancel_pressed ()));
   connect (close_button, SIGNAL (clicked ()), this, SLOT (close_pressed ()));
-  connect (abort_button, SIGNAL (clicked ()), this, SLOT (abort_pressed ()));
 
   log_panel->hide ();
   attn_frame->hide ();
-  abort_button->hide ();
   log_view->setModel (&m_file);
 
   connect (&m_file, SIGNAL (layoutChanged ()), log_view, SLOT (scrollToBottom ()));
@@ -89,8 +85,8 @@ ConfirmationDialog::mark_fetching (const std::string &name)
   if (i != m_items_by_name.end ()) {
     list->scrollToItem (i->second);
     for (int c = 0; c < list->columnCount (); ++c) {
-      i->second->setData (c, Qt::BackgroundRole, QColor (224, 244, 244));
-      i->second->setData (c, Qt::ForegroundRole, QColor (Qt::blue));
+      i->second->setData (c, Qt::BackgroundColorRole, QColor (224, 244, 244));
+      i->second->setData (c, Qt::TextColorRole, QColor (Qt::blue));
     }
     i->second->setData (1, Qt::DisplayRole, tr ("FETCHING"));
   }
@@ -99,14 +95,14 @@ ConfirmationDialog::mark_fetching (const std::string &name)
 void
 ConfirmationDialog::mark_error (const std::string &name)
 {
-  set_icon_for_name (name, QIcon (QString::fromUtf8 (":/error_16px.png")));
+  set_icon_for_name (name, QIcon (QString::fromUtf8 (":/error_16.png")));
 
   std::map<std::string, QTreeWidgetItem *>::const_iterator i = m_items_by_name.find (name);
   if (i != m_items_by_name.end ()) {
     list->scrollToItem (i->second);
     for (int c = 0; c < list->columnCount (); ++c) {
-      i->second->setData (c, Qt::BackgroundRole, QColor (255, 224, 244));
-      i->second->setData (c, Qt::ForegroundRole, QColor (Qt::black));
+      i->second->setData (c, Qt::BackgroundColorRole, QColor (255, 224, 244));
+      i->second->setData (c, Qt::TextColorRole, QColor (Qt::black));
     }
     i->second->setData (1, Qt::DisplayRole, tr ("ERROR"));
   }
@@ -115,14 +111,14 @@ ConfirmationDialog::mark_error (const std::string &name)
 void
 ConfirmationDialog::mark_success (const std::string &name)
 {
-  set_icon_for_name (name, QIcon (QString::fromUtf8 (":/marked_16px.png")));
+  set_icon_for_name (name, QIcon (QString::fromUtf8 (":/marked_16.png")));
 
   std::map<std::string, QTreeWidgetItem *>::const_iterator i = m_items_by_name.find (name);
   if (i != m_items_by_name.end ()) {
     list->scrollToItem (i->second);
     for (int c = 0; c < list->columnCount (); ++c) {
-      i->second->setData (c, Qt::BackgroundRole, QColor (160, 255, 160));
-      i->second->setData (c, Qt::ForegroundRole, QColor (Qt::black));
+      i->second->setData (c, Qt::BackgroundColorRole, QColor (160, 255, 160));
+      i->second->setData (c, Qt::TextColorRole, QColor (Qt::black));
     }
     i->second->setData (1, Qt::DisplayRole, tr ("INSTALLED"));
   }
@@ -151,22 +147,20 @@ ConfirmationDialog::start ()
 {
   confirm_panel->hide ();
   log_panel->show ();
-  close_button->hide ();
-  abort_button->show ();
+  close_button->setEnabled (false);
 }
 
 void
 ConfirmationDialog::finish ()
 {
-  close_button->show ();
-  abort_button->hide ();
+  close_button->setEnabled (true);
 }
 
 // ----------------------------------------------------------------------------------
 
 SaltDownloadManager::SaltDownloadManager ()
 {
-  m_always_download_package_information = false;
+  //  .. nothing yet ..
 }
 
 void
@@ -311,80 +305,41 @@ SaltDownloadManager::fetch_missing (const lay::Salt &salt, const lay::Salt &salt
       ++progress;
 
       //  Add URL and token from the package index
-      //
-      //  In order to do so, we try to use the information from that package index as far as possible.
-      //  Downloading a package definition from the original package URL may be expensive in case of
-      //  large GIT repositories.
-      //
-      //  Downloading is required if:
-      //  - A package download is requested without a name (package can't be looked up in the package index)
-      //  - Or a name is given, but not found in the package index
-      //
-      //  Downloading can be bypassed if the package index (salt mine) specifies "sparse=false".
-      //  In that case, the package index will have all information about the package.
-
       if (! p->name.empty ()) {
 
         const lay::SaltGrain *g = salt_mine.grain_by_name (p->name);
         if (! g) {
           if (p->url.empty ()) {
-            throw tl::Exception (tl::to_string (tr ("Package '%s' not found in index - cannot resolve download URL")), p->name);
+            throw tl::Exception (tl::to_string (QObject::tr ("Package '%1' not found in index - cannot resolve download URL").arg (tl::to_qstring (p->name))));
           }
         } else {
           if (p->url.empty ()) {
             if (tl::verbosity() >= 20) {
-              tl::log << tr ("Resolved package URL for package") << " '" << p->name << "': " << g->url ();
+              tl::log << "Resolved package URL for package " << p->name << ": " << g->url ();
             }
             p->url = g->url ();
           }
           p->token = g->token ();
-          p->grain = *g;
-          p->downloaded = true;
         }
 
       }
 
-      if (! p->downloaded && (m_always_download_package_information || salt_mine.download_package_information ())) {
-
-        //  If requested, download package information to complete information from index or dependencies
-        if (tl::verbosity() >= 10) {
-          tl::log << tl::sprintf (tl::to_string (tr ("Reading package description for package '%s' from: '%s")), p->name, p->url);
-        }
-        try {
-          p->grain = SaltGrain::from_url (p->url);
-          p->downloaded = true;
-        } catch (tl::Exception &ex) {
-          throw tl::Exception (tl::to_string (tr ("Error fetching spec file for package from '%s': %s")), p->url, ex.msg ());
-        }
-
+      try {
+        p->grain = SaltGrain::from_url (p->url);
+      } catch (tl::Exception &ex) {
+        throw tl::Exception (tl::to_string (QObject::tr ("Error fetching spec file for package '%1': %2").arg (tl::to_qstring (p->name)).arg (tl::to_qstring (ex.msg ()))));
       }
 
-      if (! p->downloaded) {
-
-        if (p->name.empty ()) {
-          throw tl::Exception (tl::to_string (tr ("No name given for package from '%s' (from dependencies or command line installation request)")), p->url);
-        }
-
-        if (tl::verbosity() >= 10) {
-          tl::warn << tl::sprintf (tl::to_string (tr ("Package '%s' not downloaded from: %s. Dependencies may not be resolved.")), p->name, p->url);
-        }
-
-      } else {
-
-        if (p->version.empty ()) {
-          p->version = p->grain.version ();
-        }
-        if (p->name.empty ()) {
-          p->name = p->grain.name ();
-        }
-
-        if (SaltGrain::compare_versions (p->grain.version (), p->version) < 0) {
-          throw tl::Exception (tl::to_string (tr ("Package '%s': package in repository is too old (%s) to satisfy requirements (%s)")), p->name, p->grain.version (), p->version);
-        }
-
+      if (p->version.empty ()) {
+        p->version = p->grain.version ();
       }
 
+      p->name = p->grain.name ();
       p->downloaded = true;
+
+      if (SaltGrain::compare_versions (p->grain.version (), p->version) < 0) {
+        throw tl::Exception (tl::to_string (QObject::tr ("Package '%1': package in repository is too old (%2) to satisfy requirements (%3)").arg (tl::to_qstring (p->name)).arg (tl::to_qstring (p->grain.version ())).arg (tl::to_qstring (p->version))));
+      }
 
     }
 
@@ -445,28 +400,18 @@ SaltDownloadManager::make_confirmation_dialog (QWidget *parent, const lay::Salt 
 namespace
 {
   class DownloadProgressAdaptor
-    : public tl::ProgressAdaptor, public tl::InputHttpStreamCallback
+    : public tl::ProgressAdaptor
   {
   public:
     DownloadProgressAdaptor (lay::ConfirmationDialog *dialog, const std::string &name)
-      : mp_dialog (dialog), m_name (name), m_is_aborted (false)
+      : mp_dialog (dialog), m_name (name)
     {
       mp_dialog->mark_fetching (m_name);
     }
 
-    virtual void yield (tl::Progress * /*progress*/)
-    {
-      QCoreApplication::processEvents (QEventLoop::AllEvents | QEventLoop::WaitForMoreEvents, 100);
-      if (mp_dialog->is_aborted ()) {
-        m_is_aborted = true;
-        throw tl::CancelException ();
-      }
-    }
-
-    virtual void wait_for_input ()
-    {
-      yield (0);
-    }
+    virtual void register_object (tl::Progress * /*progress*/) { }
+    virtual void unregister_object (tl::Progress * /*progress*/) { }
+    virtual void yield (tl::Progress * /*progress*/) { }
 
     virtual void trigger (tl::Progress *progress)
     {
@@ -483,15 +428,9 @@ namespace
       mp_dialog->mark_success (m_name);
     }
 
-    bool is_aborted () const
-    {
-      return m_is_aborted;
-    }
-
   private:
     lay::ConfirmationDialog *mp_dialog;
     std::string m_name;
-    bool m_is_aborted;
   };
 }
 
@@ -508,7 +447,7 @@ SaltDownloadManager::execute (lay::SaltManagerDialog *parent, lay::Salt &salt)
       return true;
     }
 
-    std::unique_ptr<lay::ConfirmationDialog> dialog (make_confirmation_dialog (parent, salt));
+    std::auto_ptr<lay::ConfirmationDialog> dialog (make_confirmation_dialog (parent, salt));
 
     dialog->setModal (true);
     dialog->show ();
@@ -523,9 +462,6 @@ SaltDownloadManager::execute (lay::SaltManagerDialog *parent, lay::Salt &salt)
 
     dialog->start ();
 
-    //  Stop other events to interfere with the download, specifically not macro controller updates
-    tl::NoDeferredMethods silent_section;
-
     std::sort (m_registry.begin (), m_registry.end ());
 
     for (std::vector<Descriptor>::const_iterator p = m_registry.begin (); p != m_registry.end (); ++p) {
@@ -539,17 +475,15 @@ SaltDownloadManager::execute (lay::SaltManagerDialog *parent, lay::Salt &salt)
 
       int status = 1;
 
-      DownloadProgressAdaptor pa (dialog.get (), p->name);
-      if (! salt.create_grain (p->grain, target, 0.0 /*infinite timeout*/, &pa)) {
-        pa.error ();
-        result = false;
-        status = 0;
-      } else {
-        pa.success ();
-      }
-
-      if (pa.is_aborted ()) {
-        break;
+      {
+        DownloadProgressAdaptor pa (dialog.get (), p->name);
+        if (! salt.create_grain (p->grain, target)) {
+          pa.error ();
+          result = false;
+          status = 0;
+        } else {
+          pa.success ();
+        }
       }
 
       try {
@@ -585,7 +519,7 @@ SaltDownloadManager::execute (lay::SaltManagerDialog *parent, lay::Salt &salt)
         target.set_path (g->path ());
       }
 
-      if (! salt.create_grain (p->grain, target, 60.0 /*timeout for offline installation*/)) {
+      if (! salt.create_grain (p->grain, target)) {
         tl::error << tl::to_string (QObject::tr ("Installation failed for package %1").arg (tl::to_qstring (target.name ())));
         result = false;
       } else {

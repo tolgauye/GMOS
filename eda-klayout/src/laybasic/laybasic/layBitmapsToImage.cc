@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -25,10 +25,11 @@
 #include "layBitmap.h"
 #include "layDitherPattern.h"
 #include "layLineStyles.h"
-#include "tlPixelBuffer.h"
 #include "tlTimer.h"
 #include "tlAssert.h"
-#include "tlThreads.h"
+
+#include <QMutex>
+#include <QImage>
 
 namespace lay
 {
@@ -311,22 +312,15 @@ render_scanline_cross (const uint32_t *dp, unsigned int ds, const lay::Bitmap *p
     return;
   }
 
-  //  NOTE: hardcoded bar/width ratio for crosses.
-  unsigned int lw = std::max (std::min ((unsigned int) 6, pixels / 9), (unsigned int) 1);
-
-  const int max_pixels = 31;
-  if (pixels > max_pixels) {
-    pixels = max_pixels;
+  if (pixels > 15) {
+    pixels = 15;
   }
 
   const uint32_t *dm = dp;
   unsigned int px1 = (pixels - 1) / 2;
   unsigned int px2 = (pixels - 1) - px1;
 
-  unsigned int spx1 = (lw - 1) / 2;
-  unsigned int spx2 = (lw - 1) - spx1;
-
-  const uint32_t *ps[max_pixels + 1];
+  const uint32_t *ps[16];
   for (unsigned int p = 0; p < pixels; ++p) {
     if (y + p < px1) {
       ps[p] = pbitmap->scanline (0);
@@ -337,100 +331,62 @@ render_scanline_cross (const uint32_t *dp, unsigned int ds, const lay::Bitmap *p
     }
   }
 
-  uint32_t *dpp = data;
-  for (unsigned int i = (w + lay::wordlen - 1) / lay::wordlen; i > 0; --i) {
-    *dpp++ = 0;
-  }
+  uint32_t d, dd = 0, dn;
+  dn = *(ps[px1]++);
 
-  for (unsigned int o = 0; o < pixels; ++o) {
+  unsigned int x = w;
+  while (true) {
 
-    dpp = data;
+    d = dn;
 
-    unsigned int bpx1 = 0, bpx2 = 0;
-    if (o >= px1 - spx1 && o <= px1 + spx2) {
-      bpx1 = px1;
-      bpx2 = px2;
-    } else {
-      bpx1 = spx1;
-      bpx2 = spx2;
+    dn = 0;
+    if (x > lay::wordlen) {
+      dn = *(ps[px1]++);
     }
 
-    if (bpx1 > 0 || bpx2 > 0) {
-
-      uint32_t d, dd = 0, dn;
-      dn = *(ps[o]++);
-
-      unsigned int x = w;
-      while (true) {
-
-        d = dn;
-
-        dn = 0;
-        if (x > lay::wordlen) {
-          dn = *(ps[o]++);
-        }
-
-        uint32_t d0 = d;
-        if (d0 != 0) {
-          for (unsigned int p = 1; p <= bpx1; ++p) {
-            d |= (d0 >> p);
-          }
-          for (unsigned int p = 1; p <= bpx2; ++p) {
-            d |= (d0 << p);
-          }
-        }
-        if (dn != 0) {
-          for (unsigned int p = 1; p <= bpx1; ++p) {
-            d |= (dn << (32 - p));
-          }
-        }
-        if (dd != 0) {
-          for (unsigned int p = 1; p <= bpx2; ++p) {
-            d |= (dd >> (32 - p));
-          }
-        }
-
-        dd = d0;
-
-        *dpp++ |= d & *dm++;
-        if (dm == dp + ds) {
-          dm = dp;
-        }
-
-        if (x > lay::wordlen) {
-          x -= lay::wordlen;
-        } else {
-          break;
-        }
-
+    uint32_t d0 = d;
+    if (d0 != 0) {
+      for (unsigned int p = 1; p <= px1; ++p) {
+        d |= (d0 >> p);
       }
+      for (unsigned int p = 1; p <= px2; ++p) {
+        d |= (d0 << p);
+      }
+    }
+    if (dn != 0) {
+      for (unsigned int p = 1; p <= px1; ++p) {
+        d |= (dn << (32 - p));
+      }
+    }
+    if (dd != 0) {
+      for (unsigned int p = 1; p <= px2; ++p) {
+        d |= (dd >> (32 - p));
+      }
+    }
+    for (unsigned int p = 0; p < px1; ++p) {
+      d |= *(ps[p]++);
+    }
+    for (unsigned int p = px1 + 1; p < pixels; ++p) {
+      d |= *(ps[p]++);
+    }
 
+    dd = d0;
+
+    *data++ = d & *dm++;
+    if (dm == dp + ds) {
+      dm = dp;
+    }
+
+    if (x > lay::wordlen) {
+      x -= lay::wordlen;
     } else {
-
-      unsigned int x = w;
-      while (true) {
-
-        uint32_t d = *(ps[o]++);
-
-        *dpp++ |= d & *dm++;
-        if (dm == dp + ds) {
-          dm = dp;
-        }
-
-        if (x > lay::wordlen) {
-          x -= lay::wordlen;
-        } else {
-          break;
-        }
-
-      }
-
+      break;
     }
 
   }
 }
 
-static void create_precursor_bitmaps (const std::vector<lay::ViewOp> &view_ops_in, const std::vector <unsigned int> &vo_map, const std::vector<lay::Bitmap *> &pbitmaps_in, const std::vector<unsigned int> &bm_map, const lay::LineStyles &ls, unsigned int width, unsigned int height, std::map<unsigned int, lay::Bitmap> &precursors, tl::Mutex *mutex)
+static void create_precursor_bitmaps (const std::vector<lay::ViewOp> &view_ops_in, const std::vector <unsigned int> &vo_map, const std::vector<lay::Bitmap *> &pbitmaps_in, const std::vector<unsigned int> &bm_map, const lay::LineStyles &ls, unsigned int width, unsigned int height, std::map<unsigned int, lay::Bitmap> &precursors, QMutex *mutex)
 {
   tl_assert (bm_map.size () == vo_map.size ());
 
@@ -449,8 +405,9 @@ static void create_precursor_bitmaps (const std::vector<lay::ViewOp> &view_ops_i
         mutex->lock ();
       }
 
-      lay::Bitmap &bp = precursors.insert (std::make_pair (bm_index, lay::Bitmap (width, height, 1.0, 1.0))).first->second;
-      const LineStyleInfo &ls_info = ls.style (op.line_style_index ()).scaled (op.width ());
+      lay::Bitmap &bp = precursors.insert (std::make_pair (bm_index, lay::Bitmap (width, height, 1.0))).first->second;
+      LineStyleInfo ls_info = ls.style (op.line_style_index ());
+      ls_info.scale_pattern (op.width ());
 
       for (unsigned int y = 0; y < height; y++) {
         render_scanline_std_edge (ls_info.pattern (), ls_info.pattern_stride (), pbitmaps_in [bm_index], y, width, height, bp.scanline (y));
@@ -465,18 +422,16 @@ static void create_precursor_bitmaps (const std::vector<lay::ViewOp> &view_ops_i
   }
 }
 
-void
-bitmaps_to_image (const std::vector<lay::ViewOp> &view_ops_in,
-                  const std::vector<lay::Bitmap *> &pbitmaps_in,
-                  const lay::DitherPattern &dp,
-                  const lay::LineStyles &ls,
-                  double dpr,
-                  tl::PixelBuffer *pimage, unsigned int width, unsigned int height,
-                  bool use_bitmap_index,
-                  tl::Mutex *mutex)
+static void 
+bitmaps_to_image_rgb (const std::vector<lay::ViewOp> &view_ops_in,
+                      const std::vector<lay::Bitmap *> &pbitmaps_in,
+                      const lay::DitherPattern &dp,
+                      const lay::LineStyles &ls,
+                      QImage *pimage, unsigned int width, unsigned int height,
+                      bool use_bitmap_index,
+                      bool transparent,
+                      QMutex *mutex)
 {
-  bool transparent = pimage->transparent ();
-
   std::vector<unsigned int> bm_map;
   std::vector<unsigned int> vo_map;
 
@@ -507,7 +462,7 @@ bitmaps_to_image (const std::vector<lay::ViewOp> &view_ops_in,
 
   std::vector<lay::ViewOp> view_ops;
   std::vector<const lay::Bitmap *> pbitmaps;
-  std::vector<std::pair <tl::color_t, tl::color_t> > masks;
+  std::vector<std::pair <lay::color_t, lay::color_t> > masks;
   std::vector<uint32_t> non_empty_sls;
 
   view_ops.reserve (n_in);
@@ -592,8 +547,8 @@ bitmaps_to_image (const std::vector<lay::ViewOp> &view_ops_in,
       const ViewOp &op = view_ops [i];
       if (op.width () > 1 || (op.width () == 1 && (non_empty_sls [i] & ne_mask) != 0)) {
 
-        const LineStyleInfo &ls_info = ls.style (op.line_style_index ()).scaled (op.width ());
-        const DitherPatternInfo &dp_info = dp.pattern (op.dither_index ()).scaled (dpr);
+        const LineStyleInfo &ls_info = ls.style (op.line_style_index ());
+        const DitherPatternInfo &dp_info = dp.pattern (op.dither_index ());
         const uint32_t *dither = dp_info.pattern () [(y + op.dither_offset ()) % dp_info.height ()];
         if (dither != 0) {
 
@@ -633,13 +588,13 @@ bitmaps_to_image (const std::vector<lay::ViewOp> &view_ops_in,
 
     if (masks.size () > 0) {
 
-      tl::color_t *pt = (tl::color_t *) pimage->scan_line (height - 1 - y);
+      lay::color_t *pt = (lay::color_t *) pimage->scanLine (height - 1 - y);
       uint32_t *dptr_end = dptr; 
 
       unsigned int i = 0;
       for (unsigned int x = 0; x < width; x += 32, ++i) {
 
-        tl::color_t y[32];
+        lay::color_t y[32];
         if (transparent) {
           for (int i = 0; i < 32; ++i) {
             y[i] = 0;
@@ -650,7 +605,7 @@ bitmaps_to_image (const std::vector<lay::ViewOp> &view_ops_in,
           }
         };
 
-        tl::color_t z[32] = { 
+        lay::color_t z[32] = { 
           lay::wordones, lay::wordones, lay::wordones, lay::wordones, 
           lay::wordones, lay::wordones, lay::wordones, lay::wordones, 
           lay::wordones, lay::wordones, lay::wordones, lay::wordones, 
@@ -706,15 +661,14 @@ bitmaps_to_image (const std::vector<lay::ViewOp> &view_ops_in,
   delete [] buffer;
 }
 
-void
-bitmaps_to_image (const std::vector<lay::ViewOp> &view_ops_in,
-                  const std::vector<lay::Bitmap *> &pbitmaps_in,
-                  const lay::DitherPattern &dp,
-                  const lay::LineStyles &ls,
-                  double dpr,
-                  tl::BitmapBuffer *pimage, unsigned int width, unsigned int height,
-                  bool use_bitmap_index,
-                  tl::Mutex *mutex)
+static void 
+bitmaps_to_image_mono (const std::vector<lay::ViewOp> &view_ops_in, 
+                       const std::vector<lay::Bitmap *> &pbitmaps_in,
+                       const lay::DitherPattern &dp, 
+                       const lay::LineStyles &ls,
+                       QImage *pimage, unsigned int width, unsigned int height,
+                       bool use_bitmap_index,
+                       QMutex *mutex)
 {
   std::vector<unsigned int> bm_map;
   std::vector<unsigned int> vo_map;
@@ -746,7 +700,7 @@ bitmaps_to_image (const std::vector<lay::ViewOp> &view_ops_in,
 
   std::vector<lay::ViewOp> view_ops;
   std::vector<const lay::Bitmap *> pbitmaps;
-  std::vector<std::pair <tl::color_t, tl::color_t> > masks;
+  std::vector<std::pair <lay::color_t, lay::color_t> > masks;
   std::vector<uint32_t> non_empty_sls;
 
   view_ops.reserve (n_in);
@@ -830,8 +784,8 @@ bitmaps_to_image (const std::vector<lay::ViewOp> &view_ops_in,
       const ViewOp &op = view_ops [i];
       if (op.width () > 1 || (op.width () == 1 && (non_empty_sls [i] & ne_mask) != 0)) {
 
-        const LineStyleInfo &ls_info = ls.style (op.line_style_index ()).scaled (op.width ());
-        const DitherPatternInfo &dp_info = dp.pattern (op.dither_index ()).scaled (dpr);
+        const LineStyleInfo &ls_info = ls.style (op.line_style_index ());
+        const DitherPatternInfo &dp_info = dp.pattern (op.dither_index ());
         const uint32_t *dither = dp_info.pattern () [(y + op.dither_offset ()) % dp_info.height ()];
         if (dither != 0) {
 
@@ -871,7 +825,7 @@ bitmaps_to_image (const std::vector<lay::ViewOp> &view_ops_in,
 
     if (masks.size () > 0) {
 
-      tl::color_t *pt = (tl::color_t *) pimage->scan_line (height - 1 - y);
+      lay::color_t *pt = (lay::color_t *) pimage->scanLine (height - 1 - y);
       uint32_t *dptr_end = dptr; 
 
       unsigned int i = 0;
@@ -912,13 +866,29 @@ bitmaps_to_image (const std::vector<lay::ViewOp> &view_ops_in,
   delete [] buffer;
 }
 
+void 
+bitmaps_to_image (const std::vector<lay::ViewOp> &view_ops_in, 
+                  const std::vector<lay::Bitmap *> &pbitmaps_in,
+                  const lay::DitherPattern &dp, 
+                  const lay::LineStyles &ls,
+                  QImage *pimage, unsigned int width, unsigned int height,
+                  bool use_bitmap_index,
+                  QMutex *mutex)
+{
+  if (pimage->depth () <= 1) {
+    bitmaps_to_image_mono (view_ops_in, pbitmaps_in, dp, ls, pimage, width, height, use_bitmap_index, mutex);
+  } else {
+    bool transparent = (pimage->format () == QImage::Format_ARGB32);
+    bitmaps_to_image_rgb (view_ops_in, pbitmaps_in, dp, ls, pimage, width, height, use_bitmap_index, transparent, mutex);
+  }
+}
+
 void
 bitmap_to_bitmap (const lay::ViewOp &view_op, const lay::Bitmap &bitmap,
                   unsigned char *data,
                   unsigned int width, unsigned int height,
                   const lay::DitherPattern &dp,
-                  const lay::LineStyles &ls,
-                  double dpr)
+                  const lay::LineStyles &ls)
 {
   //  quick exit, if line width is zero
   if (view_op.width () == 0) {
@@ -932,12 +902,12 @@ bitmap_to_bitmap (const lay::ViewOp &view_op, const lay::Bitmap &bitmap,
   unsigned int x = 0xc0000001;
   unsigned char x0 = ((unsigned char *) &x) [0];
 
-  const DitherPatternInfo &dp_info = dp.pattern (view_op.dither_index ()).scaled (dpr);
-  const LineStyleInfo &ls_info = ls.style (view_op.line_style_index ()).scaled (view_op.width ());
+  const DitherPatternInfo &dp_info = dp.pattern (view_op.dither_index ());
+  const LineStyleInfo &ls_info = ls.style (view_op.line_style_index ());
 
   for (unsigned int y = 0; y < height; ++y) {
 
-    unsigned int nbytes = ((width + 7) / 8);
+    unsigned nbytes = ((width + 7) / 8);
 
     if (view_op.width () > 1 || ! bitmap.is_scanline_empty (height - 1 - y)) {
 
@@ -961,9 +931,10 @@ bitmap_to_bitmap (const lay::ViewOp &view_op, const lay::Bitmap &bitmap,
         lay::Bitmap precursor;
         if (ls_info.width () > 0) {
 
-          precursor = lay::Bitmap (width, height, 1.0, 1.0);
+          precursor = lay::Bitmap (width, height, 1.0);
 
           LineStyleInfo lsi = ls_info;
+          lsi.scale_pattern (view_op.width ());
 
           for (unsigned int y = 0; y < height; y++) {
             render_scanline_std_edge (lsi.pattern (), lsi.pattern_stride (), bp, y, width, height, precursor.scanline (y));

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -37,6 +37,7 @@
 #include <QSize>
 #include "gsiQt.h"
 #include "gsiQtWidgetsCommon.h"
+#include "gsiDeclQtWidgetsTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -1011,7 +1012,7 @@ QListWidgetItem_Adaptor::~QListWidgetItem_Adaptor() { }
 
 static void _init_ctor_QListWidgetItem_Adaptor_2386 (qt_gsi::GenericStaticMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("view", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("view", true, "0");
   decl->add_arg<QListWidget * > (argspec_0);
   static gsi::ArgSpecBase argspec_1 ("type", true, "QListWidgetItem::Type");
   decl->add_arg<int > (argspec_1);
@@ -1022,13 +1023,11 @@ static void _call_ctor_QListWidgetItem_Adaptor_2386 (const qt_gsi::GenericStatic
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  QListWidget *arg1 = args ? gsi::arg_reader<QListWidget * >() (args, heap) : gsi::arg_maker<QListWidget * >() (nullptr, heap);
+  QListWidget *arg1 = args ? gsi::arg_reader<QListWidget * >() (args, heap) : gsi::arg_maker<QListWidget * >() (0, heap);
   int arg2 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (QListWidgetItem::Type, heap);
   QListWidgetItem_Adaptor *obj = new QListWidgetItem_Adaptor (arg1, arg2);
   if (arg1) {
     qt_gsi::qt_keep (obj);
-  } else {
-    qt_gsi::qt_release (obj);
   }
   ret.write<QListWidgetItem_Adaptor *> (obj);
 }
@@ -1040,7 +1039,7 @@ static void _init_ctor_QListWidgetItem_Adaptor_4303 (qt_gsi::GenericStaticMethod
 {
   static gsi::ArgSpecBase argspec_0 ("text");
   decl->add_arg<const QString & > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("view", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("view", true, "0");
   decl->add_arg<QListWidget * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("type", true, "QListWidgetItem::Type");
   decl->add_arg<int > (argspec_2);
@@ -1052,7 +1051,7 @@ static void _call_ctor_QListWidgetItem_Adaptor_4303 (const qt_gsi::GenericStatic
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const QString &arg1 = gsi::arg_reader<const QString & >() (args, heap);
-  QListWidget *arg2 = args ? gsi::arg_reader<QListWidget * >() (args, heap) : gsi::arg_maker<QListWidget * >() (nullptr, heap);
+  QListWidget *arg2 = args ? gsi::arg_reader<QListWidget * >() (args, heap) : gsi::arg_maker<QListWidget * >() (0, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (QListWidgetItem::Type, heap);
   ret.write<QListWidgetItem_Adaptor *> (new QListWidgetItem_Adaptor (arg1, arg2, arg3));
 }
@@ -1066,7 +1065,7 @@ static void _init_ctor_QListWidgetItem_Adaptor_5982 (qt_gsi::GenericStaticMethod
   decl->add_arg<const QIcon & > (argspec_0);
   static gsi::ArgSpecBase argspec_1 ("text");
   decl->add_arg<const QString & > (argspec_1);
-  static gsi::ArgSpecBase argspec_2 ("view", true, "nullptr");
+  static gsi::ArgSpecBase argspec_2 ("view", true, "0");
   decl->add_arg<QListWidget * > (argspec_2);
   static gsi::ArgSpecBase argspec_3 ("type", true, "QListWidgetItem::Type");
   decl->add_arg<int > (argspec_3);
@@ -1079,7 +1078,7 @@ static void _call_ctor_QListWidgetItem_Adaptor_5982 (const qt_gsi::GenericStatic
   tl::Heap heap;
   const QIcon &arg1 = gsi::arg_reader<const QIcon & >() (args, heap);
   const QString &arg2 = gsi::arg_reader<const QString & >() (args, heap);
-  QListWidget *arg3 = args ? gsi::arg_reader<QListWidget * >() (args, heap) : gsi::arg_maker<QListWidget * >() (nullptr, heap);
+  QListWidget *arg3 = args ? gsi::arg_reader<QListWidget * >() (args, heap) : gsi::arg_maker<QListWidget * >() (0, heap);
   int arg4 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (QListWidgetItem::Type, heap);
   ret.write<QListWidgetItem_Adaptor *> (new QListWidgetItem_Adaptor (arg1, arg2, arg3, arg4));
 }
@@ -1278,20 +1277,20 @@ static gsi::Methods methods_QListWidgetItem_Adaptor () {
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QListWidgetItem::QListWidgetItem(const QString &text, QListWidget *view, int type)\nThis method creates an object of class QListWidgetItem.", &_init_ctor_QListWidgetItem_Adaptor_4303, &_call_ctor_QListWidgetItem_Adaptor_4303);
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QListWidgetItem::QListWidgetItem(const QIcon &icon, const QString &text, QListWidget *view, int type)\nThis method creates an object of class QListWidgetItem.", &_init_ctor_QListWidgetItem_Adaptor_5982, &_call_ctor_QListWidgetItem_Adaptor_5982);
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QListWidgetItem::QListWidgetItem(const QListWidgetItem &other)\nThis method creates an object of class QListWidgetItem.", &_init_ctor_QListWidgetItem_Adaptor_2817, &_call_ctor_QListWidgetItem_Adaptor_2817);
-  methods += new qt_gsi::GenericMethod ("clone", "@brief Virtual method QListWidgetItem *QListWidgetItem::clone()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_clone_c0_0, &_call_cbs_clone_c0_0);
-  methods += new qt_gsi::GenericMethod ("clone", "@hide", true, &_init_cbs_clone_c0_0, &_call_cbs_clone_c0_0, &_set_callback_cbs_clone_c0_0);
-  methods += new qt_gsi::GenericMethod ("data", "@brief Virtual method QVariant QListWidgetItem::data(int role)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_data_c767_0, &_call_cbs_data_c767_0);
-  methods += new qt_gsi::GenericMethod ("data", "@hide", true, &_init_cbs_data_c767_0, &_call_cbs_data_c767_0, &_set_callback_cbs_data_c767_0);
-  methods += new qt_gsi::GenericMethod ("<", "@brief Virtual method bool QListWidgetItem::operator<(const QListWidgetItem &other)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_operator_lt__c2817_0, &_call_cbs_operator_lt__c2817_0);
-  methods += new qt_gsi::GenericMethod ("<", "@hide", true, &_init_cbs_operator_lt__c2817_0, &_call_cbs_operator_lt__c2817_0, &_set_callback_cbs_operator_lt__c2817_0);
-  methods += new qt_gsi::GenericMethod ("read", "@brief Virtual method void QListWidgetItem::read(QDataStream &in)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_read_1697_0, &_call_cbs_read_1697_0);
-  methods += new qt_gsi::GenericMethod ("read", "@hide", false, &_init_cbs_read_1697_0, &_call_cbs_read_1697_0, &_set_callback_cbs_read_1697_0);
-  methods += new qt_gsi::GenericMethod ("setBackgroundColor", "@brief Virtual method void QListWidgetItem::setBackgroundColor(const QColor &color)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setBackgroundColor_1905_0, &_call_cbs_setBackgroundColor_1905_0);
-  methods += new qt_gsi::GenericMethod ("setBackgroundColor", "@hide", false, &_init_cbs_setBackgroundColor_1905_0, &_call_cbs_setBackgroundColor_1905_0, &_set_callback_cbs_setBackgroundColor_1905_0);
-  methods += new qt_gsi::GenericMethod ("setData", "@brief Virtual method void QListWidgetItem::setData(int role, const QVariant &value)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setData_2778_0, &_call_cbs_setData_2778_0);
-  methods += new qt_gsi::GenericMethod ("setData", "@hide", false, &_init_cbs_setData_2778_0, &_call_cbs_setData_2778_0, &_set_callback_cbs_setData_2778_0);
-  methods += new qt_gsi::GenericMethod ("write", "@brief Virtual method void QListWidgetItem::write(QDataStream &out)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_write_c1697_0, &_call_cbs_write_c1697_0);
-  methods += new qt_gsi::GenericMethod ("write", "@hide", true, &_init_cbs_write_c1697_0, &_call_cbs_write_c1697_0, &_set_callback_cbs_write_c1697_0);
+  methods += new qt_gsi::GenericMethod ("clone", "@hide", true, &_init_cbs_clone_c0_0, &_call_cbs_clone_c0_0);
+  methods += new qt_gsi::GenericMethod ("clone", "@brief Virtual method QListWidgetItem *QListWidgetItem::clone()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_clone_c0_0, &_call_cbs_clone_c0_0, &_set_callback_cbs_clone_c0_0);
+  methods += new qt_gsi::GenericMethod ("data", "@hide", true, &_init_cbs_data_c767_0, &_call_cbs_data_c767_0);
+  methods += new qt_gsi::GenericMethod ("data", "@brief Virtual method QVariant QListWidgetItem::data(int role)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_data_c767_0, &_call_cbs_data_c767_0, &_set_callback_cbs_data_c767_0);
+  methods += new qt_gsi::GenericMethod ("<", "@hide", true, &_init_cbs_operator_lt__c2817_0, &_call_cbs_operator_lt__c2817_0);
+  methods += new qt_gsi::GenericMethod ("<", "@brief Virtual method bool QListWidgetItem::operator<(const QListWidgetItem &other)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_operator_lt__c2817_0, &_call_cbs_operator_lt__c2817_0, &_set_callback_cbs_operator_lt__c2817_0);
+  methods += new qt_gsi::GenericMethod ("read", "@hide", false, &_init_cbs_read_1697_0, &_call_cbs_read_1697_0);
+  methods += new qt_gsi::GenericMethod ("read", "@brief Virtual method void QListWidgetItem::read(QDataStream &in)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_read_1697_0, &_call_cbs_read_1697_0, &_set_callback_cbs_read_1697_0);
+  methods += new qt_gsi::GenericMethod ("setBackgroundColor", "@hide", false, &_init_cbs_setBackgroundColor_1905_0, &_call_cbs_setBackgroundColor_1905_0);
+  methods += new qt_gsi::GenericMethod ("setBackgroundColor", "@brief Virtual method void QListWidgetItem::setBackgroundColor(const QColor &color)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setBackgroundColor_1905_0, &_call_cbs_setBackgroundColor_1905_0, &_set_callback_cbs_setBackgroundColor_1905_0);
+  methods += new qt_gsi::GenericMethod ("setData", "@hide", false, &_init_cbs_setData_2778_0, &_call_cbs_setData_2778_0);
+  methods += new qt_gsi::GenericMethod ("setData", "@brief Virtual method void QListWidgetItem::setData(int role, const QVariant &value)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setData_2778_0, &_call_cbs_setData_2778_0, &_set_callback_cbs_setData_2778_0);
+  methods += new qt_gsi::GenericMethod ("write", "@hide", true, &_init_cbs_write_c1697_0, &_call_cbs_write_c1697_0);
+  methods += new qt_gsi::GenericMethod ("write", "@brief Virtual method void QListWidgetItem::write(QDataStream &out)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_write_c1697_0, &_call_cbs_write_c1697_0, &_set_callback_cbs_write_c1697_0);
   return methods;
 }
 

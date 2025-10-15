@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -32,7 +32,6 @@
 #include "dbLayout.h"
 #include "dbRecursiveShapeIterator.h"
 #include "dbHierarchyBuilder.h"
-#include "dbCellMapping.h"
 #include "gsiObject.h"
 
 #include <set>
@@ -44,12 +43,6 @@ class DeepShapeStore;
 class DeepShapeStoreState;
 class Region;
 class Edges;
-class EdgePairs;
-class Texts;
-class ShapeCollection;
-class NetBuilder;
-class LayoutToNetlist;
-class VariantsCollectorBase;
 
 /**
  *  @brief Represents a shape collection from the deep shape store
@@ -81,24 +74,6 @@ public:
    *  This requires the Region to be a DeepRegion. Otherwise, this constructor will assert
    */
   DeepLayer (const Region &region);
-
-  /**
-   *  @brief Conversion operator from texts collection to DeepLayer
-   *  This requires the texts to be a DeepTexts. Otherwise, this constructor will assert
-   */
-  DeepLayer (const Texts &region);
-
-  /**
-   *  @brief Conversion operator from edges collection to DeepLayer
-   *  This requires the edges to be a DeepEdges. Otherwise, this constructor will assert
-   */
-  DeepLayer (const Edges &region);
-
-  /**
-   *  @brief Conversion operator from edge pairs collection to DeepLayer
-   *  This requires the edge pairs to be a DeepEdgePairs. Otherwise, this constructor will assert
-   */
-  DeepLayer (const EdgePairs &region);
 
   /**
    *  @brief Copy constructor
@@ -166,11 +141,6 @@ public:
   const std::set<db::cell_index_type> *breakout_cells () const;
 
   /**
-   *  @brief Gets a hash value representing the breakout cells
-   */
-  size_t breakout_cells_hash () const;
-
-  /**
    *  @brief Inserts the layer into the given layout, starting from the given cell and into the given layer
    */
   void insert_into (Layout *into_layout, db::cell_index_type into_cell, unsigned int into_layer) const;
@@ -199,6 +169,25 @@ public:
   void add_from (const DeepLayer &dl);
 
   /**
+   *  @brief Separates cell variants (see DeepShapeStore::separate_variants)
+   */
+  template <class VarCollector>
+  void separate_variants (VarCollector &collector);
+
+  /**
+   *  @brief Commits shapes for variants to the existing cell hierarchy
+   *
+   *  The "to_propagate" collection is a set of shapes per cell and variant. The
+   *  algorithm will put these shapes into the existing hierarchy putting the
+   *  shapes into the proper parent cells to resolve variants.
+   *
+   *  This map will be modified by the algorithm and should be discarded
+   *  later.
+   */
+  template <class VarCollector>
+  void commit_shapes (VarCollector &collector, std::map<db::cell_index_type, std::map<db::ICplxTrans, db::Shapes> > &to_propagate);
+
+  /**
    *  @brief Gets the shape store object
    *  This is a pure const version to prevent manipulation of the store.
    *  This method is intended to fetch configuration options from the store.
@@ -207,16 +196,6 @@ public:
   {
     check_dss ();
     return mp_store.get ();
-  }
-
-  /**
-   *  @brief Gets the non-const shape store object
-   *  This feature is intended for internal purposes.
-   */
-  DeepShapeStore *store_non_const () const
-  {
-    check_dss ();
-    return const_cast<DeepShapeStore *> (mp_store.get ());
   }
 
 private:
@@ -252,33 +231,24 @@ public:
   void set_text_enlargement (int enl);
   int text_enlargement () const;
 
-  void set_reject_odd_polygons (bool f);
-  bool reject_odd_polygons () const;
-
   const std::set<db::cell_index_type> *breakout_cells (unsigned int layout_index) const;
-  size_t breakout_cells_hash (unsigned int layout_index) const;
   void clear_breakout_cells (unsigned int layout_index);
   void set_breakout_cells (unsigned int layout_index, const std::set<db::cell_index_type> &boc);
   void add_breakout_cell (unsigned int layout_index, db::cell_index_type ci);
   void add_breakout_cells (unsigned int layout_index, const std::set<db::cell_index_type> &cc);
 
-  void set_subcircuit_hierarchy_for_nets (bool f);
-  bool subcircuit_hierarchy_for_nets () const;
-
 private:
   int m_threads;
   double m_max_area_ratio;
   size_t m_max_vertex_count;
-  bool m_reject_odd_polygons;
   tl::Variant m_text_property_name;
-  std::vector<std::pair<std::set<db::cell_index_type>, size_t> > m_breakout_cells;
+  std::vector<std::set<db::cell_index_type> > m_breakout_cells;
   int m_text_enlargement;
-  bool m_subcircuit_hierarchy_for_nets;
 
-  std::pair<std::set<db::cell_index_type>, size_t> &ensure_breakout_cells (unsigned int layout_index)
+  std::set<db::cell_index_type> &ensure_breakout_cells (unsigned int layout_index)
   {
     if (m_breakout_cells.size () <= size_t (layout_index)) {
-      m_breakout_cells.resize (layout_index + 1, std::pair<std::set<db::cell_index_type>, size_t> ());
+      m_breakout_cells.resize (layout_index + 1, std::set<db::cell_index_type> ());
     }
     return m_breakout_cells [layout_index];
   }
@@ -286,7 +256,7 @@ private:
 
 struct DB_PUBLIC RecursiveShapeIteratorCompareForTargetHierarchy
 {
-  bool operator () (const std::pair<db::RecursiveShapeIterator, std::pair<size_t, db::ICplxTrans> > &a, const std::pair<db::RecursiveShapeIterator, std::pair<size_t, db::ICplxTrans> > &b) const
+  bool operator () (const std::pair<db::RecursiveShapeIterator, db::ICplxTrans> &a, const std::pair<db::RecursiveShapeIterator, db::ICplxTrans> &b) const
   {
     int cmp_iter = db::compare_iterators_with_respect_to_target_hierarchy (a.first, b.first);
     if (cmp_iter != 0) {
@@ -297,41 +267,6 @@ struct DB_PUBLIC RecursiveShapeIteratorCompareForTargetHierarchy
 };
 
 /**
- *  @brief An object holding a cell mapping with the hierarchy generation Ids of the involved layouts
- */
-class DB_PUBLIC CellMappingWithGenerationIds
-  : public db::CellMapping
-{
-public:
-  CellMappingWithGenerationIds ()
-    : db::CellMapping (), m_into_generation_id (0), m_from_generation_id (0)
-  {
-    //  .. nothing yet ..
-  }
-
-  void swap (CellMappingWithGenerationIds &other)
-  {
-    db::CellMapping::swap (other);
-    std::swap (m_into_generation_id, other.m_into_generation_id);
-    std::swap (m_from_generation_id, other.m_from_generation_id);
-  }
-
-  bool is_valid (const db::Layout &into_layout, const db::Layout &from_layout) const
-  {
-    return into_layout.hier_generation_id () == m_into_generation_id && from_layout.hier_generation_id () == m_from_generation_id;
-  }
-
-  void set_generation_ids (const db::Layout &into_layout, const db::Layout &from_layout)
-  {
-    m_into_generation_id = into_layout.hier_generation_id ();
-    m_from_generation_id = from_layout.hier_generation_id ();
-  }
-
-private:
-  size_t m_into_generation_id, m_from_generation_id;
-};
-
-/**
  *  @brief The "deep shape store" is a working model for the hierarchical ("deep") processor
  *
  *  The deep shape store keeps temporary data for the deep shape processor.
@@ -339,7 +274,7 @@ private:
  *  for the actual shapes.
  *
  *  The deep shape store provides the basis for working with deep regions. On preparation,
- *  shapes are copied into the deep shape store. After finishing, the shapes are copied
+ *  shapes are copied into the deep shape store. After fininishing, the shapes are copied
  *  back into the original layout. The deep shape store provides the methods and
  *  algorithms for doing the preparation and transfer.
  */
@@ -380,25 +315,6 @@ public:
   bool is_singular () const;
 
   /**
-   *  @brief Sets a value indicating whether to keep layouts
-   *
-   *  If this value is set to true, layouts are not released when their reference count
-   *  goes down to zero.
-   */
-  void set_keep_layouts (bool f)
-  {
-    m_keep_layouts = f;
-  }
-
-  /**
-   *  @brief Gets a value indicating whether to keep layouts
-   */
-  bool keep_layouts () const
-  {
-    return m_keep_layouts;
-  }
-
-  /**
    *  @brief Creates a new layer from a flat region (or the region is made flat)
    *
    *  This method is intended for use with singular-created DSS objects (see
@@ -422,26 +338,15 @@ public:
    *  After a flat layer has been created for a region, it can be retrieved
    *  from the region later with layer_for_flat (region).
    */
-  DeepLayer create_from_flat (const db::Edges &edges, const db::ICplxTrans &trans = db::ICplxTrans ());
+  DeepLayer create_from_flat (const db::Edges &region, const db::ICplxTrans &trans = db::ICplxTrans ());
 
   /**
-   *  @brief Creates a new layer from a flat text collection (or the text collection is made flat)
-   *
-   *  This method is intended for use with singular-created DSS objects (see
-   *  singular constructor).
-   *
-   *  After a flat layer has been created for a region, it can be retrieved
-   *  from the region later with layer_for_flat (region).
-   */
-  DeepLayer create_from_flat (const db::Texts &texts, const db::ICplxTrans &trans = db::ICplxTrans ());
-
-  /**
-   *  @brief Gets the layer for a given flat collection (Region, Edges, Texts, EdgePairs)
+   *  @brief Gets the layer for a given flat region.
    *
    *  If a layer has been created for a flat region with create_from_flat, it can be retrieved with this method.
    *  The first return value is true in this case.
    */
-  std::pair<bool, DeepLayer> layer_for_flat (const ShapeCollection &coll) const;
+  std::pair<bool, DeepLayer> layer_for_flat (const db::Region &region) const;
 
   /**
    *  @brief Same as layer_for_flat, but takes a region Id
@@ -491,15 +396,6 @@ public:
   DeepLayer create_edge_pair_layer (const db::RecursiveShapeIterator &si, const ICplxTrans &trans = db::ICplxTrans ());
 
   /**
-   *  @brief Inserts an text layer into the deep shape store
-   *
-   *  This method will create a new layer inside the deep shape store as a
-   *  working copy of the original layer. This method creates a layer
-   *  for texts.
-   */
-  DeepLayer create_text_layer (const db::RecursiveShapeIterator &si, const ICplxTrans &trans = db::ICplxTrans ());
-
-  /**
    *  @brief Inserts a polygon layer into the deep shape store using a custom preparation pipeline
    *
    *  This method will create a new layer inside the deep shapes store and
@@ -539,9 +435,40 @@ public:
   const db::CellMapping &cell_mapping_to_original (unsigned int layout_index, db::Layout *into_layout, db::cell_index_type into_cell, const std::set<db::cell_index_type> *excluded_cells = 0, const std::set<db::cell_index_type> *included_cells = 0);
 
   /**
-   *  @brief Gets the cell mapping from one internal layout to another
+   *  @brief Create cell variants from the given variant collector
+   *
+   *  To use this method, first create a variant collector (db::cell_variant_collector) with the required
+   *  reducer and collect the variants. Then call this method on the desired layout index to create the variants.
    */
-  const db::CellMapping &internal_cell_mapping (unsigned int from_layout_index, unsigned int into_layout_index);
+  template <class VarCollector>
+  void separate_variants (unsigned int layout_index, VarCollector &coll)
+  {
+    tl_assert (is_valid_layout_index (layout_index));
+
+    std::map<db::cell_index_type, std::map<db::ICplxTrans, db::cell_index_type> > var_map;
+    coll.separate_variants (layout (layout_index), initial_cell (layout_index), &var_map);
+    if (var_map.empty ()) {
+      //  nothing to do.
+      return;
+    }
+
+    issue_variants (layout_index, var_map);
+  }
+
+  /**
+   *  @brief Commits shapes for variants to the existing cell hierarchy
+   *
+   *  To use this method, first create a variant collector (db::cell_variant_collector) with the required
+   *  reducer and collect the variants. Then call this method on the desired layout index to commit the shapes for the
+   *  respective variants.
+   */
+  template <class VarCollector>
+  void commit_shapes (unsigned int layout_index, VarCollector &coll, unsigned int layer, std::map<db::cell_index_type, std::map<db::ICplxTrans, db::Shapes> > &to_commit)
+  {
+    tl_assert (is_valid_layout_index (layout_index));
+
+    coll.commit_shapes (layout (layout_index), initial_cell (layout_index), layer, to_commit);
+  }
 
   /**
    *  @brief For testing
@@ -571,11 +498,6 @@ public:
    *  Don't try to mess too much with the cell object, you'll screw up the internals.
    */
   db::Cell &initial_cell (unsigned int n);
-
-  /**
-   *  @brief Gets the layout index for a given internal layout
-   */
-  unsigned int layout_index (const db::Layout *layout) const;
 
   /**
    *  @brief Gets the singular layout (const version)
@@ -637,37 +559,6 @@ public:
   bool is_valid_layout_index (unsigned int n) const;
 
   /**
-   *  @brief Gets the net builder object for a given layout index and LayoutToNetlist database
-   *
-   *  If no net builder is available, one will be created. Use \\has_net_builder to check whether one is
-   *  already created.
-   */
-  db::NetBuilder &net_builder_for (unsigned int layout_index, db::LayoutToNetlist *l2n);
-
-  /**
-   *  @brief Gets the net builder object for a given LayoutToNetlist database (requires the DSS to be singular)
-   */
-  db::NetBuilder &net_builder_for (db::LayoutToNetlist *l2n)
-  {
-    require_singular ();
-    return net_builder_for (0, l2n);
-  }
-
-  /**
-   *  @brief Gets a value indicating whether a net building is available
-   */
-  bool has_net_builder_for(unsigned int layout_index, db::LayoutToNetlist *l2n);
-
-  /**
-   *  @brief Gets the net builder object for a given LayoutToNetlist database (requires the DSS to be singular)
-   */
-  bool has_net_builder_for (db::LayoutToNetlist *l2n)
-  {
-    require_singular ();
-    return has_net_builder_for (0, l2n);
-  }
-
-  /**
    *  @brief The deep shape store also keeps the number of threads to allocate for the hierarchical processor
    *
    *  This is a kind of hack, but it's convenient.
@@ -678,37 +569,6 @@ public:
    *  @brief Gets the number of threads
    */
   int threads () const;
-
-  /**
-   *  @brief Sets a flag indicating whether the working layouts will store the whole original hierarchy
-   *
-   *  Setting this flag to true will make the deep shape store copy the
-   *  hierarchy exactly from the origin layouts. This will take somewhat
-   *  more memory but avoid future cell hierarchy mapping operations.
-   *
-   *  If set to false, only the needed parts of the hierarchy are copied.
-   *  This part may need to grow when further operations are triggered.
-   */
-  void set_wants_all_cells (bool f);
-
-  /**
-   *  @brief Gets a flag indicating whether the working layouts will store the whole original hierarchy
-   */
-  bool wants_all_cells () const;
-
-  /**
-   *  @brief Sets a flag indicating whether to reject odd polygons
-   *
-   *  Some kind of "odd" (e.g. non-orientable) polygons may spoil the functionality
-   *  because they cannot be handled properly. By using this flag, the shape store
-   *  we reject these kind of polygons. The default is "accept" (without warning).
-   */
-  void set_reject_odd_polygons (bool f);
-
-  /**
-   *  @brief Gets a flag indicating whether to reject odd polygons
-   */
-  bool reject_odd_polygons () const;
 
   /**
    *  @brief Sets the maximum vertex count default value
@@ -769,29 +629,10 @@ public:
   int text_enlargement () const;
 
   /**
-   *  @brief Sets a value indicating whether to build a subcircuit hierarchy per net
-   *
-   *  This flag is used to determine the way, net subcircuit hierarchies are built:
-   *  when true, subcells are created for subcircuits on a net. Otherwise the net
-   *  shapes are produced flat inside the cell they appear on.
-   */
-  void set_subcircuit_hierarchy_for_nets (bool f);
-
-  /**
-   *  @brief Gets a value indicating whether to build a subcircuit hierarchy per net
-   */
-  bool subcircuit_hierarchy_for_nets () const;
-
-  /**
    *  @brief Gets the breakout cells for a given layout
    *  Returns 0 if there are no breakout cells for this layout.
    */
   const std::set<db::cell_index_type> *breakout_cells (unsigned int layout_index) const;
-
-  /**
-   *  @brief Gets a hash value representing the breakout cells
-   */
-  size_t breakout_cells_hash (unsigned int layout_index) const;
 
   /**
    *  @brief Clears the breakout cell list for a given layout
@@ -830,6 +671,7 @@ private:
 
   struct LayoutHolder;
 
+  void invalidate_hier ();
   void add_ref (unsigned int layout, unsigned int layer);
   void remove_ref (unsigned int layout, unsigned int layer);
 
@@ -839,7 +681,7 @@ private:
 
   void issue_variants (unsigned int layout, const std::map<db::cell_index_type, std::map<db::ICplxTrans, db::cell_index_type> > &var_map);
 
-  typedef std::map<std::pair<db::RecursiveShapeIterator, std::pair<size_t, db::ICplxTrans> >, unsigned int, RecursiveShapeIteratorCompareForTargetHierarchy> layout_map_type;
+  typedef std::map<std::pair<db::RecursiveShapeIterator, db::ICplxTrans>, unsigned int, RecursiveShapeIteratorCompareForTargetHierarchy> layout_map_type;
 
   //  no copying
   DeepShapeStore (const DeepShapeStore &);
@@ -851,8 +693,6 @@ private:
   layout_map_type m_layout_map;
   DeepShapeStoreState m_state;
   std::list<DeepShapeStoreState> m_state_stack;
-  bool m_keep_layouts;
-  bool m_wants_all_cells;
   tl::Mutex m_lock;
 
   struct DeliveryMappingCacheKey
@@ -881,9 +721,32 @@ private:
     db::cell_index_type into_cell;
   };
 
-  std::map<DeliveryMappingCacheKey, CellMappingWithGenerationIds> m_delivery_mapping_cache;
-  std::map<std::pair<unsigned int, unsigned int>, CellMappingWithGenerationIds> m_internal_mapping_cache;
+  std::map<DeliveryMappingCacheKey, db::CellMapping> m_delivery_mapping_cache;
 };
+
+template <class VarCollector>
+void DeepLayer::separate_variants (VarCollector &collector)
+{
+  check_dss ();
+  mp_store->separate_variants (m_layout, collector);
+}
+
+template <class VarCollector>
+void DeepLayer::commit_shapes (VarCollector &collector, std::map<db::cell_index_type, std::map<db::ICplxTrans, db::Shapes> > &to_commit)
+{
+  check_dss ();
+  mp_store->commit_shapes (m_layout, collector, layer (), to_commit);
+}
+
+}
+
+namespace tl
+{
+
+  //  disable copying of the deep shape store object
+  template <> struct type_traits <db::DeepShapeStore> : public type_traits<void> {
+    typedef tl::false_tag has_copy_constructor;
+  };
 
 }
 

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -107,7 +107,7 @@ public:
 
   /**
    *  @brief Indicate the end of the execution
-   *  @param success Will be true if all tiles executed successfully
+   *  @param sucess Will be true if all tiles executed successfully
    */
   virtual void finish (bool /*success*/) { }
 
@@ -142,33 +142,9 @@ private:
  *  This function is responsible for preparing (i.e. clipping) and delivering the output.
  */
 template <class X>
-void insert (X &inserter, const db::Box &o, const db::Box &tile, bool clip)
-{
-  if (clip) {
-    //  clipping
-    db::Box oc = o & tile;
-    if (! oc.empty () && oc.width () > 0 && oc.height () > 0) {
-      inserter (oc);
-    }
-  } else {
-    //  no clipping
-    inserter (o);
-  }
-}
-
-/**
- *  @brief Delivery of tiling processor output
- *  This utility is put between the container and the receiver.
- *  The inserter is an object having an operator() that takes the object.
- *  This function is responsible for preparing (i.e. clipping) and delivering the output.
- */
-template <class X>
 void insert (X &inserter, const db::Polygon &o, const db::Box &tile, bool clip)
 {
-  if (o.is_box ()) {
-    //  simple case: box
-    insert (inserter, o.box (), tile, clip);
-  } else if (clip && ! o.box ().inside (tile)) {
+  if (clip && ! o.box ().inside (tile)) {
     //  apply clipping
     if (o.box ().touches (tile)) {
       std::vector <db::Polygon> clipped_poly;
@@ -192,10 +168,7 @@ void insert (X &inserter, const db::Polygon &o, const db::Box &tile, bool clip)
 template <class X>
 void insert (X &inserter, const db::SimplePolygon &o, const db::Box &tile, bool clip)
 {
-  if (o.is_box ()) {
-    //  simple case: box
-    insert (inserter, o.box (), tile, clip);
-  } else if (clip && ! o.box ().inside (tile)) {
+  if (clip && ! o.box ().inside (tile)) {
     //  apply clipping
     if (o.box ().touches (tile)) {
       std::vector <db::SimplePolygon> clipped_poly;
@@ -262,6 +235,27 @@ void insert (X &inserter, const db::Text &o, const db::Box &tile, bool clip)
     //  clipping
     if (o.box ().inside (tile)) {
       inserter (o);
+    }
+  } else {
+    //  no clipping
+    inserter (o);
+  }
+}
+
+/**
+ *  @brief Delivery of tiling processor output
+ *  This utility is put between the container and the receiver.
+ *  The inserter is an object having an operator() that takes the object.
+ *  This function is responsible for preparing (i.e. clipping) and delivering the output.
+ */
+template <class X>
+void insert (X &inserter, const db::Box &o, const db::Box &tile, bool clip)
+{
+  if (clip) {
+    //  clipping
+    db::Box oc = o & tile;
+    if (! oc.empty ()) {
+      inserter (oc);
     }
   } else {
     //  no clipping
@@ -359,20 +353,6 @@ void insert (X &inserter, const db::EdgePairs &data, const db::Box &tile, bool c
  *  This function is responsible for preparing (i.e. clipping) and delivering the output.
  */
 template <class X>
-void insert (X &inserter, const db::Texts &data, const db::Box &tile, bool clip)
-{
-  for (db::Texts::const_iterator o = data.begin (); ! o.at_end (); ++o) {
-    insert (inserter, *o, tile, clip);
-  }
-}
-
-/**
- *  @brief Delivery of tiling processor output
- *  This utility is put between the container and the receiver.
- *  The inserter is an object having an operator() that takes the object.
- *  This function is responsible for preparing (i.e. clipping) and delivering the output.
- */
-template <class X>
 bool insert_var (X &inserter, const tl::Variant &obj, const db::Box &tile, bool clip)
 {
   if (obj.is_user<db::Region> ()) {
@@ -383,9 +363,6 @@ bool insert_var (X &inserter, const tl::Variant &obj, const db::Box &tile, bool 
     return true;
   } else if (obj.is_user<db::Edges> ()) {
     insert (inserter, obj.to_user<db::Edges> (), tile, clip);
-    return true;
-  } else if (obj.is_user<db::Texts> ()) {
-    insert (inserter, obj.to_user<db::Texts> (), tile, clip);
     return true;
   } else if (obj.is_user<db::Box> ()) {
     insert (inserter, obj.to_user<db::Box> (), tile, clip);
@@ -440,8 +417,6 @@ bool insert_var (X &inserter, const tl::Variant &obj, const db::Box &tile, bool 
 class DB_PUBLIC TilingProcessor
 {
 public:
-  enum Type { TypeRegion, TypeEdges, TypeEdgePairs, TypeTexts };
-
   /**
    *  @brief Constructor
    */
@@ -466,7 +441,7 @@ public:
    *  The transformation can be used to convert between database units.  
    *  If "as_region" is false, the input is taken as edge input.
    */
-  void input (const std::string &name, const db::RecursiveShapeIterator &iter, const db::ICplxTrans &trans = db::ICplxTrans (), Type type = TypeRegion, bool merged_semantics = true);
+  void input (const std::string &name, const db::RecursiveShapeIterator &iter, const db::ICplxTrans &trans = db::ICplxTrans (), bool as_region = true, bool merged_semantics = true);
 
   /**
    *  @brief Specifies the output 
@@ -513,14 +488,6 @@ public:
    *  Only edge pairs will be stored.
    */
   void output (const std::string &name, db::EdgePairs &edge_pairs);
-
-  /**
-   *  @brief Specifies output to an text collection
-   *
-   *  This version will specify output to a Texts object.
-   *  Only texts will be stored.
-   */
-  void output (const std::string &name, db::Texts &texts);
 
   /**
    *  @brief Specifies output to an edge collection
@@ -650,14 +617,6 @@ public:
    */
   void execute (const std::string &desc);
 
-  /**
-   *  @brief Gets the output mutex for operations not using the output method
-   */
-  static tl::Mutex &output_lock ()
-  {
-    return s_output_lock;
-  }
-
 private:
   friend class TilingProcessorWorker;
   friend class TilingProcessorOutputFunction;
@@ -665,11 +624,11 @@ private:
 
   struct InputSpec
   {
-    InputSpec () : type (TilingProcessor::TypeRegion), merged_semantics (false) { }
+    InputSpec () : region (false), merged_semantics (false) { }
     std::string name;
     db::RecursiveShapeIterator iter;
     db::ICplxTrans trans;
-    TilingProcessor::Type type;
+    bool region;
     bool merged_semantics;
   };
 
@@ -703,10 +662,20 @@ private:
   bool m_dbu_specific_set;
   bool m_scale_to_dbu;
   std::vector<std::string> m_scripts;
+  tl::Mutex m_output_mutex;
   tl::Eval m_top_eval;
-  static tl::Mutex s_output_lock;
 };
 
+}
+
+namespace tl
+{
+  template <>
+  struct type_traits<db::TilingProcessor> : public type_traits<void>
+  {
+    typedef tl::true_tag has_default_constructor;
+    typedef tl::false_tag has_copy_constructor;
+  };
 }
 
 #endif

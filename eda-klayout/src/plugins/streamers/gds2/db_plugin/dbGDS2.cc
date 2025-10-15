@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -38,7 +38,7 @@ class GDS2FormatDeclaration
   virtual std::string format_name () const { return "GDS2"; }
   virtual std::string format_desc () const { return "GDS2"; }
   virtual std::string format_title () const { return "GDS2"; }
-  virtual std::string file_format () const { return "GDS2 files (*.gds *.GDS *.gds.gz *.GDS.gz *.GDS2 *.gds2 *.gds2.gz *.GDS2.gz)"; }
+  virtual std::string file_format () const { return "GDS2 files (*.GDS *.gds *.gds.gz *.GDS.gz *.GDS2 *.gds2 *.gds2.gz *.GDS2.gz)"; }
 
   virtual bool detect (tl::InputStream &stream) const 
   {
@@ -73,9 +73,7 @@ class GDS2FormatDeclaration
       tl::make_member (&db::GDS2WriterOptions::write_cell_properties, "write-cell-properties") +
       tl::make_member (&db::GDS2WriterOptions::write_file_properties, "write-file-properties") +
       tl::make_member (&db::GDS2WriterOptions::no_zero_length_paths, "no-zero-length-paths") +
-      tl::make_member (&db::GDS2WriterOptions::default_text_size, "default-text-size") +
       tl::make_member (&db::GDS2WriterOptions::multi_xy_records, "multi-xy-records") +
-      tl::make_member (&db::GDS2WriterOptions::resolve_skew_arrays, "resolve-skew-arrays") +
       tl::make_member (&db::GDS2WriterOptions::max_vertex_count, "max-vertex-count") +
       tl::make_member (&db::GDS2WriterOptions::max_cellname_length, "max-cellname-length") +
       tl::make_member (&db::GDS2WriterOptions::libname, "libname")

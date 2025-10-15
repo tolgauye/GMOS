@@ -27,7 +27,6 @@ SOURCES += \
   $$PWD/gsiDeclQAudioOutputSelectorControl.cc \
   $$PWD/gsiDeclQAudioProbe.cc \
   $$PWD/gsiDeclQAudioRecorder.cc \
-  $$PWD/gsiDeclQAudioRoleControl.cc \
   $$PWD/gsiDeclQAudioSystemFactoryInterface.cc \
   $$PWD/gsiDeclQAudioSystemPlugin.cc \
   $$PWD/gsiDeclQCamera.cc \
@@ -53,7 +52,6 @@ SOURCES += \
   $$PWD/gsiDeclQCameraViewfinderSettingsControl.cc \
   $$PWD/gsiDeclQCameraViewfinderSettingsControl2.cc \
   $$PWD/gsiDeclQCameraZoomControl.cc \
-  $$PWD/gsiDeclQCustomAudioRoleControl.cc \
   $$PWD/gsiDeclQGraphicsVideoItem.cc \
   $$PWD/gsiDeclQImageEncoderControl.cc \
   $$PWD/gsiDeclQImageEncoderSettings.cc \

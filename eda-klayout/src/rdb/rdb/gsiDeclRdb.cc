@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -88,49 +88,6 @@ private:
   rdb::Database::const_item_ref_iterator m_iter;
 };
 
-class ItemRefUnwrappingNonConstIterator
-{
-public:
-  typedef rdb::Database::const_item_ref_iterator::iterator_category iterator_category;
-  typedef rdb::Database::const_item_ref_iterator::difference_type difference_type;
-  typedef rdb::Item value_type;
-  typedef rdb::Item &reference;
-  typedef rdb::Item *pointer;
-
-  ItemRefUnwrappingNonConstIterator (rdb::Database::item_ref_iterator i)
-    : m_iter (i)
-  { }
-
-  bool operator== (const ItemRefUnwrappingNonConstIterator &d) const
-  {
-    return m_iter == d.m_iter;
-  }
-
-  bool operator!= (const ItemRefUnwrappingNonConstIterator &d) const
-  {
-    return m_iter != d.m_iter;
-  }
-
-  ItemRefUnwrappingNonConstIterator &operator++ ()
-  {
-    ++m_iter;
-    return *this;
-  }
-
-  rdb::Item &operator* () const
-  {
-    return (*m_iter).operator* ();
-  }
-
-  rdb::Item *operator-> () const
-  {
-    return (*m_iter).operator-> ();
-  }
-
-private:
-  rdb::Database::item_ref_iterator m_iter;
-};
-
 // ---------------------------------------------------------------
 //  rdb::Reference binding
 
@@ -140,34 +97,32 @@ static rdb::Reference *new_ref_tp (const db::DCplxTrans &trans, rdb::id_type par
 }
 
 Class<rdb::Reference> decl_RdbReference ("rdb", "RdbReference",
-  gsi::constructor ("new", &new_ref_tp, gsi::arg ("trans"), gsi::arg ("parent_cell_id"),
+  gsi::constructor ("new", &new_ref_tp, 
     "@brief Creates a reference with a given transformation and parent cell ID\n"
+    "@args trans, parent_cell_id\n"
   ) +
   gsi::method ("database", (const rdb::Database *(rdb::Reference::*)() const) &rdb::Reference::database,
     "@brief Gets the database object that category is associated with\n"
     "\n"
     "This method has been introduced in version 0.23."
   ) +
-  gsi::method ("database", (rdb::Database *(rdb::Reference::*)()) &rdb::Reference::database,
-    "@brief Gets the database object that category is associated with (non-const version)\n"
-    "\n"
-    "This method has been introduced in version 0.29."
-  ) +
-  gsi::method ("trans", &rdb::Reference::trans,
+  gsi::method ("trans", &rdb::Reference::trans, 
     "@brief Gets the transformation for this reference\n"
     "The transformation describes the transformation of the child cell into the parent cell. In that sense that is the "
     "usual transformation of a cell reference.\n"
     "@return The transformation\n"
   ) +
-  gsi::method ("trans=", &rdb::Reference::set_trans, gsi::arg ("trans"),
+  gsi::method ("trans=", &rdb::Reference::set_trans, 
     "@brief Sets the transformation for this reference\n"
+    "@args trans\n"
   ) +
   gsi::method ("parent_cell_id", &rdb::Reference::parent_cell_id, 
     "@brief Gets parent cell ID for this reference\n"
     "@return The parent cell ID\n"
   ) +
-  gsi::method ("parent_cell_id=", &rdb::Reference::set_parent_cell_id, gsi::arg ("id"),
+  gsi::method ("parent_cell_id=", &rdb::Reference::set_parent_cell_id, 
     "@brief Sets the parent cell ID for this reference\n"
+    "@args id\n"
   ),
   "@brief A cell reference inside the report database\n"
   "This class describes a cell reference. Such reference object can be attached to cells to describe instantiations of them "
@@ -185,16 +140,6 @@ static rdb::References::const_iterator begin_references (const rdb::Cell *cell)
 }
 
 static rdb::References::const_iterator end_references (const rdb::Cell *cell)
-{
-  return cell->references ().end ();
-}
-
-static rdb::References::iterator begin_references_nc (rdb::Cell *cell)
-{
-  return cell->references ().begin ();
-}
-
-static rdb::References::iterator end_references_nc (rdb::Cell *cell)
 {
   return cell->references ().end ();
 }
@@ -221,18 +166,6 @@ ItemRefUnwrappingIterator cell_items_end (const rdb::Cell *cell)
   return cell->database ()->items_by_cell (cell->id ()).second;
 }
 
-ItemRefUnwrappingNonConstIterator cell_items_begin_non_const (rdb::Cell *cell)
-{
-  tl_assert (cell->database ());
-  return cell->database ()->items_by_cell (cell->id ()).first;
-}
-
-ItemRefUnwrappingNonConstIterator cell_items_end_non_const (rdb::Cell *cell)
-{
-  tl_assert (cell->database ());
-  return cell->database ()->items_by_cell (cell->id ()).second;
-}
-
 Class<rdb::Cell> decl_RdbCell ("rdb", "RdbCell",
   gsi::method ("rdb_id", &rdb::Cell::id, 
     "@brief Gets the cell ID\n"
@@ -245,45 +178,27 @@ Class<rdb::Cell> decl_RdbCell ("rdb", "RdbCell",
     "\n"
     "This method has been introduced in version 0.23."
   ) +
-  gsi::method ("database", (rdb::Database *(rdb::Cell::*)()) &rdb::Cell::database,
-    "@brief Gets the database object that category is associated with (non-const version)\n"
-    "\n"
-    "This method has been introduced in version 0.29."
-  ) +
   gsi::iterator_ext ("each_item", &cell_items_begin, &cell_items_end,
-    "@brief Iterates over all items inside the database which are associated with this cell\n"
+    "@brief Iterates over all iterms inside the database which are associated with this cell\n"
     "\n"
     "This method has been introduced in version 0.23."
   ) +
-  gsi::iterator_ext ("each_item", &cell_items_begin_non_const, &cell_items_end_non_const,
-    "@brief Iterates over all items inside the database which are associated with this cell (non-const version)\n"
-    "\n"
-    "This method has been introduced in version 0.29."
-  ) +
-  gsi::method ("name", &rdb::Cell::name,
+  gsi::method ("name", &rdb::Cell::name, 
     "@brief Gets the cell name\n"
     "The cell name is an string that identifies the category in the database. "
     "Additionally, a cell may carry a variant identifier which is a string that uniquely identifies a cell "
-    "in the context of its variants. The \"qualified name\" contains both the cell name and the variant name. "
-    "Cell names are also used to identify report database cells with layout cells. For variants, the layout cell name "
-    "can be specified explicitly with the \\layout_name attribute (see \\RdbDatabase#create_cell). The latter is available "
-    "since version 0.29.1.\n"
+    "in the context of it's variants. The \"qualified name\" contains both the cell name and the variant name. "
+    "Cell names are also used to identify report database cell's with layout cells. "
     "@return The cell name\n"
   ) +
   gsi::method ("variant", &rdb::Cell::variant, 
     "@brief Gets the cell variant name\n"
     "A variant name additionally identifies the cell when multiple cells with the same name are present. "
-    "A variant name is either assigned automatically or set when creating a cell.\n"
+    "A variant name is either assigned automatically or set when creating a cell. "
     "@return The cell variant name\n"
   ) +
-  gsi::method ("layout_name", &rdb::Cell::layout_name,
-    "@brief Gets the name of the layout cell\n"
-    "For variants, this string is the name of the actual layout cell. If empty, the cell is assume to be called 'name'.\n"
-    "@return The layout cell name\n"
-    "This read-only attribute has been added in version 0.29.1.\n"
-  ) +
-  gsi::method ("qname", &rdb::Cell::qname,
-    "@brief Gets the qualified name of the cell\n"
+  gsi::method ("qname", &rdb::Cell::qname, 
+    "@brief Gets the cell's qualified name\n"
     "The qualified name is a combination of the cell name and optionally the variant name. "
     "It is used to identify the cell by name in a unique way.\n"
     "@return The qualified name\n"
@@ -294,8 +209,9 @@ Class<rdb::Cell> decl_RdbCell ("rdb", "RdbCell",
   gsi::method ("num_items_visited", &rdb::Cell::num_items_visited, 
     "@brief Gets the number of visited items for this cell\n"
   ) +
-  gsi::method_ext ("add_reference", &add_reference, gsi::arg ("ref"),
+  gsi::method_ext ("add_reference", &add_reference,
     "@brief Adds a reference to the references of this cell\n"
+    "@args ref\n"
     "@param ref The reference to add.\n"
   ) +
   gsi::method_ext ("clear_references", &clear_references,
@@ -303,11 +219,6 @@ Class<rdb::Cell> decl_RdbCell ("rdb", "RdbCell",
   ) +
   gsi::iterator_ext ("each_reference", &begin_references, &end_references,
     "@brief Iterates over all references\n"
-  ) +
-  gsi::iterator_ext ("each_reference", &begin_references_nc, &end_references_nc,
-    "@brief Iterates over all references (non-const version)\n"
-    "\n"
-    "This method has been introduced in version 0.23."
   ),
   "@brief A cell inside the report database\n"
   "This class represents a cell in the report database. There is not necessarily a 1:1 correspondence of RDB cells "
@@ -319,22 +230,12 @@ Class<rdb::Cell> decl_RdbCell ("rdb", "RdbCell",
 // ---------------------------------------------------------------
 //  rdb::Category binding
 
-static rdb::Categories::const_iterator begin_sub_categories (const rdb::Category *cat)
+static rdb::Categories::iterator begin_sub_categories (rdb::Category *cat)
 {
   return cat->sub_categories ().begin ();
 }
 
-static rdb::Categories::const_iterator end_sub_categories (const rdb::Category *cat)
-{
-  return cat->sub_categories ().end ();
-}
-
-static rdb::Categories::iterator begin_sub_categories_non_const (rdb::Category *cat)
-{
-  return cat->sub_categories ().begin ();
-}
-
-static rdb::Categories::iterator end_sub_categories_non_const (rdb::Category *cat)
+static rdb::Categories::iterator end_sub_categories (rdb::Category *cat)
 {
   return cat->sub_categories ().end ();
 }
@@ -351,50 +252,42 @@ ItemRefUnwrappingIterator category_items_end (const rdb::Category *cat)
   return cat->database ()->items_by_category (cat->id ()).second;
 }
 
-ItemRefUnwrappingNonConstIterator category_items_begin_non_const (rdb::Category *cat)
+static void scan_layer1 (rdb::Category *cat, const db::Layout &layout, unsigned int layer)
 {
-  tl_assert (cat->database ());
-  return cat->database ()->items_by_category (cat->id ()).first;
+  rdb::scan_layer (cat, layout, layer);
 }
 
-ItemRefUnwrappingNonConstIterator category_items_end_non_const (rdb::Category *cat)
+static void scan_layer2 (rdb::Category *cat, const db::Layout &layout, unsigned int layer, const db::Cell *from_cell)
 {
-  tl_assert (cat->database ());
-  return cat->database ()->items_by_category (cat->id ()).second;
+  rdb::scan_layer (cat, layout, layer, from_cell);
 }
 
-static void scan_layer (rdb::Category *cat, const db::Layout &layout, unsigned int layer, const db::Cell *from_cell, int levels, bool with_properties)
+static void scan_layer3 (rdb::Category *cat, const db::Layout &layout, unsigned int layer, const db::Cell *from_cell, int levels)
 {
-  rdb::scan_layer (cat, layout, layer, from_cell, levels, with_properties);
+  rdb::scan_layer (cat, layout, layer, from_cell, levels);
 }
 
-static void scan_shapes (rdb::Category *cat, const db::RecursiveShapeIterator &iter, bool flat, bool with_properties)
+static void scan_shapes (rdb::Category *cat, const db::RecursiveShapeIterator &iter, bool flat)
 {
-  rdb::scan_layer (cat, iter, flat, with_properties);
+  rdb::scan_layer (cat, iter, flat);
 }
 
-static void scan_region (rdb::Category *cat, rdb::Cell *cell, const db::CplxTrans &trans, const db::Region &region, bool flat, bool with_properties)
+static void scan_region (rdb::Category *cat, rdb::Cell *cell, const db::CplxTrans &trans, const db::Region &region, bool flat)
 {
   std::pair<db::RecursiveShapeIterator, db::ICplxTrans> it = region.begin_iter ();
-  rdb::scan_layer (cat, cell, trans * it.second, it.first, flat, with_properties);
+  rdb::scan_layer (cat, cell, trans * it.second, it.first, flat);
 }
 
-static void scan_edges (rdb::Category *cat, rdb::Cell *cell, const db::CplxTrans &trans, const db::Edges &edges, bool flat, bool with_properties)
+static void scan_edges (rdb::Category *cat, rdb::Cell *cell, const db::CplxTrans &trans, const db::Edges &edges, bool flat)
 {
   std::pair<db::RecursiveShapeIterator, db::ICplxTrans> it = edges.begin_iter ();
-  rdb::scan_layer (cat, cell, trans * it.second, it.first, flat, with_properties);
+  rdb::scan_layer (cat, cell, trans * it.second, it.first, flat);
 }
 
-static void scan_edge_pairs (rdb::Category *cat, rdb::Cell *cell, const db::CplxTrans &trans, const db::EdgePairs &edge_pairs, bool flat, bool with_properties)
+static void scan_edge_pairs (rdb::Category *cat, rdb::Cell *cell, const db::CplxTrans &trans, const db::EdgePairs &edge_pairs, bool flat)
 {
   std::pair<db::RecursiveShapeIterator, db::ICplxTrans> it = edge_pairs.begin_iter ();
-  rdb::scan_layer (cat, cell, trans * it.second, it.first, flat, with_properties);
-}
-
-static void scan_texts (rdb::Category *cat, rdb::Cell *cell, const db::CplxTrans &trans, const db::Texts &texts, bool flat, bool with_properties)
-{
-  std::pair<db::RecursiveShapeIterator, db::ICplxTrans> it = texts.begin_iter ();
-  rdb::scan_layer (cat, cell, trans * it.second, it.first, flat, with_properties);
+  rdb::scan_layer (cat, cell, trans * it.second, it.first, flat);
 }
 
 Class<rdb::Category> decl_RdbCategory ("rdb", "RdbCategory",
@@ -410,16 +303,11 @@ Class<rdb::Category> decl_RdbCategory ("rdb", "RdbCategory",
     "This method has been introduced in version 0.23."
   ) +
   gsi::iterator_ext ("each_item", &category_items_begin, &category_items_end,
-    "@brief Iterates over all items inside the database which are associated with this category\n"
+    "@brief Iterates over all iterms inside the database which are associated with this category\n"
     "\n"
     "This method has been introduced in version 0.23."
   ) +
-  gsi::iterator_ext ("each_item", &category_items_begin_non_const, &category_items_end_non_const,
-    "@brief Iterates over all items inside the database which are associated with this category (non-const version)\n"
-    "\n"
-    "This method has been introduced in version 0.29."
-  ) +
-  gsi::method_ext ("scan_shapes", &scan_shapes, gsi::arg ("iter"), gsi::arg ("flat", false), gsi::arg ("with_properties", true),
+  gsi::method_ext ("scan_shapes", &scan_shapes, gsi::arg ("iter"), gsi::arg ("flat", false),
     "@brief Scans the polygon or edge shapes from the shape iterator into the category\n"
     "Creates RDB items for each polygon or edge shape read from the iterator and puts them into this category.\n"
     "A similar, but lower-level method is \\ReportDatabase#create_items with a \\RecursiveShapeIterator argument.\n"
@@ -427,11 +315,9 @@ Class<rdb::Category> decl_RdbCategory ("rdb", "RdbCategory",
     "if the \\flat argument is false. In this case, the hierarchy the recursive shape iterator traverses is "
     "copied into the report database using sample references.\n"
     "\n"
-    "If 'with_properties' is true, user properties will be turned into tagged values as well.\n"
-    "\n"
-    "This method has been introduced in version 0.23. The flat mode argument has been added in version 0.26. The 'with_properties' argument has been added in version 0.28.\n"
+    "This method has been introduced in version 0.23. The flat mode argument has been added in version 0.26.\n"
   ) +
-  gsi::method_ext ("scan_collection", &scan_region, gsi::arg ("cell"), gsi::arg ("trans"), gsi::arg ("region"), gsi::arg ("flat", false), gsi::arg ("with_properties", true),
+  gsi::method_ext ("scan_collection", &scan_region, gsi::arg ("cell"), gsi::arg ("trans"), gsi::arg ("region"), gsi::arg ("flat", false),
     "@brief Turns the given region into a hierarchical or flat report database\n"
     "The exact behavior depends on the nature of the region. If the region is a hierarchical (original or deep) region "
     "and the 'flat' argument is false, this method will produce a hierarchical report database in the given category. "
@@ -443,38 +329,47 @@ Class<rdb::Category> decl_RdbCategory ("rdb", "RdbCategory",
     "\n"
     "The transformation argument needs to supply the dbu-to-micron transformation.\n"
     "\n"
-    "If 'with_properties' is true, user properties will be turned into tagged values as well.\n"
-    "\n"
-    "This method has been introduced in version 0.26. The 'with_properties' argument has been added in version 0.28.\n"
+    "This method has been introduced in version 0.26.\n"
   ) +
-  gsi::method_ext ("scan_collection", &scan_edges, gsi::arg ("cell"), gsi::arg ("trans"), gsi::arg ("edges"), gsi::arg ("flat", false), gsi::arg ("with_properties", true),
+  gsi::method_ext ("scan_collection", &scan_edges, gsi::arg ("cell"), gsi::arg ("trans"), gsi::arg ("edges"), gsi::arg ("flat", false),
     "@brief Turns the given edge collection into a hierarchical or flat report database\n"
     "This a another flavour of \\scan_collection accepting an edge collection.\n"
     "\n"
-    "This method has been introduced in version 0.26. The 'with_properties' argument has been added in version 0.28.\n"
+    "This method has been introduced in version 0.26.\n"
   ) +
-  gsi::method_ext ("scan_collection", &scan_edge_pairs, gsi::arg ("cell"), gsi::arg ("trans"), gsi::arg ("edge_pairs"), gsi::arg ("flat", false), gsi::arg ("with_properties", true),
+  gsi::method_ext ("scan_collection", &scan_edge_pairs, gsi::arg ("cell"), gsi::arg ("trans"), gsi::arg ("edge_pairs"), gsi::arg ("flat", false),
     "@brief Turns the given edge pair collection into a hierarchical or flat report database\n"
     "This a another flavour of \\scan_collection accepting an edge pair collection.\n"
     "\n"
-    "This method has been introduced in version 0.26. The 'with_properties' argument has been added in version 0.28.\n"
+    "This method has been introduced in version 0.26.\n"
   ) +
-  gsi::method_ext ("scan_collection", &scan_texts, gsi::arg ("cell"), gsi::arg ("trans"), gsi::arg ("texts"), gsi::arg ("flat", false), gsi::arg ("with_properties", true),
-    "@brief Turns the given edge pair collection into a hierarchical or flat report database\n"
-    "This a another flavour of \\scan_collection accepting a text collection.\n"
+  gsi::method_ext ("scan_layer", &scan_layer1,
+    "@brief Scans a layer from a layout into this category\n"
+    "@args layout, layer\n"
+    "Creates RDB items for each polygon or edge shape read from the each cell in the layout on the given layer and puts them into this category.\n"
+    "New cells will be generated for every cell encountered in the layout.\n"
+    "Other settings like database unit, description, top cell etc. are not made in the RDB.\n"
     "\n"
-    "This method has been introduced in version 0.28.\n"
+    "This method has been introduced in version 0.23.\n"
   ) +
-  gsi::method_ext ("scan_layer", &scan_layer, gsi::arg ("layout"), gsi::arg ("layer"), gsi::arg ("cell", (const db::Cell *) 0, "nil"), gsi::arg ("levels", -1), gsi::arg ("with_properties", true),
+  gsi::method_ext ("scan_layer", &scan_layer2,
+    "@brief Scans a layer from a layout into this category, starting with a given cell\n"
+    "@args layout, layer, cell\n"
+    "Creates RDB items for each polygon or edge shape read from the cell and it's children in the layout on the given layer and puts them into this category.\n"
+    "New cells will be generated when required.\n"
+    "Other settings like database unit, description, top cell etc. are not made in the RDB.\n"
+    "\n"
+    "This method has been introduced in version 0.23.\n"
+  ) +
+  gsi::method_ext ("scan_layer", &scan_layer3,
     "@brief Scans a layer from a layout into this category, starting with a given cell and a depth specification\n"
-    "Creates RDB items for each polygon or edge shape read from the cell and its children in the layout on the given layer and puts them into this category.\n"
+    "@args layout, layer, cell, levels\n"
+    "Creates RDB items for each polygon or edge shape read from the cell and it's children in the layout on the given layer and puts them into this category.\n"
     "New cells will be generated when required.\n"
     "\"levels\" is the number of hierarchy levels to take the child cells from. 0 means to use only \"cell\" and don't descend, -1 means \"all levels\".\n"  
     "Other settings like database unit, description, top cell etc. are not made in the RDB.\n"
     "\n"
-    "If 'with_properties' is true, user properties will be turned into tagged values as well.\n"
-    "\n"
-    "This method has been introduced in version 0.23. The 'with_properties' argument has been added in version 0.28.\n"
+    "This method has been introduced in version 0.23.\n"
   ) +
   gsi::method ("name", &rdb::Category::name, 
     "@brief Gets the category name\n"
@@ -493,29 +388,19 @@ Class<rdb::Category> decl_RdbCategory ("rdb", "RdbCategory",
     "@brief Gets the category description\n"
     "@return The description string\n"
   ) +
-  gsi::method ("description=", &rdb::Category::set_description, gsi::arg ("description"),
+  gsi::method ("description=", &rdb::Category::set_description, 
     "@brief Sets the category description\n"
+    "@args description\n"
     "@param description The description string\n"
   ) +
   gsi::iterator_ext ("each_sub_category", &begin_sub_categories, &end_sub_categories,
     "@brief Iterates over all sub-categories\n"
-    "\n"
-    "The const version has been added in version 0.29."
   ) +
-  gsi::iterator_ext ("each_sub_category", &begin_sub_categories_non_const, &end_sub_categories_non_const,
-    "@brief Iterates over all sub-categories (non-const version)\n"
-  ) +
-  gsi::method ("parent", (const rdb::Category *(rdb::Category::*) () const) &rdb::Category::parent,
+  gsi::method ("parent", (rdb::Category *(rdb::Category::*) ()) &rdb::Category::parent, 
     "@brief Gets the parent category of this category\n"
     "@return The parent category or nil if this category is a top-level category\n"
-    "\n"
-    "The const version has been added in version 0.29."
   ) +
-  gsi::method ("parent", (rdb::Category *(rdb::Category::*) ()) &rdb::Category::parent,
-    "@brief Gets the parent category of this category (non-const version)\n"
-    "@return The parent category or nil if this category is a top-level category\n"
-  ) +
-  gsi::method ("num_items", &rdb::Category::num_items,
+  gsi::method ("num_items", &rdb::Category::num_items, 
     "@brief Gets the number of items in this category\n"
     "The number of items includes the items in sub-categories of this category.\n"
   ) +
@@ -525,7 +410,7 @@ Class<rdb::Category> decl_RdbCategory ("rdb", "RdbCategory",
   ),
   "@brief A category inside the report database\n"
   "Every item in the report database is assigned to a category. A category is a DRC rule check for example. "
-  "Categories can be organized hierarchically, i.e. a category may have sub-categories. Item counts are summarized "
+  "Categories can be organised hierarchically, i.e. a category may have sub-categories. Item counts are summarized "
   "for categories and items belonging to sub-categories of one category can be browsed together for example. "
   "As a general rule, categories not being leaf categories (having child categories) may not have items. "
 );
@@ -721,39 +606,48 @@ void value_set_tag_id (rdb::ValueWrapper *v, rdb::id_type id)
 }
 
 Class<rdb::ValueWrapper> decl_RdbItemValue ("rdb", "RdbItemValue",
-  gsi::method ("from_s", &value_from_string, gsi::arg ("s"),
+  gsi::method ("from_s", &value_from_string, 
     "@brief Creates a value object from a string\n"
+    "@args s\n"
     "The string format is the same than obtained by the to_s method.\n"
   ) +
-  gsi::constructor ("new", &new_value_f, gsi::arg ("f"),
+  gsi::constructor ("new", &new_value_f, 
     "@brief Creates a value representing a numeric value\n"
+    "@args f\n"
     "\n"
     "This variant has been introduced in version 0.24\n"
   ) +
-  gsi::constructor ("new", &new_value_s, gsi::arg ("s"),
+  gsi::constructor ("new", &new_value_s, 
     "@brief Creates a value representing a string\n"
+    "@args s\n"
   ) +
-  gsi::constructor ("new", &new_value_p, gsi::arg ("p"),
+  gsi::constructor ("new", &new_value_p, 
     "@brief Creates a value representing a DPolygon object\n"
+    "@args p\n"
   ) +
-  gsi::constructor ("new", &new_value_path, gsi::arg ("p"),
+  gsi::constructor ("new", &new_value_path, 
     "@brief Creates a value representing a DPath object\n"
+    "@args p\n"
     "\n"
     "This method has been introduced in version 0.22."
   ) +
-  gsi::constructor ("new", &new_value_text, gsi::arg ("t"),
+  gsi::constructor ("new", &new_value_text, 
     "@brief Creates a value representing a DText object\n"
+    "@args t\n"
     "\n"
     "This method has been introduced in version 0.22."
   ) +
-  gsi::constructor ("new", &new_value_e, gsi::arg ("e"),
+  gsi::constructor ("new", &new_value_e, 
     "@brief Creates a value representing a DEdge object\n"
+    "@args e\n"
   ) +
-  gsi::constructor ("new", &new_value_ep, gsi::arg ("ee"),
+  gsi::constructor ("new", &new_value_ep, 
     "@brief Creates a value representing a DEdgePair object\n"
+    "@args ee\n"
   ) +
-  gsi::constructor ("new", &new_value_b, gsi::arg ("b"),
+  gsi::constructor ("new", &new_value_b, 
     "@brief Creates a value representing a DBox object\n"
+    "@args b\n"
   ) +
   gsi::method_ext ("to_s", &value_to_string, 
     "@brief Converts a value to a string\n"
@@ -828,8 +722,9 @@ Class<rdb::ValueWrapper> decl_RdbItemValue ("rdb", "RdbItemValue",
     "@brief Gets the box if the value represents one.\n"
     "@return The \\DBox object or nil"
   ) + 
-  gsi::method_ext ("tag_id=", &value_set_tag_id, gsi::arg ("id"),
+  gsi::method_ext ("tag_id=", &value_set_tag_id, 
     "@brief Sets the tag ID to make the value a tagged value or 0 to reset it\n"
+    "@args id\n"
     "@param id The tag ID\n"
     "To get a tag ID, use \\RdbDatabase#user_tag_id (preferred) or \\RdbDatabase#tag_id (for internal use).\n"
     "Tagged values have been added in version 0.24. Tags can be given to identify a value, for example "
@@ -910,67 +805,40 @@ Class<rdb::Item> decl_RdbItem ("rdb", "RdbItem",
     "@brief Gets a value indicating whether the item was already visited\n"
     "@return True, if the item has been visited already\n"
   ) +
-  gsi::method ("add_tag", &rdb::Item::add_tag, gsi::arg ("tag_id"),
+  gsi::method ("add_tag", &rdb::Item::add_tag, 
     "@brief Adds a tag with the given id to the item\n"
+    "@args tag_id\n"
     "Each tag can be added once to the item. The tags of an item thus form a set. "
     "If a tag with that ID already exists, this method does nothing."
   ) +
-  gsi::method ("remove_tag", &rdb::Item::remove_tag, gsi::arg ("tag_id"),
+  gsi::method ("remove_tag", &rdb::Item::remove_tag, 
     "@brief Remove the tag with the given id from the item\n"
+    "@args tag_id\n"
     "If a tag with that ID does not exists on this item, this method does nothing."
   ) +
-  gsi::method ("remove_tags", &rdb::Item::remove_tags,
-    "@brief Removes all tags from the item\n"
-    "This method has been introduced in version 0.29.1."
-  ) +
-  gsi::method ("has_tag?", &rdb::Item::has_tag, gsi::arg ("tag_id"),
+  gsi::method ("has_tag?", &rdb::Item::has_tag, 
     "@brief Returns a value indicating whether the item has a tag with the given ID\n"
+    "@args tag_id\n"
     "@return True, if the item has a tag with the given ID\n"
   ) +
   gsi::method ("tags_str", &rdb::Item::tag_str, 
     "@brief Returns a string listing all tags of this item\n"
     "@return A comma-separated list of tags\n"
   ) +
-  gsi::method ("tags_str=", &rdb::Item::set_tag_str, gsi::arg ("tags"),
+  gsi::method ("tags_str=", &rdb::Item::set_tag_str, 
     "@brief Sets the tags from a string\n"
+    "@args tags\n"
     "@param tags A comma-separated list of tags\n"
   ) +
-  gsi::method ("has_image?", &rdb::Item::has_image,
-    "@brief Gets a value indicating that the item has an image attached\n"
-    "See \\image_str how to obtain the image.\n\n"
-    "This method has been introduced in version 0.28.\n"
-  ) +
-  gsi::method ("comment", &rdb::Item::comment,
-    "@brief Gets the common associated with this item as a string\n"
-    "@return The comment string\n"
-    "The comment string is an arbitrary string added by the user to the item.\n"
-    "\n"
-    "This attribute has been added in version 0.29.1.\n"
-  ) +
-  gsi::method ("comment=", &rdb::Item::set_comment, gsi::arg ("comment"),
-    "@brief Sets the common associated with this item as a string\n"
-    "See \\comment for a description of that attribute.\n"
-    "\n"
-    "This attribute has been added in version 0.29.1.\n"
-  ) +
-  gsi::method ("image_str", &rdb::Item::image_str,
+#if defined(HAVE_QT)
+  gsi::method ("image_str", &rdb::Item::image_str, 
     "@brief Gets the image associated with this item as a string\n"
-    "@return A base64-encoded image file (in PNG format)\n"
+    "@return A base64-encoded image file (usually in PNG format)\n"
   ) +
-  gsi::method ("image_str=", &rdb::Item::set_image_str, gsi::arg ("image"),
+  gsi::method ("image_str=", &rdb::Item::set_image_str, 
     "@brief Sets the image from a string\n"
+    "@args image\n"
     "@param image A base64-encoded image file (preferably in PNG format)\n"
-  ) +
-#if defined(HAVE_PNG)
-  gsi::method ("image_pixels", &rdb::Item::image_pixels,
-    "@brief Gets the attached image as a PixelBuffer object\n"
-    "\n"
-    "This method has been added in version 0.28."
-  ) +
-  gsi::method ("image=", static_cast<void (rdb::Item::*) (const tl::PixelBuffer &)> (&rdb::Item::set_image), gsi::arg ("buffer"),
-    "@brief Sets the attached image from a PixelBuffer object\n"
-    "\n"
-    "This method has been added in version 0.28."
   ) +
 #endif
   /* Not supported yet:
@@ -981,46 +849,49 @@ Class<rdb::Item> decl_RdbItem ("rdb", "RdbItem",
     "for this specific item instead of simply counting the items. "
     "@return The multiplicity\n"
   ) +
-  gsi::method ("multiplicity=", &rdb::Item::set_multiplicity, gsi::arg ("multiplicity"),
+  gsi::method ("multiplicity=", &rdb::Item::set_multiplicity, 
     "@brief Sets the item's multiplicity\n"
+    "@args multiplicity\n"
   ) +
   */
-  gsi::method_ext ("add_value", &add_value, gsi::arg ("value"),
+  gsi::method_ext ("add_value", &add_value,
     "@brief Adds a value object to the values of this item\n"
+    "@args value\n"
     "@param value The value to add.\n"
   ) +
-  gsi::method_ext ("add_value", &add_value_t<db::DPolygon>, gsi::arg ("value"),
+  gsi::method_ext ("add_value", &add_value_t<db::DPolygon>,
     "@brief Adds a polygon object to the values of this item\n"
+    "@args value\n"
     "@param value The polygon to add.\n"
     "This method has been introduced in version 0.25 as a convenience method."
   ) +
-  gsi::method_ext ("add_value", &add_value_t<db::DBox>, gsi::arg ("value"),
+  gsi::method_ext ("add_value", &add_value_t<db::DBox>,
     "@brief Adds a box object to the values of this item\n"
+    "@args value\n"
     "@param value The box to add.\n"
     "This method has been introduced in version 0.25 as a convenience method."
   ) +
-  gsi::method_ext ("add_value", &add_value_t<db::DText>, gsi::arg ("value"),
-    "@brief Adds a text object to the values of this item\n"
-    "@param value The text to add.\n"
-    "This method has been introduced in version 0.30.1 to support text objects with properties."
-  ) +
-  gsi::method_ext ("add_value", &add_value_t<db::DEdge>, gsi::arg ("value"),
+  gsi::method_ext ("add_value", &add_value_t<db::DEdge>,
     "@brief Adds an edge object to the values of this item\n"
+    "@args value\n"
     "@param value The edge to add.\n"
     "This method has been introduced in version 0.25 as a convenience method."
   ) +
-  gsi::method_ext ("add_value", &add_value_t<db::DEdgePair>, gsi::arg ("value"),
+  gsi::method_ext ("add_value", &add_value_t<db::DEdgePair>,
     "@brief Adds an edge pair object to the values of this item\n"
+    "@args value\n"
     "@param value The edge pair to add.\n"
     "This method has been introduced in version 0.25 as a convenience method."
   ) +
-  gsi::method_ext ("add_value", &add_value_t<std::string>, gsi::arg ("value"),
+  gsi::method_ext ("add_value", &add_value_t<std::string>,
     "@brief Adds a string object to the values of this item\n"
+    "@args value\n"
     "@param value The string to add.\n"
     "This method has been introduced in version 0.25 as a convenience method."
   ) +
-  gsi::method_ext ("add_value", &add_value_t<double>, gsi::arg ("value"),
+  gsi::method_ext ("add_value", &add_value_t<double>,
     "@brief Adds a numeric value to the values of this item\n"
+    "@args value\n"
     "@param value The value to add.\n"
     "This method has been introduced in version 0.25 as a convenience method."
   ) +
@@ -1076,32 +947,12 @@ rdb::Items::const_iterator database_items_end (const rdb::Database *db)
   return db->items ().end ();
 }
 
-rdb::Items::iterator database_items_begin_nc (rdb::Database *db)
-{
-  return db->items_non_const ().begin ();
-}
-
-rdb::Items::iterator database_items_end_nc (rdb::Database *db)
-{
-  return db->items_non_const ().end ();
-}
-
 ItemRefUnwrappingIterator database_items_begin_cell (const rdb::Database *db, rdb::id_type cell_id)
 {
   return db->items_by_cell (cell_id).first;
 }
 
 ItemRefUnwrappingIterator database_items_end_cell (const rdb::Database *db, rdb::id_type cell_id)
-{
-  return db->items_by_cell (cell_id).second;
-}
-
-ItemRefUnwrappingNonConstIterator database_items_begin_cell_nc (rdb::Database *db, rdb::id_type cell_id)
-{
-  return db->items_by_cell (cell_id).first;
-}
-
-ItemRefUnwrappingNonConstIterator database_items_end_cell_nc (rdb::Database *db, rdb::id_type cell_id)
 {
   return db->items_by_cell (cell_id).second;
 }
@@ -1116,32 +967,12 @@ ItemRefUnwrappingIterator database_items_end_cat (const rdb::Database *db, rdb::
   return db->items_by_category (cat_id).second;
 }
 
-ItemRefUnwrappingNonConstIterator database_items_begin_cat_nc (rdb::Database *db, rdb::id_type cat_id)
-{
-  return db->items_by_category (cat_id).first;
-}
-
-ItemRefUnwrappingNonConstIterator database_items_end_cat_nc (rdb::Database *db, rdb::id_type cat_id)
-{
-  return db->items_by_category (cat_id).second;
-}
-
 ItemRefUnwrappingIterator database_items_begin_cc (const rdb::Database *db, rdb::id_type cell_id, rdb::id_type cat_id)
 {
   return db->items_by_cell_and_category (cell_id, cat_id).first;
 }
 
 ItemRefUnwrappingIterator database_items_end_cc (const rdb::Database *db, rdb::id_type cell_id, rdb::id_type cat_id)
-{
-  return db->items_by_cell_and_category (cell_id, cat_id).second;
-}
-
-ItemRefUnwrappingNonConstIterator database_items_begin_cc_nc (rdb::Database *db, rdb::id_type cell_id, rdb::id_type cat_id)
-{
-  return db->items_by_cell_and_category (cell_id, cat_id).first;
-}
-
-ItemRefUnwrappingNonConstIterator database_items_end_cc_nc (rdb::Database *db, rdb::id_type cell_id, rdb::id_type cat_id)
 {
   return db->items_by_cell_and_category (cell_id, cat_id).second;
 }
@@ -1156,16 +987,6 @@ rdb::Categories::const_iterator database_end_categories (const rdb::Database *db
   return db->categories ().end ();
 }
 
-rdb::Categories::iterator database_end_categories_nc (rdb::Database *db)
-{
-  return db->categories_non_const ().end ();
-}
-
-rdb::Categories::iterator database_begin_categories_nc (rdb::Database *db)
-{
-  return db->categories_non_const ().begin ();
-}
-
 rdb::Cells::const_iterator database_begin_cells (const rdb::Database *db)
 {
   return db->cells ().begin ();
@@ -1174,16 +995,6 @@ rdb::Cells::const_iterator database_begin_cells (const rdb::Database *db)
 rdb::Cells::const_iterator database_end_cells (const rdb::Database *db)
 {
   return db->cells ().end ();
-}
-
-rdb::Cells::iterator database_begin_cells_nc (rdb::Database *db)
-{
-  return db->cells_non_const ().begin ();
-}
-
-rdb::Cells::iterator database_end_cells_nc (rdb::Database *db)
-{
-  return db->cells_non_const ().end ();
 }
 
 const std::string &database_tag_name (const rdb::Database *db, rdb::id_type tag)
@@ -1216,21 +1027,6 @@ void create_items_from_edge_pair_array (rdb::Database *db, rdb::id_type cell_id,
   rdb::create_items_from_sequence (db, cell_id, cat_id, trans, collection.begin (), collection.end ());
 }
 
-void create_items_from_polygon_array_with_properties (rdb::Database *db, rdb::id_type cell_id, rdb::id_type cat_id, const db::CplxTrans &trans, const std::vector<db::PolygonWithProperties> &collection, bool with_properties)
-{
-  rdb::create_items_from_sequence_with_properties (db, cell_id, cat_id, trans, collection.begin (), collection.end (), with_properties);
-}
-
-void create_items_from_edge_array_with_properties (rdb::Database *db, rdb::id_type cell_id, rdb::id_type cat_id, const db::CplxTrans &trans, const std::vector<db::EdgeWithProperties> &collection, bool with_properties)
-{
-  rdb::create_items_from_sequence_with_properties (db, cell_id, cat_id, trans, collection.begin (), collection.end (), with_properties);
-}
-
-void create_items_from_edge_pair_array_with_properties (rdb::Database *db, rdb::id_type cell_id, rdb::id_type cat_id, const db::CplxTrans &trans, const std::vector<db::EdgePairWithProperties> &collection, bool with_properties)
-{
-  rdb::create_items_from_sequence_with_properties (db, cell_id, cat_id, trans, collection.begin (), collection.end (), with_properties);
-}
-
 static rdb::Item *create_item (rdb::Database *db, rdb::id_type cell_id, rdb::id_type cat_id)
 {
   if (! db->cell_by_id (cell_id)) {
@@ -1259,7 +1055,7 @@ Class<rdb::Database> decl_ReportDatabase ("rdb", "ReportDatabase",
   ) + 
   gsi::method ("description", &rdb::Database::description, 
     "@brief Gets the databases description\n"
-    "The description is a general purpose string that is supposed to further describe the database and its content "
+    "The description is a general purpose string that is supposed to further describe the database and it's content "
     "in a human-readable form.\n"
     "@return The description string\n"
   ) +
@@ -1349,11 +1145,6 @@ Class<rdb::Database> decl_ReportDatabase ("rdb", "ReportDatabase",
   gsi::iterator_ext ("each_category", &database_begin_categories, &database_end_categories,
     "@brief Iterates over all top-level categories\n"
   ) +
-  gsi::iterator_ext ("each_category", &database_begin_categories_nc, &database_end_categories_nc,
-    "@brief Iterates over all top-level categories (non-const version)\n"
-    "\n"
-    "The non-const variant has been added in version 0.29."
-  ) +
   gsi::method ("create_category", (rdb::Category *(rdb::Database::*) (const std::string &)) &rdb::Database::create_category, gsi::arg ("name"),
     "@brief Creates a new top level category\n"
     "@param name The name of the category\n"
@@ -1362,40 +1153,24 @@ Class<rdb::Database> decl_ReportDatabase ("rdb", "ReportDatabase",
     "@brief Creates a new sub-category\n"
     "@param parent The category under which the category should be created\n"
     "@param name The name of the category\n"
-    "Since version 0.29.1, 'parent' can be nil. In that case, a top-level category is created."
   ) +
   gsi::method ("category_by_path", &rdb::Database::category_by_name, gsi::arg ("path"),
     "@brief Gets a category by path\n"
     "@param path The full path to the category starting from the top level (subcategories separated by dots)\n"
     "@return The (const) category object or nil if the name is not valid\n"
   ) +
-  gsi::method ("category_by_path", &rdb::Database::category_by_name_non_const, gsi::arg ("path"),
-    "@brief Gets a category by path (non-const version)\n"
-    "@param path The full path to the category starting from the top level (subcategories separated by dots)\n"
-    "@return The (const) category object or nil if the name is not valid\n"
-    "\n"
-    "This non-const variant has been introduced in version 0.29."
-  ) +
   gsi::method ("category_by_id", &rdb::Database::category_by_id, gsi::arg ("id"),
     "@brief Gets a category by ID\n"
     "@return The (const) category object or nil if the ID is not valid\n"
-  ) +
-  gsi::method ("category_by_id", &rdb::Database::category_by_id_non_const, gsi::arg ("id"),
-    "@brief Gets a category by ID (non-const version)\n"
-    "@return The (const) category object or nil if the ID is not valid\n"
-    "\n"
-    "This non-const variant has been introduced in version 0.29."
   ) +
   gsi::method ("create_cell", (rdb::Cell *(rdb::Database::*) (const std::string &)) &rdb::Database::create_cell, gsi::arg ("name"),
     "@brief Creates a new cell\n"
     "@param name The name of the cell\n"
   ) +
-  gsi::method ("create_cell", (rdb::Cell *(rdb::Database::*) (const std::string &, const std::string &, const std::string &)) &rdb::Database::create_cell, gsi::arg ("name"), gsi::arg ("variant"), gsi::arg ("layout_name", std::string ()),
+  gsi::method ("create_cell", (rdb::Cell *(rdb::Database::*) (const std::string &, const std::string &)) &rdb::Database::create_cell, gsi::arg ("name"), gsi::arg ("variant"),
     "@brief Creates a new cell, potentially as a variant for a cell with the same name\n"
     "@param name The name of the cell\n"
     "@param variant The variant name of the cell\n"
-    "@param layout_name For variants, this is the name of the layout cell. If empty, 'name' is used for the layout cell name.\n"
-    "The 'layout_name' argument has been added in version 0.29.1.\n"
   ) +
   gsi::method ("variants", &rdb::Database::variants, gsi::arg ("name"),
     "@brief Gets the variants for a given cell name\n"
@@ -1407,32 +1182,13 @@ Class<rdb::Database> decl_ReportDatabase ("rdb", "ReportDatabase",
     "@param qname The qualified name of the cell (name plus variant name optionally)\n"
     "@return The cell object or nil if no such cell exists\n"
   ) +
-  gsi::method ("cell_by_qname", &rdb::Database::cell_by_qname_non_const, gsi::arg ("qname"),
-    "@brief Returns the cell for a given qualified name (non-const version)\n"
-    "@param qname The qualified name of the cell (name plus variant name optionally)\n"
-    "@return The cell object or nil if no such cell exists\n"
-    "\n"
-    "This non-const variant has been added version 0.29."
-  ) +
   gsi::method ("cell_by_id", &rdb::Database::cell_by_id, gsi::arg ("id"),
     "@brief Returns the cell for a given ID\n"
     "@param id The ID of the cell\n"
     "@return The cell object or nil if no cell with that ID exists\n"
   ) +
-  gsi::method ("cell_by_id", &rdb::Database::cell_by_id_non_const, gsi::arg ("id"),
-    "@brief Returns the cell for a given ID (non-const version)\n"
-    "@param id The ID of the cell\n"
-    "@return The cell object or nil if no cell with that ID exists\n"
-    "\n"
-    "This non-const variant has been added version 0.29."
-  ) +
   gsi::iterator_ext ("each_cell", &database_begin_cells, &database_end_cells,
     "@brief Iterates over all cells\n"
-  ) +
-  gsi::iterator_ext ("each_cell", &database_begin_cells_nc, &database_end_cells_nc,
-    "@brief Iterates over all cells (non-const version)\n"
-    "\n"
-    "This non-const variant has been added version 0.29."
   ) +
   gsi::method ("num_items", (size_t (rdb::Database::*) () const) &rdb::Database::num_items,
     "@brief Returns the number of items inside the database\n"
@@ -1442,34 +1198,38 @@ Class<rdb::Database> decl_ReportDatabase ("rdb", "ReportDatabase",
     "@brief Returns the number of items already visited inside the database\n"
     "@return The total number of items already visited\n"
   ) +
-  gsi::method ("num_items", (size_t (rdb::Database::*) (rdb::id_type, rdb::id_type) const) &rdb::Database::num_items, gsi::arg ("cell_id"), gsi::arg ("category_id"),
+  gsi::method ("num_items", (size_t (rdb::Database::*) (rdb::id_type, rdb::id_type) const) &rdb::Database::num_items,
     "@brief Returns the number of items inside the database for a given cell/category combination\n"
+    "@args cell_id, category_id\n"
     "@param cell_id The ID of the cell for which to retrieve the number\n"
     "@param category_id The ID of the category for which to retrieve the number\n"
     "@return The total number of items for the given cell and the given category\n"
   ) +
-  gsi::method ("num_items_visited", (size_t (rdb::Database::*) (rdb::id_type, rdb::id_type) const) &rdb::Database::num_items_visited, gsi::arg ("cell_id"), gsi::arg ("category_id"),
+  gsi::method ("num_items_visited", (size_t (rdb::Database::*) (rdb::id_type, rdb::id_type) const) &rdb::Database::num_items_visited,
     "@brief Returns the number of items visited already for a given cell/category combination\n"
+    "@args cell_id, category_id\n"
     "@param cell_id The ID of the cell for which to retrieve the number\n"
     "@param category_id The ID of the category for which to retrieve the number\n"
     "@return The total number of items visited for the given cell and the given category\n"
   ) +
-  gsi::method_ext ("create_item", &create_item, gsi::arg ("cell_id"), gsi::arg ("category_id"),
+  gsi::method_ext ("create_item", &create_item,
     "@brief Creates a new item for the given cell/category combination\n"
+    "@args cell_id, category_id\n"
     "@param cell_id The ID of the cell to which the item is associated\n"
     "@param category_id The ID of the category to which the item is associated\n"
     "\n"
     "A more convenient method that takes cell and category objects instead of ID's is the "
     "other version of \\create_item.\n"
   ) +
-  gsi::method_ext ("create_item", &create_item_from_objects, gsi::arg ("cell"), gsi::arg ("category"),
+  gsi::method_ext ("create_item", &create_item_from_objects,
     "@brief Creates a new item for the given cell/category combination\n"
+    "@args cell, category\n"
     "@param cell The cell to which the item is associated\n"
     "@param category The category to which the item is associated\n"
     "\n"
     "This convenience method has been added in version 0.25.\n"
   ) +
-  gsi::method_ext ("create_items", &rdb::create_items_from_iterator, gsi::arg ("cell_id"), gsi::arg ("category_id"), gsi::arg ("iter"), gsi::arg ("with_properties", true),
+  gsi::method_ext ("create_items", &rdb::create_items_from_iterator, gsi::arg ("cell_id"), gsi::arg ("category_id"), gsi::arg ("iter"),
     "@brief Creates new items from a shape iterator\n"
     "This method takes the shapes from the given iterator and produces items from them.\n"
     "It accepts various kind of shapes, such as texts, polygons, boxes and paths and "
@@ -1477,44 +1237,41 @@ Class<rdb::Database> decl_ReportDatabase ("rdb", "ReportDatabase",
     "A similar method, which is intended for production of polygon or edge error layers and also provides hierarchical database "
     "construction is \\RdbCategory#scan_shapes.\n"
     "\n"
-    "This method has been introduced in version 0.25.3. The 'with_properties' argument has been added in version 0.28.\n"
+    "This method has been introduced in version 0.25.3.\n"
     "\n"
     "@param cell_id The ID of the cell to which the item is associated\n"
     "@param category_id The ID of the category to which the item is associated\n"
     "@param iter The iterator (a \\RecursiveShapeIterator object) from which to take the items\n"
-    "@param with_properties If true, user properties will be turned into tagged values as well\n"
   ) +
-  gsi::method_ext ("create_item", &rdb::create_item_from_shape, gsi::arg ("cell_id"), gsi::arg ("category_id"), gsi::arg ("trans"), gsi::arg ("shape"), gsi::arg ("with_properties", true),
+  gsi::method_ext ("create_item", &rdb::create_item_from_shape, gsi::arg ("cell_id"), gsi::arg ("category_id"), gsi::arg ("trans"), gsi::arg ("shape"),
     "@brief Creates a new item from a single shape\n"
     "This method produces an item from the given shape.\n"
     "It accepts various kind of shapes, such as texts, polygons, boxes and paths and "
     "converts them to a corresponding item. The transformation argument can be used to "
     "supply the transformation that applies the database unit for example.\n"
     "\n"
-    "This method has been introduced in version 0.25.3. The 'with_properties' argument has been added in version 0.28.\n"
+    "This method has been introduced in version 0.25.3.\n"
     "\n"
     "@param cell_id The ID of the cell to which the item is associated\n"
     "@param category_id The ID of the category to which the item is associated\n"
     "@param shape The shape to take the geometrical object from\n"
     "@param trans The transformation to apply\n"
-    "@param with_properties If true, user properties will be turned into tagged values as well\n"
   ) +
-  gsi::method_ext ("create_items", &rdb::create_items_from_shapes, gsi::arg ("cell_id"), gsi::arg ("category_id"), gsi::arg ("trans"), gsi::arg ("shapes"), gsi::arg ("with_properties", true),
+  gsi::method_ext ("create_items", &rdb::create_items_from_shapes, gsi::arg ("cell_id"), gsi::arg ("category_id"), gsi::arg ("trans"), gsi::arg ("shapes"),
     "@brief Creates new items from a shape container\n"
     "This method takes the shapes from the given container and produces items from them.\n"
     "It accepts various kind of shapes, such as texts, polygons, boxes and paths and "
     "converts them to corresponding items. The transformation argument can be used to "
     "supply the transformation that applies the database unit for example.\n"
     "\n"
-    "This method has been introduced in version 0.25.3. The 'with_properties' argument has been added in version 0.28.\n"
+    "This method has been introduced in version 0.25.3.\n"
     "\n"
     "@param cell_id The ID of the cell to which the item is associated\n"
     "@param category_id The ID of the category to which the item is associated\n"
     "@param shapes The shape container from which to take the items\n"
     "@param trans The transformation to apply\n"
-    "@param with_properties If true, user properties will be turned into tagged values as well\n"
   ) +
-  gsi::method_ext ("#create_items", &rdb::create_items_from_region, gsi::arg ("cell_id"), gsi::arg ("category_id"), gsi::arg ("trans"), gsi::arg ("region"),
+  gsi::method_ext ("create_items", &rdb::create_items_from_region, gsi::arg ("cell_id"), gsi::arg ("category_id"), gsi::arg ("trans"), gsi::arg ("region"),
     "@brief Creates new polygon items for the given cell/category combination\n"
     "For each polygon in the region a single item will be created. The value of the item will be this "
     "polygon.\n"
@@ -1522,17 +1279,17 @@ Class<rdb::Database> decl_ReportDatabase ("rdb", "ReportDatabase",
     "object's dimensions to micron units by scaling by the database unit.\n"
     "\n"
     "This method will also produce a flat version of the shapes inside the region. "
-    "\\RdbCategory#scan_collection is a similar method which also supports construction of "
+    "\\RdbCategory#scan_region is a similar method which also supports construction of "
     "hierarchical databases from deep regions.\n"
     "\n"
-    "This method has been introduced in version 0.23. It has been deprecated in favor of \\RdbCategory#scan_collection in version 0.28.\n"
+    "This method has been introduced in version 0.23.\n"
     "\n"
     "@param cell_id The ID of the cell to which the item is associated\n"
     "@param category_id The ID of the category to which the item is associated\n"
     "@param trans The transformation to apply\n"
     "@param region The region (a \\Region object) containing the polygons for which to create items\n"
   ) +
-  gsi::method_ext ("#create_items", &rdb::create_items_from_edges, gsi::arg ("cell_id"), gsi::arg ("category_id"), gsi::arg ("trans"), gsi::arg ("edges"),
+  gsi::method_ext ("create_items", &rdb::create_items_from_edges, gsi::arg ("cell_id"), gsi::arg ("category_id"), gsi::arg ("trans"), gsi::arg ("edges"),
     "@brief Creates new edge items for the given cell/category combination\n"
     "For each edge a single item will be created. The value of the item will be this "
     "edge.\n"
@@ -1540,17 +1297,17 @@ Class<rdb::Database> decl_ReportDatabase ("rdb", "ReportDatabase",
     "object's dimensions to micron units by scaling by the database unit.\n"
     "\n"
     "This method will also produce a flat version of the edges inside the edge collection. "
-    "\\RdbCategory#scan_collection is a similar method which also supports construction of "
+    "\\RdbCategory#scan_edges is a similar method which also supports construction of "
     "hierarchical databases from deep edge collections.\n"
     "\n"
-    "This method has been introduced in version 0.23. It has been deprecated in favor of \\RdbCategory#scan_collection in version 0.28.\n"
+    "This method has been introduced in version 0.23.\n"
     "\n"
     "@param cell_id The ID of the cell to which the item is associated\n"
     "@param category_id The ID of the category to which the item is associated\n"
     "@param trans The transformation to apply\n"
     "@param edges The list of edges (an \\Edges object) for which the items are created\n"
   ) +
-  gsi::method_ext ("#create_items", &rdb::create_items_from_edge_pairs, gsi::arg ("cell_id"), gsi::arg ("category_id"), gsi::arg ("trans"), gsi::arg ("edge_pairs"),
+  gsi::method_ext ("create_items", &rdb::create_items_from_edge_pairs, gsi::arg ("cell_id"), gsi::arg ("category_id"), gsi::arg ("trans"), gsi::arg ("edge_pairs"),
     "@brief Creates new edge pair items for the given cell/category combination\n"
     "For each edge pair a single item will be created. The value of the item will be this "
     "edge pair.\n"
@@ -1558,27 +1315,15 @@ Class<rdb::Database> decl_ReportDatabase ("rdb", "ReportDatabase",
     "object's dimensions to micron units by scaling by the database unit.\n"
     "\n"
     "This method will also produce a flat version of the edge pairs inside the edge pair collection. "
-    "\\RdbCategory#scan_collection is a similar method which also supports construction of "
+    "\\RdbCategory#scan_edge_pairs is a similar method which also supports construction of "
     "hierarchical databases from deep edge pair collections.\n"
     "\n"
-    "This method has been introduced in version 0.23. It has been deprecated in favor of \\RdbCategory#scan_collection in version 0.28.\n"
+    "This method has been introduced in version 0.23.\n"
     "\n"
     "@param cell_id The ID of the cell to which the item is associated\n"
     "@param category_id The ID of the category to which the item is associated\n"
     "@param trans The transformation to apply\n"
     "@param edges The list of edge pairs (an \\EdgePairs object) for which the items are created\n"
-  ) +
-  gsi::method_ext ("create_items", &create_items_from_polygon_array_with_properties, gsi::arg ("cell_id"), gsi::arg ("category_id"), gsi::arg ("trans"), gsi::arg ("array"), gsi::arg ("with_properties", true),
-    "@brief Creates new polygon items for the given cell/category combination\n"
-    "This version takes \\PolygonWithProperties objects. If \\with_properties is true (the default), the\n"
-    "properties are added to the item as tagged values.\n"
-    "@param cell_id The ID of the cell to which the item is associated\n"
-    "@param category_id The ID of the category to which the item is associated\n"
-    "@param trans The transformation to apply\n"
-    "@param polygons The list of polygons (with properties) for which the items are created\n"
-    "@param with_properties If true, the properties are transferred into the item as well"
-    "\n"
-    "This variant has been introduced in version 0.30."
   ) +
   gsi::method_ext ("create_items", &create_items_from_polygon_array, gsi::arg ("cell_id"), gsi::arg ("category_id"), gsi::arg ("trans"), gsi::arg ("array"),
     "@brief Creates new polygon items for the given cell/category combination\n"
@@ -1594,18 +1339,6 @@ Class<rdb::Database> decl_ReportDatabase ("rdb", "ReportDatabase",
     "@param trans The transformation to apply\n"
     "@param polygons The list of polygons for which the items are created\n"
   ) +
-  gsi::method_ext ("create_items", &create_items_from_edge_array_with_properties, gsi::arg ("cell_id"), gsi::arg ("category_id"), gsi::arg ("trans"), gsi::arg ("array"), gsi::arg ("with_properties", true),
-    "@brief Creates new edge items for the given cell/category combination\n"
-    "This version takes \\EdgeWithProperties objects. If \\with_properties is true (the default), the\n"
-    "properties are added to the item as tagged values.\n"
-    "@param cell_id The ID of the cell to which the item is associated\n"
-    "@param category_id The ID of the category to which the item is associated\n"
-    "@param trans The transformation to apply\n"
-    "@param polygons The list of edges (with properties) for which the items are created\n"
-    "@param with_properties If true, the properties are transferred into the item as well"
-    "\n"
-    "This variant has been introduced in version 0.30."
-  ) +
   gsi::method_ext ("create_items", &create_items_from_edge_array, gsi::arg ("cell_id"), gsi::arg ("category_id"), gsi::arg ("trans"), gsi::arg ("array"),
     "@brief Creates new edge items for the given cell/category combination\n"
     "For each edge a single item will be created. The value of the item will be this "
@@ -1619,18 +1352,6 @@ Class<rdb::Database> decl_ReportDatabase ("rdb", "ReportDatabase",
     "@param category_id The ID of the category to which the item is associated\n"
     "@param trans The transformation to apply\n"
     "@param edges The list of edges for which the items are created\n"
-  ) +
-  gsi::method_ext ("create_items", &create_items_from_edge_pair_array_with_properties, gsi::arg ("cell_id"), gsi::arg ("category_id"), gsi::arg ("trans"), gsi::arg ("array"), gsi::arg ("with_properties", true),
-    "@brief Creates new edge pair items for the given cell/category combination\n"
-    "This version takes \\EdgePairWithProperties objects. If \\with_properties is true (the default), the\n"
-    "properties are added to the item as tagged values.\n"
-    "@param cell_id The ID of the cell to which the item is associated\n"
-    "@param category_id The ID of the category to which the item is associated\n"
-    "@param trans The transformation to apply\n"
-    "@param polygons The list of edge pairs (with properties) for which the items are created\n"
-    "@param with_properties If true, the properties are transferred into the item as well"
-    "\n"
-    "This variant has been introduced in version 0.30."
   ) +
   gsi::method_ext ("create_items", &create_items_from_edge_pair_array, gsi::arg ("cell_id"), gsi::arg ("category_id"), gsi::arg ("trans"), gsi::arg ("array"),
     "@brief Creates new edge pair items for the given cell/category combination\n"
@@ -1646,36 +1367,6 @@ Class<rdb::Database> decl_ReportDatabase ("rdb", "ReportDatabase",
     "@param trans The transformation to apply\n"
     "@param edge_pairs The list of edge_pairs for which the items are created\n"
   ) +
-  gsi::method ("apply", &rdb::Database::apply, gsi::arg ("other"),
-    "@brief Transfers item attributes from one database to another for identical items\n"
-    "This method will identify items that are identical between the two databases and transfer "
-    "item attributes from the 'other' database to this database. Transferable attributes are:\n"
-    "\n"
-    "@ul\n"
-    "@li Images @/li\n"
-    "@li Item tags @/li\n"
-    "@/ul\n"
-    "\n"
-    "Existing attributes in this database are overwritten.\n"
-    "\n"
-    "Items are identical if\n"
-    "\n"
-    "@ul\n"
-    "@li They belong to the same cell (by qname) @/li\n"
-    "@li They belong to the same category (by name) @/li\n"
-    "@li Their values are identical @/li\n"
-    "@/ul\n"
-    "\n"
-    "Values are identical if their individual values and (optional) value tags are identical. "
-    "Values tagged with a tag unknown to the other database are ignored. "
-    "The order of values matters during the compare. So the value pair (17.0, 'abc') is different from ('abc', 17.0).\n"
-    "\n"
-    "The intended application for this method is use for error waiving: as the waived attribute is a transferable "
-    "attribute, it is possible to apply the waived flag from from a waiver database (the 'other' database) using this "
-    "method.\n"
-    "\n"
-    "This method has been added in version 0.29.1."
-  ) +
   gsi::method ("is_modified?", &rdb::Database::is_modified,
     "@brief Returns a value indicating whether the database has been modified\n"
   ) +
@@ -1683,69 +1374,51 @@ Class<rdb::Database> decl_ReportDatabase ("rdb", "ReportDatabase",
     "@brief Reset the modified flag\n"
   ) +
   gsi::iterator_ext ("each_item", &database_items_begin, &database_items_end,
-    "@brief Iterates over all items inside the database\n"
+    "@brief Iterates over all iterms inside the database\n"
   ) +
-  gsi::iterator_ext ("each_item", &database_items_begin_nc, &database_items_end_nc,
-    "@brief Iterates over all items inside the database (non-const version)\n"
-    "\n"
-    "This non-const variant has been added in version 0.29."
-  ) +
-  gsi::iterator_ext ("each_item_per_cell", &database_items_begin_cell, &database_items_end_cell, gsi::arg ("cell_id"),
-    "@brief Iterates over all items inside the database which are associated with the given cell\n"
+  gsi::iterator_ext ("each_item_per_cell", &database_items_begin_cell, &database_items_end_cell,
+    "@brief Iterates over all iterms inside the database which are associated with the given cell\n"
+    "@args cell_id\n"
     "@param cell_id The ID of the cell for which all associated items should be retrieved\n"
   ) +
-  gsi::iterator_ext ("each_item_per_cell", &database_items_begin_cell_nc, &database_items_end_cell_nc, gsi::arg ("cell_id"),
-    "@brief Iterates over all items inside the database which are associated with the given cell (non-const version)\n"
-    "@param cell_id The ID of the cell for which all associated items should be retrieved\n"
-    "\n"
-    "This non-const variant has been added in version 0.29."
-  ) +
-  gsi::iterator_ext ("each_item_per_category", &database_items_begin_cat, &database_items_end_cat, gsi::arg ("category_id"),
-    "@brief Iterates over all items inside the database which are associated with the given category\n"
+  gsi::iterator_ext ("each_item_per_category", &database_items_begin_cat, &database_items_end_cat,
+    "@brief Iterates over all iterms inside the database which are associated with the given category\n"
+    "@args category_id\n"
     "@param category_id The ID of the category for which all associated items should be retrieved\n"
   ) +
-  gsi::iterator_ext ("each_item_per_category", &database_items_begin_cat_nc, &database_items_end_cat_nc, gsi::arg ("category_id"),
-    "@brief Iterates over all items inside the database which are associated with the given category (non-const version)\n"
-    "@param category_id The ID of the category for which all associated items should be retrieved\n"
-    "\n"
-    "This non-const variant has been added in version 0.29."
-  ) +
-  gsi::iterator_ext ("each_item_per_cell_and_category", &database_items_begin_cc, &database_items_end_cc, gsi::arg ("cell_id"), gsi::arg ("category_id"),
-    "@brief Iterates over all items inside the database which are associated with the given cell and category\n"
+  gsi::iterator_ext ("each_item_per_cell_and_category", &database_items_begin_cc, &database_items_end_cc,
+    "@brief Iterates over all iterms inside the database which are associated with the given cell and category\n"
+    "@args cell_id,category_id\n"
     "@param cell_id The ID of the cell for which all associated items should be retrieved\n"
     "@param category_id The ID of the category for which all associated items should be retrieved\n"
   ) +
-  gsi::iterator_ext ("each_item_per_cell_and_category", &database_items_begin_cc_nc, &database_items_end_cc_nc, gsi::arg ("cell_id"), gsi::arg ("category_id"),
-    "@brief Iterates over all items inside the database which are associated with the given cell and category\n"
-    "@param cell_id The ID of the cell for which all associated items should be retrieved\n"
-    "@param category_id The ID of the category for which all associated items should be retrieved\n"
-    "\n"
-    "This non-const variant has been added in version 0.29."
-  ) +
-  gsi::method ("set_item_visited", &rdb::Database::set_item_visited, gsi::arg ("item"), gsi::arg ("visited"),
+  gsi::method ("set_item_visited", &rdb::Database::set_item_visited,
     "@brief Modifies the visited state of an item\n"
+    "@args item,visited\n"
     "@param item The item to modify\n"
     "@param visited True to set the item to visited state, false otherwise\n"
   ) +
-  gsi::method ("load", &rdb::Database::load, gsi::arg ("filename"),
+  gsi::method ("load", &rdb::Database::load,
     "@brief Loads the database from the given file\n"
+    "@args filename\n"
     "@param filename The file from which to load the database\n"
     "The reader recognizes the format automatically and will choose the appropriate decoder. 'gzip' compressed files are uncompressed "
     "automatically.\n"
   ) + 
-  gsi::method ("save", &rdb::Database::save, gsi::arg ("filename"),
+  gsi::method ("save", &rdb::Database::save,
     "@brief Saves the database to the given file\n"
+    "@args filename\n"
     "@param filename The file to which to save the database\n"
     "The database is always saved in KLayout's XML-based format.\n"
   ),
   "@brief The report database object\n"
-  "A report database is organized around a set of items which are associated with cells and categories. "
-  "Categories can be organized hierarchically by created sub-categories of other categories. "
+  "A report database is organised around a set of items which are associated with cells and categories. "
+  "Categories can be organised hierarchically by created sub-categories of other categories. "
   "Cells are associated with layout database cells and can come with a example instantiation if the layout "
   "database does not allow a unique association of the cells.\n"
   "Items in the database can have a variety of attributes: values, tags and an image object. Values are "
   "geometrical objects for example. Tags are a set of boolean flags and an image can be attached to an item "
-  "to provide a screenshot for visualization for example.\n"
+  "to provide a screenshot for visualisation for example.\n"
   "This is the main report database object. The basic use case of this object is to create one inside a \\LayoutView and "
   "populate it with items, cell and categories or load it from a file. Another use case is to create a standalone "
   "ReportDatabase object and use the methods provided to perform queries or to populate it.\n"
@@ -1759,8 +1432,9 @@ static void tp_output_rdb (db::TilingProcessor *proc, const std::string &name, r
 //  extend the db::TilingProcessor with the ability to feed images
 static
 gsi::ClassExt<db::TilingProcessor> tiling_processor_ext (
-  method_ext ("output", &tp_output_rdb, gsi::arg ("name"), gsi::arg ("rdb"), gsi::arg ("cell_id"), gsi::arg ("category_id"),
+  method_ext ("output", &tp_output_rdb,
     "@brief Specifies output to a report database\n"
+    "@args name, rdb, cell_id, category_id\n"
     "This method will establish an output channel for the processor. The output sent to that channel "
     "will be put into the report database given by the \"rdb\" parameter. \"cell_id\" specifies the "
     "cell and \"category_id\" the category to use.\n"
@@ -1772,3 +1446,4 @@ gsi::ClassExt<db::TilingProcessor> tiling_processor_ext (
 );
 
 }
+

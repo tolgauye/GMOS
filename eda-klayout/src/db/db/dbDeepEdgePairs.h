@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
 
 #include "dbCommon.h"
 
-#include "dbMutableEdgePairs.h"
+#include "dbAsIfFlatEdgePairs.h"
 #include "dbDeepShapeStore.h"
 #include "dbEdgePairs.h"
 
@@ -36,7 +36,7 @@ namespace db {
  *  @brief Provides hierarchical edges implementation
  */
 class DB_PUBLIC DeepEdgePairs
-  : public db::MutableEdgePairs, public db::DeepShapeCollectionDelegateBase
+  : public db::AsIfFlatEdgePairs
 {
 public:
   DeepEdgePairs ();
@@ -50,38 +50,19 @@ public:
 
   EdgePairsDelegate *clone () const;
 
-  virtual void do_insert (const db::EdgePair &edge_pair, db::properties_id_type prop_id);
-
-  virtual void do_transform (const db::Trans &t);
-  virtual void do_transform (const db::ICplxTrans &t);
-  virtual void do_transform (const db::IMatrix2d &t);
-  virtual void do_transform (const db::IMatrix3d &t);
-
-  virtual void flatten ();
-
-  virtual void reserve (size_t n);
-
   virtual EdgePairsIteratorDelegate *begin () const;
   virtual std::pair<db::RecursiveShapeIterator, db::ICplxTrans> begin_iter () const;
 
-  virtual size_t count () const;
-  virtual size_t hier_count () const;
+  virtual size_t size () const;
   virtual std::string to_string (size_t) const;
   virtual Box bbox () const;
   virtual bool empty () const;
   virtual const db::EdgePair *nth (size_t n) const;
-  virtual db::properties_id_type nth_prop_id (size_t n) const;
   virtual bool has_valid_edge_pairs () const;
   virtual const db::RecursiveShapeIterator *iter () const;
-  virtual void apply_property_translator (const db::PropertiesTranslator &pt);
 
   virtual EdgePairsDelegate *filter_in_place (const EdgePairFilterBase &filter);
   virtual EdgePairsDelegate *filtered (const EdgePairFilterBase &) const;
-  virtual std::pair<EdgePairsDelegate *, EdgePairsDelegate *> filtered_pair (const EdgePairFilterBase &filter) const;
-  virtual EdgePairsDelegate *process_in_place (const EdgePairProcessorBase &);
-  virtual EdgePairsDelegate *processed (const EdgePairProcessorBase &) const;
-  virtual RegionDelegate *processed_to_polygons (const EdgePairToPolygonProcessorBase &filter) const;
-  virtual EdgesDelegate *processed_to_edges (const EdgePairToEdgeProcessorBase &filter) const;
 
   virtual EdgePairsDelegate *add_in_place (const EdgePairs &other);
   virtual EdgePairsDelegate *add (const EdgePairs &other) const;
@@ -99,25 +80,23 @@ public:
   virtual void insert_into (Layout *layout, db::cell_index_type into_cell, unsigned int into_layer) const;
   virtual void insert_into_as_polygons (Layout *layout, db::cell_index_type into_cell, unsigned int into_layer, db::Coord enl) const;
 
-  virtual DeepShapeCollectionDelegateBase *deep ()
+  const DeepLayer &deep_layer () const
   {
-    return this;
+    return m_deep_layer;
   }
 
-protected:
-  virtual EdgesDelegate *pull_generic (const Edges &other) const;
-  virtual RegionDelegate *pull_generic (const Region &other) const;
-  virtual EdgePairsDelegate *selected_interacting_generic (const Edges &other, bool inverse, size_t min_count, size_t max_count) const;
-  virtual std::pair<EdgePairsDelegate *, EdgePairsDelegate *> selected_interacting_pair_generic (const Edges &other, size_t min_count, size_t max_count) const;
-  virtual EdgePairsDelegate *selected_interacting_generic (const Region &other, EdgePairInteractionMode mode, bool inverse, size_t min_count, size_t max_count) const;
-  virtual std::pair<EdgePairsDelegate *, EdgePairsDelegate *> selected_interacting_pair_generic (const Region &other, EdgePairInteractionMode mode, size_t min_count, size_t max_count) const;
+  DeepLayer &deep_layer ()
+  {
+    return m_deep_layer;
+  }
 
 private:
   DeepEdgePairs &operator= (const DeepEdgePairs &other);
 
+  DeepLayer m_deep_layer;
+
   void init ();
   EdgesDelegate *generic_edges (bool first, bool second) const;
-  std::pair<DeepEdgePairs *, DeepEdgePairs *> apply_filter (const EdgePairFilterBase &filter, bool with_true, bool with_false) const;
 };
 
 }

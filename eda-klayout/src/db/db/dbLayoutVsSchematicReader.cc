@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -38,10 +38,10 @@ LayoutVsSchematicStandardReader::LayoutVsSchematicStandardReader (tl::InputStrea
   //  .. nothing yet ..
 }
 
-void LayoutVsSchematicStandardReader::do_read_lvs (db::LayoutVsSchematic *lvs)
+void LayoutVsSchematicStandardReader::do_read_lvs (db::LayoutVsSchematic *l2n)
 {
   try {
-    read_netlist (lvs);
+    read_netlist (l2n);
   } catch (tl::Exception &ex) {
     throw tl::Exception (tl::sprintf (tl::to_string (tr ("%s in line: %d of %s")), ex.msg (), stream ().line_number (), path ()));
   }
@@ -81,14 +81,14 @@ void LayoutVsSchematicStandardReader::read_netlist (db::LayoutVsSchematic *lvs)
     } else if (test (skeys::layout_key) || test (lkeys::layout_key)) {
 
       Brace br (this);
-      LayoutToNetlistStandardReader::read_netlist (0, lvs, &br, &m_map_per_circuit_a);
+      LayoutToNetlistStandardReader::read_netlist (0, lvs, true /*nested*/, &m_map_per_circuit_a);
       br.done ();
 
     } else if (test (skeys::reference_key) || test (lkeys::reference_key)) {
 
       Brace br (this);
-      std::unique_ptr<db::Netlist> netlist (new db::Netlist ());
-      LayoutToNetlistStandardReader::read_netlist (netlist.get (), 0, &br, &m_map_per_circuit_b);
+      std::auto_ptr<db::Netlist> netlist (new db::Netlist ());
+      LayoutToNetlistStandardReader::read_netlist (netlist.get (), 0, true /*nested*/, &m_map_per_circuit_b);
       lvs->set_reference_netlist (netlist.release ());
       br.done ();
 
@@ -106,13 +106,9 @@ void LayoutVsSchematicStandardReader::read_netlist (db::LayoutVsSchematic *lvs)
     } else if (at_end ()) {
       throw tl::Exception (tl::to_string (tr ("Unexpected end of file")));
     } else {
-      skip_element ();
+      throw tl::Exception (tl::to_string (tr ("Invalid keyword")));
     }
 
-  }
-
-  if (version > 1) {
-    throw tl::Exception (tl::to_string (tr ("This program version only supports version 1 of the LVS DB format. File version is: ")) + tl::to_string (version));
   }
 }
 
@@ -138,45 +134,6 @@ bool LayoutVsSchematicStandardReader::read_status (db::NetlistCrossReference::St
   }
 }
 
-void LayoutVsSchematicStandardReader::read_log_entry (db::NetlistCrossReference *xref)
-{
-  db::Severity severity = db::NoSeverity;
-  std::string msg;
-
-  Brace br (this);
-  while (br) {
-    if (read_severity (severity)) {
-      //  continue
-    } else if (read_message (msg)) {
-      //  continue
-    } else {
-      skip_element ();
-    }
-  }
-  br.done ();
-
-  //  NOTE: this API does not use the full feature set of db::LogEntryData, so
-  //  we do not use this object here.
-  xref->log_entry (severity, msg);
-}
-
-void LayoutVsSchematicStandardReader::read_logs (db::NetlistCrossReference *xref)
-{
-  Brace br (this);
-  while (br) {
-
-    if (test (skeys::log_entry_key) || test (lkeys::log_entry_key)) {
-      read_log_entry (xref);
-    } else if (at_end ()) {
-      throw tl::Exception (tl::to_string (tr ("Unexpected end of file inside log section (entry expected)")));
-    } else {
-      skip_element ();
-    }
-
-  }
-  br.done ();
-}
-
 void LayoutVsSchematicStandardReader::read_xrefs_for_circuits (db::NetlistCrossReference *xref, const db::Circuit *circuit_a, const db::Circuit *circuit_b)
 {
   Brace br (this);
@@ -193,7 +150,7 @@ void LayoutVsSchematicStandardReader::read_xrefs_for_circuits (db::NetlistCrossR
     } else if (at_end ()) {
       throw tl::Exception (tl::to_string (tr ("Unexpected end of file inside circuit definition (net, pin, device or circuit expected)")));
     } else {
-      skip_element ();
+      throw tl::Exception (tl::to_string (tr ("Invalid keyword inside circuit definition (net, pin, device or circuit expected)")));
     }
 
   }
@@ -232,34 +189,25 @@ void LayoutVsSchematicStandardReader::read_xref (db::NetlistCrossReference *xref
       xref->gen_begin_circuit (circuit_a, circuit_b);
 
       db::NetlistCrossReference::Status status = db::NetlistCrossReference::None;
-      std::string msg;
 
       while (br) {
 
         if (read_status (status)) {
           //  continue
-        } else if (read_message (msg)) {
-          //  continue
         } else if (test (skeys::xref_key) || test (lkeys::xref_key)) {
           read_xrefs_for_circuits (xref, circuit_a, circuit_b);
-        } else if (test (skeys::log_key) || test (lkeys::log_key)) {
-          read_logs (xref);
         } else if (at_end ()) {
           throw tl::Exception (tl::to_string (tr ("Unexpected end of file inside circuit definition (status keyword of xrefs expected)")));
         } else {
-          skip_element ();
+          throw tl::Exception (tl::to_string (tr ("Invalid keyword inside circuit definition (status keyword of xrefs expected)")));
         }
 
       }
 
-      xref->gen_end_circuit (circuit_a, circuit_b, status, msg);
+      xref->gen_end_circuit (circuit_a, circuit_b, status);
 
       br.done ();
 
-    } else if (test (skeys::log_key) || test (lkeys::log_key)) {
-      read_logs (xref);
-    } else {
-      skip_element ();
     }
 
   }
@@ -377,17 +325,11 @@ void LayoutVsSchematicStandardReader::read_net_pair (db::NetlistCrossReference *
   ion_b = read_ion ();
 
   db::NetlistCrossReference::Status status = db::NetlistCrossReference::None;
-  std::string msg;
   read_status (status);
-  read_message (msg);
-
-  while (br) {
-    skip_element ();
-  }
 
   br.done ();
 
-  xref->gen_nets (net_by_numerical_id (circuit_a, ion_a, m_map_per_circuit_a), net_by_numerical_id (circuit_b, ion_b, m_map_per_circuit_b), status, msg);
+  xref->gen_nets (net_by_numerical_id (circuit_a, ion_a, m_map_per_circuit_a), net_by_numerical_id (circuit_b, ion_b, m_map_per_circuit_b), status);
 }
 
 void LayoutVsSchematicStandardReader::read_pin_pair (db::NetlistCrossReference *xref, const db::Circuit *circuit_a, const db::Circuit *circuit_b)
@@ -399,17 +341,11 @@ void LayoutVsSchematicStandardReader::read_pin_pair (db::NetlistCrossReference *
   ion_b = read_ion ();
 
   db::NetlistCrossReference::Status status = db::NetlistCrossReference::None;
-  std::string msg;
   read_status (status);
-  read_message (msg);
-
-  while (br) {
-    skip_element ();
-  }
 
   br.done ();
 
-  xref->gen_pins (pin_by_numerical_id (circuit_a, ion_a), pin_by_numerical_id (circuit_b, ion_b), status, msg);
+  xref->gen_pins (pin_by_numerical_id (circuit_a, ion_a), pin_by_numerical_id (circuit_b, ion_b), status);
 }
 
 void LayoutVsSchematicStandardReader::read_device_pair (db::NetlistCrossReference *xref, const db::Circuit *circuit_a, const db::Circuit *circuit_b)
@@ -421,17 +357,11 @@ void LayoutVsSchematicStandardReader::read_device_pair (db::NetlistCrossReferenc
   ion_b = read_ion ();
 
   db::NetlistCrossReference::Status status = db::NetlistCrossReference::None;
-  std::string msg;
   read_status (status);
-  read_message (msg);
-
-  while (br) {
-    skip_element ();
-  }
 
   br.done ();
 
-  xref->gen_devices (device_by_numerical_id (circuit_a, ion_a, m_map_per_circuit_a), device_by_numerical_id (circuit_b, ion_b, m_map_per_circuit_b), status, msg);
+  xref->gen_devices (device_by_numerical_id (circuit_a, ion_a, m_map_per_circuit_a), device_by_numerical_id (circuit_b, ion_b, m_map_per_circuit_b), status);
 }
 
 void LayoutVsSchematicStandardReader::read_subcircuit_pair (db::NetlistCrossReference *xref, const db::Circuit *circuit_a, const db::Circuit *circuit_b)
@@ -443,17 +373,11 @@ void LayoutVsSchematicStandardReader::read_subcircuit_pair (db::NetlistCrossRefe
   ion_b = read_ion ();
 
   db::NetlistCrossReference::Status status = db::NetlistCrossReference::None;
-  std::string msg;
   read_status (status);
-  read_message (msg);
-
-  while (br) {
-    skip_element ();
-  }
 
   br.done ();
 
-  xref->gen_subcircuits (subcircuit_by_numerical_id (circuit_a, ion_a, m_map_per_circuit_a), subcircuit_by_numerical_id (circuit_b, ion_b, m_map_per_circuit_b), status, msg);
+  xref->gen_subcircuits (subcircuit_by_numerical_id (circuit_a, ion_a, m_map_per_circuit_a), subcircuit_by_numerical_id (circuit_b, ion_b, m_map_per_circuit_b), status);
 }
 
 }

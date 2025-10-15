@@ -1,7 +1,7 @@
 # encoding: UTF-8
 
 # KLayout Layout Viewer
-# Copyright (C) 2006-2025 Matthias Koefferlein
+# Copyright (C) 2006-2019 Matthias Koefferlein
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -272,21 +272,21 @@ class QtBinding_TestClass < TestBase
     label = RBA::QLabel::new(dialog)
     layout = RBA::QHBoxLayout::new(dialog)
     layout.addWidget(label)
-    label._destroy
+    label.destroy
     GC.start
 
     dialog = RBA::QDialog::new(mw)
     label = RBA::QLabel::new(dialog)
     layout = RBA::QHBoxLayout::new(dialog)
     layout.addWidget(label)
-    layout._destroy
+    layout.destroy
     GC.start
 
     dialog = RBA::QDialog::new(mw)
     label = RBA::QLabel::new(dialog)
     layout = RBA::QHBoxLayout::new(dialog)
     layout.addWidget(label)
-    dialog._destroy
+    dialog.destroy
     GC.start
 
     dialog = RBA::QDialog::new(mw)
@@ -534,7 +534,7 @@ class QtBinding_TestClass < TestBase
 
     GC.start
 
-    assert_equal(ef.log.select { |s| s !~ /RBA::QKeyEvent(_Native)?: ShortcutOverride/ && s !~ /RBA::QEvent(_Native)/ }.join("\n"), "RBA::QKeyEvent: KeyPress (6)\nRBA::QKeyEvent: KeyPress (6)\nRBA::QKeyEvent: KeyPress (6)")
+    assert_equal(ef.log.select { |s| s !~ /RBA::QKeyEvent(_Native)?: ShortcutOverride/ }.join("\n"), "RBA::QKeyEvent: KeyPress (6)\nRBA::QKeyEvent: KeyPress (6)\nRBA::QKeyEvent: KeyPress (6)")
 
     ef = nil
     ef = EventFilter::new
@@ -610,307 +610,6 @@ class QtBinding_TestClass < TestBase
     assert_equal(triggered, "10*")
     b.emit_clicked(false)
     assert_equal(triggered, "10**")
-
-  end
-
-  def test_46
-
-    # Layout becomes owned by widget
-
-    w = RBA::QWidget::new
-
-    l = RBA::QHBoxLayout::new
-    w.setLayout(l)
-
-    w._destroy
-    assert_equal(l._destroyed?, true)
-
-  end
-
-  def test_47
-
-    # setParent will attach ownership for QWidget
-
-    w = RBA::QWidget::new
-    wc = RBA::QWidget::new
-
-    wc.setParent(w)
-
-    w._destroy
-    assert_equal(wc._destroyed?, true)
-
-  end
-
-  def test_48
-
-    # setParent will attach ownership for QObject
-
-    w = RBA::QObject::new
-    wc = RBA::QObject::new
-
-    wc.setParent(w)
-
-    w._destroy
-    assert_equal(wc._destroyed?, true)
-
-  end
-
-  def test_49
-
-    # setParent to nil will release ownership for QObject
-
-    w = RBA::QObject::new
-    wc = RBA::QObject::new
-
-    wc.setParent(w)
-    assert_equal(wc.parent == w, true)
-    wc.setParent(nil)
-
-    w._destroy
-    assert_equal(wc._destroyed?, false)
-    wc._destroy
-    assert_equal(wc._destroyed?, true)
-
-  end
-
-  def test_50
-
-    # QObject signals
-
-    w = RBA::QObject::new
-
-    if w.respond_to?(:objectNameChanged)   # Qt5
-
-      on = nil
-      w.objectNameChanged do |name|
-        on = name
-      end
-
-      w.objectName = "uvw"
-      assert_equal(on, "uvw")
-
-    end
-
-    od = false
-    w.destroyed do |name|
-      od = true
-    end
-
-    w._destroy
-    assert_equal(od, true)
-
-  end
-
-  def test_51
-
-    # issue #707 (QJsonValue constructor ambiguous)
-    if RBA.const_defined?("QJsonValue")
-
-      v = RBA::QJsonValue::new("hello")
-      assert_equal(v.toString, "hello")
-      assert_equal(v.toVariant, "hello")
-      assert_equal(v.toInt, 0)
-
-      v = RBA::QJsonValue::new(17)
-      assert_equal(v.toString, "")
-      assert_equal(v.toVariant, 17)
-      assert_equal(v.toInt, 17)
-
-      v = RBA::QJsonValue::new(2.5)
-      assert_equal(v.toString, "")
-      assert_equal(v.toVariant, 2.5)
-      assert_equal(v.toDouble, 2.5)
-
-      v = RBA::QJsonValue::new(true)
-      assert_equal(v.toString, "")
-      assert_equal(v.toVariant, true)
-      assert_equal(v.toBool, true)
-
-    end
-
-  end
-
-  def test_52
-
-    # issue #708 (Image serialization to QByteArray)
-    img = RBA::QImage::new(10, 10, RBA::QImage::Format_Mono)
-    img.fill(0)
-
-    buf = RBA::QBuffer::new
-    img.save(buf, "PNG")
-
-    assert_equal(buf.data.size > 100, true)
-    assert_equal(buf.data[0..7].unpack("C*"), [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
-
-  end
-
-  def test_53
-
-    # issue #771 (QMimeData not working)
-
-    mimeData = RBA::QMimeData::new
-    mimeData.setData("application/json", '{"test":"test"}')
-    jsonData = mimeData.data("application/json");
-    assert_equal(jsonData.to_s, '{"test":"test"}')
-
-  end
-
-  def test_54
-
-    # issue #1029 (Crash for QBrush passed to setData)
-
-    item = RBA::QTreeWidgetItem::new
-    item.setBackground(0, RBA::QBrush::new(RBA::QColor::new(0xFF, 0xFF, 0x00)))
-    assert_equal(item.background(0).color.red, 255)
-    assert_equal(item.background(0).color.green, 255)
-    assert_equal(item.background(0).color.blue, 0)
-
-  end
-
-  def test_55
-
-    # addWidget to QHBoxLayout keeps object managed
-    window = RBA::QDialog::new
-    layout = RBA::QHBoxLayout::new(window)
-
-    w = RBA::QPushButton::new
-    oid = w.object_id
-    layout.addWidget(w)
-    assert_equal(layout.itemAt(0).widget.object_id, oid)
-
-    # try to kill the object
-    w = nil
-    GC.start
-
-    # still there
-    w = layout.itemAt(0).widget
-    assert_equal(w._destroyed?, false)
-    assert_equal(w.object_id, oid)
-
-    # killing the window kills the layout kills the widget
-    window._destroy
-    assert_equal(window._destroyed?, true)
-    assert_equal(layout._destroyed?, true)
-    assert_equal(w._destroyed?, true)
-
-  end
-
-  def test_56
-
-    # Creating QImage from binary data
-
-    bytes = [ 0x01, 0x02, 0x03, 0x04, 0x11, 0x12, 0x13, 0x14, 0x21, 0x22, 0x33, 0x34,
-              0x31, 0x32, 0x33, 0x34, 0x41, 0x42, 0x43, 0x44, 0x51, 0x52, 0x53, 0x54,
-              0x61, 0x62, 0x63, 0x64, 0x71, 0x72, 0x73, 0x74, 0x81, 0x82, 0x83, 0x84,
-              0x91, 0x92, 0x93, 0x94, 0xa1, 0xa2, 0xa3, 0xa4, 0xb1, 0xb2, 0xb3, 0xb4 ].pack("C*")
-
-    image = RBA::QImage::new(bytes, 3, 4, RBA::QImage::Format_ARGB32)
-    assert_equal("%08x" % image.pixel(0, 0), "04030201")
-    assert_equal("%08x" % image.pixel(1, 0), "14131211")
-    assert_equal("%08x" % image.pixel(0, 2), "64636261")
-
-  end
-
-  def test_57
-
-    # QColor with string parameter (suppressing QLatin1String)
-
-    color = RBA::QColor::new("blue")
-    assert_equal(color.name(), "#0000ff")
-
-  end
-
-  def test_58
-
-    # The various ways to refer to enums
-
-    assert_equal(RBA::Qt::MouseButton::new(4).to_i, 4)
-    assert_equal(RBA::Qt_MouseButton::new(4).to_i, 4)
-    assert_equal(RBA::Qt_MouseButton::new(4).hash, 4)
-    assert_equal(RBA::Qt_MouseButton::new(1).to_s, "LeftButton")
-    assert_equal(RBA::Qt_MouseButton::LeftButton.to_i, 1)
-    assert_equal(RBA::Qt::LeftButton.to_i, 1)
-    assert_equal((RBA::Qt_MouseButton::LeftButton | RBA::Qt_MouseButton::RightButton).to_i, 3)
-    assert_equal((RBA::Qt_MouseButton::LeftButton | RBA::Qt_MouseButton::RightButton).class.to_s, "RBA::Qt_QFlags_MouseButton")
-    assert_equal((RBA::Qt::MouseButton::LeftButton | RBA::Qt::MouseButton::RightButton).to_i, 3)
-    assert_equal((RBA::Qt::MouseButton::LeftButton | RBA::Qt::MouseButton::RightButton).class.to_s, "RBA::Qt_QFlags_MouseButton")
-    assert_equal((RBA::Qt::LeftButton | RBA::Qt::RightButton).to_i, 3)
-    assert_equal((RBA::Qt::LeftButton | RBA::Qt::RightButton).class.to_s, "RBA::Qt_QFlags_MouseButton")
-
-  end
-
-  def test_59
-
-    # Enums can act as hash keys
-
-    h = {}
-    h[RBA::Qt::MouseButton::LeftButton] = "left"
-    h[RBA::Qt::MouseButton::RightButton] = "right"
-    assert_equal(h[RBA::Qt::MouseButton::LeftButton], "left")
-    assert_equal(h[RBA::Qt::MouseButton::RightButton], "right")
-    assert_equal(h[RBA::Qt::MouseButton::NoButton], nil)
-
-  end
-
-  def test_60
-
-    # findChild, findChildren
-
-    w = RBA::QWidget::new
-    w.objectName = "w"
-    w1 = RBA::QWidget::new(w)
-    w1.objectName = "w1"
-    w2 = RBA::QWidget::new(w1)
-    w2.objectName = "w2"
-
-    assert_equal(w.findChild.objectName, "w1")
-    assert_equal(w.findChild("w2").objectName, "w2")
-
-    assert_equal(w.findChildren().collect { |c| c.objectName }.join(","), "w1,w2")
-    assert_equal(w.findChildren("w2").collect { |c| c.objectName }.join(","), "w2")
-
-    begin
-      # Qt5++
-      re_cls = RBA::QRegularExpression
-    rescue => ex
-      # Qt4
-      re_cls = RBA::QRegExp
-    end
-    assert_equal(w.findChildren(re_cls::new("^.2$")).collect { |c| c.objectName }.join(","), "w2")
-    assert_equal(w.findChildren(re_cls::new("^w.$")).collect { |c| c.objectName }.join(","), "w1,w2")
-
-  end
-
-  # issue-1899
-  def test_61 
-
-    p1 = RBA::QPoint::new(1, 2)
-    p2 = RBA::QPoint::new(1, 2)
-    p3 = RBA::QPoint::new(2, 3)
-    assert_equal((p1 * 5).x, 5)
-    assert_equal((p1 * 5).y, 10)
-    assert_equal(p1 == p2, true)
-    assert_equal(p1 == p3, false)
-    assert_equal(p1 != p2, false)
-    assert_equal(p1 != p3, true)
-    assert_equal((p1 + p3).x, 3)
-    assert_equal((p1 + p3).y, 5)
-    assert_equal((p1 - p3).x, -1)
-    assert_equal((p1 - p3).y, -1)
-
-    p1 = RBA::QPointF::new(1, 2)
-    p2 = RBA::QPointF::new(1, 2)
-    p3 = RBA::QPointF::new(2, 3)
-    assert_equal((p1 * 5).x, 5)
-    assert_equal((p1 * 5).y, 10)
-    assert_equal(p1 == p2, true)
-    assert_equal(p1 == p3, false)
-    assert_equal(p1 != p2, false)
-    assert_equal(p1 != p3, true)
-    assert_equal((p1 + p3).x, 3)
-    assert_equal((p1 + p3).y, 5)
-    assert_equal((p1 - p3).x, -1)
-    assert_equal((p1 - p3).y, -1)
 
   end
 

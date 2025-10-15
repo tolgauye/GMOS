@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -28,7 +28,6 @@
 #include "dbTrans.h"
 #include "dbPolygon.h"
 #include "dbHierNetworkProcessor.h"
-#include "dbLog.h"
 #include "tlStream.h"
 #include "tlProgress.h"
 
@@ -38,42 +37,10 @@ namespace db
 class Circuit;
 class SubCircuit;
 class Device;
-class DeviceClass;
 class DeviceAbstract;
 class Net;
 class Netlist;
 class LayoutToNetlist;
-class NetShape;
-class LogEntryData;
-
-/**
- *  @brief A helper class to produce token/list lines
- *  Such lines are like:
- *    token(a b c)
- *  This class takes care of properly handling separation blanks
- */
-class TokenizedOutput
-{
-public:
-  TokenizedOutput (tl::OutputStream &stream);
-  TokenizedOutput (tl::OutputStream &stream, const std::string &token);
-  TokenizedOutput (tl::OutputStream &stream, int indent, const std::string &token);
-  TokenizedOutput (TokenizedOutput &output, const std::string &token, bool inl = false);
-  ~TokenizedOutput ();
-
-  TokenizedOutput &operator<< (const std::string &s);
-
-  tl::OutputStream &stream () { return *mp_stream; }
-
-private:
-  tl::OutputStream *mp_stream;
-  TokenizedOutput *mp_parent;
-  bool m_first, m_inline, m_newline;
-  int m_indent;
-
-  void emit_sep ();
-  int indent () const { return m_indent; }
-};
 
 namespace l2n_std_format
 {
@@ -86,17 +53,13 @@ public:
   std_writer_impl (tl::OutputStream &stream, double dbu, const std::string &progress_description = std::string ());
 
   void write (const db::LayoutToNetlist *l2n);
-  void write (TokenizedOutput &stream, bool nested, const db::Netlist *netlist, const db::LayoutToNetlist *l2n, std::map<const db::Circuit *, std::map<const db::Net *, unsigned int> > *net2id_per_circuit);
+  void write (const db::Netlist *netlist, const db::LayoutToNetlist *l2n, bool nested, std::map<const db::Circuit *, std::map<const db::Net *, unsigned int> > *net2id_per_circuit);
 
 protected:
   tl::OutputStream &stream ()
   {
     return *mp_stream;
   }
-
-  std::string severity_to_s (const db::Severity severity);
-  std::string message_to_s (const std::string &msg);
-  void write_log_entry (TokenizedOutput &stream, const LogEntryData &log_entry);
 
 private:
   tl::OutputStream *mp_stream;
@@ -106,15 +69,14 @@ private:
   const db::LayoutToNetlist *mp_l2n;
   tl::AbsoluteProgress m_progress;
 
-  void write (bool nested, TokenizedOutput &stream, std::map<const db::Circuit *, std::map<const db::Net *, unsigned int> > *net2id_per_circuit);
-  void write (TokenizedOutput &stream, const db::Circuit &circuit, std::map<const db::Circuit *, std::map<const db::Net *, unsigned int> > *net2id_per_circuit);
-  void write (TokenizedOutput &stream, const db::Net &net, unsigned int id);
-  void write (TokenizedOutput &stream, const db::SubCircuit &subcircuit, std::map<const Net *, unsigned int> &net2id);
-  void write (TokenizedOutput &stream, const db::Device &device, std::map<const Net *, unsigned int> &net2id);
-  void write (TokenizedOutput &stream, const db::DeviceAbstract &device_abstract);
-  void write (TokenizedOutput &stream, const db::NetShape *s, const db::ICplxTrans &tr, const std::string &lname, bool relative);
-  void write (TokenizedOutput &stream, const db::DCplxTrans &trans);
-  void write_device_class (TokenizedOutput &stream, const db::DeviceClass *cls, const std::string &name, const db::DeviceClass *temp_class);
+  void write (bool nested, std::map<const db::Circuit *, std::map<const db::Net *, unsigned int> > *net2id_per_circuit);
+  void write (const db::Circuit &circuit, const std::string &indent, std::map<const db::Circuit *, std::map<const db::Net *, unsigned int> > *net2id_per_circuit);
+  void write (const db::Net &net, unsigned int id, const std::string &indent);
+  void write (const db::SubCircuit &subcircuit, std::map<const Net *, unsigned int> &net2id, const std::string &indent);
+  void write (const db::Device &device, std::map<const Net *, unsigned int> &net2id, const std::string &indent);
+  void write (const db::DeviceAbstract &device_abstract, const std::string &indent);
+  void write (const db::PolygonRef *s, const db::ICplxTrans &tr, const std::string &lname, bool relative);
+  void write (const db::DCplxTrans &trans);
   void reset_geometry_ref ();
 
   //  implementation of CircuitCallback

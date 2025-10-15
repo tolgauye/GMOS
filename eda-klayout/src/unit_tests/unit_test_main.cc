@@ -3,7 +3,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -30,7 +30,6 @@
 #include "tlCommandLineParser.h"
 #include "tlFileUtils.h"
 #include "tlGlobPattern.h"
-#include "lymMacroCollection.h"
 #include "rba.h"
 #include "pya.h"
 #include "gsiDecl.h"
@@ -41,18 +40,14 @@
 //  This hard-links the GSI test classes
 #include "../gsi_test/gsiTestForceLink.h"
 
-#include "version.h"
-
 #if defined(HAVE_QT)
-
-//  For testing the document structure
-#  include "docForceLink.h"
-#  include "iconsForceLink.h"
 
 #  include "layApplication.h"
 #  include "layMainWindow.h"
 #  include "laySystemPaths.h"
 #  include "layVersion.h"
+
+#  include "version.h"
 
 #  include <QDir>
 #  include <QFileInfo>
@@ -68,126 +63,27 @@
 #endif
 
 //  required to force linking of the "rdb", "lib" and "drc" module 
-//  and the plugins/auxiliary modules (some in non-Qt case)
+//  (some in non-Qt case)
 #include "libForceLink.h"
 #include "rdbForceLink.h"
-#include "pexForceLink.h"
-#include "antForceLink.h"
-#include "imgForceLink.h"
-#include "edtForceLink.h"
-#include "lymForceLink.h"
-#if defined(HAVE_RUBY)
-#  include "drcForceLink.h"
-#  include "lvsForceLink.h"
-#endif
-
-#if defined(HAVE_QTBINDINGS)
-
-//  pulls in the Qt GSI binding modules - need to be force loaded so they are available
-//  the pya Python module (Python >= 3.8 does not recognize DLL paths on Windows)
-# include "gsiQtGuiExternals.h"
-# include "gsiQtWidgetsExternals.h"
-# include "gsiQtCoreExternals.h"
-# include "gsiQtMultimediaExternals.h"
-# include "gsiQtPrintSupportExternals.h"
-# include "gsiQtXmlExternals.h"
-# include "gsiQtXmlPatternsExternals.h"
-# include "gsiQtSqlExternals.h"
-# include "gsiQtSvgExternals.h"
-# include "gsiQtNetworkExternals.h"
-# include "gsiQtDesignerExternals.h"
-# include "gsiQtUiToolsExternals.h"
-
-FORCE_LINK_GSI_QTCORE
-FORCE_LINK_GSI_QTGUI
-FORCE_LINK_GSI_QTWIDGETS
-FORCE_LINK_GSI_QTMULTIMEDIA
-FORCE_LINK_GSI_QTPRINTSUPPORT
-FORCE_LINK_GSI_QTXML
-FORCE_LINK_GSI_QTXMLPATTERNS
-FORCE_LINK_GSI_QTDESIGNER
-FORCE_LINK_GSI_QTNETWORK
-FORCE_LINK_GSI_QTSQL
-FORCE_LINK_GSI_QTSVG
-FORCE_LINK_GSI_QTUITOOLS
-
-#else
-# define QT_EXTERNAL_BASE(x)
+#if defined(HAVE_RUBY) && defined(HAVE_QT)
+#include "drcForceLink.h"
+#include "lvsForceLink.h"
 #endif
 
 static int main_cont (int &argc, char **argv);
 
-#ifdef _WIN32 // for VC++
-
-//  for VC++/MinGW provide a wrapper for main.
-#include <Windows.h>
-
-extern "C"
-int WINAPI 
-WinMain(HINSTANCE /*hInstance*/, HINSTANCE /*prevInstance*/, LPSTR /*lpCmdLine*/, int /*nShowCmd*/)
-{
-  int argCount = 0;
-  LPWSTR *szArgList = CommandLineToArgvW(GetCommandLineW(), &argCount);
-
-  //  fail safe behaviour
-  if (!szArgList) {
-    MessageBox(NULL, L"Unable to parse command line", L"Error", MB_OK);
-    return 10;
-  }
-
-  char **argv = new char *[argCount];
-  for (int i = 0; i < argCount; i++) {
-    std::wstring a;
-    for (WCHAR *wc = szArgList [i]; *wc; ++wc) {
-      a += wchar_t ((unsigned int) *wc);
-    }
-    std::string aa = tl::to_string (a);
-    argv [i] = new char [aa.size () + 1];
-    strcpy (argv [i], aa.c_str ());
-  }
-
-  int ret = rba::RubyInterpreter::initialize (argCount, argv, &main_cont);
-
-  //  NOTE: this needs to happen after the Ruby interpreter went down since otherwise the GC will
-  //  access objects that are already cleaned up.
-  tl::StaticObjects::cleanup ();
-
-  for (int i = 0; i < argCount; i++) {
-    delete[] argv [i];
-  }
-  delete[] argv;
-
-  LocalFree(szArgList);
-  return ret;
-}
-
-#else
-
 int
-main(int a_argc, const char **a_argv)
+main (int argc, char **argv)
 {
-  char **argv = new char *[a_argc];
-  for (int i = 0; i < a_argc; i++) {
-    tl::string aa = tl::system_to_string (a_argv[i]);
-    argv [i] = new char [aa.size () + 1];
-    strcpy (argv [i], aa.c_str ());
-  }
-
-  int ret = rba::RubyInterpreter::initialize (a_argc, argv, &main_cont);
+  int ret = rba::RubyInterpreter::initialize (argc, argv, &main_cont);
 
   //  NOTE: this needs to happen after the Ruby interpreter went down since otherwise the GC will
   //  access objects that are already cleaned up.
   tl::StaticObjects::cleanup ();
 
-  for (int i = 0; i < a_argc; i++) {
-    delete[] argv [i];
-  }
-  delete[] argv;
-
   return ret;
 }
-
-#endif
 
 static bool
 run_test (tl::TestBase *t, bool editable, bool slow, int repeat)
@@ -223,7 +119,6 @@ run_tests (const std::vector<tl::TestBase *> &selected_tests, bool editable, boo
   std::vector <tl::TestBase *> failed_tests_e, failed_tests_ne;
   int skipped_ne = 0, skipped_e = 0;
   std::vector <tl::TestBase *> skipped_tests_e, skipped_tests_ne;
-  int successful_ne = 0, successful_e = 0;
 
   for (int e = 0; e < 2; ++e) {
 
@@ -244,7 +139,6 @@ run_tests (const std::vector<tl::TestBase *> &selected_tests, bool editable, boo
       std::vector <tl::TestBase *> failed_tests;
       int skipped = 0;
       std::vector <tl::TestBase *> skipped_tests;
-      int successful = 0;
 
       tl::Timer timer;
 
@@ -292,10 +186,7 @@ run_tests (const std::vector<tl::TestBase *> &selected_tests, bool editable, boo
             timer.stop();
 
             ut::noctrl << "Time: " << timer.sec_wall () << "s (wall) " << timer.sec_user () << "s (user) " << timer.sec_sys () << "s (sys)";
-            ut::noctrl << "Memory: " << timer.memory_size () / 1024 << "k";
-            ut::ctrl << "<x-testcase-times wall=\"" << timer.sec_wall () << "\" user=\"" << timer.sec_user () << "\" sys=\"" << timer.sec_sys () << "\" memory=\"" << timer.memory_size () << "\"/>";
-
-            ++successful;
+            ut::ctrl << "<x-testcase-times wall=\"" << timer.sec_wall () << "\" user=\"" << timer.sec_user () << "\" sys=\"" << timer.sec_sys () << "\"/>";
 
           } catch (tl::CancelException &) {
 
@@ -340,8 +231,6 @@ run_tests (const std::vector<tl::TestBase *> &selected_tests, bool editable, boo
       ut::noctrl << tl::replicate ("=", ut::TestConsole::instance ()->real_columns ());
       ut::noctrl << "Summary";
 
-      tl::info << "Executed " << (successful + failed) << " test(s) in " << mode << " mode.";
-
       if (skipped > 0) {
         if (e == 0) {
           skipped_tests_ne = skipped_tests;
@@ -364,12 +253,6 @@ run_tests (const std::vector<tl::TestBase *> &selected_tests, bool editable, boo
         tl::warn << failed << " test(s) failed";
       } else {
         tl::info << "All tests passed in " << mode << " mode.";
-      }
-
-      if (e == 0) {
-        successful_ne = successful;
-      } else {
-        successful_e = successful;
       }
 
       ut::ctrl << "</x-summary>";
@@ -434,8 +317,6 @@ run_tests (const std::vector<tl::TestBase *> &selected_tests, bool editable, boo
 
   ut::ctrl << "<x-grand-summary>";
 
-  tl::info << "Executed " << (successful_e + failed_e + successful_ne + failed_ne) << " test(s)";
-
   if (skipped_e + skipped_ne > 0) {
     if (non_editable) {
       tl::warn << "Skipped in non-editable mode";
@@ -482,10 +363,8 @@ run_tests (const std::vector<tl::TestBase *> &selected_tests, bool editable, boo
 static int
 main_cont (int &argc, char **argv)
 {
-  ut::TestConsole console (stdout);
-
-  std::unique_ptr<rba::RubyInterpreter> ruby_interpreter;
-  std::unique_ptr<pya::PythonInterpreter> python_interpreter;
+  std::auto_ptr<rba::RubyInterpreter> ruby_interpreter;
+  std::auto_ptr<pya::PythonInterpreter> python_interpreter;
 
 #if defined(HAVE_QT)
 
@@ -503,8 +382,11 @@ main_cont (int &argc, char **argv)
 
   int result = 0;
 
+  ut::TestConsole console (stdout);
+
   try {
 
+    pya::PythonInterpreter::initialize ();
     gsi::initialize_external ();
 
     //  Search and initialize plugin unit tests
@@ -587,13 +469,6 @@ main_cont (int &argc, char **argv)
     python_interpreter.reset (new pya::PythonInterpreter ());
     python_interpreter->push_console (&console);
 
-    lym::MacroCollection &lym_root = lym::MacroCollection::root ();
-    lym_root.add_folder (tl::to_string (tr ("Built-In")), ":/built-in-macros", "macros", true);
-    lym_root.add_folder (tl::to_string (tr ("Built-In")), ":/built-in-pymacros", "pymacros", true);
-
-    lym_root.autorun_early ();
-    lym_root.autorun ();
-
 #endif
 
     bool editable = false, non_editable = false;
@@ -609,11 +484,9 @@ main_cont (int &argc, char **argv)
     bool debug_mode = false;
     bool continue_flag = false;
     int repeat = 1;
-    std::string output;
 
     tl::CommandLineOptions cmd;
     cmd << tl::arg ("-a", &xml_format, "Provide XML output format (JUnit format)")
-        << tl::arg ("-o=log", &output, "Sends output to the given file")
         << tl::arg ("-l", &list_tests, "Lists tests and exits")
         << tl::arg ("-e", &editable, "Uses editable mode")
         << tl::arg ("-ne", &non_editable, "Uses non-editable mode")
@@ -663,25 +536,7 @@ main_cont (int &argc, char **argv)
     tl::set_continue_flag (continue_flag);
     tl::set_debug_mode (debug_mode);
 
-    //  set some global variables
-    if (rba::RubyInterpreter::instance ()) {
-      rba::RubyInterpreter::instance ()->define_variable ("ut_inst_path", tl::get_inst_path ());
-    }
-    if (pya::PythonInterpreter::instance ()) {
-      pya::PythonInterpreter::instance ()->define_variable ("ut_inst_path", tl::get_inst_path ());
-    }
-
-    FILE *output_file = 0;
-
     try {
-
-      if (! output.empty ()) {
-        output_file = fopen (output.c_str (), "w");
-        if (! output_file) {
-          throw tl::Exception (std::string ("Unable to open log file for writing :") + output);
-        }
-        console.send_to (output_file);
-      }
 
       ut::ctrl << "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>";
       ut::ctrl << "<testsuites>";
@@ -737,20 +592,8 @@ main_cont (int &argc, char **argv)
 
       ut::ctrl << "</testsuites>";
 
-      if (output_file) {
-        console.send_to (stdout);
-        fclose (output_file);
-      }
-
     } catch (...) {
-
       ut::ctrl << "</testsuites>";
-
-      if (output_file) {
-        console.send_to (stdout);
-        fclose (output_file);
-      }
-
       throw;
     }
 

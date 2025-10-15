@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -28,7 +28,6 @@
 #include "tlException.h"
 #include "tlString.h"
 #include "tlExceptions.h"
-#include "layUtils.h"
 
 namespace lay
 {
@@ -53,17 +52,13 @@ public:
   virtual void get_menu_entries (std::vector<lay::MenuEntry> &menu_entries) const
   {
     lay::PluginDeclaration::get_menu_entries (menu_entries);
-    menu_entries.push_back (lay::menu_item ("clip_tool::show", "clip_tool:edit_mode", "edit_menu.utils_menu.end", tl::to_string (QObject::tr ("Clip Tool"))));
+    menu_entries.push_back (lay::MenuEntry ("clip_tool::show", "clip_tool:edit_mode", "edit_menu.utils_menu.end", tl::to_string (QObject::tr ("Clip Tool"))));
   }
  
-  virtual lay::Plugin *create_plugin (db::Manager *, lay::Dispatcher *root, lay::LayoutViewBase *view) const
-  {
-    if (lay::has_gui ()) {
-      return new ClipDialog (root, view);
-    } else {
-      return 0;
-    }
-  }
+   virtual lay::Plugin *create_plugin (db::Manager *, lay::PluginRoot *root, lay::LayoutView *view) const
+   {
+     return new ClipDialog (root, view);
+   }
 };
 
 static tl::RegisteredClass<lay::PluginDeclaration> config_decl (new ClipDialogPluginDeclaration (), 20000, "ClipDialogPlugin");
@@ -71,7 +66,7 @@ static tl::RegisteredClass<lay::PluginDeclaration> config_decl (new ClipDialogPl
 
 // ------------------------------------------------------------
 
-ClipDialog::ClipDialog (lay::Dispatcher *root, LayoutViewBase *vw)
+ClipDialog::ClipDialog (lay::PluginRoot *root, lay::LayoutView *vw)
   : lay::Browser (root, vw), 
     Ui::ClipDialog ()
 {
@@ -91,11 +86,9 @@ ClipDialog::menu_activated (const std::string &symbol)
 {
   if (symbol == "clip_tool::show") {
 
-    int cv_index = view ()->active_cellview_index ();
-
-    lay::CellView cv = view ()->cellview (cv_index);
+    lay::CellView cv = view ()->cellview (view ()->active_cellview_index ());
     if (cv.is_valid ()) {
-      cb_layer->set_view (view (), cv_index);
+      cb_layer->set_layout (&cv->layout ());
       show ();
       activate ();
     }
@@ -132,10 +125,10 @@ BEGIN_PROTECTED
 
     double x1 = 0.0, y1 = 0.0;
     double x2 = 0.0, y2 = 0.0;
-    tl::from_string_ext (tl::to_string (le_x1->text ()), x1);
-    tl::from_string_ext (tl::to_string (le_x2->text ()), x2);
-    tl::from_string_ext (tl::to_string (le_y1->text ()), y1);
-    tl::from_string_ext (tl::to_string (le_y2->text ()), y2);
+    tl::from_string (tl::to_string (le_x1->text ()), x1);
+    tl::from_string (tl::to_string (le_x2->text ()), x2);
+    tl::from_string (tl::to_string (le_y1->text ()), y1);
+    tl::from_string (tl::to_string (le_y2->text ()), y2);
 
     clip_boxes.push_back (db::Box (db::DBox (db::DPoint (x1, y1), db::DPoint (x2, y2)) * (1.0 / cv->layout ().dbu ())));
 
@@ -148,10 +141,10 @@ BEGIN_PROTECTED
 
     double x = 0.0, y = 0.0;
     double w = 0.0, h = 0.0;
-    tl::from_string_ext (tl::to_string (le_x->text ()), x);
-    tl::from_string_ext (tl::to_string (le_y->text ()), y);
-    tl::from_string_ext (tl::to_string (le_w->text ()), w);
-    tl::from_string_ext (tl::to_string (le_h->text ()), h);
+    tl::from_string (tl::to_string (le_x->text ()), x);
+    tl::from_string (tl::to_string (le_y->text ()), y);
+    tl::from_string (tl::to_string (le_w->text ()), w);
+    tl::from_string (tl::to_string (le_h->text ()), h);
 
     clip_boxes.push_back (db::Box (db::DBox (db::DPoint (x - 0.5 * w, y - 0.5 * h), db::DPoint (x + 0.5 * w, y + 0.5 * h)) * (1.0 / cv->layout ().dbu ())));
 

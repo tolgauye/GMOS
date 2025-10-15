@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -31,42 +31,6 @@ namespace db
 {
 
 // ------------------------------------------------------------------
-//  Implementation of StreamFormatDeclaration
-
-std::string StreamFormatDeclaration::all_formats_string ()
-{
-  std::string fmts = tl::to_string (tr ("All layout files ("));
-
-  for (tl::Registrar<db::StreamFormatDeclaration>::iterator rdr = tl::Registrar<db::StreamFormatDeclaration>::begin (); rdr != tl::Registrar<db::StreamFormatDeclaration>::end (); ++rdr) {
-    if (rdr != tl::Registrar<db::StreamFormatDeclaration>::begin ()) {
-      fmts += " ";
-    }
-    std::string f = rdr->file_format ();
-    if (!f.empty ()) {
-      const char *fp = f.c_str ();
-      while (*fp && *fp != '(') {
-        ++fp;
-      }
-      if (*fp) {
-        ++fp;
-      }
-      while (*fp && *fp != ')') {
-        fmts += *fp++;
-      }
-    }
-  }
-  fmts += ")";
-  for (tl::Registrar<db::StreamFormatDeclaration>::iterator rdr = tl::Registrar<db::StreamFormatDeclaration>::begin (); rdr != tl::Registrar<db::StreamFormatDeclaration>::end (); ++rdr) {
-    if (!rdr->file_format ().empty ()) {
-      fmts += ";;";
-      fmts += rdr->file_format ();
-    }
-  }
-
-  return fmts;
-}
-
-// ------------------------------------------------------------------
 //  Implementation of load_options_xml_element_list
 
 
@@ -87,7 +51,6 @@ tl::XMLElementList load_options_xml_element_list ()
 tl::XMLElementList save_options_xml_element_list ()
 {
   tl::XMLElementList elements;
-  elements.append (tl::make_member (&db::SaveLayoutOptions::format, &db::SaveLayoutOptions::set_format, "format"));
 
   for (tl::Registrar<db::StreamFormatDeclaration>::iterator cls = tl::Registrar<db::StreamFormatDeclaration>::begin (); cls != tl::Registrar<db::StreamFormatDeclaration>::end (); ++cls) {
     const StreamFormatDeclaration *decl = dynamic_cast <const StreamFormatDeclaration *> (&*cls);

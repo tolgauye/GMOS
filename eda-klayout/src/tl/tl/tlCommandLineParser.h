@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -79,7 +79,7 @@ public:
    *    "[group]..."              - List the option under this group (group = group title)
    *    "#..."                    - Advanced option - listed with --help-all only
    *    "/..."                    - Non-advanced option - listed with -h|--help only
-   *    "*..."                    - Multiple occurrences allowed - values needs to be
+   *    "*..."                    - Multiple occurances allowed - values needs to be
    *                                an array and values are accumulated. Without *, the
    *                                value string is evaluated to a comma-separated list.
    *                                "*" means one occurrence at least unless combined with "?".
@@ -137,15 +137,7 @@ public:
   /**
    *  @brief Marks an option to be present (for boolean options)
    */
-  virtual void mark_present ()
-  {
-    //  .. nothing yet ..
-  }
-
-  /**
-   *  @brief Inverts the presence of an option (for boolean options)
-   */
-  virtual void invert_present ()
+  virtual void mark_present (bool)
   {
     //  .. nothing yet ..
   }
@@ -239,29 +231,28 @@ inline void extract (tl::Extractor &ex, std::vector<T> &t, bool repeated_hint, b
  *  @brief A helper to mark "presence"
  */
 template <class T>
-inline void mark_presence (T &)
+inline void mark_presence (T &, bool)
 {
   //  .. the default implementation does nothing ..
 }
 
-inline void mark_presence (bool &t)
+inline void mark_presence (bool &t, bool invert)
 {
-  t = true;
+  t = !invert;
 }
 
-/**
- *  @brief A helper to invert "presence"
- */
-template <class T>
-inline void invert_presence (T &)
+template <class C, class T>
+inline void mark_presence_setter (C *, void (C::*) (T), bool)
 {
   //  .. the default implementation does nothing ..
 }
 
-inline void invert_presence (bool &t)
+template <class C>
+inline void mark_presence_setter (C *c, void (C::*ptr) (bool), bool invert)
 {
-  t = !t;
+  (c->*ptr) (!invert);
 }
+
 
 /**
  *  @brief A helper template to extract the actual type from (T) or (const T &)
@@ -312,14 +303,9 @@ public:
     extract (ex, *mp_value, option ().repeated);
   }
 
-  virtual void mark_present ()
+  virtual void mark_present (bool inverted)
   {
-    mark_presence (*mp_value);
-  }
-
-  virtual void invert_present ()
-  {
-    invert_presence (*mp_value);
+    mark_presence (*mp_value, inverted);
   }
 
   virtual ArgBase *clone () const
@@ -344,30 +330,23 @@ class arg_method_setter
   : public ArgBase
 {
 public:
-  typedef typename type_without_const_ref<T>::inner_type inner_type;
-
   arg_method_setter (const std::string &option, C *object, void (C::*setter)(T), const std::string &brief_doc, const std::string &long_doc)
-    : ArgBase (option, brief_doc, long_doc), m_value (), mp_object (object), mp_setter (setter)
+    : ArgBase (option, brief_doc, long_doc), mp_object (object), mp_setter (setter)
   {
     //  .. nothing yet ..
   }
 
   virtual void take_value (tl::Extractor &ex)
   {
-    extract (ex, m_value, option ().repeated);
-    (mp_object->*mp_setter) (m_value);
+    typedef typename type_without_const_ref<T>::inner_type inner_type;
+    inner_type t = inner_type ();
+    extract (ex, t, option ().repeated);
+    (mp_object->*mp_setter) (t);
   }
 
-  virtual void mark_present ()
+  virtual void mark_present (bool inverted)
   {
-    mark_presence (m_value);
-    (mp_object->*mp_setter) (m_value);
-  }
-
-  virtual void invert_present ()
-  {
-    invert_presence (m_value);
-    (mp_object->*mp_setter) (m_value);
+    mark_presence_setter (mp_object, mp_setter, inverted);
   }
 
   virtual ArgBase *clone () const
@@ -381,7 +360,6 @@ public:
   }
 
 private:
-  inner_type m_value;
   C *mp_object;
   void (C::*mp_setter)(T);
 };

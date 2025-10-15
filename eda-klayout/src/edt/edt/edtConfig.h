@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -26,9 +26,11 @@
 
 #include <string>
 
+#include "laySnap.h"
 #include "edtCommon.h"
 #include "tlString.h"
 #include "dbPoint.h"
+#include "dbHersheyFont.h"
 
 namespace edt
 {
@@ -38,7 +40,6 @@ namespace edt
  */
 extern EDT_PUBLIC std::string cfg_edit_grid;
 extern EDT_PUBLIC std::string cfg_edit_snap_to_objects;
-extern EDT_PUBLIC std::string cfg_edit_snap_objects_to_grid;
 extern EDT_PUBLIC std::string cfg_edit_move_angle_mode;
 extern EDT_PUBLIC std::string cfg_edit_connect_angle_mode;
 extern EDT_PUBLIC std::string cfg_edit_text_string;
@@ -67,8 +68,6 @@ extern EDT_PUBLIC std::string cfg_edit_inst_column_x;
 extern EDT_PUBLIC std::string cfg_edit_inst_column_y;
 extern EDT_PUBLIC std::string cfg_edit_inst_place_origin;
 extern EDT_PUBLIC std::string cfg_edit_top_level_selection;
-extern EDT_PUBLIC std::string cfg_edit_pcell_show_parameter_names;
-extern EDT_PUBLIC std::string cfg_edit_pcell_lazy_eval_mode;
 extern EDT_PUBLIC std::string cfg_edit_hier_copy_mode;
 extern EDT_PUBLIC std::string cfg_edit_combine_mode;
 
@@ -85,10 +84,35 @@ struct EDT_PUBLIC CMConverter
 
 enum path_ext_type { Flush = 0, Square, Variable, Round, NumPEModes };
 
+struct EDT_PUBLIC ACConverter
+{
+  std::string to_string (const lay::angle_constraint_type &m);
+  void from_string (const std::string &s, lay::angle_constraint_type &m);
+};
+
 struct EDT_PUBLIC PathExtConverter
 {
   std::string to_string (const edt::path_ext_type &m);
   void from_string (const std::string &s, edt::path_ext_type &m);
+};
+
+struct EDT_PUBLIC EditGridConverter
+{
+  std::string to_string (const db::DVector &eg);
+  void from_string (const std::string &s, db::DVector &eg);
+  void from_string_picky (const std::string &s, db::DVector &eg);
+};
+
+struct EDT_PUBLIC HAlignConverter
+{
+  std::string to_string (db::HAlign a);
+  void from_string (const std::string &s, db::HAlign &a);
+};
+
+struct EDT_PUBLIC VAlignConverter
+{
+  std::string to_string (db::VAlign a);
+  void from_string (const std::string &s, db::VAlign &a);
 };
 
 }

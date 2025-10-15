@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@
 #include <QCollatorSortKey>
 #include "gsiQt.h"
 #include "gsiQtCoreCommon.h"
+#include "gsiDeclQtCoreTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -114,7 +115,7 @@ static void _call_f_swap_2252 (const qt_gsi::GenericMethod * /*decl*/, void *cls
 
 //  bool ::operator<(const QCollatorSortKey &lhs, const QCollatorSortKey &rhs)
 static bool op_QCollatorSortKey_operator_lt__5786(const QCollatorSortKey *_self, const QCollatorSortKey &rhs) {
-  return operator<(*_self, rhs);
+  return ::operator<(*_self, rhs);
 }
 
 

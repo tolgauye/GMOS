@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -65,11 +65,12 @@ static std::vector<const db::TextGenerator *> generators ()
 }
 
 Class<db::TextGenerator> decl_TextGenerator ("db", "TextGenerator",
+#if defined(HAVE_QT)
   method ("load_from_resource", &db::TextGenerator::load_from_resource, arg ("resource_path"),
     "@brief Loads the given resource data (as layout data) into the generator\n"
-    "The resource path has to start with a colon, i.e. ':/my/resource.gds'. "
     "See the description of the class how the layout data is read."
   ) +
+#endif
   method ("load_from_file", &db::TextGenerator::load_from_file, arg ("path"),
     "@brief Loads the given file into the generator\n"
     "See the description of the class how the layout data is read."
@@ -105,7 +106,7 @@ Class<db::TextGenerator> decl_TextGenerator ("db", "TextGenerator",
   ) +
   method ("glyph", &db::TextGenerator::glyph_as_region, arg ("char"),
     "@brief Gets the glyph of the given character as a region\n"
-    "The region represents the glyph's outline and is delivered in the generator's database units ."
+    "The region represents the glyph's outline and is deliverd in the generator's database units ."
     "A more elaborate way to getting the text's outline is \\text."
   ) +
   method_ext ("dline_width", &dline_width,
@@ -172,20 +173,6 @@ Class<db::TextGenerator> decl_TextGenerator ("db", "TextGenerator",
   method ("default_generator", &db::TextGenerator::default_generator,
     "@brief Gets the default text generator (a standard font)\n"
     "This method delivers the default generator or nil if no such generator is installed."
-  ) +
-  method ("set_font_paths", &db::TextGenerator::set_font_paths, gsi::arg ("paths"),
-    "@brief Sets the paths where to look for font files\n"
-    "This function sets the paths where to look for font files. After setting such a path, each font found will render a "
-    "specific generator. The generator can be found under the font file's name. As the text generator is also the basis "
-    "for the Basic.TEXT PCell, using this function also allows configuring custom fonts for this library cell.\n"
-    "\n"
-    "This method has been introduced in version 0.27.4."
-  ) +
-  method ("font_paths", &db::TextGenerator::font_paths,
-    "@brief Gets the paths where to look for font files\n"
-    "See \\set_font_paths for a description of this function.\n"
-    "\n"
-    "This method has been introduced in version 0.27.4."
   ),
   "@brief A text generator class\n"
   "\n"

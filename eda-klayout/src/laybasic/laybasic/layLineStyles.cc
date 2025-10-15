@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -24,11 +24,9 @@
 
 #include "layLineStyles.h"
 #include "tlAssert.h"
-#include "tlThreads.h"
 
 #include <ctype.h>
 #include <algorithm>
-#include <string.h>
 
 namespace lay
 {
@@ -75,8 +73,6 @@ static const char *style_strings [] = {
 // ---------------------------------------------------------------------
 //  LineStyleInfo implementation
 
-static tl::Mutex s_mutex;
-
 LineStyleInfo::LineStyleInfo ()
   : m_width (0), m_order_index (0)
 {
@@ -94,26 +90,19 @@ LineStyleInfo &
 LineStyleInfo::operator= (const LineStyleInfo &d)
 {
   if (&d != this) {
-    tl::MutexLocker locker (& s_mutex);
-    assign_no_lock (d);
+
+    m_order_index = d.m_order_index;
+    m_name = d.m_name;
+    m_width = d.m_width;
+    m_pattern_stride = d.m_pattern_stride;
+    
+    memcpy (m_pattern, d.m_pattern, sizeof (m_pattern));
+
   }
   return *this;
 }
 
-void
-LineStyleInfo::assign_no_lock (const LineStyleInfo &d)
-{
-  m_scaled_pattern.reset (0);
-
-  m_order_index = d.m_order_index;
-  m_name = d.m_name;
-  m_width = d.m_width;
-  m_pattern_stride = d.m_pattern_stride;
-
-  memcpy (m_pattern, d.m_pattern, sizeof (m_pattern));
-}
-
-bool
+bool 
 LineStyleInfo::same_bits (const LineStyleInfo &d) const
 {
   if (m_width != d.m_width) {
@@ -173,40 +162,32 @@ LineStyleInfo::is_bit_set (unsigned int n) const
   return (pattern () [(n / 32) % pattern_stride ()] & (1 << (n % 32))) != 0;
 }
 
-#if defined(HAVE_QT)
 QBitmap
-LineStyleInfo::get_bitmap (int w, int h, int fw) const
+LineStyleInfo::get_bitmap (int width, int height) const
 {
-  unsigned int height = h < 0 ? 5 : (unsigned int) h;
-  unsigned int width = w < 0 ? 34 : (unsigned int) w;
-  unsigned int frame_width = fw <= 0 ? 1 : (unsigned int) fw;
+  if (height < 0) {
+    height = 5;
+  }
+  if (width < 0) {
+    width = 34;
+  }
+
   unsigned int stride = (width + 7) / 8;
 
   unsigned char *data = new unsigned char[stride * height];
   memset (data, 0x00, size_t (stride * height));
 
-  unsigned int hv = height - 2 * frame_width;
-
-  for (unsigned int i = 0; i < hv; ++i) {
-    if (is_bit_set (i / frame_width + 1)) {
-      unsigned int y = height - 1 - frame_width - i;
-      for (unsigned int x = 0; x < frame_width; ++x) {
-        data [y * stride + x / 8] |= (1 << (x % 8));
-      }
-      for (unsigned int x = width - frame_width; x < width; ++x) {
-        data [y * stride + x / 8] |= (1 << (x % 8));
-      }
+  for (unsigned int i = 0; i < (unsigned int)(height - 2); ++i) {
+    if (is_bit_set (i)) {
+      data [(height - 2 - i) * stride] |= 0x01;
+      data [(height - 2 - i) * stride + (width - 1) / 8] |= (1 << ((width - 1) % 8));
     }
   }
 
-  for (unsigned int i = 0; i < width; ++i) {
-    if (is_bit_set (i / frame_width)) {
-      for (unsigned int y = 0; y < frame_width; ++y) {
-        data [y * stride + i / 8] |= (1 << (i % 8));
-      }
-      for (unsigned int y = height - frame_width; y < height; ++y) {
-        data [y * stride + i / 8] |= (1 << (i % 8));
-      }
+  for (unsigned int i = 1; i < (unsigned int)(width - 1); ++i) {
+    if (is_bit_set (i)) {
+      data [stride + i / 8] |= (1 << (i % 8));
+      data [(height - 2) * stride + i / 8] |= (1 << (i % 8));
     }
   }
 
@@ -215,14 +196,10 @@ LineStyleInfo::get_bitmap (int w, int h, int fw) const
 
   return bitmap;
 }
-#endif
 
 void
 LineStyleInfo::set_pattern (uint32_t pt, unsigned int w) 
 {
-  tl::MutexLocker locker (& s_mutex);
-  m_scaled_pattern.reset (0);
-
   memset (m_pattern, 0, sizeof (m_pattern));
 
   if (w >= 32) {
@@ -264,30 +241,6 @@ LineStyleInfo::set_pattern (uint32_t pt, unsigned int w)
   }
 }
 
-const LineStyleInfo &
-LineStyleInfo::scaled (unsigned int n) const
-{
-  if (n <= 1) {
-    return *this;
-  }
-
-  tl::MutexLocker locker (& s_mutex);
-
-  if (! m_scaled_pattern.get ()) {
-    m_scaled_pattern.reset (new std::map<unsigned int, LineStyleInfo> ());
-  }
-
-  auto i = m_scaled_pattern->find (n);
-  if (i != m_scaled_pattern->end ()) {
-    return i->second;
-  }
-
-  LineStyleInfo &sp = (*m_scaled_pattern) [n];
-  sp.assign_no_lock (*this);
-  sp.scale_pattern (n);
-  return sp;
-}
-
 void
 LineStyleInfo::scale_pattern (unsigned int n)
 {
@@ -306,12 +259,7 @@ LineStyleInfo::scale_pattern (unsigned int n)
 
   uint32_t *pp = m_pattern;
   uint32_t pt = m_pattern [0];
-  uint32_t ptr = pt >> 1; // right-rotated by 1
-  if (pt & 1) {
-    ptr |= (1 << (m_width - 1));
-  }
   uint32_t dd = pt;
-  uint32_t ddr = ptr;
 
   memset (m_pattern, 0, sizeof (m_pattern));
 
@@ -320,18 +268,14 @@ LineStyleInfo::scale_pattern (unsigned int n)
   for (unsigned int i = 0; i < m_pattern_stride; ++i) {
     uint32_t dout = 0;
     for (uint32_t m = 1; m != 0; m <<= 1) {
-      //  NOTE: we do not fully expand "1" fields with a following "0" as pixel expansion
-      //  will take care of this.
-      if ((dd & 1) != 0 && ((ddr & 1) != 0 || bi == 0)) {
+      if ((dd & 1) != 0) {
         dout |= m;
       }
       if (++bi == n) {
         bi = 0;
         dd >>= 1;
-        ddr >>= 1;
         if (++b == m_width) {
           dd = pt;
-          ddr = ptr;
           b = 0;
         }
       }
@@ -341,8 +285,6 @@ LineStyleInfo::scale_pattern (unsigned int n)
 
   m_width = w;
 }
-
-
 
 std::string
 LineStyleInfo::to_string () const
@@ -409,8 +351,8 @@ struct ReplaceLineStyleOp
   LineStyleInfo m_old, m_new;
 };
 
-LineStyles::LineStyles () :
-    db::Object (0)
+LineStyles::LineStyles ()
+  : QObject (), db::Object (0)
 {
   for (unsigned int d = 0; d < sizeof (style_strings) / sizeof (style_strings [0]); d += 2) {
     m_styles.push_back (LineStyleInfo ());
@@ -419,15 +361,15 @@ LineStyles::LineStyles () :
   }
 }
 
-LineStyles::LineStyles (const LineStyles &p) :
-  db::Object (0)
-{
-  m_styles = p.m_styles;
-}
-
 LineStyles::~LineStyles ()
 {
   //  .. nothing yet ..
+}
+
+LineStyles::LineStyles (const LineStyles &p)
+  : QObject (), db::Object (0)
+{
+  m_styles = p.m_styles;
 }
 
 LineStyles &
@@ -459,8 +401,11 @@ LineStyles::style (unsigned int i) const
 void 
 LineStyles::replace_style (unsigned int i, const LineStyleInfo &p)
 {
+  bool chg = false;
+
   while (i >= count ()) {
     m_styles.push_back (LineStyleInfo ());
+    chg = true;
   }
 
   if (m_styles [i] != p) {
@@ -468,6 +413,12 @@ LineStyles::replace_style (unsigned int i, const LineStyleInfo &p)
       manager ()->queue (this, new ReplaceLineStyleOp (i, m_styles [i], p));
     }
     m_styles [i] = p;
+    chg = true;
+  }
+
+  //  if something has changed emit the signal
+  if (chg) {
+    emit changed ();
   }
 }
 

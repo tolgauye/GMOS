@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -34,6 +34,7 @@
 #include <QObject>
 #include "gsiQt.h"
 #include "gsiQtCoreCommon.h"
+#include "gsiDeclQtCoreTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -134,7 +135,7 @@ static void _call_f_isConstant_c0 (const qt_gsi::GenericMethod * /*decl*/, void 
 
 static void _init_f_isDesignable_c1997 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("obj", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("obj", true, "0");
   decl->add_arg<const QObject * > (argspec_0);
   decl->set_return<bool > ();
 }
@@ -143,7 +144,7 @@ static void _call_f_isDesignable_c1997 (const qt_gsi::GenericMethod * /*decl*/, 
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  const QObject *arg1 = args ? gsi::arg_reader<const QObject * >() (args, heap) : gsi::arg_maker<const QObject * >() (nullptr, heap);
+  const QObject *arg1 = args ? gsi::arg_reader<const QObject * >() (args, heap) : gsi::arg_maker<const QObject * >() (0, heap);
   ret.write<bool > ((bool)((QMetaProperty *)cls)->isDesignable (arg1));
 }
 
@@ -153,7 +154,7 @@ static void _call_f_isDesignable_c1997 (const qt_gsi::GenericMethod * /*decl*/, 
 
 static void _init_f_isEditable_c1997 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("obj", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("obj", true, "0");
   decl->add_arg<const QObject * > (argspec_0);
   decl->set_return<bool > ();
 }
@@ -162,7 +163,7 @@ static void _call_f_isEditable_c1997 (const qt_gsi::GenericMethod * /*decl*/, vo
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  const QObject *arg1 = args ? gsi::arg_reader<const QObject * >() (args, heap) : gsi::arg_maker<const QObject * >() (nullptr, heap);
+  const QObject *arg1 = args ? gsi::arg_reader<const QObject * >() (args, heap) : gsi::arg_maker<const QObject * >() (0, heap);
   ret.write<bool > ((bool)((QMetaProperty *)cls)->isEditable (arg1));
 }
 
@@ -247,7 +248,7 @@ static void _call_f_isResettable_c0 (const qt_gsi::GenericMethod * /*decl*/, voi
 
 static void _init_f_isScriptable_c1997 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("obj", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("obj", true, "0");
   decl->add_arg<const QObject * > (argspec_0);
   decl->set_return<bool > ();
 }
@@ -256,7 +257,7 @@ static void _call_f_isScriptable_c1997 (const qt_gsi::GenericMethod * /*decl*/, 
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  const QObject *arg1 = args ? gsi::arg_reader<const QObject * >() (args, heap) : gsi::arg_maker<const QObject * >() (nullptr, heap);
+  const QObject *arg1 = args ? gsi::arg_reader<const QObject * >() (args, heap) : gsi::arg_maker<const QObject * >() (0, heap);
   ret.write<bool > ((bool)((QMetaProperty *)cls)->isScriptable (arg1));
 }
 
@@ -266,7 +267,7 @@ static void _call_f_isScriptable_c1997 (const qt_gsi::GenericMethod * /*decl*/, 
 
 static void _init_f_isStored_c1997 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("obj", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("obj", true, "0");
   decl->add_arg<const QObject * > (argspec_0);
   decl->set_return<bool > ();
 }
@@ -275,7 +276,7 @@ static void _call_f_isStored_c1997 (const qt_gsi::GenericMethod * /*decl*/, void
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  const QObject *arg1 = args ? gsi::arg_reader<const QObject * >() (args, heap) : gsi::arg_maker<const QObject * >() (nullptr, heap);
+  const QObject *arg1 = args ? gsi::arg_reader<const QObject * >() (args, heap) : gsi::arg_maker<const QObject * >() (0, heap);
   ret.write<bool > ((bool)((QMetaProperty *)cls)->isStored (arg1));
 }
 
@@ -285,7 +286,7 @@ static void _call_f_isStored_c1997 (const qt_gsi::GenericMethod * /*decl*/, void
 
 static void _init_f_isUser_c1997 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("obj", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("obj", true, "0");
   decl->add_arg<const QObject * > (argspec_0);
   decl->set_return<bool > ();
 }
@@ -294,7 +295,7 @@ static void _call_f_isUser_c1997 (const qt_gsi::GenericMethod * /*decl*/, void *
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  const QObject *arg1 = args ? gsi::arg_reader<const QObject * >() (args, heap) : gsi::arg_maker<const QObject * >() (nullptr, heap);
+  const QObject *arg1 = args ? gsi::arg_reader<const QObject * >() (args, heap) : gsi::arg_maker<const QObject * >() (0, heap);
   ret.write<bool > ((bool)((QMetaProperty *)cls)->isUser (arg1));
 }
 

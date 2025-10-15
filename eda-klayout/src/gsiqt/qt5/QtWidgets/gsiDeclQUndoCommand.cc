@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@
 #include <QUndoCommand>
 #include "gsiQt.h"
 #include "gsiQtWidgetsCommon.h"
+#include "gsiDeclQtWidgetsTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -99,21 +100,6 @@ static void _call_f_id_c0 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gs
 }
 
 
-// bool QUndoCommand::isObsolete()
-
-
-static void _init_f_isObsolete_c0 (qt_gsi::GenericMethod *decl)
-{
-  decl->set_return<bool > ();
-}
-
-static void _call_f_isObsolete_c0 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  ret.write<bool > ((bool)((QUndoCommand *)cls)->isObsolete ());
-}
-
-
 // bool QUndoCommand::mergeWith(const QUndoCommand *other)
 
 
@@ -146,26 +132,6 @@ static void _call_f_redo_0 (const qt_gsi::GenericMethod * /*decl*/, void *cls, g
   __SUPPRESS_UNUSED_WARNING(args);
   __SUPPRESS_UNUSED_WARNING(ret);
   ((QUndoCommand *)cls)->redo ();
-}
-
-
-// void QUndoCommand::setObsolete(bool obsolete)
-
-
-static void _init_f_setObsolete_864 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("obsolete");
-  decl->add_arg<bool > (argspec_0);
-  decl->set_return<void > ();
-}
-
-static void _call_f_setObsolete_864 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  bool arg1 = gsi::arg_reader<bool >() (args, heap);
-  __SUPPRESS_UNUSED_WARNING(ret);
-  ((QUndoCommand *)cls)->setObsolete (arg1);
 }
 
 
@@ -229,10 +195,8 @@ static gsi::Methods methods_QUndoCommand () {
   methods += new qt_gsi::GenericMethod ("child", "@brief Method const QUndoCommand *QUndoCommand::child(int index)\n", true, &_init_f_child_c767, &_call_f_child_c767);
   methods += new qt_gsi::GenericMethod ("childCount", "@brief Method int QUndoCommand::childCount()\n", true, &_init_f_childCount_c0, &_call_f_childCount_c0);
   methods += new qt_gsi::GenericMethod ("id", "@brief Method int QUndoCommand::id()\n", true, &_init_f_id_c0, &_call_f_id_c0);
-  methods += new qt_gsi::GenericMethod ("isObsolete?|:obsolete", "@brief Method bool QUndoCommand::isObsolete()\n", true, &_init_f_isObsolete_c0, &_call_f_isObsolete_c0);
   methods += new qt_gsi::GenericMethod ("mergeWith", "@brief Method bool QUndoCommand::mergeWith(const QUndoCommand *other)\n", false, &_init_f_mergeWith_2507, &_call_f_mergeWith_2507);
   methods += new qt_gsi::GenericMethod ("redo", "@brief Method void QUndoCommand::redo()\n", false, &_init_f_redo_0, &_call_f_redo_0);
-  methods += new qt_gsi::GenericMethod ("setObsolete|obsolete=", "@brief Method void QUndoCommand::setObsolete(bool obsolete)\n", false, &_init_f_setObsolete_864, &_call_f_setObsolete_864);
   methods += new qt_gsi::GenericMethod ("setText|text=", "@brief Method void QUndoCommand::setText(const QString &text)\n", false, &_init_f_setText_2025, &_call_f_setText_2025);
   methods += new qt_gsi::GenericMethod (":text", "@brief Method QString QUndoCommand::text()\n", true, &_init_f_text_c0, &_call_f_text_c0);
   methods += new qt_gsi::GenericMethod ("undo", "@brief Method void QUndoCommand::undo()\n", false, &_init_f_undo_0, &_call_f_undo_0);
@@ -350,7 +314,7 @@ QUndoCommand_Adaptor::~QUndoCommand_Adaptor() { }
 
 static void _init_ctor_QUndoCommand_Adaptor_1812 (qt_gsi::GenericStaticMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("parent", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("parent", true, "0");
   decl->add_arg<QUndoCommand * > (argspec_0);
   decl->set_return_new<QUndoCommand_Adaptor> ();
 }
@@ -359,7 +323,7 @@ static void _call_ctor_QUndoCommand_Adaptor_1812 (const qt_gsi::GenericStaticMet
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  QUndoCommand *arg1 = args ? gsi::arg_reader<QUndoCommand * >() (args, heap) : gsi::arg_maker<QUndoCommand * >() (nullptr, heap);
+  QUndoCommand *arg1 = args ? gsi::arg_reader<QUndoCommand * >() (args, heap) : gsi::arg_maker<QUndoCommand * >() (0, heap);
   ret.write<QUndoCommand_Adaptor *> (new QUndoCommand_Adaptor (arg1));
 }
 
@@ -370,7 +334,7 @@ static void _init_ctor_QUndoCommand_Adaptor_3729 (qt_gsi::GenericStaticMethod *d
 {
   static gsi::ArgSpecBase argspec_0 ("text");
   decl->add_arg<const QString & > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("parent", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("parent", true, "0");
   decl->add_arg<QUndoCommand * > (argspec_1);
   decl->set_return_new<QUndoCommand_Adaptor> ();
 }
@@ -380,7 +344,7 @@ static void _call_ctor_QUndoCommand_Adaptor_3729 (const qt_gsi::GenericStaticMet
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const QString &arg1 = gsi::arg_reader<const QString & >() (args, heap);
-  QUndoCommand *arg2 = args ? gsi::arg_reader<QUndoCommand * >() (args, heap) : gsi::arg_maker<QUndoCommand * >() (nullptr, heap);
+  QUndoCommand *arg2 = args ? gsi::arg_reader<QUndoCommand * >() (args, heap) : gsi::arg_maker<QUndoCommand * >() (0, heap);
   ret.write<QUndoCommand_Adaptor *> (new QUndoCommand_Adaptor (arg1, arg2));
 }
 
@@ -476,14 +440,14 @@ static gsi::Methods methods_QUndoCommand_Adaptor () {
   gsi::Methods methods;
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QUndoCommand::QUndoCommand(QUndoCommand *parent)\nThis method creates an object of class QUndoCommand.", &_init_ctor_QUndoCommand_Adaptor_1812, &_call_ctor_QUndoCommand_Adaptor_1812);
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QUndoCommand::QUndoCommand(const QString &text, QUndoCommand *parent)\nThis method creates an object of class QUndoCommand.", &_init_ctor_QUndoCommand_Adaptor_3729, &_call_ctor_QUndoCommand_Adaptor_3729);
-  methods += new qt_gsi::GenericMethod ("id", "@brief Virtual method int QUndoCommand::id()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_id_c0_0, &_call_cbs_id_c0_0);
-  methods += new qt_gsi::GenericMethod ("id", "@hide", true, &_init_cbs_id_c0_0, &_call_cbs_id_c0_0, &_set_callback_cbs_id_c0_0);
-  methods += new qt_gsi::GenericMethod ("mergeWith", "@brief Virtual method bool QUndoCommand::mergeWith(const QUndoCommand *other)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_mergeWith_2507_0, &_call_cbs_mergeWith_2507_0);
-  methods += new qt_gsi::GenericMethod ("mergeWith", "@hide", false, &_init_cbs_mergeWith_2507_0, &_call_cbs_mergeWith_2507_0, &_set_callback_cbs_mergeWith_2507_0);
-  methods += new qt_gsi::GenericMethod ("redo", "@brief Virtual method void QUndoCommand::redo()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_redo_0_0, &_call_cbs_redo_0_0);
-  methods += new qt_gsi::GenericMethod ("redo", "@hide", false, &_init_cbs_redo_0_0, &_call_cbs_redo_0_0, &_set_callback_cbs_redo_0_0);
-  methods += new qt_gsi::GenericMethod ("undo", "@brief Virtual method void QUndoCommand::undo()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_undo_0_0, &_call_cbs_undo_0_0);
-  methods += new qt_gsi::GenericMethod ("undo", "@hide", false, &_init_cbs_undo_0_0, &_call_cbs_undo_0_0, &_set_callback_cbs_undo_0_0);
+  methods += new qt_gsi::GenericMethod ("id", "@hide", true, &_init_cbs_id_c0_0, &_call_cbs_id_c0_0);
+  methods += new qt_gsi::GenericMethod ("id", "@brief Virtual method int QUndoCommand::id()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_id_c0_0, &_call_cbs_id_c0_0, &_set_callback_cbs_id_c0_0);
+  methods += new qt_gsi::GenericMethod ("mergeWith", "@hide", false, &_init_cbs_mergeWith_2507_0, &_call_cbs_mergeWith_2507_0);
+  methods += new qt_gsi::GenericMethod ("mergeWith", "@brief Virtual method bool QUndoCommand::mergeWith(const QUndoCommand *other)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_mergeWith_2507_0, &_call_cbs_mergeWith_2507_0, &_set_callback_cbs_mergeWith_2507_0);
+  methods += new qt_gsi::GenericMethod ("redo", "@hide", false, &_init_cbs_redo_0_0, &_call_cbs_redo_0_0);
+  methods += new qt_gsi::GenericMethod ("redo", "@brief Virtual method void QUndoCommand::redo()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_redo_0_0, &_call_cbs_redo_0_0, &_set_callback_cbs_redo_0_0);
+  methods += new qt_gsi::GenericMethod ("undo", "@hide", false, &_init_cbs_undo_0_0, &_call_cbs_undo_0_0);
+  methods += new qt_gsi::GenericMethod ("undo", "@brief Virtual method void QUndoCommand::undo()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_undo_0_0, &_call_cbs_undo_0_0, &_set_callback_cbs_undo_0_0);
   return methods;
 }
 

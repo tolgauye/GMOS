@@ -8,9 +8,7 @@ include($$PWD/../../lib_ut.pri)
 
 SOURCES = \
   drcBasicTests.cc \
-  drcGenericTests.cc \
   drcSimpleTests.cc \
-  drcFullTests.cc \
   drcSuiteTests.cc \
 
 INCLUDEPATH += $$DRC_INC $$TL_INC $$RDB_INC $$DB_INC $$GSI_INC $$LYM_INC

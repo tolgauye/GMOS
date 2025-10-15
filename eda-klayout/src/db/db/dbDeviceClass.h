@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -24,7 +24,6 @@
 #define _HDR_dbDeviceClass
 
 #include "dbCommon.h"
-#include "dbMemStatistics.h"
 
 #include "gsiObject.h"
 #include "tlObject.h"
@@ -103,19 +102,6 @@ public:
     return m_id;
   }
 
-  /**
-   *  @brief Generate memory statistics
-   */
-  void mem_stat (MemStatistics *stat, MemStatistics::purpose_t purpose, int cat, bool no_self = false, void *parent = 0) const
-  {
-    if (! no_self) {
-      stat->add (typeid (*this), (void *) this, sizeof (*this), sizeof (*this), parent, purpose, cat);
-    }
-
-    db::mem_stat (stat, purpose, cat, m_name, true, (void *) this);
-    db::mem_stat (stat, purpose, cat, m_description, true, (void *) this);
-  }
-
 private:
   friend class DeviceClass;
 
@@ -129,14 +115,6 @@ private:
 };
 
 /**
- *  @brief Memory statistics for DeviceTerminalDefinition
- */
-inline void mem_stat (MemStatistics *stat, MemStatistics::purpose_t purpose, int cat, const DeviceTerminalDefinition &x, bool no_self, void *parent)
-{
-  x.mem_stat (stat, purpose, cat, no_self, parent);
-}
-
-/**
  *  @brief A device parameter definition
  */
 class DB_PUBLIC DeviceParameterDefinition
@@ -146,7 +124,7 @@ public:
    *  @brief Creates an empty device parameter definition
    */
   DeviceParameterDefinition ()
-    : m_name (), m_description (), m_default_value (0.0), m_id (0), m_is_primary (true), m_si_scaling (1.0), m_geo_scaling (0.0)
+    : m_name (), m_description (), m_default_value (0.0), m_id (0), m_is_primary (true), m_si_scaling (1.0)
   {
     //  .. nothing yet ..
   }
@@ -154,8 +132,8 @@ public:
   /**
    *  @brief Creates a device parameter definition with the given name and description
    */
-  DeviceParameterDefinition (const std::string &name, const std::string &description, double default_value = 0.0, bool is_primary = true, double si_scaling = 1.0, double geo_scaling = 0.0)
-    : m_name (name), m_description (description), m_default_value (default_value), m_id (0), m_is_primary (is_primary), m_si_scaling (si_scaling), m_geo_scaling (geo_scaling)
+  DeviceParameterDefinition (const std::string &name, const std::string &description, double default_value = 0.0, bool is_primary = true, double si_scaling = 1.0)
+    : m_name (name), m_description (description), m_default_value (default_value), m_id (0), m_is_primary (is_primary), m_si_scaling (si_scaling)
   {
     //  .. nothing yet ..
   }
@@ -193,45 +171,6 @@ public:
   }
 
   /**
-   *  @brief Gets the SI unit scaling factor
-   *
-   *  Some parameters are given in micrometers - for example W and L of MOS devices. This
-   *  scaling factor gives the translation to SI units (1e-6 for micrometers).
-   */
-  double si_scaling () const
-  {
-    return m_si_scaling;
-  }
-
-  /**
-   *  @brief Set the SI unit scaling factor
-   */
-  void set_si_scaling (double s)
-  {
-    m_si_scaling = s;
-  }
-
-  /**
-   *  @brief Gets the geometry scaling exponent
-   *
-   *  The geometry scaling exponent is used for example when applying .option scale
-   *  in Spice reading. It is 0 for "no scaling", 1 for linear scaling and 2 for
-   *  quadratic scaling.
-   */
-  double geo_scaling_exponent () const
-  {
-    return m_geo_scaling;
-  }
-
-  /**
-   *  @brief Sets the geometry scaling exponent
-   */
-  void set_geo_scaling_exponent (double e)
-  {
-    m_geo_scaling = e;
-  }
-
-  /**
    *  @brief Gets the parameter default value
    */
   double default_value () const
@@ -240,7 +179,18 @@ public:
   }
 
   /**
-   *  @brief Sets the parameter default value
+   *  @brief Gets the SI unit scaling factor
+   *
+   *  Some parameters are given in micrometers for example. This
+   *  scaling factor gives the translation to SI units (1e-6 for micrometers).
+   */
+  double si_scaling () const
+  {
+    return m_si_scaling;
+  }
+
+  /**
+   *  @brief Sets the parameter description
    */
   void set_default_value (double d)
   {
@@ -274,19 +224,6 @@ public:
     return m_id;
   }
 
-  /**
-   *  @brief Generate memory statistics
-   */
-  void mem_stat (MemStatistics *stat, MemStatistics::purpose_t purpose, int cat, bool no_self = false, void *parent = 0) const
-  {
-    if (! no_self) {
-      stat->add (typeid (*this), (void *) this, sizeof (*this), sizeof (*this), parent, purpose, cat);
-    }
-
-    db::mem_stat (stat, purpose, cat, m_name, true, (void *) this);
-    db::mem_stat (stat, purpose, cat, m_description, true, (void *) this);
-  }
-
 private:
   friend class DeviceClass;
 
@@ -295,21 +232,12 @@ private:
   size_t m_id;
   bool m_is_primary;
   double m_si_scaling;
-  double m_geo_scaling;
 
   void set_id (size_t id)
   {
     m_id = id;
   }
 };
-
-/**
- *  @brief Memory statistics for DeviceParameterDefinition
- */
-inline void mem_stat (MemStatistics *stat, MemStatistics::purpose_t purpose, int cat, const DeviceParameterDefinition &x, bool no_self, void *parent)
-{
-  x.mem_stat (stat, purpose, cat, no_self, parent);
-}
 
 /**
  *  @brief A device parameter compare delegate
@@ -325,6 +253,7 @@ public:
   virtual ~DeviceParameterCompareDelegate () { }
 
   virtual bool less (const db::Device &a, const db::Device &b) const = 0;
+  virtual bool equal (const db::Device &a, const db::Device &b) const = 0;
 };
 
 /**
@@ -338,13 +267,11 @@ class DB_PUBLIC EqualDeviceParameters
 {
 public:
   EqualDeviceParameters ();
-  EqualDeviceParameters (size_t parameter_id, bool ignore = false);
-  EqualDeviceParameters (size_t parameter_id, double absolute, double relative);
+  EqualDeviceParameters (size_t parameter_id);
+  EqualDeviceParameters (size_t parameter_id, double relative, double absolute);
 
   virtual bool less (const db::Device &a, const db::Device &b) const;
-
-  //  for test purposes
-  std::string to_string () const;
+  virtual bool equal (const db::Device &a, const db::Device &b) const;
 
   EqualDeviceParameters &operator+= (const EqualDeviceParameters &other);
 
@@ -369,34 +296,10 @@ public:
   AllDeviceParametersAreEqual (double relative);
 
   virtual bool less (const db::Device &a, const db::Device &b) const;
+  virtual bool equal (const db::Device &a, const db::Device &b) const;
 
 private:
   double m_relative;
-};
-
-/**
- *  @brief A device combiner
- *
- *  The device combiner is a delegate that combines devices
- */
-class DB_PUBLIC DeviceCombiner
-  : public gsi::ObjectBase, public tl::Object
-{
-public:
-  DeviceCombiner () { }
-  virtual ~DeviceCombiner () { }
-
-  /**
-   *  @brief Combines two devices
-   *
-   *  This method shall test, whether the two devices can be combined. Both devices
-   *  are guaranteed to share the same device class.
-   *  If they cannot be combined, this method shall do nothing and return false.
-   *  If they can be combined, this method shall reconnect the nets of the first
-   *  device and entirely disconnect the nets of the second device.
-   *  The second device will be deleted afterwards.
-   */
-  virtual bool combine_devices (db::Device *a, db::Device *b) const = 0;
 };
 
 /**
@@ -540,14 +443,6 @@ public:
   }
 
   /**
-   *  @brief Gets the parameter definitions
-   */
-  std::vector<DeviceParameterDefinition> &parameter_definitions_non_const ()
-  {
-    return m_parameter_definitions;
-  }
-
-  /**
    *  @brief Adds a parameter definition
    */
   const DeviceParameterDefinition &add_parameter_definition (const DeviceParameterDefinition &pd);
@@ -561,11 +456,6 @@ public:
    *  @brief Gets the parameter definition from the ID
    */
   const DeviceParameterDefinition *parameter_definition (size_t id) const;
-
-  /**
-   *  @brief Gets the parameter definition from the ID (non-const version)
-   */
-  DeviceParameterDefinition *parameter_definition_non_const (size_t id);
 
   /**
    *  @brief Returns true, if the device has a parameter with the given name
@@ -607,57 +497,25 @@ public:
    *  device and entirely disconnect the nets of the second device.
    *  The second device will be deleted afterwards.
    */
-  bool combine_devices (db::Device *a, db::Device *b) const
+  virtual bool combine_devices (db::Device * /*a*/, db::Device * /*b*/) const
   {
-    return mp_device_combiner.get () ? mp_device_combiner->combine_devices (a, b) : false;
+    return false;
   }
 
   /**
    *  @brief Returns true if the device class supports device combination in parallel mode
    */
-  bool supports_parallel_combination () const
+  virtual bool supports_parallel_combination () const
   {
-    return m_supports_parallel_combination;
+    return false;
   }
 
   /**
    *  @brief Returns true if the device class supports device combination in serial mode
    */
-  bool supports_serial_combination () const
+  virtual bool supports_serial_combination () const
   {
-    return m_supports_serial_combination;
-  }
-
-  /**
-   *  @brief Sets a value indicating that the class supports device combination in parallel mode
-   */
-  void set_supports_parallel_combination (bool f)
-  {
-    m_supports_parallel_combination = f;
-  }
-
-  /**
-   *  @brief Sets a value indicating that the class supports device combination in serial mode
-   */
-  void set_supports_serial_combination (bool f)
-  {
-    m_supports_serial_combination = f;
-  }
-
-  /**
-   *  @brief Marks two terminals as equivalent (swappable)
-   */
-  void equivalent_terminal_id (size_t tid, size_t equiv_tid)
-  {
-    m_equivalent_terminal_ids.insert (std::make_pair (tid, equiv_tid));
-  }
-
-  /**
-   *  @brief Clears all equivalent terminal ids
-   */
-  void clear_equivalent_terminal_ids ()
-  {
-    m_equivalent_terminal_ids.clear ();
+    return false;
   }
 
   /**
@@ -666,14 +524,9 @@ public:
    *  This method returns a "normalized" terminal ID. For example, for MOS
    *  transistors where S and D can be exchanged, D will be mapped to S.
    */
-  size_t normalize_terminal_id (size_t tid) const
+  virtual size_t normalize_terminal_id (size_t tid) const
   {
-    std::map<size_t, size_t>::const_iterator ntid = m_equivalent_terminal_ids.find (tid);
-    if (ntid != m_equivalent_terminal_ids.end ()) {
-      return ntid->second;
-    } else {
-      return tid;
-    }
+    return tid;
   }
 
   /**
@@ -705,93 +558,15 @@ public:
   /**
    *  @brief Registers a compare delegate
    *
-   *  The reasoning behind choosing a delegate is that a delegate is efficient
+   *  The reasoning behind chosing a delegate is that a delegate is efficient
    *  also in scripts if one of the standard delegates is taken.
    *
    *  The device class takes ownership of the delegate.
    */
-  void set_parameter_compare_delegate (db::DeviceParameterCompareDelegate *delegate)
+  virtual void set_parameter_compare_delegate (db::DeviceParameterCompareDelegate *delegate)
   {
-    if (delegate) {
-      delegate->keep ();  //  assume transfer of ownership for scripts
-    }
+    delegate->keep ();  //  assume transfer of ownership for scripts
     mp_pc_delegate.reset (delegate);
-  }
-
-  /**
-   *  @brief Gets the parameter compare delegate or null if no such delegate is registered
-   */
-  const db::DeviceParameterCompareDelegate *parameter_compare_delegate () const
-  {
-    return mp_pc_delegate.get ();
-  }
-
-  /**
-   *  @brief Gets the parameter compare delegate or null if no such delegate is registered (non-const version)
-   */
-  db::DeviceParameterCompareDelegate *parameter_compare_delegate ()
-  {
-    return mp_pc_delegate.get ();
-  }
-
-  /**
-   *  @brief Registers a device combiner
-   *
-   *  The device class takes ownership of the combiner.
-   */
-  void set_device_combiner (db::DeviceCombiner *combiner)
-  {
-    if (combiner) {
-      combiner->keep ();  //  assume transfer of ownership for scripts
-    }
-    mp_device_combiner.reset (combiner);
-  }
-
-  /**
-   *  @brief Gets the device combiner or null if no such delegate is registered
-   */
-  const db::DeviceCombiner *device_combiner () const
-  {
-    return mp_device_combiner.get ();
-  }
-
-  /**
-   *  @brief Gets the device combiner or null if no such delegate is registered (non-const version)
-   */
-  db::DeviceCombiner *device_combiner ()
-  {
-    return mp_device_combiner.get ();
-  }
-
-  /**
-   *  @brief Internally used by the netlist comparer to temporarily attach a device class pointing to the primary one
-   */
-  void set_primary_class (const db::DeviceClass *primary) const
-  {
-    mp_primary_class = primary;
-  }
-
-  /**
-   *  @brief Internally used by the netlist comparer to temporarily attach a device class pointing to the primary one
-   */
-  const db::DeviceClass *primary_class () const
-  {
-    return mp_primary_class;
-  }
-
-  /**
-   *  @brief Generate memory statistics
-   */
-  void mem_stat (MemStatistics *stat, MemStatistics::purpose_t purpose, int cat, bool no_self = false, void *parent = 0) const
-  {
-    if (! no_self) {
-      stat->add (typeid (*this), (void *) this, sizeof (*this), sizeof (*this), parent, purpose, cat);
-    }
-
-    db::mem_stat (stat, purpose, cat, m_name, true, (void *) this);
-    db::mem_stat (stat, purpose, cat, m_description, true, (void *) this);
-    db::mem_stat (stat, purpose, cat, m_terminal_definitions, true, (void *) this);
-    db::mem_stat (stat, purpose, cat, m_parameter_definitions, true, (void *) this);
   }
 
 private:
@@ -803,25 +578,12 @@ private:
   bool m_strict;
   db::Netlist *mp_netlist;
   tl::shared_ptr<db::DeviceParameterCompareDelegate> mp_pc_delegate;
-  tl::shared_ptr<db::DeviceCombiner> mp_device_combiner;
-  bool m_supports_parallel_combination;
-  bool m_supports_serial_combination;
-  std::map<size_t, size_t> m_equivalent_terminal_ids;
-  mutable const db::DeviceClass *mp_primary_class;
 
   void set_netlist (db::Netlist *nl)
   {
     mp_netlist = nl;
   }
 };
-
-/**
- *  @brief Memory statistics for DeviceClass
- */
-inline void mem_stat (MemStatistics *stat, MemStatistics::purpose_t purpose, int cat, const DeviceClass &x, bool no_self, void *parent)
-{
-  x.mem_stat (stat, purpose, cat, no_self, parent);
-}
 
 /**
  *  @brief A device class template

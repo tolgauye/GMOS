@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -20,11 +20,6 @@
 
 */
 
-#include "tlUnitTest.h"
-#include "tlStream.h"
-#include "tlFileUtils.h"
-#include "tlEnv.h"
-
 //  Oh my god ... STRINGIFY(s) will get the argument with MACROS REPLACED.
 //  So if the PYTHONPATH is something like build.linux-released, the "linux" macro
 //  set to 1 will make this "build.1-release". So STRINGIFY isn't a real solution.
@@ -35,17 +30,26 @@
 #define STRINGIFY(s) _STRINGIFY(s)
 #define _STRINGIFY(s) #s
 
+#include "tlUnitTest.h"
+#include "tlStream.h"
+
 int run_pymodtest (tl::TestBase *_this, const std::string &fn)
 {
-  static std::string pypath = tl::combine_path (tl::get_inst_path (), "pymod");
-  tl::set_env ("PYTHONPATH", pypath);
-  tl::info << "PYTHONPATH=" << pypath;
+  static std::string pypath;
+  if (pypath.empty ()) {
+    pypath = "PYTHONPATH=";
+    pypath += STRINGIFY (PYTHONPATH);
+  }
+#if defined(_WIN32)
+  _putenv (const_cast<char *> (pypath.c_str ()));
+#else
+  putenv (const_cast<char *> (pypath.c_str ()));
+#endif
+  tl::info << pypath;
 
-  std::string fp (tl::testdata ());
-  fp += "/pymod/";
+  std::string fp (tl::testsrc ());
+  fp += "/testdata/pymod/";
   fp += fn;
-
-  int status = 0;
 
   std::string text;
   {
@@ -67,14 +71,12 @@ int run_pymodtest (tl::TestBase *_this, const std::string &fn)
     tl::InputPipe pipe (cmd);
     tl::InputStream is (pipe);
     text = is.read_all ();
-
-    status = pipe.wait ();
   }
 
   tl::info << text;
   EXPECT_EQ (text.find ("OK") != std::string::npos, true);
 
-  return status;
+  return 0;
 }
 
 #define PYMODTEST(n, file) \
@@ -84,68 +86,33 @@ PYMODTEST (bridge, "bridge.py")
 
 PYMODTEST (import_tl, "import_tl.py")
 PYMODTEST (import_db, "import_db.py")
-PYMODTEST (import_pex, "import_pex.py")
-PYMODTEST (klayout_db_tests, "klayout_db_tests.py")
 PYMODTEST (import_rdb, "import_rdb.py")
-PYMODTEST (import_lay, "import_lay.py")
-PYMODTEST (import_lib, "import_lib.py")
-PYMODTEST (pya_tests, "pya_tests.py")
-
-//  others
-PYMODTEST (issue1327, "issue1327.py")
 
 #if defined(HAVE_QT) && defined(HAVE_QTBINDINGS)
 
+PYMODTEST (import_lay, "import_lay.py")
+
 PYMODTEST (import_QtCore, "import_QtCore.py")
-#if QT_VERSION >= 0x60000
-PYMODTEST (import_QtGui, "import_QtGui_Qt6.py")
-#else
 PYMODTEST (import_QtGui, "import_QtGui.py")
-#endif
-#if defined(HAVE_QT_XML)
 PYMODTEST (import_QtXml, "import_QtXml.py")
-#endif
-#if defined(HAVE_QT_SQL)
 PYMODTEST (import_QtSql, "import_QtSql.py")
-#endif
-#if defined(HAVE_QT_NETWORK)
 PYMODTEST (import_QtNetwork, "import_QtNetwork.py")
-#endif
-#if defined(HAVE_QT_DESIGNER) && QT_VERSION < 0x60000
 PYMODTEST (import_QtDesigner, "import_QtDesigner.py")
-#endif
-#if defined(HAVE_QT_UITOOLS)
-PYMODTEST (import_QtUiTools, "import_QtUiTools.py")
-#endif
 
 #if QT_VERSION >= 0x50000
 
-#if QT_VERSION >= 0x60000
-PYMODTEST (import_QtWidgets, "import_QtWidgets_Qt6.py")
-#else
 PYMODTEST (import_QtWidgets, "import_QtWidgets.py")
-#endif
-#if defined(HAVE_QT_MULTIMEDIA)
 PYMODTEST (import_QtMultimedia, "import_QtMultimedia.py")
-#endif
-#if defined(HAVE_QT_PRINTSUPPORT)
 PYMODTEST (import_QtPrintSupport, "import_QtPrintSupport.py")
-#endif
-#if defined(HAVE_QT_SVG)
-#if QT_VERSION >= 0x60000
-PYMODTEST (import_QtSvg, "import_QtSvg_Qt6.py")
-#else
 PYMODTEST (import_QtSvg, "import_QtSvg.py")
-#endif
-#endif
-#if defined(HAVE_QT_XML) && QT_VERSION < 0x60000
 PYMODTEST (import_QtXmlPatterns, "import_QtXmlPatterns.py")
-#endif
-
-#if QT_VERSION >= 0x60000
-PYMODTEST (import_QtCore5Compat, "import_QtCore5Compat.py")
-#endif
 
 #endif
+
+PYMODTEST (import_pya, "pya_tests.py")
+
+#elif defined(HAVE_QT)
+
+PYMODTEST (import_lay, "import_lay_noqt.py")
 
 #endif

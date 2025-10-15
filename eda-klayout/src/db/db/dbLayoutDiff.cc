@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -69,10 +69,8 @@ collect_cells (const db::Layout &l, const db::Cell *top, std::map <std::string, 
 }
 
 static void
-collect_insts_of_unmapped_cells (const db::Layout & /*l*/, const db::Cell *cell, unsigned int /*flags*/, const std::map <db::cell_index_type, db::cell_index_type> &cci, std::vector <db::CellInstArrayWithProperties> &insts, bool no_duplicates)
+collect_insts_of_unmapped_cells (const db::Layout & /*l*/, const db::Cell *cell, unsigned int /*flags*/, const std::map <db::cell_index_type, db::cell_index_type> &cci, std::vector <db::CellInstArrayWithProperties> &insts)
 {
-  size_t n_before = insts.size ();
-
   for (db::Cell::const_iterator i = cell->begin (); !i.at_end (); ++i) {
 
     std::map <db::cell_index_type, db::cell_index_type>::const_iterator ccii = cci.find (i->cell_index ());
@@ -83,17 +81,10 @@ collect_insts_of_unmapped_cells (const db::Layout & /*l*/, const db::Cell *cell,
 
     }
   }
-
-  if (no_duplicates) {
-
-    std::sort (insts.begin () + n_before, insts.end ());
-    insts.erase (std::unique (insts.begin () + n_before, insts.end ()), insts.end ());
-
-  }
 }
 
 static void 
-rewrite_instances_to (std::vector <db::CellInstArrayWithProperties> &insts, unsigned int flags, const std::vector <db::cell_index_type> &common_cells)
+rewrite_instances_to (std::vector <db::CellInstArrayWithProperties> &insts, unsigned int flags, const std::vector <db::cell_index_type> &common_cells, db::PropertyMapper &pn)
 {
   for (std::vector <db::CellInstArrayWithProperties>::iterator i = insts.begin (); i != insts.end (); ++i) {
 
@@ -101,7 +92,7 @@ rewrite_instances_to (std::vector <db::CellInstArrayWithProperties> &insts, unsi
 
     db::properties_id_type prop_id = 0;
     if (! (flags & layout_diff::f_no_properties)) {
-      prop_id = i->properties_id ();
+      prop_id = pn (i->properties_id ());
     }
 
     i->object () = db::CellInst (common_cells [i->object ().cell_index ()]);
@@ -111,7 +102,7 @@ rewrite_instances_to (std::vector <db::CellInstArrayWithProperties> &insts, unsi
 }
 
 static void
-collect_insts (const db::Layout & /*l*/, const db::Cell *cell, unsigned int flags, const std::map <db::cell_index_type, db::cell_index_type> &cci, std::vector <db::CellInstArrayWithProperties> &insts, bool no_duplicates)
+collect_insts (const db::Layout & /*l*/, const db::Cell *cell, unsigned int flags, const std::map <db::cell_index_type, db::cell_index_type> &cci, std::vector <db::CellInstArrayWithProperties> &insts, PropertyMapper &pn)
 {
   insts.clear ();
 
@@ -125,7 +116,7 @@ collect_insts (const db::Layout & /*l*/, const db::Cell *cell, unsigned int flag
 
       db::properties_id_type prop_id = 0;
       if (! (flags & layout_diff::f_no_properties)) {
-        prop_id = i->prop_id ();
+        prop_id = pn (i->prop_id ());
       }
 
       db::Vector a, b;
@@ -157,10 +148,6 @@ collect_insts (const db::Layout & /*l*/, const db::Cell *cell, unsigned int flag
   }
 
   std::sort (insts.begin (), insts.end ());
-
-  if (no_duplicates) {
-    insts.erase (std::unique (insts.begin (), insts.end ()), insts.end ());
-  }
 }
 
 /**
@@ -191,10 +178,10 @@ int compare_seq (I b1, I e1, I b2, I e2, Op op)
 /**
  *  @brief Reduces two vectors to the common objects as determined by the compare operator
  *  If the iterate parameter is true, the reduction is repeated until no more reduction can be 
- *  achieved. This is useful with tolerances since the sorting is not strict in that case.
+ *  achieved. This is useful with tolerances since the sorted is not strict in that case.
  */
 template <class X, class Op>
-void reduce (std::vector<X> &a, std::vector<X> &b, Op op, bool iterate, bool no_duplicates)
+void reduce (std::vector<X> &a, std::vector<X> &b, Op op, bool iterate)
 {
   do {
 
@@ -209,29 +196,12 @@ void reduce (std::vector<X> &a, std::vector<X> &b, Op op, bool iterate, bool no_
 
     while (ra != a.end () && rb != b.end ()) {
       if (op (*ra, *rb)) {
-        typename std::vector<X>::const_iterator r = ra++;
-        *wa = *r;
-        while (no_duplicates && ra != a.end () && !op (*ra, *r) && !op(*r, *ra)) {
-          ++ra;
-        }
-        ++wa;
+        *wa++ = *ra++;
       } else if (op (*rb, *ra)) {
-        typename std::vector<X>::const_iterator r = rb++;
-        *wb = *r;
-        while (no_duplicates && rb != b.end () && !op (*rb, *r) && !op(*r, *rb)) {
-          ++rb;
-        }
-        ++wb;
+        *wb++ = *rb++;
       } else {
-        typename std::vector<X>::const_iterator r;
-        r = ra++;
-        while (no_duplicates && ra != a.end () && !op (*ra, *r) && !op(*r, *ra)) {
-          ++ra;
-        }
-        r = rb++;
-        while (no_duplicates && rb != b.end () && !op (*rb, *r) && !op(*r, *rb)) {
-          ++rb;
-        }
+        ++ra;
+        ++rb;
       }
     }
 
@@ -241,22 +211,14 @@ void reduce (std::vector<X> &a, std::vector<X> &b, Op op, bool iterate, bool no_
 
     if (ra != wa) {
       while (ra != a.end ()) {
-        typename std::vector<X>::const_iterator r = ra++;
-        *wa++ = *r;
-        while (no_duplicates && ra != a.end () && !op (*ra, *r) && !op(*r, *ra)) {
-          ++ra;
-        }
+        *wa++ = *ra++;
       }
       a.erase (wa, a.end ());
     }
 
     if (rb != wb) {
       while (rb != b.end ()) {
-        typename std::vector<X>::const_iterator r = rb++;
-        *wb++ = *r;
-        while (no_duplicates && rb != b.end () && !op (*rb, *r) && !op(*r, *rb)) {
-          ++rb;
-        }
+        *wb++ = *rb++;
       }
       b.erase (wb, b.end ());
     }
@@ -323,32 +285,6 @@ struct EdgeCompareOpWithTolerance
 
 private:
   db::Coord m_tolerance;
-};
-
-/**
- *  @brief A fuzzy compare operator for edge pairs
- *  Compares two edge pair objects applying a tolerance between them. The tolerance is the allowed deviation
- *  of points in database units.
- */
-struct EdgePairCompareOpWithTolerance
-{
-  EdgePairCompareOpWithTolerance (db::Coord tolerance)
-    : m_ec (tolerance)
-  { }
-
-  bool operator() (const db::EdgePair &a, const db::EdgePair &b) const
-  {
-    if (m_ec (a.first (), b.first ())) {
-      return true;
-    } else if (m_ec (b.first (), a.first ())) {
-      return false;
-    } else {
-      return m_ec (a.second (), b.second ());
-    }
-  }
-
-private:
-  EdgeCompareOpWithTolerance m_ec;
 };
 
 /**
@@ -443,7 +379,7 @@ struct PolygonCompareOpWithTolerance
       m_eb.push_back (*e);
     }
 
-    reduce (m_ea, m_eb, EdgeCompareOpWithTolerance (m_tolerance), m_tolerance > 0, false);
+    reduce (m_ea, m_eb, EdgeCompareOpWithTolerance (m_tolerance), m_tolerance > 0);
 
     return compare_seq (m_ea.begin (), m_ea.end (), m_eb.begin (), m_eb.end (), EdgeCompareOpWithTolerance (m_tolerance)) < 0;
   }
@@ -491,9 +427,6 @@ struct PathCompareOpWithTolerance
     db::Path::iterator ia = a.begin (), ib = b.begin ();
     while (ia != a.end () && ib != b.end ()) {
       c = compare_point (*ia, *ib, m_tolerance);
-      if (c != 0) {
-        return c < 0;
-      }
       ++ia;
       ++ib;
     }
@@ -556,12 +489,6 @@ make_edge_compare_func (db::Coord tolerance)
   return pair_compare_func<db::Edge, db::properties_id_type, EdgeCompareOpWithTolerance, std_compare_func<db::properties_id_type> > (EdgeCompareOpWithTolerance (tolerance), std_compare_func<db::properties_id_type> ());
 }
 
-pair_compare_func<db::EdgePair, db::properties_id_type, EdgePairCompareOpWithTolerance, std_compare_func<db::properties_id_type> >
-make_edge_pair_compare_func (db::Coord tolerance)
-{
-  return pair_compare_func<db::EdgePair, db::properties_id_type, EdgePairCompareOpWithTolerance, std_compare_func<db::properties_id_type> > (EdgePairCompareOpWithTolerance (tolerance), std_compare_func<db::properties_id_type> ());
-}
-
 pair_compare_func<db::Box, db::properties_id_type, BoxCompareOpWithTolerance, std_compare_func<db::properties_id_type> >
 make_box_compare_func (db::Coord tolerance)
 {
@@ -581,14 +508,14 @@ make_path_compare_func (db::Coord tolerance)
 }
 
 static void
-collect_polygons (const db::Layout & /*l*/, const db::Cell *c, unsigned int layer, unsigned int flags, std::vector< std::pair<db::Polygon, db::properties_id_type> > &shapes)
+collect_polygons (const db::Layout & /*l*/, const db::Cell *c, unsigned int layer, unsigned int flags, std::vector< std::pair<db::Polygon, db::properties_id_type> > &shapes, PropertyMapper &pn)
 {
   shapes.clear ();
 
   for (db::ShapeIterator s = c->shapes (layer).begin (db::ShapeIterator::Polygons | ((flags & db::layout_diff::f_paths_as_polygons) ? db::ShapeIterator::Paths : 0) | ((flags & db::layout_diff::f_boxes_as_polygons) ? db::ShapeIterator::Boxes : 0)); !s.at_end (); ++s) {
     db::properties_id_type prop_id = 0;
     if (! (flags & layout_diff::f_no_properties)) {
-      prop_id = s->prop_id ();
+      prop_id = pn (s->prop_id ());
     }
     shapes.push_back (std::make_pair (db::Polygon (), prop_id));
     s->polygon (shapes.back ().first);
@@ -596,14 +523,14 @@ collect_polygons (const db::Layout & /*l*/, const db::Cell *c, unsigned int laye
 }
 
 static void
-collect_edges (const db::Layout & /*l*/, const db::Cell *c, unsigned int layer, unsigned int flags, std::vector< std::pair<db::Edge, db::properties_id_type> > &shapes)
+collect_edges (const db::Layout & /*l*/, const db::Cell *c, unsigned int layer, unsigned int flags, std::vector< std::pair<db::Edge, db::properties_id_type> > &shapes, PropertyMapper &pn)
 {
   shapes.clear ();
 
   for (db::ShapeIterator s = c->shapes (layer).begin (db::ShapeIterator::Edges); !s.at_end (); ++s) {
     db::properties_id_type prop_id = 0;
     if (! (flags & layout_diff::f_no_properties)) {
-      prop_id = s->prop_id ();
+      prop_id = pn (s->prop_id ());
     }
     shapes.push_back (std::make_pair (db::Edge (), prop_id));
     s->edge (shapes.back ().first);
@@ -611,29 +538,14 @@ collect_edges (const db::Layout & /*l*/, const db::Cell *c, unsigned int layer, 
 }
 
 static void
-collect_edge_pairs (const db::Layout & /*l*/, const db::Cell *c, unsigned int layer, unsigned int flags, std::vector< std::pair<db::EdgePair, db::properties_id_type> > &shapes)
-{
-  shapes.clear ();
-
-  for (db::ShapeIterator s = c->shapes (layer).begin (db::ShapeIterator::EdgePairs); !s.at_end (); ++s) {
-    db::properties_id_type prop_id = 0;
-    if (! (flags & layout_diff::f_no_properties)) {
-      prop_id = s->prop_id ();
-    }
-    shapes.push_back (std::make_pair (db::EdgePair (), prop_id));
-    s->edge_pair (shapes.back ().first);
-  }
-}
-
-static void
-collect_boxes (const db::Layout &, const db::Cell *c, unsigned int layer, unsigned int flags, std::vector< std::pair<db::Box, db::properties_id_type> > &shapes)
+collect_boxes (const db::Layout &, const db::Cell *c, unsigned int layer, unsigned int flags, std::vector< std::pair<db::Box, db::properties_id_type> > &shapes, PropertyMapper &pn)
 {
   shapes.clear ();
 
   for (db::ShapeIterator s = c->shapes (layer).begin (db::ShapeIterator::Boxes); !s.at_end (); ++s) {
     db::properties_id_type prop_id = 0;
     if (! (flags & layout_diff::f_no_properties)) {
-      prop_id = s->prop_id ();
+      prop_id = pn (s->prop_id ());
     }
     shapes.push_back (std::make_pair (db::Box (), prop_id));
     s->box (shapes.back ().first);
@@ -641,7 +553,7 @@ collect_boxes (const db::Layout &, const db::Cell *c, unsigned int layer, unsign
 }
 
 static void
-collect_texts (const db::Layout &, const db::Cell *c, unsigned int layer, unsigned int flags, std::vector< std::pair<db::Text, db::properties_id_type> > &shapes)
+collect_texts (const db::Layout &, const db::Cell *c, unsigned int layer, unsigned int flags, std::vector< std::pair<db::Text, db::properties_id_type> > &shapes, PropertyMapper &pn)
 {
   shapes.clear ();
 
@@ -649,7 +561,7 @@ collect_texts (const db::Layout &, const db::Cell *c, unsigned int layer, unsign
 
     db::properties_id_type prop_id = 0;
     if (! (flags & layout_diff::f_no_properties)) {
-      prop_id = s->prop_id ();
+      prop_id = pn (s->prop_id ());
     }
     shapes.push_back (std::make_pair (db::Text (), prop_id));
     s->text (shapes.back ().first);
@@ -675,14 +587,14 @@ collect_texts (const db::Layout &, const db::Cell *c, unsigned int layer, unsign
 }
 
 static void
-collect_paths (const db::Layout &, const db::Cell *c, unsigned int layer, unsigned int flags, std::vector< std::pair<db::Path, db::properties_id_type> > &shapes)
+collect_paths (const db::Layout &, const db::Cell *c, unsigned int layer, unsigned int flags, std::vector< std::pair<db::Path, db::properties_id_type> > &shapes, db::PropertyMapper &pn)
 {
   shapes.clear ();
 
   for (db::ShapeIterator s = c->shapes (layer).begin (db::ShapeIterator::Paths); !s.at_end (); ++s) {
     db::properties_id_type prop_id = 0;
     if (! (flags & layout_diff::f_no_properties)) {
-      prop_id = s->prop_id ();
+      prop_id = pn (s->prop_id ());
     }
     shapes.push_back (std::make_pair (db::Path (), prop_id));
     s->path (shapes.back ().first);
@@ -702,31 +614,17 @@ do_compare_layouts (const db::Layout &a, const db::Cell *top_a, const db::Layout
     r.dbu_differs (a.dbu (), b.dbu ());
   }
 
-  if ((flags & layout_diff::f_with_meta) != 0) {
-    std::map<std::string, std::pair<tl::Variant, tl::Variant> > mi;
-    for (auto i = a.begin_meta (); i != a.end_meta (); ++i) {
-      if (i->second.persisted) {
-        mi [a.meta_info_name (i->first)].first = i->second.value;
-      }
-    }
-    for (auto i = b.begin_meta (); i != b.end_meta (); ++i) {
-      if (i->second.persisted) {
-        mi [b.meta_info_name (i->first)].second = i->second.value;
-      }
-    }
-    for (auto i = mi.begin (); i != mi.end (); ++i) {
-      if (i->second.first != i->second.second) {
-        differs = true;
-        if (flags & layout_diff::f_silent) {
-          return false;
-        }
-        r.layout_meta_info_differs (i->first, i->second.first, i->second.second);
-      }
-    }
-  }
-
   bool verbose = (flags & layout_diff::f_verbose);
-  bool no_duplicates = (flags & layout_diff::f_ignore_duplicates);
+
+  db::Layout n, na, nb;
+  na.properties_repository () = a.properties_repository ();
+  nb.properties_repository () = b.properties_repository ();
+
+  db::PropertyMapper prop_normalize_a (n, a);
+  db::PropertyMapper prop_normalize_b (n, b);
+
+  db::PropertyMapper prop_remap_to_a (na, n);
+  db::PropertyMapper prop_remap_to_b (nb, n);
 
   //  compare layers
 
@@ -927,8 +825,6 @@ do_compare_layouts (const db::Layout &a, const db::Cell *top_a, const db::Layout
   std::vector <std::pair <db::Box, db::properties_id_type> > boxes_b;
   std::vector <std::pair <db::Edge, db::properties_id_type> > edges_a;
   std::vector <std::pair <db::Edge, db::properties_id_type> > edges_b;
-  std::vector <std::pair <db::EdgePair, db::properties_id_type> > edge_pairs_a;
-  std::vector <std::pair <db::EdgePair, db::properties_id_type> > edge_pairs_b;
 
   for (unsigned int cci = 0; cci < common_cells.size (); ++cci) {
 
@@ -941,33 +837,6 @@ do_compare_layouts (const db::Layout &a, const db::Cell *top_a, const db::Layout
 
     r.begin_cell (common_cells [cci], common_cells_a [cci], common_cells_b [cci]); 
 
-    if ((flags & layout_diff::f_with_meta) != 0) {
-      std::map<std::string, std::pair<tl::Variant, tl::Variant> > mi;
-      auto ib = a.begin_meta (common_cells_a [cci]);
-      auto ie = a.end_meta (common_cells_a [cci]);
-      for (auto i = ib; i != ie; ++i) {
-        if (i->second.persisted) {
-          mi [a.meta_info_name (i->first)].first = i->second.value;
-        }
-      }
-      ib = b.begin_meta (common_cells_b [cci]);
-      ie = b.end_meta (common_cells_b [cci]);
-      for (auto i = ib; i != ie; ++i) {
-        if (i->second.persisted) {
-          mi [b.meta_info_name (i->first)].second = i->second.value;
-        }
-      }
-      for (auto i = mi.begin (); i != mi.end (); ++i) {
-        if (i->second.first != i->second.second) {
-          differs = true;
-          if (flags & layout_diff::f_silent) {
-            return false;
-          }
-          r.cell_meta_info_differs (i->first, i->second.first, i->second.second);
-        }
-      }
-    }
-
     if (!verbose && cell_a->bbox () != cell_b->bbox ()) {
       differs = true;
       if (flags & layout_diff::f_silent) {
@@ -976,20 +845,20 @@ do_compare_layouts (const db::Layout &a, const db::Cell *top_a, const db::Layout
       r.bbox_differs (cell_a->bbox (), cell_b->bbox ());
     }
 
-    collect_insts (a, cell_a, flags, common_cell_indices_a, insts_a, no_duplicates);
-    collect_insts (b, cell_b, flags, common_cell_indices_b, insts_b, no_duplicates);
+    collect_insts (a, cell_a, flags, common_cell_indices_a, insts_a, prop_normalize_a);
+    collect_insts (b, cell_b, flags, common_cell_indices_b, insts_b, prop_normalize_b);
 
     std::vector <db::CellInstArrayWithProperties> anotb;
     std::set_difference (insts_a.begin (), insts_a.end (), insts_b.begin (), insts_b.end (), std::back_inserter (anotb));
 
-    rewrite_instances_to (anotb, flags, common_cells_a);
-    collect_insts_of_unmapped_cells (a, cell_a, flags, common_cell_indices_a, anotb, no_duplicates);
+    rewrite_instances_to (anotb, flags, common_cells_a, prop_remap_to_a);
+    collect_insts_of_unmapped_cells (a, cell_a, flags, common_cell_indices_a, anotb);
 
     std::vector <db::CellInstArrayWithProperties> bnota;
     std::set_difference (insts_b.begin (), insts_b.end (), insts_a.begin (), insts_a.end (), std::back_inserter (bnota));
 
-    rewrite_instances_to (bnota, flags, common_cells_b);
-    collect_insts_of_unmapped_cells (b, cell_b, flags, common_cell_indices_b, bnota, no_duplicates);
+    rewrite_instances_to (bnota, flags, common_cells_b, prop_remap_to_b);
+    collect_insts_of_unmapped_cells (b, cell_b, flags, common_cell_indices_b, bnota);
 
     if (! anotb.empty () || ! bnota.empty ()) {
 
@@ -1003,8 +872,8 @@ do_compare_layouts (const db::Layout &a, const db::Cell *top_a, const db::Layout
 
       if (verbose) {
 
-        r.instances_in_a (insts_a, common_cells);
-        r.instances_in_b (insts_b, common_cells);
+        r.instances_in_a (insts_a, common_cells, n.properties_repository ());
+        r.instances_in_b (insts_b, common_cells, n.properties_repository ());
 
         r.instances_in_a_only (anotb, a);
         r.instances_in_b_only (bnota, b);
@@ -1052,13 +921,13 @@ do_compare_layouts (const db::Layout &a, const db::Cell *top_a, const db::Layout
       polygons_a.clear();
       polygons_b.clear();
       if (is_valid_a) {
-        collect_polygons (a, cell_a, layer_a, flags, polygons_a);
+        collect_polygons (a, cell_a, layer_a, flags, polygons_a, prop_normalize_a);
       } 
       if (is_valid_b) {
-        collect_polygons (b, cell_b, layer_b, flags, polygons_b);
+        collect_polygons (b, cell_b, layer_b, flags, polygons_b, prop_normalize_b);
       }
 
-      reduce (polygons_a, polygons_b, make_polygon_compare_func (tolerance), tolerance > 0, no_duplicates);
+      reduce (polygons_a, polygons_b, make_polygon_compare_func (tolerance), tolerance > 0);
 
       if (!polygons_a.empty () || !polygons_b.empty ()) {
         differs = true;
@@ -1067,7 +936,7 @@ do_compare_layouts (const db::Layout &a, const db::Cell *top_a, const db::Layout
         }
         r.begin_polygon_differences ();
         if (verbose) {
-          r.detailed_diff (polygons_a, polygons_b);
+          r.detailed_diff (n.properties_repository (), polygons_a, polygons_b);
         }
         r.end_polygon_differences ();
       }
@@ -1080,13 +949,13 @@ do_compare_layouts (const db::Layout &a, const db::Cell *top_a, const db::Layout
         paths_a.clear();
         paths_b.clear();
         if (is_valid_a) {
-          collect_paths (a, cell_a, layer_a, flags, paths_a);
+          collect_paths (a, cell_a, layer_a, flags, paths_a, prop_normalize_a);
         }
         if (is_valid_b) {
-          collect_paths (b, cell_b, layer_b, flags, paths_b);
+          collect_paths (b, cell_b, layer_b, flags, paths_b, prop_normalize_b);
         }
 
-        reduce (paths_a, paths_b, make_path_compare_func (tolerance), tolerance > 0, no_duplicates);
+        reduce (paths_a, paths_b, make_path_compare_func (tolerance), tolerance > 0);
 
         if (!paths_a.empty () || !paths_b.empty ()) {
           differs = true;
@@ -1095,7 +964,7 @@ do_compare_layouts (const db::Layout &a, const db::Cell *top_a, const db::Layout
           }
           r.begin_path_differences ();
           if (verbose) {
-            r.detailed_diff (paths_a, paths_b);
+            r.detailed_diff (n.properties_repository (), paths_a, paths_b);
           }
           r.end_path_differences ();
         }
@@ -1107,13 +976,13 @@ do_compare_layouts (const db::Layout &a, const db::Cell *top_a, const db::Layout
       texts_a.clear();
       texts_b.clear();
       if (is_valid_a) {
-        collect_texts (a, cell_a, layer_a, flags, texts_a);
+        collect_texts (a, cell_a, layer_a, flags, texts_a, prop_normalize_a);
       }
       if (is_valid_b) {
-        collect_texts (b, cell_b, layer_b, flags, texts_b);
+        collect_texts (b, cell_b, layer_b, flags, texts_b, prop_normalize_b);
       }
 
-      reduce (texts_a, texts_b, make_text_compare_func (tolerance), tolerance > 0, no_duplicates);
+      reduce (texts_a, texts_b, make_text_compare_func (tolerance), tolerance > 0);
 
       if (!texts_a.empty () || !texts_b.empty ()) {
         differs = true;
@@ -1122,7 +991,7 @@ do_compare_layouts (const db::Layout &a, const db::Cell *top_a, const db::Layout
         }
         r.begin_text_differences ();
         if (verbose) {
-          r.detailed_diff (texts_a, texts_b);
+          r.detailed_diff (n.properties_repository (), texts_a, texts_b);
         }
         r.end_text_differences ();
       }
@@ -1134,13 +1003,13 @@ do_compare_layouts (const db::Layout &a, const db::Cell *top_a, const db::Layout
         boxes_a.clear();
         boxes_b.clear();
         if (is_valid_a) {
-          collect_boxes (a, cell_a, layer_a, flags, boxes_a);
+          collect_boxes (a, cell_a, layer_a, flags, boxes_a, prop_normalize_a);
         }
         if (is_valid_b) {
-          collect_boxes (b, cell_b, layer_b, flags, boxes_b);
+          collect_boxes (b, cell_b, layer_b, flags, boxes_b, prop_normalize_b);
         }
 
-        reduce (boxes_a, boxes_b, make_box_compare_func (tolerance), tolerance > 0, no_duplicates);
+        reduce (boxes_a, boxes_b, make_box_compare_func (tolerance), tolerance > 0);
 
         if (!boxes_a.empty () || !boxes_b.empty ()) {
           differs = true;
@@ -1149,7 +1018,7 @@ do_compare_layouts (const db::Layout &a, const db::Cell *top_a, const db::Layout
           }
           r.begin_box_differences ();
           if (verbose) {
-            r.detailed_diff (boxes_a, boxes_b);
+            r.detailed_diff (n.properties_repository (), boxes_a, boxes_b);
           }
           r.end_box_differences ();
         }
@@ -1161,13 +1030,13 @@ do_compare_layouts (const db::Layout &a, const db::Cell *top_a, const db::Layout
       edges_a.clear();
       edges_b.clear();
       if (is_valid_a) {
-        collect_edges (a, cell_a, layer_a, flags, edges_a);
+        collect_edges (a, cell_a, layer_a, flags, edges_a, prop_normalize_a);
       }
       if (is_valid_b) {
-        collect_edges (b, cell_b, layer_b, flags, edges_b);
+        collect_edges (b, cell_b, layer_b, flags, edges_b, prop_normalize_b);
       }
 
-      reduce (edges_a, edges_b, make_edge_compare_func (tolerance), tolerance > 0, no_duplicates);
+      reduce (edges_a, edges_b, make_edge_compare_func (tolerance), tolerance > 0);
 
       if (!edges_a.empty () || !edges_b.empty ()) {
         differs = true;
@@ -1176,34 +1045,9 @@ do_compare_layouts (const db::Layout &a, const db::Cell *top_a, const db::Layout
         }
         r.begin_edge_differences ();
         if (verbose) {
-          r.detailed_diff (edges_a, edges_b);
+          r.detailed_diff (n.properties_repository (), edges_a, edges_b);
         }
         r.end_edge_differences ();
-      }
-
-      //  compare edge pairs
-
-      edge_pairs_a.clear();
-      edge_pairs_b.clear();
-      if (is_valid_a) {
-        collect_edge_pairs (a, cell_a, layer_a, flags, edge_pairs_a);
-      }
-      if (is_valid_b) {
-        collect_edge_pairs (b, cell_b, layer_b, flags, edge_pairs_b);
-      }
-
-      reduce (edge_pairs_a, edge_pairs_b, make_edge_pair_compare_func (tolerance), tolerance > 0, no_duplicates);
-
-      if (!edge_pairs_a.empty () || !edge_pairs_b.empty ()) {
-        differs = true;
-        if (flags & layout_diff::f_silent) {
-          return false;
-        }
-        r.begin_edge_pair_differences ();
-        if (verbose) {
-          r.detailed_diff (edge_pairs_a, edge_pairs_b);
-        }
-        r.end_edge_pair_differences ();
       }
 
       r.end_layer ();
@@ -1255,7 +1099,6 @@ public:
   }
 
   void dbu_differs (double dbu_a, double dbu_b);
-  void layout_meta_info_differs (const std::string &name, const tl::Variant &a, const tl::Variant &b);
   void layer_in_a_only (const db::LayerProperties &la);
   void layer_in_b_only (const db::LayerProperties &lb);
   void layer_name_differs (const db::LayerProperties &la, const db::LayerProperties &lb);
@@ -1263,33 +1106,29 @@ public:
   void cell_in_b_only (const std::string &cellname, db::cell_index_type ci);
   void cell_name_differs (const std::string &cellname_a, db::cell_index_type cia, const std::string &cellname_b, db::cell_index_type cib);
   void begin_cell (const std::string &cellname, db::cell_index_type cia, db::cell_index_type cib);
-  void cell_meta_info_differs (const std::string &name, const tl::Variant &a, const tl::Variant &b);
   void bbox_differs (const db::Box &ba, const db::Box &bb);
   void begin_inst_differences ();
-  void instances_in_a (const std::vector <db::CellInstArrayWithProperties> &insts_a, const std::vector <std::string> &cell_names);
-  void instances_in_b (const std::vector <db::CellInstArrayWithProperties> &insts_b, const std::vector <std::string> &cell_names);
+  void instances_in_a (const std::vector <db::CellInstArrayWithProperties> &insts_a, const std::vector <std::string> &cell_names, const db::PropertiesRepository &props);
+  void instances_in_b (const std::vector <db::CellInstArrayWithProperties> &insts_b, const std::vector <std::string> &cell_names, const db::PropertiesRepository &props);
   void instances_in_a_only (const std::vector <db::CellInstArrayWithProperties> &anotb, const db::Layout &a);
   void instances_in_b_only (const std::vector <db::CellInstArrayWithProperties> &bnota, const db::Layout &b);
   void end_inst_differences ();
   void begin_layer (const db::LayerProperties &layer, unsigned int layer_index_a, bool is_valid_a, unsigned int layer_index_b, bool is_valid_b);
   void per_layer_bbox_differs (const db::Box &ba, const db::Box &bb);
   void begin_polygon_differences ();
-  void detailed_diff (const std::vector <std::pair <db::Polygon, db::properties_id_type> > &a, const std::vector <std::pair <db::Polygon, db::properties_id_type> > &b);
+  void detailed_diff (const db::PropertiesRepository &pr, const std::vector <std::pair <db::Polygon, db::properties_id_type> > &a, const std::vector <std::pair <db::Polygon, db::properties_id_type> > &b);
   void end_polygon_differences ();
   void begin_path_differences ();
-  void detailed_diff (const std::vector <std::pair <db::Path, db::properties_id_type> > &a, const std::vector <std::pair <db::Path, db::properties_id_type> > &b);
+  void detailed_diff (const db::PropertiesRepository &pr, const std::vector <std::pair <db::Path, db::properties_id_type> > &a, const std::vector <std::pair <db::Path, db::properties_id_type> > &b);
   void end_path_differences ();
   void begin_box_differences ();
-  void detailed_diff (const std::vector <std::pair <db::Box, db::properties_id_type> > &a, const std::vector <std::pair <db::Box, db::properties_id_type> > &b);
+  void detailed_diff (const db::PropertiesRepository &pr, const std::vector <std::pair <db::Box, db::properties_id_type> > &a, const std::vector <std::pair <db::Box, db::properties_id_type> > &b);
   void end_box_differences ();
   void begin_edge_differences ();
-  void detailed_diff (const std::vector <std::pair <db::Edge, db::properties_id_type> > &a, const std::vector <std::pair <db::Edge, db::properties_id_type> > &b);
+  void detailed_diff (const db::PropertiesRepository &pr, const std::vector <std::pair <db::Edge, db::properties_id_type> > &a, const std::vector <std::pair <db::Edge, db::properties_id_type> > &b);
   void end_edge_differences ();
-  void begin_edge_pair_differences ();
-  void detailed_diff (const std::vector <std::pair <db::EdgePair, db::properties_id_type> > &a, const std::vector <std::pair <db::EdgePair, db::properties_id_type> > &b);
-  void end_edge_pair_differences ();
   void begin_text_differences ();
-  void detailed_diff (const std::vector <std::pair <db::Text, db::properties_id_type> > &a, const std::vector <std::pair <db::Text, db::properties_id_type> > &b);
+  void detailed_diff (const db::PropertiesRepository &pr, const std::vector <std::pair <db::Text, db::properties_id_type> > &a, const std::vector <std::pair <db::Text, db::properties_id_type> > &b);
   void end_text_differences ();
   void end_layer ();
   void end_cell ();
@@ -1304,7 +1143,7 @@ private:
   tl::Channel &enough (tl::Channel &);
   void print_cell_inst (const db::CellInstArrayWithProperties &ci, const std::vector <std::string> &cell_names);
   void print_cell_inst (const db::CellInstArrayWithProperties &ci, const db::Layout &l);
-  template <class SH> void print_diffs (const std::vector <std::pair <SH, db::properties_id_type> > &a, const std::vector <std::pair <SH, db::properties_id_type> > &b);
+  template <class SH> void print_diffs (const db::PropertiesRepository &pr, const std::vector <std::pair <SH, db::properties_id_type> > &a, const std::vector <std::pair <SH, db::properties_id_type> > &b);
 };
 
 PrintingDifferenceReceiver::PrintingDifferenceReceiver ()
@@ -1347,8 +1186,6 @@ PrintingDifferenceReceiver::print_cell_inst (const db::CellInstArrayWithProperti
   unsigned long amax, bmax;
   if (ci.is_regular_array (a, b, amax, bmax)) {
     enough (tl::info) << "[a=" << a.to_string () << ", b=" << b.to_string () << ", na=" << amax << ", nb=" << bmax << "]" << tl::noendl;
-  } else if (ci.size () > 1) {
-    enough (tl::info) << " (+" << (ci.size () - 1) << " irregular locations)" << tl::noendl;
   } else {
     enough (tl::info) << "" << tl::noendl;
   }
@@ -1368,8 +1205,6 @@ PrintingDifferenceReceiver::print_cell_inst (const db::CellInstArrayWithProperti
   unsigned long amax, bmax;
   if (ci.is_regular_array (a, b, amax, bmax)) {
     enough (tl::info) << "[a=" << a.to_string () << ", b=" << b.to_string () << ", na=" << amax << ", nb=" << bmax << "]" << tl::noendl;
-  } else if (ci.size () > 1) {
-    enough (tl::info) << " (+" << (ci.size () - 1) << " irregular locations)" << tl::noendl;
   } else {
     enough (tl::info) << "" << tl::noendl;
   }
@@ -1382,7 +1217,7 @@ PrintingDifferenceReceiver::print_cell_inst (const db::CellInstArrayWithProperti
 
 template <class SH>
 void
-PrintingDifferenceReceiver::print_diffs (const std::vector <std::pair <SH, db::properties_id_type> > &_a, const std::vector <std::pair <SH, db::properties_id_type> > &_b)
+PrintingDifferenceReceiver::print_diffs (const db::PropertiesRepository &pr, const std::vector <std::pair <SH, db::properties_id_type> > &_a, const std::vector <std::pair <SH, db::properties_id_type> > &_b)
 {
   //  the vectors may be in any order (specifically because of tolerances) but
   //  for the diff we need to make sure they are ordered.
@@ -1395,8 +1230,21 @@ PrintingDifferenceReceiver::print_diffs (const std::vector <std::pair <SH, db::p
   std::set_difference (a.begin (), a.end (), b.begin (), b.end (), std::back_inserter (anotb));
   for (typename std::vector <std::pair <SH, db::properties_id_type> >::const_iterator s = anotb.begin (); s != anotb.end (); ++s) {
     enough (tl::info) << "  " << s->first.to_string () << tl::noendl;
-    if (s->second != 0 && m_print_properties) {
-      tl::info << " " << db::properties (s->second).to_dict_var ().to_string ();
+    if (s->second != 0) {
+      if (m_print_properties) {
+        const db::PropertiesRepository::properties_set &props = pr.properties (s->second);
+        for (db::PropertiesRepository::properties_set::const_iterator p = props.begin (); p != props.end (); ++p) {
+          const tl::Variant &name = pr.prop_name (p->first);
+          if (name.is_long ()) {
+            tl::info << " {" << int (name.to_long ()) << " {" << p->second.to_string () << "}}" << tl::noendl;
+          } else {
+            tl::info << " {{" << name.to_string () << "} {" << p->second.to_string () << "}}" << tl::noendl;
+          }
+        }
+        tl::info << "";
+      } else {
+        tl::info << " [" << s->second << "]";
+      }
     } else {
       tl::info << "";
     }
@@ -1408,17 +1256,7 @@ PrintingDifferenceReceiver::dbu_differs (double dbu_a, double dbu_b)
 {
   try {
     enough (tl::error) << "Database units differ " << dbu_a << " vs. " << dbu_b;
-  } catch (tl::CancelException &) {
-    //  ignore cancel exceptions
-  }
-}
-
-void
-PrintingDifferenceReceiver::layout_meta_info_differs (const std::string &name, const tl::Variant &a, const tl::Variant &b)
-{
-  try {
-    enough (tl::error) << "Global meta info differs - [" << name << "]: " << a << " vs. " << b;
-  } catch (tl::CancelException &) {
+  } catch (tl::CancelException) {
     //  ignore cancel exceptions
   }
 }
@@ -1428,7 +1266,7 @@ PrintingDifferenceReceiver::layer_in_a_only (const db::LayerProperties &la)
 {
   try {
     enough (tl::error) << "Layer " << la.to_string () << " is not present in layout b, but in a";
-  } catch (tl::CancelException &) {
+  } catch (tl::CancelException) {
     //  ignore cancel exceptions
   }
 }
@@ -1438,7 +1276,7 @@ PrintingDifferenceReceiver::layer_in_b_only (const db::LayerProperties &lb)
 {
   try {
     enough (tl::error) << "Layer " << lb.to_string () << " is not present in layout a, but in b";
-  } catch (tl::CancelException &) {
+  } catch (tl::CancelException) {
     //  ignore cancel exceptions
   }
 }
@@ -1449,7 +1287,7 @@ PrintingDifferenceReceiver::layer_name_differs (const db::LayerProperties &la, c
   try {
     enough (tl::error) << "Layer names differ between layout a and b for layer " << la.layer << "/" << la.datatype << ": "
                        << la.name << " vs. " << lb.name;
-  } catch (tl::CancelException &) {
+  } catch (tl::CancelException) {
     //  ignore cancel exceptions
   }
 }
@@ -1459,7 +1297,7 @@ PrintingDifferenceReceiver::cell_in_a_only (const std::string &cellname, db::cel
 {
   try {
     enough (tl::error) << "Cell " << cellname << " is not present in layout b, but in a";
-  } catch (tl::CancelException &) {
+  } catch (tl::CancelException) {
     //  ignore cancel exceptions
   }
 }
@@ -1469,7 +1307,7 @@ PrintingDifferenceReceiver::cell_in_b_only (const std::string &cellname, db::cel
 {
   try {
     enough (tl::error) << "Cell " << cellname << " is not present in layout a, but in b";
-  } catch (tl::CancelException &) {
+  } catch (tl::CancelException) {
     //  ignore cancel exceptions
   }
 }
@@ -1479,7 +1317,7 @@ PrintingDifferenceReceiver::cell_name_differs (const std::string &cellname_a, db
 {
   try {
     enough (tl::error) << "Cell " << cellname_a << " in a is renamed to " << cellname_b << " in b";
-  } catch (tl::CancelException &) {
+  } catch (tl::CancelException) {
     //  ignore cancel exceptions
   }
 }
@@ -1489,7 +1327,7 @@ PrintingDifferenceReceiver::bbox_differs (const db::Box &ba, const db::Box &bb)
 {
   try {
     enough (tl::error) << "Bounding boxes differ for cell " << m_cellname << ", " << ba.to_string () << " vs. " << bb.to_string ();
-  } catch (tl::CancelException &) {
+  } catch (tl::CancelException) {
     //  ignore cancel exceptions
   }
 }
@@ -1501,32 +1339,22 @@ PrintingDifferenceReceiver::begin_cell (const std::string &cellname, db::cell_in
 }
 
 void
-PrintingDifferenceReceiver::cell_meta_info_differs (const std::string &name, const tl::Variant &a, const tl::Variant &b)
-{
-  try {
-    enough (tl::error) << "Meta info differs in cell " << m_cellname << " - [" << name << "]: " << a << " vs. " << b;
-  } catch (tl::CancelException &) {
-    //  ignore cancel exceptions
-  }
-}
-
-void
 PrintingDifferenceReceiver::begin_inst_differences ()
 {
   try {
     enough (tl::error) << "Instances differ in cell " << m_cellname;
-  } catch (tl::CancelException &) {
+  } catch (tl::CancelException) {
     //  ignore cancel exceptions
   }
 }
 
 void
-PrintingDifferenceReceiver::instances_in_a (const std::vector <db::CellInstArrayWithProperties> & /*insts_a*/, const std::vector <std::string> & /*cell_names*/)
+PrintingDifferenceReceiver::instances_in_a (const std::vector <db::CellInstArrayWithProperties> & /*insts_a*/, const std::vector <std::string> & /*cell_names*/, const db::PropertiesRepository & /*props*/)
 {
 }
 
 void
-PrintingDifferenceReceiver::instances_in_b (const std::vector <db::CellInstArrayWithProperties> & /*insts_b*/, const std::vector <std::string> & /*cell_names*/)
+PrintingDifferenceReceiver::instances_in_b (const std::vector <db::CellInstArrayWithProperties> & /*insts_b*/, const std::vector <std::string> & /*cell_names*/, const db::PropertiesRepository & /*props*/)
 {
 }
 
@@ -1538,7 +1366,7 @@ PrintingDifferenceReceiver::instances_in_a_only (const std::vector <db::CellInst
     for (std::vector <db::CellInstArrayWithProperties>::const_iterator s = anotb.begin (); s != anotb.end (); ++s) {
       print_cell_inst (*s, a);
     }
-  } catch (tl::CancelException &) {
+  } catch (tl::CancelException) {
     //  ignore cancel exceptions
   }
 }
@@ -1551,7 +1379,7 @@ PrintingDifferenceReceiver::instances_in_b_only (const std::vector <db::CellInst
     for (std::vector <db::CellInstArrayWithProperties>::const_iterator s = bnota.begin (); s != bnota.end (); ++s) {
       print_cell_inst (*s, b);
     }
-  } catch (tl::CancelException &) {
+  } catch (tl::CancelException) {
     //  ignore cancel exceptions
   }
 }
@@ -1573,7 +1401,7 @@ PrintingDifferenceReceiver::per_layer_bbox_differs (const db::Box &ba, const db:
   try {
     enough (tl::error) << "Per-layer bounding boxes differ for cell " << m_cellname << ", layer (" << m_layer.to_string () << "), "
                        << ba.to_string () << " vs. " << bb.to_string ();
-  } catch (tl::CancelException &) {
+  } catch (tl::CancelException) {
     //  ignore cancel exceptions
   }
 }
@@ -1583,20 +1411,20 @@ PrintingDifferenceReceiver::begin_polygon_differences ()
 {
   try {
     enough (tl::error) << "Polygons differ for layer " << m_layer.to_string () << " in cell " << m_cellname;
-  } catch (tl::CancelException &) {
+  } catch (tl::CancelException) {
     //  ignore cancel exceptions
   }
 }
 
 void
-PrintingDifferenceReceiver::detailed_diff (const std::vector <std::pair <db::Polygon, db::properties_id_type> > &a, const std::vector <std::pair <db::Polygon, db::properties_id_type> > &b)
+PrintingDifferenceReceiver::detailed_diff (const db::PropertiesRepository &pr, const std::vector <std::pair <db::Polygon, db::properties_id_type> > &a, const std::vector <std::pair <db::Polygon, db::properties_id_type> > &b)
 {
   try {
     enough (tl::info) << "Not in b but in a:";
-    print_diffs (a, b);
+    print_diffs (pr, a, b);
     enough (tl::info) << "Not in a but in b:";
-    print_diffs (b, a);
-  } catch (tl::CancelException &) {
+    print_diffs (pr, b, a);
+  } catch (tl::CancelException) {
     //  ignore cancel exceptions
   }
 }
@@ -1611,20 +1439,20 @@ PrintingDifferenceReceiver::begin_path_differences ()
 {
   try {
     enough (tl::error) << "Paths differ for layer " << m_layer.to_string () << " in cell " << m_cellname;
-  } catch (tl::CancelException &) {
+  } catch (tl::CancelException) {
     //  ignore cancel exceptions
   }
 }
 
 void
-PrintingDifferenceReceiver::detailed_diff (const std::vector <std::pair <db::Path, db::properties_id_type> > &a, const std::vector <std::pair <db::Path, db::properties_id_type> > &b)
+PrintingDifferenceReceiver::detailed_diff (const db::PropertiesRepository &pr, const std::vector <std::pair <db::Path, db::properties_id_type> > &a, const std::vector <std::pair <db::Path, db::properties_id_type> > &b)
 {
   try {
     enough (tl::info) << "Not in b but in a:";
-    print_diffs (a, b);
+    print_diffs (pr, a, b);
     enough (tl::info) << "Not in a but in b:";
-    print_diffs (b, a);
-  } catch (tl::CancelException &) {
+    print_diffs (pr, b, a);
+  } catch (tl::CancelException) {
     //  ignore cancel exceptions
   }
 }
@@ -1639,20 +1467,20 @@ PrintingDifferenceReceiver::begin_box_differences ()
 {
   try {
     enough (tl::error) << "Boxes differ for layer " << m_layer.to_string () << " in cell " << m_cellname;
-  } catch (tl::CancelException &) {
+  } catch (tl::CancelException) {
     //  ignore cancel exceptions
   }
 }
 
 void
-PrintingDifferenceReceiver::detailed_diff (const std::vector <std::pair <db::Box, db::properties_id_type> > &a, const std::vector <std::pair <db::Box, db::properties_id_type> > &b)
+PrintingDifferenceReceiver::detailed_diff (const db::PropertiesRepository &pr, const std::vector <std::pair <db::Box, db::properties_id_type> > &a, const std::vector <std::pair <db::Box, db::properties_id_type> > &b)
 {
   try {
     enough (tl::info) << "Not in b but in a:";
-    print_diffs (a, b);
+    print_diffs (pr, a, b);
     enough (tl::info) << "Not in a but in b:";
-    print_diffs (b, a);
-  } catch (tl::CancelException &) {
+    print_diffs (pr, b, a);
+  } catch (tl::CancelException) {
     //  ignore cancel exceptions
   }
 }
@@ -1667,20 +1495,20 @@ PrintingDifferenceReceiver::begin_edge_differences ()
 {
   try {
     enough (tl::error) << "Edges differ for layer " << m_layer.to_string () << " in cell " << m_cellname;
-  } catch (tl::CancelException &) {
+  } catch (tl::CancelException) {
     //  ignore cancel exceptions
   }
 }
 
 void
-PrintingDifferenceReceiver::detailed_diff (const std::vector <std::pair <db::Edge, db::properties_id_type> > &a, const std::vector <std::pair <db::Edge, db::properties_id_type> > &b)
+PrintingDifferenceReceiver::detailed_diff (const db::PropertiesRepository &pr, const std::vector <std::pair <db::Edge, db::properties_id_type> > &a, const std::vector <std::pair <db::Edge, db::properties_id_type> > &b)
 {
   try {
     enough (tl::info) << "Not in b but in a:";
-    print_diffs (a, b);
+    print_diffs (pr, a, b);
     enough (tl::info) << "Not in a but in b:";
-    print_diffs (b, a);
-  } catch (tl::CancelException &) {
+    print_diffs (pr, b, a);
+  } catch (tl::CancelException) {
     //  ignore cancel exceptions
   }
 }
@@ -1691,52 +1519,24 @@ PrintingDifferenceReceiver::end_edge_differences ()
 }
 
 void
-PrintingDifferenceReceiver::begin_edge_pair_differences ()
-{
-  try {
-    enough (tl::error) << "Edge pairs differ for layer " << m_layer.to_string () << " in cell " << m_cellname;
-  } catch (tl::CancelException &) {
-    //  ignore cancel exceptions
-  }
-}
-
-void
-PrintingDifferenceReceiver::detailed_diff (const std::vector <std::pair <db::EdgePair, db::properties_id_type> > &a, const std::vector <std::pair <db::EdgePair, db::properties_id_type> > &b)
-{
-  try {
-    enough (tl::info) << "Not in b but in a:";
-    print_diffs (a, b);
-    enough (tl::info) << "Not in a but in b:";
-    print_diffs (b, a);
-  } catch (tl::CancelException &) {
-    //  ignore cancel exceptions
-  }
-}
-
-void
-PrintingDifferenceReceiver::end_edge_pair_differences ()
-{
-}
-
-void
 PrintingDifferenceReceiver::begin_text_differences ()
 {
   try {
     enough (tl::error) << "Texts differ for layer " << m_layer.to_string () << " in cell " << m_cellname;
-  } catch (tl::CancelException &) {
+  } catch (tl::CancelException) {
     //  ignore cancel exceptions
   }
 }
 
 void
-PrintingDifferenceReceiver::detailed_diff (const std::vector <std::pair <db::Text, db::properties_id_type> > &a, const std::vector <std::pair <db::Text, db::properties_id_type> > &b)
+PrintingDifferenceReceiver::detailed_diff (const db::PropertiesRepository &pr, const std::vector <std::pair <db::Text, db::properties_id_type> > &a, const std::vector <std::pair <db::Text, db::properties_id_type> > &b)
 {
   try {
     enough (tl::info) << "Not in b but in a:";
-    print_diffs (a, b);
+    print_diffs (pr, a, b);
     enough (tl::info) << "Not in a but in b:";
-    print_diffs (b, a);
-  } catch (tl::CancelException &) {
+    print_diffs (pr, b, a);
+  } catch (tl::CancelException) {
     //  ignore cancel exceptions
   }
 }

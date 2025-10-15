@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@
 #include <QMediaServiceFeaturesInterface>
 #include "gsiQt.h"
 #include "gsiQtMultimediaCommon.h"
+#include "gsiDeclQtMultimediaTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -150,8 +151,8 @@ gsi::Class<QMediaServiceFeaturesInterface> &qtdecl_QMediaServiceFeaturesInterfac
 static gsi::Methods methods_QMediaServiceFeaturesInterface_Adaptor () {
   gsi::Methods methods;
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QMediaServiceFeaturesInterface::QMediaServiceFeaturesInterface()\nThis method creates an object of class QMediaServiceFeaturesInterface.", &_init_ctor_QMediaServiceFeaturesInterface_Adaptor_0, &_call_ctor_QMediaServiceFeaturesInterface_Adaptor_0);
-  methods += new qt_gsi::GenericMethod ("supportedFeatures", "@brief Virtual method QFlags<QMediaServiceProviderHint::Feature> QMediaServiceFeaturesInterface::supportedFeatures(const QByteArray &service)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_supportedFeatures_c2309_0, &_call_cbs_supportedFeatures_c2309_0);
-  methods += new qt_gsi::GenericMethod ("supportedFeatures", "@hide", true, &_init_cbs_supportedFeatures_c2309_0, &_call_cbs_supportedFeatures_c2309_0, &_set_callback_cbs_supportedFeatures_c2309_0);
+  methods += new qt_gsi::GenericMethod ("supportedFeatures", "@hide", true, &_init_cbs_supportedFeatures_c2309_0, &_call_cbs_supportedFeatures_c2309_0);
+  methods += new qt_gsi::GenericMethod ("supportedFeatures", "@brief Virtual method QFlags<QMediaServiceProviderHint::Feature> QMediaServiceFeaturesInterface::supportedFeatures(const QByteArray &service)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_supportedFeatures_c2309_0, &_call_cbs_supportedFeatures_c2309_0, &_set_callback_cbs_supportedFeatures_c2309_0);
   return methods;
 }
 

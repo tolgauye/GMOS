@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -67,7 +67,7 @@ Technologies::operator= (const Technologies &other)
   return *this;
 }
 
-static std::unique_ptr<db::Technologies> sp_technologies;
+static std::auto_ptr<db::Technologies> sp_technologies;
 
 db::Technologies *
 Technologies::instance ()
@@ -80,7 +80,7 @@ Technologies::instance ()
 
 static tl::XMLElementList xml_elements () 
 {
-  return make_element ((Technologies::const_iterator (Technologies::*) () const) &Technologies::begin, (Technologies::const_iterator (Technologies::*) () const) &Technologies::end, &Technologies::add_void, "technology",
+  return make_element ((Technologies::const_iterator (Technologies::*) () const) &Technologies::begin, (Technologies::const_iterator (Technologies::*) () const) &Technologies::end, &Technologies::add, "technology",
     Technology::xml_elements ()
   );
 }
@@ -92,7 +92,7 @@ Technologies::to_xml () const
   db::Technologies copy;
   for (const_iterator t = begin (); t != end (); ++t) {
     if (t->is_persisted ()) {
-      copy.add (*t);
+      copy.add (new Technology (*t));
     }
   }
 
@@ -110,7 +110,7 @@ Technologies::load_from_xml (const std::string &s)
   db::Technologies copy;
   for (const_iterator t = begin (); t != end (); ++t) {
     if (! t->is_persisted ()) {
-      copy.add (*t);
+      copy.add (new Technology (*t));
     }
   }
 
@@ -121,31 +121,34 @@ Technologies::load_from_xml (const std::string &s)
   *this = copy;
 }
 
-db::Technology *
-Technologies::add_tech (const Technology &tech, bool replace_same)
+void 
+Technologies::add_tech (Technology *tech, bool replace_same)
 {
+  if (! tech) {
+    return;
+  }
+
+  std::auto_ptr<Technology> tech_ptr (tech);
+
   Technology *t = 0;
   for (tl::stable_vector<Technology>::iterator i = m_technologies.begin (); !t && i != m_technologies.end (); ++i) {
-    if (i->name () == tech.name ()) {
+    if (i->name () == tech->name ()) {
       t = i.operator-> ();
     }
   }
 
   if (t) {
     if (replace_same) {
-      *t = tech;
+      *t = *tech;
     } else {
-      throw tl::Exception (tl::to_string (tr ("A technology with this name already exists: ")) + tech.name ());
+      throw tl::Exception (tl::to_string (tr ("A technology with this name already exists: ")) + tech->name ());
     }
   } else {
-    t = new Technology (tech);
-    m_technologies.push_back (t);
-    t->technology_changed_with_sender_event.add (this, &Technologies::technology_changed);
+    m_technologies.push_back (tech_ptr.release ());
+    tech->technology_changed_with_sender_event.add (this, &Technologies::technology_changed);
   }
 
   technologies_changed ();
-
-  return t;
 }
 
 void 
@@ -283,7 +286,6 @@ Technology::~Technology ()
 Technology::Technology (const Technology &d)
   : tl::Object (),
     m_name (d.m_name), m_description (d.m_description), m_group (d.m_group), m_grain_name (d.m_grain_name), m_dbu (d.m_dbu),
-    m_default_grids (d.m_default_grids),
     m_explicit_base_path (d.m_explicit_base_path), m_default_base_path (d.m_default_base_path),
     m_load_layout_options (d.m_load_layout_options),
     m_save_layout_options (d.m_save_layout_options),
@@ -304,7 +306,6 @@ Technology &Technology::operator= (const Technology &d)
     m_group = d.m_group;
     m_grain_name = d.m_grain_name;
     m_dbu = d.m_dbu;
-    m_default_grids = d.m_default_grids;
     m_default_base_path = d.m_default_base_path;
     m_explicit_base_path = d.m_explicit_base_path;
     m_load_layout_options = d.m_load_layout_options;
@@ -347,44 +348,6 @@ Technology::get_display_string () const
   return d;
 }
 
-static void
-parse_default_grids (const std::string &s, std::vector<double> &grids, double &default_grid)
-{
-  tl::Extractor ex (s.c_str ());
-
-  //  convert the list of grids to a list of doubles
-  while (! ex.at_end ()) {
-    double g = 0.0;
-    if (! ex.try_read (g)) {
-      break;
-    }
-    grids.push_back (g);
-    if (ex.test ("!")) {
-      default_grid = g;
-    }
-    ex.test (",");
-  }
-}
-
-std::vector<double>
-Technology::default_grid_list () const
-{
-  std::vector<double> grids;
-  double default_grid = 0.0;
-  parse_default_grids (m_default_grids, grids, default_grid);
-  return grids;
-}
-
-double
-Technology::default_grid () const
-{
-  std::vector<double> grids;
-  double default_grid = 0.0;
-  parse_default_grids (m_default_grids, grids, default_grid);
-  return default_grid;
-}
-
-
 tl::XMLElementList 
 Technology::xml_elements () 
 {
@@ -393,7 +356,6 @@ Technology::xml_elements ()
          tl::make_member (&Technology::description, &Technology::set_description, "description") + 
          tl::make_member (&Technology::group, &Technology::set_group, "group") +
          tl::make_member (&Technology::dbu, &Technology::set_dbu, "dbu") +
-         tl::make_member (&Technology::default_grids, &Technology::set_default_grids, "default-grids") +
          tl::make_member (&Technology::explicit_base_path, &Technology::set_explicit_base_path, "base-path") +
          tl::make_member (&Technology::default_base_path, &Technology::set_default_base_path, "original-base-path") +
          tl::make_member (&Technology::layer_properties_file, &Technology::set_layer_properties_file, "layer-properties_file") +
@@ -479,10 +441,10 @@ std::string
 Technology::correct_path (const std::string &fp) const
 {
   std::string bp = base_path ();
-  if (bp.empty () || ! tl::InputStream::is_file_path (fp) || ! tl::InputStream::is_file_path (bp)) {
+  if (bp.empty ()) {
     return fp;
   } else {
-    return tl::relative_path (tl::InputStream::as_file_path (bp), tl::InputStream::as_file_path (fp));
+    return tl::relative_path (bp, fp);
   }
 }
 
@@ -494,11 +456,7 @@ Technology::load (const std::string &fn)
   xml_struct.parse (source, *this);
 
   //  use the tech file's path as the default base path
-  if (tl::InputStream::is_file_path (fn)) {
-    set_default_base_path (tl::absolute_path (fn));
-  } else {
-    set_default_base_path (std::string ());
-  }
+  set_default_base_path (tl::absolute_path (fn));
 
   set_tech_file_path (fn);
 }
@@ -519,10 +477,10 @@ Technology::build_effective_path (const std::string &p) const
     return p;
   }
 
-  if (tl::InputStream::is_absolute (p)) {
+  if (tl::is_absolute (p)) {
     return p;
   } else {
-    return tl::InputStream::combine (bp, p);
+    return tl::combine_path (bp, p);
   }
 }
 

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -51,7 +51,7 @@ public:
    *  @param color The colors as a vector
    *  @param luminous_colors The list of indices of luminous colors as a vector
    */
-  ColorPalette (const std::vector<tl::color_t> &colors, const std::vector<unsigned int> &luminous_colors);
+  ColorPalette (const std::vector<lay::color_t> &colors, const std::vector<unsigned int> &luminous_colors);
 
   /**
    *  @brief Copy constructor
@@ -79,7 +79,7 @@ public:
   /**
    *  @brief Change a specific color
    */
-  void set_color (unsigned int n, tl::color_t c);
+  void set_color (unsigned int n, lay::color_t c);
 
   /**
    *  @brief Clear the colors list
@@ -99,7 +99,7 @@ public:
   /** 
    *  @brief Retrieve the color by index
    */
-  tl::color_t color_by_index (unsigned int n) const;
+  lay::color_t color_by_index (unsigned int n) const;
 
   /**
    *  @brief Retrieve the number of colors in the palette
@@ -111,7 +111,7 @@ public:
   /** 
    *  @brief Retrieve the luminous color by index
    */
-  tl::color_t 
+  lay::color_t 
   luminous_color_by_index (unsigned int n) const
   {
     return color_by_index (luminous_color_index_by_index (n));
@@ -157,7 +157,7 @@ public:
   static ColorPalette default_palette (); 
 
 private:
-  std::vector <tl::color_t> m_colors;
+  std::vector <lay::color_t> m_colors;
   std::vector <unsigned int> m_luminous_color_indices;
 
 };

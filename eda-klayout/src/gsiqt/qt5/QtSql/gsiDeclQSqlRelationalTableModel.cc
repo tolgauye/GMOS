@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -48,6 +48,7 @@
 #include <QTimerEvent>
 #include "gsiQt.h"
 #include "gsiQtSqlCommon.h"
+#include "gsiDeclQtSqlTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -297,7 +298,7 @@ static void _init_f_tr_4013 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("s");
   decl->add_arg<const char * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("c", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("c", true, "__null");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("n", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -309,7 +310,7 @@ static void _call_f_tr_4013 (const qt_gsi::GenericStaticMethod * /*decl*/, gsi::
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (__null, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QSqlRelationalTableModel::tr (arg1, arg2, arg3));
 }
@@ -322,7 +323,7 @@ static void _init_f_trUtf8_4013 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("s");
   decl->add_arg<const char * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("c", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("c", true, "__null");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("n", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -334,7 +335,7 @@ static void _call_f_trUtf8_4013 (const qt_gsi::GenericStaticMethod * /*decl*/, g
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (__null, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QSqlRelationalTableModel::trUtf8 (arg1, arg2, arg3));
 }
@@ -360,27 +361,12 @@ static gsi::Methods methods_QSqlRelationalTableModel () {
   methods += gsi::qt_signal<int > ("beforeDelete(int)", "beforeDelete", gsi::arg("row"), "@brief Signal declaration for QSqlRelationalTableModel::beforeDelete(int row)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<QSqlRecord & > ("beforeInsert(QSqlRecord &)", "beforeInsert", gsi::arg("record"), "@brief Signal declaration for QSqlRelationalTableModel::beforeInsert(QSqlRecord &record)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<int, QSqlRecord & > ("beforeUpdate(int, QSqlRecord &)", "beforeUpdate", gsi::arg("row"), gsi::arg("record"), "@brief Signal declaration for QSqlRelationalTableModel::beforeUpdate(int row, QSqlRecord &record)\nYou can bind a procedure to this signal.");
-  methods += gsi::qt_signal<const QModelIndex &, int, int > ("columnsAboutToBeInserted(const QModelIndex &, int, int)", "columnsAboutToBeInserted", gsi::arg("parent"), gsi::arg("first"), gsi::arg("last"), "@brief Signal declaration for QSqlRelationalTableModel::columnsAboutToBeInserted(const QModelIndex &parent, int first, int last)\nYou can bind a procedure to this signal.");
-  methods += gsi::qt_signal<const QModelIndex &, int, int, const QModelIndex &, int > ("columnsAboutToBeMoved(const QModelIndex &, int, int, const QModelIndex &, int)", "columnsAboutToBeMoved", gsi::arg("sourceParent"), gsi::arg("sourceStart"), gsi::arg("sourceEnd"), gsi::arg("destinationParent"), gsi::arg("destinationColumn"), "@brief Signal declaration for QSqlRelationalTableModel::columnsAboutToBeMoved(const QModelIndex &sourceParent, int sourceStart, int sourceEnd, const QModelIndex &destinationParent, int destinationColumn)\nYou can bind a procedure to this signal.");
-  methods += gsi::qt_signal<const QModelIndex &, int, int > ("columnsAboutToBeRemoved(const QModelIndex &, int, int)", "columnsAboutToBeRemoved", gsi::arg("parent"), gsi::arg("first"), gsi::arg("last"), "@brief Signal declaration for QSqlRelationalTableModel::columnsAboutToBeRemoved(const QModelIndex &parent, int first, int last)\nYou can bind a procedure to this signal.");
-  methods += gsi::qt_signal<const QModelIndex &, int, int > ("columnsInserted(const QModelIndex &, int, int)", "columnsInserted", gsi::arg("parent"), gsi::arg("first"), gsi::arg("last"), "@brief Signal declaration for QSqlRelationalTableModel::columnsInserted(const QModelIndex &parent, int first, int last)\nYou can bind a procedure to this signal.");
-  methods += gsi::qt_signal<const QModelIndex &, int, int, const QModelIndex &, int > ("columnsMoved(const QModelIndex &, int, int, const QModelIndex &, int)", "columnsMoved", gsi::arg("parent"), gsi::arg("start"), gsi::arg("end"), gsi::arg("destination"), gsi::arg("column"), "@brief Signal declaration for QSqlRelationalTableModel::columnsMoved(const QModelIndex &parent, int start, int end, const QModelIndex &destination, int column)\nYou can bind a procedure to this signal.");
-  methods += gsi::qt_signal<const QModelIndex &, int, int > ("columnsRemoved(const QModelIndex &, int, int)", "columnsRemoved", gsi::arg("parent"), gsi::arg("first"), gsi::arg("last"), "@brief Signal declaration for QSqlRelationalTableModel::columnsRemoved(const QModelIndex &parent, int first, int last)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<const QModelIndex &, const QModelIndex &, const QVector<int> & > ("dataChanged(const QModelIndex &, const QModelIndex &, const QVector<int> &)", "dataChanged", gsi::arg("topLeft"), gsi::arg("bottomRight"), gsi::arg("roles"), "@brief Signal declaration for QSqlRelationalTableModel::dataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<QObject * > ("destroyed(QObject *)", "destroyed", gsi::arg("arg1"), "@brief Signal declaration for QSqlRelationalTableModel::destroyed(QObject *)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<const qt_gsi::Converter<Qt::Orientation>::target_type &, int, int > ("headerDataChanged(Qt::Orientation, int, int)", "headerDataChanged", gsi::arg("orientation"), gsi::arg("first"), gsi::arg("last"), "@brief Signal declaration for QSqlRelationalTableModel::headerDataChanged(Qt::Orientation orientation, int first, int last)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<const QList<QPersistentModelIndex> &, const qt_gsi::Converter<QAbstractItemModel::LayoutChangeHint>::target_type & > ("layoutAboutToBeChanged(const QList<QPersistentModelIndex> &, QAbstractItemModel::LayoutChangeHint)", "layoutAboutToBeChanged", gsi::arg("parents"), gsi::arg("hint"), "@brief Signal declaration for QSqlRelationalTableModel::layoutAboutToBeChanged(const QList<QPersistentModelIndex> &parents, QAbstractItemModel::LayoutChangeHint hint)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<const QList<QPersistentModelIndex> &, const qt_gsi::Converter<QAbstractItemModel::LayoutChangeHint>::target_type & > ("layoutChanged(const QList<QPersistentModelIndex> &, QAbstractItemModel::LayoutChangeHint)", "layoutChanged", gsi::arg("parents"), gsi::arg("hint"), "@brief Signal declaration for QSqlRelationalTableModel::layoutChanged(const QList<QPersistentModelIndex> &parents, QAbstractItemModel::LayoutChangeHint hint)\nYou can bind a procedure to this signal.");
-  methods += gsi::qt_signal ("modelAboutToBeReset()", "modelAboutToBeReset", "@brief Signal declaration for QSqlRelationalTableModel::modelAboutToBeReset()\nYou can bind a procedure to this signal.");
-  methods += gsi::qt_signal ("modelReset()", "modelReset", "@brief Signal declaration for QSqlRelationalTableModel::modelReset()\nYou can bind a procedure to this signal.");
-  methods += gsi::qt_signal<const QString & > ("objectNameChanged(const QString &)", "objectNameChanged", gsi::arg("objectName"), "@brief Signal declaration for QSqlRelationalTableModel::objectNameChanged(const QString &objectName)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<int, QSqlRecord & > ("primeInsert(int, QSqlRecord &)", "primeInsert", gsi::arg("row"), gsi::arg("record"), "@brief Signal declaration for QSqlRelationalTableModel::primeInsert(int row, QSqlRecord &record)\nYou can bind a procedure to this signal.");
-  methods += gsi::qt_signal<const QModelIndex &, int, int > ("rowsAboutToBeInserted(const QModelIndex &, int, int)", "rowsAboutToBeInserted", gsi::arg("parent"), gsi::arg("first"), gsi::arg("last"), "@brief Signal declaration for QSqlRelationalTableModel::rowsAboutToBeInserted(const QModelIndex &parent, int first, int last)\nYou can bind a procedure to this signal.");
-  methods += gsi::qt_signal<const QModelIndex &, int, int, const QModelIndex &, int > ("rowsAboutToBeMoved(const QModelIndex &, int, int, const QModelIndex &, int)", "rowsAboutToBeMoved", gsi::arg("sourceParent"), gsi::arg("sourceStart"), gsi::arg("sourceEnd"), gsi::arg("destinationParent"), gsi::arg("destinationRow"), "@brief Signal declaration for QSqlRelationalTableModel::rowsAboutToBeMoved(const QModelIndex &sourceParent, int sourceStart, int sourceEnd, const QModelIndex &destinationParent, int destinationRow)\nYou can bind a procedure to this signal.");
-  methods += gsi::qt_signal<const QModelIndex &, int, int > ("rowsAboutToBeRemoved(const QModelIndex &, int, int)", "rowsAboutToBeRemoved", gsi::arg("parent"), gsi::arg("first"), gsi::arg("last"), "@brief Signal declaration for QSqlRelationalTableModel::rowsAboutToBeRemoved(const QModelIndex &parent, int first, int last)\nYou can bind a procedure to this signal.");
-  methods += gsi::qt_signal<const QModelIndex &, int, int > ("rowsInserted(const QModelIndex &, int, int)", "rowsInserted", gsi::arg("parent"), gsi::arg("first"), gsi::arg("last"), "@brief Signal declaration for QSqlRelationalTableModel::rowsInserted(const QModelIndex &parent, int first, int last)\nYou can bind a procedure to this signal.");
-  methods += gsi::qt_signal<const QModelIndex &, int, int, const QModelIndex &, int > ("rowsMoved(const QModelIndex &, int, int, const QModelIndex &, int)", "rowsMoved", gsi::arg("parent"), gsi::arg("start"), gsi::arg("end"), gsi::arg("destination"), gsi::arg("row"), "@brief Signal declaration for QSqlRelationalTableModel::rowsMoved(const QModelIndex &parent, int start, int end, const QModelIndex &destination, int row)\nYou can bind a procedure to this signal.");
-  methods += gsi::qt_signal<const QModelIndex &, int, int > ("rowsRemoved(const QModelIndex &, int, int)", "rowsRemoved", gsi::arg("parent"), gsi::arg("first"), gsi::arg("last"), "@brief Signal declaration for QSqlRelationalTableModel::rowsRemoved(const QModelIndex &parent, int first, int last)\nYou can bind a procedure to this signal.");
   methods += new qt_gsi::GenericStaticMethod ("tr", "@brief Static method QString QSqlRelationalTableModel::tr(const char *s, const char *c, int n)\nThis method is static and can be called without an instance.", &_init_f_tr_4013, &_call_f_tr_4013);
   methods += new qt_gsi::GenericStaticMethod ("trUtf8", "@brief Static method QString QSqlRelationalTableModel::trUtf8(const char *s, const char *c, int n)\nThis method is static and can be called without an instance.", &_init_f_trUtf8_4013, &_call_f_trUtf8_4013);
   return methods;
@@ -664,64 +650,6 @@ public:
     }
   }
 
-  //  [emitter impl] void QSqlRelationalTableModel::columnsAboutToBeInserted(const QModelIndex &parent, int first, int last)
-  void emitter_QSqlRelationalTableModel_columnsAboutToBeInserted_7372(const QModelIndex &parent, int first, int last)
-  {
-    __SUPPRESS_UNUSED_WARNING (parent);
-    __SUPPRESS_UNUSED_WARNING (first);
-    __SUPPRESS_UNUSED_WARNING (last);
-    throw tl::Exception ("Can't emit private signal 'void QSqlRelationalTableModel::columnsAboutToBeInserted(const QModelIndex &parent, int first, int last)'");
-  }
-
-  //  [emitter impl] void QSqlRelationalTableModel::columnsAboutToBeMoved(const QModelIndex &sourceParent, int sourceStart, int sourceEnd, const QModelIndex &destinationParent, int destinationColumn)
-  void emitter_QSqlRelationalTableModel_columnsAboutToBeMoved_10318(const QModelIndex &sourceParent, int sourceStart, int sourceEnd, const QModelIndex &destinationParent, int destinationColumn)
-  {
-    __SUPPRESS_UNUSED_WARNING (sourceParent);
-    __SUPPRESS_UNUSED_WARNING (sourceStart);
-    __SUPPRESS_UNUSED_WARNING (sourceEnd);
-    __SUPPRESS_UNUSED_WARNING (destinationParent);
-    __SUPPRESS_UNUSED_WARNING (destinationColumn);
-    throw tl::Exception ("Can't emit private signal 'void QSqlRelationalTableModel::columnsAboutToBeMoved(const QModelIndex &sourceParent, int sourceStart, int sourceEnd, const QModelIndex &destinationParent, int destinationColumn)'");
-  }
-
-  //  [emitter impl] void QSqlRelationalTableModel::columnsAboutToBeRemoved(const QModelIndex &parent, int first, int last)
-  void emitter_QSqlRelationalTableModel_columnsAboutToBeRemoved_7372(const QModelIndex &parent, int first, int last)
-  {
-    __SUPPRESS_UNUSED_WARNING (parent);
-    __SUPPRESS_UNUSED_WARNING (first);
-    __SUPPRESS_UNUSED_WARNING (last);
-    throw tl::Exception ("Can't emit private signal 'void QSqlRelationalTableModel::columnsAboutToBeRemoved(const QModelIndex &parent, int first, int last)'");
-  }
-
-  //  [emitter impl] void QSqlRelationalTableModel::columnsInserted(const QModelIndex &parent, int first, int last)
-  void emitter_QSqlRelationalTableModel_columnsInserted_7372(const QModelIndex &parent, int first, int last)
-  {
-    __SUPPRESS_UNUSED_WARNING (parent);
-    __SUPPRESS_UNUSED_WARNING (first);
-    __SUPPRESS_UNUSED_WARNING (last);
-    throw tl::Exception ("Can't emit private signal 'void QSqlRelationalTableModel::columnsInserted(const QModelIndex &parent, int first, int last)'");
-  }
-
-  //  [emitter impl] void QSqlRelationalTableModel::columnsMoved(const QModelIndex &parent, int start, int end, const QModelIndex &destination, int column)
-  void emitter_QSqlRelationalTableModel_columnsMoved_10318(const QModelIndex &parent, int start, int end, const QModelIndex &destination, int column)
-  {
-    __SUPPRESS_UNUSED_WARNING (parent);
-    __SUPPRESS_UNUSED_WARNING (start);
-    __SUPPRESS_UNUSED_WARNING (end);
-    __SUPPRESS_UNUSED_WARNING (destination);
-    __SUPPRESS_UNUSED_WARNING (column);
-    throw tl::Exception ("Can't emit private signal 'void QSqlRelationalTableModel::columnsMoved(const QModelIndex &parent, int start, int end, const QModelIndex &destination, int column)'");
-  }
-
-  //  [emitter impl] void QSqlRelationalTableModel::columnsRemoved(const QModelIndex &parent, int first, int last)
-  void emitter_QSqlRelationalTableModel_columnsRemoved_7372(const QModelIndex &parent, int first, int last)
-  {
-    __SUPPRESS_UNUSED_WARNING (parent);
-    __SUPPRESS_UNUSED_WARNING (first);
-    __SUPPRESS_UNUSED_WARNING (last);
-    throw tl::Exception ("Can't emit private signal 'void QSqlRelationalTableModel::columnsRemoved(const QModelIndex &parent, int first, int last)'");
-  }
-
   //  [adaptor impl] QVariant QSqlRelationalTableModel::data(const QModelIndex &item, int role)
   QVariant cbs_data_c3054_1(const QModelIndex &item, int role) const
   {
@@ -764,33 +692,33 @@ public:
     }
   }
 
-  //  [adaptor impl] bool QSqlRelationalTableModel::event(QEvent *event)
-  bool cbs_event_1217_0(QEvent *_event)
+  //  [adaptor impl] bool QSqlRelationalTableModel::event(QEvent *)
+  bool cbs_event_1217_0(QEvent *arg1)
   {
-    return QSqlRelationalTableModel::event(_event);
+    return QSqlRelationalTableModel::event(arg1);
   }
 
-  virtual bool event(QEvent *_event)
+  virtual bool event(QEvent *arg1)
   {
     if (cb_event_1217_0.can_issue()) {
-      return cb_event_1217_0.issue<QSqlRelationalTableModel_Adaptor, bool, QEvent *>(&QSqlRelationalTableModel_Adaptor::cbs_event_1217_0, _event);
+      return cb_event_1217_0.issue<QSqlRelationalTableModel_Adaptor, bool, QEvent *>(&QSqlRelationalTableModel_Adaptor::cbs_event_1217_0, arg1);
     } else {
-      return QSqlRelationalTableModel::event(_event);
+      return QSqlRelationalTableModel::event(arg1);
     }
   }
 
-  //  [adaptor impl] bool QSqlRelationalTableModel::eventFilter(QObject *watched, QEvent *event)
-  bool cbs_eventFilter_2411_0(QObject *watched, QEvent *event)
+  //  [adaptor impl] bool QSqlRelationalTableModel::eventFilter(QObject *, QEvent *)
+  bool cbs_eventFilter_2411_0(QObject *arg1, QEvent *arg2)
   {
-    return QSqlRelationalTableModel::eventFilter(watched, event);
+    return QSqlRelationalTableModel::eventFilter(arg1, arg2);
   }
 
-  virtual bool eventFilter(QObject *watched, QEvent *event)
+  virtual bool eventFilter(QObject *arg1, QEvent *arg2)
   {
     if (cb_eventFilter_2411_0.can_issue()) {
-      return cb_eventFilter_2411_0.issue<QSqlRelationalTableModel_Adaptor, bool, QObject *, QEvent *>(&QSqlRelationalTableModel_Adaptor::cbs_eventFilter_2411_0, watched, event);
+      return cb_eventFilter_2411_0.issue<QSqlRelationalTableModel_Adaptor, bool, QObject *, QEvent *>(&QSqlRelationalTableModel_Adaptor::cbs_eventFilter_2411_0, arg1, arg2);
     } else {
-      return QSqlRelationalTableModel::eventFilter(watched, event);
+      return QSqlRelationalTableModel::eventFilter(arg1, arg2);
     }
   }
 
@@ -962,18 +890,6 @@ public:
     }
   }
 
-  //  [emitter impl] void QSqlRelationalTableModel::modelAboutToBeReset()
-  void emitter_QSqlRelationalTableModel_modelAboutToBeReset_3767()
-  {
-    throw tl::Exception ("Can't emit private signal 'void QSqlRelationalTableModel::modelAboutToBeReset()'");
-  }
-
-  //  [emitter impl] void QSqlRelationalTableModel::modelReset()
-  void emitter_QSqlRelationalTableModel_modelReset_3767()
-  {
-    throw tl::Exception ("Can't emit private signal 'void QSqlRelationalTableModel::modelReset()'");
-  }
-
   //  [adaptor impl] bool QSqlRelationalTableModel::moveColumns(const QModelIndex &sourceParent, int sourceColumn, int count, const QModelIndex &destinationParent, int destinationChild)
   bool cbs_moveColumns_6659_0(const QModelIndex &sourceParent, int sourceColumn, int count, const QModelIndex &destinationParent, int destinationChild)
   {
@@ -1002,13 +918,6 @@ public:
     } else {
       return QSqlRelationalTableModel::moveRows(sourceParent, sourceRow, count, destinationParent, destinationChild);
     }
-  }
-
-  //  [emitter impl] void QSqlRelationalTableModel::objectNameChanged(const QString &objectName)
-  void emitter_QSqlRelationalTableModel_objectNameChanged_4567(const QString &objectName)
-  {
-    __SUPPRESS_UNUSED_WARNING (objectName);
-    throw tl::Exception ("Can't emit private signal 'void QSqlRelationalTableModel::objectNameChanged(const QString &objectName)'");
   }
 
   //  [emitter impl] void QSqlRelationalTableModel::primeInsert(int row, QSqlRecord &record)
@@ -1120,64 +1029,6 @@ public:
     } else {
       return QSqlRelationalTableModel::rowCount(parent);
     }
-  }
-
-  //  [emitter impl] void QSqlRelationalTableModel::rowsAboutToBeInserted(const QModelIndex &parent, int first, int last)
-  void emitter_QSqlRelationalTableModel_rowsAboutToBeInserted_7372(const QModelIndex &parent, int first, int last)
-  {
-    __SUPPRESS_UNUSED_WARNING (parent);
-    __SUPPRESS_UNUSED_WARNING (first);
-    __SUPPRESS_UNUSED_WARNING (last);
-    throw tl::Exception ("Can't emit private signal 'void QSqlRelationalTableModel::rowsAboutToBeInserted(const QModelIndex &parent, int first, int last)'");
-  }
-
-  //  [emitter impl] void QSqlRelationalTableModel::rowsAboutToBeMoved(const QModelIndex &sourceParent, int sourceStart, int sourceEnd, const QModelIndex &destinationParent, int destinationRow)
-  void emitter_QSqlRelationalTableModel_rowsAboutToBeMoved_10318(const QModelIndex &sourceParent, int sourceStart, int sourceEnd, const QModelIndex &destinationParent, int destinationRow)
-  {
-    __SUPPRESS_UNUSED_WARNING (sourceParent);
-    __SUPPRESS_UNUSED_WARNING (sourceStart);
-    __SUPPRESS_UNUSED_WARNING (sourceEnd);
-    __SUPPRESS_UNUSED_WARNING (destinationParent);
-    __SUPPRESS_UNUSED_WARNING (destinationRow);
-    throw tl::Exception ("Can't emit private signal 'void QSqlRelationalTableModel::rowsAboutToBeMoved(const QModelIndex &sourceParent, int sourceStart, int sourceEnd, const QModelIndex &destinationParent, int destinationRow)'");
-  }
-
-  //  [emitter impl] void QSqlRelationalTableModel::rowsAboutToBeRemoved(const QModelIndex &parent, int first, int last)
-  void emitter_QSqlRelationalTableModel_rowsAboutToBeRemoved_7372(const QModelIndex &parent, int first, int last)
-  {
-    __SUPPRESS_UNUSED_WARNING (parent);
-    __SUPPRESS_UNUSED_WARNING (first);
-    __SUPPRESS_UNUSED_WARNING (last);
-    throw tl::Exception ("Can't emit private signal 'void QSqlRelationalTableModel::rowsAboutToBeRemoved(const QModelIndex &parent, int first, int last)'");
-  }
-
-  //  [emitter impl] void QSqlRelationalTableModel::rowsInserted(const QModelIndex &parent, int first, int last)
-  void emitter_QSqlRelationalTableModel_rowsInserted_7372(const QModelIndex &parent, int first, int last)
-  {
-    __SUPPRESS_UNUSED_WARNING (parent);
-    __SUPPRESS_UNUSED_WARNING (first);
-    __SUPPRESS_UNUSED_WARNING (last);
-    throw tl::Exception ("Can't emit private signal 'void QSqlRelationalTableModel::rowsInserted(const QModelIndex &parent, int first, int last)'");
-  }
-
-  //  [emitter impl] void QSqlRelationalTableModel::rowsMoved(const QModelIndex &parent, int start, int end, const QModelIndex &destination, int row)
-  void emitter_QSqlRelationalTableModel_rowsMoved_10318(const QModelIndex &parent, int start, int end, const QModelIndex &destination, int row)
-  {
-    __SUPPRESS_UNUSED_WARNING (parent);
-    __SUPPRESS_UNUSED_WARNING (start);
-    __SUPPRESS_UNUSED_WARNING (end);
-    __SUPPRESS_UNUSED_WARNING (destination);
-    __SUPPRESS_UNUSED_WARNING (row);
-    throw tl::Exception ("Can't emit private signal 'void QSqlRelationalTableModel::rowsMoved(const QModelIndex &parent, int start, int end, const QModelIndex &destination, int row)'");
-  }
-
-  //  [emitter impl] void QSqlRelationalTableModel::rowsRemoved(const QModelIndex &parent, int first, int last)
-  void emitter_QSqlRelationalTableModel_rowsRemoved_7372(const QModelIndex &parent, int first, int last)
-  {
-    __SUPPRESS_UNUSED_WARNING (parent);
-    __SUPPRESS_UNUSED_WARNING (first);
-    __SUPPRESS_UNUSED_WARNING (last);
-    throw tl::Exception ("Can't emit private signal 'void QSqlRelationalTableModel::rowsRemoved(const QModelIndex &parent, int first, int last)'");
   }
 
   //  [adaptor impl] bool QSqlRelationalTableModel::select()
@@ -1420,33 +1271,33 @@ public:
     }
   }
 
-  //  [adaptor impl] void QSqlRelationalTableModel::childEvent(QChildEvent *event)
-  void cbs_childEvent_1701_0(QChildEvent *event)
+  //  [adaptor impl] void QSqlRelationalTableModel::childEvent(QChildEvent *)
+  void cbs_childEvent_1701_0(QChildEvent *arg1)
   {
-    QSqlRelationalTableModel::childEvent(event);
+    QSqlRelationalTableModel::childEvent(arg1);
   }
 
-  virtual void childEvent(QChildEvent *event)
+  virtual void childEvent(QChildEvent *arg1)
   {
     if (cb_childEvent_1701_0.can_issue()) {
-      cb_childEvent_1701_0.issue<QSqlRelationalTableModel_Adaptor, QChildEvent *>(&QSqlRelationalTableModel_Adaptor::cbs_childEvent_1701_0, event);
+      cb_childEvent_1701_0.issue<QSqlRelationalTableModel_Adaptor, QChildEvent *>(&QSqlRelationalTableModel_Adaptor::cbs_childEvent_1701_0, arg1);
     } else {
-      QSqlRelationalTableModel::childEvent(event);
+      QSqlRelationalTableModel::childEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QSqlRelationalTableModel::customEvent(QEvent *event)
-  void cbs_customEvent_1217_0(QEvent *event)
+  //  [adaptor impl] void QSqlRelationalTableModel::customEvent(QEvent *)
+  void cbs_customEvent_1217_0(QEvent *arg1)
   {
-    QSqlRelationalTableModel::customEvent(event);
+    QSqlRelationalTableModel::customEvent(arg1);
   }
 
-  virtual void customEvent(QEvent *event)
+  virtual void customEvent(QEvent *arg1)
   {
     if (cb_customEvent_1217_0.can_issue()) {
-      cb_customEvent_1217_0.issue<QSqlRelationalTableModel_Adaptor, QEvent *>(&QSqlRelationalTableModel_Adaptor::cbs_customEvent_1217_0, event);
+      cb_customEvent_1217_0.issue<QSqlRelationalTableModel_Adaptor, QEvent *>(&QSqlRelationalTableModel_Adaptor::cbs_customEvent_1217_0, arg1);
     } else {
-      QSqlRelationalTableModel::customEvent(event);
+      QSqlRelationalTableModel::customEvent(arg1);
     }
   }
 
@@ -1555,18 +1406,18 @@ public:
     }
   }
 
-  //  [adaptor impl] void QSqlRelationalTableModel::timerEvent(QTimerEvent *event)
-  void cbs_timerEvent_1730_0(QTimerEvent *event)
+  //  [adaptor impl] void QSqlRelationalTableModel::timerEvent(QTimerEvent *)
+  void cbs_timerEvent_1730_0(QTimerEvent *arg1)
   {
-    QSqlRelationalTableModel::timerEvent(event);
+    QSqlRelationalTableModel::timerEvent(arg1);
   }
 
-  virtual void timerEvent(QTimerEvent *event)
+  virtual void timerEvent(QTimerEvent *arg1)
   {
     if (cb_timerEvent_1730_0.can_issue()) {
-      cb_timerEvent_1730_0.issue<QSqlRelationalTableModel_Adaptor, QTimerEvent *>(&QSqlRelationalTableModel_Adaptor::cbs_timerEvent_1730_0, event);
+      cb_timerEvent_1730_0.issue<QSqlRelationalTableModel_Adaptor, QTimerEvent *>(&QSqlRelationalTableModel_Adaptor::cbs_timerEvent_1730_0, arg1);
     } else {
-      QSqlRelationalTableModel::timerEvent(event);
+      QSqlRelationalTableModel::timerEvent(arg1);
     }
   }
 
@@ -1648,7 +1499,7 @@ QSqlRelationalTableModel_Adaptor::~QSqlRelationalTableModel_Adaptor() { }
 
 static void _init_ctor_QSqlRelationalTableModel_Adaptor_2804 (qt_gsi::GenericStaticMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("parent", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("parent", true, "0");
   decl->add_arg<QObject * > (argspec_0);
   static gsi::ArgSpecBase argspec_1 ("db", true, "QSqlDatabase()");
   decl->add_arg<QSqlDatabase > (argspec_1);
@@ -1659,7 +1510,7 @@ static void _call_ctor_QSqlRelationalTableModel_Adaptor_2804 (const qt_gsi::Gene
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (nullptr, heap);
+  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (0, heap);
   QSqlDatabase arg2 = args ? gsi::arg_reader<QSqlDatabase >() (args, heap) : gsi::arg_maker<QSqlDatabase >() (QSqlDatabase(), heap);
   ret.write<QSqlRelationalTableModel_Adaptor *> (new QSqlRelationalTableModel_Adaptor (arg1, arg2));
 }
@@ -2022,11 +1873,11 @@ static void _call_fp_changePersistentIndexList_5912 (const qt_gsi::GenericMethod
 }
 
 
-// void QSqlRelationalTableModel::childEvent(QChildEvent *event)
+// void QSqlRelationalTableModel::childEvent(QChildEvent *)
 
 static void _init_cbs_childEvent_1701_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QChildEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -2089,162 +1940,6 @@ static void _set_callback_cbs_columnCount_c2395_1 (void *cls, const gsi::Callbac
 }
 
 
-// emitter void QSqlRelationalTableModel::columnsAboutToBeInserted(const QModelIndex &parent, int first, int last)
-
-static void _init_emitter_columnsAboutToBeInserted_7372 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("parent");
-  decl->add_arg<const QModelIndex & > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("first");
-  decl->add_arg<int > (argspec_1);
-  static gsi::ArgSpecBase argspec_2 ("last");
-  decl->add_arg<int > (argspec_2);
-  decl->set_return<void > ();
-}
-
-static void _call_emitter_columnsAboutToBeInserted_7372 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs & /*ret*/) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const QModelIndex &arg1 = gsi::arg_reader<const QModelIndex & >() (args, heap);
-  int arg2 = gsi::arg_reader<int >() (args, heap);
-  int arg3 = gsi::arg_reader<int >() (args, heap);
-  ((QSqlRelationalTableModel_Adaptor *)cls)->emitter_QSqlRelationalTableModel_columnsAboutToBeInserted_7372 (arg1, arg2, arg3);
-}
-
-
-// emitter void QSqlRelationalTableModel::columnsAboutToBeMoved(const QModelIndex &sourceParent, int sourceStart, int sourceEnd, const QModelIndex &destinationParent, int destinationColumn)
-
-static void _init_emitter_columnsAboutToBeMoved_10318 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("sourceParent");
-  decl->add_arg<const QModelIndex & > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("sourceStart");
-  decl->add_arg<int > (argspec_1);
-  static gsi::ArgSpecBase argspec_2 ("sourceEnd");
-  decl->add_arg<int > (argspec_2);
-  static gsi::ArgSpecBase argspec_3 ("destinationParent");
-  decl->add_arg<const QModelIndex & > (argspec_3);
-  static gsi::ArgSpecBase argspec_4 ("destinationColumn");
-  decl->add_arg<int > (argspec_4);
-  decl->set_return<void > ();
-}
-
-static void _call_emitter_columnsAboutToBeMoved_10318 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs & /*ret*/) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const QModelIndex &arg1 = gsi::arg_reader<const QModelIndex & >() (args, heap);
-  int arg2 = gsi::arg_reader<int >() (args, heap);
-  int arg3 = gsi::arg_reader<int >() (args, heap);
-  const QModelIndex &arg4 = gsi::arg_reader<const QModelIndex & >() (args, heap);
-  int arg5 = gsi::arg_reader<int >() (args, heap);
-  ((QSqlRelationalTableModel_Adaptor *)cls)->emitter_QSqlRelationalTableModel_columnsAboutToBeMoved_10318 (arg1, arg2, arg3, arg4, arg5);
-}
-
-
-// emitter void QSqlRelationalTableModel::columnsAboutToBeRemoved(const QModelIndex &parent, int first, int last)
-
-static void _init_emitter_columnsAboutToBeRemoved_7372 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("parent");
-  decl->add_arg<const QModelIndex & > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("first");
-  decl->add_arg<int > (argspec_1);
-  static gsi::ArgSpecBase argspec_2 ("last");
-  decl->add_arg<int > (argspec_2);
-  decl->set_return<void > ();
-}
-
-static void _call_emitter_columnsAboutToBeRemoved_7372 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs & /*ret*/) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const QModelIndex &arg1 = gsi::arg_reader<const QModelIndex & >() (args, heap);
-  int arg2 = gsi::arg_reader<int >() (args, heap);
-  int arg3 = gsi::arg_reader<int >() (args, heap);
-  ((QSqlRelationalTableModel_Adaptor *)cls)->emitter_QSqlRelationalTableModel_columnsAboutToBeRemoved_7372 (arg1, arg2, arg3);
-}
-
-
-// emitter void QSqlRelationalTableModel::columnsInserted(const QModelIndex &parent, int first, int last)
-
-static void _init_emitter_columnsInserted_7372 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("parent");
-  decl->add_arg<const QModelIndex & > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("first");
-  decl->add_arg<int > (argspec_1);
-  static gsi::ArgSpecBase argspec_2 ("last");
-  decl->add_arg<int > (argspec_2);
-  decl->set_return<void > ();
-}
-
-static void _call_emitter_columnsInserted_7372 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs & /*ret*/) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const QModelIndex &arg1 = gsi::arg_reader<const QModelIndex & >() (args, heap);
-  int arg2 = gsi::arg_reader<int >() (args, heap);
-  int arg3 = gsi::arg_reader<int >() (args, heap);
-  ((QSqlRelationalTableModel_Adaptor *)cls)->emitter_QSqlRelationalTableModel_columnsInserted_7372 (arg1, arg2, arg3);
-}
-
-
-// emitter void QSqlRelationalTableModel::columnsMoved(const QModelIndex &parent, int start, int end, const QModelIndex &destination, int column)
-
-static void _init_emitter_columnsMoved_10318 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("parent");
-  decl->add_arg<const QModelIndex & > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("start");
-  decl->add_arg<int > (argspec_1);
-  static gsi::ArgSpecBase argspec_2 ("end");
-  decl->add_arg<int > (argspec_2);
-  static gsi::ArgSpecBase argspec_3 ("destination");
-  decl->add_arg<const QModelIndex & > (argspec_3);
-  static gsi::ArgSpecBase argspec_4 ("column");
-  decl->add_arg<int > (argspec_4);
-  decl->set_return<void > ();
-}
-
-static void _call_emitter_columnsMoved_10318 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs & /*ret*/) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const QModelIndex &arg1 = gsi::arg_reader<const QModelIndex & >() (args, heap);
-  int arg2 = gsi::arg_reader<int >() (args, heap);
-  int arg3 = gsi::arg_reader<int >() (args, heap);
-  const QModelIndex &arg4 = gsi::arg_reader<const QModelIndex & >() (args, heap);
-  int arg5 = gsi::arg_reader<int >() (args, heap);
-  ((QSqlRelationalTableModel_Adaptor *)cls)->emitter_QSqlRelationalTableModel_columnsMoved_10318 (arg1, arg2, arg3, arg4, arg5);
-}
-
-
-// emitter void QSqlRelationalTableModel::columnsRemoved(const QModelIndex &parent, int first, int last)
-
-static void _init_emitter_columnsRemoved_7372 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("parent");
-  decl->add_arg<const QModelIndex & > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("first");
-  decl->add_arg<int > (argspec_1);
-  static gsi::ArgSpecBase argspec_2 ("last");
-  decl->add_arg<int > (argspec_2);
-  decl->set_return<void > ();
-}
-
-static void _call_emitter_columnsRemoved_7372 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs & /*ret*/) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const QModelIndex &arg1 = gsi::arg_reader<const QModelIndex & >() (args, heap);
-  int arg2 = gsi::arg_reader<int >() (args, heap);
-  int arg3 = gsi::arg_reader<int >() (args, heap);
-  ((QSqlRelationalTableModel_Adaptor *)cls)->emitter_QSqlRelationalTableModel_columnsRemoved_7372 (arg1, arg2, arg3);
-}
-
-
 // exposed QModelIndex QSqlRelationalTableModel::createIndex(int row, int column, void *data)
 
 static void _init_fp_createIndex_c2374 (qt_gsi::GenericMethod *decl)
@@ -2253,7 +1948,7 @@ static void _init_fp_createIndex_c2374 (qt_gsi::GenericMethod *decl)
   decl->add_arg<int > (argspec_0);
   static gsi::ArgSpecBase argspec_1 ("column");
   decl->add_arg<int > (argspec_1);
-  static gsi::ArgSpecBase argspec_2 ("data", true, "nullptr");
+  static gsi::ArgSpecBase argspec_2 ("data", true, "0");
   decl->add_arg<void * > (argspec_2);
   decl->set_return<QModelIndex > ();
 }
@@ -2264,7 +1959,7 @@ static void _call_fp_createIndex_c2374 (const qt_gsi::GenericMethod * /*decl*/, 
   tl::Heap heap;
   int arg1 = gsi::arg_reader<int >() (args, heap);
   int arg2 = gsi::arg_reader<int >() (args, heap);
-  void *arg3 = args ? gsi::arg_reader<void * >() (args, heap) : gsi::arg_maker<void * >() (nullptr, heap);
+  void *arg3 = args ? gsi::arg_reader<void * >() (args, heap) : gsi::arg_maker<void * >() (0, heap);
   ret.write<QModelIndex > ((QModelIndex)((QSqlRelationalTableModel_Adaptor *)cls)->fp_QSqlRelationalTableModel_createIndex_c2374 (arg1, arg2, arg3));
 }
 
@@ -2293,11 +1988,11 @@ static void _call_fp_createIndex_c2657 (const qt_gsi::GenericMethod * /*decl*/, 
 }
 
 
-// void QSqlRelationalTableModel::customEvent(QEvent *event)
+// void QSqlRelationalTableModel::customEvent(QEvent *)
 
 static void _init_cbs_customEvent_1217_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -2421,7 +2116,7 @@ static void _set_callback_cbs_deleteRowFromTable_767_0 (void *cls, const gsi::Ca
 
 static void _init_emitter_destroyed_1302 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("arg1", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("arg1", true, "0");
   decl->add_arg<QObject * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -2430,7 +2125,7 @@ static void _call_emitter_destroyed_1302 (const qt_gsi::GenericMethod * /*decl*/
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (nullptr, heap);
+  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (0, heap);
   ((QSqlRelationalTableModel_Adaptor *)cls)->emitter_QSqlRelationalTableModel_destroyed_1302 (arg1);
 }
 
@@ -2621,11 +2316,11 @@ static void _call_fp_endResetModel_0 (const qt_gsi::GenericMethod * /*decl*/, vo
 }
 
 
-// bool QSqlRelationalTableModel::event(QEvent *event)
+// bool QSqlRelationalTableModel::event(QEvent *)
 
 static void _init_cbs_event_1217_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QEvent * > (argspec_0);
   decl->set_return<bool > ();
 }
@@ -2644,13 +2339,13 @@ static void _set_callback_cbs_event_1217_0 (void *cls, const gsi::Callback &cb)
 }
 
 
-// bool QSqlRelationalTableModel::eventFilter(QObject *watched, QEvent *event)
+// bool QSqlRelationalTableModel::eventFilter(QObject *, QEvent *)
 
 static void _init_cbs_eventFilter_2411_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("watched");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QObject * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("event");
+  static gsi::ArgSpecBase argspec_1 ("arg2");
   decl->add_arg<QEvent * > (argspec_1);
   decl->set_return<bool > ();
 }
@@ -3063,34 +2758,6 @@ static void _set_callback_cbs_mimeTypes_c0_0 (void *cls, const gsi::Callback &cb
 }
 
 
-// emitter void QSqlRelationalTableModel::modelAboutToBeReset()
-
-static void _init_emitter_modelAboutToBeReset_3767 (qt_gsi::GenericMethod *decl)
-{
-  decl->set_return<void > ();
-}
-
-static void _call_emitter_modelAboutToBeReset_3767 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs & /*ret*/) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  ((QSqlRelationalTableModel_Adaptor *)cls)->emitter_QSqlRelationalTableModel_modelAboutToBeReset_3767 ();
-}
-
-
-// emitter void QSqlRelationalTableModel::modelReset()
-
-static void _init_emitter_modelReset_3767 (qt_gsi::GenericMethod *decl)
-{
-  decl->set_return<void > ();
-}
-
-static void _call_emitter_modelReset_3767 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs & /*ret*/) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  ((QSqlRelationalTableModel_Adaptor *)cls)->emitter_QSqlRelationalTableModel_modelReset_3767 ();
-}
-
-
 // bool QSqlRelationalTableModel::moveColumns(const QModelIndex &sourceParent, int sourceColumn, int count, const QModelIndex &destinationParent, int destinationChild)
 
 static void _init_cbs_moveColumns_6659_0 (qt_gsi::GenericMethod *decl)
@@ -3158,24 +2825,6 @@ static void _call_cbs_moveRows_6659_0 (const qt_gsi::GenericMethod * /*decl*/, v
 static void _set_callback_cbs_moveRows_6659_0 (void *cls, const gsi::Callback &cb)
 {
   ((QSqlRelationalTableModel_Adaptor *)cls)->cb_moveRows_6659_0 = cb;
-}
-
-
-// emitter void QSqlRelationalTableModel::objectNameChanged(const QString &objectName)
-
-static void _init_emitter_objectNameChanged_4567 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("objectName");
-  decl->add_arg<const QString & > (argspec_0);
-  decl->set_return<void > ();
-}
-
-static void _call_emitter_objectNameChanged_4567 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs & /*ret*/) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const QString &arg1 = gsi::arg_reader<const QString & >() (args, heap);
-  ((QSqlRelationalTableModel_Adaptor *)cls)->emitter_QSqlRelationalTableModel_objectNameChanged_4567 (arg1);
 }
 
 
@@ -3468,162 +3117,6 @@ static void _call_cbs_rowCount_c2395_1 (const qt_gsi::GenericMethod * /*decl*/, 
 static void _set_callback_cbs_rowCount_c2395_1 (void *cls, const gsi::Callback &cb)
 {
   ((QSqlRelationalTableModel_Adaptor *)cls)->cb_rowCount_c2395_1 = cb;
-}
-
-
-// emitter void QSqlRelationalTableModel::rowsAboutToBeInserted(const QModelIndex &parent, int first, int last)
-
-static void _init_emitter_rowsAboutToBeInserted_7372 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("parent");
-  decl->add_arg<const QModelIndex & > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("first");
-  decl->add_arg<int > (argspec_1);
-  static gsi::ArgSpecBase argspec_2 ("last");
-  decl->add_arg<int > (argspec_2);
-  decl->set_return<void > ();
-}
-
-static void _call_emitter_rowsAboutToBeInserted_7372 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs & /*ret*/) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const QModelIndex &arg1 = gsi::arg_reader<const QModelIndex & >() (args, heap);
-  int arg2 = gsi::arg_reader<int >() (args, heap);
-  int arg3 = gsi::arg_reader<int >() (args, heap);
-  ((QSqlRelationalTableModel_Adaptor *)cls)->emitter_QSqlRelationalTableModel_rowsAboutToBeInserted_7372 (arg1, arg2, arg3);
-}
-
-
-// emitter void QSqlRelationalTableModel::rowsAboutToBeMoved(const QModelIndex &sourceParent, int sourceStart, int sourceEnd, const QModelIndex &destinationParent, int destinationRow)
-
-static void _init_emitter_rowsAboutToBeMoved_10318 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("sourceParent");
-  decl->add_arg<const QModelIndex & > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("sourceStart");
-  decl->add_arg<int > (argspec_1);
-  static gsi::ArgSpecBase argspec_2 ("sourceEnd");
-  decl->add_arg<int > (argspec_2);
-  static gsi::ArgSpecBase argspec_3 ("destinationParent");
-  decl->add_arg<const QModelIndex & > (argspec_3);
-  static gsi::ArgSpecBase argspec_4 ("destinationRow");
-  decl->add_arg<int > (argspec_4);
-  decl->set_return<void > ();
-}
-
-static void _call_emitter_rowsAboutToBeMoved_10318 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs & /*ret*/) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const QModelIndex &arg1 = gsi::arg_reader<const QModelIndex & >() (args, heap);
-  int arg2 = gsi::arg_reader<int >() (args, heap);
-  int arg3 = gsi::arg_reader<int >() (args, heap);
-  const QModelIndex &arg4 = gsi::arg_reader<const QModelIndex & >() (args, heap);
-  int arg5 = gsi::arg_reader<int >() (args, heap);
-  ((QSqlRelationalTableModel_Adaptor *)cls)->emitter_QSqlRelationalTableModel_rowsAboutToBeMoved_10318 (arg1, arg2, arg3, arg4, arg5);
-}
-
-
-// emitter void QSqlRelationalTableModel::rowsAboutToBeRemoved(const QModelIndex &parent, int first, int last)
-
-static void _init_emitter_rowsAboutToBeRemoved_7372 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("parent");
-  decl->add_arg<const QModelIndex & > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("first");
-  decl->add_arg<int > (argspec_1);
-  static gsi::ArgSpecBase argspec_2 ("last");
-  decl->add_arg<int > (argspec_2);
-  decl->set_return<void > ();
-}
-
-static void _call_emitter_rowsAboutToBeRemoved_7372 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs & /*ret*/) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const QModelIndex &arg1 = gsi::arg_reader<const QModelIndex & >() (args, heap);
-  int arg2 = gsi::arg_reader<int >() (args, heap);
-  int arg3 = gsi::arg_reader<int >() (args, heap);
-  ((QSqlRelationalTableModel_Adaptor *)cls)->emitter_QSqlRelationalTableModel_rowsAboutToBeRemoved_7372 (arg1, arg2, arg3);
-}
-
-
-// emitter void QSqlRelationalTableModel::rowsInserted(const QModelIndex &parent, int first, int last)
-
-static void _init_emitter_rowsInserted_7372 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("parent");
-  decl->add_arg<const QModelIndex & > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("first");
-  decl->add_arg<int > (argspec_1);
-  static gsi::ArgSpecBase argspec_2 ("last");
-  decl->add_arg<int > (argspec_2);
-  decl->set_return<void > ();
-}
-
-static void _call_emitter_rowsInserted_7372 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs & /*ret*/) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const QModelIndex &arg1 = gsi::arg_reader<const QModelIndex & >() (args, heap);
-  int arg2 = gsi::arg_reader<int >() (args, heap);
-  int arg3 = gsi::arg_reader<int >() (args, heap);
-  ((QSqlRelationalTableModel_Adaptor *)cls)->emitter_QSqlRelationalTableModel_rowsInserted_7372 (arg1, arg2, arg3);
-}
-
-
-// emitter void QSqlRelationalTableModel::rowsMoved(const QModelIndex &parent, int start, int end, const QModelIndex &destination, int row)
-
-static void _init_emitter_rowsMoved_10318 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("parent");
-  decl->add_arg<const QModelIndex & > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("start");
-  decl->add_arg<int > (argspec_1);
-  static gsi::ArgSpecBase argspec_2 ("end");
-  decl->add_arg<int > (argspec_2);
-  static gsi::ArgSpecBase argspec_3 ("destination");
-  decl->add_arg<const QModelIndex & > (argspec_3);
-  static gsi::ArgSpecBase argspec_4 ("row");
-  decl->add_arg<int > (argspec_4);
-  decl->set_return<void > ();
-}
-
-static void _call_emitter_rowsMoved_10318 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs & /*ret*/) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const QModelIndex &arg1 = gsi::arg_reader<const QModelIndex & >() (args, heap);
-  int arg2 = gsi::arg_reader<int >() (args, heap);
-  int arg3 = gsi::arg_reader<int >() (args, heap);
-  const QModelIndex &arg4 = gsi::arg_reader<const QModelIndex & >() (args, heap);
-  int arg5 = gsi::arg_reader<int >() (args, heap);
-  ((QSqlRelationalTableModel_Adaptor *)cls)->emitter_QSqlRelationalTableModel_rowsMoved_10318 (arg1, arg2, arg3, arg4, arg5);
-}
-
-
-// emitter void QSqlRelationalTableModel::rowsRemoved(const QModelIndex &parent, int first, int last)
-
-static void _init_emitter_rowsRemoved_7372 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("parent");
-  decl->add_arg<const QModelIndex & > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("first");
-  decl->add_arg<int > (argspec_1);
-  static gsi::ArgSpecBase argspec_2 ("last");
-  decl->add_arg<int > (argspec_2);
-  decl->set_return<void > ();
-}
-
-static void _call_emitter_rowsRemoved_7372 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs & /*ret*/) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const QModelIndex &arg1 = gsi::arg_reader<const QModelIndex & >() (args, heap);
-  int arg2 = gsi::arg_reader<int >() (args, heap);
-  int arg3 = gsi::arg_reader<int >() (args, heap);
-  ((QSqlRelationalTableModel_Adaptor *)cls)->emitter_QSqlRelationalTableModel_rowsRemoved_7372 (arg1, arg2, arg3);
 }
 
 
@@ -4122,11 +3615,11 @@ static void _set_callback_cbs_supportedDropActions_c0_0 (void *cls, const gsi::C
 }
 
 
-// void QSqlRelationalTableModel::timerEvent(QTimerEvent *event)
+// void QSqlRelationalTableModel::timerEvent(QTimerEvent *)
 
 static void _init_cbs_timerEvent_1730_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QTimerEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -4190,41 +3683,35 @@ static gsi::Methods methods_QSqlRelationalTableModel_Adaptor () {
   methods += new qt_gsi::GenericMethod ("*beginRemoveColumns", "@brief Method void QSqlRelationalTableModel::beginRemoveColumns(const QModelIndex &parent, int first, int last)\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_beginRemoveColumns_3713, &_call_fp_beginRemoveColumns_3713);
   methods += new qt_gsi::GenericMethod ("*beginRemoveRows", "@brief Method void QSqlRelationalTableModel::beginRemoveRows(const QModelIndex &parent, int first, int last)\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_beginRemoveRows_3713, &_call_fp_beginRemoveRows_3713);
   methods += new qt_gsi::GenericMethod ("*beginResetModel", "@brief Method void QSqlRelationalTableModel::beginResetModel()\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_beginResetModel_0, &_call_fp_beginResetModel_0);
-  methods += new qt_gsi::GenericMethod ("buddy", "@brief Virtual method QModelIndex QSqlRelationalTableModel::buddy(const QModelIndex &index)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_buddy_c2395_0, &_call_cbs_buddy_c2395_0);
-  methods += new qt_gsi::GenericMethod ("buddy", "@hide", true, &_init_cbs_buddy_c2395_0, &_call_cbs_buddy_c2395_0, &_set_callback_cbs_buddy_c2395_0);
-  methods += new qt_gsi::GenericMethod ("canDropMimeData", "@brief Virtual method bool QSqlRelationalTableModel::canDropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_canDropMimeData_c7425_0, &_call_cbs_canDropMimeData_c7425_0);
-  methods += new qt_gsi::GenericMethod ("canDropMimeData", "@hide", true, &_init_cbs_canDropMimeData_c7425_0, &_call_cbs_canDropMimeData_c7425_0, &_set_callback_cbs_canDropMimeData_c7425_0);
-  methods += new qt_gsi::GenericMethod ("canFetchMore", "@brief Virtual method bool QSqlRelationalTableModel::canFetchMore(const QModelIndex &parent)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_canFetchMore_c2395_1, &_call_cbs_canFetchMore_c2395_1);
-  methods += new qt_gsi::GenericMethod ("canFetchMore", "@hide", true, &_init_cbs_canFetchMore_c2395_1, &_call_cbs_canFetchMore_c2395_1, &_set_callback_cbs_canFetchMore_c2395_1);
+  methods += new qt_gsi::GenericMethod ("buddy", "@hide", true, &_init_cbs_buddy_c2395_0, &_call_cbs_buddy_c2395_0);
+  methods += new qt_gsi::GenericMethod ("buddy", "@brief Virtual method QModelIndex QSqlRelationalTableModel::buddy(const QModelIndex &index)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_buddy_c2395_0, &_call_cbs_buddy_c2395_0, &_set_callback_cbs_buddy_c2395_0);
+  methods += new qt_gsi::GenericMethod ("canDropMimeData", "@hide", true, &_init_cbs_canDropMimeData_c7425_0, &_call_cbs_canDropMimeData_c7425_0);
+  methods += new qt_gsi::GenericMethod ("canDropMimeData", "@brief Virtual method bool QSqlRelationalTableModel::canDropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_canDropMimeData_c7425_0, &_call_cbs_canDropMimeData_c7425_0, &_set_callback_cbs_canDropMimeData_c7425_0);
+  methods += new qt_gsi::GenericMethod ("canFetchMore", "@hide", true, &_init_cbs_canFetchMore_c2395_1, &_call_cbs_canFetchMore_c2395_1);
+  methods += new qt_gsi::GenericMethod ("canFetchMore", "@brief Virtual method bool QSqlRelationalTableModel::canFetchMore(const QModelIndex &parent)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_canFetchMore_c2395_1, &_call_cbs_canFetchMore_c2395_1, &_set_callback_cbs_canFetchMore_c2395_1);
   methods += new qt_gsi::GenericMethod ("*changePersistentIndex", "@brief Method void QSqlRelationalTableModel::changePersistentIndex(const QModelIndex &from, const QModelIndex &to)\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_changePersistentIndex_4682, &_call_fp_changePersistentIndex_4682);
   methods += new qt_gsi::GenericMethod ("*changePersistentIndexList", "@brief Method void QSqlRelationalTableModel::changePersistentIndexList(const QList<QModelIndex> &from, const QList<QModelIndex> &to)\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_changePersistentIndexList_5912, &_call_fp_changePersistentIndexList_5912);
-  methods += new qt_gsi::GenericMethod ("*childEvent", "@brief Virtual method void QSqlRelationalTableModel::childEvent(QChildEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0);
-  methods += new qt_gsi::GenericMethod ("*childEvent", "@hide", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0, &_set_callback_cbs_childEvent_1701_0);
-  methods += new qt_gsi::GenericMethod ("clear", "@brief Virtual method void QSqlRelationalTableModel::clear()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_clear_0_0, &_call_cbs_clear_0_0);
-  methods += new qt_gsi::GenericMethod ("clear", "@hide", false, &_init_cbs_clear_0_0, &_call_cbs_clear_0_0, &_set_callback_cbs_clear_0_0);
-  methods += new qt_gsi::GenericMethod ("columnCount", "@brief Virtual method int QSqlRelationalTableModel::columnCount(const QModelIndex &parent)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_columnCount_c2395_1, &_call_cbs_columnCount_c2395_1);
-  methods += new qt_gsi::GenericMethod ("columnCount", "@hide", true, &_init_cbs_columnCount_c2395_1, &_call_cbs_columnCount_c2395_1, &_set_callback_cbs_columnCount_c2395_1);
-  methods += new qt_gsi::GenericMethod ("emit_columnsAboutToBeInserted", "@brief Emitter for signal void QSqlRelationalTableModel::columnsAboutToBeInserted(const QModelIndex &parent, int first, int last)\nCall this method to emit this signal.", false, &_init_emitter_columnsAboutToBeInserted_7372, &_call_emitter_columnsAboutToBeInserted_7372);
-  methods += new qt_gsi::GenericMethod ("emit_columnsAboutToBeMoved", "@brief Emitter for signal void QSqlRelationalTableModel::columnsAboutToBeMoved(const QModelIndex &sourceParent, int sourceStart, int sourceEnd, const QModelIndex &destinationParent, int destinationColumn)\nCall this method to emit this signal.", false, &_init_emitter_columnsAboutToBeMoved_10318, &_call_emitter_columnsAboutToBeMoved_10318);
-  methods += new qt_gsi::GenericMethod ("emit_columnsAboutToBeRemoved", "@brief Emitter for signal void QSqlRelationalTableModel::columnsAboutToBeRemoved(const QModelIndex &parent, int first, int last)\nCall this method to emit this signal.", false, &_init_emitter_columnsAboutToBeRemoved_7372, &_call_emitter_columnsAboutToBeRemoved_7372);
-  methods += new qt_gsi::GenericMethod ("emit_columnsInserted", "@brief Emitter for signal void QSqlRelationalTableModel::columnsInserted(const QModelIndex &parent, int first, int last)\nCall this method to emit this signal.", false, &_init_emitter_columnsInserted_7372, &_call_emitter_columnsInserted_7372);
-  methods += new qt_gsi::GenericMethod ("emit_columnsMoved", "@brief Emitter for signal void QSqlRelationalTableModel::columnsMoved(const QModelIndex &parent, int start, int end, const QModelIndex &destination, int column)\nCall this method to emit this signal.", false, &_init_emitter_columnsMoved_10318, &_call_emitter_columnsMoved_10318);
-  methods += new qt_gsi::GenericMethod ("emit_columnsRemoved", "@brief Emitter for signal void QSqlRelationalTableModel::columnsRemoved(const QModelIndex &parent, int first, int last)\nCall this method to emit this signal.", false, &_init_emitter_columnsRemoved_7372, &_call_emitter_columnsRemoved_7372);
+  methods += new qt_gsi::GenericMethod ("*childEvent", "@hide", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0);
+  methods += new qt_gsi::GenericMethod ("*childEvent", "@brief Virtual method void QSqlRelationalTableModel::childEvent(QChildEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0, &_set_callback_cbs_childEvent_1701_0);
+  methods += new qt_gsi::GenericMethod ("clear", "@hide", false, &_init_cbs_clear_0_0, &_call_cbs_clear_0_0);
+  methods += new qt_gsi::GenericMethod ("clear", "@brief Virtual method void QSqlRelationalTableModel::clear()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_clear_0_0, &_call_cbs_clear_0_0, &_set_callback_cbs_clear_0_0);
+  methods += new qt_gsi::GenericMethod ("columnCount", "@hide", true, &_init_cbs_columnCount_c2395_1, &_call_cbs_columnCount_c2395_1);
+  methods += new qt_gsi::GenericMethod ("columnCount", "@brief Virtual method int QSqlRelationalTableModel::columnCount(const QModelIndex &parent)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_columnCount_c2395_1, &_call_cbs_columnCount_c2395_1, &_set_callback_cbs_columnCount_c2395_1);
   methods += new qt_gsi::GenericMethod ("*createIndex", "@brief Method QModelIndex QSqlRelationalTableModel::createIndex(int row, int column, void *data)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_createIndex_c2374, &_call_fp_createIndex_c2374);
   methods += new qt_gsi::GenericMethod ("*createIndex", "@brief Method QModelIndex QSqlRelationalTableModel::createIndex(int row, int column, quintptr id)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_createIndex_c2657, &_call_fp_createIndex_c2657);
-  methods += new qt_gsi::GenericMethod ("*customEvent", "@brief Virtual method void QSqlRelationalTableModel::customEvent(QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*customEvent", "@hide", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0, &_set_callback_cbs_customEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("data", "@brief Virtual method QVariant QSqlRelationalTableModel::data(const QModelIndex &item, int role)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_data_c3054_1, &_call_cbs_data_c3054_1);
-  methods += new qt_gsi::GenericMethod ("data", "@hide", true, &_init_cbs_data_c3054_1, &_call_cbs_data_c3054_1, &_set_callback_cbs_data_c3054_1);
+  methods += new qt_gsi::GenericMethod ("*customEvent", "@hide", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*customEvent", "@brief Virtual method void QSqlRelationalTableModel::customEvent(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0, &_set_callback_cbs_customEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("data", "@hide", true, &_init_cbs_data_c3054_1, &_call_cbs_data_c3054_1);
+  methods += new qt_gsi::GenericMethod ("data", "@brief Virtual method QVariant QSqlRelationalTableModel::data(const QModelIndex &item, int role)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_data_c3054_1, &_call_cbs_data_c3054_1, &_set_callback_cbs_data_c3054_1);
   methods += new qt_gsi::GenericMethod ("emit_dataChanged", "@brief Emitter for signal void QSqlRelationalTableModel::dataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles)\nCall this method to emit this signal.", false, &_init_emitter_dataChanged_7048, &_call_emitter_dataChanged_7048);
   methods += new qt_gsi::GenericMethod ("*decodeData", "@brief Method bool QSqlRelationalTableModel::decodeData(int row, int column, const QModelIndex &parent, QDataStream &stream)\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_decodeData_5302, &_call_fp_decodeData_5302);
-  methods += new qt_gsi::GenericMethod ("*deleteRowFromTable", "@brief Virtual method bool QSqlRelationalTableModel::deleteRowFromTable(int row)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_deleteRowFromTable_767_0, &_call_cbs_deleteRowFromTable_767_0);
-  methods += new qt_gsi::GenericMethod ("*deleteRowFromTable", "@hide", false, &_init_cbs_deleteRowFromTable_767_0, &_call_cbs_deleteRowFromTable_767_0, &_set_callback_cbs_deleteRowFromTable_767_0);
+  methods += new qt_gsi::GenericMethod ("*deleteRowFromTable", "@hide", false, &_init_cbs_deleteRowFromTable_767_0, &_call_cbs_deleteRowFromTable_767_0);
+  methods += new qt_gsi::GenericMethod ("*deleteRowFromTable", "@brief Virtual method bool QSqlRelationalTableModel::deleteRowFromTable(int row)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_deleteRowFromTable_767_0, &_call_cbs_deleteRowFromTable_767_0, &_set_callback_cbs_deleteRowFromTable_767_0);
   methods += new qt_gsi::GenericMethod ("emit_destroyed", "@brief Emitter for signal void QSqlRelationalTableModel::destroyed(QObject *)\nCall this method to emit this signal.", false, &_init_emitter_destroyed_1302, &_call_emitter_destroyed_1302);
-  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@brief Virtual method void QSqlRelationalTableModel::disconnectNotify(const QMetaMethod &signal)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0);
-  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@hide", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0, &_set_callback_cbs_disconnectNotify_2394_0);
-  methods += new qt_gsi::GenericMethod ("dropMimeData", "@brief Virtual method bool QSqlRelationalTableModel::dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_dropMimeData_7425_0, &_call_cbs_dropMimeData_7425_0);
-  methods += new qt_gsi::GenericMethod ("dropMimeData", "@hide", false, &_init_cbs_dropMimeData_7425_0, &_call_cbs_dropMimeData_7425_0, &_set_callback_cbs_dropMimeData_7425_0);
+  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@hide", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0);
+  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@brief Virtual method void QSqlRelationalTableModel::disconnectNotify(const QMetaMethod &signal)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0, &_set_callback_cbs_disconnectNotify_2394_0);
+  methods += new qt_gsi::GenericMethod ("dropMimeData", "@hide", false, &_init_cbs_dropMimeData_7425_0, &_call_cbs_dropMimeData_7425_0);
+  methods += new qt_gsi::GenericMethod ("dropMimeData", "@brief Virtual method bool QSqlRelationalTableModel::dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_dropMimeData_7425_0, &_call_cbs_dropMimeData_7425_0, &_set_callback_cbs_dropMimeData_7425_0);
   methods += new qt_gsi::GenericMethod ("*encodeData", "@brief Method void QSqlRelationalTableModel::encodeData(const QList<QModelIndex> &indexes, QDataStream &stream)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_encodeData_c4599, &_call_fp_encodeData_c4599);
   methods += new qt_gsi::GenericMethod ("*endInsertColumns", "@brief Method void QSqlRelationalTableModel::endInsertColumns()\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_endInsertColumns_0, &_call_fp_endInsertColumns_0);
   methods += new qt_gsi::GenericMethod ("*endInsertRows", "@brief Method void QSqlRelationalTableModel::endInsertRows()\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_endInsertRows_0, &_call_fp_endInsertRows_0);
@@ -4233,117 +3720,108 @@ static gsi::Methods methods_QSqlRelationalTableModel_Adaptor () {
   methods += new qt_gsi::GenericMethod ("*endRemoveColumns", "@brief Method void QSqlRelationalTableModel::endRemoveColumns()\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_endRemoveColumns_0, &_call_fp_endRemoveColumns_0);
   methods += new qt_gsi::GenericMethod ("*endRemoveRows", "@brief Method void QSqlRelationalTableModel::endRemoveRows()\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_endRemoveRows_0, &_call_fp_endRemoveRows_0);
   methods += new qt_gsi::GenericMethod ("*endResetModel", "@brief Method void QSqlRelationalTableModel::endResetModel()\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_endResetModel_0, &_call_fp_endResetModel_0);
-  methods += new qt_gsi::GenericMethod ("event", "@brief Virtual method bool QSqlRelationalTableModel::event(QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0);
-  methods += new qt_gsi::GenericMethod ("event", "@hide", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0, &_set_callback_cbs_event_1217_0);
-  methods += new qt_gsi::GenericMethod ("eventFilter", "@brief Virtual method bool QSqlRelationalTableModel::eventFilter(QObject *watched, QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0);
-  methods += new qt_gsi::GenericMethod ("eventFilter", "@hide", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0, &_set_callback_cbs_eventFilter_2411_0);
-  methods += new qt_gsi::GenericMethod ("fetchMore", "@brief Virtual method void QSqlRelationalTableModel::fetchMore(const QModelIndex &parent)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_fetchMore_2395_1, &_call_cbs_fetchMore_2395_1);
-  methods += new qt_gsi::GenericMethod ("fetchMore", "@hide", false, &_init_cbs_fetchMore_2395_1, &_call_cbs_fetchMore_2395_1, &_set_callback_cbs_fetchMore_2395_1);
-  methods += new qt_gsi::GenericMethod ("flags", "@brief Virtual method QFlags<Qt::ItemFlag> QSqlRelationalTableModel::flags(const QModelIndex &index)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_flags_c2395_0, &_call_cbs_flags_c2395_0);
-  methods += new qt_gsi::GenericMethod ("flags", "@hide", true, &_init_cbs_flags_c2395_0, &_call_cbs_flags_c2395_0, &_set_callback_cbs_flags_c2395_0);
-  methods += new qt_gsi::GenericMethod ("headerData", "@brief Virtual method QVariant QSqlRelationalTableModel::headerData(int section, Qt::Orientation orientation, int role)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_headerData_c3231_1, &_call_cbs_headerData_c3231_1);
-  methods += new qt_gsi::GenericMethod ("headerData", "@hide", true, &_init_cbs_headerData_c3231_1, &_call_cbs_headerData_c3231_1, &_set_callback_cbs_headerData_c3231_1);
+  methods += new qt_gsi::GenericMethod ("event", "@hide", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0);
+  methods += new qt_gsi::GenericMethod ("event", "@brief Virtual method bool QSqlRelationalTableModel::event(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0, &_set_callback_cbs_event_1217_0);
+  methods += new qt_gsi::GenericMethod ("eventFilter", "@hide", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0);
+  methods += new qt_gsi::GenericMethod ("eventFilter", "@brief Virtual method bool QSqlRelationalTableModel::eventFilter(QObject *, QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0, &_set_callback_cbs_eventFilter_2411_0);
+  methods += new qt_gsi::GenericMethod ("fetchMore", "@hide", false, &_init_cbs_fetchMore_2395_1, &_call_cbs_fetchMore_2395_1);
+  methods += new qt_gsi::GenericMethod ("fetchMore", "@brief Virtual method void QSqlRelationalTableModel::fetchMore(const QModelIndex &parent)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_fetchMore_2395_1, &_call_cbs_fetchMore_2395_1, &_set_callback_cbs_fetchMore_2395_1);
+  methods += new qt_gsi::GenericMethod ("flags", "@hide", true, &_init_cbs_flags_c2395_0, &_call_cbs_flags_c2395_0);
+  methods += new qt_gsi::GenericMethod ("flags", "@brief Virtual method QFlags<Qt::ItemFlag> QSqlRelationalTableModel::flags(const QModelIndex &index)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_flags_c2395_0, &_call_cbs_flags_c2395_0, &_set_callback_cbs_flags_c2395_0);
+  methods += new qt_gsi::GenericMethod ("headerData", "@hide", true, &_init_cbs_headerData_c3231_1, &_call_cbs_headerData_c3231_1);
+  methods += new qt_gsi::GenericMethod ("headerData", "@brief Virtual method QVariant QSqlRelationalTableModel::headerData(int section, Qt::Orientation orientation, int role)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_headerData_c3231_1, &_call_cbs_headerData_c3231_1, &_set_callback_cbs_headerData_c3231_1);
   methods += new qt_gsi::GenericMethod ("emit_headerDataChanged", "@brief Emitter for signal void QSqlRelationalTableModel::headerDataChanged(Qt::Orientation orientation, int first, int last)\nCall this method to emit this signal.", false, &_init_emitter_headerDataChanged_3231, &_call_emitter_headerDataChanged_3231);
-  methods += new qt_gsi::GenericMethod ("index", "@brief Virtual method QModelIndex QSqlRelationalTableModel::index(int row, int column, const QModelIndex &parent)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_index_c3713_1, &_call_cbs_index_c3713_1);
-  methods += new qt_gsi::GenericMethod ("index", "@hide", true, &_init_cbs_index_c3713_1, &_call_cbs_index_c3713_1, &_set_callback_cbs_index_c3713_1);
-  methods += new qt_gsi::GenericMethod ("*indexInQuery", "@brief Virtual method QModelIndex QSqlRelationalTableModel::indexInQuery(const QModelIndex &item)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_indexInQuery_c2395_0, &_call_cbs_indexInQuery_c2395_0);
-  methods += new qt_gsi::GenericMethod ("*indexInQuery", "@hide", true, &_init_cbs_indexInQuery_c2395_0, &_call_cbs_indexInQuery_c2395_0, &_set_callback_cbs_indexInQuery_c2395_0);
-  methods += new qt_gsi::GenericMethod ("insertColumns", "@brief Virtual method bool QSqlRelationalTableModel::insertColumns(int column, int count, const QModelIndex &parent)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_insertColumns_3713_1, &_call_cbs_insertColumns_3713_1);
-  methods += new qt_gsi::GenericMethod ("insertColumns", "@hide", false, &_init_cbs_insertColumns_3713_1, &_call_cbs_insertColumns_3713_1, &_set_callback_cbs_insertColumns_3713_1);
-  methods += new qt_gsi::GenericMethod ("*insertRowIntoTable", "@brief Virtual method bool QSqlRelationalTableModel::insertRowIntoTable(const QSqlRecord &values)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_insertRowIntoTable_2305_0, &_call_cbs_insertRowIntoTable_2305_0);
-  methods += new qt_gsi::GenericMethod ("*insertRowIntoTable", "@hide", false, &_init_cbs_insertRowIntoTable_2305_0, &_call_cbs_insertRowIntoTable_2305_0, &_set_callback_cbs_insertRowIntoTable_2305_0);
-  methods += new qt_gsi::GenericMethod ("insertRows", "@brief Virtual method bool QSqlRelationalTableModel::insertRows(int row, int count, const QModelIndex &parent)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_insertRows_3713_1, &_call_cbs_insertRows_3713_1);
-  methods += new qt_gsi::GenericMethod ("insertRows", "@hide", false, &_init_cbs_insertRows_3713_1, &_call_cbs_insertRows_3713_1, &_set_callback_cbs_insertRows_3713_1);
+  methods += new qt_gsi::GenericMethod ("index", "@hide", true, &_init_cbs_index_c3713_1, &_call_cbs_index_c3713_1);
+  methods += new qt_gsi::GenericMethod ("index", "@brief Virtual method QModelIndex QSqlRelationalTableModel::index(int row, int column, const QModelIndex &parent)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_index_c3713_1, &_call_cbs_index_c3713_1, &_set_callback_cbs_index_c3713_1);
+  methods += new qt_gsi::GenericMethod ("*indexInQuery", "@hide", true, &_init_cbs_indexInQuery_c2395_0, &_call_cbs_indexInQuery_c2395_0);
+  methods += new qt_gsi::GenericMethod ("*indexInQuery", "@brief Virtual method QModelIndex QSqlRelationalTableModel::indexInQuery(const QModelIndex &item)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_indexInQuery_c2395_0, &_call_cbs_indexInQuery_c2395_0, &_set_callback_cbs_indexInQuery_c2395_0);
+  methods += new qt_gsi::GenericMethod ("insertColumns", "@hide", false, &_init_cbs_insertColumns_3713_1, &_call_cbs_insertColumns_3713_1);
+  methods += new qt_gsi::GenericMethod ("insertColumns", "@brief Virtual method bool QSqlRelationalTableModel::insertColumns(int column, int count, const QModelIndex &parent)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_insertColumns_3713_1, &_call_cbs_insertColumns_3713_1, &_set_callback_cbs_insertColumns_3713_1);
+  methods += new qt_gsi::GenericMethod ("*insertRowIntoTable", "@hide", false, &_init_cbs_insertRowIntoTable_2305_0, &_call_cbs_insertRowIntoTable_2305_0);
+  methods += new qt_gsi::GenericMethod ("*insertRowIntoTable", "@brief Virtual method bool QSqlRelationalTableModel::insertRowIntoTable(const QSqlRecord &values)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_insertRowIntoTable_2305_0, &_call_cbs_insertRowIntoTable_2305_0, &_set_callback_cbs_insertRowIntoTable_2305_0);
+  methods += new qt_gsi::GenericMethod ("insertRows", "@hide", false, &_init_cbs_insertRows_3713_1, &_call_cbs_insertRows_3713_1);
+  methods += new qt_gsi::GenericMethod ("insertRows", "@brief Virtual method bool QSqlRelationalTableModel::insertRows(int row, int count, const QModelIndex &parent)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_insertRows_3713_1, &_call_cbs_insertRows_3713_1, &_set_callback_cbs_insertRows_3713_1);
   methods += new qt_gsi::GenericMethod ("*isSignalConnected", "@brief Method bool QSqlRelationalTableModel::isSignalConnected(const QMetaMethod &signal)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_isSignalConnected_c2394, &_call_fp_isSignalConnected_c2394);
-  methods += new qt_gsi::GenericMethod ("itemData", "@brief Virtual method QMap<int, QVariant> QSqlRelationalTableModel::itemData(const QModelIndex &index)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_itemData_c2395_0, &_call_cbs_itemData_c2395_0);
-  methods += new qt_gsi::GenericMethod ("itemData", "@hide", true, &_init_cbs_itemData_c2395_0, &_call_cbs_itemData_c2395_0, &_set_callback_cbs_itemData_c2395_0);
+  methods += new qt_gsi::GenericMethod ("itemData", "@hide", true, &_init_cbs_itemData_c2395_0, &_call_cbs_itemData_c2395_0);
+  methods += new qt_gsi::GenericMethod ("itemData", "@brief Virtual method QMap<int, QVariant> QSqlRelationalTableModel::itemData(const QModelIndex &index)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_itemData_c2395_0, &_call_cbs_itemData_c2395_0, &_set_callback_cbs_itemData_c2395_0);
   methods += new qt_gsi::GenericMethod ("emit_layoutAboutToBeChanged", "@brief Emitter for signal void QSqlRelationalTableModel::layoutAboutToBeChanged(const QList<QPersistentModelIndex> &parents, QAbstractItemModel::LayoutChangeHint hint)\nCall this method to emit this signal.", false, &_init_emitter_layoutAboutToBeChanged_7947, &_call_emitter_layoutAboutToBeChanged_7947);
   methods += new qt_gsi::GenericMethod ("emit_layoutChanged", "@brief Emitter for signal void QSqlRelationalTableModel::layoutChanged(const QList<QPersistentModelIndex> &parents, QAbstractItemModel::LayoutChangeHint hint)\nCall this method to emit this signal.", false, &_init_emitter_layoutChanged_7947, &_call_emitter_layoutChanged_7947);
-  methods += new qt_gsi::GenericMethod ("match", "@brief Virtual method QList<QModelIndex> QSqlRelationalTableModel::match(const QModelIndex &start, int role, const QVariant &value, int hits, QFlags<Qt::MatchFlag> flags)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_match_c7932_2, &_call_cbs_match_c7932_2);
-  methods += new qt_gsi::GenericMethod ("match", "@hide", true, &_init_cbs_match_c7932_2, &_call_cbs_match_c7932_2, &_set_callback_cbs_match_c7932_2);
-  methods += new qt_gsi::GenericMethod ("mimeData", "@brief Virtual method QMimeData *QSqlRelationalTableModel::mimeData(const QList<QModelIndex> &indexes)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_mimeData_c3010_0, &_call_cbs_mimeData_c3010_0);
-  methods += new qt_gsi::GenericMethod ("mimeData", "@hide", true, &_init_cbs_mimeData_c3010_0, &_call_cbs_mimeData_c3010_0, &_set_callback_cbs_mimeData_c3010_0);
-  methods += new qt_gsi::GenericMethod ("mimeTypes", "@brief Virtual method QStringList QSqlRelationalTableModel::mimeTypes()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_mimeTypes_c0_0, &_call_cbs_mimeTypes_c0_0);
-  methods += new qt_gsi::GenericMethod ("mimeTypes", "@hide", true, &_init_cbs_mimeTypes_c0_0, &_call_cbs_mimeTypes_c0_0, &_set_callback_cbs_mimeTypes_c0_0);
-  methods += new qt_gsi::GenericMethod ("emit_modelAboutToBeReset", "@brief Emitter for signal void QSqlRelationalTableModel::modelAboutToBeReset()\nCall this method to emit this signal.", false, &_init_emitter_modelAboutToBeReset_3767, &_call_emitter_modelAboutToBeReset_3767);
-  methods += new qt_gsi::GenericMethod ("emit_modelReset", "@brief Emitter for signal void QSqlRelationalTableModel::modelReset()\nCall this method to emit this signal.", false, &_init_emitter_modelReset_3767, &_call_emitter_modelReset_3767);
-  methods += new qt_gsi::GenericMethod ("moveColumns", "@brief Virtual method bool QSqlRelationalTableModel::moveColumns(const QModelIndex &sourceParent, int sourceColumn, int count, const QModelIndex &destinationParent, int destinationChild)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_moveColumns_6659_0, &_call_cbs_moveColumns_6659_0);
-  methods += new qt_gsi::GenericMethod ("moveColumns", "@hide", false, &_init_cbs_moveColumns_6659_0, &_call_cbs_moveColumns_6659_0, &_set_callback_cbs_moveColumns_6659_0);
-  methods += new qt_gsi::GenericMethod ("moveRows", "@brief Virtual method bool QSqlRelationalTableModel::moveRows(const QModelIndex &sourceParent, int sourceRow, int count, const QModelIndex &destinationParent, int destinationChild)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_moveRows_6659_0, &_call_cbs_moveRows_6659_0);
-  methods += new qt_gsi::GenericMethod ("moveRows", "@hide", false, &_init_cbs_moveRows_6659_0, &_call_cbs_moveRows_6659_0, &_set_callback_cbs_moveRows_6659_0);
-  methods += new qt_gsi::GenericMethod ("emit_objectNameChanged", "@brief Emitter for signal void QSqlRelationalTableModel::objectNameChanged(const QString &objectName)\nCall this method to emit this signal.", false, &_init_emitter_objectNameChanged_4567, &_call_emitter_objectNameChanged_4567);
-  methods += new qt_gsi::GenericMethod ("*orderByClause", "@brief Virtual method QString QSqlRelationalTableModel::orderByClause()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_orderByClause_c0_0, &_call_cbs_orderByClause_c0_0);
-  methods += new qt_gsi::GenericMethod ("*orderByClause", "@hide", true, &_init_cbs_orderByClause_c0_0, &_call_cbs_orderByClause_c0_0, &_set_callback_cbs_orderByClause_c0_0);
+  methods += new qt_gsi::GenericMethod ("match", "@hide", true, &_init_cbs_match_c7932_2, &_call_cbs_match_c7932_2);
+  methods += new qt_gsi::GenericMethod ("match", "@brief Virtual method QList<QModelIndex> QSqlRelationalTableModel::match(const QModelIndex &start, int role, const QVariant &value, int hits, QFlags<Qt::MatchFlag> flags)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_match_c7932_2, &_call_cbs_match_c7932_2, &_set_callback_cbs_match_c7932_2);
+  methods += new qt_gsi::GenericMethod ("mimeData", "@hide", true, &_init_cbs_mimeData_c3010_0, &_call_cbs_mimeData_c3010_0);
+  methods += new qt_gsi::GenericMethod ("mimeData", "@brief Virtual method QMimeData *QSqlRelationalTableModel::mimeData(const QList<QModelIndex> &indexes)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_mimeData_c3010_0, &_call_cbs_mimeData_c3010_0, &_set_callback_cbs_mimeData_c3010_0);
+  methods += new qt_gsi::GenericMethod ("mimeTypes", "@hide", true, &_init_cbs_mimeTypes_c0_0, &_call_cbs_mimeTypes_c0_0);
+  methods += new qt_gsi::GenericMethod ("mimeTypes", "@brief Virtual method QStringList QSqlRelationalTableModel::mimeTypes()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_mimeTypes_c0_0, &_call_cbs_mimeTypes_c0_0, &_set_callback_cbs_mimeTypes_c0_0);
+  methods += new qt_gsi::GenericMethod ("moveColumns", "@hide", false, &_init_cbs_moveColumns_6659_0, &_call_cbs_moveColumns_6659_0);
+  methods += new qt_gsi::GenericMethod ("moveColumns", "@brief Virtual method bool QSqlRelationalTableModel::moveColumns(const QModelIndex &sourceParent, int sourceColumn, int count, const QModelIndex &destinationParent, int destinationChild)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_moveColumns_6659_0, &_call_cbs_moveColumns_6659_0, &_set_callback_cbs_moveColumns_6659_0);
+  methods += new qt_gsi::GenericMethod ("moveRows", "@hide", false, &_init_cbs_moveRows_6659_0, &_call_cbs_moveRows_6659_0);
+  methods += new qt_gsi::GenericMethod ("moveRows", "@brief Virtual method bool QSqlRelationalTableModel::moveRows(const QModelIndex &sourceParent, int sourceRow, int count, const QModelIndex &destinationParent, int destinationChild)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_moveRows_6659_0, &_call_cbs_moveRows_6659_0, &_set_callback_cbs_moveRows_6659_0);
+  methods += new qt_gsi::GenericMethod ("*orderByClause", "@hide", true, &_init_cbs_orderByClause_c0_0, &_call_cbs_orderByClause_c0_0);
+  methods += new qt_gsi::GenericMethod ("*orderByClause", "@brief Virtual method QString QSqlRelationalTableModel::orderByClause()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_orderByClause_c0_0, &_call_cbs_orderByClause_c0_0, &_set_callback_cbs_orderByClause_c0_0);
   methods += new qt_gsi::GenericMethod ("*persistentIndexList", "@brief Method QList<QModelIndex> QSqlRelationalTableModel::persistentIndexList()\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_persistentIndexList_c0, &_call_fp_persistentIndexList_c0);
   methods += new qt_gsi::GenericMethod ("*primaryValues", "@brief Method QSqlRecord QSqlRelationalTableModel::primaryValues(int row)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_primaryValues_c767, &_call_fp_primaryValues_c767);
   methods += new qt_gsi::GenericMethod ("emit_primeInsert", "@brief Emitter for signal void QSqlRelationalTableModel::primeInsert(int row, QSqlRecord &record)\nCall this method to emit this signal.", false, &_init_emitter_primeInsert_2269, &_call_emitter_primeInsert_2269);
-  methods += new qt_gsi::GenericMethod ("*queryChange", "@brief Virtual method void QSqlRelationalTableModel::queryChange()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_queryChange_0_0, &_call_cbs_queryChange_0_0);
-  methods += new qt_gsi::GenericMethod ("*queryChange", "@hide", false, &_init_cbs_queryChange_0_0, &_call_cbs_queryChange_0_0, &_set_callback_cbs_queryChange_0_0);
+  methods += new qt_gsi::GenericMethod ("*queryChange", "@hide", false, &_init_cbs_queryChange_0_0, &_call_cbs_queryChange_0_0);
+  methods += new qt_gsi::GenericMethod ("*queryChange", "@brief Virtual method void QSqlRelationalTableModel::queryChange()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_queryChange_0_0, &_call_cbs_queryChange_0_0, &_set_callback_cbs_queryChange_0_0);
   methods += new qt_gsi::GenericMethod ("*receivers", "@brief Method int QSqlRelationalTableModel::receivers(const char *signal)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_receivers_c1731, &_call_fp_receivers_c1731);
-  methods += new qt_gsi::GenericMethod ("relationModel", "@brief Virtual method QSqlTableModel *QSqlRelationalTableModel::relationModel(int column)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_relationModel_c767_0, &_call_cbs_relationModel_c767_0);
-  methods += new qt_gsi::GenericMethod ("relationModel", "@hide", true, &_init_cbs_relationModel_c767_0, &_call_cbs_relationModel_c767_0, &_set_callback_cbs_relationModel_c767_0);
-  methods += new qt_gsi::GenericMethod ("removeColumns", "@brief Virtual method bool QSqlRelationalTableModel::removeColumns(int column, int count, const QModelIndex &parent)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_removeColumns_3713_1, &_call_cbs_removeColumns_3713_1);
-  methods += new qt_gsi::GenericMethod ("removeColumns", "@hide", false, &_init_cbs_removeColumns_3713_1, &_call_cbs_removeColumns_3713_1, &_set_callback_cbs_removeColumns_3713_1);
-  methods += new qt_gsi::GenericMethod ("removeRows", "@brief Virtual method bool QSqlRelationalTableModel::removeRows(int row, int count, const QModelIndex &parent)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_removeRows_3713_1, &_call_cbs_removeRows_3713_1);
-  methods += new qt_gsi::GenericMethod ("removeRows", "@hide", false, &_init_cbs_removeRows_3713_1, &_call_cbs_removeRows_3713_1, &_set_callback_cbs_removeRows_3713_1);
+  methods += new qt_gsi::GenericMethod ("relationModel", "@hide", true, &_init_cbs_relationModel_c767_0, &_call_cbs_relationModel_c767_0);
+  methods += new qt_gsi::GenericMethod ("relationModel", "@brief Virtual method QSqlTableModel *QSqlRelationalTableModel::relationModel(int column)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_relationModel_c767_0, &_call_cbs_relationModel_c767_0, &_set_callback_cbs_relationModel_c767_0);
+  methods += new qt_gsi::GenericMethod ("removeColumns", "@hide", false, &_init_cbs_removeColumns_3713_1, &_call_cbs_removeColumns_3713_1);
+  methods += new qt_gsi::GenericMethod ("removeColumns", "@brief Virtual method bool QSqlRelationalTableModel::removeColumns(int column, int count, const QModelIndex &parent)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_removeColumns_3713_1, &_call_cbs_removeColumns_3713_1, &_set_callback_cbs_removeColumns_3713_1);
+  methods += new qt_gsi::GenericMethod ("removeRows", "@hide", false, &_init_cbs_removeRows_3713_1, &_call_cbs_removeRows_3713_1);
+  methods += new qt_gsi::GenericMethod ("removeRows", "@brief Virtual method bool QSqlRelationalTableModel::removeRows(int row, int count, const QModelIndex &parent)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_removeRows_3713_1, &_call_cbs_removeRows_3713_1, &_set_callback_cbs_removeRows_3713_1);
   methods += new qt_gsi::GenericMethod ("*resetInternalData", "@brief Method void QSqlRelationalTableModel::resetInternalData()\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_resetInternalData_0, &_call_fp_resetInternalData_0);
-  methods += new qt_gsi::GenericMethod ("revert", "@brief Virtual method void QSqlRelationalTableModel::revert()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_revert_0_0, &_call_cbs_revert_0_0);
-  methods += new qt_gsi::GenericMethod ("revert", "@hide", false, &_init_cbs_revert_0_0, &_call_cbs_revert_0_0, &_set_callback_cbs_revert_0_0);
-  methods += new qt_gsi::GenericMethod ("revertRow", "@brief Virtual method void QSqlRelationalTableModel::revertRow(int row)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_revertRow_767_0, &_call_cbs_revertRow_767_0);
-  methods += new qt_gsi::GenericMethod ("revertRow", "@hide", false, &_init_cbs_revertRow_767_0, &_call_cbs_revertRow_767_0, &_set_callback_cbs_revertRow_767_0);
-  methods += new qt_gsi::GenericMethod ("roleNames", "@brief Virtual method QHash<int, QByteArray> QSqlRelationalTableModel::roleNames()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_roleNames_c0_0, &_call_cbs_roleNames_c0_0);
-  methods += new qt_gsi::GenericMethod ("roleNames", "@hide", true, &_init_cbs_roleNames_c0_0, &_call_cbs_roleNames_c0_0, &_set_callback_cbs_roleNames_c0_0);
-  methods += new qt_gsi::GenericMethod ("rowCount", "@brief Virtual method int QSqlRelationalTableModel::rowCount(const QModelIndex &parent)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_rowCount_c2395_1, &_call_cbs_rowCount_c2395_1);
-  methods += new qt_gsi::GenericMethod ("rowCount", "@hide", true, &_init_cbs_rowCount_c2395_1, &_call_cbs_rowCount_c2395_1, &_set_callback_cbs_rowCount_c2395_1);
-  methods += new qt_gsi::GenericMethod ("emit_rowsAboutToBeInserted", "@brief Emitter for signal void QSqlRelationalTableModel::rowsAboutToBeInserted(const QModelIndex &parent, int first, int last)\nCall this method to emit this signal.", false, &_init_emitter_rowsAboutToBeInserted_7372, &_call_emitter_rowsAboutToBeInserted_7372);
-  methods += new qt_gsi::GenericMethod ("emit_rowsAboutToBeMoved", "@brief Emitter for signal void QSqlRelationalTableModel::rowsAboutToBeMoved(const QModelIndex &sourceParent, int sourceStart, int sourceEnd, const QModelIndex &destinationParent, int destinationRow)\nCall this method to emit this signal.", false, &_init_emitter_rowsAboutToBeMoved_10318, &_call_emitter_rowsAboutToBeMoved_10318);
-  methods += new qt_gsi::GenericMethod ("emit_rowsAboutToBeRemoved", "@brief Emitter for signal void QSqlRelationalTableModel::rowsAboutToBeRemoved(const QModelIndex &parent, int first, int last)\nCall this method to emit this signal.", false, &_init_emitter_rowsAboutToBeRemoved_7372, &_call_emitter_rowsAboutToBeRemoved_7372);
-  methods += new qt_gsi::GenericMethod ("emit_rowsInserted", "@brief Emitter for signal void QSqlRelationalTableModel::rowsInserted(const QModelIndex &parent, int first, int last)\nCall this method to emit this signal.", false, &_init_emitter_rowsInserted_7372, &_call_emitter_rowsInserted_7372);
-  methods += new qt_gsi::GenericMethod ("emit_rowsMoved", "@brief Emitter for signal void QSqlRelationalTableModel::rowsMoved(const QModelIndex &parent, int start, int end, const QModelIndex &destination, int row)\nCall this method to emit this signal.", false, &_init_emitter_rowsMoved_10318, &_call_emitter_rowsMoved_10318);
-  methods += new qt_gsi::GenericMethod ("emit_rowsRemoved", "@brief Emitter for signal void QSqlRelationalTableModel::rowsRemoved(const QModelIndex &parent, int first, int last)\nCall this method to emit this signal.", false, &_init_emitter_rowsRemoved_7372, &_call_emitter_rowsRemoved_7372);
-  methods += new qt_gsi::GenericMethod ("select", "@brief Virtual method bool QSqlRelationalTableModel::select()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_select_0_0, &_call_cbs_select_0_0);
-  methods += new qt_gsi::GenericMethod ("select", "@hide", false, &_init_cbs_select_0_0, &_call_cbs_select_0_0, &_set_callback_cbs_select_0_0);
-  methods += new qt_gsi::GenericMethod ("selectRow", "@brief Virtual method bool QSqlRelationalTableModel::selectRow(int row)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_selectRow_767_0, &_call_cbs_selectRow_767_0);
-  methods += new qt_gsi::GenericMethod ("selectRow", "@hide", false, &_init_cbs_selectRow_767_0, &_call_cbs_selectRow_767_0, &_set_callback_cbs_selectRow_767_0);
-  methods += new qt_gsi::GenericMethod ("*selectStatement", "@brief Virtual method QString QSqlRelationalTableModel::selectStatement()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_selectStatement_c0_0, &_call_cbs_selectStatement_c0_0);
-  methods += new qt_gsi::GenericMethod ("*selectStatement", "@hide", true, &_init_cbs_selectStatement_c0_0, &_call_cbs_selectStatement_c0_0, &_set_callback_cbs_selectStatement_c0_0);
+  methods += new qt_gsi::GenericMethod ("revert", "@hide", false, &_init_cbs_revert_0_0, &_call_cbs_revert_0_0);
+  methods += new qt_gsi::GenericMethod ("revert", "@brief Virtual method void QSqlRelationalTableModel::revert()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_revert_0_0, &_call_cbs_revert_0_0, &_set_callback_cbs_revert_0_0);
+  methods += new qt_gsi::GenericMethod ("revertRow", "@hide", false, &_init_cbs_revertRow_767_0, &_call_cbs_revertRow_767_0);
+  methods += new qt_gsi::GenericMethod ("revertRow", "@brief Virtual method void QSqlRelationalTableModel::revertRow(int row)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_revertRow_767_0, &_call_cbs_revertRow_767_0, &_set_callback_cbs_revertRow_767_0);
+  methods += new qt_gsi::GenericMethod ("roleNames", "@hide", true, &_init_cbs_roleNames_c0_0, &_call_cbs_roleNames_c0_0);
+  methods += new qt_gsi::GenericMethod ("roleNames", "@brief Virtual method QHash<int, QByteArray> QSqlRelationalTableModel::roleNames()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_roleNames_c0_0, &_call_cbs_roleNames_c0_0, &_set_callback_cbs_roleNames_c0_0);
+  methods += new qt_gsi::GenericMethod ("rowCount", "@hide", true, &_init_cbs_rowCount_c2395_1, &_call_cbs_rowCount_c2395_1);
+  methods += new qt_gsi::GenericMethod ("rowCount", "@brief Virtual method int QSqlRelationalTableModel::rowCount(const QModelIndex &parent)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_rowCount_c2395_1, &_call_cbs_rowCount_c2395_1, &_set_callback_cbs_rowCount_c2395_1);
+  methods += new qt_gsi::GenericMethod ("select", "@hide", false, &_init_cbs_select_0_0, &_call_cbs_select_0_0);
+  methods += new qt_gsi::GenericMethod ("select", "@brief Virtual method bool QSqlRelationalTableModel::select()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_select_0_0, &_call_cbs_select_0_0, &_set_callback_cbs_select_0_0);
+  methods += new qt_gsi::GenericMethod ("selectRow", "@hide", false, &_init_cbs_selectRow_767_0, &_call_cbs_selectRow_767_0);
+  methods += new qt_gsi::GenericMethod ("selectRow", "@brief Virtual method bool QSqlRelationalTableModel::selectRow(int row)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_selectRow_767_0, &_call_cbs_selectRow_767_0, &_set_callback_cbs_selectRow_767_0);
+  methods += new qt_gsi::GenericMethod ("*selectStatement", "@hide", true, &_init_cbs_selectStatement_c0_0, &_call_cbs_selectStatement_c0_0);
+  methods += new qt_gsi::GenericMethod ("*selectStatement", "@brief Virtual method QString QSqlRelationalTableModel::selectStatement()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_selectStatement_c0_0, &_call_cbs_selectStatement_c0_0, &_set_callback_cbs_selectStatement_c0_0);
   methods += new qt_gsi::GenericMethod ("*sender", "@brief Method QObject *QSqlRelationalTableModel::sender()\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_sender_c0, &_call_fp_sender_c0);
   methods += new qt_gsi::GenericMethod ("*senderSignalIndex", "@brief Method int QSqlRelationalTableModel::senderSignalIndex()\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_senderSignalIndex_c0, &_call_fp_senderSignalIndex_c0);
-  methods += new qt_gsi::GenericMethod ("setData", "@brief Virtual method bool QSqlRelationalTableModel::setData(const QModelIndex &item, const QVariant &value, int role)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setData_5065_1, &_call_cbs_setData_5065_1);
-  methods += new qt_gsi::GenericMethod ("setData", "@hide", false, &_init_cbs_setData_5065_1, &_call_cbs_setData_5065_1, &_set_callback_cbs_setData_5065_1);
-  methods += new qt_gsi::GenericMethod ("setEditStrategy", "@brief Virtual method void QSqlRelationalTableModel::setEditStrategy(QSqlTableModel::EditStrategy strategy)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setEditStrategy_3163_0, &_call_cbs_setEditStrategy_3163_0);
-  methods += new qt_gsi::GenericMethod ("setEditStrategy", "@hide", false, &_init_cbs_setEditStrategy_3163_0, &_call_cbs_setEditStrategy_3163_0, &_set_callback_cbs_setEditStrategy_3163_0);
-  methods += new qt_gsi::GenericMethod ("setFilter", "@brief Virtual method void QSqlRelationalTableModel::setFilter(const QString &filter)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setFilter_2025_0, &_call_cbs_setFilter_2025_0);
-  methods += new qt_gsi::GenericMethod ("setFilter", "@hide", false, &_init_cbs_setFilter_2025_0, &_call_cbs_setFilter_2025_0, &_set_callback_cbs_setFilter_2025_0);
-  methods += new qt_gsi::GenericMethod ("setHeaderData", "@brief Virtual method bool QSqlRelationalTableModel::setHeaderData(int section, Qt::Orientation orientation, const QVariant &value, int role)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setHeaderData_5242_1, &_call_cbs_setHeaderData_5242_1);
-  methods += new qt_gsi::GenericMethod ("setHeaderData", "@hide", false, &_init_cbs_setHeaderData_5242_1, &_call_cbs_setHeaderData_5242_1, &_set_callback_cbs_setHeaderData_5242_1);
-  methods += new qt_gsi::GenericMethod ("setItemData", "@brief Virtual method bool QSqlRelationalTableModel::setItemData(const QModelIndex &index, const QMap<int, QVariant> &roles)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setItemData_5414_0, &_call_cbs_setItemData_5414_0);
-  methods += new qt_gsi::GenericMethod ("setItemData", "@hide", false, &_init_cbs_setItemData_5414_0, &_call_cbs_setItemData_5414_0, &_set_callback_cbs_setItemData_5414_0);
+  methods += new qt_gsi::GenericMethod ("setData", "@hide", false, &_init_cbs_setData_5065_1, &_call_cbs_setData_5065_1);
+  methods += new qt_gsi::GenericMethod ("setData", "@brief Virtual method bool QSqlRelationalTableModel::setData(const QModelIndex &item, const QVariant &value, int role)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setData_5065_1, &_call_cbs_setData_5065_1, &_set_callback_cbs_setData_5065_1);
+  methods += new qt_gsi::GenericMethod ("setEditStrategy", "@hide", false, &_init_cbs_setEditStrategy_3163_0, &_call_cbs_setEditStrategy_3163_0);
+  methods += new qt_gsi::GenericMethod ("setEditStrategy", "@brief Virtual method void QSqlRelationalTableModel::setEditStrategy(QSqlTableModel::EditStrategy strategy)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setEditStrategy_3163_0, &_call_cbs_setEditStrategy_3163_0, &_set_callback_cbs_setEditStrategy_3163_0);
+  methods += new qt_gsi::GenericMethod ("setFilter", "@hide", false, &_init_cbs_setFilter_2025_0, &_call_cbs_setFilter_2025_0);
+  methods += new qt_gsi::GenericMethod ("setFilter", "@brief Virtual method void QSqlRelationalTableModel::setFilter(const QString &filter)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setFilter_2025_0, &_call_cbs_setFilter_2025_0, &_set_callback_cbs_setFilter_2025_0);
+  methods += new qt_gsi::GenericMethod ("setHeaderData", "@hide", false, &_init_cbs_setHeaderData_5242_1, &_call_cbs_setHeaderData_5242_1);
+  methods += new qt_gsi::GenericMethod ("setHeaderData", "@brief Virtual method bool QSqlRelationalTableModel::setHeaderData(int section, Qt::Orientation orientation, const QVariant &value, int role)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setHeaderData_5242_1, &_call_cbs_setHeaderData_5242_1, &_set_callback_cbs_setHeaderData_5242_1);
+  methods += new qt_gsi::GenericMethod ("setItemData", "@hide", false, &_init_cbs_setItemData_5414_0, &_call_cbs_setItemData_5414_0);
+  methods += new qt_gsi::GenericMethod ("setItemData", "@brief Virtual method bool QSqlRelationalTableModel::setItemData(const QModelIndex &index, const QMap<int, QVariant> &roles)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setItemData_5414_0, &_call_cbs_setItemData_5414_0, &_set_callback_cbs_setItemData_5414_0);
   methods += new qt_gsi::GenericMethod ("*setLastError", "@brief Method void QSqlRelationalTableModel::setLastError(const QSqlError &error)\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_setLastError_2220, &_call_fp_setLastError_2220);
   methods += new qt_gsi::GenericMethod ("*setPrimaryKey", "@brief Method void QSqlRelationalTableModel::setPrimaryKey(const QSqlIndex &key)\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_setPrimaryKey_2202, &_call_fp_setPrimaryKey_2202);
   methods += new qt_gsi::GenericMethod ("*setQuery", "@brief Method void QSqlRelationalTableModel::setQuery(const QSqlQuery &query)\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_setQuery_2232, &_call_fp_setQuery_2232);
-  methods += new qt_gsi::GenericMethod ("setRelation", "@brief Virtual method void QSqlRelationalTableModel::setRelation(int column, const QSqlRelation &relation)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setRelation_3187_0, &_call_cbs_setRelation_3187_0);
-  methods += new qt_gsi::GenericMethod ("setRelation", "@hide", false, &_init_cbs_setRelation_3187_0, &_call_cbs_setRelation_3187_0, &_set_callback_cbs_setRelation_3187_0);
-  methods += new qt_gsi::GenericMethod ("setSort", "@brief Virtual method void QSqlRelationalTableModel::setSort(int column, Qt::SortOrder order)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setSort_2340_0, &_call_cbs_setSort_2340_0);
-  methods += new qt_gsi::GenericMethod ("setSort", "@hide", false, &_init_cbs_setSort_2340_0, &_call_cbs_setSort_2340_0, &_set_callback_cbs_setSort_2340_0);
-  methods += new qt_gsi::GenericMethod ("setTable", "@brief Virtual method void QSqlRelationalTableModel::setTable(const QString &tableName)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setTable_2025_0, &_call_cbs_setTable_2025_0);
-  methods += new qt_gsi::GenericMethod ("setTable", "@hide", false, &_init_cbs_setTable_2025_0, &_call_cbs_setTable_2025_0, &_set_callback_cbs_setTable_2025_0);
-  methods += new qt_gsi::GenericMethod ("sibling", "@brief Virtual method QModelIndex QSqlRelationalTableModel::sibling(int row, int column, const QModelIndex &idx)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_sibling_c3713_0, &_call_cbs_sibling_c3713_0);
-  methods += new qt_gsi::GenericMethod ("sibling", "@hide", true, &_init_cbs_sibling_c3713_0, &_call_cbs_sibling_c3713_0, &_set_callback_cbs_sibling_c3713_0);
-  methods += new qt_gsi::GenericMethod ("sort", "@brief Virtual method void QSqlRelationalTableModel::sort(int column, Qt::SortOrder order)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_sort_2340_0, &_call_cbs_sort_2340_0);
-  methods += new qt_gsi::GenericMethod ("sort", "@hide", false, &_init_cbs_sort_2340_0, &_call_cbs_sort_2340_0, &_set_callback_cbs_sort_2340_0);
-  methods += new qt_gsi::GenericMethod ("span", "@brief Virtual method QSize QSqlRelationalTableModel::span(const QModelIndex &index)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_span_c2395_0, &_call_cbs_span_c2395_0);
-  methods += new qt_gsi::GenericMethod ("span", "@hide", true, &_init_cbs_span_c2395_0, &_call_cbs_span_c2395_0, &_set_callback_cbs_span_c2395_0);
-  methods += new qt_gsi::GenericMethod ("submit", "@brief Virtual method bool QSqlRelationalTableModel::submit()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_submit_0_0, &_call_cbs_submit_0_0);
-  methods += new qt_gsi::GenericMethod ("submit", "@hide", false, &_init_cbs_submit_0_0, &_call_cbs_submit_0_0, &_set_callback_cbs_submit_0_0);
-  methods += new qt_gsi::GenericMethod ("supportedDragActions", "@brief Virtual method QFlags<Qt::DropAction> QSqlRelationalTableModel::supportedDragActions()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_supportedDragActions_c0_0, &_call_cbs_supportedDragActions_c0_0);
-  methods += new qt_gsi::GenericMethod ("supportedDragActions", "@hide", true, &_init_cbs_supportedDragActions_c0_0, &_call_cbs_supportedDragActions_c0_0, &_set_callback_cbs_supportedDragActions_c0_0);
-  methods += new qt_gsi::GenericMethod ("supportedDropActions", "@brief Virtual method QFlags<Qt::DropAction> QSqlRelationalTableModel::supportedDropActions()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_supportedDropActions_c0_0, &_call_cbs_supportedDropActions_c0_0);
-  methods += new qt_gsi::GenericMethod ("supportedDropActions", "@hide", true, &_init_cbs_supportedDropActions_c0_0, &_call_cbs_supportedDropActions_c0_0, &_set_callback_cbs_supportedDropActions_c0_0);
-  methods += new qt_gsi::GenericMethod ("*timerEvent", "@brief Virtual method void QSqlRelationalTableModel::timerEvent(QTimerEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0);
-  methods += new qt_gsi::GenericMethod ("*timerEvent", "@hide", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0, &_set_callback_cbs_timerEvent_1730_0);
-  methods += new qt_gsi::GenericMethod ("*updateRowInTable", "@brief Virtual method bool QSqlRelationalTableModel::updateRowInTable(int row, const QSqlRecord &values)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_updateRowInTable_2964_0, &_call_cbs_updateRowInTable_2964_0);
-  methods += new qt_gsi::GenericMethod ("*updateRowInTable", "@hide", false, &_init_cbs_updateRowInTable_2964_0, &_call_cbs_updateRowInTable_2964_0, &_set_callback_cbs_updateRowInTable_2964_0);
+  methods += new qt_gsi::GenericMethod ("setRelation", "@hide", false, &_init_cbs_setRelation_3187_0, &_call_cbs_setRelation_3187_0);
+  methods += new qt_gsi::GenericMethod ("setRelation", "@brief Virtual method void QSqlRelationalTableModel::setRelation(int column, const QSqlRelation &relation)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setRelation_3187_0, &_call_cbs_setRelation_3187_0, &_set_callback_cbs_setRelation_3187_0);
+  methods += new qt_gsi::GenericMethod ("setSort", "@hide", false, &_init_cbs_setSort_2340_0, &_call_cbs_setSort_2340_0);
+  methods += new qt_gsi::GenericMethod ("setSort", "@brief Virtual method void QSqlRelationalTableModel::setSort(int column, Qt::SortOrder order)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setSort_2340_0, &_call_cbs_setSort_2340_0, &_set_callback_cbs_setSort_2340_0);
+  methods += new qt_gsi::GenericMethod ("setTable", "@hide", false, &_init_cbs_setTable_2025_0, &_call_cbs_setTable_2025_0);
+  methods += new qt_gsi::GenericMethod ("setTable", "@brief Virtual method void QSqlRelationalTableModel::setTable(const QString &tableName)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setTable_2025_0, &_call_cbs_setTable_2025_0, &_set_callback_cbs_setTable_2025_0);
+  methods += new qt_gsi::GenericMethod ("sibling", "@hide", true, &_init_cbs_sibling_c3713_0, &_call_cbs_sibling_c3713_0);
+  methods += new qt_gsi::GenericMethod ("sibling", "@brief Virtual method QModelIndex QSqlRelationalTableModel::sibling(int row, int column, const QModelIndex &idx)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_sibling_c3713_0, &_call_cbs_sibling_c3713_0, &_set_callback_cbs_sibling_c3713_0);
+  methods += new qt_gsi::GenericMethod ("sort", "@hide", false, &_init_cbs_sort_2340_0, &_call_cbs_sort_2340_0);
+  methods += new qt_gsi::GenericMethod ("sort", "@brief Virtual method void QSqlRelationalTableModel::sort(int column, Qt::SortOrder order)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_sort_2340_0, &_call_cbs_sort_2340_0, &_set_callback_cbs_sort_2340_0);
+  methods += new qt_gsi::GenericMethod ("span", "@hide", true, &_init_cbs_span_c2395_0, &_call_cbs_span_c2395_0);
+  methods += new qt_gsi::GenericMethod ("span", "@brief Virtual method QSize QSqlRelationalTableModel::span(const QModelIndex &index)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_span_c2395_0, &_call_cbs_span_c2395_0, &_set_callback_cbs_span_c2395_0);
+  methods += new qt_gsi::GenericMethod ("submit", "@hide", false, &_init_cbs_submit_0_0, &_call_cbs_submit_0_0);
+  methods += new qt_gsi::GenericMethod ("submit", "@brief Virtual method bool QSqlRelationalTableModel::submit()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_submit_0_0, &_call_cbs_submit_0_0, &_set_callback_cbs_submit_0_0);
+  methods += new qt_gsi::GenericMethod ("supportedDragActions", "@hide", true, &_init_cbs_supportedDragActions_c0_0, &_call_cbs_supportedDragActions_c0_0);
+  methods += new qt_gsi::GenericMethod ("supportedDragActions", "@brief Virtual method QFlags<Qt::DropAction> QSqlRelationalTableModel::supportedDragActions()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_supportedDragActions_c0_0, &_call_cbs_supportedDragActions_c0_0, &_set_callback_cbs_supportedDragActions_c0_0);
+  methods += new qt_gsi::GenericMethod ("supportedDropActions", "@hide", true, &_init_cbs_supportedDropActions_c0_0, &_call_cbs_supportedDropActions_c0_0);
+  methods += new qt_gsi::GenericMethod ("supportedDropActions", "@brief Virtual method QFlags<Qt::DropAction> QSqlRelationalTableModel::supportedDropActions()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_supportedDropActions_c0_0, &_call_cbs_supportedDropActions_c0_0, &_set_callback_cbs_supportedDropActions_c0_0);
+  methods += new qt_gsi::GenericMethod ("*timerEvent", "@hide", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0);
+  methods += new qt_gsi::GenericMethod ("*timerEvent", "@brief Virtual method void QSqlRelationalTableModel::timerEvent(QTimerEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0, &_set_callback_cbs_timerEvent_1730_0);
+  methods += new qt_gsi::GenericMethod ("*updateRowInTable", "@hide", false, &_init_cbs_updateRowInTable_2964_0, &_call_cbs_updateRowInTable_2964_0);
+  methods += new qt_gsi::GenericMethod ("*updateRowInTable", "@brief Virtual method bool QSqlRelationalTableModel::updateRowInTable(int row, const QSqlRecord &values)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_updateRowInTable_2964_0, &_call_cbs_updateRowInTable_2964_0, &_set_callback_cbs_updateRowInTable_2964_0);
   return methods;
 }
 

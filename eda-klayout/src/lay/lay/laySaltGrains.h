@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -77,24 +77,6 @@ public:
    *  @brief Sets the name of the grain collection
    */
   void set_name (const std::string &p);
-
-  /**
-   *  @brief Gets a value indicating that the information in the grain collection is sparse
-   *
-   *  If this flag is set to true (the default), the information in the collection needs
-   *  to be completed by pulling the original definition of the grain for the grain's URL.
-   *  If the flag is false, the information is complete and reflects the grain's original
-   *  definition.
-   */
-  const bool &sparse () const
-  {
-    return m_sparse;
-  }
-
-  /**
-   *  @brief Sets a value indicating that the information in the grain collection is sparse
-   */
-  void set_sparse (const bool &f);
 
   /**
    *  @brief Gets the title of the grain collection
@@ -243,7 +225,6 @@ private:
   collections_type m_collections;
   grains_type m_grains;
   std::string m_url;
-  bool m_sparse;
 };
 
 }

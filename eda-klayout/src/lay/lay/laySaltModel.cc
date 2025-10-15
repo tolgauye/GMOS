@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -155,7 +155,7 @@ SaltModel::data (const QModelIndex &index, int role) const
 
     if (m_marked.find (g->name ()) != m_marked.end ()) {
       QPainter painter (&img);
-      QImage warn (":/marked_64px.png");
+      QImage warn (":/marked_64.png");
       painter.drawImage (0, 0, warn);
     }
 
@@ -163,15 +163,15 @@ SaltModel::data (const QModelIndex &index, int role) const
     if (m != m_messages.end ()) {
       if (m->second.first == Warning) {
         QPainter painter (&img);
-        QImage warn (":/warn_16px.png");
+        QImage warn (":/warn_16.png");
         painter.drawImage (0, 0, warn);
       } else if (m->second.first == Error) {
         QPainter painter (&img);
-        QImage warn (":/error_16px.png");
+        QImage warn (":/error_16.png");
         painter.drawImage (0, 0, warn);
       } else if (m->second.first == Info) {
         QPainter painter (&img);
-        QImage warn (":/info_16px.png");
+        QImage warn (":/info_16.png");
         painter.drawImage (0, 0, warn);
       }
     }

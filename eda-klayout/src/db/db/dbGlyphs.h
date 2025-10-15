@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -76,10 +76,12 @@ public:
    */
   TextGenerator ();
 
+#if defined(HAVE_QT)
   /**
    *  @brief Loads the font from the given resource
    */
   void load_from_resource (const std::string &name);
+#endif
 
   /**
    *  @brief Loads from the given binary data
@@ -119,13 +121,13 @@ public:
    *  @param char_spacing Additional spacing between the lines in µm
    *  @param The resulting polygons will be put here (the vector will be cleared before)
    */
-  void text (const std::string &t, double target_dbu, double mag2, bool inv, double bias, double char_spacing, double line_spacing, std::vector<db::Polygon> &polygons) const;
+  void text (const std::string &t, double target_dbu, double mag, bool inv, double bias, double char_spacing, double line_spacing, std::vector<db::Polygon> &polygons) const;
 
   /**
    *  @brief Creates the given text as a region
    *  For the parameters see "text"
    */
-  db::Region text_as_region (const std::string &t, double target_dbu, double mag2, bool inv, double bias, double char_spacing, double line_spacing) const;
+  db::Region text_as_region (const std::string &t, double target_dbu, double mag, bool inv, double bias, double char_spacing, double line_spacing) const;
 
   /**
    *  @brief Gets the glyph for a given character
@@ -200,13 +202,8 @@ public:
   static void set_font_paths (const std::vector<std::string> &paths);
 
   /**
-   *  @brief Gets the font search paths
-   */
-  static std::vector<std::string> font_paths ();
-
-  /**
    *  @brief Returns the font with the given name
-   *  If no font with that name exists, 0 is returned.
+   *  If no font with that name exsist, 0 is returned.
    */
   static const TextGenerator *generator_by_name (const std::string &name);
 

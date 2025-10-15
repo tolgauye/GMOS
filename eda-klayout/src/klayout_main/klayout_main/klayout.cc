@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -38,13 +38,10 @@
 
 #include "version.h"
 
-//  required to force linking of the "lib" and other modules
+//  required to force linking of the "ext" and "lib" module
 #include "libForceLink.h"
-#include "pexForceLink.h"
 #include "antForceLink.h"
 #include "imgForceLink.h"
-#include "docForceLink.h"
-#include "iconsForceLink.h"
 #if defined(HAVE_RUBY)
 #include "drcForceLink.h"
 #include "lvsForceLink.h"
@@ -54,30 +51,18 @@
 
 //  pulls in the Qt GSI binding modules
 # include "gsiQtGuiExternals.h"
-# include "gsiQtWidgetsExternals.h"
 # include "gsiQtCoreExternals.h"
-# include "gsiQtMultimediaExternals.h"
-# include "gsiQtPrintSupportExternals.h"
 # include "gsiQtXmlExternals.h"
-# include "gsiQtXmlPatternsExternals.h"
 # include "gsiQtSqlExternals.h"
-# include "gsiQtSvgExternals.h"
 # include "gsiQtNetworkExternals.h"
 # include "gsiQtDesignerExternals.h"
-# include "gsiQtUiToolsExternals.h"
 
 FORCE_LINK_GSI_QTCORE
 FORCE_LINK_GSI_QTGUI
-FORCE_LINK_GSI_QTWIDGETS
-FORCE_LINK_GSI_QTMULTIMEDIA
-FORCE_LINK_GSI_QTPRINTSUPPORT
 FORCE_LINK_GSI_QTXML
-FORCE_LINK_GSI_QTXMLPATTERNS
 FORCE_LINK_GSI_QTDESIGNER
 FORCE_LINK_GSI_QTNETWORK
 FORCE_LINK_GSI_QTSQL
-FORCE_LINK_GSI_QTSVG
-FORCE_LINK_GSI_QTUITOOLS
 
 #else
 # define QT_EXTERNAL_BASE(x)
@@ -88,8 +73,6 @@ FORCE_LINK_GSI_QTUITOOLS
 #include <QTextCodec>
 
 #include <iostream>
-#include <fstream>
-#include <memory>
 #include <cstdlib>
 
 int klayout_main (int &argc, char **argv);
@@ -159,16 +142,14 @@ main(int a_argc, const char **a_argv)
 #endif
 
 #if QT_VERSION >= 0x050000
-void custom_message_handler(QtMsgType type, const QMessageLogContext & /*ctx*/, const QString &msg)
+void myMessageOutput(QtMsgType type, const QMessageLogContext & /*ctx*/, const QString &msg)
 {
   switch (type) {
   case QtDebugMsg:
     fprintf(stderr, "Debug: %s\n", msg.toLocal8Bit ().constData ());
     break;
   case QtWarningMsg:
-    if (tl::verbosity () > 0) {
-      fprintf(stderr, "Warning: %s\n", msg.toLocal8Bit ().constData ());
-    }
+    fprintf(stderr, "Warning: %s\n", msg.toLocal8Bit ().constData ());
     break;
   case QtCriticalMsg:
     fprintf(stderr, "Critical: %s\n", msg.toLocal8Bit ().constData ());
@@ -178,20 +159,18 @@ void custom_message_handler(QtMsgType type, const QMessageLogContext & /*ctx*/, 
     abort();
   case QtInfoMsg:
     fprintf(stderr, "Info: %s\n", msg.toLocal8Bit ().constData ());
-    break;
+    abort();
   }
 }
 #else
-void custom_message_handler(QtMsgType type, const char *msg)
+void myMessageOutput(QtMsgType type, const char *msg)
 {
   switch (type) {
   case QtDebugMsg:
     fprintf(stderr, "Debug: %s\n", msg);
     break;
   case QtWarningMsg:
-    if (tl::verbosity () > 0) {
-      fprintf(stderr, "Warning: %s\n", msg);
-    }
+    fprintf(stderr, "Warning: %s\n", msg);
     break;
   case QtCriticalMsg:
     fprintf(stderr, "Critical: %s\n", msg);
@@ -205,80 +184,26 @@ void custom_message_handler(QtMsgType type, const char *msg)
 
 static int klayout_main_cont (int &argc, char **argv);
 
-namespace {
-
-class LogFileWriter
-  : public tl::Channel
-{
-public:
-  static std::unique_ptr<std::ofstream> m_os;
-
-  LogFileWriter (int min_verbosity, const std::string &prefix)
-    : m_min_verbosity (min_verbosity), m_prefix (prefix), m_new_line (true)
-  { }
-
-  static bool open (const std::string &path)
-  {
-    m_os.reset (new std::ofstream (path));
-    return m_os->good ();
-  }
-
-  void puts (const char *s)
-  {
-    if (m_os && tl::verbosity () >= m_min_verbosity) {
-      m_os->write (s, strlen (s));
-    }
-  }
-
-  void endl ()
-  {
-    puts ("\n");
-    m_new_line = true;
-  }
-
-  void end ()
-  {
-    if (m_os && tl::verbosity () >= m_min_verbosity) {
-      m_os->flush ();
-    }
-  }
-
-  void begin ()
-  {
-    if (m_new_line) {
-      puts (m_prefix.c_str ());
-      m_new_line = false;
-    }
-  }
-
-  void yield () { }
-
-private:
-  int m_min_verbosity;
-  std::string m_prefix;
-  bool m_new_line;
-};
-
-std::unique_ptr<std::ofstream> LogFileWriter::m_os;
-
-}
-
-static void set_log_file (const std::string &log_file)
-{
-  if (LogFileWriter::open (log_file)) {
-    tl::info.add (new LogFileWriter (0, std::string ()), true);
-    tl::log.add (new LogFileWriter (10, std::string ()), true);
-    tl::warn.add (new LogFileWriter (0, std::string ("Warning: ")), true);
-    tl::error.add (new LogFileWriter (0, std::string ("ERROR: ")), true);
-  }
-}
-
 /**
  *  @brief The basic entry point
  *  Note that by definition, klayout_main receives arguments in UTF-8
  */
 int
 klayout_main (int &argc, char **argv)
+{
+  //  This special initialization is required by the Ruby interpreter because it wants to mark the stack
+  int ret = rba::RubyInterpreter::initialize (argc, argv, &klayout_main_cont);
+
+  //  clean up all static data now, since we don't trust the static destructors.
+  //  NOTE: this needs to happen after the Ruby interpreter went down since otherwise the GC will
+  //  access objects that are already cleaned up.
+  tl::StaticObjects::cleanup ();
+
+  return ret;
+}
+
+int 
+klayout_main_cont (int &argc, char **argv)
 {
   //  install the version strings
   lay::Version::set_exe_name (prg_exe_name);
@@ -300,58 +225,18 @@ klayout_main (int &argc, char **argv)
   about_text += prg_about_text;
   lay::Version::set_about_text (about_text.c_str ());
 
-  //  Capture the shortcut command line arguments, log file and the verbosity settings
-  //  for early errors and warnings
-
-  for (int i = 1; i < argc; ++i) {
-
-    if (argv [i] == std::string ("-v")) {
-
-      tl::info << lay::ApplicationBase::version ();
-      return 0;
-
-    } else if (argv [i] == std::string ("-h")) {
-
-      tl::info << lay::ApplicationBase::usage () << tl::noendl;
-      return 0;
-
-    } else if (argv [i] == std::string ("-k") && (i + 1) < argc) {
-
-      set_log_file (argv [++i]);
-
-    } else if (argv [i] == std::string ("-d") && (i + 1) < argc) {
-
-      int v = 0;
-      tl::from_string (argv [++i], v);
-      tl::verbosity (v);
-
-    }
-
-  }
-
-  //  This special initialization is required by the Ruby interpreter because it wants to mark the stack
-  int ret = rba::RubyInterpreter::initialize (argc, argv, &klayout_main_cont);
-
-  //  clean up all static data now, since we don't trust the static destructors.
-  //  NOTE: this needs to happen after the Ruby interpreter went down since otherwise the GC will
-  //  access objects that are already cleaned up.
-  tl::StaticObjects::cleanup ();
-
-  return ret;
-}
-
-int 
-klayout_main_cont (int &argc, char **argv)
-{
 #if QT_VERSION >= 0x050000
-  qInstallMessageHandler (custom_message_handler);
+  qInstallMessageHandler (myMessageOutput);
 #else
-  qInstallMsgHandler (custom_message_handler);
+  qInstallMsgHandler (myMessageOutput);
 #endif
 
   int result = 0;
 
   try {
+
+    //  initialize the Python interpreter
+    pya::PythonInterpreter::initialize ();
 
     //  this registers the gsi definitions
     gsi::initialize_external ();
@@ -367,11 +252,10 @@ klayout_main_cont (int &argc, char **argv)
       }
     }
 
-    std::unique_ptr<lay::ApplicationBase> app;
+    std::auto_ptr<lay::ApplicationBase> app;
     if (non_ui_mode) {
       app.reset (new lay::NonGuiApplication (argc, argv));
     } else {
-      lay::GuiApplication::initialize ();
       app.reset (new lay::GuiApplication (argc, argv));
       lay::enable_signal_handler_gui (true);
     }

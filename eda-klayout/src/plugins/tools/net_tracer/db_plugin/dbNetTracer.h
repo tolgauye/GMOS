@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -696,24 +696,6 @@ public:
   }
 
   /**
-   *  @brief Sets the maximum number of shapes to trace
-   *
-   *  Setting the trace depth to 0 is equivalent to "unlimited".
-   */
-  void set_trace_depth (size_t n)
-  {
-    m_trace_depth = n;
-  }
-
-  /**
-   *  @brief Gets the maximum number of shapes to trace
-   */
-  size_t trace_depth () const
-  {
-    return m_trace_depth;
-  }
-
-  /**
    *  @brief Returns the number of shapes found
    */
   size_t size () const
@@ -725,7 +707,7 @@ public:
    *  @brief Returns true, if the net is incomplete
    *
    *  This flag is true if the extractor was aborted
-   *  for example by the user or the trace depth was exhausted.
+   *  for example by the user.
    *  The shapes do not fully cover the net.
    */
   bool incomplete () const
@@ -777,7 +759,6 @@ private:
   std::string m_name;
   int m_name_hier_depth;
   bool m_incomplete;
-  size_t m_trace_depth;
   NetTracerShape m_stop_shape; 
   NetTracerShape m_start_shape;
   db::EdgeProcessor m_ep;

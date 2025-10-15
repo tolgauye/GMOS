@@ -49,7 +49,6 @@ module LVS
     def initialize(engine)
       super
       @comparer_config = []
-      @comparer_miniconfig = []
     end
 
     def _make_data
@@ -97,173 +96,6 @@ module LVS
 
     def _lvs_data
       _l2n_data && @lvs
-    end
-
-    # %LVS%
-    # @name tolerance
-    # @brief Specifies compare tolerances for certain device parameters
-    # @synopsis tolerance(device_class_name, parameter_name, absolute_tolerance [, relative_tolerance])
-    # @synopsis tolerance(device_class_name, parameter_name [, :absolute => absolute_tolerance] [, :relative => relative_tolerance])
-    # Specifies a compare tolerance for a specific parameter on a given device class.
-    # The device class is the name of a device class in the extracted netlist.
-    # Tolerances can be given in absolute units or relative or both. 
-    # The relative tolerance is given as a factor, so 0.1 is a 10% tolerance.
-    # Absolute and relative tolerances add, so specifying both allows for a larger
-    # deviation.
-    #
-    # Some device parameters - like the resistor's "L" and "W" parameters - are not compared by default.
-    # These are "secondary" device parameters. Using a tolerance on such parameters will make these parameters
-    # being compared even if they are secondary ones.
-    #
-    # A function is skip a parameter during the device compare is "ignore_parameter".
-    #
-    # "tolerance" and "ignore_parameter" only have an effect with the default device comparer. Using a custom device comparer
-    # will override the definitions by "ignore_parameter" or "tolerance".
-
-    def tolerance(device_class_name, parameter_name, *args)
-
-      device_class_name.is_a?(String) || raise("Device class argument of 'tolerance' must be a string")
-      parameter_name.is_a?(String) || raise("Parameter name argument of 'tolerance' must be a string")
-
-      abs_tol = nil
-      rel_tol = nil
-      args.each do |a|
-        if a.is_a?(Hash)
-          a.keys.each do |k|
-            if k == :absolute
-              abs_tol = a[k].to_f
-            elsif k == :relative
-              rel_tol = a[k].to_f
-            else
-              raise("Unknown option #{k.to_s} in 'tolerance' (allowed options are: absolute, relative)")
-            end
-          end
-        elsif abs_tol == nil
-          abs_tol = a.to_f
-        elsif rel_tol == nil
-          rel_tol = a.to_f
-        else
-          raise("Too many arguments in 'tolerance' (max. 4)")
-        end
-      end
-
-      abs_tol ||= 0.0
-      rel_tol ||= 0.0
-
-      if self._l2n_data
-        # already extracted
-        self._tolerance(self._l2n_data, device_class_name, parameter_name, abs_tol, rel_tol)
-      else
-        @post_extract_config << lambda { |l2n| self._tolerance(l2n, device_class_name, parameter_name, abs_tol, rel_tol) }
-      end
-
-    end
-
-    def _tolerance(l2n, device_class_name, parameter_name, abs_tol, rel_tol)
-
-      dc = l2n.netlist.device_class_by_name(device_class_name)
-      if dc && dc.has_parameter?(parameter_name)
-        ep = RBA::EqualDeviceParameters::new(dc.parameter_id(parameter_name), abs_tol, rel_tol)
-        if dc.equal_parameters == nil
-          dc.equal_parameters = ep
-        else
-          dc.equal_parameters += ep
-        end
-      end
-
-    end
-
-    # %LVS%
-    # @name ignore_parameter
-    # @brief Skip a specific parameter for a given device class name during device compare
-    # @synopsis ignore_parameter(device_class_name, parameter_name)
-    # 
-    # Use this function is ignore a parameter for a particular device class during the netlist compare.
-    # Some parameters - for example "L" and "W" parameters of the resistor device - are "secondary" parameters
-    # which are not ignored by default. Using "ignore_parameter" on such devices does not have an effect.
-    #
-    # "ignore_parameter" and "tolerance" only have an effect with the default device comparer. Using a custom device comparer
-    # will override the definitions by "ignore_parameter" or "tolerance".
-
-    def ignore_parameter(device_class_name, parameter_name)
-
-      device_class_name.is_a?(String) || raise("Device class argument of 'ignore_parameter' must be a string")
-      parameter_name.is_a?(String) || raise("Parameter name argument of 'ignore_parameter' must be a string")
-
-      if self._l2n_data
-        # already extracted
-        self._ignore_parameter(self._l2n_data, device_class_name, parameter_name)
-      else
-        @post_extract_config << lambda { |l2n| self._ignore_parameter(l2n, device_class_name, parameter_name) }
-      end
-
-    end
-
-    def _ignore_parameter(l2n, device_class_name, parameter_name)
-
-      dc = l2n.netlist.device_class_by_name(device_class_name)
-      if dc && dc.has_parameter?(parameter_name)
-        ep = RBA::EqualDeviceParameters::ignore(dc.parameter_id(parameter_name))
-        if dc.equal_parameters == nil
-          dc.equal_parameters = ep
-        else
-          dc.equal_parameters += ep
-        end
-      end
-
-    end
-
-    # %LVS%
-    # @name enable_parameter
-    # @brief Indicates whether to enable a specific parameter for a given device
-    # @synopsis enable_parameter(device_class_name, parameter_name)
-    # The parameter is made "primary" which enables further applications - e.g. it is netlisted
-    # for some elements which normally would not print that parameter, and the parameter
-    # is compared in the default device compare scheme during netlist matching.
-    #
-    # Enabling a parameter is rather a hint for the system and the effects can be controlled
-    # by other means, so this is not a strong concept. For example, once a \tolerance is 
-    # specified for a parameter, the "primary" flag of the parameter is not considered anymore.
-    # The inverse the this function is \disable_parameter.
-
-    # %LVS%
-    # @name disable_parameter
-    # @brief Indicates whether to disable a specific parameter for a given device
-    # @synopsis disable_parameter(device_class_name, parameter_name)
-    # Disabling a parameter is the inverse of \enable_parameter. Disabling a parameter will
-    # reset the "primary" flag of the parameter. This has several effects - e.g. the parameter will not be 
-    # used in device compare during netlist matching by default. 
-    #
-    # This is not a strong concept but rather
-    # a hint for the system. Disabling a parameter for netlist compare without side effects
-    # is possible with the \ignore_parameter function. In the same way, \tolerance will enable a parameter for
-    # netlist compare regardless of the "primary" status of the parameter.
-
-    [ :enable_parameter, :disable_parameter ].each do |mn|
-      eval <<"CODE"
-      def #{mn}(device_class_name, parameter_name)
-
-        device_class_name.is_a?(String) || raise("Device class argument of '#{mn}' must be a string")
-        parameter_name.is_a?(String) || raise("Parameter name argument of '#{mn}' must be a string")
-
-        if self._l2n_data
-          # already extracted
-          self._enable_parameter(self._l2n_data, device_class_name, parameter_name, :#{mn} == :enable_parameter)
-        else
-          @post_extract_config << lambda { |l2n| self._enable_parameter(l2n, device_class_name, parameter_name, :#{mn} == :enable_parameter) }
-        end
-
-      end
-CODE
-    end
-
-    def _enable_parameter(l2n, device_class_name, parameter_name, enable)
-
-      dc = l2n.netlist.device_class_by_name(device_class_name)
-      if dc && dc.has_parameter?(parameter_name)
-        dc.enable_parameter(parameter_name, enable)
-      end
-
     end
 
     # %LVS%
@@ -340,169 +172,12 @@ CODE
 
     end
 
-    # %LVS%
-    # @name join_symmetric_nets
-    # @brief Joins symmetric nets of selected circuits on the extracted netlist
-    # @synopsis join_symmetric_nets(circuit_filter)
-    # Nets are symmetrical if swapping them would not modify the circuit.
-    # Hence they will carry the same potential and can be connected (joined).
-    # This will simplify the circuit and can be applied before device combination
-    # (e.g. through "netlist.simplify") to render a schematic-equivalent netlist in some 
-    # cases where symmetric nodes are split (i.e. "split gate" configuration).
-    #
-    # This method operates on the extracted netlist (layout). The circuit filter
-    # specifies the circuits to which to apply this operation. The filter is a
-    # glob-style pattern. Using "*" for all circuits is possible, but it's 
-    # discouraged currenty until the reliability of the symmetry detection 
-    # algorithm is established. Currently it is recommended to apply it only to 
-    # those circuits for which this feature is required.
-    #
-    # For the symmetry detection, the specified constraints (e.g. tolerances,
-    # device filters etc.) apply.
-
-    def join_symmetric_nets(circuit_pattern)
-
-      circuit_pattern.is_a?(String) || raise("Circuit pattern argument of 'join_symmetric_nets' must be a string")
-
-      if self._l2n_data
-        # already extracted
-        self._join_symmetric_nets(self._l2n_data, circuit_pattern)
-      else
-        @post_extract_config << lambda { |l2n| self._join_symmetric_nets(l2n, circuit_pattern) }
-      end
-
-    end
-
-    def _join_symmetric_nets(l2n, circuit_pattern)
-
-      comparer = self._comparer_mini
-
-      l2n.netlist.circuits_by_name(circuit_pattern).each do |c|
-        comparer.join_symmetric_nets(c)
-      end
-
-      comparer._destroy
-
-    end
-
-    # %LVS%
-    # @name split_gates
-    # @brief Implements the "split gates" feature
-    # @synopsis split_gates(device_name)
-    # @synopsis split_gates(device_name, circuit_filter)
-    # Multi-fingered, multi-gate MOS transistors can be built without connecting
-    # the source/drain internal nets between the fingers. This will prevent 
-    # "combine_devices" from combining the single gate transistors of the
-    # different fingers into single ones.
-    #
-    # "split_gates" now marks the devices of the given class so that they will
-    # receive a special treatment which joins the internl source/drain nodes.
-    #
-    # By default, this method is applied to all circuits. You can specify
-    # a circuit pattern to apply it to certain circuits only.
-    #
-    # "device_name" must be a valid device name and denote a MOS3, MOS4, DMOS3
-    # or DMOS4 device.
-
-    def split_gates(device_name, circuit_pattern = "*")
-
-      device_name.is_a?(String) || raise("Device name argument of 'split_gates' must be a string")
-      circuit_pattern.is_a?(String) || raise("Circuit pattern argument of 'split_gates' must be a string")
-
-      if self._l2n_data
-        # already extracted
-        self._split_gates(self._l2n_data, device_name, circuit_pattern)
-      else
-        @post_extract_config << lambda { |l2n| self._split_gates(l2n, device_name, circuit_pattern) }
-      end
-
-    end
-
-    def _split_gates(l2n, device_name, circuit_pattern)
-
-      dc = l2n.netlist.device_class_by_name(device_name)
-      if ! dc
-        raise("'#{device_name}' is not a valid device name") 
-      end
-      if ! dc.respond_to?(:join_split_gates)
-        raise("Device '#{device_name}' is not a kind supporting 'split_gates'") 
-      end
-
-      l2n.netlist.circuits_by_name(circuit_pattern).each do |c|
-        dc.join_split_gates(c)
-      end
-
-    end
-
-    # %LVS%
-    # @name blank_circuit
-    # @brief Removes the content from the given circuits (blackboxing)
-    # @synopsis blank_circuit(circuit_filter)
-    # This method will erase all content from the circuits matching the filter.
-    # The filter is a glob expression.
-    #
-    # This has the following effects:
-    #
-    # @ul
-    # @li The circuits are no longer compared (netlist vs. schematic) @/li
-    # @li Named pins are required to match (use labels on the nets to name pins in the layout) @/li
-    # @li Unnamed pins are treated as equivalent and can be swapped @/li
-    # @li The selected circuits will not be purged on netlist simplification @/li
-    # @/ul
-    #
-    # Using this method can be useful to reduce the verification overhead for 
-    # blocks which are already verifified by other ways or for which no schematic
-    # is available - e.g. hard macros.
-    #
-    # Example:
-    # 
-    # @code
-    # # skips all MEMORY* circuits from compare
-    # blank_circuit("MEMORY*")
-    # @/code
-
-    def blank_circuit(circuit_pattern)
-
-      circuit_pattern.is_a?(String) || raise("Circuit pattern argument of 'blank_circuit' must be a string")
-
-      if self._l2n_data
-        # already extracted
-        self._blank_circuit(self._l2n_data, circuit_pattern)
-      else
-        @post_extract_config << lambda { |l2n| self._blank_circuit(l2n, circuit_pattern) }
-      end
-
-    end
-
-    def _blank_circuit(l2n, circuit_pattern)
-
-      (n, s) = _ensure_two_netlists
-
-      n.blank_circuit(circuit_pattern)
-      s.blank_circuit(circuit_pattern)
-
-    end
-
     def _comparer
 
       comparer = RBA::NetlistComparer::new
 
       # execute the configuration commands
       @comparer_config.each do |cc|
-        cc.call(comparer)
-      end
-
-      return comparer
-
-    end
-
-    def _comparer_mini
-
-      comparer = RBA::NetlistComparer::new
-      comparer.with_log = false
-
-      # execute the configuration commands
-      @comparer_miniconfig.each do |cc|
         cc.call(comparer)
       end
 
@@ -520,225 +195,84 @@ CODE
     end
       
     # %LVS%
-    # @name no_lvs_hints
-    # @brief Disables LVS hints
-    # @synopsis no_lvs_hints
-    # LVS hints may be expensive to compute. Use this function to disable
-    # generation of LVS hints
-
-    def no_lvs_hints
-      @comparer_config << lambda { |comparer| comparer.with_log = false }
-    end
-
-    # %LVS%
-    # @name flag_missing_ports
-    # @brief Flags inconsistently labelled or missing ports in the current top circuit
-    # @synopsis flag_missing_ports
-    # This method must be called after "compare" was executed successfully and will 
-    # report errors if pins in the current top circuit's schematic are not labelled 
-    # correspondingly in the layout. This prevents swapping of port labels or 
-    # pads.
-    #
-    # @code
-    # success = compare
-    # success && flag_missing_ports
-    # @/code
-    #
-    # Note that in order to use this method, the top circuit from the schematic netlist
-    # needs to have pins. This may not be always the case - for example, if the top 
-    # level circuit is not a subcircuit in a Spice netlist.
-
-    def flag_missing_ports
-
-      lvs_data.netlist || raise("Netlist not extracted yet")
-      lvs_data.xref || raise("Compare step was not executed yet")
-
-      lvs_data.flag_missing_ports(lvs_data.netlist.top_circuit)
-
-    end
-
-    # %LVS%
     # @name same_nets
     # @brief Establishes an equivalence between the nets
-    # @synopsis same_nets(circuit_pattern, net_pattern)
-    # @synopsis same_nets(circuit_pattern, net_a, net_b)
+    # @synopsis same_nets(circuit, net_a, net_b)
     # @synopsis same_nets(circuit_a, net_a, circuit_b, net_b)
     # This method will force an equivalence between the net_a and net_b from circuit_a
     # and circuit_b (circuit in the three-argument form is for both circuit_a and circuit_b).
-    # 
+    #
     # In the four-argument form, the circuits can be either given by name or as Circuit
-    # objects. In the three-argument form, the circuits have to be given by name pattern. 
+    # objects. In the three-argument form, the circuit has to be given by name. 
     # Nets can be either given by name or as Net objects.
-    # In the two-argument form, the circuits and nets have to be given as name pattern.
-    #
-    # "name pattern" are glob-style pattern - e.g. the following will identify the 
-    # all nets starting with "A" from the extracted netlist with the same net from 
-    # the schematic netlist for all circuits starting with "INV":
-    #
-    # @code
-    # same_nets("INV*", "A*")
-    # @/code
-    #
-    # A plain "*" for the net pattern forces all (named) nets to be equivalent between layout and schematic. 
-    # Unnamed nets from the extracted netlist are not considered - i.e. nets without a label.
     #
     # After using this function, the compare algorithm will consider these nets equivalent.
     # Use this method to provide hints for the comparer in cases which are difficult to
     # resolve otherwise.
     #
-    # circuit_a and net_a are for the layout netlist, circuit_b and net_b for the schematic netlist.
-    # Names are case sensitive for layout-derived netlists and case-insensitive for SPICE schematic netlists.
-    #
-    # Use this method andwhere in the script before the \compare call.
-    #
-    # Multiple calls of "same_nets" can be used. The calls are effective in the order
-    # the are given. For example, the following sequence specifies equivalence of all
-    # equally named nets, with the exception of "A" and "B" which are equivalent to each other
-    # inside cell "ND2", despite their different name:
-    #
-    # @code
-    # same_nets("*", "*")
-    # same_nets("ND2", "A", "B")
-    # @/code
+    # Before this method can be used, a schematic netlist needs to be loaded with
+    # \schematic.
 
     def same_nets(*args)
-      _same_nets_impl(false, *args)
-    end
 
-    # %LVS%
-    # @name same_nets!
-    # @brief Establishes an equivalence between the nets with matching requirement
-    # @synopsis same_nets!(circuit_pattern, net_pattern)
-    # @synopsis same_nets!(circuit_pattern, net_a, net_b)
-    # @synopsis same_nets!(circuit_a, net_a, circuit_b, net_b)
-    # This method is equivalent to \same_nets, but requires identity of the given nets.
-    # If the specified nets do not match, an error is reported.
-    #
-    # For example, this global specification requires all named nets from the
-    # layout to have an equivalent net in the schematic and those nets need to be 
-    # identical for all circuits:
-    #
-    # @code
-    # same_nets!("*", "*")
-    # @/code
-    #
-    # The following specification requires "A" and "B" to be identical in
-    # circuit "ND2". It is not an error if either "A" does not exist in the
-    # layout or "B" does not exist in the schematic:
-    #
-    # @code
-    # same_nets!("ND2", "A", "B")
-    # @/code
-    
-    def same_nets!(*args)
-      _same_nets_impl(true, *args)
-    end
-
-    def _same_nets_impl(force, *args)
-
-      if args.size < 2 
-        raise("Too few arguments to 'same_nets' (need at least 2)")
+      if args.size < 3 
+        raise("Too few arguments to 'same_nets' (need at least 3)")
       end
       if args.size > 4 
         raise("Too many arguments to 'same_nets' (need max 4)")
       end
 
-      if args.size == 2
-        ( ca, a ) = args
-        cb = nil
-        ca.is_a?(String) || raise("Circuit argument of 'same_nets' must be a string")
-        b = nil
-        a.is_a?(String) || raise("Net argument of 'same_nets' must be a string")
-      elsif args.size == 3
+      if args.size == 3
         ( ca, a, b ) = args
-        cb = nil
+        cb = ca
         ca.is_a?(String) || raise("Circuit argument of 'same_nets' must be a string")
-        [ a, b ].each do |n|
-          n.is_a?(String) || n.is_a?(RBA::Net) || raise("Net arguments of 'same_nets' must be strings or Net objects")
-        end
       else
         ( ca, a, cb, b ) = args
         [ ca, cb ].each do |n|
-          n.is_a?(String) || n.is_a?(RBA::Circuit) || raise("Circuit arguments of 'same_nets' must be strings or Circuit objects")
-        end
-        [ a, b ].each do |n|
-          n.is_a?(String) || n.is_a?(RBA::Net) || raise("Net arguments of 'same_nets' must be strings or Net objects")
+          n.is_a?(String) || n.is_a?(RBA::Net) || raise("Circuit arguments of 'same_nets' must be strings or Net objects")
         end
       end
 
-      @comparer_config << lambda { |comparer| self._same_nets(comparer, ca, a, cb, b, force) }
+      [ a, b ].each do |n|
+        n.is_a?(String) || n.is_a?(RBA::Net) || raise("Net arguments of 'same_nets' must be strings or Net objects")
+      end
+
+      @comparer_config << lambda { |comparer| self._same_nets(comparer, ca, a, cb, b) }
 
     end
 
-    def _same_nets(comparer, ca, a, cb, b, force)
+    def _same_nets(comparer, ca, a, cb, b)
 
       ( nl_a, nl_b ) = _ensure_two_netlists
 
-      cs = !(nl_a.is_case_sensitive? && nl_b.is_case_sensitive?)
-
-      if ca.is_a?(String) && (!cb || cb == "*")
-
-        n2c = {}
-        nl_a.circuits_by_name(ca, cs).each { |c| name = cs ? c.name.upcase : c.name; n2c[name] ||= [ nil, nil ]; n2c[name][0] = c }
-        nl_b.circuits_by_name(ca, cs).each { |c| name = cs ? c.name.upcase : c.name; n2c[name] ||= [ nil, nil ]; n2c[name][1] = c }
-
-        circuits = []
-        n2c.keys.sort.each do |n|
-          if n2c[n][0] && n2c[n][1]
-            circuits << n2c[n]
-          end
-        end
-          
+      if ca.is_a?(String)
+        circuit_a = nl_a.circuit_by_name(ca)
       else 
-
-        circuit_a = ca.is_a?(String) ? nl_a.circuit_by_name(ca) : ca
-        circuit_b = cb.is_a?(String) ? nl_b.circuit_by_name(cb) : cb
-
-        circuits = []
-        if circuit_a && circuit_b
-          circuits << [ circuit_a, circuit_b ]
-        end
-
+        circuit_a = ca
       end
 
-      circuits.each do |circuit_a, circuit_b|
+      if cb.is_a?(String)
+        circuit_b = nl_b.circuit_by_name(cb)
+      else
+        circuit_b = cb
+      end
 
-        if a.is_a?(String) && (!b || b == "*")
+      if circuit_a && circuit_b
 
-          n2n = {}
-          circuit_a.nets_by_name(a, cs).each { |n| name = cs ? n.name.upcase : n.name; n2n[name] ||= [ nil, nil ]; n2n[name][0] = n }
-          circuit_b.nets_by_name(a, cs).each { |n| name = cs ? n.name.upcase : n.name; n2n[name] ||= [ nil, nil ]; n2n[name][1] = n }
-
-          nets = []
-          n2n.keys.sort.each do |n|
-            if n2n[n][0] && (force || n2n[n][1])
-              nets << n2n[n]
-            end
-          end
-
+        if a.is_a?(String)
+          net_a = circuit_a.net_by_name(a) || raise("Not a valid net name in extracted netlist in 'same_nets': #{a} (for circuit #{circuit_a})")
         else
-
-          if a.is_a?(String)
-            net_a = circuit_a.net_by_name(a)
-          else
-            net_a = a
-          end
-
-          if b.is_a?(String)
-            net_b = circuit_b.net_by_name(b)
-          else
-            net_b = b
-          end
-          
-          nets = []
-          if net_a && net_b
-            nets << [ net_a, net_b ]
-          end
-
+          net_a = a
         end
 
-        nets.each do |net_a, net_b|
-          comparer.same_nets(circuit_a, circuit_b, net_a, net_b, force)
+        if b.is_a?(String)
+          net_b = circuit_b.net_by_name(b) || raise("Not a valid net name in extracted netlist in 'same_nets': #{b} (for circuit #{circuit_b})")
+        else
+          net_b = b
+        end
+
+        if net_a && net_b
+          comparer.same_nets(net_a, net_b)
         end
 
       end
@@ -752,14 +286,12 @@ CODE
     # This method will force an equivalence between the two circuits.
     # By default, circuits are identified by name. If names are different, this
     # method allows establishing an explicit correspondence.
-    #
-    # circuit_a is for the layout netlist, circuit_b for the schematic netlist.
-    # Names are case sensitive for layout-derived netlists and case-insensitive for SPICE schematic netlists.
     # 
     # One of the circuits may be nil. In this case, the corresponding
     # other circuit is mapped to "nothing", i.e. ignored.
     #
-    # Use this method andwhere in the script before the \compare call.
+    # Before this method can be used, a schematic netlist needs to be loaded with
+    # \schematic.
 
     def same_circuits(a, b)
 
@@ -791,33 +323,11 @@ CODE
     # By default, device classes are identified by name. If names are different, this
     # method allows establishing an explicit correspondence.
     #
-    # Before this method can be used, a schematic netlist needs to be loaded with
-    # \schematic.
-    #
-    # class_a is for the layout netlist, class_b for the schematic netlist.
-    # Names are case sensitive for layout-derived netlists and case-insensitive for SPICE schematic netlists.
-    # 
-    # One of the device classes may be "nil". In this case, the corresponding
+    # One of the device classes may be nil. In this case, the corresponding
     # other device class is mapped to "nothing", i.e. ignored.
     #
-    # A device class on one side can be mapped to multiple other device
-    # classes on the other side by using this function multiple times, e.g.
-    #
-    # @code
-    # same_device_classes("POLYRES", "RES")
-    # same_device_classes("WELLRES", "RES")
-    # @/code
-    #
-    # will match both "POLYRES" and "WELLRES" on the layout side to "RES" on the 
-    # schematic side.
-    #
-    # Once a device class is mentioned with "same_device_classes", matching by
-    # name is disabled for this class. So after using 'same_device_classes("A", "B")'
-    # "A" is no longer equivalent to "A" on the other side. If you want "A" to 
-    # stay equivalent to "A" too, you need to use 'same_device_classes("A", "A")' 
-    # in addition.
-    #
-    # Use this method andwhere in the script before the \compare call.
+    # Before this method can be used, a schematic netlist needs to be loaded with
+    # \schematic.
 
     def same_device_classes(a, b)
 
@@ -856,15 +366,13 @@ CODE
     # @/code
     #
     # The circuit argument is either a circuit name (a string) or a Circuit object
-    # from the schematic netlist. 
-    #
-    # Names are case sensitive for layout-derived netlists and case-insensitive for SPICE schematic netlists.
+    # from the schematic netlist.
     #
     # The pin arguments are zero-based pin numbers, where 0 is the first number, 1 the second etc.
-    # If the netlist provides named pins, names can be used instead of numbers. Again, use upper
-    # case pin names for SPICE netlists.
+    # If the netlist provides named pins, names can be used instead of numbers.
     #
-    # Use this method andwhere in the script before the \compare call.
+    # Before this method can be used, a schematic netlist needs to be loaded with
+    # \schematic.
 
     def equivalent_pins(circuit, *pins)
 
@@ -966,7 +474,6 @@ CODE
     def min_caps(value)
       v = value.to_f
       @comparer_config << lambda { |comparer| comparer.min_capacitance = v }
-      @comparer_miniconfig << lambda { |comparer| comparer.min_capacitance = v }
     end
       
     # %LVS%
@@ -979,7 +486,6 @@ CODE
     def max_res(value)
       v = value.to_f
       @comparer_config << lambda { |comparer| comparer.max_resistance = v }
-      @comparer_miniconfig << lambda { |comparer| comparer.max_resistance = v }
     end
 
     # %LVS%
@@ -995,19 +501,12 @@ CODE
     # pursues this "deduction path" in greater depth while with 
     # smaller values, the algorithm prefers picking nets in a random fashion
     # as the seeds for this deduction path. The default value is 8. 
-    # 
-    # By default, the depth is unlimited, but it may
-    # be reduced in order to limit the compare runtimes at the cost
-    # of a less elaborate compare attempt. The preferred solution 
-    # however is to use labels for net name hints which also reduces
-    # the branch complexity.
 
     def max_depth(value)
       v = value.to_i
       @comparer_config << lambda { |comparer| comparer.max_depth = v }
     end
 
-    # %LVS%
     # @name max_branch_complexity
     # @brief Configures the maximum branch complexity for ambiguous net matching
     # @synopsis max_branch_complexity(n)
@@ -1017,36 +516,16 @@ CODE
     # path for this nets may lead to further branches if more ambiguous
     # nets are encountered. To avoid combinational explosion, the maximum
     # branch complexity is limited to the value configured with this 
-    # function. The default value is 500 which means not more than
-    # 500 combinations are tried for a single seed pair. For networks
+    # function. The default value is 100 which means not more than
+    # 100 combinations are tried for a single seed pair. For networks
     # with inherent ambiguity such as decoders, the complexity
     # can be increased at the expense of potentially larger runtimes.
     # The runtime penality is roughly proportional to the branch
     # complexity.
-    # 
-    # By default, the branch complexity is unlimited, but it may
-    # be reduced in order to limit the compare runtimes at the cost
-    # of a less elaborate compare attempt. The preferred solution 
-    # however is to use labels for net name hints which also reduces
-    # the depth.
  
     def max_branch_complexity(value)
       v = value.to_i
       @comparer_config << lambda { |comparer| comparer.max_branch_complexity = v }
-    end
-
-    # %LVS%
-    # @name consider_net_names
-    # @brief Indicates whether the netlist comparer shall use net names
-    # @synopsis consider_net_names(f)
-    # If this value is set to true (the default), the netlist comparer
-    # will employ net names to resolve ambiguities. If set to false,
-    # ambiguities will be resolved based on the topology alone. Topology
-    # resolution is more expensive.
- 
-    def consider_net_names(value)
-      v = ! value
-      @comparer_config << lambda { |comparer| comparer.dont_consider_net_names = v }
     end
 
   end

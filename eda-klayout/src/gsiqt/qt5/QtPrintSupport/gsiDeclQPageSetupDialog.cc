@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -33,6 +33,7 @@
 #include <QWidget>
 #include "gsiQt.h"
 #include "gsiQtPrintSupportCommon.h"
+#include "gsiDeclQtPrintSupportTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -147,7 +148,7 @@ static void _init_f_tr_4013 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("s");
   decl->add_arg<const char * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("c", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("c", true, "__null");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("n", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -159,7 +160,7 @@ static void _call_f_tr_4013 (const qt_gsi::GenericStaticMethod * /*decl*/, gsi::
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (__null, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QPageSetupDialog::tr (arg1, arg2, arg3));
 }
@@ -172,7 +173,7 @@ static void _init_f_trUtf8_4013 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("s");
   decl->add_arg<const char * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("c", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("c", true, "__null");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("n", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -184,7 +185,7 @@ static void _call_f_trUtf8_4013 (const qt_gsi::GenericStaticMethod * /*decl*/, g
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (__null, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QPageSetupDialog::trUtf8 (arg1, arg2, arg3));
 }
@@ -271,7 +272,7 @@ static void _init_ctor_QPageSetupDialog_Adaptor_2650 (qt_gsi::GenericStaticMetho
 {
   static gsi::ArgSpecBase argspec_0 ("printer");
   decl->add_arg<QPrinter * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("parent", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("parent", true, "0");
   decl->add_arg<QWidget * > (argspec_1);
   decl->set_return_new<QPageSetupDialog_Adaptor> ();
 }
@@ -281,7 +282,7 @@ static void _call_ctor_QPageSetupDialog_Adaptor_2650 (const qt_gsi::GenericStati
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   QPrinter *arg1 = gsi::arg_reader<QPrinter * >() (args, heap);
-  QWidget *arg2 = args ? gsi::arg_reader<QWidget * >() (args, heap) : gsi::arg_maker<QWidget * >() (nullptr, heap);
+  QWidget *arg2 = args ? gsi::arg_reader<QWidget * >() (args, heap) : gsi::arg_maker<QWidget * >() (0, heap);
   ret.write<QPageSetupDialog_Adaptor *> (new QPageSetupDialog_Adaptor (arg1, arg2));
 }
 
@@ -290,7 +291,7 @@ static void _call_ctor_QPageSetupDialog_Adaptor_2650 (const qt_gsi::GenericStati
 
 static void _init_ctor_QPageSetupDialog_Adaptor_1315 (qt_gsi::GenericStaticMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("parent", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("parent", true, "0");
   decl->add_arg<QWidget * > (argspec_0);
   decl->set_return_new<QPageSetupDialog_Adaptor> ();
 }
@@ -299,7 +300,7 @@ static void _call_ctor_QPageSetupDialog_Adaptor_1315 (const qt_gsi::GenericStati
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  QWidget *arg1 = args ? gsi::arg_reader<QWidget * >() (args, heap) : gsi::arg_maker<QWidget * >() (nullptr, heap);
+  QWidget *arg1 = args ? gsi::arg_reader<QWidget * >() (args, heap) : gsi::arg_maker<QWidget * >() (0, heap);
   ret.write<QPageSetupDialog_Adaptor *> (new QPageSetupDialog_Adaptor (arg1));
 }
 
@@ -333,8 +334,8 @@ static gsi::Methods methods_QPageSetupDialog_Adaptor () {
   gsi::Methods methods;
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QPageSetupDialog::QPageSetupDialog(QPrinter *printer, QWidget *parent)\nThis method creates an object of class QPageSetupDialog.", &_init_ctor_QPageSetupDialog_Adaptor_2650, &_call_ctor_QPageSetupDialog_Adaptor_2650);
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QPageSetupDialog::QPageSetupDialog(QWidget *parent)\nThis method creates an object of class QPageSetupDialog.", &_init_ctor_QPageSetupDialog_Adaptor_1315, &_call_ctor_QPageSetupDialog_Adaptor_1315);
-  methods += new qt_gsi::GenericMethod ("open", "@brief Virtual method void QPageSetupDialog::open()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_open_0_0, &_call_cbs_open_0_0);
-  methods += new qt_gsi::GenericMethod ("open", "@hide", false, &_init_cbs_open_0_0, &_call_cbs_open_0_0, &_set_callback_cbs_open_0_0);
+  methods += new qt_gsi::GenericMethod ("open", "@hide", false, &_init_cbs_open_0_0, &_call_cbs_open_0_0);
+  methods += new qt_gsi::GenericMethod ("open", "@brief Virtual method void QPageSetupDialog::open()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_open_0_0, &_call_cbs_open_0_0, &_set_callback_cbs_open_0_0);
   return methods;
 }
 

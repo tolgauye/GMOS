@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -413,7 +413,7 @@ public:
    *
    *  It must be given a list of valid layers which is used to determine empty cells if dont_save_empty_cells is true.
    */
-  void get_cells (const db::Layout &layout, std::set <db::cell_index_type> &cells, const std::vector <std::pair <unsigned int, db::LayerProperties> > &valid_layers, bool require_unique_names = true) const;
+  void get_cells (const db::Layout &layout, std::set <db::cell_index_type> &cells, const std::vector <std::pair <unsigned int, db::LayerProperties> > &valid_layers) const;
 
   /**
    *  @brief Sets a layout reader option by name

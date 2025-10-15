@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -102,11 +102,11 @@ pya_channel_init (PyObject *self, PyObject *, PyObject *)
 }
 
 void
-PYAChannelObject::make_class ()
+PYAChannelObject::make_class (PyObject *module)
 {
   static PyTypeObject channel_type = {
     PyVarObject_HEAD_INIT (&PyType_Type, 0)
-    "__PYA_Channel",            // tp_name
+    "pya._Channel",             // tp_name
     sizeof (PYAChannelObject)   // tp_size
   };
 
@@ -114,7 +114,7 @@ PYAChannelObject::make_class ()
       {"write", (PyCFunction) &pya_channel_write, METH_VARARGS, "internal stdout/stderr redirection object: write method" },
       {"flush", (PyCFunction) &pya_channel_flush, METH_VARARGS, "internal stdout/stderr redirection object: flush method" },
       {"isatty", (PyCFunction) &pya_channel_isatty, METH_VARARGS, "internal stdout/stderr redirection object: isatty method" },
-      {NULL,  NULL},
+      {NULL,	NULL},
   };
 
   channel_type.tp_flags = Py_TPFLAGS_DEFAULT;
@@ -124,8 +124,7 @@ PYAChannelObject::make_class ()
   PyType_Ready (&channel_type);
   Py_INCREF (&channel_type);
 
-  PyObject *module = PyImport_AddModule("__main__");
-  PyModule_AddObject (module, "__PYA_Channel", (PyObject *) &channel_type);
+  PyModule_AddObject (module, "_Channel", (PyObject *) &channel_type);
 
   cls = &channel_type;
 }
@@ -379,7 +378,7 @@ pya_plain_iterator_next (PyObject *self)
 
   gsi::SerialArgs args (iter->iter->serial_size ());
   iter->iter->get (args);
-  PythonRef obj = pull_arg (*iter->value_type, args, 0, heap);
+  PythonRef obj = pop_arg (*iter->value_type, args, 0, heap);
 
   return obj.release ();
 }
@@ -628,12 +627,10 @@ PYASignal::make_class (PyObject *module)
 
   static PyMethodDef signal_methods[] = {
       {"add", (PyCFunction) &pya_signal_add, METH_VARARGS, "internal signal proxy object: += operator" },
-      {"connect", (PyCFunction) &pya_signal_add, METH_VARARGS, "synonym to 'add' or '+='" },
       {"remove", (PyCFunction) &pya_signal_remove, METH_VARARGS, "internal signal proxy object: -= operator" },
-      {"disconnect", (PyCFunction) &pya_signal_remove, METH_VARARGS, "synonym to 'remove' or '-='" },
       {"set", (PyCFunction) &pya_signal_set, METH_VARARGS, "internal signal proxy object: assignment" },
       {"clear", (PyCFunction) &pya_signal_clear, METH_NOARGS, "internal signal proxy object: clears all receivers" },
-      {NULL,  NULL},
+      {NULL,	NULL},
   };
 
   static PyNumberMethods nm = { };

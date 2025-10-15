@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -49,20 +49,16 @@ ResourceHelpProvider::ResourceHelpProvider (const char *folder, const std::strin
 }
 
 QDomDocument 
-ResourceHelpProvider::get (lay::HelpSource * /*src*/, const std::string &path) const
+ResourceHelpProvider::get (const std::string &path) const
 {
   QString qpath = tl::to_qstring (path);
   QResource res (resource_url (qpath));
   if (res.size () == 0) {
-    throw tl::Exception (tl::to_string (QObject::tr ("No data found for resource ")) + tl::to_string (res.fileName ()));
+    throw tl::Exception (tl::to_string (QObject::tr ("ERROR: no data found for resource ")) + tl::to_string (res.fileName ()));
   }
 
   QByteArray data;
-#if QT_VERSION >= 0x60000
-  if (res.compressionAlgorithm () == QResource::ZlibCompression) {
-#else
   if (res.isCompressed ()) {
-#endif
     data = qUncompress ((const unsigned char *)res.data (), (int)res.size ());
   } else {
     data = QByteArray ((const char *)res.data (), (int)res.size ());

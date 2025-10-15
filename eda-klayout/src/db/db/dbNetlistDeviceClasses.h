@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -30,12 +30,27 @@ namespace db
 {
 
 /**
+ *  @brief A basic two-terminal device class
+ */
+class DB_PUBLIC DeviceClassTwoTerminalDevice
+  : public db::DeviceClass
+{
+public:
+  virtual bool combine_devices (Device *a, Device *b) const;
+
+  virtual void parallel (Device *a, Device *b) const = 0;
+  virtual void serial (Device *a, Device *b) const = 0;
+  virtual bool supports_parallel_combination () const { return true; }
+  virtual bool supports_serial_combination () const { return true; }
+};
+
+/**
  *  @brief A basic resistor device class
  *  A resistor defines a single parameter, "R", which is the resistance in Ohm.
  *  It defines two terminals, "A" and "B" for the two terminals.
  */
 class DB_PUBLIC DeviceClassResistor
-  : public db::DeviceClass
+  : public db::DeviceClassTwoTerminalDevice
 {
 public:
   DeviceClassResistor ();
@@ -53,6 +68,14 @@ public:
 
   static size_t terminal_id_A;
   static size_t terminal_id_B;
+
+  virtual void parallel (Device *a, Device *b) const;
+  virtual void serial (Device *a, Device *b) const;
+
+  virtual size_t normalize_terminal_id (size_t) const
+  {
+    return terminal_id_A;
+  }
 };
 
 /**
@@ -72,6 +95,8 @@ public:
   }
 
   static size_t terminal_id_W;
+
+  virtual bool combine_devices (Device *a, Device *b) const;
 };
 
 /**
@@ -80,7 +105,7 @@ public:
  *  It defines two terminals, "A" and "B" for the two terminals.
  */
 class DB_PUBLIC DeviceClassCapacitor
-  : public db::DeviceClass
+  : public db::DeviceClassTwoTerminalDevice
 {
 public:
   DeviceClassCapacitor ();
@@ -96,6 +121,14 @@ public:
 
   static size_t terminal_id_A;
   static size_t terminal_id_B;
+
+  virtual void parallel (Device *a, Device *b) const;
+  virtual void serial (Device *a, Device *b) const;
+
+  virtual size_t normalize_terminal_id (size_t id) const
+  {
+    return id == terminal_id_B ? terminal_id_A : id;
+  }
 };
 
 /**
@@ -115,6 +148,8 @@ public:
   }
 
   static size_t terminal_id_W;
+
+  virtual bool combine_devices (Device *a, Device *b) const;
 };
 
 /**
@@ -123,7 +158,7 @@ public:
  *  It defines two terminals, "A" and "B" for the two terminals.
  */
 class DB_PUBLIC DeviceClassInductor
-  : public db::DeviceClass
+  : public db::DeviceClassTwoTerminalDevice
 {
 public:
   DeviceClassInductor ();
@@ -137,6 +172,14 @@ public:
 
   static size_t terminal_id_A;
   static size_t terminal_id_B;
+
+  virtual void parallel (Device *a, Device *b) const;
+  virtual void serial (Device *a, Device *b) const;
+
+  virtual size_t normalize_terminal_id (size_t id) const
+  {
+    return id == terminal_id_B ? terminal_id_A : id;
+  }
 };
 
 /**
@@ -161,6 +204,9 @@ public:
   {
     return new DeviceClassDiode (*this);
   }
+
+  virtual bool combine_devices (Device *a, Device *b) const;
+  virtual bool supports_parallel_combination () const { return true; }
 };
 
 /**
@@ -191,26 +237,16 @@ public:
     return new DeviceClassMOS3Transistor (*this);
   }
 
-  /**
-   *  @brief Implements the "split_gates" feature
-   *  This feature will join internal source/drain nodes to form fingered multi-gate
-   *  transistors.
-   */
-  void join_split_gates (db::Circuit *circuit) const;
+  virtual bool combine_devices (Device *a, Device *b) const;
+  virtual bool supports_parallel_combination () const { return true; }
 
-  /**
-   * @brief Returns true if device lengths are compatible
-   */
-  static bool lengths_are_identical (const db::Device *a, const db::Device *b);
+  virtual size_t normalize_terminal_id (size_t tid) const
+  {
+    return tid == terminal_id_D ? terminal_id_S : tid;
+  }
 
 protected:
   void combine_parameters (Device *a, Device *b) const;
-  virtual bool has_bulk_pin () const;
-
-private:
-  bool is_source_terminal (size_t tid) const;
-  bool is_drain_terminal (size_t tid) const;
-  bool net_is_source_drain_connection (const db::Net *net) const;
 };
 
 /**
@@ -231,8 +267,12 @@ public:
     return new DeviceClassMOS4Transistor (*this);
   }
 
-protected:
-  virtual bool has_bulk_pin () const;
+  virtual size_t normalize_terminal_id (size_t tid) const
+  {
+    return tid == terminal_id_D ? terminal_id_S : tid;
+  }
+
+  virtual bool combine_devices (Device *a, Device *b) const;
 };
 
 /**
@@ -263,6 +303,12 @@ public:
   {
     return new DeviceClassBJT3Transistor (*this);
   }
+
+  virtual bool combine_devices (Device *a, Device *b) const;
+  virtual bool supports_parallel_combination () const { return true; }
+
+protected:
+  void combine_parameters (Device *a, Device *b) const;
 };
 
 /**
@@ -282,6 +328,8 @@ public:
   {
     return new DeviceClassBJT4Transistor (*this);
   }
+
+  virtual bool combine_devices (Device *a, Device *b) const;
 };
 
 }

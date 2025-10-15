@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -23,36 +23,11 @@
 #include "dbCircuit.h"
 #include "dbNetlist.h"
 #include "dbLayout.h"
-#include "tlIteratorUtils.h"
 
 #include <set>
 
 namespace db
 {
-
-/**
- *  @brief Creates a joined name for nets and pins
- */
-static std::string
-join_names (const std::string &n1, const std::string &n2)
-{
-  //  create a new name for the joined net
-  if (n2.empty ()) {
-    return n1;
-  } else if (n1.empty ()) {
-    return n2;
-  } else if (n1 == n2) {
-    return n1;
-  } else {
-    //  separate parts (if already joined) and mix
-    auto p1 = tl::split (n1, ",");
-    auto p2 = tl::split (n2, ",");
-    std::set<std::string> ps;
-    ps.insert (p1.begin (), p1.end ());
-    ps.insert (p2.begin (), p2.end ());
-    return tl::join (ps.begin (), ps.end (), ",");
-  }
-}
 
 // --------------------------------------------------------------------------------
 //  Circuit class implementation
@@ -194,7 +169,7 @@ const Pin *Circuit::pin_by_id (size_t id) const
     return 0;
   } else {
     pin_list::iterator pi = m_pin_by_id [id];
-    if (tl::is_null_iterator (pi)) {
+    if (pi == pin_list::iterator ()) {
       return 0;
     } else {
       return pi.operator-> ();
@@ -204,17 +179,15 @@ const Pin *Circuit::pin_by_id (size_t id) const
 
 void Circuit::rename_pin (size_t id, const std::string &name)
 {
-  if (id < m_pin_by_id.size () && ! tl::is_null_iterator (m_pin_by_id [id])) {
+  if (id < m_pin_by_id.size () && m_pin_by_id [id] != pin_list::iterator ()) {
     m_pin_by_id [id]->set_name (name);
   }
 }
 
 const Pin *Circuit::pin_by_name (const std::string &name) const
 {
-  std::string nn = mp_netlist ? mp_netlist->normalize_name (name) : name;
-
   for (Circuit::const_pin_iterator p = begin_pins (); p != end_pins (); ++p) {
-    if (p->name () == nn) {
+    if (p->name () == name) {
       return p.operator-> ();
     }
   }
@@ -334,7 +307,7 @@ void Circuit::clear_pins ()
   m_pin_by_id.clear ();
 }
 
-Pin &Circuit::add_pin (const Pin &pin)
+const Pin &Circuit::add_pin (const Pin &pin)
 {
   m_pins.push_back (pin);
   m_pins.back ().set_id (m_pin_by_id.size ());
@@ -342,7 +315,7 @@ Pin &Circuit::add_pin (const Pin &pin)
   return m_pins.back ();
 }
 
-Pin &Circuit::add_pin (const std::string &name)
+const Pin &Circuit::add_pin (const std::string &name)
 {
   m_pins.push_back (Pin (name));
   m_pins.back ().set_id (m_pin_by_id.size ());
@@ -352,84 +325,25 @@ Pin &Circuit::add_pin (const std::string &name)
 
 void Circuit::remove_pin (size_t id)
 {
-  if (id < m_pin_by_id.size () && ! tl::is_null_iterator (m_pin_by_id [id])) {
+  if (id < m_pin_by_id.size () && m_pin_by_id [id] != pin_list::iterator ()) {
     m_pins.erase (m_pin_by_id [id]);
     m_pin_by_id [id] = pin_list::iterator ();
   }
 }
 
-Net *Circuit::net_by_name (const std::string &name)
-{
-  return m_net_by_name.object_by (mp_netlist ? mp_netlist->normalize_name (name) : name);
-}
-
 void Circuit::add_net (Net *net)
 {
-  if (! net) {
-    return;
-  }
-  if (net->circuit ()) {
-    throw tl::Exception (tl::to_string (tr ("Net already part of a circuit")));
-  }
-
   m_nets.push_back (net);
   net->set_circuit (this);
 }
 
 void Circuit::remove_net (Net *net)
 {
-  if (! net) {
-    return;
-  }
-  if (net->circuit () != this) {
-    throw tl::Exception (tl::to_string (tr ("Net not withing given circuit")));
-  }
-
   m_nets.erase (net);
-}
-
-void Circuit::join_nets (Net *net, Net *with)
-{
-  if (net == with || ! with || ! net) {
-    return;
-  }
-  if (net->circuit () != this || with->circuit () != this) {
-    throw tl::Exception (tl::to_string (tr ("Nets not within given circuit")));
-  }
-
-  while (with->begin_terminals () != with->end_terminals ()) {
-    db::Device *device = const_cast<db::Device *> (with->begin_terminals ()->device ());
-    device->connect_terminal (with->begin_terminals ()->terminal_id (), net);
-  }
-
-  while (with->begin_subcircuit_pins () != with->end_subcircuit_pins ()) {
-    db::SubCircuit *subcircuit = const_cast<db::SubCircuit *> (with->begin_subcircuit_pins ()->subcircuit ());
-    subcircuit->connect_pin (with->begin_subcircuit_pins ()->pin_id (), net);
-  }
-
-  while (with->begin_pins () != with->end_pins ()) {
-    join_pin_with_net (with->begin_pins ()->pin_id (), net);
-  }
-
-  if (netlist ()->callbacks ()) {
-    netlist ()->callbacks ()->link_nets (net, with);
-  }
-
-  //  create a new name for the joined net
-  net->set_name (join_names (net->name (), with->name ()));
-
-  remove_net (with);
 }
 
 void Circuit::add_device (Device *device)
 {
-  if (! device) {
-    return;
-  }
-  if (device->circuit ()) {
-    throw tl::Exception (tl::to_string (tr ("Device already in a circuit")));
-  }
-
   device->set_circuit (this);
 
   size_t id = 0;
@@ -444,30 +358,11 @@ void Circuit::add_device (Device *device)
 
 void Circuit::remove_device (Device *device)
 {
-  if (! device) {
-    return;
-  }
-  if (device->circuit () != this) {
-    throw tl::Exception (tl::to_string (tr ("Device not withing given circuit")));
-  }
-
   m_devices.erase (device);
-}
-
-Device *Circuit::device_by_name (const std::string &name)
-{
-  return m_device_by_name.object_by (mp_netlist ? mp_netlist->normalize_name (name) : name);
 }
 
 void Circuit::add_subcircuit (SubCircuit *subcircuit)
 {
-  if (! subcircuit) {
-    return;
-  }
-  if (subcircuit->circuit ()) {
-    throw tl::Exception (tl::to_string (tr ("Subcircuit already in a circuit")));
-  }
-
   subcircuit->set_circuit (this);
 
   size_t id = 0;
@@ -482,19 +377,7 @@ void Circuit::add_subcircuit (SubCircuit *subcircuit)
 
 void Circuit::remove_subcircuit (SubCircuit *subcircuit)
 {
-  if (! subcircuit) {
-    return;
-  }
-  if (subcircuit->circuit () != this) {
-    throw tl::Exception (tl::to_string (tr ("Subcircuit not withing given circuit")));
-  }
-
   m_subcircuits.erase (subcircuit);
-}
-
-SubCircuit *Circuit::subcircuit_by_name (const std::string &name)
-{
-  return m_subcircuit_by_name.object_by (mp_netlist ? mp_netlist->normalize_name (name) : name);
 }
 
 void Circuit::register_ref (SubCircuit *r)
@@ -509,12 +392,7 @@ void Circuit::unregister_ref (SubCircuit *r)
 
 void Circuit::flatten_subcircuit (SubCircuit *subcircuit)
 {
-  if (! subcircuit) {
-    return;
-  }
-  if (subcircuit->circuit () != this) {
-    throw tl::Exception (tl::to_string (tr ("Subcircuit not withing given circuit")));
-  }
+  tl_assert (subcircuit != 0);
 
   const db::Circuit *c = subcircuit->circuit_ref ();
 
@@ -524,21 +402,15 @@ void Circuit::flatten_subcircuit (SubCircuit *subcircuit)
 
   for (db::Circuit::const_net_iterator n = c->begin_nets (); n != c->end_nets (); ++n) {
 
+    //  TODO: cannot join pins through subcircuits currently
+    tl_assert (n->pin_count () <= 1);
+
     db::Net *outside_net = 0;
 
     if (n->pin_count () > 0) {
 
-      for (db::Net::const_pin_iterator p = n->begin_pins (); p != n->end_pins (); ++p) {
-
-        size_t pin_id = p->pin_id ();
-
-        if (outside_net) {
-          join_nets (outside_net, subcircuit->net_for_pin (pin_id));
-        } else {
-          outside_net = subcircuit->net_for_pin (pin_id);
-        }
-
-      }
+      size_t pin_id = n->begin_pins ()->pin_id ();
+      outside_net = subcircuit->net_for_pin (pin_id);
 
     } else {
 
@@ -644,11 +516,6 @@ void Circuit::set_pin_ref_for_pin (size_t pin_id, Net::pin_iterator iter)
   m_pin_refs [pin_id] = iter;
 }
 
-bool Circuit::is_empty () const
-{
-  return m_nets.empty () && m_pins.empty () && m_devices.empty () && m_subcircuits.empty ();
-}
-
 void Circuit::blank ()
 {
   tl_assert (netlist () != 0);
@@ -682,7 +549,7 @@ const Net *Circuit::net_for_pin (size_t pin_id) const
 {
   if (pin_id < m_pin_refs.size ()) {
     Net::pin_iterator p = m_pin_refs [pin_id];
-    if (! tl::is_null_iterator (p)) {
+    if (p != Net::pin_iterator ()) {
       return p->net ();
     }
   }
@@ -697,7 +564,7 @@ void Circuit::connect_pin (size_t pin_id, Net *net)
 
   if (pin_id < m_pin_refs.size ()) {
     Net::pin_iterator p = m_pin_refs [pin_id];
-    if (! tl::is_null_iterator (p) && p->net ()) {
+    if (p != Net::pin_iterator () && p->net ()) {
       p->net ()->erase_pin (p);
     }
     m_pin_refs [pin_id] = Net::pin_iterator ();
@@ -705,69 +572,6 @@ void Circuit::connect_pin (size_t pin_id, Net *net)
 
   if (net) {
     net->add_pin (NetPinRef (pin_id));
-  }
-}
-
-void Circuit::join_pin_with_net (size_t pin_id, Net *net)
-{
-  if (net_for_pin (pin_id) == net) {
-    return;
-  }
-
-  if (pin_id < m_pin_refs.size ()) {
-    Net::pin_iterator p = m_pin_refs [pin_id];
-    if (! tl::is_null_iterator (p) && p->net ()) {
-      p->net ()->erase_pin (p);
-    }
-    m_pin_refs [pin_id] = Net::pin_iterator ();
-  }
-
-  if (net) {
-    if (net->begin_pins () != net->end_pins ()) {
-      join_pins (net->begin_pins ()->pin_id (), pin_id);
-    } else {
-      net->add_pin (NetPinRef (pin_id));
-    }
-  }
-}
-
-void Circuit::join_pins (size_t pin, size_t with)
-{
-  if (with != pin && with < m_pin_by_id.size () && ! tl::is_null_iterator (m_pin_by_id [with])) {
-
-    //  create a new joined name
-    m_pin_by_id [pin]->set_name (join_names (m_pin_by_id [pin]->name (), m_pin_by_id [with]->name ()));
-
-    m_pins.erase (m_pin_by_id [with]);
-    m_pin_by_id.erase (m_pin_by_id.begin () + with);
-    m_pin_refs.erase (m_pin_refs.begin () + with);
-
-    //  correct the pin IDs inside the circuit: all IDS > with will be reduced by 1
-    if (pin > with) {
-      --pin;
-    }
-    for (auto p = m_pins.begin (); p != m_pins.end (); ++p) {
-      if (p->id () > with) {
-        p->set_id (p->id () - 1);
-      }
-    }
-    for (auto p = m_pin_refs.begin () + with; p != m_pin_refs.end (); ++p) {
-      (*p)->set_pin_id ((*p)->pin_id () - 1);
-    }
-
-    //  join nets in calls
-    for (auto s = begin_refs (); s != end_refs (); ++s) {
-
-      db::SubCircuit &sc = *s;
-      db::Net *with_net = sc.net_for_pin (with);
-
-      //  NOTE: this will also correct the Pin IDs on the attached nets
-      sc.erase_pin (with);
-
-      sc.circuit ()->join_nets (sc.net_for_pin (pin), with_net);
-
-    }
-
   }
 }
 
@@ -822,41 +626,6 @@ void Circuit::do_purge_nets (bool keep_pins)
       remove_pin (*p);
     }
 
-  }
-}
-
-static bool can_purge_device (const db::Device &device)
-{
-  if (! device.device_class ()) {
-    return false;
-  }
-
-  const std::vector<db::DeviceTerminalDefinition> &tdefs = device.device_class ()->terminal_definitions ();
-  if (tdefs.size () <= 1) {
-    return false;
-  }
-
-  const db::Net *net = device.net_for_terminal (tdefs.front ().id ());
-  for (auto t = tdefs.begin () + 1; t != tdefs.end (); ++t) {
-    if (net != device.net_for_terminal (t->id ())) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-void Circuit::purge_devices ()
-{
-  std::vector<db::Device *> devices_to_be_purged;
-  for (device_iterator d = begin_devices (); d != end_devices (); ++d) {
-    if (can_purge_device (*d)) {
-      devices_to_be_purged.push_back (d.operator-> ());
-    }
-  }
-
-  for (auto d = devices_to_be_purged.begin (); d != devices_to_be_purged.end (); ++d) {
-    remove_device (*d);
   }
 }
 

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -45,6 +45,7 @@
 #include <QTransform>
 #include "gsiQt.h"
 #include "gsiQtGuiCommon.h"
+#include "gsiDeclQtGuiTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -387,7 +388,7 @@ static void _init_f_load_6908 (qt_gsi::GenericMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("fileName");
   decl->add_arg<const QString & > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("format", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("format", true, "0");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("flags", true, "Qt::AutoColor");
   decl->add_arg<QFlags<Qt::ImageConversionFlag> > (argspec_2);
@@ -399,7 +400,7 @@ static void _call_f_load_6908 (const qt_gsi::GenericMethod * /*decl*/, void *cls
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const QString &arg1 = gsi::arg_reader<const QString & >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (0, heap);
   QFlags<Qt::ImageConversionFlag> arg3 = args ? gsi::arg_reader<QFlags<Qt::ImageConversionFlag> >() (args, heap) : gsi::arg_maker<QFlags<Qt::ImageConversionFlag> >() (Qt::AutoColor, heap);
   ret.write<bool > ((bool)((QPixmap *)cls)->load (arg1, arg2, arg3));
 }
@@ -414,7 +415,7 @@ static void _init_f_loadFromData_9283 (qt_gsi::GenericMethod *decl)
   decl->add_arg<const unsigned char * > (argspec_0);
   static gsi::ArgSpecBase argspec_1 ("len");
   decl->add_arg<unsigned int > (argspec_1);
-  static gsi::ArgSpecBase argspec_2 ("format", true, "nullptr");
+  static gsi::ArgSpecBase argspec_2 ("format", true, "0");
   decl->add_arg<const char * > (argspec_2);
   static gsi::ArgSpecBase argspec_3 ("flags", true, "Qt::AutoColor");
   decl->add_arg<QFlags<Qt::ImageConversionFlag> > (argspec_3);
@@ -427,7 +428,7 @@ static void _call_f_loadFromData_9283 (const qt_gsi::GenericMethod * /*decl*/, v
   tl::Heap heap;
   const unsigned char *arg1 = gsi::arg_reader<const unsigned char * >() (args, heap);
   unsigned int arg2 = gsi::arg_reader<unsigned int >() (args, heap);
-  const char *arg3 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg3 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (0, heap);
   QFlags<Qt::ImageConversionFlag> arg4 = args ? gsi::arg_reader<QFlags<Qt::ImageConversionFlag> >() (args, heap) : gsi::arg_maker<QFlags<Qt::ImageConversionFlag> >() (Qt::AutoColor, heap);
   ret.write<bool > ((bool)((QPixmap *)cls)->loadFromData (arg1, arg2, arg3, arg4));
 }
@@ -440,7 +441,7 @@ static void _init_f_loadFromData_7192 (qt_gsi::GenericMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("data");
   decl->add_arg<const QByteArray & > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("format", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("format", true, "0");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("flags", true, "Qt::AutoColor");
   decl->add_arg<QFlags<Qt::ImageConversionFlag> > (argspec_2);
@@ -452,7 +453,7 @@ static void _call_f_loadFromData_7192 (const qt_gsi::GenericMethod * /*decl*/, v
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const QByteArray &arg1 = gsi::arg_reader<const QByteArray & >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (0, heap);
   QFlags<Qt::ImageConversionFlag> arg3 = args ? gsi::arg_reader<QFlags<Qt::ImageConversionFlag> >() (args, heap) : gsi::arg_maker<QFlags<Qt::ImageConversionFlag> >() (Qt::AutoColor, heap);
   ret.write<bool > ((bool)((QPixmap *)cls)->loadFromData (arg1, arg2, arg3));
 }
@@ -544,7 +545,7 @@ static void _init_f_save_c4307 (qt_gsi::GenericMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("fileName");
   decl->add_arg<const QString & > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("format", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("format", true, "0");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("quality", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -556,7 +557,7 @@ static void _call_f_save_c4307 (const qt_gsi::GenericMethod * /*decl*/, void *cl
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const QString &arg1 = gsi::arg_reader<const QString & >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (0, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<bool > ((bool)((QPixmap *)cls)->save (arg1, arg2, arg3));
 }
@@ -569,7 +570,7 @@ static void _init_f_save_c3729 (qt_gsi::GenericMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("device");
   decl->add_arg<QIODevice * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("format", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("format", true, "0");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("quality", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -581,7 +582,7 @@ static void _call_f_save_c3729 (const qt_gsi::GenericMethod * /*decl*/, void *cl
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   QIODevice *arg1 = gsi::arg_reader<QIODevice * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (0, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<bool > ((bool)((QPixmap *)cls)->save (arg1, arg2, arg3));
 }
@@ -701,7 +702,7 @@ static void _init_f_scroll_5269 (qt_gsi::GenericMethod *decl)
   decl->add_arg<int > (argspec_4);
   static gsi::ArgSpecBase argspec_5 ("height");
   decl->add_arg<int > (argspec_5);
-  static gsi::ArgSpecBase argspec_6 ("exposed", true, "nullptr");
+  static gsi::ArgSpecBase argspec_6 ("exposed", true, "0");
   decl->add_arg<QRegion * > (argspec_6);
   decl->set_return<void > ();
 }
@@ -716,7 +717,7 @@ static void _call_f_scroll_5269 (const qt_gsi::GenericMethod * /*decl*/, void *c
   int arg4 = gsi::arg_reader<int >() (args, heap);
   int arg5 = gsi::arg_reader<int >() (args, heap);
   int arg6 = gsi::arg_reader<int >() (args, heap);
-  QRegion *arg7 = args ? gsi::arg_reader<QRegion * >() (args, heap) : gsi::arg_maker<QRegion * >() (nullptr, heap);
+  QRegion *arg7 = args ? gsi::arg_reader<QRegion * >() (args, heap) : gsi::arg_maker<QRegion * >() (0, heap);
   __SUPPRESS_UNUSED_WARNING(ret);
   ((QPixmap *)cls)->scroll (arg1, arg2, arg3, arg4, arg5, arg6, arg7);
 }
@@ -733,7 +734,7 @@ static void _init_f_scroll_4317 (qt_gsi::GenericMethod *decl)
   decl->add_arg<int > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("rect");
   decl->add_arg<const QRect & > (argspec_2);
-  static gsi::ArgSpecBase argspec_3 ("exposed", true, "nullptr");
+  static gsi::ArgSpecBase argspec_3 ("exposed", true, "0");
   decl->add_arg<QRegion * > (argspec_3);
   decl->set_return<void > ();
 }
@@ -745,7 +746,7 @@ static void _call_f_scroll_4317 (const qt_gsi::GenericMethod * /*decl*/, void *c
   int arg1 = gsi::arg_reader<int >() (args, heap);
   int arg2 = gsi::arg_reader<int >() (args, heap);
   const QRect &arg3 = gsi::arg_reader<const QRect & >() (args, heap);
-  QRegion *arg4 = args ? gsi::arg_reader<QRegion * >() (args, heap) : gsi::arg_maker<QRegion * >() (nullptr, heap);
+  QRegion *arg4 = args ? gsi::arg_reader<QRegion * >() (args, heap) : gsi::arg_maker<QRegion * >() (0, heap);
   __SUPPRESS_UNUSED_WARNING(ret);
   ((QPixmap *)cls)->scroll (arg1, arg2, arg3, arg4);
 }
@@ -1358,7 +1359,7 @@ static void _init_ctor_QPixmap_Adaptor_6908 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("fileName");
   decl->add_arg<const QString & > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("format", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("format", true, "0");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("flags", true, "Qt::AutoColor");
   decl->add_arg<QFlags<Qt::ImageConversionFlag> > (argspec_2);
@@ -1370,7 +1371,7 @@ static void _call_ctor_QPixmap_Adaptor_6908 (const qt_gsi::GenericStaticMethod *
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const QString &arg1 = gsi::arg_reader<const QString & >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (0, heap);
   QFlags<Qt::ImageConversionFlag> arg3 = args ? gsi::arg_reader<QFlags<Qt::ImageConversionFlag> >() (args, heap) : gsi::arg_maker<QFlags<Qt::ImageConversionFlag> >() (Qt::AutoColor, heap);
   ret.write<QPixmap_Adaptor *> (new QPixmap_Adaptor (arg1, arg2, arg3));
 }
@@ -1536,16 +1537,16 @@ static gsi::Methods methods_QPixmap_Adaptor () {
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QPixmap::QPixmap(const QString &fileName, const char *format, QFlags<Qt::ImageConversionFlag> flags)\nThis method creates an object of class QPixmap.", &_init_ctor_QPixmap_Adaptor_6908, &_call_ctor_QPixmap_Adaptor_6908);
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QPixmap::QPixmap(const QPixmap &)\nThis method creates an object of class QPixmap.", &_init_ctor_QPixmap_Adaptor_2017, &_call_ctor_QPixmap_Adaptor_2017);
   methods += new qt_gsi::GenericStaticMethod ("*fromImageInPlace", "@brief Method QPixmap QPixmap::fromImageInPlace(QImage &image, QFlags<Qt::ImageConversionFlag> flags)\nThis method is protected and can only be called from inside a derived class.", &_init_fp_fromImageInPlace_4442, &_call_fp_fromImageInPlace_4442);
-  methods += new qt_gsi::GenericMethod ("*initPainter", "@brief Virtual method void QPixmap::initPainter(QPainter *painter)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_initPainter_c1426_0, &_call_cbs_initPainter_c1426_0);
-  methods += new qt_gsi::GenericMethod ("*initPainter", "@hide", true, &_init_cbs_initPainter_c1426_0, &_call_cbs_initPainter_c1426_0, &_set_callback_cbs_initPainter_c1426_0);
-  methods += new qt_gsi::GenericMethod ("*metric", "@brief Virtual method int QPixmap::metric(QPaintDevice::PaintDeviceMetric)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_metric_c3445_0, &_call_cbs_metric_c3445_0);
-  methods += new qt_gsi::GenericMethod ("*metric", "@hide", true, &_init_cbs_metric_c3445_0, &_call_cbs_metric_c3445_0, &_set_callback_cbs_metric_c3445_0);
-  methods += new qt_gsi::GenericMethod ("paintEngine", "@brief Virtual method QPaintEngine *QPixmap::paintEngine()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_paintEngine_c0_0, &_call_cbs_paintEngine_c0_0);
-  methods += new qt_gsi::GenericMethod ("paintEngine", "@hide", true, &_init_cbs_paintEngine_c0_0, &_call_cbs_paintEngine_c0_0, &_set_callback_cbs_paintEngine_c0_0);
-  methods += new qt_gsi::GenericMethod ("*redirected", "@brief Virtual method QPaintDevice *QPixmap::redirected(QPoint *offset)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_redirected_c1225_0, &_call_cbs_redirected_c1225_0);
-  methods += new qt_gsi::GenericMethod ("*redirected", "@hide", true, &_init_cbs_redirected_c1225_0, &_call_cbs_redirected_c1225_0, &_set_callback_cbs_redirected_c1225_0);
-  methods += new qt_gsi::GenericMethod ("*sharedPainter", "@brief Virtual method QPainter *QPixmap::sharedPainter()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_sharedPainter_c0_0, &_call_cbs_sharedPainter_c0_0);
-  methods += new qt_gsi::GenericMethod ("*sharedPainter", "@hide", true, &_init_cbs_sharedPainter_c0_0, &_call_cbs_sharedPainter_c0_0, &_set_callback_cbs_sharedPainter_c0_0);
+  methods += new qt_gsi::GenericMethod ("*initPainter", "@hide", true, &_init_cbs_initPainter_c1426_0, &_call_cbs_initPainter_c1426_0);
+  methods += new qt_gsi::GenericMethod ("*initPainter", "@brief Virtual method void QPixmap::initPainter(QPainter *painter)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_initPainter_c1426_0, &_call_cbs_initPainter_c1426_0, &_set_callback_cbs_initPainter_c1426_0);
+  methods += new qt_gsi::GenericMethod ("*metric", "@hide", true, &_init_cbs_metric_c3445_0, &_call_cbs_metric_c3445_0);
+  methods += new qt_gsi::GenericMethod ("*metric", "@brief Virtual method int QPixmap::metric(QPaintDevice::PaintDeviceMetric)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_metric_c3445_0, &_call_cbs_metric_c3445_0, &_set_callback_cbs_metric_c3445_0);
+  methods += new qt_gsi::GenericMethod ("paintEngine", "@hide", true, &_init_cbs_paintEngine_c0_0, &_call_cbs_paintEngine_c0_0);
+  methods += new qt_gsi::GenericMethod ("paintEngine", "@brief Virtual method QPaintEngine *QPixmap::paintEngine()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_paintEngine_c0_0, &_call_cbs_paintEngine_c0_0, &_set_callback_cbs_paintEngine_c0_0);
+  methods += new qt_gsi::GenericMethod ("*redirected", "@hide", true, &_init_cbs_redirected_c1225_0, &_call_cbs_redirected_c1225_0);
+  methods += new qt_gsi::GenericMethod ("*redirected", "@brief Virtual method QPaintDevice *QPixmap::redirected(QPoint *offset)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_redirected_c1225_0, &_call_cbs_redirected_c1225_0, &_set_callback_cbs_redirected_c1225_0);
+  methods += new qt_gsi::GenericMethod ("*sharedPainter", "@hide", true, &_init_cbs_sharedPainter_c0_0, &_call_cbs_sharedPainter_c0_0);
+  methods += new qt_gsi::GenericMethod ("*sharedPainter", "@brief Virtual method QPainter *QPixmap::sharedPainter()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_sharedPainter_c0_0, &_call_cbs_sharedPainter_c0_0, &_set_callback_cbs_sharedPainter_c0_0);
   return methods;
 }
 

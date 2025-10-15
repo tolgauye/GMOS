@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -42,6 +42,7 @@
 #include <QTextTableFormat>
 #include "gsiQt.h"
 #include "gsiQtGuiCommon.h"
+#include "gsiDeclQtGuiTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -107,21 +108,6 @@ static void _call_f_name_c0 (const qt_gsi::GenericMethod * /*decl*/, void *cls, 
 }
 
 
-// int QTextImageFormat::quality()
-
-
-static void _init_f_quality_c0 (qt_gsi::GenericMethod *decl)
-{
-  decl->set_return<int > ();
-}
-
-static void _call_f_quality_c0 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  ret.write<int > ((int)((QTextImageFormat *)cls)->quality ());
-}
-
-
 // void QTextImageFormat::setHeight(double height)
 
 
@@ -159,26 +145,6 @@ static void _call_f_setName_2025 (const qt_gsi::GenericMethod * /*decl*/, void *
   const QString &arg1 = gsi::arg_reader<const QString & >() (args, heap);
   __SUPPRESS_UNUSED_WARNING(ret);
   ((QTextImageFormat *)cls)->setName (arg1);
-}
-
-
-// void QTextImageFormat::setQuality(int quality)
-
-
-static void _init_f_setQuality_767 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("quality", true, "100");
-  decl->add_arg<int > (argspec_0);
-  decl->set_return<void > ();
-}
-
-static void _call_f_setQuality_767 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  int arg1 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (100, heap);
-  __SUPPRESS_UNUSED_WARNING(ret);
-  ((QTextImageFormat *)cls)->setQuality (arg1);
 }
 
 
@@ -227,10 +193,8 @@ static gsi::Methods methods_QTextImageFormat () {
   methods += new qt_gsi::GenericMethod (":height", "@brief Method double QTextImageFormat::height()\n", true, &_init_f_height_c0, &_call_f_height_c0);
   methods += new qt_gsi::GenericMethod ("isValid?", "@brief Method bool QTextImageFormat::isValid()\n", true, &_init_f_isValid_c0, &_call_f_isValid_c0);
   methods += new qt_gsi::GenericMethod (":name", "@brief Method QString QTextImageFormat::name()\n", true, &_init_f_name_c0, &_call_f_name_c0);
-  methods += new qt_gsi::GenericMethod (":quality", "@brief Method int QTextImageFormat::quality()\n", true, &_init_f_quality_c0, &_call_f_quality_c0);
   methods += new qt_gsi::GenericMethod ("setHeight|height=", "@brief Method void QTextImageFormat::setHeight(double height)\n", false, &_init_f_setHeight_1071, &_call_f_setHeight_1071);
   methods += new qt_gsi::GenericMethod ("setName|name=", "@brief Method void QTextImageFormat::setName(const QString &name)\n", false, &_init_f_setName_2025, &_call_f_setName_2025);
-  methods += new qt_gsi::GenericMethod ("setQuality|quality=", "@brief Method void QTextImageFormat::setQuality(int quality)\n", false, &_init_f_setQuality_767, &_call_f_setQuality_767);
   methods += new qt_gsi::GenericMethod ("setWidth|width=", "@brief Method void QTextImageFormat::setWidth(double width)\n", false, &_init_f_setWidth_1071, &_call_f_setWidth_1071);
   methods += new qt_gsi::GenericMethod (":width", "@brief Method double QTextImageFormat::width()\n", true, &_init_f_width_c0, &_call_f_width_c0);
   return methods;

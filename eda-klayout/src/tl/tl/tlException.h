@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -36,17 +36,17 @@ namespace tl
 /**
  *  @brief The unspecific exception class
  *
- *  This class is the base class for all exceptions in this
- *  framework. It does not carry further information except
- *  a message string that can be created through different
+ *  This class is the base class for all exceptions in this 
+ *  framework. It does not carry further information except 
+ *  a message string that can be created through different 
  *  constructor methods.
  */
 
-class TL_PUBLIC Exception
+class TL_PUBLIC Exception 
 {
 public:
   Exception (const std::string &msg)
-    : m_msg (msg), m_first_chance (true)
+    : m_msg (msg)
   { }
 
   Exception (const std::string &fmt, const std::vector<tl::Variant> &a)
@@ -126,58 +126,11 @@ public:
 
   virtual ~Exception () { }
 
-  /**
-   *  @brief Gets the full message text
-   *  Derived classes may dynamically build error messages.
-   *  "basic_msg" is the core message. Derived classes may
-   *  ignore the core message or modify the latter to build
-   *  the full message.
-   */
   virtual std::string msg () const { return m_msg; }
-
-  /**
-   *  @brief Gets the basic message
-   *  The basic message is the actual error text. Derived classes
-   *  may decide to deliver a more elaborate version of the message
-   *  through "msg".
-   */
-  std::string basic_msg () const { return m_msg; }
-
-  /**
-   *  @brief Exchanges the basic message
-   */
-  void set_basic_msg (const std::string &msg) { m_msg = msg; }
-
-  /**
-   *  @brief Sets a flag indicating whether this exception is a first-chance one
-   *
-   *  "first chance" means it has not been seen in the debugger.
-   *  Set this flag to false to indicate that it already got seen.
-   *  By default the flag is true, indicating it has not been handled
-   *  by the debugger.
-   */
-  void set_first_chance (bool f) { m_first_chance = f; }
-
-  /**
-   *  @brief Gets a flag indicating that is this a first-chance exception
-   */
-  bool first_chance () const { return m_first_chance; }
 
 private:
   std::string m_msg;
-  bool m_first_chance;
   void init (const std::string &fmt, const std::vector<tl::Variant> &a);
-};
-
-/**
- *  @brief An exception thrown when the wrong type is provided as argument.
- */
-struct TL_PUBLIC TypeError
-  : public Exception
-{
-  TypeError (const std::string &msg)
-    : Exception (msg)
-  { }
 };
 
 /**
@@ -206,3 +159,4 @@ struct TL_PUBLIC InternalException
 } // namespace tl
 
 #endif
+

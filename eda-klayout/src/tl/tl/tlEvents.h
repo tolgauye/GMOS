@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -92,7 +92,7 @@ TL_PUBLIC void handle_event_exception (std::exception &ex);
  *
  *  @endcode
  *
- *  Events can be given a disambiguation or client data parameter:
+ *  Events can be given a disamibguation or client data parameter:
  *
  *  @code
  *

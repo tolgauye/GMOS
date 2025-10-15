@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -26,7 +26,6 @@
 
 #include "layMainWindow.h"
 #include "layApplication.h"
-#include "layUtils.h"
 
 namespace lay
 {
@@ -57,20 +56,16 @@ public:
     lay::PluginDeclaration::get_menu_entries (menu_entries);
 
     //  separator:
-    menu_entries.push_back (lay::separator ("search_replace_sep", "edit_menu.utils_group+"));
+    menu_entries.push_back (lay::MenuEntry ("search_replace_sep", "edit_menu.utils_group+"));
 
     //  two entries - one for view mode and one for edit mode:
-    menu_entries.push_back (lay::menu_item ("search_replace::show", "search_replace_editor:edit:edit_mode", "edit_menu.utils_group+", tl::to_string (QObject::tr ("Search and Replace"))));
-    menu_entries.push_back (lay::menu_item ("search_replace::show", "search_replace_viewer:edit:view_mode", "edit_menu.utils_group+", tl::to_string (QObject::tr ("Search"))));
+    menu_entries.push_back (lay::MenuEntry ("search_replace::show", "search_replace_editor:edit:edit_mode", "edit_menu.utils_group+", tl::to_string (QObject::tr ("Search and Replace"))));
+    menu_entries.push_back (lay::MenuEntry ("search_replace::show", "search_replace_viewer:edit:view_mode", "edit_menu.utils_group+", tl::to_string (QObject::tr ("Search"))));
   }
  
-  virtual lay::Plugin *create_plugin (db::Manager *, lay::Dispatcher *root, lay::LayoutViewBase *view) const
+  virtual lay::Plugin *create_plugin (db::Manager *, lay::PluginRoot *root, lay::LayoutView *view) const
   {
-    if (lay::has_gui ()) {
-      return new SearchReplaceDialog (root, view);
-    } else {
-      return 0;
-    }
+    return new SearchReplaceDialog (root, view);
   }
 };
 

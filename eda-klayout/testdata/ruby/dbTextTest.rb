@@ -1,7 +1,7 @@
 # encoding: UTF-8
 
 # KLayout Layout Viewer
-# Copyright (C) 2006-2025 Matthias Koefferlein
+# Copyright (C) 2006-2019 Matthias Koefferlein
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -69,53 +69,31 @@ class DBText_TestClass < TestBase
     a = RBA::DText::new( "hallo", a.trans, 22.0, 7 )
     assert_equal( a.string, "hallo" )
     assert_equal( a.trans.to_s, "m45 5,7" )
-    assert_equal( a.position.to_s, "5,7" )
-    assert_equal( a.bbox.to_s, "(5,7;5,7)" )
     assert_equal( a.font, 7 )
     assert_equal( a.size, 22.0 )
 
     a.font = 8
     assert_equal( a.font, 8 )
 
-    a.halign = 1
-    assert_equal( a.halign.to_i, 1 )
-    assert_equal( a.halign, RBA::DText::HAlignCenter )
-    assert_equal( a.halign.to_s, "HAlignCenter" )
-
-    a.halign = RBA::DText::HAlignRight
-    assert_equal( a.halign.to_i, 2 )
-    assert_equal( a.halign, RBA::DText::HAlignRight )
-    assert_equal( a.halign.to_s, "HAlignRight" )
-
-    a.valign = 1
-    assert_equal( a.valign.to_i, 1 )
-    assert_equal( a.valign, RBA::DText::VAlignCenter )
-    assert_equal( a.valign.to_s, "VAlignCenter" )
-
-    a.valign = RBA::DText::VAlignBottom
-    assert_equal( a.valign.to_i, 2 )
-    assert_equal( a.valign, RBA::DText::VAlignBottom )
-    assert_equal( a.valign.to_s, "VAlignBottom" )
-
     a.size = 23.0
     assert_equal( a.size, 23.0 )
 
     b = a.dup
 
-    assert_equal( a.moved( RBA::DPoint::new( 0, 1 ) ).to_s, "('hallo',m45 5,8) s=23 f=8 ha=r va=b" )
+    assert_equal( a.moved( RBA::DPoint::new( 0, 1 ) ).to_s, "('hallo',m45 5,8)" )
     a.move( RBA::DPoint::new( 1, 0 ) )
-    assert_equal( a.to_s, "('hallo',m45 6,7) s=23 f=8 ha=r va=b" )
+    assert_equal( a.to_s, "('hallo',m45 6,7)" )
 
     b = b.transformed( RBA::DTrans::new( RBA::DTrans::R0, RBA::DPoint::new( 1, 0 )) )
-    assert_equal( b.to_s, "('hallo',m45 6,7) s=23 f=8 ha=r va=b" )
+    assert_equal( b.to_s, "('hallo',m45 6,7)" )
 
     m = RBA::DCplxTrans::new( RBA::DTrans::new, 1.5 )
     assert_equal( a.transformed(m).class.to_s, "RBA::DText" )
-    assert_equal( a.transformed(m).to_s, "('hallo',m45 9,10.5) s=34.5 f=8 ha=r va=b" )
+    assert_equal( a.transformed(m).to_s, "('hallo',m45 9,10.5)" )
 
     m = RBA::VCplxTrans::new( 1000.0 )
     assert_equal( a.transformed(m).class.to_s, "RBA::Text" )
-    assert_equal( a.transformed(m).to_s, "('hallo',m45 6000,7000) s=23000 f=8 ha=r va=b" )
+    assert_equal( a.transformed(m).to_s, "('hallo',m45 6000,7000)" )
 
   end
 
@@ -163,49 +141,27 @@ class DBText_TestClass < TestBase
     a = RBA::Text::new( "hallo", a.trans, 22, 7 )
     assert_equal( a.string, "hallo" )
     assert_equal( a.trans.to_s, "m45 5,7" )
-    assert_equal( a.position.to_s, "5,7" )
-    assert_equal( a.bbox.to_s, "(5,7;5,7)" )
     assert_equal( a.font, 7 )
     assert_equal( a.size, 22.0 )
 
     a.font = 8
     assert_equal( a.font, 8 )
 
-    a.halign = 1
-    assert_equal( a.halign.to_i, 1 )
-    assert_equal( a.halign, RBA::Text::HAlignCenter )
-    assert_equal( a.halign.to_s, "HAlignCenter" )
-
-    a.halign = RBA::Text::HAlignLeft
-    assert_equal( a.halign.to_i, 0 )
-    assert_equal( a.halign, RBA::Text::HAlignLeft )
-    assert_equal( a.halign.to_s, "HAlignLeft" )
-
-    a.valign = 1
-    assert_equal( a.valign.to_i, 1 )
-    assert_equal( a.valign, RBA::Text::VAlignCenter )
-    assert_equal( a.valign.to_s, "VAlignCenter" )
-
-    a.valign = RBA::Text::VAlignTop
-    assert_equal( a.valign.to_i, 0 )
-    assert_equal( a.valign, RBA::Text::VAlignTop )
-    assert_equal( a.valign.to_s, "VAlignTop" )
-
     a.size = 23
     assert_equal( a.size, 23 )
 
     b = a.dup
 
-    assert_equal( a.moved( RBA::Point::new( 0, 1 ) ).to_s, "('hallo',m45 5,8) s=23 f=8 ha=l va=t" )
+    assert_equal( a.moved( RBA::Point::new( 0, 1 ) ).to_s, "('hallo',m45 5,8)" )
     a.move( RBA::Point::new( 1, 0 ) )
-    assert_equal( a.to_s, "('hallo',m45 6,7) s=23 f=8 ha=l va=t" )
+    assert_equal( a.to_s, "('hallo',m45 6,7)" )
 
     b = b.transformed( RBA::Trans::new( RBA::Trans::R0, RBA::Point::new( 1, 0 )) )
-    assert_equal( b.to_s, "('hallo',m45 6,7) s=23 f=8 ha=l va=t" )
+    assert_equal( b.to_s, "('hallo',m45 6,7)" )
 
     m = RBA::CplxTrans::new( RBA::Trans::new, 1.5 )
-    assert_equal( a.transformed(m).to_s, "('hallo',m45 9,10.5) s=34.5 f=8 ha=l va=t" )
-    assert_equal( a.transformed(RBA::ICplxTrans::new(m)).to_s, "('hallo',m45 9,11) s=35 f=8 ha=l va=t" )
+    assert_equal( a.transformed(m).to_s, "('hallo',m45 9,10.5)" )
+    assert_equal( a.transformed(RBA::ICplxTrans::new(m)).to_s, "('hallo',m45 9,11)" )
 
   end
 
@@ -251,46 +207,6 @@ class DBText_TestClass < TestBase
     assert_equal(h[a2], "a1")
     assert_equal(h[a3], "a3")
     assert_equal(h[a4], "a4")
-
-  end
-
-  def test_textWithProperties
-
-    s = RBA::TextWithProperties::new
-    assert_equal(s.to_s, "('',r0 0,0) props={}")
-
-    s = RBA::TextWithProperties::new(RBA::Text::new("text", RBA::Trans::R90), { 1 => "one" })
-    assert_equal(s.to_s, "('text',r90 0,0) props={1=>one}")
-
-    pid = RBA::Layout::properties_id({ 1 => "one" })
-    s = RBA::TextWithProperties::new(RBA::Text::new("text", RBA::Trans::R90), pid)
-    assert_equal(s.to_s, "('text',r90 0,0) props={1=>one}")
-    assert_equal((RBA::CplxTrans::new(0.001) * s).to_s, "('text',r90 0,0) props={1=>one}")
-    assert_equal(s.property(1), "one")
-    assert_equal(s.properties, { 1 => "one" })
-    s.set_property(1, "xxx")
-    assert_equal(s.to_s, "('text',r90 0,0) props={1=>xxx}")
-    s.delete_property(1)
-    assert_equal(s.to_s, "('text',r90 0,0) props={}")
-    assert_equal(s.property(1), nil)
-
-    s = RBA::DTextWithProperties::new
-    assert_equal(s.to_s, "('',r0 0,0) props={}")
-
-    s = RBA::DTextWithProperties::new(RBA::DText::new("text", RBA::Trans::R90), { 1 => "one" })
-    assert_equal(s.to_s, "('text',r90 0,0) props={1=>one}")
-
-    pid = RBA::Layout::properties_id({ 1 => "one" })
-    s = RBA::DTextWithProperties::new(RBA::DText::new("text", RBA::Trans::R90), pid)
-    assert_equal(s.to_s, "('text',r90 0,0) props={1=>one}")
-    assert_equal((RBA::VCplxTrans::new(2.5) * s).to_s, "('text',r90 0,0) props={1=>one}")
-    assert_equal(s.property(1), "one")
-    assert_equal(s.properties, { 1 => "one" })
-    s.set_property(1, "xxx")
-    assert_equal(s.to_s, "('text',r90 0,0) props={1=>xxx}")
-    s.delete_property(1)
-    assert_equal(s.to_s, "('text',r90 0,0) props={}")
-    assert_equal(s.property(1), nil)
 
   end
 

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -24,24 +24,14 @@
 #include "dbLayout.h"
 #include "dbMemStatistics.h"
 #include "dbTrans.h"
-#include "dbTechnology.h"
 #include "dbShapeRepository.h"
 #include "dbPCellHeader.h"
 #include "dbPCellVariant.h"
 #include "dbPCellDeclaration.h"
 #include "dbLibraryProxy.h"
-#include "dbColdProxy.h"
 #include "dbLibraryManager.h"
 #include "dbLibrary.h"
-#include "dbCellVariants.h"
 #include "dbRegion.h"
-#include "dbEdgePairs.h"
-#include "dbEdges.h"
-#include "dbTexts.h"
-#include "dbCellMapping.h"
-#include "dbLayerMapping.h"
-#include "dbLayoutUtils.h"
-#include "dbCellVariants.h"
 #include "tlTimer.h"
 #include "tlLog.h"
 #include "tlInternational.h"
@@ -86,27 +76,6 @@ struct SetLayoutPropId
 
 private:
   db::properties_id_type m_from, m_to;
-};
-
-struct SetLayoutTechName
-  : public LayoutOp
-{
-  SetLayoutTechName (const std::string &from, const std::string &to)
-    : m_from (from), m_to (to)
-  { }
-
-  virtual void redo (db::Layout *layout) const
-  {
-    layout->set_technology_name_without_update (m_to);
-  }
-
-  virtual void undo (db::Layout *layout) const
-  {
-    layout->set_technology_name_without_update (m_from);
-  }
-
-private:
-  std::string m_from, m_to;
 };
 
 struct SetLayoutDBU
@@ -257,180 +226,31 @@ private:
   bool m_insert;
 };
 
-struct SetLayoutMetaInfoOp
-  : public LayoutOp
-{
-  SetLayoutMetaInfoOp (db::Layout::meta_info_name_id_type name_id, const db::MetaInfo *f, const db::MetaInfo *t)
-    : m_name_id (name_id), m_has_from (f != 0), m_has_to (t != 0)
-  {
-    if (f) {
-      m_from = *f;
-    }
-    if (t) {
-      m_to = *t;
-    }
-  }
-
-  virtual void redo (db::Layout *layout) const
-  {
-    if (! m_has_to) {
-      layout->remove_meta_info (m_name_id);
-    } else {
-      layout->add_meta_info (m_name_id, m_to);
-    }
-  }
-
-  virtual void undo (db::Layout *layout) const
-  {
-    if (! m_has_from) {
-      layout->remove_meta_info (m_name_id);
-    } else {
-      layout->add_meta_info (m_name_id, m_from);
-    }
-  }
-
-private:
-  db::Layout::meta_info_name_id_type m_name_id;
-  bool m_has_from, m_has_to;
-  db::MetaInfo m_from, m_to;
-};
-
-struct SetCellMetaInfoOp
-  : public LayoutOp
-{
-  SetCellMetaInfoOp (db::cell_index_type ci, db::Layout::meta_info_name_id_type name_id, const db::MetaInfo *f, const db::MetaInfo *t)
-    : m_ci (ci), m_name_id (name_id), m_has_from (f != 0), m_has_to (t != 0)
-  {
-    if (f) {
-      m_from = *f;
-    }
-    if (t) {
-      m_to = *t;
-    }
-  }
-
-  virtual void redo (db::Layout *layout) const
-  {
-    if (! m_has_to) {
-      layout->remove_meta_info (m_ci, m_name_id);
-    } else {
-      layout->add_meta_info (m_ci, m_name_id, m_to);
-    }
-  }
-
-  virtual void undo (db::Layout *layout) const
-  {
-    if (! m_has_from) {
-      layout->remove_meta_info (m_ci, m_name_id);
-    } else {
-      layout->add_meta_info (m_ci, m_name_id, m_from);
-    }
-  }
-
-private:
-  db::cell_index_type m_ci;
-  db::Layout::meta_info_name_id_type m_name_id;
-  bool m_has_from, m_has_to;
-  db::MetaInfo m_from, m_to;
-};
-
 // -----------------------------------------------------------------
-//  Implementation of the ProxyContextInfo class
+//  Implementation of the LayerIterator class
 
-LayoutOrCellContextInfo
-LayoutOrCellContextInfo::deserialize (std::vector<std::string>::const_iterator from, std::vector<std::string>::const_iterator to)
+LayerIterator::LayerIterator (unsigned int layer_index, const db::Layout &layout)
+  : m_layer_index (layer_index), m_layout (layout)
 {
-  LayoutOrCellContextInfo info;
-
-  for (auto i = from; i != to; ++i) {
-
-    tl::Extractor ex (i->c_str ());
-
-    if (ex.test ("LIB=")) {
-
-      info.lib_name = ex.skip ();
-
-    } else if (ex.test ("P(")) {
-
-      std::pair<std::string, tl::Variant> vv;
-
-      ex.read_word_or_quoted (vv.first);
-      ex.test (")");
-      ex.test ("=");
-      ex.read (vv.second);
-
-      info.pcell_parameters.insert (vv);
-
-    } else if (ex.test ("PCELL=")) {
-
-      info.pcell_name = ex.skip ();
-
-    } else if (ex.test ("CELL=")) {
-
-      info.cell_name = ex.skip ();
-
-    } else if (ex.test ("META(")) {
-
-      std::pair<std::string, std::pair<tl::Variant, std::string> > vv;
-
-      ex.read_word_or_quoted (vv.first);
-      if (ex.test (",")) {
-        ex.read_word_or_quoted (vv.second.second);
-      }
-      ex.test (")");
-      ex.test ("=");
-      ex.read (vv.second.first);
-
-      info.meta_info.insert(vv);
-
-    }
-
-  }
-
-  return info;
-}
-
-void
-LayoutOrCellContextInfo::serialize (std::vector<std::string> &strings)
-{
-  if (! lib_name.empty ()) {
-    strings.push_back ("LIB=" + lib_name);
-  }
-  for (auto p = pcell_parameters.begin (); p != pcell_parameters.end (); ++p) {
-    strings.push_back ("P(" + tl::to_word_or_quoted_string (p->first) + ")=" + p->second.to_parsable_string ());
-  }
-  if (! pcell_name.empty ()) {
-    strings.push_back ("PCELL=" + pcell_name);
-  }
-  if (! cell_name.empty ()) {
-    strings.push_back ("CELL=" + cell_name);
-  }
-
-  std::string mv;
-  for (auto m = meta_info.begin (); m != meta_info.end (); ++m) {
-    mv.clear ();
-    mv += "META(";
-    mv += tl::to_word_or_quoted_string (m->first);
-    if (! m->second.second.empty ()) {
-      mv += ",";
-      mv += tl::to_word_or_quoted_string (m->second.second);
-    }
-    mv += ")=";
-    mv += m->second.first.to_parsable_string ();
-    strings.push_back (mv);
+  while (m_layer_index < m_layout.layers () && ! m_layout.is_valid_layer (m_layer_index)) {
+    ++m_layer_index;
   }
 }
 
-bool
-LayoutOrCellContextInfo::has_proxy_info () const
+LayerIterator &
+LayerIterator::operator++() 
 {
-  return !pcell_name.empty () || !lib_name.empty ();
+  do {
+    ++m_layer_index;
+  } while (m_layer_index < m_layout.layers () && ! m_layout.is_valid_layer (m_layer_index));
+
+  return *this;
 }
 
-bool
-LayoutOrCellContextInfo::has_meta_info () const
+std::pair<unsigned int, const db::LayerProperties *> 
+LayerIterator::operator*() const
 {
-  return !meta_info.empty ();
+  return std::pair<unsigned int, const db::LayerProperties *> (m_layer_index, &m_layout.get_properties (m_layer_index));
 }
 
 // -----------------------------------------------------------------
@@ -438,14 +258,14 @@ LayoutOrCellContextInfo::has_meta_info () const
 
 Layout::Layout (db::Manager *manager)
   : db::Object (manager),
-    mp_library (0),
-    mp_builder (0),
     m_cells_size (0),
     m_invalid (0),
     m_top_cells (0),
     m_dbu (0.001),
     m_prop_id (0),
-    m_do_cleanup (false),
+    m_properties_repository (this),
+    m_guiding_shape_layer (-1),
+    m_waste_layer (-1),
     m_editable (db::default_editable_mode ())
 {
   // .. nothing yet ..
@@ -453,14 +273,14 @@ Layout::Layout (db::Manager *manager)
 
 Layout::Layout (bool editable, db::Manager *manager)
   : db::Object (manager),
-    mp_library (0),
-    mp_builder (0),
     m_cells_size (0),
     m_invalid (0),
     m_top_cells (0),
     m_dbu (0.001),
     m_prop_id (0),
-    m_do_cleanup (false),
+    m_properties_repository (this),
+    m_guiding_shape_layer (-1),
+    m_waste_layer (-1),
     m_editable (editable)
 {
   // .. nothing yet ..
@@ -470,16 +290,14 @@ Layout::Layout (const db::Layout &layout)
   : db::Object (layout),
     db::LayoutStateModel (),
     gsi::ObjectBase (),
-    tl::Object (),
-    tl::UniqueId (),
-    mp_library (0),
-    mp_builder (0),
     m_cells_size (0),
     m_invalid (0),
     m_top_cells (0),
     m_dbu (0.001),
     m_prop_id (0),
-    m_do_cleanup (false),
+    m_properties_repository (this),
+    m_guiding_shape_layer (-1),
+    m_waste_layer (-1),
     m_editable (layout.m_editable)
 {
   *this = layout;
@@ -520,7 +338,8 @@ Layout::clear ()
 
   m_top_down_list.clear ();
 
-  m_layers.clear ();
+  m_free_indices.clear ();
+  m_layer_states.clear ();
 
   for (std::vector<const char *>::const_iterator p = m_cell_names.begin (); p != m_cell_names.end (); ++p) {
     if (*p) {
@@ -531,6 +350,8 @@ Layout::clear ()
   m_cell_map.clear ();
 
   m_shape_repository = db::GenericRepository ();
+  db::PropertiesRepository empty_pr (this);
+  m_properties_repository = empty_pr;
   m_array_repository = db::ArrayRepository ();
 
   for (std::vector<pcell_header_type *>::const_iterator pc = m_pcells.begin (); pc != m_pcells.end (); ++pc) {
@@ -538,6 +359,9 @@ Layout::clear ()
   }
   m_pcells.clear ();
   m_pcell_ids.clear ();
+
+  m_guiding_shape_layer = -1;
+  m_waste_layer = -1;
 
   m_lib_proxy_map.clear ();
   m_meta_info.clear ();
@@ -552,8 +376,8 @@ Layout::operator= (const Layout &d)
 
     clear ();
 
-    m_layers = d.m_layers;
-
+    m_guiding_shape_layer = d.m_guiding_shape_layer;
+    m_waste_layer = d.m_waste_layer;
     m_editable = d.m_editable;
 
     m_pcell_ids = d.m_pcell_ids;
@@ -578,6 +402,10 @@ Layout::operator= (const Layout &d)
       m_cell_ptrs [new_cell->cell_index ()] = new_cell;
     }
 
+    m_properties_repository = d.m_properties_repository; // because the cell assign operator does not map property ID's ..
+    m_free_indices = d.m_free_indices;
+    m_layer_states = d.m_layer_states;
+    m_layer_props = d.m_layer_props;
     m_top_down_list = d.m_top_down_list;
     m_top_cells = d.m_top_cells;
 
@@ -597,199 +425,10 @@ Layout::operator= (const Layout &d)
     }
 
     m_dbu = d.m_dbu;
-
     m_meta_info = d.m_meta_info;
-    m_meta_info_by_cell = d.m_meta_info_by_cell;
-    m_meta_info_names = d.m_meta_info_names;
-    m_meta_info_name_map = d.m_meta_info_name_map;
-
-    m_tech_name = d.m_tech_name;
-
-    m_prop_id = d.m_prop_id;
 
   }
   return *this;
-}
-
-const db::Technology *
-Layout::technology () const
-{
-  return db::Technologies::instance ()->has_technology (m_tech_name) ? db::Technologies::instance ()->technology_by_name (m_tech_name) : 0;
-}
-
-void
-Layout::set_technology_name_without_update (const std::string &tech)
-{
-  if (tech != m_tech_name) {
-    if (manager () && manager ()->transacting ()) {
-      manager ()->queue (this, new SetLayoutTechName (m_tech_name, tech));
-    }
-    m_tech_name = tech;
-    technology_changed_event ();
-  }
-}
-
-void
-Layout::set_technology_name (const std::string &tech)
-{
-  if (tech == m_tech_name) {
-    return;
-  }
-
-  //  determine which library to map to what
-  std::map<db::lib_id_type, db::lib_id_type> mapping;
-  std::set<db::lib_id_type> seen;
-  std::set<db::lib_id_type> lost;
-
-  for (db::Layout::iterator c = begin (); c != end (); ++c) {
-
-    db::LibraryProxy *lib_proxy = dynamic_cast<db::LibraryProxy *> (&*c);
-    if (lib_proxy && seen.find (lib_proxy->lib_id ()) == seen.end ()) {
-
-      seen.insert (lib_proxy->lib_id ());
-
-      std::pair<bool, db::lib_id_type> new_id (false, 0);
-      const db::Library *l = db::LibraryManager::instance ().lib (lib_proxy->lib_id ());
-      if (l) {
-        new_id = db::LibraryManager::instance ().lib_by_name (l->get_name (), tech);
-      }
-
-      if (new_id.first && new_id.second != l->get_id ()) {
-        mapping.insert (std::make_pair (l->get_id (), new_id.second));
-      } else if (! new_id.first) {
-        lost.insert (lib_proxy->lib_id ());
-      }
-
-    }
-
-  }
-
-  if (! mapping.empty () || ! lost.empty ()) {
-
-    bool needs_cleanup = false;
-
-    std::vector<std::pair<db::LibraryProxy *, db::PCellVariant *> > pcells_to_map;
-    std::vector<db::LibraryProxy *> lib_cells_to_map;
-    std::vector<db::LibraryProxy *> lib_cells_lost;
-
-    for (db::Layout::iterator c = begin (); c != end (); ++c) {
-
-      std::map<db::lib_id_type, db::lib_id_type>::const_iterator m;
-
-      db::LibraryProxy *lib_proxy = dynamic_cast<db::LibraryProxy *> (&*c);
-      if (! lib_proxy) {
-        continue;
-      }
-
-      if ((m = mapping.find (lib_proxy->lib_id ())) != mapping.end ()) {
-
-        db::Library *lib = db::LibraryManager::instance ().lib (lib_proxy->lib_id ());
-        db::Cell *lib_cell = &lib->layout ().cell (lib_proxy->library_cell_index ());
-        db::PCellVariant *lib_pcell = dynamic_cast <db::PCellVariant *> (lib_cell);
-        if (lib_pcell) {
-          pcells_to_map.push_back (std::make_pair (lib_proxy, lib_pcell));
-        } else {
-          lib_cells_to_map.push_back (lib_proxy);
-        }
-
-        needs_cleanup = true;
-
-      } else if (lost.find (lib_proxy->lib_id ()) != lost.end ()) {
-
-        lib_cells_lost.push_back (lib_proxy);
-
-        needs_cleanup = true;
-
-      }
-
-    }
-
-    //  We do PCell resolution before the library proxy resolution. The reason is that
-    //  PCells may generate library proxies in their instantiation. Hence we must instantiate
-    //  the PCells before we can resolve them.
-    for (std::vector<std::pair<db::LibraryProxy *, db::PCellVariant *> >::const_iterator lp = pcells_to_map.begin (); lp != pcells_to_map.end (); ++lp) {
-
-      db::cell_index_type ci = lp->first->Cell::cell_index ();
-      db::PCellVariant *lib_pcell = lp->second;
-
-      std::pair<bool, pcell_id_type> pn = lib_pcell->layout ()->pcell_by_name (lp->first->get_basic_name ().c_str ());
-
-      if (! pn.first) {
-
-        //  substitute by a cold proxy
-        db::LayoutOrCellContextInfo info;
-        get_context_info (ci, info);
-        create_cold_proxy_as (info, ci);
-
-      } else {
-
-        db::Library *new_lib = db::LibraryManager::instance ().lib (mapping [lp->first->lib_id ()]);
-
-        const db::PCellDeclaration *old_pcell_decl = lib_pcell->layout ()->pcell_declaration (lib_pcell->pcell_id ());
-        const db::PCellDeclaration *new_pcell_decl = new_lib->layout ().pcell_declaration (pn.second);
-        if (! old_pcell_decl || ! new_pcell_decl) {
-
-          //  substitute by a cold proxy
-          db::LayoutOrCellContextInfo info;
-          get_context_info (ci, info);
-          create_cold_proxy_as (info, ci);
-
-        } else {
-
-          //  map pcell parameters by name
-          std::map<std::string, tl::Variant> param_by_name = lib_pcell->parameters_by_name ();
-          lp->first->remap (new_lib->get_id (), new_lib->layout ().get_pcell_variant (pn.second, new_pcell_decl->map_parameters (param_by_name)));
-
-        }
-
-      }
-
-    }
-
-    for (std::vector<db::LibraryProxy *>::const_iterator lp = lib_cells_to_map.begin (); lp != lib_cells_to_map.end (); ++lp) {
-
-      db::Library *new_lib = db::LibraryManager::instance ().lib (mapping [(*lp)->lib_id ()]);
-
-      db::cell_index_type ci = (*lp)->Cell::cell_index ();
-
-      std::pair<bool, cell_index_type> cn = new_lib->layout ().cell_by_name ((*lp)->get_basic_name ().c_str ());
-
-      if (! cn.first) {
-
-        //  unlink this proxy: substitute by a cold proxy
-        db::LayoutOrCellContextInfo info;
-        get_context_info (ci, info);
-        create_cold_proxy_as (info, ci);
-
-      } else {
-
-        (*lp)->remap (new_lib->get_id (), cn.second);
-
-      }
-
-    }
-
-    for (std::vector<db::LibraryProxy *>::const_iterator lp = lib_cells_lost.begin (); lp != lib_cells_lost.end (); ++lp) {
-
-      db::cell_index_type ci = (*lp)->Cell::cell_index ();
-
-      //  substitute by a cold proxy
-      db::LayoutOrCellContextInfo info;
-      get_context_info (ci, info);
-      create_cold_proxy_as (info, ci);
-
-    }
-
-    if (needs_cleanup) {
-      cleanup ();
-    }
-
-  }
-
-  set_technology_name_without_update (tech);
-
-  //  we may have re-established a connection for pending ("cold") proxies so we can try to restore them
-  restore_proxies ();
 }
 
 void
@@ -799,22 +438,25 @@ Layout::mem_stat (MemStatistics *stat, MemStatistics::purpose_t purpose, int cat
     stat->add (typeid (*this), (void *) this, sizeof (*this), sizeof (*this), parent, purpose, cat);
   }
 
-  m_layers.mem_stat (stat, purpose, cat, true, (void *) this);
-
   db::mem_stat (stat, purpose, cat, m_cell_ptrs, true, (void *) this);
   db::mem_stat (stat, purpose, cat, m_free_cell_indices, true, (void *) this);
   db::mem_stat (stat, purpose, cat, m_top_down_list, true, (void *) this);
+  db::mem_stat (stat, purpose, cat, m_free_indices, true, (void *) this);
+  db::mem_stat (stat, purpose, cat, m_layer_states, true, (void *) this);
   db::mem_stat (stat, purpose, cat, m_cell_names, true, (void *) this);
   db::mem_stat (stat, purpose, cat, m_cell_map, true, (void *) this);
+  db::mem_stat (stat, purpose, cat, m_layer_props, true, (void *) this);
   db::mem_stat (stat, purpose, cat, m_pcells, true, (void *) this);
   db::mem_stat (stat, purpose, cat, m_pcell_ids, true, (void *) this);
   db::mem_stat (stat, purpose, cat, m_lib_proxy_map, true, (void *) this);
   db::mem_stat (stat, purpose, cat, m_meta_info, true, (void *) this);
+  db::mem_stat (stat, purpose, cat, m_string_repository, true, (void *) this);
   db::mem_stat (stat, purpose, cat, m_shape_repository, true, (void *) this);
+  db::mem_stat (stat, purpose, cat, m_properties_repository, true, (void *) this);
   db::mem_stat (stat, purpose, cat, m_array_repository, true, (void *) this);
 
   for (std::vector<const char *>::const_iterator i = m_cell_names.begin (); i != m_cell_names.end (); ++i) {
-    stat->add (typeid (char []), (void *) *i, *i ? (strlen (*i) + 1) : 0, *i ? (strlen (*i) + 1) : 0, (void *) this, purpose, cat);
+    stat->add (typeid (char []), (void *) *i, strlen (*i) + 1, strlen (*i) + 1, (void *) this, purpose, cat);
   }
   for (cell_list::const_iterator i = m_cells.begin (); i != m_cells.end (); ++i) {
     db::mem_stat (stat, MemStatistics::CellInfo, int (i->id ()), *i, false, (void *) this);
@@ -831,7 +473,6 @@ Layout::prop_id (db::properties_id_type id)
     if (manager () && manager ()->transacting ()) {
       manager ()->queue (this, new SetLayoutPropId (m_prop_id, id));
     }
-    invalidate_prop_ids ();
     m_prop_id = id;
   }
 }
@@ -867,13 +508,10 @@ Layout::delete_cells (const std::set<cell_index_type> &cells_to_delete)
   std::set <cell_index_type> pcs;
   for (std::set<cell_index_type>::const_iterator c = cells_to_delete.begin (); c != cells_to_delete.end (); ++c) {
     const db::Cell &cref = cell (*c);
-    cref.check_locked ();
     for (db::Cell::parent_cell_iterator pc = cref.begin_parent_cells (); pc != cref.end_parent_cells (); ++pc) {
       pcs.insert (*pc);
     }
   }
-
-  db::LayoutLocker locker (this);
 
   //  Clear all instances
   for (std::set<cell_index_type>::const_iterator c = cells_to_delete.begin (); c != cells_to_delete.end (); ++c) {
@@ -886,7 +524,7 @@ Layout::delete_cells (const std::set<cell_index_type> &cells_to_delete)
     //  will disable us saving undo data with reference to them.
     if (manager () && manager ()->transacting ()) {
       for (unsigned int i = 0; i < layers (); ++i) {
-        if (is_valid_layer (i) || is_special_layer (i)) {
+        if (is_valid_layer (i)) {
           cref.clear (i);
         }
       }
@@ -922,14 +560,10 @@ Layout::delete_cells (const std::set<cell_index_type> &cells_to_delete)
   //  cell child objects that must remain.
   for (std::set<cell_index_type>::const_iterator c = cells_to_delete.begin (); c != cells_to_delete.end (); ++c) {
 
-    //  supports undo
-    clear_meta (*c);
-
     if (manager () && manager ()->transacting ()) {
        
       //  note the "take" method - this takes out the cell
-      std::string cn (cell_name (*c));
-      manager ()->queue (this, new NewRemoveCellOp (*c, cn, true /*remove*/, take_cell (*c)));
+      manager ()->queue (this, new NewRemoveCellOp (*c, cell_name (*c), true /*remove*/, take_cell (*c)));
 
     } else {
 
@@ -945,7 +579,6 @@ void
 Layout::delete_cell (cell_index_type id)
 {
   db::Cell &cref = cell (id);
-  cref.check_locked ();
 
   std::vector <cell_index_type> pcs;
   for (db::Cell::parent_cell_iterator pc = cref.begin_parent_cells (); pc != cref.end_parent_cells (); ++pc) {
@@ -958,7 +591,7 @@ Layout::delete_cell (cell_index_type id)
   //  will disable us saving undo data with reference to them.
   if (manager () && manager ()->transacting ()) {
     for (unsigned int i = 0; i < layers (); ++i) {
-      if (is_valid_layer (i) || is_special_layer (i)) {
+      if (is_valid_layer (i)) {
         cref.clear (i);
       }
     }
@@ -995,14 +628,10 @@ Layout::delete_cell (cell_index_type id)
   //  a backup container for the cell. This is necessary since the ID's within manager are given to
   //  cell child objects that must remain.
 
-  //  supports undo
-  clear_meta (id);
-
   if (manager () && manager ()->transacting ()) {
      
-    //  note the "take" method - this takes out the cell
-    std::string cn (cell_name (id));
-    manager ()->queue (this, new NewRemoveCellOp (id, cn, true /*remove*/, take_cell (id)));
+    //  not the "take" method - this takes out the cell
+    manager ()->queue (this, new NewRemoveCellOp (id, cell_name (id), true /*remove*/, take_cell (id)));
 
   } else {
 
@@ -1028,12 +657,6 @@ void
 Layout::insert (db::cell_index_type cell, int layer, const db::EdgePairs &edge_pairs)
 {
   edge_pairs.insert_into (this, cell, layer);
-}
-
-void
-Layout::insert (db::cell_index_type cell, int layer, const db::Texts &texts)
-{
-  texts.insert_into (this, cell, layer);
 }
 
 void
@@ -1081,7 +704,7 @@ Layout::flatten (const db::Cell &source_cell, db::Cell &target_cell, const db::I
       //  even an iteration of the instances requires an update.
       start_changes ();
 
-      db::Instances old_instances (&target_cell);
+      db::Instances old_instances (0);
       old_instances = target_cell.instances ();
       target_cell.clear_insts ();
 
@@ -1136,8 +759,6 @@ Layout::flatten (const db::Cell &source_cell, db::Cell &target_cell, const db::I
 void 
 Layout::flatten (db::Cell &cell_to_flatten, int levels, bool prune) 
 {
-  cell_to_flatten.check_locked ();
-
   std::set<db::cell_index_type> direct_children;
   if (prune) {
     //  save direct children
@@ -1184,17 +805,15 @@ Layout::do_prune_cell_or_subcell (cell_index_type id, int levels, bool subcells)
   //  collect the called cells
   std::set <cell_index_type> called;
   cref.collect_called_cells (called, levels);
-  if (! subcells) {
-    called.insert (id);
-  }
+  called.insert (id);
 
   //  From these cells erase all cells that have parents outside the subtree of our cell.
   //  Make sure this is done recursively by doing this top-down.
   for (top_down_iterator c = begin_top_down (); c != end_top_down (); ++c) {
-    if (*c != id && called.find (*c) != called.end ()) {
+    if (called.find (*c) != called.end () && *c != id) {
       db::Cell &ccref = cell (*c);
       for (db::Cell::parent_cell_iterator pc = ccref.begin_parent_cells (); pc != ccref.end_parent_cells (); ++pc) {
-        if (*pc != id && called.find (*pc) == called.end ()) {
+        if (called.find (*pc) == called.end ()) {
           //  we have a parent outside the subset considered currently (either the cell was never in or
           //  it was removed itself already): remove this cell from the set of valid subcells.
           called.erase (*c);
@@ -1204,8 +823,17 @@ Layout::do_prune_cell_or_subcell (cell_index_type id, int levels, bool subcells)
     }
   }
 
-  //  and delete the cells
-  delete_cells (called);
+  //  order the called cells bottom-up 
+  std::vector <cell_index_type> cells_to_delete;
+  cells_to_delete.reserve (called.size ());
+  for (bottom_up_iterator c = begin_bottom_up (); c != end_bottom_up (); ++c) {
+    if (called.find (*c) != called.end () && (!subcells || *c != id)) {
+      cells_to_delete.push_back (*c);
+    }
+  }
+
+  //  and delete these cells
+  delete_cells (cells_to_delete.begin (), cells_to_delete.end ());
 
   //  erase all instances in the subcells case (because, by definition we don't have any more instances)
   if (subcells) {
@@ -1330,15 +958,10 @@ Layout::take_cell (cell_index_type ci)
 
   m_cell_ptrs [ci] = 0;
 
-  auto mi = m_meta_info_by_cell.find (ci);
-  if (mi != m_meta_info_by_cell.end ()) {
-    m_meta_info_by_cell.erase (mi);
-  }
-
   //  Using free cell indices does have one significant drawback:
   //  The cellview references cannot be uniquely classified as being invalid - because the
   //  ID might be reused. This causes problems, when a cell is being deleted and subsequently a
-  //  cell is being created - a crash occurs. Therefore the free index feature is disabled.
+  //  cell is being created - a crash occures. Therefore the free index feature is disabled.
   //  If this causes memory consumption problems, it should be considered to use a map and
   //  an arbitrary ID.
   // m_free_cell_indices.push_back (ci);
@@ -1383,24 +1006,7 @@ Layout::uniquify_cell_name (const char *name) const
   }
 }
 
-cell_index_type
-Layout::add_cell (const db::Layout &other, db::cell_index_type ci)
-{
-  cell_index_type ci_new = add_cell (other.cell_name (ci));
-  cell (ci_new).set_ghost_cell (other.cell (ci).is_ghost_cell ());
-
-  if (&other == this) {
-    add_meta_info (ci_new, other.begin_meta (ci), other.end_meta (ci));
-  } else {
-    for (auto m = other.begin_meta (ci); m != other.end_meta (ci); ++m) {
-      add_meta_info (ci_new, meta_info_name_id (other.meta_info_name (m->first)), m->second);
-    }
-  }
-
-  return ci_new;
-}
-
-cell_index_type
+cell_index_type 
 Layout::add_cell (const char *name)
 {
   std::string b;
@@ -1438,30 +1044,8 @@ Layout::add_cell (const char *name)
   m_cells.push_back_ptr (new_cell);
   m_cell_ptrs [new_index] = new_cell;
 
-  //  enter its index and cell_name
+  //  enter it's index and cell_name
   register_cell_name (name, new_index);
-
-  if (manager () && manager ()->transacting ()) {
-    manager ()->queue (this, new NewRemoveCellOp (new_index, m_cell_names [new_index], false /*new*/, 0));
-  }
-
-  return new_index;
-}
-
-cell_index_type
-Layout::add_anonymous_cell ()
-{
-  std::string b;
-
-  //  create a new cell
-  cell_index_type new_index = allocate_new_cell ();
-
-  cell_type *new_cell = new cell_type (new_index, *this);
-  m_cells.push_back_ptr (new_cell);
-  m_cell_ptrs [new_index] = new_cell;
-
-  //  enter its index and cell_name
-  register_cell_name (0, new_index);
 
   if (manager () && manager ()->transacting ()) {
     manager ()->queue (this, new NewRemoveCellOp (new_index, m_cell_names [new_index], false /*new*/, 0));
@@ -1473,16 +1057,11 @@ Layout::add_anonymous_cell ()
 void 
 Layout::register_cell_name (const char *name, cell_index_type ci)
 {
-  //  enter its index and cell_name
+  //  enter it's index and cell_name
   char *cp;
 
-  if (name == 0) {
-    cp = new char [1];
-    *cp = 0;
-  } else {
-    cp = new char [strlen (name) + 1];
-    strcpy (cp, name);
-  }
+  cp = new char [strlen (name) + 1];
+  strcpy (cp, name);
 
   while (m_cell_names.size () < ci) {
     char *e = new char [1];
@@ -1497,9 +1076,7 @@ Layout::register_cell_name (const char *name, cell_index_type ci)
     m_cell_names.push_back (cp);
   }
 
-  if (name) {
-    m_cell_map.insert (std::make_pair (cp, ci));
-  }
+  m_cell_map.insert (std::make_pair (cp, ci));
 }
 
 void
@@ -1534,21 +1111,12 @@ Layout::topological_sort ()
 {
   m_top_cells = 0;
   m_top_down_list.clear ();
-
-  //  NOTE: we explicitly count the cells here and do not rely on "m_cell_size".
-  //  Reason is that this is somewhat safer, specifically directly after take() when
-  //  the cell list is already reduced, but the cell pointers are still containing the cell
-  //  (issue #905)
-  size_t ncells = 0;
-  for (const_iterator c = begin (); c != end (); ++c) {
-    ++ncells;
-  }
-  m_top_down_list.reserve (ncells);
+  m_top_down_list.reserve (m_cells_size);
 
   std::vector<size_t> num_parents (m_cell_ptrs.size (), 0);
 
   //  while there are cells to treat ..
-  while (m_top_down_list.size () != ncells) {
+  while (m_top_down_list.size () != m_cells_size) {
 
     size_t n_top_down_cells = m_top_down_list.size ();
 
@@ -1592,60 +1160,6 @@ Layout::topological_sort ()
 
 }
 
-void
-Layout::copy_tree_shapes (const db::Layout &source_layout, const db::CellMapping &cm)
-{
-  if (this == &source_layout) {
-    throw tl::Exception (tl::to_string (tr ("Cannot copy shapes within the same layout")));
-  }
-
-  db::ICplxTrans trans (source_layout.dbu () / dbu ());
-
-  db::LayerMapping lm;
-  lm.create_full (*this, source_layout);
-
-  db::copy_shapes (*this, source_layout, trans, cm.source_cells (), cm.table (), lm.table ());
-}
-
-void
-Layout::copy_tree_shapes (const db::Layout &source_layout, const db::CellMapping &cm, const db::LayerMapping &lm)
-{
-  if (this == &source_layout) {
-    throw tl::Exception (tl::to_string (tr ("Cannot copy shapes within the same layout")));
-  }
-
-  db::ICplxTrans trans (source_layout.dbu () / dbu ());
-
-  db::copy_shapes (*this, source_layout, trans, cm.source_cells (), cm.table (), lm.table ());
-}
-
-void
-Layout::move_tree_shapes (db::Layout &source_layout, const db::CellMapping &cm)
-{
-  if (this == &source_layout) {
-    throw tl::Exception (tl::to_string (tr ("Cannot copy shapes within the same layout")));
-  }
-
-  db::ICplxTrans trans (source_layout.dbu () / dbu ());
-
-  db::LayerMapping lm;
-  lm.create_full (*this, source_layout);
-
-  db::move_shapes (*this, source_layout, trans, cm.source_cells (), cm.table (), lm.table ());
-}
-
-void
-Layout::move_tree_shapes (db::Layout &source_layout, const db::CellMapping &cm, const db::LayerMapping &lm)
-{
-  if (this == &source_layout) {
-    throw tl::Exception (tl::to_string (tr ("Cannot copy shapes within the same layout")));
-  }
-
-  db::ICplxTrans trans (source_layout.dbu () / dbu ());
-
-  db::move_shapes (*this, source_layout, trans, cm.source_cells (), cm.table (), lm.table ());
-}
-
 bool 
 Layout::is_valid_cell_index (cell_index_type ci) const
 {
@@ -1672,22 +1186,8 @@ Layout::allocate_new_cell ()
 }
 
 void
-Layout::refresh ()
-{
-  for (iterator c = begin (); c != end (); ++c) {
-    c->update ();
-  }
-}
-
-void
 Layout::cleanup (const std::set<db::cell_index_type> &keep)
 {
-  //  only managed layouts will receive cleanup requests. Never library container layouts - these
-  //  cannot know if their proxies are not referenced by other proxies.
-  if (! m_do_cleanup) {
-    return;
-  }
-
   //  deleting cells may create new top cells which need to be deleted as well, hence we iterate
   //  until there are no more cells to delete
   while (true) {
@@ -1747,51 +1247,10 @@ Layout::end_top_cells () const
   return m_top_down_list.begin () + m_top_cells;
 }
 
-void
-Layout::start_changes ()
-{
-  tl::MutexLocker locker (&lock ());
-  ++m_invalid;
-}
-
-void
-Layout::end_changes ()
-{
-  tl::MutexLocker locker (&lock ());
-  if (m_invalid > 0) {
-    if (--m_invalid == 0) {
-      force_update_no_lock ();
-    }
-  }
-}
-
-void
-Layout::end_changes_no_update ()
-{
-  tl::MutexLocker locker (&lock ());
-  if (m_invalid > 0) {
-    --m_invalid;
-  }
-}
-
 void 
 Layout::force_update () 
 {
-  //  NOTE: the assumption is that either one thread is writing or
-  //  multiple threads are reading. Hence, we do not need to lock hier_dirty() or bboxes_dirty().
-  //  We still do double checking as another thread might do the update as well.
-  if (! update_needed ()) {
-    return;
-  }
-
-  tl::MutexLocker locker (&lock ());
-  force_update_no_lock ();
-}
-
-void
-Layout::force_update_no_lock () const
-{
-  if (hier_dirty () || bboxes_dirty () || prop_ids_dirty ()) {
+  if (hier_dirty () || bboxes_dirty ()) {
 
     unsigned int invalid = m_invalid;
 
@@ -1815,42 +1274,35 @@ Layout::force_update_no_lock () const
 void 
 Layout::update () const
 {
-  //  NOTE: the assumption is that either one thread is writing or
-  //  multiple threads are reading. Hence, we do not need to lock hier_dirty() or bboxes_dirty().
-  //  We still do double checking as another thread might do the update as well.
-  if (under_construction () || (! hier_dirty () && ! bboxes_dirty () && ! prop_ids_dirty ())) {
-    return;
+  if (! under_construction () && (hier_dirty () || bboxes_dirty ())) {
+
+    try {
+
+      m_invalid = std::numeric_limits<unsigned int>::max ();   //  prevent recursion
+
+      db::LayoutStateModel *state_model = const_cast<db::LayoutStateModel *> ((const db::LayoutStateModel *) this);
+      state_model->update ();
+
+      m_invalid = 0;
+
+    } catch (...) {
+      m_invalid = 0;
+      throw;
+    }
+
   }
-
-  tl::MutexLocker locker (&lock ());
-
-  if (! under_construction ()) {
-    force_update_no_lock ();
-  }
-}
-
-bool
-Layout::update_needed () const
-{
-  return hier_dirty () || bboxes_dirty ();
 }
 
 void 
 Layout::do_update ()
 {
-  if (! update_needed ()) {
-    return;
-  }
-
   tl::SelfTimer timer (tl::verbosity () > layout_base_verbosity, tl::to_string (tr ("Sorting")));
 
   //  establish a progress report since this operation can take some time.
   //  HINT: because of some gcc bug, automatic destruction of the tl::Progress
   //  object does not work. We overcome this problem by creating the object with new 
   //  and catching exceptions.
-  //  As this operation is critical we don't want to have it cancelled. Plus: do_update is called during ~LayoutLocker and
-  //  if we throw exceptions then, we'll get a runtime assertion.
-  tl::RelativeProgress *pr = new tl::RelativeProgress (tl::to_string (tr ("Sorting layout")), m_cells_size, 0, false /*can't cancel*/);
+  tl::RelativeProgress *pr = new tl::RelativeProgress (tl::to_string (tr ("Sorting layout")), m_cells_size, 1000);
   pr->set_desc ("");
 
   try {
@@ -1913,7 +1365,6 @@ Layout::do_update ()
           cp.sort_shapes ();
         }
       }
-
     }
 
     //  sort the instance trees now, since we have computed the bboxes
@@ -1925,9 +1376,8 @@ Layout::do_update ()
       for (bottom_up_iterator c = begin_bottom_up (); c != end_bottom_up (); ++c) {
         ++*pr;
         cell_type &cp (cell (*c));
-        bool force_sort_inst_tree = dirty_parents.find (*c) != dirty_parents.end ();
-        if (hier_dirty () || force_sort_inst_tree) {
-          cp.sort_inst_tree (force_sort_inst_tree);
+        if (hier_dirty () || dirty_parents.find (*c) != dirty_parents.end ()) {
+          cp.sort_inst_tree ();
         }
         if (cp.layers () > layers) {
           layers = cp.layers ();
@@ -1943,235 +1393,53 @@ Layout::do_update ()
   delete pr;
 }
 
-static Layout::meta_info_map s_empty_meta;
-
-Layout::meta_info_iterator
-Layout::begin_meta (db::cell_index_type ci) const
-{
-  auto m = m_meta_info_by_cell.find (ci);
-  if (m != m_meta_info_by_cell.end ()) {
-    return m->second.begin ();
-  } else {
-    return s_empty_meta.begin ();
-  }
-}
-
-Layout::meta_info_iterator
-Layout::end_meta (db::cell_index_type ci) const
-{
-  auto m = m_meta_info_by_cell.find (ci);
-  if (m != m_meta_info_by_cell.end ()) {
-    return m->second.end ();
-  } else {
-    return s_empty_meta.end ();
-  }
-}
-
-const std::string &
-Layout::meta_info_name (Layout::meta_info_name_id_type name_id) const
-{
-  static std::string empty;
-  return name_id < m_meta_info_names.size () ? m_meta_info_names[name_id] : empty;
-}
-
-Layout::meta_info_name_id_type
-Layout::meta_info_name_id (const std::string &name)
-{
-  auto n = m_meta_info_name_map.find (name);
-  if (n != m_meta_info_name_map.end ()) {
-    return n->second;
-  } else {
-    size_t id = m_meta_info_names.size ();
-    m_meta_info_names.push_back (name);
-    m_meta_info_name_map.insert (std::make_pair (name, id));
-    return id;
-  }
-}
-
-Layout::meta_info_name_id_type
-Layout::meta_info_name_id (const std::string &name) const
-{
-  auto n = m_meta_info_name_map.find (name);
-  return n != m_meta_info_name_map.end () ? n->second : std::numeric_limits<meta_info_name_id_type>::max ();
-}
-
 void
 Layout::clear_meta ()
 {
-  if (manager () && manager ()->transacting ()) {
-    for (auto i = m_meta_info.begin (); i != m_meta_info.end (); ++i) {
-      manager ()->queue (this, new SetLayoutMetaInfoOp (i->first, &i->second, 0));
-    }
-  }
-
   m_meta_info.clear ();
 }
 
 void
-Layout::add_meta_info (meta_info_name_id_type name_id, const MetaInfo &i)
+Layout::add_meta_info (const MetaInfo &i)
 {
-  if (manager () && manager ()->transacting ()) {
-    auto e = m_meta_info.find (name_id);
-    manager ()->queue (this, new SetLayoutMetaInfoOp (name_id, e != m_meta_info.end () ? &e->second : 0, &i));
+  for (meta_info::iterator m = m_meta_info.begin (); m != m_meta_info.end (); ++m) {
+    if (m->name == i.name) {
+      *m = i;
+      return;
+    }
   }
-
-  m_meta_info[name_id] = i;
+  m_meta_info.push_back (i);
 }
 
 void
-Layout::remove_meta_info (meta_info_name_id_type name_id)
+Layout::remove_meta_info (const std::string &name)
 {
-  if (manager () && manager ()->transacting ()) {
-    auto e = m_meta_info.find (name_id);
-    if (e != m_meta_info.end ()) {
-      manager ()->queue (this, new SetLayoutMetaInfoOp (name_id, &e->second, 0));
+  for (meta_info::iterator m = m_meta_info.begin (); m != m_meta_info.end (); ++m) {
+    if (m->name == name) {
+      m_meta_info.erase (m);
+      return;
+    }
+  }
+}
+
+const std::string &
+Layout::meta_info_value (const std::string &name) const
+{
+  for (meta_info::const_iterator m = m_meta_info.begin (); m != m_meta_info.end (); ++m) {
+    if (m->name == name) {
+      return m->value;
     }
   }
 
-  m_meta_info.erase (name_id);
+  static const std::string s_empty;
+  return s_empty;
 }
 
-const MetaInfo &
-Layout::meta_info (meta_info_name_id_type name_id) const
-{
-  auto n = m_meta_info.find (name_id);
-  static MetaInfo null_value;
-  return n != m_meta_info.end () ? n->second : null_value;
-}
-
-bool
-Layout::has_meta_info (meta_info_name_id_type name_id) const
-{
-  return m_meta_info.find (name_id) != m_meta_info.end ();
-}
-
-void
-Layout::clear_meta (db::cell_index_type ci)
-{
-  if (manager () && manager ()->transacting ()) {
-    auto ib = begin_meta (ci);
-    auto ie = end_meta (ci);
-    for (auto i = ib; i != ie; ++i) {
-      manager ()->queue (this, new SetCellMetaInfoOp (ci, i->first, &i->second, 0));
-    }
-  }
-
-  m_meta_info_by_cell.erase (ci);
-}
-
-void
-Layout::clear_all_meta ()
-{
-  clear_meta ();
-  while (! m_meta_info_by_cell.empty ()) {
-    clear_meta (m_meta_info_by_cell.begin ()->first);
-  }
-}
-
-void
-Layout::add_meta_info (db::cell_index_type ci, meta_info_name_id_type name_id, const MetaInfo &i)
-{
-  if (manager () && manager ()->transacting ()) {
-    const MetaInfo *from = 0;
-    auto c = m_meta_info_by_cell.find (ci);
-    if (c != m_meta_info_by_cell.end ()) {
-      auto e = c->second.find (name_id);
-      if (e != c->second.end ()) {
-        from = &e->second;
-      }
-    }
-    manager ()->queue (this, new SetCellMetaInfoOp (ci, name_id, from, &i));
-  }
-
-  m_meta_info_by_cell[ci][name_id] = i;
-}
-
-void
-Layout::remove_meta_info (db::cell_index_type ci, meta_info_name_id_type name_id)
-{
-  auto c = m_meta_info_by_cell.find (ci);
-
-  if (manager () && manager ()->transacting ()) {
-    const MetaInfo *from = 0;
-    if (c != m_meta_info_by_cell.end ()) {
-      auto e = c->second.find (name_id);
-      if (e != c->second.end ()) {
-        from = &e->second;
-      }
-    }
-    manager ()->queue (this, new SetCellMetaInfoOp (ci, name_id, from, 0));
-  }
-
-  if (c != m_meta_info_by_cell.end ()) {
-    c->second.erase (name_id);
-  }
-}
-
-const MetaInfo &
-Layout::meta_info (db::cell_index_type ci, meta_info_name_id_type name_id) const
-{
-  auto c = m_meta_info_by_cell.find (ci);
-  if (c != m_meta_info_by_cell.end ()) {
-    auto i = c->second.find (name_id);
-    if (i != c->second.end ()) {
-      return i->second;
-    }
-  }
-
-  static MetaInfo null_value;
-  return null_value;
-}
-
-bool
-Layout::has_meta_info (db::cell_index_type ci, meta_info_name_id_type name_id) const
-{
-  auto c = m_meta_info_by_cell.find (ci);
-  if (c != m_meta_info_by_cell.end ()) {
-    return c->second.find (name_id) != c->second.end ();
-  } else {
-    return false;
-  }
-}
-
-void
-Layout::merge_meta_info (const db::Layout &other)
-{
-  for (auto mi = other.begin_meta (); mi != other.end_meta (); ++mi) {
-    add_meta_info (other.meta_info_name (mi->first), mi->second);
-  }
-}
-
-void
-Layout::merge_meta_info (db::cell_index_type into_cell, const db::Layout &other, db::cell_index_type other_cell)
-{
-  auto mi_begin = other.begin_meta (other_cell);
-  auto mi_end = other.end_meta (other_cell);
-  for (auto mi = mi_begin; mi != mi_end; ++mi) {
-    add_meta_info (into_cell, other.meta_info_name (mi->first), mi->second);
-  }
-}
-
-void
-Layout::merge_meta_info (const db::Layout &other, const db::CellMapping &cm)
-{
-  for (auto i = cm.begin (); i != cm.end (); ++i) {
-    merge_meta_info (i->second, other, i->first);
-  }
-}
-
-void
-Layout::copy_meta_info (const db::Layout &other, const db::CellMapping &cm)
-{
-  for (auto i = cm.begin (); i != cm.end (); ++i) {
-    copy_meta_info (i->second, other, i->first);
-  }
-}
-
-void
+void 
 Layout::swap_layers (unsigned int a, unsigned int b)
 {
-  tl_assert (m_layers.layer_state (a) != LayoutLayers::Free);
-  tl_assert (m_layers.layer_state (b) != LayoutLayers::Free);
+  tl_assert (a < layers () && m_layer_states [a] != Free);
+  tl_assert (b < layers () && m_layer_states [b] != Free);
 
   //  clear the shapes
   for (iterator c = begin (); c != end (); ++c) {
@@ -2182,8 +1450,8 @@ Layout::swap_layers (unsigned int a, unsigned int b)
 void 
 Layout::move_layer (unsigned int src, unsigned int dest)
 {
-  tl_assert (m_layers.layer_state (src) != LayoutLayers::Free);
-  tl_assert (m_layers.layer_state (dest) != LayoutLayers::Free);
+  tl_assert (src < layers () && m_layer_states [src] != Free);
+  tl_assert (dest < layers () && m_layer_states [dest] != Free);
 
   //  move the shapes
   for (iterator c = begin (); c != end (); ++c) {
@@ -2191,23 +1459,11 @@ Layout::move_layer (unsigned int src, unsigned int dest)
   }
 }
 
-void
-Layout::move_layer (unsigned int src, unsigned int dest, unsigned int flags)
-{
-  tl_assert (m_layers.layer_state (src) != LayoutLayers::Free);
-  tl_assert (m_layers.layer_state (dest) != LayoutLayers::Free);
-
-  //  move the shapes
-  for (iterator c = begin (); c != end (); ++c) {
-    c->move (src, dest, flags);
-  }
-}
-
-void
+void 
 Layout::copy_layer (unsigned int src, unsigned int dest)
 {
-  tl_assert (m_layers.layer_state (src) != LayoutLayers::Free);
-  tl_assert (m_layers.layer_state (dest) != LayoutLayers::Free);
+  tl_assert (src < layers () && m_layer_states [src] != Free);
+  tl_assert (dest < layers () && m_layer_states [dest] != Free);
 
   //  copy the shapes
   for (iterator c = begin (); c != end (); ++c) {
@@ -2215,22 +1471,10 @@ Layout::copy_layer (unsigned int src, unsigned int dest)
   }
 }
 
-void
-Layout::copy_layer (unsigned int src, unsigned int dest, unsigned int flags)
-{
-  tl_assert (m_layers.layer_state (src) != LayoutLayers::Free);
-  tl_assert (m_layers.layer_state (dest) != LayoutLayers::Free);
-
-  //  copy the shapes
-  for (iterator c = begin (); c != end (); ++c) {
-    c->copy (src, dest, flags);
-  }
-}
-
-void
+void 
 Layout::clear_layer (unsigned int n)
 {
-  tl_assert (m_layers.layer_state (n) != LayoutLayers::Free);
+  tl_assert (n < layers () && m_layer_states [n] != Free);
 
   //  clear the shapes
   for (iterator c = begin (); c != end (); ++c) {
@@ -2238,27 +1482,17 @@ Layout::clear_layer (unsigned int n)
   }
 }
 
-void
-Layout::clear_layer (unsigned int n, unsigned int flags)
-{
-  tl_assert (m_layers.layer_state (n) != LayoutLayers::Free);
-
-  //  clear the shapes
-  for (iterator c = begin (); c != end (); ++c) {
-    c->clear (n, flags);
-  }
-}
-
-void
+void 
 Layout::delete_layer (unsigned int n)
 {
-  tl_assert (m_layers.layer_state (n) != LayoutLayers::Free);
+  tl_assert (n < layers () && m_layer_states [n] != Free);
 
   if (manager () && manager ()->transacting ()) {
-    manager ()->queue (this, new InsertRemoveLayerOp (n, m_layers.get_properties (n), false /*delete*/));
+    manager ()->queue (this, new InsertRemoveLayerOp (n, m_layer_props [n], false /*delete*/));
   }
 
-  m_layers.delete_layer (n);
+  m_free_indices.push_back (n);
+  m_layer_states [n] = Free;
 
   //  clear the shapes
   for (iterator c = begin (); c != end (); ++c) {
@@ -2268,26 +1502,14 @@ Layout::delete_layer (unsigned int n)
   layer_properties_changed ();
 }
 
-unsigned int
-Layout::get_layer (const db::LayerProperties &props)
-{
-  int li = get_layer_maybe (props);
-  if (li >= 0) {
-    return (unsigned int) li;
-  }
-
-  if (props.is_null ()) {
-    //  for a null layer info always create a layer
-    return insert_layer ();
-  } else {
-    return insert_layer (props);
-  }
-}
-
 unsigned int 
 Layout::insert_layer (const LayerProperties &props)
 {
-  unsigned int i = m_layers.insert_layer (props);
+  unsigned int i = do_insert_layer ();
+  while (m_layer_props.size () <= i) {
+    m_layer_props.push_back (LayerProperties ());
+  }
+  m_layer_props [i] = props;
 
   if (manager () && manager ()->transacting ()) {
     manager ()->queue (this, new InsertRemoveLayerOp (i, props, true/*insert*/));
@@ -2301,7 +1523,11 @@ Layout::insert_layer (const LayerProperties &props)
 void 
 Layout::insert_layer (unsigned int index, const LayerProperties &props)
 {
-  m_layers.insert_layer (index, props);
+  do_insert_layer (index);
+  while (m_layer_props.size () <= index) {
+    m_layer_props.push_back (LayerProperties ());
+  }
+  m_layer_props [index] = props;
 
   if (manager () && manager ()->transacting ()) {
     manager ()->queue (this, new InsertRemoveLayerOp (index, props, true/*insert*/));
@@ -2310,10 +1536,58 @@ Layout::insert_layer (unsigned int index, const LayerProperties &props)
   layer_properties_changed ();
 }
 
+unsigned int
+Layout::get_layer (const db::LayerProperties &lp)
+{
+  if (lp.is_null ()) {
+    //  for a null layer info always create a layer
+    return insert_layer ();
+  } else {
+    //  if we have a layer with the requested properties already, return this.
+    for (db::Layout::layer_iterator li = begin_layers (); li != end_layers (); ++li) {
+      if ((*li).second->log_equal (lp)) {
+        return (*li).first;
+      }
+    }
+    //  otherwise create a new layer
+    return insert_layer (lp);
+  }
+}
+
+unsigned int
+Layout::waste_layer () const
+{
+  if (m_waste_layer < 0) {
+    //  create the waste layer (since that layer is cached we can do
+    //  this in a "const" fashion.
+    db::Layout *self = const_cast<db::Layout *> (this);
+    self->m_waste_layer = (int) self->insert_special_layer (db::LayerProperties ("WASTE"));
+  }
+
+  return (unsigned int) m_waste_layer;
+}
+
+unsigned int
+Layout::guiding_shape_layer () const
+{
+  if (m_guiding_shape_layer < 0) {
+    //  create the guiding shape layer (since that layer is cached we can do
+    //  this in a "const" fashion.
+    db::Layout *self = const_cast<db::Layout *> (this);
+    self->m_guiding_shape_layer = (int) self->insert_special_layer (db::LayerProperties ("GUIDING_SHAPES"));
+  }
+
+  return (unsigned int) m_guiding_shape_layer;
+}
+
 unsigned int 
 Layout::insert_special_layer (const LayerProperties &props)
 {
-  unsigned int i = m_layers.insert_special_layer (props);
+  unsigned int i = do_insert_layer (true /*special*/);
+  while (m_layer_props.size () <= i) {
+    m_layer_props.push_back (LayerProperties ());
+  }
+  m_layer_props [i] = props;
 
   if (manager () && manager ()->transacting ()) {
     manager ()->queue (this, new InsertRemoveLayerOp (i, props, true/*insert*/));
@@ -2325,13 +1599,13 @@ Layout::insert_special_layer (const LayerProperties &props)
 void 
 Layout::set_properties (unsigned int i, const LayerProperties &props)
 {
-  if (m_layers.get_properties (i) != props) {
+  if (m_layer_props [i] != props) {
 
     if (manager () && manager ()->transacting ()) {
-      manager ()->queue (this, new SetLayerPropertiesOp (i, props, m_layers.get_properties (i)));
+      manager ()->queue (this, new SetLayerPropertiesOp (i, props, m_layer_props [i]));
     }
 
-    m_layers.set_properties (i, props);
+    m_layer_props [i] = props;
 
     layer_properties_changed ();
 
@@ -2341,11 +1615,58 @@ Layout::set_properties (unsigned int i, const LayerProperties &props)
 void 
 Layout::insert_special_layer (unsigned int index, const LayerProperties &props)
 {
-  m_layers.insert_special_layer (index, props);
+  do_insert_layer (index, true /*special*/);
+  while (m_layer_props.size () <= index) {
+    m_layer_props.push_back (LayerProperties ());
+  }
+  m_layer_props [index] = props;
 
   if (manager () && manager ()->transacting ()) {
     manager ()->queue (this, new InsertRemoveLayerOp (index, props, true/*insert*/));
   }
+}
+
+unsigned int 
+Layout::do_insert_layer (bool special) 
+{
+  if (m_free_indices.size () > 0) {
+    unsigned int i = m_free_indices.back ();
+    m_free_indices.pop_back ();
+    m_layer_states [i] = special ? Special : Normal;
+    return i;
+  } else {
+    m_layer_states.push_back (special ? Special : Normal);
+    unsigned int i = layers () - 1;
+    return i;
+  }
+}
+
+void 
+Layout::do_insert_layer (unsigned int index, bool special) 
+{
+  if (index >= layers ()) {
+
+    //  add layer to the end of the list.
+    //  add as may freelist entries as required.
+    while (index > layers ()) {
+      m_free_indices.push_back (layers ());
+      m_layer_states.push_back (Free);
+    }
+    m_layer_states.push_back (special ? Special : Normal);
+
+  } else {
+
+    tl_assert (m_layer_states [index] == Free);
+    m_layer_states [index] = special ? Special : Normal;
+  
+  }
+
+}
+
+void 
+Layout::reserve_layers (unsigned int n)
+{
+  m_layer_states.reserve (n);
 }
 
 static const std::vector<tl::Variant> &gauge_parameters (const std::vector<tl::Variant> &p, const db::PCellDeclaration *pcell_decl, std::vector<tl::Variant> &buffer)
@@ -2373,53 +1694,8 @@ static const std::vector<tl::Variant> &gauge_parameters (const std::vector<tl::V
   }
 }
 
-void
-Layout::replace_cell (cell_index_type target_cell_index, db::Cell *new_cell, bool retain_layout)
-{
-  invalidate_hier ();
-
-  db::Cell *old_cell = m_cell_ptrs [target_cell_index];
-  if (old_cell) {
-    old_cell->unregister ();
-    if (retain_layout) {
-      new_cell->Cell::operator= (*old_cell);
-    }
-  }
-
-  if (manager () && manager ()->transacting ()) {
-    //  note the "take" method - this takes out the cell but does not delete it (we need it inside undo)
-    m_cells.take (iterator (old_cell));
-    manager ()->queue (this, new NewRemoveCellOp (target_cell_index, cell_name (target_cell_index), true /*remove*/, old_cell));
-  } else {
-    m_cells.erase (iterator (old_cell));
-  }
-
-  m_cells.push_back_ptr (new_cell);
-  m_cell_ptrs [target_cell_index] = new_cell;
-
-  if (manager () && manager ()->transacting ()) {
-    manager ()->queue (this, new NewRemoveCellOp (target_cell_index, m_cell_names [target_cell_index], false /*new*/, 0));
-  }
-}
-
-void
-Layout::replace_instances_of (cell_index_type src_cell_index, cell_index_type target_cell_index)
-{
-  //  replace all instances of the new cell with the original one
-  std::vector<std::pair<db::cell_index_type, db::Instance> > parents;
-  for (db::Cell::parent_inst_iterator pi = cell (src_cell_index).begin_parent_insts (); ! pi.at_end (); ++pi) {
-    parents.push_back (std::make_pair (pi->parent_cell_index (), pi->child_inst ()));
-  }
-
-  for (std::vector<std::pair<db::cell_index_type, db::Instance> >::const_iterator p = parents.begin (); p != parents.end (); ++p) {
-    db::CellInstArray ia = p->second.cell_inst ();
-    ia.object ().cell_index (target_cell_index);
-    cell (p->first).replace (p->second, ia);
-  }
-}
-
 void 
-Layout::get_pcell_variant_as (pcell_id_type pcell_id, const std::vector<tl::Variant> &p, cell_index_type target_cell_index, ImportLayerMapping *layer_mapping, bool retain_layout)
+Layout::get_pcell_variant_as (pcell_id_type pcell_id, const std::vector<tl::Variant> &p, cell_index_type target_cell_index, ImportLayerMapping *layer_mapping)
 {
   pcell_header_type *header = pcell_header (pcell_id);
   tl_assert (header != 0);
@@ -2430,15 +1706,19 @@ Layout::get_pcell_variant_as (pcell_id_type pcell_id, const std::vector<tl::Vari
   //  this variant must not exist yet for "get as" semantics
   tl_assert (header->get_variant (*this, parameters) == 0);
 
+  tl_assert (! (manager () && manager ()->transacting ()));
   tl_assert (m_cell_ptrs [target_cell_index] != 0);
  
-  pcell_variant_type *variant = new pcell_variant_type (target_cell_index, *this, pcell_id, parameters);
-  replace_cell (target_cell_index, variant, retain_layout);
+  invalidate_hier ();
 
-  if (! retain_layout) {
-    //  produce the layout unless we retained it
-    variant->update (layer_mapping);
-  }
+  m_cells.erase (iterator (m_cell_ptrs [target_cell_index]));
+
+  pcell_variant_type *variant = new pcell_variant_type (target_cell_index, *this, pcell_id, parameters);
+  m_cells.push_back_ptr (variant);
+  m_cell_ptrs [target_cell_index] = variant;
+
+  // produce the layout
+  variant->update (layer_mapping);
 }
 
 cell_index_type 
@@ -2474,7 +1754,7 @@ Layout::get_pcell_variant_dict (pcell_id_type pcell_id, const std::map<std::stri
     m_cells.push_back_ptr (variant);
     m_cell_ptrs [new_index] = variant;
 
-    //  enter its index and cell_name
+    //  enter it's index and cell_name
     register_cell_name (b.c_str (), new_index);
 
     if (manager () && manager ()->transacting ()) {
@@ -2513,7 +1793,7 @@ Layout::get_pcell_variant (pcell_id_type pcell_id, const std::vector<tl::Variant
     m_cells.push_back_ptr (variant);
     m_cell_ptrs [new_index] = variant;
 
-    //  enter its index and cell_name
+    //  enter it's index and cell_name
     register_cell_name (b.c_str (), new_index);
 
     if (manager () && manager ()->transacting ()) {
@@ -2570,29 +1850,14 @@ Layout::register_pcell (const std::string &name, pcell_declaration_type *declara
     //  replace any existing PCell declaration with that name.
     id = pcid->second;
     if (m_pcells [id]) {
-
-      std::unique_ptr<pcell_header_type> org_header (m_pcells [id]);
-      std::vector<pcell_variant_type *> variants;
-      for (auto v = org_header->begin (); v != org_header->end (); ++v) {
-        variants.push_back (v->second);
-      }
-      for (auto v = variants.begin (); v != variants.end (); ++v) {
-        (*v)->unregister ();
-      }
-
-      m_pcells [id] = new pcell_header_type (id, name, declaration);
-
-      for (auto v = variants.begin (); v != variants.end (); ++v) {
-        (*v)->reregister ();
-      }
-
-    } else {
-      m_pcells [id] = new pcell_header_type (id, name, declaration);
+      delete m_pcells [id];
     }
+
+    m_pcells [id] = new pcell_header_type (id, name, declaration);
 
   } else {
 
-    id = (unsigned int) m_pcells.size ();
+    id = m_pcells.size ();
     m_pcells.push_back (new pcell_header_type (id, name, declaration));
     m_pcell_ids.insert (std::make_pair (std::string (name), id));
 
@@ -2600,7 +1865,6 @@ Layout::register_pcell (const std::string &name, pcell_declaration_type *declara
 
   declaration->m_id = id;
   declaration->m_name = name;
-  declaration->mp_layout = this;
 
   //  marks this object being held by the layout
   declaration->keep ();
@@ -2621,7 +1885,7 @@ Layout::convert_cell_to_static (db::cell_index_type ci)
   tl_assert (is_valid_cell_index (ci));
   db::cell_index_type ret_ci = ci;
 
-  if (m_cell_ptrs [ci] && m_cell_ptrs [ci]->is_proxy ()) {
+  if (dynamic_cast<const LibraryProxy *> (m_cell_ptrs [ci]) || dynamic_cast<const PCellVariant *> (m_cell_ptrs [ci])) {
 
     invalidate_hier ();
 
@@ -2634,8 +1898,8 @@ Layout::convert_cell_to_static (db::cell_index_type ci)
     new_cell.set_cell_index (ret_ci);
 
     //  remove guiding shapes.
-    if (m_layers.guiding_shape_layer_maybe () >= 0) {
-      new_cell.shapes (m_layers.guiding_shape_layer_maybe ()).clear ();
+    if (m_guiding_shape_layer >= 0) {
+      new_cell.shapes (m_guiding_shape_layer).clear ();
     }
 
   }
@@ -2723,7 +1987,8 @@ Layout::get_pcell_parameter (cell_index_type cell_index, const std::string &name
   if (pcell_variant) {
     return pcell_variant->parameter_by_name (name);
   } else {
-    return tl::Variant ();
+    static std::map<std::string, tl::Variant> empty;
+    return empty;
   }
 }
 
@@ -2743,7 +2008,8 @@ Layout::get_named_pcell_parameters (cell_index_type cell_index) const
   if (pcell_variant) {
     return pcell_variant->parameters_by_name ();
   } else {
-    return std::map<std::string, tl::Variant> ();
+    static std::map<std::string, tl::Variant> empty;
+    return empty;
   }
 }
 
@@ -2796,118 +2062,10 @@ Layout::get_pcell_variant_cell (cell_index_type cell_index, const std::vector<tl
 
 }
 
-bool
-Layout::has_context_info () const
+bool 
+Layout::get_context_info (cell_index_type cell_index, std::vector <std::string> &context_info) const
 {
-  for (auto i = m_meta_info.begin (); i != m_meta_info.end (); ++i) {
-    if (i->second.persisted) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-bool
-Layout::has_context_info (cell_index_type cell_index) const
-{
-  auto c = m_meta_info_by_cell.find (cell_index);
-  if (c != m_meta_info_by_cell.end ()) {
-    for (auto i = c->second.begin (); i != c->second.end (); ++i) {
-      if (i->second.persisted) {
-        return true;
-      }
-    }
-  }
-
-  const db::Cell &cref = cell (cell_index);
-  if (cref.is_proxy () && ! cref.is_top ()) {
-    return true;
-  } else {
-    return false;
-  }
-}
-
-bool
-Layout::get_context_info (std::vector <std::string> &strings) const
-{
-  LayoutOrCellContextInfo info;
-  if (! get_context_info (info)) {
-    return false;
-  } else {
-    info.serialize (strings);
-    return true;
-  }
-}
-
-bool
-Layout::get_context_info (LayoutOrCellContextInfo &info) const
-{
-  for (auto i = m_meta_info.begin (); i != m_meta_info.end (); ++i) {
-    if (i->second.persisted) {
-      std::pair<tl::Variant, std::string> &mi = info.meta_info [m_meta_info_names [i->first] ];
-      mi.first = i->second.value;
-      mi.second = i->second.description;
-    }
-  }
-
-  return true;
-}
-
-void
-Layout::fill_meta_info_from_context (std::vector <std::string>::const_iterator from, std::vector <std::string>::const_iterator to)
-{
-  fill_meta_info_from_context (LayoutOrCellContextInfo::deserialize (from, to));
-}
-
-void
-Layout::fill_meta_info_from_context (const LayoutOrCellContextInfo &context_info)
-{
-  if (! context_info.meta_info.empty ()) {
-    for (auto i = context_info.meta_info.begin (); i != context_info.meta_info.end (); ++i) {
-      meta_info_name_id_type name_id = meta_info_name_id (i->first);
-      m_meta_info [name_id] = MetaInfo (i->second.second, i->second.first, true);
-    }
-  }
-}
-
-bool
-Layout::get_context_info (cell_index_type cell_index, std::vector <std::string> &strings) const
-{
-  LayoutOrCellContextInfo info;
-  if (! get_context_info (cell_index, info)) {
-    return false;
-  } else {
-    info.serialize (strings);
-    return true;
-  }
-}
-
-bool
-Layout::get_context_info (cell_index_type cell_index, LayoutOrCellContextInfo &info) const
-{
-  bool any_meta = false;
-
-  auto cmi = m_meta_info_by_cell.find (cell_index);
-  if (cmi != m_meta_info_by_cell.end ()) {
-    for (auto i = cmi->second.begin (); i != cmi->second.end (); ++i) {
-      if (i->second.persisted) {
-        std::pair<tl::Variant, std::string> &mi = info.meta_info [m_meta_info_names [i->first] ];
-        mi.first = i->second.value;
-        mi.second = i->second.description;
-        any_meta = true;
-      }
-    }
-  }
-
   const db::Cell *cptr = &cell (cell_index);
-
-  const db::ColdProxy *cold_proxy = dynamic_cast <const db::ColdProxy *> (cptr);
-  if (cold_proxy) {
-    info = cold_proxy->context_info ();
-    return true;
-  }
-
   const db::Layout *ly = this;
 
   const db::LibraryProxy *lib_proxy;
@@ -2915,16 +2073,13 @@ Layout::get_context_info (cell_index_type cell_index, LayoutOrCellContextInfo &i
 
     const db::Library *lib = db::LibraryManager::instance ().lib (lib_proxy->lib_id ());
     if (! lib) {
-      return any_meta; //  abort
+      return false; //  abort
     } else {
 
       //  one level of library indirection
       ly = &lib->layout ();
-      if (! ly->is_valid_cell_index (lib_proxy->library_cell_index ())) {
-        return any_meta; //  abort
-      }
       cptr = &ly->cell (lib_proxy->library_cell_index ());
-      info.lib_name = lib->get_name ();
+      context_info.push_back ("LIB=" + lib->get_name ());
 
     }
 
@@ -2934,69 +2089,21 @@ Layout::get_context_info (cell_index_type cell_index, LayoutOrCellContextInfo &i
   if (pcell_variant) {
     
     const db::PCellDeclaration *pcell_decl = ly->pcell_declaration (pcell_variant->pcell_id ());
-    if (pcell_decl) {
-      const std::vector<db::PCellParameterDeclaration> &pcp = pcell_decl->parameter_declarations ();
-      std::vector<db::PCellParameterDeclaration>::const_iterator pd = pcp.begin ();
-      for (std::vector<tl::Variant>::const_iterator p = pcell_variant->parameters ().begin (); p != pcell_variant->parameters ().end () && pd != pcp.end (); ++p, ++pd) {
-        info.pcell_parameters.insert (std::make_pair (pd->get_name (), *p));
-      }
+
+    const std::vector<db::PCellParameterDeclaration> &pcp = pcell_decl->parameter_declarations ();
+    std::vector<db::PCellParameterDeclaration>::const_iterator pd = pcp.begin ();
+    for (std::vector<tl::Variant>::const_iterator p = pcell_variant->parameters ().begin (); p != pcell_variant->parameters ().end () && pd != pcp.end (); ++p, ++pd) {
+      context_info.push_back ("P(" + tl::to_word_or_quoted_string (pd->get_name ()) + ")=" + p->to_parsable_string ());
     }
 
     const db::PCellHeader *header = ly->pcell_header (pcell_variant->pcell_id ());
-    if (header) {
-      info.pcell_name = header->get_name ();
-    }
+    context_info.push_back ("PCELL=" + header->get_name ());
 
-  } else if (ly != this) {
-    info.cell_name = ly->cell_name (cptr->cell_index ());
+  } else {
+    context_info.push_back ("CELL=" + std::string (ly->cell_name (cptr->cell_index ())));
   }
 
   return true;
-}
-
-void
-Layout::fill_meta_info_from_context (cell_index_type cell_index, std::vector <std::string>::const_iterator from, std::vector <std::string>::const_iterator to)
-{
-  fill_meta_info_from_context (cell_index, LayoutOrCellContextInfo::deserialize (from, to));
-}
-
-void
-Layout::fill_meta_info_from_context (cell_index_type cell_index, const LayoutOrCellContextInfo &context_info)
-{
-  if (! context_info.meta_info.empty ()) {
-
-    meta_info_map &mi = m_meta_info_by_cell [cell_index];
-
-    for (auto i = context_info.meta_info.begin (); i != context_info.meta_info.end (); ++i) {
-      meta_info_name_id_type name_id = meta_info_name_id (i->first);
-      mi [name_id] = MetaInfo (i->second.second, i->second.first, true);
-    }
-
-  }
-}
-
-void
-Layout::restore_proxies (ImportLayerMapping *layer_mapping)
-{
-  std::vector<db::ColdProxy *> cold_proxies;
-
-  for (iterator c = begin (); c != end (); ++c) {
-    db::ColdProxy *proxy = dynamic_cast<db::ColdProxy *> (c.operator-> ());
-    if (proxy) {
-      cold_proxies.push_back (proxy);
-    }
-  }
-
-  bool needs_cleanup = false;
-  for (std::vector<db::ColdProxy *>::const_iterator p = cold_proxies.begin (); p != cold_proxies.end (); ++p) {
-    if (recover_proxy_as ((*p)->cell_index (), (*p)->context_info (), layer_mapping)) {
-      needs_cleanup = true;
-    }
-  }
-
-  if (needs_cleanup) {
-    cleanup ();
-  }
 }
 
 bool
@@ -3006,21 +2113,17 @@ Layout::recover_proxy_as (cell_index_type cell_index, std::vector <std::string>:
     return false;
   }
 
-  return recover_proxy_as (cell_index, LayoutOrCellContextInfo::deserialize (from, to), layer_mapping);
-}
+  tl::Extractor ex (from->c_str ());
 
-bool
-Layout::recover_proxy_as (cell_index_type cell_index, const LayoutOrCellContextInfo &info, ImportLayerMapping *layer_mapping)
-{
-  if (! info.lib_name.empty ()) {
+  if (ex.test ("LIB=")) {
 
-    db::Cell *lib_cell = 0;
-
-    Library *lib = db::LibraryManager::instance ().lib_ptr_by_name (info.lib_name, m_tech_name);
-    if (lib) {
-      lib_cell = lib->layout ().recover_proxy_no_lib (info);
+    std::string lib_name = ex.skip ();
+    Library *lib = db::LibraryManager::instance ().lib_ptr_by_name (lib_name);
+    if (! lib) {
+      return false;
     }
 
+    db::Cell *lib_cell = lib->layout ().recover_proxy (from + 1, to);
     if (lib_cell) {
       get_lib_proxy_as (lib, lib_cell->cell_index (), cell_index, layer_mapping);
       return true;
@@ -3028,26 +2131,36 @@ Layout::recover_proxy_as (cell_index_type cell_index, const LayoutOrCellContextI
 
   } else {
 
-    if (! info.pcell_name.empty ()) {
+    std::map<std::string, tl::Variant> parameters;
 
-      std::pair<bool, pcell_id_type> pc = pcell_by_name (info.pcell_name.c_str ());
+    while (from != to && (ex = tl::Extractor (from->c_str ())).test ("P(")) {
+
+      std::string name;
+      ex.read_word_or_quoted (name);
+      ex.test (")");
+      ex.test ("=");
+
+      ex.read (parameters.insert (std::make_pair (name, tl::Variant ())).first->second);
+
+      ++from;
+
+    }
+
+    if (ex.test ("PCELL=")) {
+
+      std::pair<bool, pcell_id_type> pc = pcell_by_name (ex.skip ());
       if (pc.first) {
-        get_pcell_variant_as (pc.second, pcell_declaration (pc.second)->map_parameters (info.pcell_parameters), cell_index, layer_mapping);
+        get_pcell_variant_as (pc.second, pcell_declaration (pc.second)->map_parameters (parameters), cell_index, layer_mapping);
         return true;
       }
 
-    } else if (! info.cell_name.empty ()) {
+    } else if (ex.test ("CELL=")) {
 
-      //  This should not happen. A cell (given by the cell name) cannot be proxy to another cell in the same layout.
+      //  This should not happen. A cell (given by the cell index) cannot be proxy to another cell in the same layout.
       tl_assert (false);
 
     } 
 
-  }
-
-  if (! dynamic_cast<db::ColdProxy *> (m_cell_ptrs [cell_index])) {
-    //  create a cold proxy representing the context information so we can restore it
-    create_cold_proxy_as (info, cell_index);
   }
 
   return false;
@@ -3060,54 +2173,55 @@ Layout::recover_proxy (std::vector <std::string>::const_iterator from, std::vect
     return 0;
   }
 
-  return recover_proxy (LayoutOrCellContextInfo::deserialize (from, to));
-}
+  tl::Extractor ex (from->c_str ());
 
-db::Cell *
-Layout::recover_proxy (const LayoutOrCellContextInfo &info)
-{
-  if (! info.lib_name.empty ()) {
+  if (ex.test ("LIB=")) {
 
-    Library *lib = db::LibraryManager::instance ().lib_ptr_by_name (info.lib_name, m_tech_name);
-
-    db::Cell *lib_cell = 0;
-    if (lib) {
-      lib_cell = lib->layout ().recover_proxy_no_lib (info);
+    std::string lib_name = ex.skip ();
+    Library *lib = db::LibraryManager::instance ().lib_ptr_by_name (lib_name);
+    if (! lib) {
+      return 0;
     }
 
+    db::Cell *lib_cell = lib->layout ().recover_proxy (from + 1, to);
     if (lib_cell) {
-      return m_cell_ptrs [get_lib_proxy (lib, lib_cell->cell_index ())];
+      cell_index_type cell_index = get_lib_proxy (lib, lib_cell->cell_index ());
+      return &cell (cell_index);
     }
 
   } else {
 
-    db::Cell *proxy = recover_proxy_no_lib (info);
-    if (proxy) {
-      return proxy;
+    std::map<std::string, tl::Variant> parameters;
+
+    while (from != to && (ex = tl::Extractor (from->c_str ())).test ("P(")) {
+
+      std::string name;
+      ex.read_word_or_quoted (name);
+      ex.test (")");
+      ex.test ("=");
+
+      ex.read (parameters.insert (std::make_pair (name, tl::Variant ())).first->second);
+
+      ++from;
+
     }
 
-  }
+    if (ex.test ("PCELL=")) {
 
-  return m_cell_ptrs [create_cold_proxy (info)];
-}
+      std::pair<bool, pcell_id_type> pc = pcell_by_name (ex.skip ());
+      if (pc.first) {
+        cell_index_type cell_index = get_pcell_variant (pc.second, pcell_declaration (pc.second)->map_parameters (parameters));
+        return &cell (cell_index);
+      }
 
-db::Cell *
-Layout::recover_proxy_no_lib (const LayoutOrCellContextInfo &info)
-{
-  if (! info.pcell_name.empty ()) {
+    } else if (ex.test ("CELL=")) {
 
-    std::pair<bool, pcell_id_type> pc = pcell_by_name (info.pcell_name.c_str ());
-    if (pc.first) {
-      cell_index_type cell_index = get_pcell_variant (pc.second, pcell_declaration (pc.second)->map_parameters (info.pcell_parameters));
-      return m_cell_ptrs [cell_index];
-    }
+      std::pair<bool, cell_index_type> cc = cell_by_name (ex.skip ());
+      if (cc.first) {
+        return &cell (cc.second);
+      }
 
-  } else if (! info.cell_name.empty ()) {
-
-    std::pair<bool, cell_index_type> cc = cell_by_name (info.cell_name.c_str ());
-    if (cc.first) {
-      return m_cell_ptrs [cc.second];
-    }
+    } 
 
   }
 
@@ -3139,17 +2253,21 @@ Layout::unregister_lib_proxy (db::LibraryProxy *lib_proxy)
 }
 
 void
-Layout::get_lib_proxy_as (Library *lib, cell_index_type cell_index, cell_index_type target_cell_index, ImportLayerMapping *layer_mapping, bool retain_layout)
+Layout::get_lib_proxy_as (Library *lib, cell_index_type cell_index, cell_index_type target_cell_index, ImportLayerMapping *layer_mapping)
 {
+  tl_assert (! (manager () && manager ()->transacting ()));
   tl_assert (m_cell_ptrs [target_cell_index] != 0);
  
-  LibraryProxy *proxy = new LibraryProxy (target_cell_index, *this, lib->get_id (), cell_index);
-  replace_cell (target_cell_index, proxy, retain_layout);
+  invalidate_hier ();
 
-  if (! retain_layout) {
-    //  produce the layout unless we retained it
-    proxy->update (layer_mapping);
-  }
+  m_cells.erase (iterator (m_cell_ptrs [target_cell_index]));
+
+  LibraryProxy *proxy = new LibraryProxy (target_cell_index, *this, lib->get_id (), cell_index);
+  m_cells.push_back_ptr (proxy);
+  m_cell_ptrs [target_cell_index] = proxy;
+
+  // produce the layout
+  proxy->update (layer_mapping);
 }
 
 cell_index_type
@@ -3173,59 +2291,19 @@ Layout::get_lib_proxy (Library *lib, cell_index_type cell_index)
     m_cells.push_back_ptr (proxy);
     m_cell_ptrs [new_index] = proxy;
 
-    //  enter its index and cell_name
+    //  enter it's index and cell_name
     register_cell_name (b.c_str (), new_index);
 
     if (manager () && manager ()->transacting ()) {
       manager ()->queue (this, new NewRemoveCellOp (new_index, m_cell_names [new_index], false /*new*/, 0));
     }
 
-    //  produce the layout
+    // produce the layout
     proxy->update ();
 
     return new_index;
 
   }
-}
-
-cell_index_type
-Layout::create_cold_proxy (const db::LayoutOrCellContextInfo &info)
-{
-  //  create a new unique name
-  std::string b;
-  if (! info.cell_name.empty ()) {
-    b = info.cell_name;
-  } else if (! info.pcell_name.empty ()) {
-    b = info.pcell_name;
-  }
-  if (m_cell_map.find (b.c_str ()) != m_cell_map.end ()) {
-    b = uniquify_cell_name (b.c_str ());
-  }
-
-  //  create a new cell (a LibraryProxy)
-  cell_index_type new_index = allocate_new_cell ();
-
-  ColdProxy *proxy = new ColdProxy (new_index, *this, info);
-  m_cells.push_back_ptr (proxy);
-  m_cell_ptrs [new_index] = proxy;
-
-  //  enter its index and cell_name
-  register_cell_name (b.c_str (), new_index);
-
-  if (manager () && manager ()->transacting ()) {
-    manager ()->queue (this, new NewRemoveCellOp (new_index, m_cell_names [new_index], false /*new*/, 0));
-  }
-
-  return new_index;
-}
-
-void
-Layout::create_cold_proxy_as (const db::LayoutOrCellContextInfo &info, cell_index_type target_cell_index)
-{
-  tl_assert (m_cell_ptrs [target_cell_index] != 0);
-
-  ColdProxy *proxy = new ColdProxy (target_cell_index, *this, info);
-  replace_cell (target_cell_index, proxy, true);
 }
 
 void

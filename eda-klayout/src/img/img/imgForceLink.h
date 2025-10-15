@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -10,7 +10,7 @@
   (at your option) any later version.
 
   This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warrimgy of
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU General Public License for more details.
 
@@ -33,7 +33,7 @@
 namespace img
 {
   IMG_PUBLIC int _force_link_f ();
-  static int _force_link_target = _force_link_f ();
+  int _force_link_target = _force_link_f ();
 }
 
 #endif

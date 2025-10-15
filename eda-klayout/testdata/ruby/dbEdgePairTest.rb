@@ -1,7 +1,7 @@
 # encoding: UTF-8
 
 # KLayout Layout Viewer
-# Copyright (C) 2006-2025 Matthias Koefferlein
+# Copyright (C) 2006-2019 Matthias Koefferlein
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,8 +31,6 @@ class DBEdgePair_TestClass < TestBase
     ep = RBA::EdgePair::new
     assert_equal(ep.to_s, "(0,0;0,0)/(0,0;0,0)")
 
-    assert_equal(ep.to_s, "(0,0;0,0)/(0,0;0,0)")
-
     ep.first = RBA::Edge::new(0, 0, 10, 20)
     assert_equal(ep.to_s, "(0,0;10,20)/(0,0;0,0)")
 
@@ -58,23 +56,6 @@ class DBEdgePair_TestClass < TestBase
     assert_equal(ep.polygon(0).class.to_s, "RBA::Polygon")
     assert_equal(ep.simple_polygon(0).to_s, "(-10,0;-10,30;0,0;10,20)")
     assert_equal(ep.simple_polygon(0).class.to_s, "RBA::SimplePolygon")
-
-    ep = RBA::EdgePair::new(RBA::Edge::new(0, 0, 10, 0), RBA::Edge::new(0, 20, 0, 0))
-  
-    assert_equal(ep.distance, 0)
-    assert_equal(ep.perimeter, 30)
-    assert_equal(ep.area, 100)
-    assert_equal(ep.simple_polygon(0).area, 100)
-
-    ep = RBA::EdgePair::new(RBA::Edge::new(0, 0, 10, 0), RBA::Edge::new(0, 0, 0, 20))
-  
-    assert_equal(ep.perimeter, 30)
-    assert_equal(ep.area, 0)
-    assert_equal(ep.simple_polygon(0).area, 0)
-
-    ep = RBA::EdgePair::new(RBA::Edge::new(0, 0, 10, 0), RBA::Edge::new(-10, 10, 20, 10))
-  
-    assert_equal(ep.distance, 10)
 
   end
 
@@ -110,23 +91,6 @@ class DBEdgePair_TestClass < TestBase
     assert_equal(ep.polygon(0).class.to_s, "RBA::DPolygon")
     assert_equal(ep.simple_polygon(0).to_s, "(-10,0;-10,30;0,0;10,20)")
     assert_equal(ep.simple_polygon(0).class.to_s, "RBA::DSimplePolygon")
-
-    ep = RBA::DEdgePair::new(RBA::DEdge::new(0, 0, 10, 0), RBA::DEdge::new(0, 20, 0, 0))
-  
-    assert_equal(ep.distance, 0)
-    assert_equal(ep.perimeter, 30)
-    assert_equal(ep.area, 100)
-    assert_equal(ep.simple_polygon(0).area, 100)
-
-    ep = RBA::DEdgePair::new(RBA::DEdge::new(0, 0, 10, 0), RBA::DEdge::new(0, 0, 0, 20))
-  
-    assert_equal(ep.perimeter, 30)
-    assert_equal(ep.area, 0)
-    assert_equal(ep.simple_polygon(0).area, 0)
-
-    ep = RBA::DEdgePair::new(RBA::DEdge::new(0, 0, 10, 0), RBA::DEdge::new(-10, 10, 20, 10))
-  
-    assert_equal(ep.distance, 10)
 
   end
 
@@ -196,93 +160,6 @@ class DBEdgePair_TestClass < TestBase
     assert_equal(h[b2b], "a")
     assert_equal(h[b3a], "b")
     assert_equal(h[b3b], "c")
-
-  end
-
-  # Symmetric edge pairs
-  def test_5
-
-    b1 = RBA::DEdgePair::new(RBA::DEdge::new(1, 2, 3, 4), RBA::DEdge::new(11, 12, 13, 14), false)
-    b1x = RBA::DEdgePair::new(RBA::DEdge::new(11, 12, 13, 14), RBA::DEdge::new(1, 2, 3, 4), false)
-    b2a = RBA::DEdgePair::new(RBA::DEdge::new(1, 2, 3, 4), RBA::DEdge::new(11, 12, 13, 14), true)
-    b2b = RBA::DEdgePair::new(RBA::DEdge::new(11, 12, 13, 14), RBA::DEdge::new(1, 2, 3, 4), true)
-
-    assert_equal(b1.hash == b1x.hash, false)
-    assert_equal(b1.hash == b2a.hash, false)
-    assert_equal(b1.hash == b2b.hash, false)
-    assert_equal(b2a.hash == b2b.hash, true)
-
-    assert_equal(b1 < b1x, true)
-    assert_equal(b1 == b1x, false)
-    assert_equal(b1 < b2a, true)
-    assert_equal(b1 == b2a, false)
-    assert_equal(b1 < b2b, true)
-    assert_equal(b2a < b2b, false)
-    assert_equal(b2a == b2b, true)
-    assert_equal(b2b < b2a, false)
-
-    assert_equal(b1.to_s, "(1,2;3,4)/(11,12;13,14)")
-    assert_equal(b1x.to_s, "(11,12;13,14)/(1,2;3,4)")
-    assert_equal(b2a.to_s, "(1,2;3,4)|(11,12;13,14)")
-    assert_equal(b2b.to_s, "(1,2;3,4)|(11,12;13,14)")
-    
-    h = {}
-    h[b1] = 1
-    h[b1x] = 2
-    assert_equal(h.size, 2)
-    assert_equal(h.keys.collect(&:to_s).join(","), "(1,2;3,4)/(11,12;13,14),(11,12;13,14)/(1,2;3,4)")
-
-    h = {}
-    h[b1] = 1
-    h[b2a] = 2
-    assert_equal(h.size, 2)
-    assert_equal(h.keys.collect(&:to_s).join(","), "(1,2;3,4)/(11,12;13,14),(1,2;3,4)|(11,12;13,14)")
-
-    h = {}
-    h[b2a] = 1
-    h[b2b] = 2
-    assert_equal(h.size, 1)
-    assert_equal(h.keys.collect(&:to_s).join(","), "(1,2;3,4)|(11,12;13,14)")
-
-  end
-
-  def test_edgePairWithProperties
-
-    s = RBA::EdgePairWithProperties::new
-    assert_equal(s.to_s, "(0,0;0,0)/(0,0;0,0) props={}")
-
-    s = RBA::EdgePairWithProperties::new(RBA::EdgePair::new(RBA::Edge::new(0, 0, 100, 200), RBA::Edge::new(10, 10, 110, 210)), { 1 => "one" })
-    assert_equal(s.to_s, "(0,0;100,200)/(10,10;110,210) props={1=>one}")
-
-    pid = RBA::Layout::properties_id({ 1 => "one" })
-    s = RBA::EdgePairWithProperties::new(RBA::EdgePair::new(RBA::Edge::new(0, 0, 100, 200), RBA::Edge::new(10, 10, 110, 210)), pid)
-    assert_equal(s.to_s, "(0,0;100,200)/(10,10;110,210) props={1=>one}")
-    assert_equal((RBA::CplxTrans::new(0.001) * s).to_s, "(0,0;0.1,0.2)/(0.01,0.01;0.11,0.21) props={1=>one}")
-    assert_equal(s.property(1), "one")
-    assert_equal(s.properties, { 1 => "one" })
-    s.set_property(1, "xxx")
-    assert_equal(s.to_s, "(0,0;100,200)/(10,10;110,210) props={1=>xxx}")
-    s.delete_property(1)
-    assert_equal(s.to_s, "(0,0;100,200)/(10,10;110,210) props={}")
-    assert_equal(s.property(1), nil)
-
-    s = RBA::DEdgePairWithProperties::new
-    assert_equal(s.to_s, "(0,0;0,0)/(0,0;0,0) props={}")
-
-    s = RBA::DEdgePairWithProperties::new(RBA::DEdgePair::new(RBA::DEdge::new(0, 0, 100, 200), RBA::DEdge::new(10, 10, 110, 210)), { 1 => "one" })
-    assert_equal(s.to_s, "(0,0;100,200)/(10,10;110,210) props={1=>one}")
-
-    pid = RBA::Layout::properties_id({ 1 => "one" })
-    s = RBA::DEdgePairWithProperties::new(RBA::DEdgePair::new(RBA::DEdge::new(0, 0, 100, 200), RBA::DEdge::new(10, 10, 110, 210)), pid)
-    assert_equal(s.to_s, "(0,0;100,200)/(10,10;110,210) props={1=>one}")
-    assert_equal((RBA::VCplxTrans::new(2.5) * s).to_s, "(0,0;250,500)/(25,25;275,525) props={1=>one}")
-    assert_equal(s.property(1), "one")
-    assert_equal(s.properties, { 1 => "one" })
-    s.set_property(1, "xxx")
-    assert_equal(s.to_s, "(0,0;100,200)/(10,10;110,210) props={1=>xxx}")
-    s.delete_property(1)
-    assert_equal(s.to_s, "(0,0;100,200)/(10,10;110,210) props={}")
-    assert_equal(s.property(1), nil)
 
   end
 

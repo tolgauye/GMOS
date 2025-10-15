@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -33,7 +33,6 @@
 #include <list>
 #include <vector>
 #include <string>
-#include <set>
 
 namespace gsi
 {
@@ -64,12 +63,6 @@ public:
    *  @brief Destructor
    */
   ~PythonModule ();
-
-  /**
-   *  @brief Clean up the module
-   *  This method is called by the interpreter before Py_Finalize
-   */
-  void cleanup ();
 
   /**
    *  @brief Initializes the module
@@ -115,65 +108,13 @@ public:
    */
   PyObject *take_module ();
 
-  /**
-   *  @brief Gets the module name
-   */
-  const std::string &mod_name () const
-  {
-    return m_mod_name;
-  }
-
-  /**
-   *  @brief Adds the given documentation for the given class and method
-   */
-  void add_python_doc (const gsi::ClassBase &cls, const MethodTable *mt, int mid, const std::string &doc);
-
-  /**
-   *  @brief Adds the given documentation for the given class
-   */
-  void add_python_doc (const gsi::MethodBase *m, const std::string &doc);
-
-  /**
-   *  @brief Creates a method definition
-   */
-  PyMethodDef *make_method_def ();
-
-  /**
-   *  @brief Creates a property getter/setter pair
-   */
-  PyGetSetDef *make_getset_def ();
-
-  /**
-   *  @brief Creates a string with backup storage
-   */
-  char *make_string (const std::string &s);
-
-  /**
-   *  @brief Gets the next available class ID
-   */
-  size_t next_class_id () const
-  {
-    return m_classes.size ();
-  }
-
-  /**
-   *  @brief Register the class
-   */
-  void register_class (const gsi::ClassBase *cls)
-  {
-    m_classes.push_back (cls);
-    m_class_set.insert (cls);
-  }
-
-  /**
-   *  @brief Returns a value indicating whether the class is member of this module
-   */
-  bool is_class_of_module (const gsi::ClassBase *cls)
-  {
-    return m_class_set.find (cls) != m_class_set.end ();
-  }
-
 private:
+  void add_python_doc (const gsi::ClassBase &cls, const MethodTable *mt, int mid, const std::string &doc);
+  PyMethodDef *make_method_def ();
+  PyGetSetDef *make_getset_def ();
+  char *make_string (const std::string &s);
+  static void check (const char *mod_name);
+
   std::list<std::string> m_string_heap;
   std::vector<PyMethodDef *> m_methods_heap;
   std::vector<PyGetSetDef *> m_getseters_heap;
@@ -184,8 +125,6 @@ private:
 
   static std::map<const gsi::MethodBase *, std::string> m_python_doc;
   static std::vector<const gsi::ClassBase *> m_classes;
-  static std::map<PyTypeObject *, const gsi::ClassBase *> m_class_by_type;
-  std::set<const gsi::ClassBase *> m_class_set;
 };
 
 }

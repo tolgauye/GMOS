@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -43,21 +43,7 @@ inline QString tr (const char *s)
   return QObject::tr (s);
 }
 #else
-
-//  NOTE: with this definition in place, we can build plugins without Qt,
-//  by using "tr" and falling back here, even if Qt is enabled
-
-#define __KLAYOUT_TL_HAVE_TR_FALLBACK
-namespace tl
-{
-  std::string TL_PUBLIC tr_fallback (const char *s);
-}
-
-inline std::string tr (const char *s)
-{
-  return tl::tr_fallback (s);
-}
-
+std::string TL_PUBLIC tr (const char *s);
 #endif
 
 namespace tl

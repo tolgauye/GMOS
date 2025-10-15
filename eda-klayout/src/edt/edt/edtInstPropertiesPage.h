@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -20,7 +20,6 @@
 
 */
 
-#if defined(HAVE_QT)
 
 
 #ifndef HDR_edtInstPropertiesPage
@@ -47,11 +46,12 @@ public:
   InstPropertiesPage (edt::Service *service, db::Manager *manager, QWidget *parent);
   ~InstPropertiesPage ();
 
-  virtual size_t count () const;
-  virtual void select_entries (const std::vector<size_t> &entries);
-  virtual std::string description (size_t entry) const;
-  virtual std::string description () const;
-  virtual void confine_selection (const std::vector<size_t> &remaining_entries);
+  virtual void back ();
+  virtual void front ();
+  virtual bool at_begin () const;
+  virtual bool at_end () const;
+  virtual void operator-- ();
+  virtual void operator++ ();
   virtual void leave ();
 
 private:
@@ -59,18 +59,18 @@ private:
   void recompute_selection_ptrs (const std::vector<lay::ObjectInstPath> &new_sel);
 
 protected:
-  std::vector<EditableSelectionIterator::pointer> m_selection_ptrs;
-  std::vector<size_t> m_indexes;
+  std::vector<edt::Service::obj_iterator> m_selection_ptrs;
+  unsigned int m_index;
   edt::Service *mp_service;
   bool m_enable_cb_callback;
   db::properties_id_type m_prop_id;
   edt::PCellParametersPage *mp_pcell_parameters;
 
   virtual bool readonly ();
-  virtual void apply (bool commit);
-  virtual void apply_to_all (bool relative, bool commit);
+  virtual void apply (); 
+  virtual void apply_to_all ();
   virtual bool can_apply_to_all () const;
-  void do_apply (bool current_only, bool relative);
+  void do_apply (bool current_only);
   virtual ChangeApplicator *create_applicator (db::Cell &cell, const db::Instance &inst, double dbu);
 
 protected slots:
@@ -88,4 +88,3 @@ protected slots:
 
 #endif
 
-#endif

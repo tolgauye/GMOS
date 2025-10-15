@@ -25,7 +25,7 @@ win32 {
   msvc {
     QMAKE_POST_LINK += (if not exist $$shell_path($$DESTDIR_PYMOD) mkdir $$shell_path($$DESTDIR_PYMOD)) && $(COPY) $(DESTDIR_TARGET) $$shell_path($$DESTDIR_PYMOD/$${TARGET}$${PYTHONEXTSUFFIX})
   } else {
-    QMAKE_POST_LINK += $(MKDIR) $$DESTDIR_PYMOD && $(COPY) $(DESTDIR_TARGET) $$DESTDIR_PYMOD/$${TARGET}$${PYTHONEXTSUFFIX}
+    QMAKE_POST_LINK += $(MKDIR) $$shell_path($$DESTDIR_PYMOD) && $(COPY) $(DESTDIR_TARGET) $$shell_path($$DESTDIR_PYMOD/$${TARGET}$${PYTHONEXTSUFFIX})
   }
 
   # to avoid the major version being appended to the dll name - in this case -lxyz won't link it again
@@ -49,33 +49,6 @@ msvc {
 }
 INSTALLS = lib_target
 
-!equals(PYI, "") {
-
-  msvc {
-    QMAKE_POST_LINK += && $(COPY) $$shell_path($$PWD/distutils_src/klayout/$$PYI) $$shell_path($$DESTDIR_PYMOD)
-  } else {
-    QMAKE_POST_LINK += && $(MKDIR) $$DESTDIR_PYMOD && $(COPY) $$PWD/distutils_src/klayout/$$PYI $$DESTDIR_PYMOD
-  }
-
-  POST_TARGETDEPS += $$PWD/distutils_src/klayout/$$PYI
-
-  # INSTALLS needs to be inside a lib or app templates.
-  modpyi_target.path = $$PREFIX/pymod/klayout
-  # This would be nice:
-  #   init_target.files += $$DESTDIR_PYMOD/$$REALMODULE/*
-  # but some Qt versions need this explicitly:
-  msvc {
-    modpyi_target.extra = $(INSTALL_PROGRAM) $$shell_path($$DESTDIR_PYMOD/$$PYI) $$shell_path($(INSTALLROOT)$$PREFIX/pymod/klayout)
-  } else {
-    modpyi_target.extra = $(INSTALL_PROGRAM) $$DESTDIR_PYMOD/$$PYI $(INSTALLROOT)$$PREFIX/pymod/klayout
-  }
-
-  # Not yet. As long as .pyi files are not generated automatically,
-  # this does not make much sense:
-  # INSTALLS += modpyi_target
-
-}
-
 !equals(REALMODULE, "") {
 
   msvc {
@@ -83,8 +56,6 @@ INSTALLS = lib_target
   } else {
     QMAKE_POST_LINK += && $(MKDIR) $$DESTDIR_PYMOD/$$REALMODULE && $(COPY) $$PWD/distutils_src/klayout/$$REALMODULE/*.py $$DESTDIR_PYMOD/$$REALMODULE
   }
-
-  POST_TARGETDEPS += $$files($$PWD/distutils_src/klayout/$$REALMODULE/*.py, false)
 
   # INSTALLS needs to be inside a lib or app templates.
   modsrc_target.path = $$PREFIX/pymod/klayout/$$REALMODULE

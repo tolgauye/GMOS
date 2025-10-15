@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -38,6 +38,7 @@
 #include <QTimerEvent>
 #include "gsiQt.h"
 #include "gsiQtMultimediaCommon.h"
+#include "gsiDeclQtMultimediaTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -374,7 +375,7 @@ static void _init_f_tr_4013 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("s");
   decl->add_arg<const char * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("c", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("c", true, "__null");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("n", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -386,7 +387,7 @@ static void _call_f_tr_4013 (const qt_gsi::GenericStaticMethod * /*decl*/, gsi::
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (__null, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QVideoWindowControl::tr (arg1, arg2, arg3));
 }
@@ -399,7 +400,7 @@ static void _init_f_trUtf8_4013 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("s");
   decl->add_arg<const char * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("c", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("c", true, "__null");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("n", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -411,7 +412,7 @@ static void _call_f_trUtf8_4013 (const qt_gsi::GenericStaticMethod * /*decl*/, g
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (__null, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QVideoWindowControl::trUtf8 (arg1, arg2, arg3));
 }
@@ -447,7 +448,6 @@ static gsi::Methods methods_QVideoWindowControl () {
   methods += gsi::qt_signal<bool > ("fullScreenChanged(bool)", "fullScreenChanged", gsi::arg("fullScreen"), "@brief Signal declaration for QVideoWindowControl::fullScreenChanged(bool fullScreen)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<int > ("hueChanged(int)", "hueChanged", gsi::arg("hue"), "@brief Signal declaration for QVideoWindowControl::hueChanged(int hue)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal ("nativeSizeChanged()", "nativeSizeChanged", "@brief Signal declaration for QVideoWindowControl::nativeSizeChanged()\nYou can bind a procedure to this signal.");
-  methods += gsi::qt_signal<const QString & > ("objectNameChanged(const QString &)", "objectNameChanged", gsi::arg("objectName"), "@brief Signal declaration for QVideoWindowControl::objectNameChanged(const QString &objectName)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<int > ("saturationChanged(int)", "saturationChanged", gsi::arg("saturation"), "@brief Signal declaration for QVideoWindowControl::saturationChanged(int saturation)\nYou can bind a procedure to this signal.");
   methods += new qt_gsi::GenericStaticMethod ("tr", "@brief Static method QString QVideoWindowControl::tr(const char *s, const char *c, int n)\nThis method is static and can be called without an instance.", &_init_f_tr_4013, &_call_f_tr_4013);
   methods += new qt_gsi::GenericStaticMethod ("trUtf8", "@brief Static method QString QVideoWindowControl::trUtf8(const char *s, const char *c, int n)\nThis method is static and can be called without an instance.", &_init_f_trUtf8_4013, &_call_f_trUtf8_4013);
@@ -575,33 +575,33 @@ public:
     }
   }
 
-  //  [adaptor impl] bool QVideoWindowControl::event(QEvent *event)
-  bool cbs_event_1217_0(QEvent *_event)
+  //  [adaptor impl] bool QVideoWindowControl::event(QEvent *)
+  bool cbs_event_1217_0(QEvent *arg1)
   {
-    return QVideoWindowControl::event(_event);
+    return QVideoWindowControl::event(arg1);
   }
 
-  virtual bool event(QEvent *_event)
+  virtual bool event(QEvent *arg1)
   {
     if (cb_event_1217_0.can_issue()) {
-      return cb_event_1217_0.issue<QVideoWindowControl_Adaptor, bool, QEvent *>(&QVideoWindowControl_Adaptor::cbs_event_1217_0, _event);
+      return cb_event_1217_0.issue<QVideoWindowControl_Adaptor, bool, QEvent *>(&QVideoWindowControl_Adaptor::cbs_event_1217_0, arg1);
     } else {
-      return QVideoWindowControl::event(_event);
+      return QVideoWindowControl::event(arg1);
     }
   }
 
-  //  [adaptor impl] bool QVideoWindowControl::eventFilter(QObject *watched, QEvent *event)
-  bool cbs_eventFilter_2411_0(QObject *watched, QEvent *event)
+  //  [adaptor impl] bool QVideoWindowControl::eventFilter(QObject *, QEvent *)
+  bool cbs_eventFilter_2411_0(QObject *arg1, QEvent *arg2)
   {
-    return QVideoWindowControl::eventFilter(watched, event);
+    return QVideoWindowControl::eventFilter(arg1, arg2);
   }
 
-  virtual bool eventFilter(QObject *watched, QEvent *event)
+  virtual bool eventFilter(QObject *arg1, QEvent *arg2)
   {
     if (cb_eventFilter_2411_0.can_issue()) {
-      return cb_eventFilter_2411_0.issue<QVideoWindowControl_Adaptor, bool, QObject *, QEvent *>(&QVideoWindowControl_Adaptor::cbs_eventFilter_2411_0, watched, event);
+      return cb_eventFilter_2411_0.issue<QVideoWindowControl_Adaptor, bool, QObject *, QEvent *>(&QVideoWindowControl_Adaptor::cbs_eventFilter_2411_0, arg1, arg2);
     } else {
-      return QVideoWindowControl::eventFilter(watched, event);
+      return QVideoWindowControl::eventFilter(arg1, arg2);
     }
   }
 
@@ -666,13 +666,6 @@ public:
   void emitter_QVideoWindowControl_nativeSizeChanged_0()
   {
     emit QVideoWindowControl::nativeSizeChanged();
-  }
-
-  //  [emitter impl] void QVideoWindowControl::objectNameChanged(const QString &objectName)
-  void emitter_QVideoWindowControl_objectNameChanged_4567(const QString &objectName)
-  {
-    __SUPPRESS_UNUSED_WARNING (objectName);
-    throw tl::Exception ("Can't emit private signal 'void QVideoWindowControl::objectNameChanged(const QString &objectName)'");
   }
 
   //  [adaptor impl] void QVideoWindowControl::repaint()
@@ -854,33 +847,33 @@ public:
     }
   }
 
-  //  [adaptor impl] void QVideoWindowControl::childEvent(QChildEvent *event)
-  void cbs_childEvent_1701_0(QChildEvent *event)
+  //  [adaptor impl] void QVideoWindowControl::childEvent(QChildEvent *)
+  void cbs_childEvent_1701_0(QChildEvent *arg1)
   {
-    QVideoWindowControl::childEvent(event);
+    QVideoWindowControl::childEvent(arg1);
   }
 
-  virtual void childEvent(QChildEvent *event)
+  virtual void childEvent(QChildEvent *arg1)
   {
     if (cb_childEvent_1701_0.can_issue()) {
-      cb_childEvent_1701_0.issue<QVideoWindowControl_Adaptor, QChildEvent *>(&QVideoWindowControl_Adaptor::cbs_childEvent_1701_0, event);
+      cb_childEvent_1701_0.issue<QVideoWindowControl_Adaptor, QChildEvent *>(&QVideoWindowControl_Adaptor::cbs_childEvent_1701_0, arg1);
     } else {
-      QVideoWindowControl::childEvent(event);
+      QVideoWindowControl::childEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QVideoWindowControl::customEvent(QEvent *event)
-  void cbs_customEvent_1217_0(QEvent *event)
+  //  [adaptor impl] void QVideoWindowControl::customEvent(QEvent *)
+  void cbs_customEvent_1217_0(QEvent *arg1)
   {
-    QVideoWindowControl::customEvent(event);
+    QVideoWindowControl::customEvent(arg1);
   }
 
-  virtual void customEvent(QEvent *event)
+  virtual void customEvent(QEvent *arg1)
   {
     if (cb_customEvent_1217_0.can_issue()) {
-      cb_customEvent_1217_0.issue<QVideoWindowControl_Adaptor, QEvent *>(&QVideoWindowControl_Adaptor::cbs_customEvent_1217_0, event);
+      cb_customEvent_1217_0.issue<QVideoWindowControl_Adaptor, QEvent *>(&QVideoWindowControl_Adaptor::cbs_customEvent_1217_0, arg1);
     } else {
-      QVideoWindowControl::customEvent(event);
+      QVideoWindowControl::customEvent(arg1);
     }
   }
 
@@ -899,18 +892,18 @@ public:
     }
   }
 
-  //  [adaptor impl] void QVideoWindowControl::timerEvent(QTimerEvent *event)
-  void cbs_timerEvent_1730_0(QTimerEvent *event)
+  //  [adaptor impl] void QVideoWindowControl::timerEvent(QTimerEvent *)
+  void cbs_timerEvent_1730_0(QTimerEvent *arg1)
   {
-    QVideoWindowControl::timerEvent(event);
+    QVideoWindowControl::timerEvent(arg1);
   }
 
-  virtual void timerEvent(QTimerEvent *event)
+  virtual void timerEvent(QTimerEvent *arg1)
   {
     if (cb_timerEvent_1730_0.can_issue()) {
-      cb_timerEvent_1730_0.issue<QVideoWindowControl_Adaptor, QTimerEvent *>(&QVideoWindowControl_Adaptor::cbs_timerEvent_1730_0, event);
+      cb_timerEvent_1730_0.issue<QVideoWindowControl_Adaptor, QTimerEvent *>(&QVideoWindowControl_Adaptor::cbs_timerEvent_1730_0, arg1);
     } else {
-      QVideoWindowControl::timerEvent(event);
+      QVideoWindowControl::timerEvent(arg1);
     }
   }
 
@@ -1012,11 +1005,11 @@ static void _call_emitter_brightnessChanged_767 (const qt_gsi::GenericMethod * /
 }
 
 
-// void QVideoWindowControl::childEvent(QChildEvent *event)
+// void QVideoWindowControl::childEvent(QChildEvent *)
 
 static void _init_cbs_childEvent_1701_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QChildEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1073,11 +1066,11 @@ static void _call_emitter_contrastChanged_767 (const qt_gsi::GenericMethod * /*d
 }
 
 
-// void QVideoWindowControl::customEvent(QEvent *event)
+// void QVideoWindowControl::customEvent(QEvent *)
 
 static void _init_cbs_customEvent_1217_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1101,7 +1094,7 @@ static void _set_callback_cbs_customEvent_1217_0 (void *cls, const gsi::Callback
 
 static void _init_emitter_destroyed_1302 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("arg1", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("arg1", true, "0");
   decl->add_arg<QObject * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1110,7 +1103,7 @@ static void _call_emitter_destroyed_1302 (const qt_gsi::GenericMethod * /*decl*/
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (nullptr, heap);
+  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (0, heap);
   ((QVideoWindowControl_Adaptor *)cls)->emitter_QVideoWindowControl_destroyed_1302 (arg1);
 }
 
@@ -1158,11 +1151,11 @@ static void _set_callback_cbs_displayRect_c0_0 (void *cls, const gsi::Callback &
 }
 
 
-// bool QVideoWindowControl::event(QEvent *event)
+// bool QVideoWindowControl::event(QEvent *)
 
 static void _init_cbs_event_1217_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QEvent * > (argspec_0);
   decl->set_return<bool > ();
 }
@@ -1181,13 +1174,13 @@ static void _set_callback_cbs_event_1217_0 (void *cls, const gsi::Callback &cb)
 }
 
 
-// bool QVideoWindowControl::eventFilter(QObject *watched, QEvent *event)
+// bool QVideoWindowControl::eventFilter(QObject *, QEvent *)
 
 static void _init_cbs_eventFilter_2411_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("watched");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QObject * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("event");
+  static gsi::ArgSpecBase argspec_1 ("arg2");
   decl->add_arg<QEvent * > (argspec_1);
   decl->set_return<bool > ();
 }
@@ -1329,24 +1322,6 @@ static void _call_emitter_nativeSizeChanged_0 (const qt_gsi::GenericMethod * /*d
 {
   __SUPPRESS_UNUSED_WARNING(args);
   ((QVideoWindowControl_Adaptor *)cls)->emitter_QVideoWindowControl_nativeSizeChanged_0 ();
-}
-
-
-// emitter void QVideoWindowControl::objectNameChanged(const QString &objectName)
-
-static void _init_emitter_objectNameChanged_4567 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("objectName");
-  decl->add_arg<const QString & > (argspec_0);
-  decl->set_return<void > ();
-}
-
-static void _call_emitter_objectNameChanged_4567 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs & /*ret*/) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const QString &arg1 = gsi::arg_reader<const QString & >() (args, heap);
-  ((QVideoWindowControl_Adaptor *)cls)->emitter_QVideoWindowControl_objectNameChanged_4567 (arg1);
 }
 
 
@@ -1645,11 +1620,11 @@ static void _set_callback_cbs_setWinId_696_0 (void *cls, const gsi::Callback &cb
 }
 
 
-// void QVideoWindowControl::timerEvent(QTimerEvent *event)
+// void QVideoWindowControl::timerEvent(QTimerEvent *)
 
 static void _init_cbs_timerEvent_1730_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QTimerEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1696,66 +1671,65 @@ gsi::Class<QVideoWindowControl> &qtdecl_QVideoWindowControl ();
 static gsi::Methods methods_QVideoWindowControl_Adaptor () {
   gsi::Methods methods;
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QVideoWindowControl::QVideoWindowControl()\nThis method creates an object of class QVideoWindowControl.", &_init_ctor_QVideoWindowControl_Adaptor_0, &_call_ctor_QVideoWindowControl_Adaptor_0);
-  methods += new qt_gsi::GenericMethod ("aspectRatioMode", "@brief Virtual method Qt::AspectRatioMode QVideoWindowControl::aspectRatioMode()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_aspectRatioMode_c0_0, &_call_cbs_aspectRatioMode_c0_0);
-  methods += new qt_gsi::GenericMethod ("aspectRatioMode", "@hide", true, &_init_cbs_aspectRatioMode_c0_0, &_call_cbs_aspectRatioMode_c0_0, &_set_callback_cbs_aspectRatioMode_c0_0);
-  methods += new qt_gsi::GenericMethod ("brightness", "@brief Virtual method int QVideoWindowControl::brightness()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_brightness_c0_0, &_call_cbs_brightness_c0_0);
-  methods += new qt_gsi::GenericMethod ("brightness", "@hide", true, &_init_cbs_brightness_c0_0, &_call_cbs_brightness_c0_0, &_set_callback_cbs_brightness_c0_0);
+  methods += new qt_gsi::GenericMethod ("aspectRatioMode", "@hide", true, &_init_cbs_aspectRatioMode_c0_0, &_call_cbs_aspectRatioMode_c0_0);
+  methods += new qt_gsi::GenericMethod ("aspectRatioMode", "@brief Virtual method Qt::AspectRatioMode QVideoWindowControl::aspectRatioMode()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_aspectRatioMode_c0_0, &_call_cbs_aspectRatioMode_c0_0, &_set_callback_cbs_aspectRatioMode_c0_0);
+  methods += new qt_gsi::GenericMethod ("brightness", "@hide", true, &_init_cbs_brightness_c0_0, &_call_cbs_brightness_c0_0);
+  methods += new qt_gsi::GenericMethod ("brightness", "@brief Virtual method int QVideoWindowControl::brightness()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_brightness_c0_0, &_call_cbs_brightness_c0_0, &_set_callback_cbs_brightness_c0_0);
   methods += new qt_gsi::GenericMethod ("emit_brightnessChanged", "@brief Emitter for signal void QVideoWindowControl::brightnessChanged(int brightness)\nCall this method to emit this signal.", false, &_init_emitter_brightnessChanged_767, &_call_emitter_brightnessChanged_767);
-  methods += new qt_gsi::GenericMethod ("*childEvent", "@brief Virtual method void QVideoWindowControl::childEvent(QChildEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0);
-  methods += new qt_gsi::GenericMethod ("*childEvent", "@hide", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0, &_set_callback_cbs_childEvent_1701_0);
-  methods += new qt_gsi::GenericMethod ("contrast", "@brief Virtual method int QVideoWindowControl::contrast()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_contrast_c0_0, &_call_cbs_contrast_c0_0);
-  methods += new qt_gsi::GenericMethod ("contrast", "@hide", true, &_init_cbs_contrast_c0_0, &_call_cbs_contrast_c0_0, &_set_callback_cbs_contrast_c0_0);
+  methods += new qt_gsi::GenericMethod ("*childEvent", "@hide", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0);
+  methods += new qt_gsi::GenericMethod ("*childEvent", "@brief Virtual method void QVideoWindowControl::childEvent(QChildEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0, &_set_callback_cbs_childEvent_1701_0);
+  methods += new qt_gsi::GenericMethod ("contrast", "@hide", true, &_init_cbs_contrast_c0_0, &_call_cbs_contrast_c0_0);
+  methods += new qt_gsi::GenericMethod ("contrast", "@brief Virtual method int QVideoWindowControl::contrast()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_contrast_c0_0, &_call_cbs_contrast_c0_0, &_set_callback_cbs_contrast_c0_0);
   methods += new qt_gsi::GenericMethod ("emit_contrastChanged", "@brief Emitter for signal void QVideoWindowControl::contrastChanged(int contrast)\nCall this method to emit this signal.", false, &_init_emitter_contrastChanged_767, &_call_emitter_contrastChanged_767);
-  methods += new qt_gsi::GenericMethod ("*customEvent", "@brief Virtual method void QVideoWindowControl::customEvent(QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*customEvent", "@hide", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0, &_set_callback_cbs_customEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*customEvent", "@hide", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*customEvent", "@brief Virtual method void QVideoWindowControl::customEvent(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0, &_set_callback_cbs_customEvent_1217_0);
   methods += new qt_gsi::GenericMethod ("emit_destroyed", "@brief Emitter for signal void QVideoWindowControl::destroyed(QObject *)\nCall this method to emit this signal.", false, &_init_emitter_destroyed_1302, &_call_emitter_destroyed_1302);
-  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@brief Virtual method void QVideoWindowControl::disconnectNotify(const QMetaMethod &signal)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0);
-  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@hide", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0, &_set_callback_cbs_disconnectNotify_2394_0);
-  methods += new qt_gsi::GenericMethod ("displayRect", "@brief Virtual method QRect QVideoWindowControl::displayRect()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_displayRect_c0_0, &_call_cbs_displayRect_c0_0);
-  methods += new qt_gsi::GenericMethod ("displayRect", "@hide", true, &_init_cbs_displayRect_c0_0, &_call_cbs_displayRect_c0_0, &_set_callback_cbs_displayRect_c0_0);
-  methods += new qt_gsi::GenericMethod ("event", "@brief Virtual method bool QVideoWindowControl::event(QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0);
-  methods += new qt_gsi::GenericMethod ("event", "@hide", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0, &_set_callback_cbs_event_1217_0);
-  methods += new qt_gsi::GenericMethod ("eventFilter", "@brief Virtual method bool QVideoWindowControl::eventFilter(QObject *watched, QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0);
-  methods += new qt_gsi::GenericMethod ("eventFilter", "@hide", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0, &_set_callback_cbs_eventFilter_2411_0);
+  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@hide", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0);
+  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@brief Virtual method void QVideoWindowControl::disconnectNotify(const QMetaMethod &signal)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0, &_set_callback_cbs_disconnectNotify_2394_0);
+  methods += new qt_gsi::GenericMethod ("displayRect", "@hide", true, &_init_cbs_displayRect_c0_0, &_call_cbs_displayRect_c0_0);
+  methods += new qt_gsi::GenericMethod ("displayRect", "@brief Virtual method QRect QVideoWindowControl::displayRect()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_displayRect_c0_0, &_call_cbs_displayRect_c0_0, &_set_callback_cbs_displayRect_c0_0);
+  methods += new qt_gsi::GenericMethod ("event", "@hide", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0);
+  methods += new qt_gsi::GenericMethod ("event", "@brief Virtual method bool QVideoWindowControl::event(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0, &_set_callback_cbs_event_1217_0);
+  methods += new qt_gsi::GenericMethod ("eventFilter", "@hide", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0);
+  methods += new qt_gsi::GenericMethod ("eventFilter", "@brief Virtual method bool QVideoWindowControl::eventFilter(QObject *, QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0, &_set_callback_cbs_eventFilter_2411_0);
   methods += new qt_gsi::GenericMethod ("emit_fullScreenChanged", "@brief Emitter for signal void QVideoWindowControl::fullScreenChanged(bool fullScreen)\nCall this method to emit this signal.", false, &_init_emitter_fullScreenChanged_864, &_call_emitter_fullScreenChanged_864);
-  methods += new qt_gsi::GenericMethod ("hue", "@brief Virtual method int QVideoWindowControl::hue()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_hue_c0_0, &_call_cbs_hue_c0_0);
-  methods += new qt_gsi::GenericMethod ("hue", "@hide", true, &_init_cbs_hue_c0_0, &_call_cbs_hue_c0_0, &_set_callback_cbs_hue_c0_0);
+  methods += new qt_gsi::GenericMethod ("hue", "@hide", true, &_init_cbs_hue_c0_0, &_call_cbs_hue_c0_0);
+  methods += new qt_gsi::GenericMethod ("hue", "@brief Virtual method int QVideoWindowControl::hue()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_hue_c0_0, &_call_cbs_hue_c0_0, &_set_callback_cbs_hue_c0_0);
   methods += new qt_gsi::GenericMethod ("emit_hueChanged", "@brief Emitter for signal void QVideoWindowControl::hueChanged(int hue)\nCall this method to emit this signal.", false, &_init_emitter_hueChanged_767, &_call_emitter_hueChanged_767);
-  methods += new qt_gsi::GenericMethod ("isFullScreen", "@brief Virtual method bool QVideoWindowControl::isFullScreen()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_isFullScreen_c0_0, &_call_cbs_isFullScreen_c0_0);
-  methods += new qt_gsi::GenericMethod ("isFullScreen", "@hide", true, &_init_cbs_isFullScreen_c0_0, &_call_cbs_isFullScreen_c0_0, &_set_callback_cbs_isFullScreen_c0_0);
+  methods += new qt_gsi::GenericMethod ("isFullScreen", "@hide", true, &_init_cbs_isFullScreen_c0_0, &_call_cbs_isFullScreen_c0_0);
+  methods += new qt_gsi::GenericMethod ("isFullScreen", "@brief Virtual method bool QVideoWindowControl::isFullScreen()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_isFullScreen_c0_0, &_call_cbs_isFullScreen_c0_0, &_set_callback_cbs_isFullScreen_c0_0);
   methods += new qt_gsi::GenericMethod ("*isSignalConnected", "@brief Method bool QVideoWindowControl::isSignalConnected(const QMetaMethod &signal)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_isSignalConnected_c2394, &_call_fp_isSignalConnected_c2394);
-  methods += new qt_gsi::GenericMethod ("nativeSize", "@brief Virtual method QSize QVideoWindowControl::nativeSize()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_nativeSize_c0_0, &_call_cbs_nativeSize_c0_0);
-  methods += new qt_gsi::GenericMethod ("nativeSize", "@hide", true, &_init_cbs_nativeSize_c0_0, &_call_cbs_nativeSize_c0_0, &_set_callback_cbs_nativeSize_c0_0);
+  methods += new qt_gsi::GenericMethod ("nativeSize", "@hide", true, &_init_cbs_nativeSize_c0_0, &_call_cbs_nativeSize_c0_0);
+  methods += new qt_gsi::GenericMethod ("nativeSize", "@brief Virtual method QSize QVideoWindowControl::nativeSize()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_nativeSize_c0_0, &_call_cbs_nativeSize_c0_0, &_set_callback_cbs_nativeSize_c0_0);
   methods += new qt_gsi::GenericMethod ("emit_nativeSizeChanged", "@brief Emitter for signal void QVideoWindowControl::nativeSizeChanged()\nCall this method to emit this signal.", false, &_init_emitter_nativeSizeChanged_0, &_call_emitter_nativeSizeChanged_0);
-  methods += new qt_gsi::GenericMethod ("emit_objectNameChanged", "@brief Emitter for signal void QVideoWindowControl::objectNameChanged(const QString &objectName)\nCall this method to emit this signal.", false, &_init_emitter_objectNameChanged_4567, &_call_emitter_objectNameChanged_4567);
   methods += new qt_gsi::GenericMethod ("*receivers", "@brief Method int QVideoWindowControl::receivers(const char *signal)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_receivers_c1731, &_call_fp_receivers_c1731);
-  methods += new qt_gsi::GenericMethod ("repaint", "@brief Virtual method void QVideoWindowControl::repaint()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_repaint_0_0, &_call_cbs_repaint_0_0);
-  methods += new qt_gsi::GenericMethod ("repaint", "@hide", false, &_init_cbs_repaint_0_0, &_call_cbs_repaint_0_0, &_set_callback_cbs_repaint_0_0);
-  methods += new qt_gsi::GenericMethod ("saturation", "@brief Virtual method int QVideoWindowControl::saturation()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_saturation_c0_0, &_call_cbs_saturation_c0_0);
-  methods += new qt_gsi::GenericMethod ("saturation", "@hide", true, &_init_cbs_saturation_c0_0, &_call_cbs_saturation_c0_0, &_set_callback_cbs_saturation_c0_0);
+  methods += new qt_gsi::GenericMethod ("repaint", "@hide", false, &_init_cbs_repaint_0_0, &_call_cbs_repaint_0_0);
+  methods += new qt_gsi::GenericMethod ("repaint", "@brief Virtual method void QVideoWindowControl::repaint()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_repaint_0_0, &_call_cbs_repaint_0_0, &_set_callback_cbs_repaint_0_0);
+  methods += new qt_gsi::GenericMethod ("saturation", "@hide", true, &_init_cbs_saturation_c0_0, &_call_cbs_saturation_c0_0);
+  methods += new qt_gsi::GenericMethod ("saturation", "@brief Virtual method int QVideoWindowControl::saturation()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_saturation_c0_0, &_call_cbs_saturation_c0_0, &_set_callback_cbs_saturation_c0_0);
   methods += new qt_gsi::GenericMethod ("emit_saturationChanged", "@brief Emitter for signal void QVideoWindowControl::saturationChanged(int saturation)\nCall this method to emit this signal.", false, &_init_emitter_saturationChanged_767, &_call_emitter_saturationChanged_767);
   methods += new qt_gsi::GenericMethod ("*sender", "@brief Method QObject *QVideoWindowControl::sender()\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_sender_c0, &_call_fp_sender_c0);
   methods += new qt_gsi::GenericMethod ("*senderSignalIndex", "@brief Method int QVideoWindowControl::senderSignalIndex()\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_senderSignalIndex_c0, &_call_fp_senderSignalIndex_c0);
-  methods += new qt_gsi::GenericMethod ("setAspectRatioMode", "@brief Virtual method void QVideoWindowControl::setAspectRatioMode(Qt::AspectRatioMode mode)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setAspectRatioMode_2257_0, &_call_cbs_setAspectRatioMode_2257_0);
-  methods += new qt_gsi::GenericMethod ("setAspectRatioMode", "@hide", false, &_init_cbs_setAspectRatioMode_2257_0, &_call_cbs_setAspectRatioMode_2257_0, &_set_callback_cbs_setAspectRatioMode_2257_0);
-  methods += new qt_gsi::GenericMethod ("setBrightness", "@brief Virtual method void QVideoWindowControl::setBrightness(int brightness)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setBrightness_767_0, &_call_cbs_setBrightness_767_0);
-  methods += new qt_gsi::GenericMethod ("setBrightness", "@hide", false, &_init_cbs_setBrightness_767_0, &_call_cbs_setBrightness_767_0, &_set_callback_cbs_setBrightness_767_0);
-  methods += new qt_gsi::GenericMethod ("setContrast", "@brief Virtual method void QVideoWindowControl::setContrast(int contrast)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setContrast_767_0, &_call_cbs_setContrast_767_0);
-  methods += new qt_gsi::GenericMethod ("setContrast", "@hide", false, &_init_cbs_setContrast_767_0, &_call_cbs_setContrast_767_0, &_set_callback_cbs_setContrast_767_0);
-  methods += new qt_gsi::GenericMethod ("setDisplayRect", "@brief Virtual method void QVideoWindowControl::setDisplayRect(const QRect &rect)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setDisplayRect_1792_0, &_call_cbs_setDisplayRect_1792_0);
-  methods += new qt_gsi::GenericMethod ("setDisplayRect", "@hide", false, &_init_cbs_setDisplayRect_1792_0, &_call_cbs_setDisplayRect_1792_0, &_set_callback_cbs_setDisplayRect_1792_0);
-  methods += new qt_gsi::GenericMethod ("setFullScreen", "@brief Virtual method void QVideoWindowControl::setFullScreen(bool fullScreen)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setFullScreen_864_0, &_call_cbs_setFullScreen_864_0);
-  methods += new qt_gsi::GenericMethod ("setFullScreen", "@hide", false, &_init_cbs_setFullScreen_864_0, &_call_cbs_setFullScreen_864_0, &_set_callback_cbs_setFullScreen_864_0);
-  methods += new qt_gsi::GenericMethod ("setHue", "@brief Virtual method void QVideoWindowControl::setHue(int hue)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setHue_767_0, &_call_cbs_setHue_767_0);
-  methods += new qt_gsi::GenericMethod ("setHue", "@hide", false, &_init_cbs_setHue_767_0, &_call_cbs_setHue_767_0, &_set_callback_cbs_setHue_767_0);
-  methods += new qt_gsi::GenericMethod ("setSaturation", "@brief Virtual method void QVideoWindowControl::setSaturation(int saturation)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setSaturation_767_0, &_call_cbs_setSaturation_767_0);
-  methods += new qt_gsi::GenericMethod ("setSaturation", "@hide", false, &_init_cbs_setSaturation_767_0, &_call_cbs_setSaturation_767_0, &_set_callback_cbs_setSaturation_767_0);
-  methods += new qt_gsi::GenericMethod ("setWinId", "@brief Virtual method void QVideoWindowControl::setWinId(WId id)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setWinId_696_0, &_call_cbs_setWinId_696_0);
-  methods += new qt_gsi::GenericMethod ("setWinId", "@hide", false, &_init_cbs_setWinId_696_0, &_call_cbs_setWinId_696_0, &_set_callback_cbs_setWinId_696_0);
-  methods += new qt_gsi::GenericMethod ("*timerEvent", "@brief Virtual method void QVideoWindowControl::timerEvent(QTimerEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0);
-  methods += new qt_gsi::GenericMethod ("*timerEvent", "@hide", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0, &_set_callback_cbs_timerEvent_1730_0);
-  methods += new qt_gsi::GenericMethod ("winId", "@brief Virtual method WId QVideoWindowControl::winId()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_winId_c0_0, &_call_cbs_winId_c0_0);
-  methods += new qt_gsi::GenericMethod ("winId", "@hide", true, &_init_cbs_winId_c0_0, &_call_cbs_winId_c0_0, &_set_callback_cbs_winId_c0_0);
+  methods += new qt_gsi::GenericMethod ("setAspectRatioMode", "@hide", false, &_init_cbs_setAspectRatioMode_2257_0, &_call_cbs_setAspectRatioMode_2257_0);
+  methods += new qt_gsi::GenericMethod ("setAspectRatioMode", "@brief Virtual method void QVideoWindowControl::setAspectRatioMode(Qt::AspectRatioMode mode)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setAspectRatioMode_2257_0, &_call_cbs_setAspectRatioMode_2257_0, &_set_callback_cbs_setAspectRatioMode_2257_0);
+  methods += new qt_gsi::GenericMethod ("setBrightness", "@hide", false, &_init_cbs_setBrightness_767_0, &_call_cbs_setBrightness_767_0);
+  methods += new qt_gsi::GenericMethod ("setBrightness", "@brief Virtual method void QVideoWindowControl::setBrightness(int brightness)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setBrightness_767_0, &_call_cbs_setBrightness_767_0, &_set_callback_cbs_setBrightness_767_0);
+  methods += new qt_gsi::GenericMethod ("setContrast", "@hide", false, &_init_cbs_setContrast_767_0, &_call_cbs_setContrast_767_0);
+  methods += new qt_gsi::GenericMethod ("setContrast", "@brief Virtual method void QVideoWindowControl::setContrast(int contrast)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setContrast_767_0, &_call_cbs_setContrast_767_0, &_set_callback_cbs_setContrast_767_0);
+  methods += new qt_gsi::GenericMethod ("setDisplayRect", "@hide", false, &_init_cbs_setDisplayRect_1792_0, &_call_cbs_setDisplayRect_1792_0);
+  methods += new qt_gsi::GenericMethod ("setDisplayRect", "@brief Virtual method void QVideoWindowControl::setDisplayRect(const QRect &rect)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setDisplayRect_1792_0, &_call_cbs_setDisplayRect_1792_0, &_set_callback_cbs_setDisplayRect_1792_0);
+  methods += new qt_gsi::GenericMethod ("setFullScreen", "@hide", false, &_init_cbs_setFullScreen_864_0, &_call_cbs_setFullScreen_864_0);
+  methods += new qt_gsi::GenericMethod ("setFullScreen", "@brief Virtual method void QVideoWindowControl::setFullScreen(bool fullScreen)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setFullScreen_864_0, &_call_cbs_setFullScreen_864_0, &_set_callback_cbs_setFullScreen_864_0);
+  methods += new qt_gsi::GenericMethod ("setHue", "@hide", false, &_init_cbs_setHue_767_0, &_call_cbs_setHue_767_0);
+  methods += new qt_gsi::GenericMethod ("setHue", "@brief Virtual method void QVideoWindowControl::setHue(int hue)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setHue_767_0, &_call_cbs_setHue_767_0, &_set_callback_cbs_setHue_767_0);
+  methods += new qt_gsi::GenericMethod ("setSaturation", "@hide", false, &_init_cbs_setSaturation_767_0, &_call_cbs_setSaturation_767_0);
+  methods += new qt_gsi::GenericMethod ("setSaturation", "@brief Virtual method void QVideoWindowControl::setSaturation(int saturation)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setSaturation_767_0, &_call_cbs_setSaturation_767_0, &_set_callback_cbs_setSaturation_767_0);
+  methods += new qt_gsi::GenericMethod ("setWinId", "@hide", false, &_init_cbs_setWinId_696_0, &_call_cbs_setWinId_696_0);
+  methods += new qt_gsi::GenericMethod ("setWinId", "@brief Virtual method void QVideoWindowControl::setWinId(WId id)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setWinId_696_0, &_call_cbs_setWinId_696_0, &_set_callback_cbs_setWinId_696_0);
+  methods += new qt_gsi::GenericMethod ("*timerEvent", "@hide", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0);
+  methods += new qt_gsi::GenericMethod ("*timerEvent", "@brief Virtual method void QVideoWindowControl::timerEvent(QTimerEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0, &_set_callback_cbs_timerEvent_1730_0);
+  methods += new qt_gsi::GenericMethod ("winId", "@hide", true, &_init_cbs_winId_c0_0, &_call_cbs_winId_c0_0);
+  methods += new qt_gsi::GenericMethod ("winId", "@brief Virtual method WId QVideoWindowControl::winId()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_winId_c0_0, &_call_cbs_winId_c0_0, &_set_callback_cbs_winId_c0_0);
   return methods;
 }
 

@@ -14,7 +14,7 @@ HEADERS = \
   drcForceLink.h \
 
 RESOURCES = \
-  drcResources.qrc
+  drcResources.qrc 
 
 INCLUDEPATH += $$TL_INC $$DB_INC $$GSI_INC $$LYM_INC $$RDB_INC
 DEPENDPATH += $$TL_INC $$DB_INC $$GSI_INC $$LYM_INC $$RDB_INC

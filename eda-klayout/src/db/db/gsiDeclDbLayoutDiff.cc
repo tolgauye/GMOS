@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -90,11 +90,6 @@ public:
     dbu_differs_event (dbu_a, dbu_b);
   }
 
-  virtual void layout_meta_info_differs (const std::string &name, const tl::Variant &value_a, const tl::Variant &value_b)
-  {
-    layout_meta_info_differs_event (name, value_a, value_b);
-  }
-
   virtual void layer_in_a_only (const db::LayerProperties &la)
   {
     layer_in_a_only_event (la);
@@ -135,11 +130,6 @@ public:
     mp_cell_a = &mp_layout_a->cell (cia);
     mp_cell_b = &mp_layout_b->cell (cib);
     begin_cell_event (mp_cell_a, mp_cell_b);
-  }
-
-  virtual void cell_meta_info_differs (const std::string &name, const tl::Variant &value_a, const tl::Variant &value_b)
-  {
-    cell_meta_info_differs_event (name, value_a, value_b);
   }
 
   virtual void begin_inst_differences ()
@@ -183,7 +173,7 @@ public:
     begin_polygon_differences_event ();
   }
 
-  virtual void detailed_diff (const std::vector <std::pair <db::Polygon, db::properties_id_type> > &a, const std::vector <std::pair <db::Polygon, db::properties_id_type> > &b)
+  virtual void detailed_diff (const db::PropertiesRepository & /*pr*/, const std::vector <std::pair <db::Polygon, db::properties_id_type> > &a, const std::vector <std::pair <db::Polygon, db::properties_id_type> > &b)
   {
     for (std::vector <std::pair <db::Polygon, db::properties_id_type> >::const_iterator i = a.begin (); i != a.end (); ++i) {
       polygon_in_a_only_event (i->first, i->second);
@@ -203,7 +193,7 @@ public:
     begin_path_differences_event ();
   }
 
-  virtual void detailed_diff (const std::vector <std::pair <db::Path, db::properties_id_type> > &a, const std::vector <std::pair <db::Path, db::properties_id_type> > &b)
+  virtual void detailed_diff (const db::PropertiesRepository & /*pr*/, const std::vector <std::pair <db::Path, db::properties_id_type> > &a, const std::vector <std::pair <db::Path, db::properties_id_type> > &b)
   {
     for (std::vector <std::pair <db::Path, db::properties_id_type> >::const_iterator i = a.begin (); i != a.end (); ++i) {
       path_in_a_only_event (i->first, i->second);
@@ -223,7 +213,7 @@ public:
     begin_box_differences_event ();
   }
 
-  virtual void detailed_diff (const std::vector <std::pair <db::Box, db::properties_id_type> > &a, const std::vector <std::pair <db::Box, db::properties_id_type> > &b)
+  virtual void detailed_diff (const db::PropertiesRepository & /*pr*/, const std::vector <std::pair <db::Box, db::properties_id_type> > &a, const std::vector <std::pair <db::Box, db::properties_id_type> > &b)
   {
     for (std::vector <std::pair <db::Box, db::properties_id_type> >::const_iterator i = a.begin (); i != a.end (); ++i) {
       box_in_a_only_event (i->first, i->second);
@@ -243,7 +233,7 @@ public:
     begin_edge_differences_event ();
   }
 
-  virtual void detailed_diff (const std::vector <std::pair <db::Edge, db::properties_id_type> > &a, const std::vector <std::pair <db::Edge, db::properties_id_type> > &b)
+  virtual void detailed_diff (const db::PropertiesRepository & /*pr*/, const std::vector <std::pair <db::Edge, db::properties_id_type> > &a, const std::vector <std::pair <db::Edge, db::properties_id_type> > &b)
   {
     for (std::vector <std::pair <db::Edge, db::properties_id_type> >::const_iterator i = a.begin (); i != a.end (); ++i) {
       edge_in_a_only_event (i->first, i->second);
@@ -258,32 +248,12 @@ public:
     end_edge_differences_event ();
   }
 
-  virtual void begin_edge_pair_differences ()
-  {
-    begin_edge_pair_differences_event ();
-  }
-
-  virtual void detailed_diff (const std::vector <std::pair <db::EdgePair, db::properties_id_type> > &a, const std::vector <std::pair <db::EdgePair, db::properties_id_type> > &b)
-  {
-    for (std::vector <std::pair <db::EdgePair, db::properties_id_type> >::const_iterator i = a.begin (); i != a.end (); ++i) {
-      edge_pair_in_a_only_event (i->first, i->second);
-    }
-    for (std::vector <std::pair <db::EdgePair, db::properties_id_type> >::const_iterator i = b.begin (); i != b.end (); ++i) {
-      edge_pair_in_b_only_event (i->first, i->second);
-    }
-  }
-
-  virtual void end_edge_pair_differences ()
-  {
-    end_edge_pair_differences_event ();
-  }
-
   virtual void begin_text_differences ()
   {
     begin_text_differences_event ();
   }
 
-  virtual void detailed_diff (const std::vector <std::pair <db::Text, db::properties_id_type> > &a, const std::vector <std::pair <db::Text, db::properties_id_type> > &b)
+  virtual void detailed_diff (const db::PropertiesRepository & /*pr*/, const std::vector <std::pair <db::Text, db::properties_id_type> > &a, const std::vector <std::pair <db::Text, db::properties_id_type> > &b)
   {
     for (std::vector <std::pair <db::Text, db::properties_id_type> >::const_iterator i = a.begin (); i != a.end (); ++i) {
       text_in_a_only_event (i->first, i->second);
@@ -353,7 +323,6 @@ public:
   }
 
   tl::event<double /*dbu_a*/, double /*dbu_a*/> dbu_differs_event;
-  tl::event<const std::string & /*name*/, const tl::Variant & /*value_a*/, const tl::Variant & /*value_b*/> layout_meta_info_differs_event;
   tl::event<const db::LayerProperties & /*a*/> layer_in_a_only_event;
   tl::event<const db::LayerProperties & /*b*/> layer_in_b_only_event;
   tl::event<const db::LayerProperties & /*a*/, const db::LayerProperties & /*b*/> layer_name_differs_event;
@@ -362,7 +331,6 @@ public:
   tl::event<const db::Cell * /*c*/> cell_in_b_only_event;
   tl::event<const db::Box & /*ba*/, const db::Box & /*bb*/> bbox_differs_event;
   tl::event<const db::Cell * /*ca*/, const db::Cell * /*cb*/> begin_cell_event;
-  tl::event<const std::string & /*name*/, const tl::Variant & /*value_a*/, const tl::Variant & /*value_b*/> cell_meta_info_differs_event;
   tl::Event begin_inst_differences_event;
   tl::event<const db::CellInstArray & /*anotb*/, db::properties_id_type /*prop_id*/> instance_in_a_only_event;
   tl::event<const db::CellInstArray & /*bnota*/, db::properties_id_type /*prop_id*/> instance_in_b_only_event;
@@ -385,10 +353,6 @@ public:
   tl::event<const db::Edge & /*anotb*/, db::properties_id_type /*prop_id*/> edge_in_a_only_event;
   tl::event<const db::Edge & /*bnota*/, db::properties_id_type /*prop_id*/> edge_in_b_only_event;
   tl::Event end_edge_differences_event;
-  tl::Event begin_edge_pair_differences_event;
-  tl::event<const db::EdgePair & /*anotb*/, db::properties_id_type /*prop_id*/> edge_pair_in_a_only_event;
-  tl::event<const db::EdgePair & /*bnota*/, db::properties_id_type /*prop_id*/> edge_pair_in_b_only_event;
-  tl::Event end_edge_pair_differences_event;
   tl::Event begin_text_differences_event;
   tl::event<const db::Text & /*anotb*/, db::properties_id_type /*prop_id*/> text_in_a_only_event;
   tl::event<const db::Text & /*bnota*/, db::properties_id_type /*prop_id*/> text_in_b_only_event;
@@ -405,12 +369,26 @@ private:
   int m_layer_index_b;
 };
 
-static unsigned int f_silent () {
-  return db::layout_diff::f_silent;
 }
 
-static unsigned int f_ignore_duplicates () {
-  return db::layout_diff::f_ignore_duplicates;
+namespace tl
+{
+
+//  Disable copy and default ctor for layout query
+template <>
+struct type_traits<LayoutDiff>
+  : public type_traits<void>
+{
+  typedef false_tag has_copy_constructor;
+};
+
+}
+
+namespace gsi
+{
+
+static unsigned int f_silent () {
+  return db::layout_diff::f_silent;
 }
 
 static unsigned int f_no_text_orientation () {
@@ -419,10 +397,6 @@ static unsigned int f_no_text_orientation () {
 
 static unsigned int f_no_properties () {
   return db::layout_diff::f_no_properties;
-}
-
-static unsigned int f_with_meta () {
-  return db::layout_diff::f_with_meta;
 }
 
 static unsigned int f_no_layer_names () {
@@ -466,37 +440,22 @@ gsi::Class<LayoutDiff> decl_LayoutDiff ("db", "LayoutDiff",
     "full compare.\n"
     "\n"
     "This constant can be used for the flags parameter of \\compare_layouts and \\compare_cells. It can be "
-    "combined with other constants to form a flag set."
-  ) +
-  gsi::constant ("IgnoreDuplicates", &f_ignore_duplicates,
-    "@brief Ignore duplicate instances or shapes\n"
-    "With this option present, duplicate instances or shapes are ignored and "
-    "duplication does not count as a difference.\n"
-    "\n"
-    "This option has been introduced in version 0.28.9."
+    "compared with other contants to form a flag set."
   ) +
   gsi::constant ("NoTextOrientation", &f_no_text_orientation,
     "@brief Ignore text orientation\n"
     "This constant can be used for the flags parameter of \\compare_layouts and \\compare_cells. It can be "
-    "combined with other constants to form a flag set."
+    "compared with other contants to form a flag set."
   ) +
   gsi::constant ("NoProperties", &f_no_properties,
     "@brief Ignore properties\n"
     "This constant can be used for the flags parameter of \\compare_layouts and \\compare_cells. It can be "
-    "combined with other constants to form a flag set."
-  ) +
-  gsi::constant ("WithMetaInfo", &f_with_meta,
-    "@brief Ignore meta info\n"
-    "This constant can be used for the flags parameter of \\compare_layouts and \\compare_cells. It can be "
-    "combined with other constants to form a flag set. If present, this option tells the compare algorithm "
-    "to include persisted meta info in the compare.\n"
-    "\n"
-    "This flag has been introduced in version 0.28.16."
+    "compared with other contants to form a flag set."
   ) +
   gsi::constant ("NoLayerNames", &f_no_layer_names,
     "@brief Do not compare layer names\n"
     "This constant can be used for the flags parameter of \\compare_layouts and \\compare_cells. It can be "
-    "combined with other constants to form a flag set."
+    "compared with other contants to form a flag set."
   ) +
   gsi::constant ("Verbose", &f_verbose,
     "@brief Enables verbose mode (gives details about the differences)\n"
@@ -504,22 +463,22 @@ gsi::Class<LayoutDiff> decl_LayoutDiff ("db", "LayoutDiff",
     "See the event descriptions for details about the differences in verbose and non-verbose mode.\n"
     "\n"
     "This constant can be used for the flags parameter of \\compare_layouts and \\compare_cells. It can be "
-    "combined with other constants to form a flag set."
+    "compared with other contants to form a flag set."
   ) +
   gsi::constant ("BoxesAsPolygons", &f_boxes_as_polygons,
     "@brief Compare boxes to polygons\n"
     "This constant can be used for the flags parameter of \\compare_layouts and \\compare_cells. It can be "
-    "combined with other constants to form a flag set."
+    "compared with other contants to form a flag set."
   ) +
   gsi::constant ("FlattenArrayInsts", &f_flatten_array_insts,
     "@brief Compare array instances instance by instance\n"
     "This constant can be used for the flags parameter of \\compare_layouts and \\compare_cells. It can be "
-    "combined with other constants to form a flag set."
+    "compared with other contants to form a flag set."
   ) +
   gsi::constant ("PathsAsPolygons", &f_paths_as_polygons,
     "@brief Compare paths to polygons\n"
     "This constant can be used for the flags parameter of \\compare_layouts and \\compare_cells. It can be "
-    "combined with other constants to form a flag set."
+    "compared with other contants to form a flag set."
   ) +
   gsi::constant ("SmartCellMapping", &f_smart_cell_mapping,
     "@brief Derive smart cell mapping instead of name mapping (available only if top cells are specified)\n"
@@ -527,7 +486,7 @@ gsi::Class<LayoutDiff> decl_LayoutDiff ("db", "LayoutDiff",
     "cells are compared (with \\LayoutDiff#compare with cells instead of layout objects).\n"
     "\n"
     "This constant can be used for the flags parameter of \\compare_layouts and \\compare_cells. It can be "
-    "combined with other constants to form a flag set.\n"
+    "compared with other contants to form a flag set.\n"
   ) +
   gsi::constant ("DontSummarizeMissingLayers", &f_dont_summarize_missing_layers,
     "@brief Don't summarize missing layers\n"
@@ -535,12 +494,12 @@ gsi::Class<LayoutDiff> decl_LayoutDiff ("db", "LayoutDiff",
     "layer will be reported as difference.\n"
     "\n"
     "This constant can be used for the flags parameter of \\compare_layouts and \\compare_cells. It can be "
-    "combined with other constants to form a flag set."
+    "compared with other contants to form a flag set."
   ) +
   gsi::constant ("NoTextDetails", &f_no_text_details,
     "@brief Ignore text details (font, size, presentation)\n"
     "This constant can be used for the flags parameter of \\compare_layouts and \\compare_cells. It can be "
-    "combined with other constants to form a flag set."
+    "compared with other contants to form a flag set."
   ) +
   gsi::method ("compare", &LayoutDiff::compare_layouts,
     gsi::arg("a"),
@@ -617,14 +576,6 @@ gsi::Class<LayoutDiff> decl_LayoutDiff ("db", "LayoutDiff",
   gsi::event ("on_dbu_differs", &LayoutDiff::dbu_differs_event, gsi::arg ("dbu_a"), gsi::arg ("dbu_b"),
     "@brief This signal indicates a difference in the database units of the layouts\n"
   ) +
-  gsi::event ("on_layout_meta_info_differs", &LayoutDiff::layout_meta_info_differs_event, gsi::arg ("name"), gsi::arg ("a"), gsi::arg ("b"),
-    "@brief This signal indicates that global meta info differs\n"
-    "Meta information is only compared when \\WithMetaInfo is added to the compare flags.\n"
-    "'a' and 'b' are the values for the first and second layout. 'nil' is passed to these values to indicate "
-    "missing meta information on one side.\n"
-    "\n"
-    "This event has been added in version 0.28.16."
-  ) +
   gsi::event ("on_layer_in_a_only", &LayoutDiff::layer_in_a_only_event, gsi::arg ("a"),
     "@brief This signal indicates a layer that is present only in the first layout\n"
   ) +
@@ -651,16 +602,8 @@ gsi::Class<LayoutDiff> decl_LayoutDiff ("db", "LayoutDiff",
     "In verbose mode detailed events will be issued indicating the differences.\n"
   ) +
   gsi::event ("on_begin_cell", &LayoutDiff::begin_cell_event, gsi::arg ("ca"), gsi::arg ("cb"),
-    "@brief This signal indicates the sequence of events for a cell pair\n"
+    "@brief This signal initiates the sequence of events for a cell pair\n"
     "All cell specific events happen between \\begin_cell_event and \\end_cell_event signals."
-  ) +
-  gsi::event ("on_cell_meta_info_differs", &LayoutDiff::cell_meta_info_differs_event, gsi::arg ("name"), gsi::arg ("a"), gsi::arg ("b"),
-    "@brief This signal indicates that meta info between the current cells differs\n"
-    "Meta information is only compared when \\WithMetaInfo is added to the compare flags.\n"
-    "'a' and 'b' are the values for the first and second layout. 'nil' is passed to these values to indicate "
-    "missing meta information on one side.\n"
-    "\n"
-    "This event has been added in version 0.28.16."
   ) +
   gsi::event ("on_begin_inst_differences", &LayoutDiff::begin_inst_differences_event,
     "@brief This signal indicates differences in the cell instances\n"
@@ -745,29 +688,6 @@ gsi::Class<LayoutDiff> decl_LayoutDiff ("db", "LayoutDiff",
   ) +
   gsi::event ("on_end_edge_differences", &LayoutDiff::end_edge_differences_event,
     "@brief This signal indicates the end of sequence of edge differences\n"
-  ) +
-  gsi::event ("on_begin_edge_pair_differences", &LayoutDiff::begin_edge_pair_differences_event,
-    "@brief This signal indicates differences in the edge pairs on the current layer\n"
-    "The current layer is indicated by the \\begin_layer_event signal or can be obtained from the diff object "
-    "through \\LayoutDiff#layer_info_a, \\LayoutDiff#layer_index_a, \\LayoutDiff#layer_info_b and \\LayoutDiff#layer_index_b. "
-    "In verbose mode (see \\Verbose flag) more signals will be emitted for edge pairs that are different between the two layouts."
-    "\n"
-    "This event has been introduced in version 0.28."
-  ) +
-  gsi::event ("on_edge_pair_in_a_only", &LayoutDiff::edge_pair_in_a_only_event, gsi::arg ("anotb"), gsi::arg ("prop_id"),
-    "@brief This signal indicates an edge pair that is present in the first layout only"
-    "\n"
-    "This event has been introduced in version 0.28."
-  ) +
-  gsi::event ("on_edge_pair_in_b_only", &LayoutDiff::edge_pair_in_b_only_event, gsi::arg ("bnota"), gsi::arg ("prop_id"),
-    "@brief This signal indicates an edge pair that is present in the second layout only"
-    "\n"
-    "This event has been introduced in version 0.28."
-  ) +
-  gsi::event ("on_end_edge_pair_differences", &LayoutDiff::end_edge_pair_differences_event,
-    "@brief This signal indicates the end of sequence of edge pair differences\n"
-    "\n"
-    "This event has been introduced in version 0.28."
   ) +
   gsi::event ("on_begin_text_differences", &LayoutDiff::begin_text_differences_event,
     "@brief This signal indicates differences in the texts on the current layer\n"

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -56,32 +56,18 @@ public:
    *  the start method is called and when the shape container is cleared if "clear_shapes"
    *  is set.
    *
-   *  @param shapes Where to store the shapes
    *  @param clear_shapes If true, the shapes container is cleared on the start event.
-   *  @param prop_id The properties ID to assign to all the output shapes (or 0 if no property shall be assigned)
    */
-  ShapeGenerator (db::Shapes &shapes, bool clear_shapes = false, db::properties_id_type prop_id = 0)
-    : PolygonSink (), mp_shapes (&shapes), m_clear_shapes (clear_shapes), m_prop_id (prop_id)
+  ShapeGenerator (db::Shapes &shapes, bool clear_shapes = false)
+    : PolygonSink (), mp_shapes (&shapes), m_clear_shapes (clear_shapes)
   { }
-
-  /**
-   *  @brief Sets the properties ID to be used for the next polygon
-   */
-  void set_prop_id (db::properties_id_type prop_id)
-  {
-    m_prop_id = prop_id;
-  }
 
   /**
    *  @brief Implementation of the PolygonSink interface
    */
   virtual void put (const db::Polygon &polygon) 
   {
-    if (m_prop_id) {
-      mp_shapes->insert (db::PolygonWithProperties (polygon, m_prop_id));
-    } else {
-      mp_shapes->insert (polygon);
-    }
+    mp_shapes->insert (polygon);
   }
 
   /**
@@ -99,7 +85,6 @@ public:
 private:
   db::Shapes *mp_shapes;
   bool m_clear_shapes;
-  db::properties_id_type m_prop_id;
 };
 
 /**
@@ -120,8 +105,8 @@ public:
    *
    *  @param clear_shapes If true, the shapes container is cleared on the start event.
    */
-  EdgeShapeGenerator (db::Shapes &shapes, bool clear_shapes = false, int tag = 0, EdgeShapeGenerator *chained = 0)
-    : EdgeSink (), mp_shapes (&shapes), m_clear_shapes (clear_shapes), m_tag (tag), mp_chained (chained)
+  EdgeShapeGenerator (db::Shapes &shapes, bool clear_shapes = false)
+    : EdgeSink (), mp_shapes (&shapes), m_clear_shapes (clear_shapes)
   { }
 
   /**
@@ -130,22 +115,6 @@ public:
   virtual void put (const db::Edge &edge) 
   {
     mp_shapes->insert (edge);
-    if (mp_chained) {
-      mp_chained->put (edge);
-    }
-  }
-
-  /**
-   *  @brief Implementation of the EdgeSink interface
-   */
-  virtual void put (const db::Edge &edge, int tag)
-  {
-    if (m_tag == 0 || m_tag == tag) {
-      mp_shapes->insert (edge);
-    }
-    if (mp_chained) {
-      mp_chained->put (edge, tag);
-    }
   }
 
   /**
@@ -158,16 +127,11 @@ public:
       //  The single-shot scheme is a easy way to overcome problems with multiple start/flush brackets (i.e. on size filter)
       m_clear_shapes = false;
     }
-    if (mp_chained) {
-      mp_chained->start ();
-    }
   }
 
 private:
   db::Shapes *mp_shapes;
   bool m_clear_shapes;
-  int m_tag;
-  EdgeShapeGenerator *mp_chained;
 };
 
 /**
@@ -195,11 +159,6 @@ public:
    *  @brief Reserve the number of edges
    */
   void reserve (size_t n);
-
-  /**
-   *  @brief Reports the number of edges stored in the processor
-   */
-  size_t count () const;
 
   /**
    *  @brief Sets the base verbosity of the processor (see EdgeProcessor::set_base_verbosity for details)

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -78,26 +78,6 @@ public:
    *  @brief Destructor
    */
   ~LoadLayoutOptions ();
-
-  /**
-   *  @brief Gets the warning level
-   *
-   *  The warning level is a reader-specific setting which enables or disables warnings
-   *  on specific levels. Level 0 is always "warnings off". The default level is 1
-   *  which means "reasonable warnings emitted".
-   */
-  int warn_level () const
-  {
-    return m_warn_level;
-  }
-
-  /**
-   *  @brief Sets the warning level
-   */
-  void set_warn_level (int w)
-  {
-    m_warn_level = w;
-  }
 
   /**
    *  @brief Sets specific options for the given format
@@ -220,24 +200,8 @@ public:
    */
   tl::Variant get_option_by_name (const std::string &name);
 
-  /**
-   *  @brief Sets a layout reader option by calling method
-   *
-   *  The name is taken to be a GSI method which is called to set the
-   *  option.
-   */
-  void set_option_by_method (const std::string &name, const tl::Variant &value);
-
-  /**
-   *  @brief Gets a layout reader option by calling a method
-   *
-   *  See "set_option_by_method" for details.
-   */
-  tl::Variant get_option_by_method (const std::string &name);
-
 private:
   std::map <std::string, FormatSpecificReaderOptions *> m_options;
-  int m_warn_level;
 
   void release ();
 };

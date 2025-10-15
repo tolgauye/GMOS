@@ -1,7 +1,6 @@
 
 TARGET = dbcore
 REALMODULE = db
-PYI = dbcore.pyi
 
 include($$PWD/../pymod.pri)
 

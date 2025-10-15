@@ -1,6 +1,6 @@
 
 # 
-# Copyright (C) 2006-2025 Matthias Koefferlein
+# Copyright (C) 2006-2019 Matthias Koefferlein
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -196,7 +196,7 @@ module QualifiedNameResolver
     @id2obj && @id2obj[id]
   end
 
-  def resolve_qid(qid, stop = nil, include_other = true)
+  def resolve_qid(qid)
 
     qid.is_a?(CPPQualifiedId) || raise("Argument of resolve_qid must be a CPPQualifiedId object")
 
@@ -206,30 +206,22 @@ module QualifiedNameResolver
       while root.parent
         root = root.parent
       end
-      obj = root.resolve_qid(qid, nil, false)
+      obj = root.resolve_qid(qid)
     else
       obj = id2obj(qid.parts[0].id)
       if obj && qid.parts.size > 1
         # The part may be a typedef: resolve it in that case before we proceed
         while obj && obj.is_a?(CPPTypedef) 
-          obj = obj.type.concrete.is_a?(CPPQualifiedId) && self.resolve_qid(obj.type.concrete, stop, include_other)
+          obj = obj.type.concrete.is_a?(CPPQualifiedId) && self.resolve_qid(obj.type.concrete)
         end
         if obj
           qid_new = qid.dup
           qid_new.parts = qid.parts[1 .. -1]
-          obj = obj.respond_to?(:resolve_qid) && obj.resolve_qid(qid_new, stop, include_other)
+          obj = obj.respond_to?(:resolve_qid) && obj.resolve_qid(qid_new)
         end
       end
-      if ! obj && include_other
-        # try base classes
-        self.other_children.each do |bc|
-          if bc != self && bc.respond_to?(:resolve_qid)
-            (obj = bc.resolve_qid(qid, self, false)) && break
-          end
-        end
-      end
-      if ! obj && self.parent && self.parent != stop
-        obj = self.parent.resolve_qid(qid, stop, include_other)
+      if ! obj && self.parent
+        obj = self.parent.resolve_qid(qid)
       end
     end
 
@@ -289,10 +281,6 @@ class CPPDeclaration
     []
   end
 
-  def other_children
-    []
-  end
-
   def myself
     self.type.name 
   end
@@ -307,13 +295,8 @@ class CPPEnumDeclaration
     []
   end
 
-  def other_children
-    []
-  end
-
   def myself
-    # exclude forward declarations
-    self.enum.specs && self.enum.name.to_s
+    self.enum.name.to_s
   end
 
 end
@@ -323,10 +306,6 @@ class CPPEnumSpec
   include QualifiedNameResolver
 
   def children
-    []
-  end
-
-  def other_children
     []
   end
 
@@ -373,10 +352,6 @@ class CPPTypedef
     []
   end
 
-  def other_children
-    []
-  end
-
 end
 
 class CPPStructDeclaration
@@ -391,7 +366,7 @@ class CPPStructDeclaration
 
     # add enum constants (CPPEnumSpec)
     (self.struct.body_decl || []).each do |bd|
-      if bd.is_a?(CPPEnumDeclaration) && bd.enum && bd.enum.specs && !bd.enum.is_class
+      if bd.is_a?(CPPEnumDeclaration) && bd.enum && bd.enum.specs
         c += bd.enum.specs
       end
     end
@@ -419,7 +394,7 @@ class CPPStructDeclaration
       # The parent may be null for template base classes which are 
       # forward-declared .. we're not interested in this case.
       if self.parent
-        bc_obj = self.parent.resolve_qid(bc.class_id, nil, false)
+        bc_obj = self.parent.resolve_qid(bc.class_id)
         # NOTE: it may look strange to test whether the base class is the class itself but
         # since we do a half-hearted job of resolving template variants, this may happen
         # if we derive a template specialization from another one (specifically 
@@ -546,10 +521,6 @@ class CPPModule
 
     self.decls = new_decls
 
-  end
-
-  def other_children
-    []
   end
 
   def remove(d)

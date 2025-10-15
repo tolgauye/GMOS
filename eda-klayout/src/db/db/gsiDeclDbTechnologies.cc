@@ -1,8 +1,7 @@
-
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -45,14 +44,10 @@ static db::Technology *technology_by_name (const std::string &name)
 
 static db::Technology *create_technology (const std::string &name)
 {
-  db::Technology tech;
-  tech.set_name (name);
-  return db::Technologies::instance ()->add_new (tech);
-}
-
-static db::Technology *register_technology (const db::Technology &tech)
-{
-  return db::Technologies::instance ()->add_new (tech);
+  db::Technology *tech = new db::Technology ();
+  tech->set_name (name);
+  db::Technologies::instance ()->add_new (tech);
+  return tech;
 }
 
 static void remove_technology (const std::string &name)
@@ -124,7 +119,7 @@ gsi::Class<db::TechnologyComponent> technology_component_decl ("db", "Technology
   "@brief A part of a technology definition\n"
   "Technology components extend technology definitions (class \\Technology) by "
   "specialized subfeature definitions. For example, the net tracer supplies "
-  "its technology-dependent specification through a technology component called "
+  "it's technology-dependent specification through a technology component called "
   "\\NetTracerTechnology.\n"
   "\n"
   "Components are managed within technologies and can be accessed from a technology "
@@ -134,28 +129,6 @@ gsi::Class<db::TechnologyComponent> technology_component_decl ("db", "Technology
 );
 
 DB_PUBLIC gsi::Class<db::TechnologyComponent> &decl_dbTechnologyComponent () { return technology_component_decl; }
-
-static void
-set_default_grid_list2 (db::Technology *tech, const std::vector<double> &grids, double default_grid)
-{
-  std::string r;
-  for (auto g = grids.begin (); g != grids.end (); ++g) {
-    if (! r.empty ()) {
-      r += ",";
-    }
-    r += tl::micron_to_string (*g);
-    if (db::coord_traits<db::DCoord>::equals (*g, default_grid)) {
-      r += "!";
-    }
-  }
-  tech->set_default_grids (r);
-}
-
-static void
-set_default_grid_list (db::Technology *tech, const std::vector<double> &grids)
-{
-  set_default_grid_list2 (tech, grids, 0.0);
-}
 
 gsi::Class<db::Technology> technology_decl ("db", "Technology",
   gsi::method ("name", &db::Technology::name,
@@ -240,39 +213,6 @@ gsi::Class<db::Technology> technology_decl ("db", "Technology",
   gsi::method ("dbu=", &db::Technology::set_dbu, gsi::arg ("dbu"),
     "@brief Sets the default database unit\n"
   ) +
-  gsi::method ("default_grids", &db::Technology::default_grid_list,
-    "@brief Gets the default grids\n"
-    "\n"
-    "See \\default_grids for details.\n"
-    "\n"
-    "This property has been introduced in version 0.28.17."
-  ) +
-  gsi::method ("default_grid", &db::Technology::default_grid,
-    "@brief Gets the default grid\n"
-    "\n"
-    "The default grid is a specific one from the default grid list.\n"
-    "It indicates the one that is taken if the current grid is not matching one of "
-    "the default grids.\n"
-    "\n"
-    "To set the default grid, use \\set_default_grids.\n"
-    "\n"
-    "This property has been introduced in version 0.29."
-  ) +
-  gsi::method_ext ("default_grids=", &set_default_grid_list, gsi::arg ("grids"),
-    "@brief Sets the default grids\n"
-    "If not empty, this list replaces the global grid list for this technology.\n"
-    "Note that this method will reset the default grid (see \\default_grid). Use "
-    "\\set_default_grids to set the default grids and the strong default one.\n"
-    "\n"
-    "This property has been introduced in version 0.28.17."
-  ) +
-  gsi::method_ext ("set_default_grids", &set_default_grid_list2, gsi::arg ("grids"), gsi::arg ("default_grid", 0.0),
-    "@brief Sets the default grids and the strong default one\n"
-    "See \\default_grids and \\default_grid for a description of this property.\n"
-    "Note that the default grid has to be a member of the 'grids' array to become active.\n"
-    "\n"
-    "This method has been introduced in version 0.29."
-  ) +
   gsi::method ("layer_properties_file", &db::Technology::layer_properties_file,
     "@brief Gets the path of the layer properties file\n"
     "\n"
@@ -350,24 +290,10 @@ gsi::Class<db::Technology> technology_decl ("db", "Technology",
   gsi::method ("create_technology", &create_technology, gsi::arg ("name"),
     "@brief Creates a new (empty) technology with the given name\n"
     "\n"
-    "The new technology is already registered in the system.\n"
-    "\n"
     "This method returns a reference to the new technology."
   ) +
-  gsi::method ("register_technology", &register_technology, gsi::arg ("tech"),
-    "@brief Registers a technology in the system\n"
-    "\n"
-    "Only after a technology is registered, it can be used in the system, e.g. by "
-    "specifying its name in \\Layout#technology_name. While \\create_technology already registers "
-    "the technology, this method allows registering a Technology object that has created in other ways.\n"
-    "\n"
-    "This method returns a reference to the new technology object, which is a copy of the argument. "
-    "\\remove_technology can be used to remove a technology registered by this method.\n"
-    "\n"
-    "This method has been introduced in version 0.28.14."
-  ) +
   gsi::method ("remove_technology", &remove_technology, gsi::arg ("name"),
-    "@brief Removes the technology with the given name from the system\n"
+    "@brief Removes the technology with the given name\n"
   ) +
   gsi::method ("technologies_to_xml", &technologies_to_xml,
     "@brief Returns a XML representation of all technologies registered in the system\n"
@@ -390,13 +316,12 @@ gsi::Class<db::Technology> technology_decl ("db", "Technology",
   gsi::method ("technologies_from_xml", &technologies_from_xml, gsi::arg ("xml"),
     "@brief Loads the technologies from a XML representation\n"
     "\n"
-    "See \\technologies_to_xml for details."
+    "See \\technologies_to_xml for details. This method is the corresponding setter."
   ) +
   gsi::method ("technology_from_xml", &technology_from_xml, gsi::arg ("xml"),
     "@brief Loads the technology from a XML representation\n"
     "\n"
-    "See \\technology_to_xml for details. Note that this function will create "
-    "a new Technology object which is not registered in the system. See \\Technology#register for details."
+    "See \\technology_to_xml for details."
   ) +
   gsi::method_ext ("component_names", &get_component_names,
     "@brief Gets the names of all components available for \\component"
@@ -411,21 +336,6 @@ gsi::Class<db::Technology> technology_decl ("db", "Technology",
   "available in the system can be obtained with \\technology_names. Individual technology "
   "definitions are returned with \\technology_by_name. Use \\create_technology to register "
   "new technologies and \\remove_technology to delete technologies.\n"
-  "\n"
-  "Note that a Technology object needs to be registered in the system, before its name "
-  "can be used to specify a technology, for example in \\Layout#technology_name. "
-  "Technology objects created by \\create_technology are automatically registered. "
-  "If you create a Technology object directly, you need to register it explicitly:"
-  "\n"
-  "@code\n"
-  "tech = RBA::Technology::new\n"
-  "tech.load(\"mytech.lyt\")\n"
-  "RBA::Technology::register_technology(tech)\n"
-  "@/code\n"
-  "\n"
-  "Note that in the latter example, an exception will be thrown if a technology with the same "
-  "name already exists. Also note, that \\Technology#register will register a copy of the "
-  "object, so modifying it after registration will not have any effect.\n"
   "\n"
   "The Technology class has been introduced in version 0.25.\n"
 );

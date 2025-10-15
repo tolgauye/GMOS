@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -36,6 +36,7 @@
 #include <QSizePolicy>
 #include "gsiQt.h"
 #include "gsiQtWidgetsCommon.h"
+#include "gsiDeclQtWidgetsTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -56,7 +57,7 @@ static void _init_f_addItem_7835 (qt_gsi::GenericMethod *decl)
   decl->add_arg<int > (argspec_3);
   static gsi::ArgSpecBase argspec_4 ("columnSpan");
   decl->add_arg<int > (argspec_4);
-  static gsi::ArgSpecBase argspec_5 ("alignment", true, "Qt::Alignment()");
+  static gsi::ArgSpecBase argspec_5 ("alignment", true, "0");
   decl->add_arg<QFlags<Qt::AlignmentFlag> > (argspec_5);
   decl->set_return<void > ();
 }
@@ -70,7 +71,7 @@ static void _call_f_addItem_7835 (const qt_gsi::GenericMethod * /*decl*/, void *
   int arg3 = gsi::arg_reader<int >() (args, heap);
   int arg4 = gsi::arg_reader<int >() (args, heap);
   int arg5 = gsi::arg_reader<int >() (args, heap);
-  QFlags<Qt::AlignmentFlag> arg6 = args ? gsi::arg_reader<QFlags<Qt::AlignmentFlag> >() (args, heap) : gsi::arg_maker<QFlags<Qt::AlignmentFlag> >() (Qt::Alignment(), heap);
+  QFlags<Qt::AlignmentFlag> arg6 = args ? gsi::arg_reader<QFlags<Qt::AlignmentFlag> >() (args, heap) : gsi::arg_maker<QFlags<Qt::AlignmentFlag> >() (0, heap);
   __SUPPRESS_UNUSED_WARNING(ret);
   ((QGraphicsGridLayout *)cls)->addItem (arg1, arg2, arg3, arg4, arg5, arg6);
 }
@@ -87,7 +88,7 @@ static void _init_f_addItem_6517 (qt_gsi::GenericMethod *decl)
   decl->add_arg<int > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("column");
   decl->add_arg<int > (argspec_2);
-  static gsi::ArgSpecBase argspec_3 ("alignment", true, "Qt::Alignment()");
+  static gsi::ArgSpecBase argspec_3 ("alignment", true, "0");
   decl->add_arg<QFlags<Qt::AlignmentFlag> > (argspec_3);
   decl->set_return<void > ();
 }
@@ -99,7 +100,7 @@ static void _call_f_addItem_6517 (const qt_gsi::GenericMethod * /*decl*/, void *
   QGraphicsLayoutItem *arg1 = gsi::arg_reader<QGraphicsLayoutItem * >() (args, heap);
   int arg2 = gsi::arg_reader<int >() (args, heap);
   int arg3 = gsi::arg_reader<int >() (args, heap);
-  QFlags<Qt::AlignmentFlag> arg4 = args ? gsi::arg_reader<QFlags<Qt::AlignmentFlag> >() (args, heap) : gsi::arg_maker<QFlags<Qt::AlignmentFlag> >() (Qt::Alignment(), heap);
+  QFlags<Qt::AlignmentFlag> arg4 = args ? gsi::arg_reader<QFlags<Qt::AlignmentFlag> >() (args, heap) : gsi::arg_maker<QFlags<Qt::AlignmentFlag> >() (0, heap);
   __SUPPRESS_UNUSED_WARNING(ret);
   ((QGraphicsGridLayout *)cls)->addItem (arg1, arg2, arg3, arg4);
 }
@@ -1220,7 +1221,7 @@ QGraphicsGridLayout_Adaptor::~QGraphicsGridLayout_Adaptor() { }
 
 static void _init_ctor_QGraphicsGridLayout_Adaptor_2557 (qt_gsi::GenericStaticMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("parent", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("parent", true, "0");
   decl->add_arg<QGraphicsLayoutItem * > (argspec_0);
   decl->set_return_new<QGraphicsGridLayout_Adaptor> ();
 }
@@ -1229,7 +1230,7 @@ static void _call_ctor_QGraphicsGridLayout_Adaptor_2557 (const qt_gsi::GenericSt
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  QGraphicsLayoutItem *arg1 = args ? gsi::arg_reader<QGraphicsLayoutItem * >() (args, heap) : gsi::arg_maker<QGraphicsLayoutItem * >() (nullptr, heap);
+  QGraphicsLayoutItem *arg1 = args ? gsi::arg_reader<QGraphicsLayoutItem * >() (args, heap) : gsi::arg_maker<QGraphicsLayoutItem * >() (0, heap);
   ret.write<QGraphicsGridLayout_Adaptor *> (new QGraphicsGridLayout_Adaptor (arg1));
 }
 
@@ -1513,26 +1514,26 @@ static gsi::Methods methods_QGraphicsGridLayout_Adaptor () {
   gsi::Methods methods;
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QGraphicsGridLayout::QGraphicsGridLayout(QGraphicsLayoutItem *parent)\nThis method creates an object of class QGraphicsGridLayout.", &_init_ctor_QGraphicsGridLayout_Adaptor_2557, &_call_ctor_QGraphicsGridLayout_Adaptor_2557);
   methods += new qt_gsi::GenericMethod ("*addChildLayoutItem", "@brief Method void QGraphicsGridLayout::addChildLayoutItem(QGraphicsLayoutItem *layoutItem)\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_addChildLayoutItem_2557, &_call_fp_addChildLayoutItem_2557);
-  methods += new qt_gsi::GenericMethod ("count", "@brief Virtual method int QGraphicsGridLayout::count()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_count_c0_0, &_call_cbs_count_c0_0);
-  methods += new qt_gsi::GenericMethod ("count", "@hide", true, &_init_cbs_count_c0_0, &_call_cbs_count_c0_0, &_set_callback_cbs_count_c0_0);
-  methods += new qt_gsi::GenericMethod ("getContentsMargins", "@brief Virtual method void QGraphicsGridLayout::getContentsMargins(double *left, double *top, double *right, double *bottom)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_getContentsMargins_c4704_0, &_call_cbs_getContentsMargins_c4704_0);
-  methods += new qt_gsi::GenericMethod ("getContentsMargins", "@hide", true, &_init_cbs_getContentsMargins_c4704_0, &_call_cbs_getContentsMargins_c4704_0, &_set_callback_cbs_getContentsMargins_c4704_0);
-  methods += new qt_gsi::GenericMethod ("invalidate", "@brief Virtual method void QGraphicsGridLayout::invalidate()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_invalidate_0_0, &_call_cbs_invalidate_0_0);
-  methods += new qt_gsi::GenericMethod ("invalidate", "@hide", false, &_init_cbs_invalidate_0_0, &_call_cbs_invalidate_0_0, &_set_callback_cbs_invalidate_0_0);
-  methods += new qt_gsi::GenericMethod ("itemAt", "@brief Virtual method QGraphicsLayoutItem *QGraphicsGridLayout::itemAt(int index)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_itemAt_c767_0, &_call_cbs_itemAt_c767_0);
-  methods += new qt_gsi::GenericMethod ("itemAt", "@hide", true, &_init_cbs_itemAt_c767_0, &_call_cbs_itemAt_c767_0, &_set_callback_cbs_itemAt_c767_0);
-  methods += new qt_gsi::GenericMethod ("removeAt", "@brief Virtual method void QGraphicsGridLayout::removeAt(int index)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_removeAt_767_0, &_call_cbs_removeAt_767_0);
-  methods += new qt_gsi::GenericMethod ("removeAt", "@hide", false, &_init_cbs_removeAt_767_0, &_call_cbs_removeAt_767_0, &_set_callback_cbs_removeAt_767_0);
-  methods += new qt_gsi::GenericMethod ("setGeometry", "@brief Virtual method void QGraphicsGridLayout::setGeometry(const QRectF &rect)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setGeometry_1862_0, &_call_cbs_setGeometry_1862_0);
-  methods += new qt_gsi::GenericMethod ("setGeometry", "@hide", false, &_init_cbs_setGeometry_1862_0, &_call_cbs_setGeometry_1862_0, &_set_callback_cbs_setGeometry_1862_0);
+  methods += new qt_gsi::GenericMethod ("count", "@hide", true, &_init_cbs_count_c0_0, &_call_cbs_count_c0_0);
+  methods += new qt_gsi::GenericMethod ("count", "@brief Virtual method int QGraphicsGridLayout::count()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_count_c0_0, &_call_cbs_count_c0_0, &_set_callback_cbs_count_c0_0);
+  methods += new qt_gsi::GenericMethod ("getContentsMargins", "@hide", true, &_init_cbs_getContentsMargins_c4704_0, &_call_cbs_getContentsMargins_c4704_0);
+  methods += new qt_gsi::GenericMethod ("getContentsMargins", "@brief Virtual method void QGraphicsGridLayout::getContentsMargins(double *left, double *top, double *right, double *bottom)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_getContentsMargins_c4704_0, &_call_cbs_getContentsMargins_c4704_0, &_set_callback_cbs_getContentsMargins_c4704_0);
+  methods += new qt_gsi::GenericMethod ("invalidate", "@hide", false, &_init_cbs_invalidate_0_0, &_call_cbs_invalidate_0_0);
+  methods += new qt_gsi::GenericMethod ("invalidate", "@brief Virtual method void QGraphicsGridLayout::invalidate()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_invalidate_0_0, &_call_cbs_invalidate_0_0, &_set_callback_cbs_invalidate_0_0);
+  methods += new qt_gsi::GenericMethod ("itemAt", "@hide", true, &_init_cbs_itemAt_c767_0, &_call_cbs_itemAt_c767_0);
+  methods += new qt_gsi::GenericMethod ("itemAt", "@brief Virtual method QGraphicsLayoutItem *QGraphicsGridLayout::itemAt(int index)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_itemAt_c767_0, &_call_cbs_itemAt_c767_0, &_set_callback_cbs_itemAt_c767_0);
+  methods += new qt_gsi::GenericMethod ("removeAt", "@hide", false, &_init_cbs_removeAt_767_0, &_call_cbs_removeAt_767_0);
+  methods += new qt_gsi::GenericMethod ("removeAt", "@brief Virtual method void QGraphicsGridLayout::removeAt(int index)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_removeAt_767_0, &_call_cbs_removeAt_767_0, &_set_callback_cbs_removeAt_767_0);
+  methods += new qt_gsi::GenericMethod ("setGeometry", "@hide", false, &_init_cbs_setGeometry_1862_0, &_call_cbs_setGeometry_1862_0);
+  methods += new qt_gsi::GenericMethod ("setGeometry", "@brief Virtual method void QGraphicsGridLayout::setGeometry(const QRectF &rect)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setGeometry_1862_0, &_call_cbs_setGeometry_1862_0, &_set_callback_cbs_setGeometry_1862_0);
   methods += new qt_gsi::GenericMethod ("*setGraphicsItem", "@brief Method void QGraphicsGridLayout::setGraphicsItem(QGraphicsItem *item)\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_setGraphicsItem_1919, &_call_fp_setGraphicsItem_1919);
   methods += new qt_gsi::GenericMethod ("*setOwnedByLayout", "@brief Method void QGraphicsGridLayout::setOwnedByLayout(bool ownedByLayout)\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_setOwnedByLayout_864, &_call_fp_setOwnedByLayout_864);
-  methods += new qt_gsi::GenericMethod ("sizeHint", "@brief Virtual method QSizeF QGraphicsGridLayout::sizeHint(Qt::SizeHint which, const QSizeF &constraint)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_sizeHint_c3330_1, &_call_cbs_sizeHint_c3330_1);
-  methods += new qt_gsi::GenericMethod ("sizeHint", "@hide", true, &_init_cbs_sizeHint_c3330_1, &_call_cbs_sizeHint_c3330_1, &_set_callback_cbs_sizeHint_c3330_1);
-  methods += new qt_gsi::GenericMethod ("updateGeometry", "@brief Virtual method void QGraphicsGridLayout::updateGeometry()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_updateGeometry_0_0, &_call_cbs_updateGeometry_0_0);
-  methods += new qt_gsi::GenericMethod ("updateGeometry", "@hide", false, &_init_cbs_updateGeometry_0_0, &_call_cbs_updateGeometry_0_0, &_set_callback_cbs_updateGeometry_0_0);
-  methods += new qt_gsi::GenericMethod ("widgetEvent", "@brief Virtual method void QGraphicsGridLayout::widgetEvent(QEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_widgetEvent_1217_0, &_call_cbs_widgetEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("widgetEvent", "@hide", false, &_init_cbs_widgetEvent_1217_0, &_call_cbs_widgetEvent_1217_0, &_set_callback_cbs_widgetEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("sizeHint", "@hide", true, &_init_cbs_sizeHint_c3330_1, &_call_cbs_sizeHint_c3330_1);
+  methods += new qt_gsi::GenericMethod ("sizeHint", "@brief Virtual method QSizeF QGraphicsGridLayout::sizeHint(Qt::SizeHint which, const QSizeF &constraint)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_sizeHint_c3330_1, &_call_cbs_sizeHint_c3330_1, &_set_callback_cbs_sizeHint_c3330_1);
+  methods += new qt_gsi::GenericMethod ("updateGeometry", "@hide", false, &_init_cbs_updateGeometry_0_0, &_call_cbs_updateGeometry_0_0);
+  methods += new qt_gsi::GenericMethod ("updateGeometry", "@brief Virtual method void QGraphicsGridLayout::updateGeometry()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_updateGeometry_0_0, &_call_cbs_updateGeometry_0_0, &_set_callback_cbs_updateGeometry_0_0);
+  methods += new qt_gsi::GenericMethod ("widgetEvent", "@hide", false, &_init_cbs_widgetEvent_1217_0, &_call_cbs_widgetEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("widgetEvent", "@brief Virtual method void QGraphicsGridLayout::widgetEvent(QEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_widgetEvent_1217_0, &_call_cbs_widgetEvent_1217_0, &_set_callback_cbs_widgetEvent_1217_0);
   return methods;
 }
 

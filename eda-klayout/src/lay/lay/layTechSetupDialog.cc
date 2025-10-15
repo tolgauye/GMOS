@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -32,7 +32,6 @@
 #include "layMacroEditorTree.h"
 #include "layMacroController.h"
 #include "layTechnologyController.h"
-#include "layQtTools.h"
 #include "lymMacro.h"
 #include "tlAssert.h"
 #include "tlStream.h"
@@ -114,7 +113,6 @@ TechBaseEditorPage::setup ()
   mp_ui->desc_le->setText (tl::to_qstring (tech ()->description ()));
   mp_ui->group_le->setText (tl::to_qstring (tech ()->group ()));
   mp_ui->dbu_le->setText (tl::to_qstring (tl::to_string (tech ()->dbu ())));
-  mp_ui->grids_le->setText (tl::to_qstring (tl::to_string (tech ()->default_grids ())));
   mp_ui->desc_le->setEnabled (! tech ()->name ().empty ());
   mp_ui->base_path_le->setText (tl::to_qstring (tech ()->explicit_base_path ()));
 #if QT_VERSION >= 0x040700
@@ -137,7 +135,7 @@ TechBaseEditorPage::setup ()
 
     for (db::LibraryManager::iterator l = db::LibraryManager::instance ().begin (); l != db::LibraryManager::instance ().end (); ++l) {
       const db::Library *lib = db::LibraryManager::instance ().lib (l->second);
-      if (lib->is_for_technology (tech ()->name ())) {
+      if (lib->get_technology () == tech ()->name ()) {
         std::string text = lib->get_name ();
         if (! lib->get_description ().empty ()) {
           text += " - " + lib->get_description ();
@@ -165,18 +163,18 @@ TechBaseEditorPage::commit ()
   tech ()->set_description (tl::to_string (mp_ui->desc_le->text ()));
   tech ()->set_group (tl::to_string (mp_ui->group_le->text ()));
   tech ()->set_explicit_base_path (tl::to_string (mp_ui->base_path_le->text ()));
-  tech ()->set_default_grids (tl::to_string (mp_ui->grids_le->text ()));
 
   double d = 0.001;
-  tl::from_string_ext (tl::to_string (mp_ui->dbu_le->text ()), d);
+  tl::from_string (tl::to_string (mp_ui->dbu_le->text ()), d);
   tech ()->set_dbu (d);
 
   if (! mp_ui->lyp_grp->isChecked ()) {
     tech ()->set_layer_properties_file (std::string ());
+    tech ()->set_add_other_layers (true);
   } else {
     tech ()->set_layer_properties_file (tl::to_string (mp_ui->lyp_le->text ()));
+    tech ()->set_add_other_layers (mp_ui->add_other_layers_cbx->isChecked ());
   }
-  tech ()->set_add_other_layers (mp_ui->add_other_layers_cbx->isChecked ());
 }
 
 void 
@@ -360,7 +358,7 @@ TechSaveOptionsEditorPage::setup ()
   for (std::vector< std::pair<StreamWriterOptionsPage *, std::string> >::iterator page = m_pages.begin (); page != m_pages.end (); ++page) {
     if (page->first) {
       const db::FormatSpecificWriterOptions *specific_options = tech ()->save_layout_options ().get_options (page->second);
-      std::unique_ptr<db::FormatSpecificWriterOptions> default_options;
+      std::auto_ptr<db::FormatSpecificWriterOptions> default_options;
       if (! specific_options) {
         //  In case there is no option object yet, create a first one for initialization
         default_options.reset (StreamWriterPluginDeclaration::plugin_for_format (page->second)->create_specific_options ());
@@ -410,7 +408,7 @@ TechMacrosPage::TechMacrosPage (QWidget *parent, const std::string &cat, const s
 
   QFont f = mp_ui->macro_text->font ();
   f.setFixedPitch (true);
-  f.setFamily (monospace_font ().family ());
+  f.setFamily (tl::to_qstring ("Monospace"));
   mp_ui->macro_text->setFont (f);
 
   connect (mp_ui->create_folder_button, SIGNAL (clicked ()), this, SLOT (create_folder_clicked ()));
@@ -709,7 +707,7 @@ TechSetupDialog::update ()
 }
 
 int
-TechSetupDialog::exec_dialog (db::Technologies &technologies)
+TechSetupDialog::exec (db::Technologies &technologies)
 {
   if (s_first_show) {
     TipDialog td (this,
@@ -776,13 +774,13 @@ BEGIN_PROTECTED
       }
     }
 
-    db::Technology nt (*t);
+    db::Technology *nt = new db::Technology (*t);
 
-    nt.set_tech_file_path (tl::to_string (tech_dir.absoluteFilePath (tn + QString::fromUtf8 (".lyt"))));
-    nt.set_default_base_path (tl::to_string (tech_dir.absolutePath ()));
-    nt.set_persisted (false);
-    nt.set_name (tl::to_string (tn));
-    nt.set_description (std::string ());
+    nt->set_tech_file_path (tl::to_string (tech_dir.absoluteFilePath (tn + QString::fromUtf8 (".lyt"))));
+    nt->set_default_base_path (tl::to_string (tech_dir.absolutePath ()));
+    nt->set_persisted (false);
+    nt->set_name (tl::to_string (tn));
+    nt->set_description (std::string ());
     m_technologies.add (nt);
 
     update_tech_tree ();
@@ -901,7 +899,12 @@ BEGIN_PROTECTED
 
     db::Technology t;
     t.load (fn);
-    m_technologies.add (t);
+
+    if (m_technologies.has_technology (t.name ())) {
+      *m_technologies.technology_by_name (t.name ()) = t;
+    } else {
+      m_technologies.add (new db::Technology (t));
+    }
 
     update_tech_tree ();
     select_tech (*m_technologies.technology_by_name (t.name ()));
@@ -1238,7 +1241,7 @@ TechComponentSetupDialog::TechComponentSetupDialog (QWidget *parent, db::Technol
 
       QVBoxLayout *layout = new QVBoxLayout (mp_ui->content_frame);
       layout->addWidget (mp_editor);
-      layout->setContentsMargins (0, 0, 0, 0);
+      layout->setMargin (0);
       mp_ui->content_frame->setLayout (layout);
 
       mp_editor->set_technology (tech, mp_component);

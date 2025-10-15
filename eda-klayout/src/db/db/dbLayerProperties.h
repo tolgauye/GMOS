@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -39,10 +39,6 @@ namespace db
  *
  *  The layer properties are basically to be used for storing of layer name and 
  *  layer/datatype information.
- *
- *  A special use case is for the target of a layer mapping specification.
- *  In this case, the layer properties can make use of the relative
- *  layer/datatype specifications.
  */
 struct DB_PUBLIC LayerProperties
 {
@@ -72,7 +68,10 @@ struct DB_PUBLIC LayerProperties
    *  A null specification is one created by the default constructor. It does not have
    *  a layer, datatype or name assigned.
    */
-  bool is_null () const;
+  bool is_null () const
+  {
+    return layer < 0 && datatype < 0 && name.empty ();
+  }
   
   /**
    *  @brief Return true, if the layer is specified by name only
@@ -82,17 +81,12 @@ struct DB_PUBLIC LayerProperties
   /**
    *  @brief Convert to a string
    */
-  std::string to_string (bool as_target = false) const;
+  std::string to_string () const;
 
   /**
    *  @brief Extract from a tl::Extractor
-   *
-   *  With "with_relative" true, the extractor allows giving
-   *  relative layer/datatype specifications in the format "*+1" or "*-100".
-   *  "*" for layer or datatype is for "don't care" (on input) or "leave as is"
-   *  (for output).
    */
-  void read (tl::Extractor &ex, bool as_target = false);
+  void read (tl::Extractor &ex);
 
   /**
    *  @brief "Logical" equality
@@ -229,17 +223,27 @@ inline LayerProperties &operator+= (LayerProperties &props, const LayerOffset &o
 
 }
 
-/**
- *  @brief Special extractors for LayerProperties and LayerOffset
- */
+//  tl namespace support for db::LayerProperties
 namespace tl
 {
-  template<> DB_PUBLIC void extractor_impl<db::LayerProperties> (tl::Extractor &ex, db::LayerProperties &p);
-  template<> DB_PUBLIC void extractor_impl<db::LayerOffset> (tl::Extractor &ex, db::LayerOffset &p);
+  template <>
+  struct type_traits <db::LayerProperties> : public type_traits<void> 
+  {
+    typedef true_tag supports_extractor;
+    typedef true_tag supports_to_string;
+    typedef true_tag has_less_operator;
+    typedef true_tag has_equal_operator;
+  };
 
-  template<> DB_PUBLIC bool test_extractor_impl<db::LayerProperties> (tl::Extractor &ex, db::LayerProperties &p);
-  template<> DB_PUBLIC bool test_extractor_impl<db::LayerOffset> (tl::Extractor &ex, db::LayerOffset &p);
-} // namespace tl
+  template <>
+  struct type_traits <db::LayerOffset> : public type_traits<void> 
+  {
+    typedef true_tag supports_extractor;
+    typedef true_tag supports_to_string;
+    typedef true_tag has_less_operator;
+    typedef true_tag has_equal_operator;
+  };
+}
 
 #endif
 

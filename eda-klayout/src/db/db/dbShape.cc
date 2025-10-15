@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -24,51 +24,9 @@
 #include "dbShape.h"
 #include "dbBoxConvert.h"
 #include "dbPolygonTools.h"
-#include "dbHash.h"
-#include "tlCpp.h"
 
 namespace db
 {
-
-static NO_RETURN void raise_no_path ()
-{
-  throw tl::Exception (tl::to_string (tr ("Shape is not a path")));
-}
-
-static NO_RETURN void raise_no_polygon ()
-{
-  throw tl::Exception (tl::to_string (tr ("Shape is not a general or simple polygon")));
-}
-
-static NO_RETURN void raise_no_general_polygon ()
-{
-  throw tl::Exception (tl::to_string (tr ("Shape is not a general polygon")));
-}
-
-static NO_RETURN void raise_no_simple_polygon ()
-{
-  throw tl::Exception (tl::to_string (tr ("Shape is not a simple polygon-type")));
-}
-
-static NO_RETURN void raise_no_box ()
-{
-  throw tl::Exception (tl::to_string (tr ("Shape is not a box")));
-}
-
-static NO_RETURN void raise_no_text ()
-{
-  throw tl::Exception (tl::to_string (tr ("Shape is not a text")));
-}
-
-static NO_RETURN void raise_invalid_hole_index_on_polygon ()
-{
-  throw tl::Exception (tl::to_string (tr ("Invalid hole index")));
-}
-
-static NO_RETURN void raise_invalid_hole_index_on_simple_polygon ()
-{
-  throw tl::Exception (tl::to_string (tr ("A simple polygon doesn't have holes")));
-}
 
 // -------------------------------------------------------------------------------
 //  Shape implementation
@@ -96,8 +54,6 @@ db::properties_id_type Shape::prop_id () const
         return (**((pedge_iter_type *) m_generic.iter)).properties_id ();
       case EdgePair:
         return (**((pedge_pair_iter_type *) m_generic.iter)).properties_id ();
-      case Point:
-        return (**((ppoint_iter_type *) m_generic.iter)).properties_id ();
       case Path:
         return (**((ppath_iter_type *) m_generic.iter)).properties_id ();
       case PathRef:
@@ -147,8 +103,6 @@ db::properties_id_type Shape::prop_id () const
         return m_generic.pedge->properties_id ();
       case EdgePair:
         return m_generic.pedge_pair->properties_id ();
-      case Point:
-        return m_generic.ppoint->properties_id ();
       case Path:
         return m_generic.ppath->properties_id ();
       case PathRef:
@@ -191,7 +145,7 @@ Shape::point_iterator Shape::begin_point () const
   } else if (m_type == PathRef || m_type == PathPtrArrayMember) {
     return point_iterator (path_ref ().begin ());
   } else {
-    raise_no_path ();
+    tl_assert (false);
   }
 }
 
@@ -202,7 +156,7 @@ Shape::point_iterator Shape::end_point () const
   } else if (m_type == PathRef || m_type == PathPtrArrayMember) {
     return point_iterator (path_ref ().end ());
   } else {
-    raise_no_path ();
+    tl_assert (false);
   }
 }
 
@@ -217,7 +171,7 @@ Shape::point_iterator Shape::begin_hull () const
   } else if (m_type == PolygonRef || m_type == PolygonPtrArrayMember) {
     return point_iterator (polygon_ref ().begin_hull ());
   } else {
-    raise_no_polygon ();
+    tl_assert (false);
   }
 }
 
@@ -232,45 +186,37 @@ Shape::point_iterator Shape::end_hull () const
   } else if (m_type == PolygonRef || m_type == PolygonPtrArrayMember) {
     return point_iterator (polygon_ref ().end_hull ());
   } else {
-    raise_no_polygon ();
+    tl_assert (false);
   }
 }
 
 Shape::point_iterator Shape::begin_hole (unsigned int hole) const
 {
-  if (m_type == SimplePolygon || m_type == SimplePolygonRef || m_type == SimplePolygonPtrArrayMember) {
-    raise_invalid_hole_index_on_simple_polygon ();
+  if (m_type == SimplePolygon) {
+    return point_iterator (simple_polygon ().begin_hole (hole));
+  } else if (m_type == SimplePolygonRef || m_type == SimplePolygonPtrArrayMember) {
+    return point_iterator (simple_polygon_ref ().begin_hole (hole));
   } else if (m_type == Polygon) {
-    if (hole >= polygon ().holes ()) {
-      raise_invalid_hole_index_on_polygon ();
-    }
     return point_iterator (polygon ().begin_hole (hole));
   } else if (m_type == PolygonRef || m_type == PolygonPtrArrayMember) {
-    if (hole >= polygon_ref ().obj ().holes ()) {
-      raise_invalid_hole_index_on_polygon ();
-    }
     return point_iterator (polygon_ref ().begin_hole (hole));
   } else {
-    raise_no_polygon ();
+    tl_assert (false);
   }
 }
 
 Shape::point_iterator Shape::end_hole (unsigned int hole) const
 {
-  if (m_type == SimplePolygon || m_type == SimplePolygonRef || m_type == SimplePolygonPtrArrayMember) {
-    raise_invalid_hole_index_on_simple_polygon ();
+  if (m_type == SimplePolygon) {
+    return point_iterator (simple_polygon ().end_hole (hole));
+  } else if (m_type == SimplePolygonRef || m_type == SimplePolygonPtrArrayMember) {
+    return point_iterator (simple_polygon_ref ().end_hole (hole));
   } else if (m_type == Polygon) {
-    if (hole >= polygon ().holes ()) {
-      raise_invalid_hole_index_on_polygon ();
-    }
     return point_iterator (polygon ().end_hole (hole));
   } else if (m_type == PolygonRef || m_type == PolygonPtrArrayMember) {
-    if (hole >= polygon_ref ().obj ().holes ()) {
-      raise_invalid_hole_index_on_polygon ();
-    }
     return point_iterator (polygon_ref ().end_hole (hole));
   } else {
-    raise_no_polygon ();
+    tl_assert (false);
   }
 }
 
@@ -285,7 +231,7 @@ unsigned int Shape::holes () const
   } else if (m_type == PolygonRef || m_type == PolygonPtrArrayMember) {
     return polygon_ref ().obj ().holes ();
   } else {
-    raise_no_polygon ();
+    tl_assert (false);
   }
 }
 
@@ -300,7 +246,7 @@ Shape::polygon_edge_iterator Shape::begin_edge () const
   } else if (m_type == PolygonRef || m_type == PolygonPtrArrayMember) {
     return polygon_edge_iterator (polygon_ref ().begin_edge ());
   } else {
-    raise_no_polygon ();
+    tl_assert (false);
   }
 }
 
@@ -323,31 +269,29 @@ Shape::polygon_edge_iterator Shape::begin_edge (unsigned int c) const
   } else if (m_type == PolygonRef || m_type == PolygonPtrArrayMember) {
     return polygon_edge_iterator (polygon_ref ().begin_edge (c));
   } else {
-    raise_no_polygon ();
+    tl_assert (false);
   }
 }
 
 Shape::polygon_ref_type Shape::polygon_ref () const
 {
+  tl_assert (m_type == PolygonRef || m_type == PolygonPtrArrayMember);
   if (m_type == PolygonRef) {
     return *basic_ptr (polygon_ref_type::tag ());
-  } else if (m_type == PolygonPtrArrayMember) {
-    tl_assert (m_trans.rot () == 0);
-    return polygon_ref_type (&basic_ptr (polygon_ptr_array_type::tag ())->object ().obj (), db::Disp (m_trans.disp ()));
   } else {
-    raise_no_general_polygon ();
+    tl_assert (m_trans.rot () == 0);
+    return polygon_ref_type (&basic_ptr (polygon_ptr_array_type::tag ())->object ().obj (), m_trans.disp ());
   }
 }
 
 Shape::simple_polygon_ref_type Shape::simple_polygon_ref () const
 {
+  tl_assert (m_type == SimplePolygonRef || m_type == SimplePolygonPtrArrayMember);
   if (m_type == SimplePolygonRef) {
     return *basic_ptr (simple_polygon_ref_type::tag ());
-  } else if (m_type == SimplePolygonPtrArrayMember) {
-    tl_assert (m_trans.rot () == 0);
-    return simple_polygon_ref_type (&basic_ptr (simple_polygon_ptr_array_type::tag ())->object ().obj (), db::Disp (m_trans.disp ()));
   } else {
-    raise_no_simple_polygon ();
+    tl_assert (m_trans.rot () == 0);
+    return simple_polygon_ref_type (&basic_ptr (simple_polygon_ptr_array_type::tag ())->object ().obj (), m_trans.disp ());
   }
 }
 
@@ -419,13 +363,12 @@ bool Shape::simple_polygon (Shape::simple_polygon_type &p) const
 
 Shape::path_ref_type Shape::path_ref () const
 {
+  tl_assert (m_type == PathRef || m_type == PathPtrArrayMember);
   if (m_type == PathRef) {
     return *basic_ptr (path_ref_type::tag ());
-  } else if (m_type == PathPtrArrayMember) {
-    tl_assert (m_trans.rot () == 0);
-    return path_ref_type (&basic_ptr (path_ptr_array_type::tag ())->object ().obj (), db::Disp (m_trans.disp ()));
   } else {
-    raise_no_path ();
+    tl_assert (m_trans.rot () == 0);
+    return path_ref_type (&basic_ptr (path_ptr_array_type::tag ())->object ().obj (), m_trans.disp ());
   }
 }
 
@@ -480,13 +423,12 @@ bool Shape::path (Shape::path_type &p) const
 
 Shape::text_ref_type Shape::text_ref () const
 {
+  tl_assert (m_type == TextRef || m_type == TextPtrArrayMember);
   if (m_type == TextRef) {
     return *basic_ptr (text_ref_type::tag ());
-  } else if (m_type == TextPtrArrayMember) {
+  } else {
     tl_assert (m_trans.rot () == 0);
     return text_ref_type (&basic_ptr (text_ptr_array_type::tag ())->object ().obj (), disp_type (m_trans.disp ()));
-  } else {
-    raise_no_text ();
   }
 }
 
@@ -561,19 +503,15 @@ db::VAlign Shape::text_valign () const
 
 Shape::box_type Shape::box () const
 {
+  tl_assert (m_type == Box || m_type == ShortBox || m_type == BoxArrayMember || m_type == ShortBoxArrayMember);
   if (m_type == Box) {
     return *basic_ptr (box_type::tag ());
   } else if (m_type == ShortBox) {
     return Shape::box_type (*basic_ptr (short_box_type::tag ()));
   } else if (m_type == BoxArrayMember) {
     return m_trans * basic_ptr (box_array_type::tag ())->object ();
-  } else if (m_type == ShortBoxArrayMember) {
-    return m_trans * basic_ptr (short_box_array_type::tag ())->object ();
-  } else if (m_type == Point) {
-    point_type pt = point ();
-    return m_trans * box_type (pt, pt);
   } else {
-    raise_no_box ();
+    return m_trans * basic_ptr (short_box_array_type::tag ())->object ();
   }
 }
 
@@ -622,12 +560,6 @@ Shape::perimeter_type Shape::perimeter () const
       const short_box_array_type *arr = basic_ptr (short_box_array_type::tag ());
       return arr->size () * arr->object ().perimeter ();
     }
-  case Point:
-    return 0;
-  case Edge:
-    return edge ().length ();
-  case EdgePair:
-    return edge_pair ().perimeter ();
   case Box:
   case ShortBox:
   case BoxArrayMember:
@@ -643,9 +575,6 @@ size_t Shape::array_size () const
   switch (m_type) {
   case Null:
     return 0;
-  case Point:
-  case Edge:
-  case EdgePair:
   case Polygon:
   case PolygonRef:
   case PolygonPtrArrayMember:
@@ -698,11 +627,6 @@ Shape::area_type Shape::area () const
   switch (m_type) {
   case Null:
     return area_type ();
-  case Point:
-  case Edge:
-    return 0;
-  case EdgePair:
-    return edge_pair ().area ();
   case Polygon:
     return polygon ().area ();
   case PolygonRef:
@@ -783,8 +707,6 @@ Shape::box_type Shape::bbox () const
     return box_type (edge ().p1 (), edge ().p2 ());
   case EdgePair:
     return edge_pair ().bbox ();
-  case Point:
-    return box_type (point (), point ());
   case Path:
     return path ().box ();
   case PathRef:
@@ -806,79 +728,6 @@ Shape::box_type Shape::bbox () const
   default:
     return box_type ();
   }
-}
-
-Shape::box_type Shape::rectangle () const
-{
-  if (is_box ()) {
-    return box ();
-  }
-
-  switch (m_type) {
-  case db::Shape::Polygon:
-    return polygon ().is_box () ? polygon ().box () : box_type ();
-  case db::Shape::PolygonRef:
-  case db::Shape::PolygonPtrArrayMember:
-    return polygon_ref ().is_box () ? polygon_ref ().box () : box_type ();
-  case db::Shape::SimplePolygon:
-    return simple_polygon ().is_box () ? simple_polygon ().box () : box_type ();
-  case db::Shape::SimplePolygonRef:
-  case db::Shape::SimplePolygonPtrArrayMember:
-    return simple_polygon_ref ().is_box () ? simple_polygon_ref ().box () : box_type ();
-  case db::Shape::Path:
-    {
-      const path_type &p = path ();
-      if (! p.round () && p.points () <= 2 && p.points () > 0) {
-        point_type p1 = *p.begin ();
-        point_type p2 = p1;
-        if (p.points () == 2) {
-          p2 = *++p.begin ();
-        }
-        if (p1.x () == p2.x () || p1.y () == p2.y ()) {
-          return p.box ();
-        }
-      }
-    }
-    break;
-  case db::Shape::PathRef:
-  case db::Shape::PathPtrArrayMember:
-    {
-      const path_ref_type &p = path_ref ();
-      if (! p.ptr ()->round () && p.ptr ()->points () <= 2 && p.ptr ()->points () > 0) {
-        point_type p1 = *p.begin ();
-        point_type p2 = p1;
-        if (p.ptr ()->points () == 2) {
-          p2 = *++p.begin ();
-        }
-        if (p1.x () == p2.x () || p1.y () == p2.y ()) {
-          return p.box ();
-        }
-      }
-    }
-    break;
-  default:
-    break;
-  }
-
-  return box_type ();
-}
-
-size_t
-Shape::hash_value () const
-{
-  size_t h = size_t (m_type);
-  h = tl::hcombine (h, tl::hfunc (m_trans));
-
-  if (m_stable) {
-    //  Use the bytes of the iterator binary pattern (see operator<)
-    for (unsigned int i = 0; i < sizeof (tl::reuse_vector<box_type>::const_iterator); ++i) {
-      h = tl::hcombine (h, size_t (m_generic.iter[i]));
-    }
-  } else {
-    h = tl::hcombine (h, size_t (m_generic.any));
-  }
-
-  return h;
 }
 
 std::string
@@ -932,9 +781,6 @@ Shape::to_string () const
   case EdgePair:
     r = "edge_pair " + edge_pair ().to_string ();
     break;
-  case Point:
-    r = "point " + point ().to_string ();
-    break;
   case Path:
   case PathRef:
   case PathPtrArrayMember:
@@ -967,8 +813,7 @@ Shape::to_string () const
   }
   
   if (has_prop_id ()) {
-    r += " props=";
-    r += db::properties (prop_id ()).to_dict_var ().to_string ();
+    r += " prop_id=" + tl::to_string (prop_id ());
   }
 
   return r;

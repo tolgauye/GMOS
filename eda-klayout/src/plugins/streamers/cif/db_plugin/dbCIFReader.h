@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -52,8 +52,8 @@ class DB_PLUGIN_PUBLIC CIFReaderException
   : public ReaderException
 {
 public:
-  CIFReaderException (const std::string &msg, size_t l, const std::string &cell, const std::string &source)
-    : ReaderException (tl::sprintf (tl::to_string (tr ("%s (line=%ld, cell=%s), in file: %s")), msg, l, cell, source))
+  CIFReaderException (const std::string &msg, size_t l, const std::string &cell)
+    : ReaderException (tl::sprintf (tl::to_string (tr ("%s (line=%ld, cell=%s)")), msg, l, cell))
   { }
 };
 
@@ -129,7 +129,7 @@ public:
    *
    *  Reimplements CIFDiagnostics
    */
-  virtual void warn (const std::string &txt, int warn_level = 1);
+  virtual void warn (const std::string &txt);
 
 private:
   tl::TextInputStream m_stream;

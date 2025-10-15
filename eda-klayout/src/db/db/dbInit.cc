@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -151,7 +151,7 @@ void init (const std::vector<std::string> &_paths)
         try {
           s_plugins.push_back (load_plugin (imp));
           modules.insert (*im);
-        } catch (tl::Exception &ex) {
+        } catch (tl::Exception (&ex)) {
           tl::error << ex.msg ();
         }
       }

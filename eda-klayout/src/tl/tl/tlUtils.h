@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -195,7 +195,7 @@ private:
 };
 
 /**
- *  @brief A specialization of assoc_map using a std::map as associative container
+ *  @brief A specialisation of assoc_map using a std::map as associative container
  */
 template <class Value>
 struct map_map 
@@ -277,7 +277,7 @@ struct is_equal_type
 };
 
 /**
- *  @brief A type comparison operator (specialization for equal classes)
+ *  @brief A type comparison operator (specialisation for equal classes)
  */
 template <class A>
 struct is_equal_type<A, A>

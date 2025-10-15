@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -38,6 +38,7 @@
 #include <QTimerEvent>
 #include "gsiQt.h"
 #include "gsiQtNetworkCommon.h"
+#include "gsiDeclQtNetworkTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -386,7 +387,7 @@ static void _init_f_tr_4013 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("s");
   decl->add_arg<const char * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("c", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("c", true, "__null");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("n", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -398,7 +399,7 @@ static void _call_f_tr_4013 (const qt_gsi::GenericStaticMethod * /*decl*/, gsi::
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (__null, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QNetworkSession::tr (arg1, arg2, arg3));
 }
@@ -411,7 +412,7 @@ static void _init_f_trUtf8_4013 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("s");
   decl->add_arg<const char * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("c", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("c", true, "__null");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("n", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -423,7 +424,7 @@ static void _call_f_trUtf8_4013 (const qt_gsi::GenericStaticMethod * /*decl*/, g
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (__null, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QNetworkSession::trUtf8 (arg1, arg2, arg3));
 }
@@ -459,7 +460,6 @@ static gsi::Methods methods_QNetworkSession () {
   methods += gsi::qt_signal<QObject * > ("destroyed(QObject *)", "destroyed", gsi::arg("arg1"), "@brief Signal declaration for QNetworkSession::destroyed(QObject *)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<const qt_gsi::Converter<QNetworkSession::SessionError>::target_type & > ("error(QNetworkSession::SessionError)", "error_sig", gsi::arg("arg1"), "@brief Signal declaration for QNetworkSession::error(QNetworkSession::SessionError)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal ("newConfigurationActivated()", "newConfigurationActivated", "@brief Signal declaration for QNetworkSession::newConfigurationActivated()\nYou can bind a procedure to this signal.");
-  methods += gsi::qt_signal<const QString & > ("objectNameChanged(const QString &)", "objectNameChanged", gsi::arg("objectName"), "@brief Signal declaration for QNetworkSession::objectNameChanged(const QString &objectName)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal ("opened()", "opened", "@brief Signal declaration for QNetworkSession::opened()\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<const QNetworkConfiguration &, bool > ("preferredConfigurationChanged(const QNetworkConfiguration &, bool)", "preferredConfigurationChanged", gsi::arg("config"), gsi::arg("isSeamless"), "@brief Signal declaration for QNetworkSession::preferredConfigurationChanged(const QNetworkConfiguration &config, bool isSeamless)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<const qt_gsi::Converter<QNetworkSession::State>::target_type & > ("stateChanged(QNetworkSession::State)", "stateChanged", gsi::arg("arg1"), "@brief Signal declaration for QNetworkSession::stateChanged(QNetworkSession::State)\nYou can bind a procedure to this signal.");
@@ -536,33 +536,33 @@ public:
     emit QNetworkSession::error(arg1);
   }
 
-  //  [adaptor impl] bool QNetworkSession::event(QEvent *event)
-  bool cbs_event_1217_0(QEvent *_event)
+  //  [adaptor impl] bool QNetworkSession::event(QEvent *)
+  bool cbs_event_1217_0(QEvent *arg1)
   {
-    return QNetworkSession::event(_event);
+    return QNetworkSession::event(arg1);
   }
 
-  virtual bool event(QEvent *_event)
+  virtual bool event(QEvent *arg1)
   {
     if (cb_event_1217_0.can_issue()) {
-      return cb_event_1217_0.issue<QNetworkSession_Adaptor, bool, QEvent *>(&QNetworkSession_Adaptor::cbs_event_1217_0, _event);
+      return cb_event_1217_0.issue<QNetworkSession_Adaptor, bool, QEvent *>(&QNetworkSession_Adaptor::cbs_event_1217_0, arg1);
     } else {
-      return QNetworkSession::event(_event);
+      return QNetworkSession::event(arg1);
     }
   }
 
-  //  [adaptor impl] bool QNetworkSession::eventFilter(QObject *watched, QEvent *event)
-  bool cbs_eventFilter_2411_0(QObject *watched, QEvent *event)
+  //  [adaptor impl] bool QNetworkSession::eventFilter(QObject *, QEvent *)
+  bool cbs_eventFilter_2411_0(QObject *arg1, QEvent *arg2)
   {
-    return QNetworkSession::eventFilter(watched, event);
+    return QNetworkSession::eventFilter(arg1, arg2);
   }
 
-  virtual bool eventFilter(QObject *watched, QEvent *event)
+  virtual bool eventFilter(QObject *arg1, QEvent *arg2)
   {
     if (cb_eventFilter_2411_0.can_issue()) {
-      return cb_eventFilter_2411_0.issue<QNetworkSession_Adaptor, bool, QObject *, QEvent *>(&QNetworkSession_Adaptor::cbs_eventFilter_2411_0, watched, event);
+      return cb_eventFilter_2411_0.issue<QNetworkSession_Adaptor, bool, QObject *, QEvent *>(&QNetworkSession_Adaptor::cbs_eventFilter_2411_0, arg1, arg2);
     } else {
-      return QNetworkSession::eventFilter(watched, event);
+      return QNetworkSession::eventFilter(arg1, arg2);
     }
   }
 
@@ -570,13 +570,6 @@ public:
   void emitter_QNetworkSession_newConfigurationActivated_0()
   {
     emit QNetworkSession::newConfigurationActivated();
-  }
-
-  //  [emitter impl] void QNetworkSession::objectNameChanged(const QString &objectName)
-  void emitter_QNetworkSession_objectNameChanged_4567(const QString &objectName)
-  {
-    __SUPPRESS_UNUSED_WARNING (objectName);
-    throw tl::Exception ("Can't emit private signal 'void QNetworkSession::objectNameChanged(const QString &objectName)'");
   }
 
   //  [emitter impl] void QNetworkSession::opened()
@@ -603,33 +596,33 @@ public:
     emit QNetworkSession::usagePoliciesChanged(usagePolicies);
   }
 
-  //  [adaptor impl] void QNetworkSession::childEvent(QChildEvent *event)
-  void cbs_childEvent_1701_0(QChildEvent *event)
+  //  [adaptor impl] void QNetworkSession::childEvent(QChildEvent *)
+  void cbs_childEvent_1701_0(QChildEvent *arg1)
   {
-    QNetworkSession::childEvent(event);
+    QNetworkSession::childEvent(arg1);
   }
 
-  virtual void childEvent(QChildEvent *event)
+  virtual void childEvent(QChildEvent *arg1)
   {
     if (cb_childEvent_1701_0.can_issue()) {
-      cb_childEvent_1701_0.issue<QNetworkSession_Adaptor, QChildEvent *>(&QNetworkSession_Adaptor::cbs_childEvent_1701_0, event);
+      cb_childEvent_1701_0.issue<QNetworkSession_Adaptor, QChildEvent *>(&QNetworkSession_Adaptor::cbs_childEvent_1701_0, arg1);
     } else {
-      QNetworkSession::childEvent(event);
+      QNetworkSession::childEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QNetworkSession::customEvent(QEvent *event)
-  void cbs_customEvent_1217_0(QEvent *event)
+  //  [adaptor impl] void QNetworkSession::customEvent(QEvent *)
+  void cbs_customEvent_1217_0(QEvent *arg1)
   {
-    QNetworkSession::customEvent(event);
+    QNetworkSession::customEvent(arg1);
   }
 
-  virtual void customEvent(QEvent *event)
+  virtual void customEvent(QEvent *arg1)
   {
     if (cb_customEvent_1217_0.can_issue()) {
-      cb_customEvent_1217_0.issue<QNetworkSession_Adaptor, QEvent *>(&QNetworkSession_Adaptor::cbs_customEvent_1217_0, event);
+      cb_customEvent_1217_0.issue<QNetworkSession_Adaptor, QEvent *>(&QNetworkSession_Adaptor::cbs_customEvent_1217_0, arg1);
     } else {
-      QNetworkSession::customEvent(event);
+      QNetworkSession::customEvent(arg1);
     }
   }
 
@@ -648,18 +641,18 @@ public:
     }
   }
 
-  //  [adaptor impl] void QNetworkSession::timerEvent(QTimerEvent *event)
-  void cbs_timerEvent_1730_0(QTimerEvent *event)
+  //  [adaptor impl] void QNetworkSession::timerEvent(QTimerEvent *)
+  void cbs_timerEvent_1730_0(QTimerEvent *arg1)
   {
-    QNetworkSession::timerEvent(event);
+    QNetworkSession::timerEvent(arg1);
   }
 
-  virtual void timerEvent(QTimerEvent *event)
+  virtual void timerEvent(QTimerEvent *arg1)
   {
     if (cb_timerEvent_1730_0.can_issue()) {
-      cb_timerEvent_1730_0.issue<QNetworkSession_Adaptor, QTimerEvent *>(&QNetworkSession_Adaptor::cbs_timerEvent_1730_0, event);
+      cb_timerEvent_1730_0.issue<QNetworkSession_Adaptor, QTimerEvent *>(&QNetworkSession_Adaptor::cbs_timerEvent_1730_0, arg1);
     } else {
-      QNetworkSession::timerEvent(event);
+      QNetworkSession::timerEvent(arg1);
     }
   }
 
@@ -679,7 +672,7 @@ static void _init_ctor_QNetworkSession_Adaptor_4702 (qt_gsi::GenericStaticMethod
 {
   static gsi::ArgSpecBase argspec_0 ("connConfig");
   decl->add_arg<const QNetworkConfiguration & > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("parent", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("parent", true, "0");
   decl->add_arg<QObject * > (argspec_1);
   decl->set_return_new<QNetworkSession_Adaptor> ();
 }
@@ -689,16 +682,16 @@ static void _call_ctor_QNetworkSession_Adaptor_4702 (const qt_gsi::GenericStatic
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const QNetworkConfiguration &arg1 = gsi::arg_reader<const QNetworkConfiguration & >() (args, heap);
-  QObject *arg2 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (nullptr, heap);
+  QObject *arg2 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (0, heap);
   ret.write<QNetworkSession_Adaptor *> (new QNetworkSession_Adaptor (arg1, arg2));
 }
 
 
-// void QNetworkSession::childEvent(QChildEvent *event)
+// void QNetworkSession::childEvent(QChildEvent *)
 
 static void _init_cbs_childEvent_1701_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QChildEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -732,11 +725,11 @@ static void _call_emitter_closed_0 (const qt_gsi::GenericMethod * /*decl*/, void
 }
 
 
-// void QNetworkSession::customEvent(QEvent *event)
+// void QNetworkSession::customEvent(QEvent *)
 
 static void _init_cbs_customEvent_1217_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -760,7 +753,7 @@ static void _set_callback_cbs_customEvent_1217_0 (void *cls, const gsi::Callback
 
 static void _init_emitter_destroyed_1302 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("arg1", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("arg1", true, "0");
   decl->add_arg<QObject * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -769,7 +762,7 @@ static void _call_emitter_destroyed_1302 (const qt_gsi::GenericMethod * /*decl*/
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (nullptr, heap);
+  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (0, heap);
   ((QNetworkSession_Adaptor *)cls)->emitter_QNetworkSession_destroyed_1302 (arg1);
 }
 
@@ -816,11 +809,11 @@ static void _call_emitter_error_3381 (const qt_gsi::GenericMethod * /*decl*/, vo
 }
 
 
-// bool QNetworkSession::event(QEvent *event)
+// bool QNetworkSession::event(QEvent *)
 
 static void _init_cbs_event_1217_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QEvent * > (argspec_0);
   decl->set_return<bool > ();
 }
@@ -839,13 +832,13 @@ static void _set_callback_cbs_event_1217_0 (void *cls, const gsi::Callback &cb)
 }
 
 
-// bool QNetworkSession::eventFilter(QObject *watched, QEvent *event)
+// bool QNetworkSession::eventFilter(QObject *, QEvent *)
 
 static void _init_cbs_eventFilter_2411_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("watched");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QObject * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("event");
+  static gsi::ArgSpecBase argspec_1 ("arg2");
   decl->add_arg<QEvent * > (argspec_1);
   decl->set_return<bool > ();
 }
@@ -894,24 +887,6 @@ static void _call_emitter_newConfigurationActivated_0 (const qt_gsi::GenericMeth
 {
   __SUPPRESS_UNUSED_WARNING(args);
   ((QNetworkSession_Adaptor *)cls)->emitter_QNetworkSession_newConfigurationActivated_0 ();
-}
-
-
-// emitter void QNetworkSession::objectNameChanged(const QString &objectName)
-
-static void _init_emitter_objectNameChanged_4567 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("objectName");
-  decl->add_arg<const QString & > (argspec_0);
-  decl->set_return<void > ();
-}
-
-static void _call_emitter_objectNameChanged_4567 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs & /*ret*/) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const QString &arg1 = gsi::arg_reader<const QString & >() (args, heap);
-  ((QNetworkSession_Adaptor *)cls)->emitter_QNetworkSession_objectNameChanged_4567 (arg1);
 }
 
 
@@ -1014,11 +989,11 @@ static void _call_emitter_stateChanged_2632 (const qt_gsi::GenericMethod * /*dec
 }
 
 
-// void QNetworkSession::timerEvent(QTimerEvent *event)
+// void QNetworkSession::timerEvent(QTimerEvent *)
 
 static void _init_cbs_timerEvent_1730_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QTimerEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1064,30 +1039,29 @@ gsi::Class<QNetworkSession> &qtdecl_QNetworkSession ();
 static gsi::Methods methods_QNetworkSession_Adaptor () {
   gsi::Methods methods;
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QNetworkSession::QNetworkSession(const QNetworkConfiguration &connConfig, QObject *parent)\nThis method creates an object of class QNetworkSession.", &_init_ctor_QNetworkSession_Adaptor_4702, &_call_ctor_QNetworkSession_Adaptor_4702);
-  methods += new qt_gsi::GenericMethod ("*childEvent", "@brief Virtual method void QNetworkSession::childEvent(QChildEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0);
-  methods += new qt_gsi::GenericMethod ("*childEvent", "@hide", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0, &_set_callback_cbs_childEvent_1701_0);
+  methods += new qt_gsi::GenericMethod ("*childEvent", "@hide", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0);
+  methods += new qt_gsi::GenericMethod ("*childEvent", "@brief Virtual method void QNetworkSession::childEvent(QChildEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0, &_set_callback_cbs_childEvent_1701_0);
   methods += new qt_gsi::GenericMethod ("emit_closed", "@brief Emitter for signal void QNetworkSession::closed()\nCall this method to emit this signal.", false, &_init_emitter_closed_0, &_call_emitter_closed_0);
-  methods += new qt_gsi::GenericMethod ("*customEvent", "@brief Virtual method void QNetworkSession::customEvent(QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*customEvent", "@hide", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0, &_set_callback_cbs_customEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*customEvent", "@hide", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*customEvent", "@brief Virtual method void QNetworkSession::customEvent(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0, &_set_callback_cbs_customEvent_1217_0);
   methods += new qt_gsi::GenericMethod ("emit_destroyed", "@brief Emitter for signal void QNetworkSession::destroyed(QObject *)\nCall this method to emit this signal.", false, &_init_emitter_destroyed_1302, &_call_emitter_destroyed_1302);
-  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@brief Virtual method void QNetworkSession::disconnectNotify(const QMetaMethod &signal)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0);
-  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@hide", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0, &_set_callback_cbs_disconnectNotify_2394_0);
+  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@hide", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0);
+  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@brief Virtual method void QNetworkSession::disconnectNotify(const QMetaMethod &signal)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0, &_set_callback_cbs_disconnectNotify_2394_0);
   methods += new qt_gsi::GenericMethod ("emit_error_sig", "@brief Emitter for signal void QNetworkSession::error(QNetworkSession::SessionError)\nCall this method to emit this signal.", false, &_init_emitter_error_3381, &_call_emitter_error_3381);
-  methods += new qt_gsi::GenericMethod ("event", "@brief Virtual method bool QNetworkSession::event(QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0);
-  methods += new qt_gsi::GenericMethod ("event", "@hide", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0, &_set_callback_cbs_event_1217_0);
-  methods += new qt_gsi::GenericMethod ("eventFilter", "@brief Virtual method bool QNetworkSession::eventFilter(QObject *watched, QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0);
-  methods += new qt_gsi::GenericMethod ("eventFilter", "@hide", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0, &_set_callback_cbs_eventFilter_2411_0);
+  methods += new qt_gsi::GenericMethod ("event", "@hide", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0);
+  methods += new qt_gsi::GenericMethod ("event", "@brief Virtual method bool QNetworkSession::event(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0, &_set_callback_cbs_event_1217_0);
+  methods += new qt_gsi::GenericMethod ("eventFilter", "@hide", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0);
+  methods += new qt_gsi::GenericMethod ("eventFilter", "@brief Virtual method bool QNetworkSession::eventFilter(QObject *, QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0, &_set_callback_cbs_eventFilter_2411_0);
   methods += new qt_gsi::GenericMethod ("*isSignalConnected", "@brief Method bool QNetworkSession::isSignalConnected(const QMetaMethod &signal)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_isSignalConnected_c2394, &_call_fp_isSignalConnected_c2394);
   methods += new qt_gsi::GenericMethod ("emit_newConfigurationActivated", "@brief Emitter for signal void QNetworkSession::newConfigurationActivated()\nCall this method to emit this signal.", false, &_init_emitter_newConfigurationActivated_0, &_call_emitter_newConfigurationActivated_0);
-  methods += new qt_gsi::GenericMethod ("emit_objectNameChanged", "@brief Emitter for signal void QNetworkSession::objectNameChanged(const QString &objectName)\nCall this method to emit this signal.", false, &_init_emitter_objectNameChanged_4567, &_call_emitter_objectNameChanged_4567);
   methods += new qt_gsi::GenericMethod ("emit_opened", "@brief Emitter for signal void QNetworkSession::opened()\nCall this method to emit this signal.", false, &_init_emitter_opened_0, &_call_emitter_opened_0);
   methods += new qt_gsi::GenericMethod ("emit_preferredConfigurationChanged", "@brief Emitter for signal void QNetworkSession::preferredConfigurationChanged(const QNetworkConfiguration &config, bool isSeamless)\nCall this method to emit this signal.", false, &_init_emitter_preferredConfigurationChanged_4264, &_call_emitter_preferredConfigurationChanged_4264);
   methods += new qt_gsi::GenericMethod ("*receivers", "@brief Method int QNetworkSession::receivers(const char *signal)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_receivers_c1731, &_call_fp_receivers_c1731);
   methods += new qt_gsi::GenericMethod ("*sender", "@brief Method QObject *QNetworkSession::sender()\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_sender_c0, &_call_fp_sender_c0);
   methods += new qt_gsi::GenericMethod ("*senderSignalIndex", "@brief Method int QNetworkSession::senderSignalIndex()\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_senderSignalIndex_c0, &_call_fp_senderSignalIndex_c0);
   methods += new qt_gsi::GenericMethod ("emit_stateChanged", "@brief Emitter for signal void QNetworkSession::stateChanged(QNetworkSession::State)\nCall this method to emit this signal.", false, &_init_emitter_stateChanged_2632, &_call_emitter_stateChanged_2632);
-  methods += new qt_gsi::GenericMethod ("*timerEvent", "@brief Virtual method void QNetworkSession::timerEvent(QTimerEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0);
-  methods += new qt_gsi::GenericMethod ("*timerEvent", "@hide", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0, &_set_callback_cbs_timerEvent_1730_0);
+  methods += new qt_gsi::GenericMethod ("*timerEvent", "@hide", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0);
+  methods += new qt_gsi::GenericMethod ("*timerEvent", "@brief Virtual method void QNetworkSession::timerEvent(QTimerEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0, &_set_callback_cbs_timerEvent_1730_0);
   methods += new qt_gsi::GenericMethod ("emit_usagePoliciesChanged", "@brief Emitter for signal void QNetworkSession::usagePoliciesChanged(QFlags<QNetworkSession::UsagePolicy> usagePolicies)\nCall this method to emit this signal.", false, &_init_emitter_usagePoliciesChanged_3940, &_call_emitter_usagePoliciesChanged_3940);
   return methods;
 }

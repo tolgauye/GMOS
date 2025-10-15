@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -23,13 +23,8 @@
 
 
 #include "layXORToolDialog.h"
-#include "layDispatcher.h"
 
 #include "layPlugin.h"
-#include "layLayoutView.h"
-#include "layUtils.h"
-
-#include <QPointer>
 
 namespace lay
 {
@@ -38,26 +33,23 @@ class XORPlugin
   : public lay::Plugin
 {
 public:
-  XORPlugin (lay::LayoutViewBase *view)
-    : lay::Plugin (view), mp_view (view)
+  XORPlugin (Plugin *parent, lay::LayoutView *view)
+    : lay::Plugin (parent), mp_view (view)
   {
-    if (lay::has_gui ()) {
-      mp_dialog = new lay::XORToolDialog (0);
-    }
+    mp_dialog = new lay::XORToolDialog (0);
   }
 
   ~XORPlugin ()
   {
-    if (mp_dialog) {
-      delete mp_dialog.data ();
-    }
+    delete mp_dialog;
+    mp_dialog = 0;
   }
 
   void menu_activated (const std::string &symbol) 
   {
     if (symbol == "lay::xor_tool") {
 
-      if (mp_dialog && mp_dialog->exec_dialog (mp_view)) {
+      if (mp_dialog->exec_dialog (mp_view)) {
 
         // ... implementation is in layXORToolDialog.cc ...
 
@@ -67,8 +59,8 @@ public:
   }
 
 private:
-  lay::LayoutViewBase *mp_view;
-  QPointer<lay::XORToolDialog> mp_dialog;
+  lay::LayoutView *mp_view;
+  lay::XORToolDialog *mp_dialog;
 };
 
 class XORPluginDeclaration
@@ -104,7 +96,7 @@ public:
   virtual void get_menu_entries (std::vector<lay::MenuEntry> &menu_entries) const
   {
     lay::PluginDeclaration::get_menu_entries (menu_entries);
-    menu_entries.push_back (lay::menu_item ("lay::xor_tool", "xor_tool:edit", "tools_menu.post_verification_group", tl::to_string (QObject::tr ("XOR Tool"))));
+    menu_entries.push_back (lay::MenuEntry ("lay::xor_tool", "xor_tool:edit", "tools_menu.post_verification_group", tl::to_string (QObject::tr ("XOR Tool"))));
   }
 
   virtual bool configure (const std::string & /*name*/, const std::string & /*value*/)
@@ -117,9 +109,9 @@ public:
     // .. nothing yet ..
   }
 
-  lay::Plugin *create_plugin (db::Manager *, lay::Dispatcher *, lay::LayoutViewBase *view) const
+  lay::Plugin *create_plugin (db::Manager *, lay::PluginRoot *root, lay::LayoutView *view) const
   {
-    return new XORPlugin (view);
+    return new XORPlugin (root, view);
   }
 };
 

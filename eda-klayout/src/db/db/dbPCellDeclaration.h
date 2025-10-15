@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -28,18 +28,16 @@
 
 #include "gsiObject.h"
 #include "dbLayout.h"
-#include "dbVia.h"
 #include "tlVariant.h"
-#include "tlObject.h"
-#include "tlOptional.h"
 
 namespace db
 {
 
+typedef size_t pcell_id_type;
 typedef std::vector<tl::Variant> pcell_parameters_type;
     
-/**
- *  @brief A declaration for one PCell parameter
+  /**
+   *  @brief A declaration for one PCell parameter
  *
  *  A parameter is described by a name (potentially a variable name), a description text (for a UI label),
  *  a default value (a variant), a type (requested type for the variant), a choice list (if the parameter can
@@ -63,7 +61,6 @@ public:
     t_layer,    //  a layer (value is a db::LayerProperties object)
     t_shape,    //  a shape (a db::Point, db::Box, db::Polygon, db::Edge or db::Path) rendering a guiding shape
     t_list,     //  a list of strings
-    t_callback, //  callback only (button)
     t_none      //  no specific type 
   };
 
@@ -170,22 +167,6 @@ public:
   }
 
   /**
-   *  @brief Getter for the tooltip property
-   */
-  const std::string &get_tooltip () const
-  {
-    return m_tooltip;
-  }
-
-  /**
-   *  @brief Setter for the tooltip property
-   */
-  void set_tooltip (const std::string &tooltip)
-  {
-    m_tooltip = tooltip;
-  }
-
-  /**
    *  @brief Getter for the type property
    */
   type get_type () const
@@ -286,56 +267,6 @@ public:
   }
 
   /**
-   *  @brief Sets the minimum value
-   *
-   *  The minimum value is a visual feature and limits the allowed values for numerical
-   *  entry boxes. This applies to parameters of type int or double. The minimum value
-   *  is not effective if choices are present.
-   *
-   *  The minimum value is not enforced - for example there is no restriction implemented
-   *  when setting values programmatically.
-   *
-   *  Setting this attribute to "nil" (the default) implies "no limit".
-   */
-  void set_min_value (const tl::Variant &min)
-  {
-    m_min_value = min;
-  }
-
-  /**
-   *  @brief Gets the minimum value (see \set_min_value)
-   */
-  const tl::Variant &min_value () const
-  {
-    return m_min_value;
-  }
-
-  /**
-   *  @brief Sets the maximum value
-   *
-   *  The maximum value is a visual feature and limits the allowed values for numerical
-   *  entry boxes. This applies to parameters of type int or double. The maximum value
-   *  is not effective if choices are present.
-   *
-   *  The maximum value is not enforced - for example there is no restriction implemented
-   *  when setting values programmatically.
-   *
-   *  Setting this attribute to "nil" (the default) implies "no limit".
-   */
-  void set_max_value (const tl::Variant &max)
-  {
-    m_max_value = max;
-  }
-
-  /**
-   *  @brief Gets the maximum value (see \set_max_value)
-   */
-  const tl::Variant &max_value () const
-  {
-    return m_max_value;
-  }
-
-  /**
    *  @brief Equality
    */
   bool operator== (const db::PCellParameterDeclaration &d) const
@@ -348,10 +279,7 @@ public:
            m_type == d.m_type &&
            m_name == d.m_name &&
            m_description == d.m_description &&
-           m_tooltip == d.m_tooltip &&
-           m_unit == d.m_unit &&
-           m_min_value == d.m_min_value &&
-           m_max_value == d.m_max_value;
+           m_unit == d.m_unit;
   }
 
 private:
@@ -361,8 +289,7 @@ private:
   bool m_hidden, m_readonly;
   type m_type;
   std::string m_name;
-  std::string m_description, m_tooltip, m_unit;
-  tl::Variant m_min_value, m_max_value;
+  std::string m_description, m_unit;
 };
 
 /**
@@ -397,198 +324,10 @@ public:
 };
 
 /**
- *  @brief Represents the dynamic state of a single parameter
- */
-class DB_PUBLIC ParameterState
-{
-public:
-  /**
-   *  @brief A enum describing the icon type
-   */
-  enum Icon {
-    NoIcon = 0,
-    InfoIcon = 1,
-    ErrorIcon = 2,
-    WarningIcon = 3
-  };
-
-  /**
-   *  @brief Parameterized constructor
-   */
-  ParameterState ()
-    : m_value (), m_visible (true), m_enabled (true), m_readonly (false), m_icon (NoIcon)
-  {
-    //  .. nothing yet ..
-  }
-
-  /**
-   *  @brief Gets the value
-   */
-  const tl::Variant &value () const
-  {
-    return m_value;
-  }
-
-  /**
-   *  @brief Sets the value
-   */
-  void set_value (const tl::Variant &v)
-  {
-    m_value = v;
-  }
-
-  /**
-   *  @brief Gets the visibility state
-   */
-  bool is_visible () const
-  {
-    return m_visible;
-  }
-
-  /**
-   *  @brief Sets the visibility
-   */
-  void set_visible (bool v)
-  {
-    m_visible = v;
-  }
-
-  /**
-   *  @brief Gets the enabled state
-   */
-  bool is_enabled () const
-  {
-    return m_enabled;
-  }
-
-  /**
-   *  @brief Sets the enabled state
-   */
-  void set_enabled (bool v)
-  {
-    m_enabled = v;
-  }
-
-  /**
-   *  @brief Gets a value indicating whether the parameter is read-only
-   */
-  bool is_readonly () const
-  {
-    return m_readonly;
-  }
-
-  /**
-   *  @brief Sets a value indicating whether the parameter is read-only
-   */
-  void set_readonly (bool f)
-  {
-    m_readonly = f;
-  }
-
-  /**
-   *  @brief Gets the tooltip for the parameter
-   */
-  const std::string &tooltip () const
-  {
-    return m_tooltip;
-  }
-
-  /**
-   *  @brief Sets the tooltip
-   */
-  void set_tooltip (const std::string &s)
-  {
-    m_tooltip = s;
-  }
-
-  /**
-   *  @brief Gets the icon
-   */
-  Icon icon () const
-  {
-    return m_icon;
-  }
-
-  /**
-   *  @brief Sets the icon
-   */
-  void set_icon (Icon i)
-  {
-    m_icon = i;
-  }
-
-private:
-  tl::Variant m_value;
-  bool m_visible, m_enabled, m_readonly;
-  std::string m_tooltip;
-  Icon m_icon;
-};
-
-/**
- *  @brief Represents the state of call parameters for the callback implementation
- */
-class DB_PUBLIC ParameterStates
-{
-public:
-  /**
-   *  @brief Default constructor
-   */
-  ParameterStates ();
-
-  /**
-   *  @brief Copy constructor
-   */
-  ParameterStates (const ParameterStates &other);
-
-  /**
-   *  @brief Move constructor
-   */
-  ParameterStates (ParameterStates &&other);
-
-  /**
-   *  @brief Assignment
-   */
-  ParameterStates &operator= (const ParameterStates &other);
-
-  /**
-   *  @brief Sets a parameter from a given state
-   */
-  void set_parameter (const std::string &name, const ParameterState &ps);
-
-  /**
-   *  @brief Gets the parameter state for the parameter with the given name
-   *
-   *  If the name is not a valid parameter name, the behavior is undefined.
-   */
-  ParameterState &parameter (const std::string &name);
-
-  /**
-   *  @brief Gets the parameter state for the parameter with the given name
-   *
-   *  If the name is not a valid parameter name, the behavior is undefined.
-   */
-  const ParameterState &parameter (const std::string &name) const;
-
-  /**
-   *  @brief Gets a value indicating whether a parameter with that name is present
-   */
-  bool has_parameter (const std::string &name) const;
-
-  /**
-   *  @brief Returns true, if the values of the parameter states are equal
-   */
-  bool values_are_equal (const db::ParameterStates &other) const;
-
-public:
-  std::map<std::string, ParameterState> m_states;
-};
-
-/**
  *  @brief A declaration for a PCell
  */
 class DB_PUBLIC PCellDeclaration
-  : public gsi::ObjectBase,
-    public tl::Object
+  : public gsi::ObjectBase
 {
 public:
   /**
@@ -634,25 +373,7 @@ public:
   }
 
   /**
-   *  @brief Callback on parameter change
-   *
-   *  This method allows implementing dynamic behavior on the change of a parameter value.
-   *  A ParameterStatus object is supplied that allows changing parameter enabled status, visibility and value.
-   *  The callback also acts as receiver for t_callback type parameters which only present a button.
-   *
-   *  The callback function receives the name of the parameter that was changed.
-   *  On some occasions, the callback is called unspecifically, for example for the initialization.
-   *  In that case, the parameter name is empty.
-   *
-   *  Exceptions from this implementation are ignored.
-   */
-  virtual void callback (const db::Layout & /*layout*/, const std::string & /*name*/, ParameterStates & /*states*/) const
-  {
-    //  the default implementation does nothing
-  }
-
-  /**
-   *  @brief Produces a layout for the given parameter set and using the given layers.
+   *  @brief Produce a layout for the given parameter set and using the given layers.
    *
    *  A reimplementation of that method should produce the desired layout for the given parameter set.
    *  The layout shall be put into the given cell. This code may create cell instances to other cells 
@@ -671,16 +392,6 @@ public:
   virtual std::string get_display_name (const pcell_parameters_type &) const
   {
     return std::string ();
-  }
-
-  /**
-   *  @brief Returns the description text of the PCell
-   *
-   *  The description text is a for human interpretation only. By default, the name will be returned.
-   */
-  virtual std::string get_description () const
-  {
-    return m_name;
   }
 
   /**
@@ -715,44 +426,6 @@ public:
   virtual db::Trans transformation_from_shape (const db::Layout & /*layout*/, const db::Shape & /*shape*/, unsigned int /*layer*/) const
   {
     return db::Trans ();
-  }
-
-  /**
-   *  @brief Returns a value indicating that the PCell wants lazy evaluation
-   *
-   *  In lazy evaluation mode, the PCell is not immediately updated when a parameter is changed in the UI, but only when it is requested
-   *  to be updated.
-   */
-  virtual bool wants_lazy_evaluation () const
-  {
-    return false;
-  }
-
-  /**
-   *  @brief Returns the via types the PCell can provide
-   *
-   *  This method returns a list of via types the PCell can support.
-   *  If this list is non-empty, the PCell will be used to implement
-   *  vias of one of the given type.
-   *
-   *  Such a PCell needs to support the following (maybe hidden) parameters
-   *  * "via" (string): the name of the via type
-   *  * "w_bottom" (float): the bottom wire width in um or 0 if not specified
-   *  * "h_bottom" (float): the bottom wire height in um or 0 if not specified
-   *  * "w_top" (float): the top wire width in um or 0 if not specified
-   *  * "h_top" (float): the top wire height in um or 0 if not specified
-   */
-  virtual std::vector<ViaType> via_types () const
-  {
-    return std::vector<ViaType> ();
-  }
-
-  /**
-   *  @brief Gets the Layout object the PCell is registered inside or NULL if it is not registered
-   */
-  db::Layout *layout () const
-  {
-    return mp_layout;
   }
 
   /**
@@ -844,13 +517,23 @@ private:
   int m_ref_count;
   pcell_id_type m_id;
   std::string m_name;
-  db::Layout *mp_layout;
   mutable bool m_has_parameter_declarations;
   mutable std::vector<PCellParameterDeclaration> m_parameter_declarations;
 
   friend class db::Layout;
 };
 
+}
+
+namespace tl
+{
+  /**
+   *  @brief Type traits 
+   */
+  template <> struct type_traits <db::PCellDeclaration> : public type_traits<void> {
+    typedef tl::false_tag has_copy_constructor;
+    typedef tl::false_tag has_default_constructor;
+  };
 }
 
 #endif

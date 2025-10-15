@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -100,16 +100,14 @@ void
 MemStatisticsCollector::print ()
 {
   std::map<purpose_t, std::string> p2s;
-  p2s[None]            = "(none)         ";
-  p2s[LayoutInfo]      = "Layout info    ";
-  p2s[CellInfo]        = "Cell info      ";
-  p2s[Instances]       = "Instances      ";
-  p2s[InstTrees]       = "Instance trees ";
-  p2s[ShapesInfo]      = "Shapes info    ";
-  p2s[ShapesCache]     = "Shapes cache   ";
-  p2s[ShapeTrees]      = "Shape trees    ";
-  p2s[Netlist]         = "Netlist        ";
-  p2s[LayoutToNetlist] = "Netlist layout ";
+  p2s[None]        = "(none)         ";
+  p2s[LayoutInfo]  = "Layout info    ";
+  p2s[CellInfo]    = "Cell info      ";
+  p2s[Instances]   = "Instances      ";
+  p2s[InstTrees]   = "Instance trees ";
+  p2s[ShapesInfo]  = "Shapes info    ";
+  p2s[ShapesCache] = "Shapes cache   ";
+  p2s[ShapeTrees]  = "Shape trees    ";
 
   if (m_detailed) {
 

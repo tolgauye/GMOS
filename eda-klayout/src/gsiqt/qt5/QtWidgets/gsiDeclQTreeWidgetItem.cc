@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -37,6 +37,7 @@
 #include <QTreeWidget>
 #include "gsiQt.h"
 #include "gsiQtWidgetsCommon.h"
+#include "gsiDeclQtWidgetsTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -1599,8 +1600,6 @@ static void _call_ctor_QTreeWidgetItem_Adaptor_2374 (const qt_gsi::GenericStatic
   QTreeWidgetItem_Adaptor *obj = new QTreeWidgetItem_Adaptor (arg1, arg2);
   if (arg1) {
     qt_gsi::qt_keep (obj);
-  } else {
-    qt_gsi::qt_release (obj);
   }
   ret.write<QTreeWidgetItem_Adaptor *> (obj);
 }
@@ -1629,8 +1628,6 @@ static void _call_ctor_QTreeWidgetItem_Adaptor_4703 (const qt_gsi::GenericStatic
   QTreeWidgetItem_Adaptor *obj = new QTreeWidgetItem_Adaptor (arg1, arg2, arg3);
   if (arg1) {
     qt_gsi::qt_keep (obj);
-  } else {
-    qt_gsi::qt_release (obj);
   }
   ret.write<QTreeWidgetItem_Adaptor *> (obj);
 }
@@ -1659,8 +1656,6 @@ static void _call_ctor_QTreeWidgetItem_Adaptor_4380 (const qt_gsi::GenericStatic
   QTreeWidgetItem_Adaptor *obj = new QTreeWidgetItem_Adaptor (arg1, arg2, arg3);
   if (arg1) {
     qt_gsi::qt_keep (obj);
-  } else {
-    qt_gsi::qt_release (obj);
   }
   ret.write<QTreeWidgetItem_Adaptor *> (obj);
 }
@@ -1686,8 +1681,6 @@ static void _call_ctor_QTreeWidgetItem_Adaptor_2773 (const qt_gsi::GenericStatic
   QTreeWidgetItem_Adaptor *obj = new QTreeWidgetItem_Adaptor (arg1, arg2);
   if (arg1) {
     qt_gsi::qt_keep (obj);
-  } else {
-    qt_gsi::qt_release (obj);
   }
   ret.write<QTreeWidgetItem_Adaptor *> (obj);
 }
@@ -1716,8 +1709,6 @@ static void _call_ctor_QTreeWidgetItem_Adaptor_5102 (const qt_gsi::GenericStatic
   QTreeWidgetItem_Adaptor *obj = new QTreeWidgetItem_Adaptor (arg1, arg2, arg3);
   if (arg1) {
     qt_gsi::qt_keep (obj);
-  } else {
-    qt_gsi::qt_release (obj);
   }
   ret.write<QTreeWidgetItem_Adaptor *> (obj);
 }
@@ -1746,8 +1737,6 @@ static void _call_ctor_QTreeWidgetItem_Adaptor_4779 (const qt_gsi::GenericStatic
   QTreeWidgetItem_Adaptor *obj = new QTreeWidgetItem_Adaptor (arg1, arg2, arg3);
   if (arg1) {
     qt_gsi::qt_keep (obj);
-  } else {
-    qt_gsi::qt_release (obj);
   }
   ret.write<QTreeWidgetItem_Adaptor *> (obj);
 }
@@ -1929,19 +1918,19 @@ static gsi::Methods methods_QTreeWidgetItem_Adaptor () {
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QTreeWidgetItem::QTreeWidgetItem(QTreeWidgetItem *parent, int type)\nThis method creates an object of class QTreeWidgetItem.", &_init_ctor_QTreeWidgetItem_Adaptor_2773, &_call_ctor_QTreeWidgetItem_Adaptor_2773);
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QTreeWidgetItem::QTreeWidgetItem(QTreeWidgetItem *parent, const QStringList &strings, int type)\nThis method creates an object of class QTreeWidgetItem.", &_init_ctor_QTreeWidgetItem_Adaptor_5102, &_call_ctor_QTreeWidgetItem_Adaptor_5102);
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QTreeWidgetItem::QTreeWidgetItem(QTreeWidgetItem *parent, QTreeWidgetItem *after, int type)\nThis method creates an object of class QTreeWidgetItem.", &_init_ctor_QTreeWidgetItem_Adaptor_4779, &_call_ctor_QTreeWidgetItem_Adaptor_4779);
-  methods += new qt_gsi::GenericMethod ("clone", "@brief Virtual method QTreeWidgetItem *QTreeWidgetItem::clone()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_clone_c0_0, &_call_cbs_clone_c0_0);
-  methods += new qt_gsi::GenericMethod ("clone", "@hide", true, &_init_cbs_clone_c0_0, &_call_cbs_clone_c0_0, &_set_callback_cbs_clone_c0_0);
-  methods += new qt_gsi::GenericMethod ("data", "@brief Virtual method QVariant QTreeWidgetItem::data(int column, int role)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_data_c1426_0, &_call_cbs_data_c1426_0);
-  methods += new qt_gsi::GenericMethod ("data", "@hide", true, &_init_cbs_data_c1426_0, &_call_cbs_data_c1426_0, &_set_callback_cbs_data_c1426_0);
+  methods += new qt_gsi::GenericMethod ("clone", "@hide", true, &_init_cbs_clone_c0_0, &_call_cbs_clone_c0_0);
+  methods += new qt_gsi::GenericMethod ("clone", "@brief Virtual method QTreeWidgetItem *QTreeWidgetItem::clone()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_clone_c0_0, &_call_cbs_clone_c0_0, &_set_callback_cbs_clone_c0_0);
+  methods += new qt_gsi::GenericMethod ("data", "@hide", true, &_init_cbs_data_c1426_0, &_call_cbs_data_c1426_0);
+  methods += new qt_gsi::GenericMethod ("data", "@brief Virtual method QVariant QTreeWidgetItem::data(int column, int role)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_data_c1426_0, &_call_cbs_data_c1426_0, &_set_callback_cbs_data_c1426_0);
   methods += new qt_gsi::GenericMethod ("*emitDataChanged", "@brief Method void QTreeWidgetItem::emitDataChanged()\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_emitDataChanged_0, &_call_fp_emitDataChanged_0);
-  methods += new qt_gsi::GenericMethod ("<", "@brief Virtual method bool QTreeWidgetItem::operator<(const QTreeWidgetItem &other)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_operator_lt__c2805_0, &_call_cbs_operator_lt__c2805_0);
-  methods += new qt_gsi::GenericMethod ("<", "@hide", true, &_init_cbs_operator_lt__c2805_0, &_call_cbs_operator_lt__c2805_0, &_set_callback_cbs_operator_lt__c2805_0);
-  methods += new qt_gsi::GenericMethod ("read", "@brief Virtual method void QTreeWidgetItem::read(QDataStream &in)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_read_1697_0, &_call_cbs_read_1697_0);
-  methods += new qt_gsi::GenericMethod ("read", "@hide", false, &_init_cbs_read_1697_0, &_call_cbs_read_1697_0, &_set_callback_cbs_read_1697_0);
-  methods += new qt_gsi::GenericMethod ("setData", "@brief Virtual method void QTreeWidgetItem::setData(int column, int role, const QVariant &value)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setData_3437_0, &_call_cbs_setData_3437_0);
-  methods += new qt_gsi::GenericMethod ("setData", "@hide", false, &_init_cbs_setData_3437_0, &_call_cbs_setData_3437_0, &_set_callback_cbs_setData_3437_0);
-  methods += new qt_gsi::GenericMethod ("write", "@brief Virtual method void QTreeWidgetItem::write(QDataStream &out)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_write_c1697_0, &_call_cbs_write_c1697_0);
-  methods += new qt_gsi::GenericMethod ("write", "@hide", true, &_init_cbs_write_c1697_0, &_call_cbs_write_c1697_0, &_set_callback_cbs_write_c1697_0);
+  methods += new qt_gsi::GenericMethod ("<", "@hide", true, &_init_cbs_operator_lt__c2805_0, &_call_cbs_operator_lt__c2805_0);
+  methods += new qt_gsi::GenericMethod ("<", "@brief Virtual method bool QTreeWidgetItem::operator<(const QTreeWidgetItem &other)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_operator_lt__c2805_0, &_call_cbs_operator_lt__c2805_0, &_set_callback_cbs_operator_lt__c2805_0);
+  methods += new qt_gsi::GenericMethod ("read", "@hide", false, &_init_cbs_read_1697_0, &_call_cbs_read_1697_0);
+  methods += new qt_gsi::GenericMethod ("read", "@brief Virtual method void QTreeWidgetItem::read(QDataStream &in)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_read_1697_0, &_call_cbs_read_1697_0, &_set_callback_cbs_read_1697_0);
+  methods += new qt_gsi::GenericMethod ("setData", "@hide", false, &_init_cbs_setData_3437_0, &_call_cbs_setData_3437_0);
+  methods += new qt_gsi::GenericMethod ("setData", "@brief Virtual method void QTreeWidgetItem::setData(int column, int role, const QVariant &value)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setData_3437_0, &_call_cbs_setData_3437_0, &_set_callback_cbs_setData_3437_0);
+  methods += new qt_gsi::GenericMethod ("write", "@hide", true, &_init_cbs_write_c1697_0, &_call_cbs_write_c1697_0);
+  methods += new qt_gsi::GenericMethod ("write", "@brief Virtual method void QTreeWidgetItem::write(QDataStream &out)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_write_c1697_0, &_call_cbs_write_c1697_0, &_set_callback_cbs_write_c1697_0);
   return methods;
 }
 

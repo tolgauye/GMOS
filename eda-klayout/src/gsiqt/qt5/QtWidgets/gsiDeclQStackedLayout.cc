@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -43,6 +43,7 @@
 #include <QWidget>
 #include "gsiQt.h"
 #include "gsiQtWidgetsCommon.h"
+#include "gsiDeclQtWidgetsTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -96,7 +97,6 @@ static void _call_f_addWidget_1315 (const qt_gsi::GenericMethod * /*decl*/, void
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   QWidget *arg1 = gsi::arg_reader<QWidget * >() (args, heap);
-  qt_gsi::qt_keep (arg1);
   ret.write<int > ((int)((QStackedLayout *)cls)->addWidget (arg1));
 }
 
@@ -198,7 +198,6 @@ static void _call_f_insertWidget_1974 (const qt_gsi::GenericMethod * /*decl*/, v
   tl::Heap heap;
   int arg1 = gsi::arg_reader<int >() (args, heap);
   QWidget *arg2 = gsi::arg_reader<QWidget * >() (args, heap);
-  qt_gsi::qt_keep (arg2);
   ret.write<int > ((int)((QStackedLayout *)cls)->insertWidget (arg1, arg2));
 }
 
@@ -407,7 +406,7 @@ static void _init_f_tr_4013 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("s");
   decl->add_arg<const char * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("c", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("c", true, "__null");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("n", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -419,7 +418,7 @@ static void _call_f_tr_4013 (const qt_gsi::GenericStaticMethod * /*decl*/, gsi::
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (__null, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QStackedLayout::tr (arg1, arg2, arg3));
 }
@@ -432,7 +431,7 @@ static void _init_f_trUtf8_4013 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("s");
   decl->add_arg<const char * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("c", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("c", true, "__null");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("n", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -444,7 +443,7 @@ static void _call_f_trUtf8_4013 (const qt_gsi::GenericStaticMethod * /*decl*/, g
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (__null, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QStackedLayout::trUtf8 (arg1, arg2, arg3));
 }
@@ -477,7 +476,6 @@ static gsi::Methods methods_QStackedLayout () {
   methods += new qt_gsi::GenericMethod ("widget", "@brief Method QWidget *QStackedLayout::widget(int)\n", true, &_init_f_widget_c767, &_call_f_widget_c767);
   methods += gsi::qt_signal<int > ("currentChanged(int)", "currentChanged", gsi::arg("index"), "@brief Signal declaration for QStackedLayout::currentChanged(int index)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<QObject * > ("destroyed(QObject *)", "destroyed", gsi::arg("arg1"), "@brief Signal declaration for QStackedLayout::destroyed(QObject *)\nYou can bind a procedure to this signal.");
-  methods += gsi::qt_signal<const QString & > ("objectNameChanged(const QString &)", "objectNameChanged", gsi::arg("objectName"), "@brief Signal declaration for QStackedLayout::objectNameChanged(const QString &objectName)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<int > ("widgetRemoved(int)", "widgetRemoved", gsi::arg("index"), "@brief Signal declaration for QStackedLayout::widgetRemoved(int index)\nYou can bind a procedure to this signal.");
   methods += new qt_gsi::GenericStaticMethod ("tr", "@brief Static method QString QStackedLayout::tr(const char *s, const char *c, int n)\nThis method is static and can be called without an instance.", &_init_f_tr_4013, &_call_f_tr_4013);
   methods += new qt_gsi::GenericStaticMethod ("trUtf8", "@brief Static method QString QStackedLayout::trUtf8(const char *s, const char *c, int n)\nThis method is static and can be called without an instance.", &_init_f_trUtf8_4013, &_call_f_trUtf8_4013);
@@ -621,33 +619,33 @@ public:
     emit QStackedLayout::destroyed(arg1);
   }
 
-  //  [adaptor impl] bool QStackedLayout::event(QEvent *event)
-  bool cbs_event_1217_0(QEvent *_event)
+  //  [adaptor impl] bool QStackedLayout::event(QEvent *)
+  bool cbs_event_1217_0(QEvent *arg1)
   {
-    return QStackedLayout::event(_event);
+    return QStackedLayout::event(arg1);
   }
 
-  virtual bool event(QEvent *_event)
+  virtual bool event(QEvent *arg1)
   {
     if (cb_event_1217_0.can_issue()) {
-      return cb_event_1217_0.issue<QStackedLayout_Adaptor, bool, QEvent *>(&QStackedLayout_Adaptor::cbs_event_1217_0, _event);
+      return cb_event_1217_0.issue<QStackedLayout_Adaptor, bool, QEvent *>(&QStackedLayout_Adaptor::cbs_event_1217_0, arg1);
     } else {
-      return QStackedLayout::event(_event);
+      return QStackedLayout::event(arg1);
     }
   }
 
-  //  [adaptor impl] bool QStackedLayout::eventFilter(QObject *watched, QEvent *event)
-  bool cbs_eventFilter_2411_0(QObject *watched, QEvent *event)
+  //  [adaptor impl] bool QStackedLayout::eventFilter(QObject *, QEvent *)
+  bool cbs_eventFilter_2411_0(QObject *arg1, QEvent *arg2)
   {
-    return QStackedLayout::eventFilter(watched, event);
+    return QStackedLayout::eventFilter(arg1, arg2);
   }
 
-  virtual bool eventFilter(QObject *watched, QEvent *event)
+  virtual bool eventFilter(QObject *arg1, QEvent *arg2)
   {
     if (cb_eventFilter_2411_0.can_issue()) {
-      return cb_eventFilter_2411_0.issue<QStackedLayout_Adaptor, bool, QObject *, QEvent *>(&QStackedLayout_Adaptor::cbs_eventFilter_2411_0, watched, event);
+      return cb_eventFilter_2411_0.issue<QStackedLayout_Adaptor, bool, QObject *, QEvent *>(&QStackedLayout_Adaptor::cbs_eventFilter_2411_0, arg1, arg2);
     } else {
-      return QStackedLayout::eventFilter(watched, event);
+      return QStackedLayout::eventFilter(arg1, arg2);
     }
   }
 
@@ -831,13 +829,6 @@ public:
     }
   }
 
-  //  [emitter impl] void QStackedLayout::objectNameChanged(const QString &objectName)
-  void emitter_QStackedLayout_objectNameChanged_4567(const QString &objectName)
-  {
-    __SUPPRESS_UNUSED_WARNING (objectName);
-    throw tl::Exception ("Can't emit private signal 'void QStackedLayout::objectNameChanged(const QString &objectName)'");
-  }
-
   //  [adaptor impl] void QStackedLayout::setGeometry(const QRect &rect)
   void cbs_setGeometry_1792_0(const QRect &rect)
   {
@@ -934,18 +925,18 @@ public:
     }
   }
 
-  //  [adaptor impl] void QStackedLayout::customEvent(QEvent *event)
-  void cbs_customEvent_1217_0(QEvent *event)
+  //  [adaptor impl] void QStackedLayout::customEvent(QEvent *)
+  void cbs_customEvent_1217_0(QEvent *arg1)
   {
-    QStackedLayout::customEvent(event);
+    QStackedLayout::customEvent(arg1);
   }
 
-  virtual void customEvent(QEvent *event)
+  virtual void customEvent(QEvent *arg1)
   {
     if (cb_customEvent_1217_0.can_issue()) {
-      cb_customEvent_1217_0.issue<QStackedLayout_Adaptor, QEvent *>(&QStackedLayout_Adaptor::cbs_customEvent_1217_0, event);
+      cb_customEvent_1217_0.issue<QStackedLayout_Adaptor, QEvent *>(&QStackedLayout_Adaptor::cbs_customEvent_1217_0, arg1);
     } else {
-      QStackedLayout::customEvent(event);
+      QStackedLayout::customEvent(arg1);
     }
   }
 
@@ -964,18 +955,18 @@ public:
     }
   }
 
-  //  [adaptor impl] void QStackedLayout::timerEvent(QTimerEvent *event)
-  void cbs_timerEvent_1730_0(QTimerEvent *event)
+  //  [adaptor impl] void QStackedLayout::timerEvent(QTimerEvent *)
+  void cbs_timerEvent_1730_0(QTimerEvent *arg1)
   {
-    QStackedLayout::timerEvent(event);
+    QStackedLayout::timerEvent(arg1);
   }
 
-  virtual void timerEvent(QTimerEvent *event)
+  virtual void timerEvent(QTimerEvent *arg1)
   {
     if (cb_timerEvent_1730_0.can_issue()) {
-      cb_timerEvent_1730_0.issue<QStackedLayout_Adaptor, QTimerEvent *>(&QStackedLayout_Adaptor::cbs_timerEvent_1730_0, event);
+      cb_timerEvent_1730_0.issue<QStackedLayout_Adaptor, QTimerEvent *>(&QStackedLayout_Adaptor::cbs_timerEvent_1730_0, arg1);
     } else {
-      QStackedLayout::timerEvent(event);
+      QStackedLayout::timerEvent(arg1);
     }
   }
 
@@ -1238,11 +1229,11 @@ static void _call_emitter_currentChanged_767 (const qt_gsi::GenericMethod * /*de
 }
 
 
-// void QStackedLayout::customEvent(QEvent *event)
+// void QStackedLayout::customEvent(QEvent *)
 
 static void _init_cbs_customEvent_1217_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1266,7 +1257,7 @@ static void _set_callback_cbs_customEvent_1217_0 (void *cls, const gsi::Callback
 
 static void _init_emitter_destroyed_1302 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("arg1", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("arg1", true, "0");
   decl->add_arg<QObject * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1275,7 +1266,7 @@ static void _call_emitter_destroyed_1302 (const qt_gsi::GenericMethod * /*decl*/
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (nullptr, heap);
+  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (0, heap);
   ((QStackedLayout_Adaptor *)cls)->emitter_QStackedLayout_destroyed_1302 (arg1);
 }
 
@@ -1304,11 +1295,11 @@ static void _set_callback_cbs_disconnectNotify_2394_0 (void *cls, const gsi::Cal
 }
 
 
-// bool QStackedLayout::event(QEvent *event)
+// bool QStackedLayout::event(QEvent *)
 
 static void _init_cbs_event_1217_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QEvent * > (argspec_0);
   decl->set_return<bool > ();
 }
@@ -1327,13 +1318,13 @@ static void _set_callback_cbs_event_1217_0 (void *cls, const gsi::Callback &cb)
 }
 
 
-// bool QStackedLayout::eventFilter(QObject *watched, QEvent *event)
+// bool QStackedLayout::eventFilter(QObject *, QEvent *)
 
 static void _init_cbs_eventFilter_2411_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("watched");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QObject * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("event");
+  static gsi::ArgSpecBase argspec_1 ("arg2");
   decl->add_arg<QEvent * > (argspec_1);
   decl->set_return<bool > ();
 }
@@ -1616,24 +1607,6 @@ static void _set_callback_cbs_minimumSize_c0_0 (void *cls, const gsi::Callback &
 }
 
 
-// emitter void QStackedLayout::objectNameChanged(const QString &objectName)
-
-static void _init_emitter_objectNameChanged_4567 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("objectName");
-  decl->add_arg<const QString & > (argspec_0);
-  decl->set_return<void > ();
-}
-
-static void _call_emitter_objectNameChanged_4567 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs & /*ret*/) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const QString &arg1 = gsi::arg_reader<const QString & >() (args, heap);
-  ((QStackedLayout_Adaptor *)cls)->emitter_QStackedLayout_objectNameChanged_4567 (arg1);
-}
-
-
 // exposed int QStackedLayout::receivers(const char *signal)
 
 static void _init_fp_receivers_c1731 (qt_gsi::GenericMethod *decl)
@@ -1765,11 +1738,11 @@ static void _set_callback_cbs_takeAt_767_0 (void *cls, const gsi::Callback &cb)
 }
 
 
-// void QStackedLayout::timerEvent(QTimerEvent *event)
+// void QStackedLayout::timerEvent(QTimerEvent *)
 
 static void _init_cbs_timerEvent_1730_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QTimerEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1857,67 +1830,66 @@ static gsi::Methods methods_QStackedLayout_Adaptor () {
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QStackedLayout::QStackedLayout(QLayout *parentLayout)\nThis method creates an object of class QStackedLayout.", &_init_ctor_QStackedLayout_Adaptor_1341, &_call_ctor_QStackedLayout_Adaptor_1341);
   methods += new qt_gsi::GenericMethod ("*addChildLayout", "@brief Method void QStackedLayout::addChildLayout(QLayout *l)\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_addChildLayout_1341, &_call_fp_addChildLayout_1341);
   methods += new qt_gsi::GenericMethod ("*addChildWidget", "@brief Method void QStackedLayout::addChildWidget(QWidget *w)\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_addChildWidget_1315, &_call_fp_addChildWidget_1315);
-  methods += new qt_gsi::GenericMethod ("addItem", "@brief Virtual method void QStackedLayout::addItem(QLayoutItem *item)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_addItem_1740_0, &_call_cbs_addItem_1740_0);
-  methods += new qt_gsi::GenericMethod ("addItem", "@hide", false, &_init_cbs_addItem_1740_0, &_call_cbs_addItem_1740_0, &_set_callback_cbs_addItem_1740_0);
+  methods += new qt_gsi::GenericMethod ("addItem", "@hide", false, &_init_cbs_addItem_1740_0, &_call_cbs_addItem_1740_0);
+  methods += new qt_gsi::GenericMethod ("addItem", "@brief Virtual method void QStackedLayout::addItem(QLayoutItem *item)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_addItem_1740_0, &_call_cbs_addItem_1740_0, &_set_callback_cbs_addItem_1740_0);
   methods += new qt_gsi::GenericMethod ("*adoptLayout", "@brief Method bool QStackedLayout::adoptLayout(QLayout *layout)\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_adoptLayout_1341, &_call_fp_adoptLayout_1341);
   methods += new qt_gsi::GenericMethod ("*alignmentRect", "@brief Method QRect QStackedLayout::alignmentRect(const QRect &)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_alignmentRect_c1792, &_call_fp_alignmentRect_c1792);
-  methods += new qt_gsi::GenericMethod ("*childEvent", "@brief Virtual method void QStackedLayout::childEvent(QChildEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0);
-  methods += new qt_gsi::GenericMethod ("*childEvent", "@hide", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0, &_set_callback_cbs_childEvent_1701_0);
-  methods += new qt_gsi::GenericMethod ("controlTypes", "@brief Virtual method QFlags<QSizePolicy::ControlType> QStackedLayout::controlTypes()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_controlTypes_c0_0, &_call_cbs_controlTypes_c0_0);
-  methods += new qt_gsi::GenericMethod ("controlTypes", "@hide", true, &_init_cbs_controlTypes_c0_0, &_call_cbs_controlTypes_c0_0, &_set_callback_cbs_controlTypes_c0_0);
-  methods += new qt_gsi::GenericMethod ("count", "@brief Virtual method int QStackedLayout::count()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_count_c0_0, &_call_cbs_count_c0_0);
-  methods += new qt_gsi::GenericMethod ("count", "@hide", true, &_init_cbs_count_c0_0, &_call_cbs_count_c0_0, &_set_callback_cbs_count_c0_0);
+  methods += new qt_gsi::GenericMethod ("*childEvent", "@hide", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0);
+  methods += new qt_gsi::GenericMethod ("*childEvent", "@brief Virtual method void QStackedLayout::childEvent(QChildEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0, &_set_callback_cbs_childEvent_1701_0);
+  methods += new qt_gsi::GenericMethod ("controlTypes", "@hide", true, &_init_cbs_controlTypes_c0_0, &_call_cbs_controlTypes_c0_0);
+  methods += new qt_gsi::GenericMethod ("controlTypes", "@brief Virtual method QFlags<QSizePolicy::ControlType> QStackedLayout::controlTypes()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_controlTypes_c0_0, &_call_cbs_controlTypes_c0_0, &_set_callback_cbs_controlTypes_c0_0);
+  methods += new qt_gsi::GenericMethod ("count", "@hide", true, &_init_cbs_count_c0_0, &_call_cbs_count_c0_0);
+  methods += new qt_gsi::GenericMethod ("count", "@brief Virtual method int QStackedLayout::count()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_count_c0_0, &_call_cbs_count_c0_0, &_set_callback_cbs_count_c0_0);
   methods += new qt_gsi::GenericMethod ("emit_currentChanged", "@brief Emitter for signal void QStackedLayout::currentChanged(int index)\nCall this method to emit this signal.", false, &_init_emitter_currentChanged_767, &_call_emitter_currentChanged_767);
-  methods += new qt_gsi::GenericMethod ("*customEvent", "@brief Virtual method void QStackedLayout::customEvent(QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*customEvent", "@hide", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0, &_set_callback_cbs_customEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*customEvent", "@hide", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*customEvent", "@brief Virtual method void QStackedLayout::customEvent(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0, &_set_callback_cbs_customEvent_1217_0);
   methods += new qt_gsi::GenericMethod ("emit_destroyed", "@brief Emitter for signal void QStackedLayout::destroyed(QObject *)\nCall this method to emit this signal.", false, &_init_emitter_destroyed_1302, &_call_emitter_destroyed_1302);
-  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@brief Virtual method void QStackedLayout::disconnectNotify(const QMetaMethod &signal)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0);
-  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@hide", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0, &_set_callback_cbs_disconnectNotify_2394_0);
-  methods += new qt_gsi::GenericMethod ("event", "@brief Virtual method bool QStackedLayout::event(QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0);
-  methods += new qt_gsi::GenericMethod ("event", "@hide", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0, &_set_callback_cbs_event_1217_0);
-  methods += new qt_gsi::GenericMethod ("eventFilter", "@brief Virtual method bool QStackedLayout::eventFilter(QObject *watched, QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0);
-  methods += new qt_gsi::GenericMethod ("eventFilter", "@hide", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0, &_set_callback_cbs_eventFilter_2411_0);
-  methods += new qt_gsi::GenericMethod ("expandingDirections", "@brief Virtual method QFlags<Qt::Orientation> QStackedLayout::expandingDirections()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_expandingDirections_c0_0, &_call_cbs_expandingDirections_c0_0);
-  methods += new qt_gsi::GenericMethod ("expandingDirections", "@hide", true, &_init_cbs_expandingDirections_c0_0, &_call_cbs_expandingDirections_c0_0, &_set_callback_cbs_expandingDirections_c0_0);
-  methods += new qt_gsi::GenericMethod ("geometry", "@brief Virtual method QRect QStackedLayout::geometry()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_geometry_c0_0, &_call_cbs_geometry_c0_0);
-  methods += new qt_gsi::GenericMethod ("geometry", "@hide", true, &_init_cbs_geometry_c0_0, &_call_cbs_geometry_c0_0, &_set_callback_cbs_geometry_c0_0);
-  methods += new qt_gsi::GenericMethod ("hasHeightForWidth", "@brief Virtual method bool QStackedLayout::hasHeightForWidth()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_hasHeightForWidth_c0_0, &_call_cbs_hasHeightForWidth_c0_0);
-  methods += new qt_gsi::GenericMethod ("hasHeightForWidth", "@hide", true, &_init_cbs_hasHeightForWidth_c0_0, &_call_cbs_hasHeightForWidth_c0_0, &_set_callback_cbs_hasHeightForWidth_c0_0);
-  methods += new qt_gsi::GenericMethod ("heightForWidth", "@brief Virtual method int QStackedLayout::heightForWidth(int width)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_heightForWidth_c767_0, &_call_cbs_heightForWidth_c767_0);
-  methods += new qt_gsi::GenericMethod ("heightForWidth", "@hide", true, &_init_cbs_heightForWidth_c767_0, &_call_cbs_heightForWidth_c767_0, &_set_callback_cbs_heightForWidth_c767_0);
-  methods += new qt_gsi::GenericMethod ("indexOf", "@brief Virtual method int QStackedLayout::indexOf(QWidget *)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_indexOf_c1315_0, &_call_cbs_indexOf_c1315_0);
-  methods += new qt_gsi::GenericMethod ("indexOf", "@hide", true, &_init_cbs_indexOf_c1315_0, &_call_cbs_indexOf_c1315_0, &_set_callback_cbs_indexOf_c1315_0);
-  methods += new qt_gsi::GenericMethod ("invalidate", "@brief Virtual method void QStackedLayout::invalidate()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_invalidate_0_0, &_call_cbs_invalidate_0_0);
-  methods += new qt_gsi::GenericMethod ("invalidate", "@hide", false, &_init_cbs_invalidate_0_0, &_call_cbs_invalidate_0_0, &_set_callback_cbs_invalidate_0_0);
-  methods += new qt_gsi::GenericMethod ("isEmpty", "@brief Virtual method bool QStackedLayout::isEmpty()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_isEmpty_c0_0, &_call_cbs_isEmpty_c0_0);
-  methods += new qt_gsi::GenericMethod ("isEmpty", "@hide", true, &_init_cbs_isEmpty_c0_0, &_call_cbs_isEmpty_c0_0, &_set_callback_cbs_isEmpty_c0_0);
+  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@hide", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0);
+  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@brief Virtual method void QStackedLayout::disconnectNotify(const QMetaMethod &signal)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0, &_set_callback_cbs_disconnectNotify_2394_0);
+  methods += new qt_gsi::GenericMethod ("event", "@hide", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0);
+  methods += new qt_gsi::GenericMethod ("event", "@brief Virtual method bool QStackedLayout::event(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0, &_set_callback_cbs_event_1217_0);
+  methods += new qt_gsi::GenericMethod ("eventFilter", "@hide", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0);
+  methods += new qt_gsi::GenericMethod ("eventFilter", "@brief Virtual method bool QStackedLayout::eventFilter(QObject *, QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0, &_set_callback_cbs_eventFilter_2411_0);
+  methods += new qt_gsi::GenericMethod ("expandingDirections", "@hide", true, &_init_cbs_expandingDirections_c0_0, &_call_cbs_expandingDirections_c0_0);
+  methods += new qt_gsi::GenericMethod ("expandingDirections", "@brief Virtual method QFlags<Qt::Orientation> QStackedLayout::expandingDirections()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_expandingDirections_c0_0, &_call_cbs_expandingDirections_c0_0, &_set_callback_cbs_expandingDirections_c0_0);
+  methods += new qt_gsi::GenericMethod ("geometry", "@hide", true, &_init_cbs_geometry_c0_0, &_call_cbs_geometry_c0_0);
+  methods += new qt_gsi::GenericMethod ("geometry", "@brief Virtual method QRect QStackedLayout::geometry()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_geometry_c0_0, &_call_cbs_geometry_c0_0, &_set_callback_cbs_geometry_c0_0);
+  methods += new qt_gsi::GenericMethod ("hasHeightForWidth", "@hide", true, &_init_cbs_hasHeightForWidth_c0_0, &_call_cbs_hasHeightForWidth_c0_0);
+  methods += new qt_gsi::GenericMethod ("hasHeightForWidth", "@brief Virtual method bool QStackedLayout::hasHeightForWidth()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_hasHeightForWidth_c0_0, &_call_cbs_hasHeightForWidth_c0_0, &_set_callback_cbs_hasHeightForWidth_c0_0);
+  methods += new qt_gsi::GenericMethod ("heightForWidth", "@hide", true, &_init_cbs_heightForWidth_c767_0, &_call_cbs_heightForWidth_c767_0);
+  methods += new qt_gsi::GenericMethod ("heightForWidth", "@brief Virtual method int QStackedLayout::heightForWidth(int width)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_heightForWidth_c767_0, &_call_cbs_heightForWidth_c767_0, &_set_callback_cbs_heightForWidth_c767_0);
+  methods += new qt_gsi::GenericMethod ("indexOf", "@hide", true, &_init_cbs_indexOf_c1315_0, &_call_cbs_indexOf_c1315_0);
+  methods += new qt_gsi::GenericMethod ("indexOf", "@brief Virtual method int QStackedLayout::indexOf(QWidget *)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_indexOf_c1315_0, &_call_cbs_indexOf_c1315_0, &_set_callback_cbs_indexOf_c1315_0);
+  methods += new qt_gsi::GenericMethod ("invalidate", "@hide", false, &_init_cbs_invalidate_0_0, &_call_cbs_invalidate_0_0);
+  methods += new qt_gsi::GenericMethod ("invalidate", "@brief Virtual method void QStackedLayout::invalidate()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_invalidate_0_0, &_call_cbs_invalidate_0_0, &_set_callback_cbs_invalidate_0_0);
+  methods += new qt_gsi::GenericMethod ("isEmpty", "@hide", true, &_init_cbs_isEmpty_c0_0, &_call_cbs_isEmpty_c0_0);
+  methods += new qt_gsi::GenericMethod ("isEmpty", "@brief Virtual method bool QStackedLayout::isEmpty()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_isEmpty_c0_0, &_call_cbs_isEmpty_c0_0, &_set_callback_cbs_isEmpty_c0_0);
   methods += new qt_gsi::GenericMethod ("*isSignalConnected", "@brief Method bool QStackedLayout::isSignalConnected(const QMetaMethod &signal)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_isSignalConnected_c2394, &_call_fp_isSignalConnected_c2394);
-  methods += new qt_gsi::GenericMethod ("itemAt", "@brief Virtual method QLayoutItem *QStackedLayout::itemAt(int)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_itemAt_c767_0, &_call_cbs_itemAt_c767_0);
-  methods += new qt_gsi::GenericMethod ("itemAt", "@hide", true, &_init_cbs_itemAt_c767_0, &_call_cbs_itemAt_c767_0, &_set_callback_cbs_itemAt_c767_0);
-  methods += new qt_gsi::GenericMethod ("layout", "@brief Virtual method QLayout *QStackedLayout::layout()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_layout_0_0, &_call_cbs_layout_0_0);
-  methods += new qt_gsi::GenericMethod ("layout", "@hide", false, &_init_cbs_layout_0_0, &_call_cbs_layout_0_0, &_set_callback_cbs_layout_0_0);
-  methods += new qt_gsi::GenericMethod ("maximumSize", "@brief Virtual method QSize QStackedLayout::maximumSize()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_maximumSize_c0_0, &_call_cbs_maximumSize_c0_0);
-  methods += new qt_gsi::GenericMethod ("maximumSize", "@hide", true, &_init_cbs_maximumSize_c0_0, &_call_cbs_maximumSize_c0_0, &_set_callback_cbs_maximumSize_c0_0);
-  methods += new qt_gsi::GenericMethod ("minimumHeightForWidth", "@brief Virtual method int QStackedLayout::minimumHeightForWidth(int)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_minimumHeightForWidth_c767_0, &_call_cbs_minimumHeightForWidth_c767_0);
-  methods += new qt_gsi::GenericMethod ("minimumHeightForWidth", "@hide", true, &_init_cbs_minimumHeightForWidth_c767_0, &_call_cbs_minimumHeightForWidth_c767_0, &_set_callback_cbs_minimumHeightForWidth_c767_0);
-  methods += new qt_gsi::GenericMethod ("minimumSize", "@brief Virtual method QSize QStackedLayout::minimumSize()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_minimumSize_c0_0, &_call_cbs_minimumSize_c0_0);
-  methods += new qt_gsi::GenericMethod ("minimumSize", "@hide", true, &_init_cbs_minimumSize_c0_0, &_call_cbs_minimumSize_c0_0, &_set_callback_cbs_minimumSize_c0_0);
-  methods += new qt_gsi::GenericMethod ("emit_objectNameChanged", "@brief Emitter for signal void QStackedLayout::objectNameChanged(const QString &objectName)\nCall this method to emit this signal.", false, &_init_emitter_objectNameChanged_4567, &_call_emitter_objectNameChanged_4567);
+  methods += new qt_gsi::GenericMethod ("itemAt", "@hide", true, &_init_cbs_itemAt_c767_0, &_call_cbs_itemAt_c767_0);
+  methods += new qt_gsi::GenericMethod ("itemAt", "@brief Virtual method QLayoutItem *QStackedLayout::itemAt(int)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_itemAt_c767_0, &_call_cbs_itemAt_c767_0, &_set_callback_cbs_itemAt_c767_0);
+  methods += new qt_gsi::GenericMethod ("layout", "@hide", false, &_init_cbs_layout_0_0, &_call_cbs_layout_0_0);
+  methods += new qt_gsi::GenericMethod ("layout", "@brief Virtual method QLayout *QStackedLayout::layout()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_layout_0_0, &_call_cbs_layout_0_0, &_set_callback_cbs_layout_0_0);
+  methods += new qt_gsi::GenericMethod ("maximumSize", "@hide", true, &_init_cbs_maximumSize_c0_0, &_call_cbs_maximumSize_c0_0);
+  methods += new qt_gsi::GenericMethod ("maximumSize", "@brief Virtual method QSize QStackedLayout::maximumSize()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_maximumSize_c0_0, &_call_cbs_maximumSize_c0_0, &_set_callback_cbs_maximumSize_c0_0);
+  methods += new qt_gsi::GenericMethod ("minimumHeightForWidth", "@hide", true, &_init_cbs_minimumHeightForWidth_c767_0, &_call_cbs_minimumHeightForWidth_c767_0);
+  methods += new qt_gsi::GenericMethod ("minimumHeightForWidth", "@brief Virtual method int QStackedLayout::minimumHeightForWidth(int)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_minimumHeightForWidth_c767_0, &_call_cbs_minimumHeightForWidth_c767_0, &_set_callback_cbs_minimumHeightForWidth_c767_0);
+  methods += new qt_gsi::GenericMethod ("minimumSize", "@hide", true, &_init_cbs_minimumSize_c0_0, &_call_cbs_minimumSize_c0_0);
+  methods += new qt_gsi::GenericMethod ("minimumSize", "@brief Virtual method QSize QStackedLayout::minimumSize()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_minimumSize_c0_0, &_call_cbs_minimumSize_c0_0, &_set_callback_cbs_minimumSize_c0_0);
   methods += new qt_gsi::GenericMethod ("*receivers", "@brief Method int QStackedLayout::receivers(const char *signal)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_receivers_c1731, &_call_fp_receivers_c1731);
   methods += new qt_gsi::GenericMethod ("*sender", "@brief Method QObject *QStackedLayout::sender()\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_sender_c0, &_call_fp_sender_c0);
   methods += new qt_gsi::GenericMethod ("*senderSignalIndex", "@brief Method int QStackedLayout::senderSignalIndex()\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_senderSignalIndex_c0, &_call_fp_senderSignalIndex_c0);
-  methods += new qt_gsi::GenericMethod ("setGeometry", "@brief Virtual method void QStackedLayout::setGeometry(const QRect &rect)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setGeometry_1792_0, &_call_cbs_setGeometry_1792_0);
-  methods += new qt_gsi::GenericMethod ("setGeometry", "@hide", false, &_init_cbs_setGeometry_1792_0, &_call_cbs_setGeometry_1792_0, &_set_callback_cbs_setGeometry_1792_0);
-  methods += new qt_gsi::GenericMethod ("sizeHint", "@brief Virtual method QSize QStackedLayout::sizeHint()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_sizeHint_c0_0, &_call_cbs_sizeHint_c0_0);
-  methods += new qt_gsi::GenericMethod ("sizeHint", "@hide", true, &_init_cbs_sizeHint_c0_0, &_call_cbs_sizeHint_c0_0, &_set_callback_cbs_sizeHint_c0_0);
-  methods += new qt_gsi::GenericMethod ("spacerItem", "@brief Virtual method QSpacerItem *QStackedLayout::spacerItem()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_spacerItem_0_0, &_call_cbs_spacerItem_0_0);
-  methods += new qt_gsi::GenericMethod ("spacerItem", "@hide", false, &_init_cbs_spacerItem_0_0, &_call_cbs_spacerItem_0_0, &_set_callback_cbs_spacerItem_0_0);
-  methods += new qt_gsi::GenericMethod ("takeAt", "@brief Virtual method QLayoutItem *QStackedLayout::takeAt(int)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_takeAt_767_0, &_call_cbs_takeAt_767_0);
-  methods += new qt_gsi::GenericMethod ("takeAt", "@hide", false, &_init_cbs_takeAt_767_0, &_call_cbs_takeAt_767_0, &_set_callback_cbs_takeAt_767_0);
-  methods += new qt_gsi::GenericMethod ("*timerEvent", "@brief Virtual method void QStackedLayout::timerEvent(QTimerEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0);
-  methods += new qt_gsi::GenericMethod ("*timerEvent", "@hide", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0, &_set_callback_cbs_timerEvent_1730_0);
-  methods += new qt_gsi::GenericMethod ("widget", "@brief Virtual method QWidget *QStackedLayout::widget()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_widget_0_0, &_call_cbs_widget_0_0);
-  methods += new qt_gsi::GenericMethod ("widget", "@hide", false, &_init_cbs_widget_0_0, &_call_cbs_widget_0_0, &_set_callback_cbs_widget_0_0);
+  methods += new qt_gsi::GenericMethod ("setGeometry", "@hide", false, &_init_cbs_setGeometry_1792_0, &_call_cbs_setGeometry_1792_0);
+  methods += new qt_gsi::GenericMethod ("setGeometry", "@brief Virtual method void QStackedLayout::setGeometry(const QRect &rect)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setGeometry_1792_0, &_call_cbs_setGeometry_1792_0, &_set_callback_cbs_setGeometry_1792_0);
+  methods += new qt_gsi::GenericMethod ("sizeHint", "@hide", true, &_init_cbs_sizeHint_c0_0, &_call_cbs_sizeHint_c0_0);
+  methods += new qt_gsi::GenericMethod ("sizeHint", "@brief Virtual method QSize QStackedLayout::sizeHint()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_sizeHint_c0_0, &_call_cbs_sizeHint_c0_0, &_set_callback_cbs_sizeHint_c0_0);
+  methods += new qt_gsi::GenericMethod ("spacerItem", "@hide", false, &_init_cbs_spacerItem_0_0, &_call_cbs_spacerItem_0_0);
+  methods += new qt_gsi::GenericMethod ("spacerItem", "@brief Virtual method QSpacerItem *QStackedLayout::spacerItem()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_spacerItem_0_0, &_call_cbs_spacerItem_0_0, &_set_callback_cbs_spacerItem_0_0);
+  methods += new qt_gsi::GenericMethod ("takeAt", "@hide", false, &_init_cbs_takeAt_767_0, &_call_cbs_takeAt_767_0);
+  methods += new qt_gsi::GenericMethod ("takeAt", "@brief Virtual method QLayoutItem *QStackedLayout::takeAt(int)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_takeAt_767_0, &_call_cbs_takeAt_767_0, &_set_callback_cbs_takeAt_767_0);
+  methods += new qt_gsi::GenericMethod ("*timerEvent", "@hide", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0);
+  methods += new qt_gsi::GenericMethod ("*timerEvent", "@brief Virtual method void QStackedLayout::timerEvent(QTimerEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0, &_set_callback_cbs_timerEvent_1730_0);
+  methods += new qt_gsi::GenericMethod ("widget", "@hide", false, &_init_cbs_widget_0_0, &_call_cbs_widget_0_0);
+  methods += new qt_gsi::GenericMethod ("widget", "@brief Virtual method QWidget *QStackedLayout::widget()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_widget_0_0, &_call_cbs_widget_0_0, &_set_callback_cbs_widget_0_0);
   methods += new qt_gsi::GenericMethod ("*widgetEvent", "@brief Method void QStackedLayout::widgetEvent(QEvent *)\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_widgetEvent_1217, &_call_fp_widgetEvent_1217);
   methods += new qt_gsi::GenericMethod ("emit_widgetRemoved", "@brief Emitter for signal void QStackedLayout::widgetRemoved(int index)\nCall this method to emit this signal.", false, &_init_emitter_widgetRemoved_767, &_call_emitter_widgetRemoved_767);
   return methods;

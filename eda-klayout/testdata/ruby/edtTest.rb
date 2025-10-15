@@ -1,7 +1,7 @@
 # encoding: UTF-8
 
 # KLayout Layout Viewer
-# Copyright (C) 2006-2025 Matthias Koefferlein
+# Copyright (C) 2006-2019 Matthias Koefferlein
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -47,12 +47,8 @@ class EDT_TestClass < TestBase
     assert_equal(p.seq, 2)
 
     assert_equal(p.is_cell_inst?, true)
-    assert_equal(p.layer, nil)
-    assert_equal(p.shape, nil)
     p.layer = -1
     assert_equal(p.is_cell_inst?, true)
-    assert_equal(p.layer, nil)
-    assert_equal(p.shape, nil)
 
     p.layer = 42
     assert_equal(p.layer, 42)
@@ -181,8 +177,6 @@ class EDT_TestClass < TestBase
     assert_equal(sel.size, 1)
     assert_equal(sel[0] == p2, true)
     assert_equal(sel[0].layout.object_id, ly.object_id)
-    assert_equal(sel[0].cell_index, c2.cell_index)
-    assert_equal(sel[0].cell.cell_index, c2.cell_index)
     assert_equal(sel[0].trans.to_s, "r0 *1 10,20")
     assert_equal(sel[0].dtrans.to_s, "r0 *1 0.01,0.02")
     assert_equal(sel[0].source_trans.to_s, "r0 *1 10,20")

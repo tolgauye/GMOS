@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -25,10 +25,7 @@
 #define HDR_dbObjectWithProperties
 
 #include "tlException.h"
-#include "tlTypeTraits.h"
-#include "tlString.h"
 #include "dbTypes.h"
-#include "dbUserObject.h"
 #include "dbPolygon.h"
 #include "dbPath.h"
 #include "dbEdge.h"
@@ -43,19 +40,6 @@ namespace db
 {
 
 class ArrayRepository;
-
-DB_PUBLIC bool properties_id_less (properties_id_type a, properties_id_type b);
-
-template <class Obj> class object_with_properties;
-
-/**
- *  @brief A helper method to create an object with properties
- */
-template <class Obj>
-inline db::object_with_properties<Obj> make_object_with_properties (const Obj &obj, db::properties_id_type pid)
-{
-  return db::object_with_properties<Obj> (obj, pid);
-}
 
 /**
  *  @brief A object with properties template
@@ -89,16 +73,6 @@ public:
    */
   object_with_properties ()
     : Obj (), m_id (0)
-  {
-    //  .. nothing yet ..
-  }
-
-  /**
-   *  @brief Create myself from a object
-   *  The properties ID is initialized with zero (= no properties)
-   */
-  object_with_properties (const Obj &obj)
-    : Obj (obj), m_id (0)
   {
     //  .. nothing yet ..
   }
@@ -183,23 +157,7 @@ public:
     if (! Obj::operator== (d)) {
       return Obj::operator< (d);
     } 
-    return db::properties_id_less (m_id, d.m_id);
-  }
-
-  /**
-   *  @brief Downcase to base object (non-const)
-   */
-  Obj &base ()
-  {
-    return *this;
-  }
-
-  /**
-   *  @brief Downcase to base object (const)
-   */
-  const Obj &base () const
-  {
-    return *this;
+    return m_id < d.m_id;
   }
 
   /**
@@ -216,63 +174,6 @@ public:
   void properties_id (properties_id_type id) 
   {
     m_id = id;
-  }
-
-  /**
-   *  @brief Returns the scaled object
-   */
-  db::object_with_properties<typename tl::result_of_method<decltype (& Obj::scaled)>::type>
-  scaled (double f) const
-  {
-    return make_object_with_properties (Obj::scaled (f), m_id);
-  }
-
-  /**
-   *  @brief Returns the transformed object
-   */
-  template <class Trans>
-  db::object_with_properties<typename tl::result_of_method<decltype (& Obj::template transformed<Trans>)>::type>
-  transformed (const Trans &tr) const
-  {
-    return make_object_with_properties (Obj::transformed (tr), m_id);
-  }
-
-  /**
-   *  @brief In-place transformation
-   */
-  template <class Trans>
-  db::object_with_properties<Obj> &transform (const Trans &tr)
-  {
-    Obj::transform (tr);
-    return *this;
-  }
-
-  /**
-   *  @brief Returns the transformed object
-   */
-  db::object_with_properties<Obj> moved (const typename Obj::vector_type &v) const
-  {
-    return make_object_with_properties (Obj::moved (v), m_id);
-  }
-
-  /**
-   *  @brief In-place move
-   */
-  db::object_with_properties<Obj> &move (const typename Obj::vector_type &v)
-  {
-    Obj::move (v);
-    return *this;
-  }
-
-  /**
-   *  @brief Returns a string describing the object
-   */
-  std::string to_string () const
-  {
-    std::string s = Obj::to_string ();
-    s += " props=";
-    s += db::properties (properties_id ()).to_dict_var ().to_string ();
-    return s;
   }
 
 private:
@@ -293,9 +194,6 @@ typedef object_with_properties<DPath> DPathWithProperties;
 typedef object_with_properties<PathRef> PathRefWithProperties;
 typedef object_with_properties<DPathRef> DPathRefWithProperties;
 
-typedef object_with_properties<Point> PointWithProperties;
-typedef object_with_properties<DPoint> DPointWithProperties;
-
 typedef object_with_properties<Edge> EdgeWithProperties;
 typedef object_with_properties<DEdge> DEdgeWithProperties;
 
@@ -313,100 +211,7 @@ typedef object_with_properties<DBox> DBoxWithProperties;
 typedef object_with_properties<db::array<db::CellInst, db::Trans> > CellInstArrayWithProperties;
 typedef object_with_properties<db::array<db::CellInst, db::DTrans> > DCellInstArrayWithProperties;
 
-/**
- *  @brief Binary * operator (transformation)
- *
- *  Transforms the object with the given transformation and
- *  returns the result.
- *
- *  @param t The transformation to apply
- *  @param obj The object to transform
- *  @return t * obj
- */
-
-template <class Tr, class Obj>
-inline db::object_with_properties<typename tl::result_of_method<decltype (& Obj::template transformed<Tr>)>::type>
-operator* (const Tr &t, const db::object_with_properties<Obj> &obj)
-{
-  return db::object_with_properties<typename tl::result_of_method<decltype (& Obj::template transformed<Tr>)>::type> (obj.Obj::transformed (t), obj.properties_id ());
-}
-
-/**
- *  @brief Binary * operator (scaling)
- *
- *  @param obj The object to scale.
- *  @param s The scaling factor
- *
- *  @return The scaled object
- */
-template <class Obj>
-inline db::object_with_properties<typename tl::result_of_method<decltype (& Obj::operator*)>::type>
-operator* (const db::object_with_properties<Obj> &obj, double s)
-{
-  return db::object_with_properties<typename tl::result_of_method<decltype (& Obj::operator*)>::type> (obj * s, obj.properties_id ());
-}
-
-/**
- *  @brief Output stream insertion operator
- */
-template <class T>
-inline std::ostream &
-operator<< (std::ostream &os, const object_with_properties<T> &p)
-{
-  return (os << p.to_string ());
-}
-
 } // namespace db
-
-
-namespace tl
-{
-
-/**
- *  @brief Special extractors
- */
-
-template <> DB_PUBLIC bool test_extractor_impl (tl::Extractor &ex, db::object_with_properties<db::Box> &p);
-template <> DB_PUBLIC bool test_extractor_impl (tl::Extractor &ex, db::object_with_properties<db::UserObject> &p);
-template <> DB_PUBLIC bool test_extractor_impl (tl::Extractor &ex, db::object_with_properties<db::Polygon> &p);
-template <> DB_PUBLIC bool test_extractor_impl (tl::Extractor &ex, db::object_with_properties<db::SimplePolygon> &p);
-template <> DB_PUBLIC bool test_extractor_impl (tl::Extractor &ex, db::object_with_properties<db::Path> &p);
-template <> DB_PUBLIC bool test_extractor_impl (tl::Extractor &ex, db::object_with_properties<db::Text> &p);
-template <> DB_PUBLIC bool test_extractor_impl (tl::Extractor &ex, db::object_with_properties<db::Point> &p);
-template <> DB_PUBLIC bool test_extractor_impl (tl::Extractor &ex, db::object_with_properties<db::Edge> &p);
-template <> DB_PUBLIC bool test_extractor_impl (tl::Extractor &ex, db::object_with_properties<db::EdgePair> &p);
-
-template <> DB_PUBLIC bool test_extractor_impl (tl::Extractor &ex, db::object_with_properties<db::DBox> &p);
-template <> DB_PUBLIC bool test_extractor_impl (tl::Extractor &ex, db::object_with_properties<db::DUserObject> &p);
-template <> DB_PUBLIC bool test_extractor_impl (tl::Extractor &ex, db::object_with_properties<db::DPolygon> &p);
-template <> DB_PUBLIC bool test_extractor_impl (tl::Extractor &ex, db::object_with_properties<db::DSimplePolygon> &p);
-template <> DB_PUBLIC bool test_extractor_impl (tl::Extractor &ex, db::object_with_properties<db::DPath> &p);
-template <> DB_PUBLIC bool test_extractor_impl (tl::Extractor &ex, db::object_with_properties<db::DText> &p);
-template <> DB_PUBLIC bool test_extractor_impl (tl::Extractor &ex, db::object_with_properties<db::DPoint> &p);
-template <> DB_PUBLIC bool test_extractor_impl (tl::Extractor &ex, db::object_with_properties<db::DEdge> &p);
-template <> DB_PUBLIC bool test_extractor_impl (tl::Extractor &ex, db::object_with_properties<db::DEdgePair> &p);
-
-template <> DB_PUBLIC void extractor_impl (tl::Extractor &ex, db::object_with_properties<db::Box> &p);
-template <> DB_PUBLIC void extractor_impl (tl::Extractor &ex, db::object_with_properties<db::UserObject> &p);
-template <> DB_PUBLIC void extractor_impl (tl::Extractor &ex, db::object_with_properties<db::Polygon> &p);
-template <> DB_PUBLIC void extractor_impl (tl::Extractor &ex, db::object_with_properties<db::SimplePolygon> &p);
-template <> DB_PUBLIC void extractor_impl (tl::Extractor &ex, db::object_with_properties<db::Path> &p);
-template <> DB_PUBLIC void extractor_impl (tl::Extractor &ex, db::object_with_properties<db::Text> &p);
-template <> DB_PUBLIC void extractor_impl (tl::Extractor &ex, db::object_with_properties<db::Point> &p);
-template <> DB_PUBLIC void extractor_impl (tl::Extractor &ex, db::object_with_properties<db::Edge> &p);
-template <> DB_PUBLIC void extractor_impl (tl::Extractor &ex, db::object_with_properties<db::EdgePair> &p);
-
-template <> DB_PUBLIC void extractor_impl (tl::Extractor &ex, db::object_with_properties<db::DBox> &p);
-template <> DB_PUBLIC void extractor_impl (tl::Extractor &ex, db::object_with_properties<db::DUserObject> &p);
-template <> DB_PUBLIC void extractor_impl (tl::Extractor &ex, db::object_with_properties<db::DPolygon> &p);
-template <> DB_PUBLIC void extractor_impl (tl::Extractor &ex, db::object_with_properties<db::DSimplePolygon> &p);
-template <> DB_PUBLIC void extractor_impl (tl::Extractor &ex, db::object_with_properties<db::DPath> &p);
-template <> DB_PUBLIC void extractor_impl (tl::Extractor &ex, db::object_with_properties<db::DText> &p);
-template <> DB_PUBLIC void extractor_impl (tl::Extractor &ex, db::object_with_properties<db::DPoint> &p);
-template <> DB_PUBLIC void extractor_impl (tl::Extractor &ex, db::object_with_properties<db::DEdge> &p);
-template <> DB_PUBLIC void extractor_impl (tl::Extractor &ex, db::object_with_properties<db::DEdgePair> &p);
-
-} // namespace tl
 
 #endif
 

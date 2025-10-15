@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -33,11 +33,10 @@
 namespace db
 {
 
-Manager::Manager (bool enabled)
+Manager::Manager ()
   : m_transactions (),
     m_current (m_transactions.begin ()), 
-    m_opened (false), m_replay (false),
-    m_enabled (enabled)
+    m_opened (false), m_replay (false)
 {
   //  .. nothing yet ..
 }
@@ -111,7 +110,7 @@ Manager::erase_transactions (transactions_t::iterator from, transactions_t::iter
 Manager::transaction_id_t 
 Manager::transaction (const std::string &description, transaction_id_t join_with)
 {
-  if (m_enabled) {
+  if (db::transactions_enabled ()) {
 
     //  close transactions that are still open (was an assertion before)
     if (m_opened) {
@@ -122,9 +121,7 @@ Manager::transaction (const std::string &description, transaction_id_t join_with
     tl_assert (! m_replay);
 
     if (! m_transactions.empty () && reinterpret_cast<transaction_id_t> (& m_transactions.back ()) == join_with) {
-      if (! description.empty ()) {
-        m_transactions.back ().second = description;
-      }
+      m_transactions.back ().second = description;
     } else {
       //  delete all following transactions and add a new one
       erase_transactions (m_current, m_transactions.end ());
@@ -146,45 +143,16 @@ Manager::last_transaction_id () const
   return m_transactions.empty () ? 0 : reinterpret_cast<transaction_id_t> (& m_transactions.back ());
 }
 
-Manager::transaction_id_t
-Manager::transaction_id_for_undo () const
-{
-  transactions_t::iterator c = m_current;
-  if (c == m_transactions.begin ()) {
-    return 0;
-  } else {
-    --c;
-    return reinterpret_cast<transaction_id_t> (c.operator-> ());
-  }
-}
-
-Manager::transaction_id_t
-Manager::transaction_id_for_redo () const
-{
-  if (m_current == m_transactions.end ()) {
-    return 0;
-  } else {
-    return reinterpret_cast<transaction_id_t> (m_current.operator-> ());
-  }
-}
-
 void
 Manager::cancel ()
 {
-  //  equivalent to commit and undo. But takes care that an empty commit is not followed by undo
-  //  (which would undo the previous transaction!)
-  if (m_enabled) {
+  if (db::transactions_enabled ()) {
 
-    tl_assert (m_opened);
-    tl_assert (! m_replay);
-    m_opened = false;
+    //  commit and undo - revert changes done so far
+    commit ();
+    undo ();
 
-    if (m_current->first.begin () != m_current->first.end ()) {
-      ++m_current;
-      undo ();
-    }
-
-    //  wipe following history as we don't want the cancelled operation to be redoable
+    //  delete all following transactions
     erase_transactions (m_current, m_transactions.end ());
     m_current = m_transactions.end ();
 
@@ -194,7 +162,7 @@ Manager::cancel ()
 void 
 Manager::commit ()
 {
-  if (m_enabled) {
+  if (db::transactions_enabled ()) {
 
     tl_assert (m_opened);
     tl_assert (! m_replay);
@@ -285,7 +253,7 @@ Manager::redo ()
   }
 }
 
-std::pair<bool, std::string>
+std::pair<bool, std::string> 
 Manager::available_undo () const
 {
   if (m_opened || m_current == m_transactions.begin ()) {
@@ -307,78 +275,13 @@ Manager::available_redo () const
   }
 }
 
-int
-Manager::available_undo_items ()
-{
-  if (m_opened) {
-    return 0;
-  }
-
-  int n = 0;
-  for (auto i = m_current; i != m_transactions.begin (); --i) {
-    ++n;
-  }
-  return n;
-}
-
-int
-Manager::available_redo_items ()
-{
-  if (m_opened) {
-    return 0;
-  }
-
-  int n = 0;
-  for (auto i = m_current; i != m_transactions.end (); ++i) {
-    ++n;
-  }
-  return n;
-}
-
-std::string
-Manager::undo_or_redo_item (int delta) const
-{
-  if (delta < 0) {
-
-    auto i = m_current;
-    while (delta < 0) {
-      if (i == m_transactions.begin ()) {
-        return std::string ();
-      }
-      ++delta;
-      --i;
-    }
-
-    return i->second;
-
-  } else {
-
-    auto i = m_current;
-    while (delta > 0) {
-      if (i == m_transactions.end ()) {
-        return std::string ();
-      }
-      --delta;
-      ++i;
-    }
-
-    if (i == m_transactions.end ()) {
-      return std::string ();
-    } else {
-      return i->second;
-    }
-
-  }
-}
-
-
 db::Op *
 Manager::last_queued (db::Object *object) 
 {
   tl_assert (m_opened);
   tl_assert (! m_replay);
 
-  if (m_current == m_transactions.end () || m_current->first.empty () || (object && m_current->first.back ().first != object->id ())) {
+  if (m_current->first.empty () || m_current->first.back ().first != object->id ()) {
     return 0;
   } else {
     return m_current->first.back ().second;

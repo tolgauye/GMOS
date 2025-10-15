@@ -1,15 +1,20 @@
 
-INCLUDEPATH += $$RBA_INC $$PYA_INC $$TL_INC $$GSI_INC $$DB_INC $$PEX_INC $$RDB_INC $$LYM_INC $$LAYBASIC_INC $$LAYVIEW_INC $$ANT_INC $$IMG_INC $$EDT_INC $$LIB_INC $$VERSION_INC
-DEPENDPATH += $$RBA_INC $$PYA_INC $$TL_INC $$GSI_INC $$DB_INC $$PEX_INC $$RDB_INC $$LYM_INC $$LAYBASIC_INC $$LAYVIEW_INC $$ANT_INC $$IMG_INC $$EDT_INC $$LIB_INC $$VERSION_INC
+INCLUDEPATH += $$RBA_INC $$PYA_INC $$TL_INC $$GSI_INC $$DB_INC $$RDB_INC $$LYM_INC $$LAYBASIC_INC $$LAY_INC $$ANT_INC $$IMG_INC $$EDT_INC $$LIB_INC $$VERSION_INC
+DEPENDPATH += $$RBA_INC $$PYA_INC $$TL_INC $$GSI_INC $$DB_INC $$RDB_INC $$LYM_INC $$LAYBASIC_INC $$LAY_INC $$ANT_INC $$IMG_INC $$EDT_INC $$LIB_INC $$VERSION_INC
 
-LIBS += "$$PYTHONLIBFILE" "$$RUBYLIBFILE" -L$$DESTDIR -lklayout_tl -lklayout_gsi -lklayout_db -lklayout_pex -lklayout_rdb -lklayout_lym -lklayout_laybasic -lklayout_layview -lklayout_ant -lklayout_img -lklayout_edt -lklayout_lib
+LIBS += "$$PYTHONLIBFILE" "$$RUBYLIBFILE" -L$$DESTDIR -lklayout_tl -lklayout_gsi -lklayout_db -lklayout_rdb -lklayout_lib
 
 !equals(HAVE_QT, "0") {
 
-  INCLUDEPATH += $$LAYUI_INC $$LAY_INC
-  DEPENDPATH += $$LAYUI_INC $$LAY_INC
+  INCLUDEPATH += $$LYM_INC $$LAYBASIC_INC $$LAY_INC $$ANT_INC $$IMG_INC $$EDT_INC
+  DEPENDPATH += $$LYM_INC $$LAYBASIC_INC $$LAY_INC $$ANT_INC $$IMG_INC $$EDT_INC
 
-  LIBS += -L$$DESTDIR -lklayout_layui -lklayout_lay
+  LIBS += -L$$DESTDIR -lklayout_lym -lklayout_laybasic -lklayout_lay -lklayout_ant -lklayout_img -lklayout_edt
+
+  # Note: this accounts for UI-generated headers placed into the output folders in
+  # shadow builds:
+  INCLUDEPATH += $$DESTDIR/laybasic $$DESTDIR/lay $$DESTDIR/ext
+  DEPENDPATH += $$DESTDIR/laybasic $$DESTDIR/lay $$DESTDIR/ext
 
   equals(HAVE_QTBINDINGS, "1") {
     LIBS += -lklayout_qtbasic -lklayout_QtGui -lklayout_QtCore
@@ -29,60 +34,13 @@ equals(HAVE_PYTHON, "1") {
   LIBS += -lklayout_pyastub
 }
 
-equals(HAVE_QTBINDINGS, "1") {
-
-  LIBS += -lklayout_qtbasic -lklayout_QtGui
-
-  !equals(HAVE_QT_XML, "0") {
-    LIBS += -lklayout_QtXml
+!equals(HAVE_QT, "0") {
+  equals(HAVE_RUBY, "1") {
+    # DRC is only available with Ruby
+    INCLUDEPATH += $$DRC_INC $$LVS_INC
+    DEPENDPATH += $$DRC_INC $$LVS_INC
+    LIBS += -lklayout_drc -lklayout_lvs
   }
-  !equals(HAVE_QT_NETWORK, "0") {
-    LIBS += -lklayout_QtNetwork
-  }
-  !equals(HAVE_QT_SQL, "0") {
-    LIBS += -lklayout_QtSql
-  }
-  !equals(HAVE_QT_DESIGNER, "0") {
-    LIBS += -lklayout_QtDesigner
-  }
-  !equals(HAVE_QT_UITOOLS, "0") {
-    LIBS += -lklayout_QtUiTools
-  }
-
-  greaterThan(QT_MAJOR_VERSION, 4) {
-
-    LIBS += -lklayout_QtWidgets
-
-    !equals(HAVE_QT_MULTIMEDIA, "0") {
-      LIBS += -lklayout_QtMultimedia
-    }
-    !equals(HAVE_QT_PRINTSUPPORT, "0") {
-      LIBS += -lklayout_QtPrintSupport
-    }
-    !equals(HAVE_QT_SVG, "0") {
-      LIBS += -lklayout_QtSvg
-    }
-    !equals(HAVE_QT_XML, "0") {
-      LIBS += -lklayout_QtXmlPatterns
-    }
-
-  }
-
-  greaterThan(QT_MAJOR_VERSION, 5) {
-
-    LIBS += -lklayout_QtCore5Compat
-    LIBS -= -lklayout_QtXmlPatterns
-    LIBS -= -lklayout_QtDesigner
-
-  }
-
-}
-
-equals(HAVE_RUBY, "1") {
-  # DRC is only available with Ruby
-  INCLUDEPATH += $$DRC_INC $$LVS_INC
-  DEPENDPATH += $$DRC_INC $$LVS_INC
-  LIBS += -lklayout_drc -lklayout_lvs
 }
 
 msvc {

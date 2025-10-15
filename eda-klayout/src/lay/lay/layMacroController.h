@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
 
 #include "layCommon.h"
 #include "layPlugin.h"
-#include "lymMacroCollection.h"
+#include "lymMacro.h"
 #include "tlObject.h"
 #include "tlDeferredExecution.h"
 #include "tlFileSystemWatcher.h"
@@ -89,12 +89,12 @@ public:
   /**
    *  @brief Reimplementation of the PluginDeclaration interface
    */
-  virtual void initialized (lay::Dispatcher *root);
+  virtual void initialized (lay::PluginRoot *root);
 
   /**
    *  @brief Reimplementation of the PluginDeclaration interface
    */
-  virtual void uninitialize (lay::Dispatcher *root);
+  virtual void uninitialize (lay::PluginRoot *root);
 
   /**
    *  @brief Reimplementation of the PluginDeclaration interface
@@ -109,7 +109,7 @@ public:
   /**
    *  @brief Reimplementation of the PluginDeclaration interface
    */
-  virtual bool can_exit (lay::Dispatcher *root) const;
+  virtual bool can_exit (lay::PluginRoot *root) const;
 
   /**
    *  @brief Gets a value indicating whether the plugin will accept a dropped file with the given URL or path
@@ -147,15 +147,9 @@ public:
 
   /**
    *  @brief Loads the macros from the predefined paths and establishes the search paths
-   *  This method can be called multiple times.
+   *  This method will also establish the macro categories.
    */
   void finish ();
-
-  /**
-   *  @brief Adds a new macro category
-   *  finish() needs to be called after adding a new category.
-   */
-  void add_macro_category (const std::string &name, const std::string &description, const std::vector<std::string> &folders);
 
   /**
    *  @brief Adds a temporary macro
@@ -167,6 +161,11 @@ public:
    *  The MainWindow object will become owner of the macro object.
    */
   void add_temp_macro (lym::Macro *m);
+
+  /**
+   *  @brief Gets the macro associated with an Action or nil if there is none
+   */
+  lym::Macro *macro_for_action (const lay::Action *action);
 
   /**
    *  @brief Obtain the list of macro categories
@@ -204,8 +203,8 @@ private:
    */
   struct ExternalPathDescriptor
   {
-    ExternalPathDescriptor (const std::string &_path, const std::string &_description, const std::string &_cat, lym::MacroCollection::FolderType _type, bool _readonly, const std::string &_version = std::string ())
-      : path (_path), description (_description), cat (_cat), type (_type), version (_version), readonly (_readonly)
+    ExternalPathDescriptor (const std::string &_path, const std::string &_description, const std::string &_cat, lym::MacroCollection::FolderType _type, bool _readonly)
+      : path (_path), description (_description), cat (_cat), type (_type), readonly (_readonly)
     {
       //  .. nothing yet ..
     }
@@ -214,7 +213,6 @@ private:
     std::string description;
     std::string cat;
     lym::MacroCollection::FolderType type;
-    std::string version;
     bool readonly;
   };
 
@@ -238,7 +236,8 @@ private:
   lay::MacroEditorDialog *mp_macro_editor;
   lay::MainWindow *mp_mw;
   bool m_no_implicit_macros;
-  tl::weak_collection<lay::Action> m_macro_actions;
+  std::vector<lay::Action> m_macro_actions;
+  std::map<QAction *, lym::Macro *> m_action_to_macro;
   lym::MacroCollection m_temp_macros;
   std::vector<MacroCategory> m_macro_categories;
   std::vector<InternalPathDescriptor> m_internal_paths;
@@ -249,6 +248,8 @@ private:
   tl::DeferredMethod<MacroController> dm_do_sync_with_external_sources;
   tl::DeferredMethod<MacroController> dm_sync_file_watcher;
   tl::DeferredMethod<MacroController> dm_sync_files;
+  std::vector<std::pair<std::string, std::string> > m_key_bindings;
+  std::vector<std::pair<std::string, bool> > m_menu_items_hidden;
 
   void sync_implicit_macros (bool ask_before_autorun);
   void add_macro_items_to_menu (lym::MacroCollection &collection, std::set<std::string> &used_names, std::set<std::string> &groups, const db::Technology *tech);

@@ -1,7 +1,7 @@
 # encoding: UTF-8
 
 # KLayout Layout Viewer
-# Copyright (C) 2006-2025 Matthias Koefferlein
+# Copyright (C) 2006-2019 Matthias Koefferlein
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -49,11 +49,6 @@ class DBCellInst_TestClass < TestBase
     assert_equal(a.trans.to_s, "r90 0,0")
     assert_equal(a.cplx_trans.to_s, "r90 *1 0,0")
 
-    a = RBA::CellInstArray::new(0, RBA::Vector::new(42, -17))
-    assert_equal(a.is_complex?, false)
-    assert_equal(a.trans.to_s, "r0 42,-17")
-    assert_equal(a.cplx_trans.to_s, "r0 *1 42,-17")
-
     a = RBA::CellInstArray::new(0, RBA::ICplxTrans::new(1.5))
     assert_equal(a.is_complex?, true)
     assert_equal(a.trans.to_s, "r0 0,0")
@@ -86,9 +81,9 @@ class DBCellInst_TestClass < TestBase
     assert_equal(at.trans.to_s, "r90 0,0")
     assert_equal(at.cplx_trans.to_s, "r135 *1 0,0")
 
-    assert_equal(at < a, false)
+    assert_equal(at < a, true)
     assert_equal(at < atdup, false)
-    assert_equal(a < at, true)
+    assert_equal(a < at, false)
     assert_equal(atdup < at, false)
     assert_equal(a != at, true)
     assert_equal(a == at, false)
@@ -110,12 +105,6 @@ class DBCellInst_TestClass < TestBase
     assert_equal(a.trans.to_s, "r90 0,0")
     assert_equal(a.cplx_trans.to_s, "r90 *1 0,0")
     assert_equal(a.to_s, "#0 r90 0,0 [10,20*3;30,40*5]")
-
-    a = RBA::CellInstArray::new(0, RBA::Vector::new(42, -17), RBA::Vector::new(10, 20), RBA::Vector::new(30, 40), 3, 5)
-    assert_equal(a.is_complex?, false)
-    assert_equal(a.trans.to_s, "r0 42,-17")
-    assert_equal(a.cplx_trans.to_s, "r0 *1 42,-17")
-    assert_equal(a.to_s, "#0 r0 42,-17 [10,20*3;30,40*5]")
 
     a = RBA::CellInstArray::new(0, RBA::ICplxTrans::new(1.5), RBA::Vector::new(10, 20), RBA::Vector::new(30, 40), 3, 5)
     assert_equal(a.is_complex?, true)
@@ -154,9 +143,9 @@ class DBCellInst_TestClass < TestBase
     assert_equal(at.cplx_trans.to_s, "r135 *1 0,0")
     assert_equal(at.to_s, "#0 r135 *1 0,0 [-20,10*3;-40,30*5]")
 
-    assert_equal(at < a, false)
+    assert_equal(at < a, true)
     assert_equal(at < atdup, false)
-    assert_equal(a < at, true)
+    assert_equal(a < at, false)
     assert_equal(atdup < at, false)
     assert_equal(a != at, true)
     assert_equal(a == at, false)
@@ -188,11 +177,6 @@ class DBCellInst_TestClass < TestBase
     assert_equal(a.is_complex?, false)
     assert_equal(a.trans.to_s, "r90 0,0")
     assert_equal(a.cplx_trans.to_s, "r90 *1 0,0")
-
-    a = RBA::DCellInstArray::new(0, RBA::DVector::new(42, -17))
-    assert_equal(a.is_complex?, false)
-    assert_equal(a.trans.to_s, "r0 42,-17")
-    assert_equal(a.cplx_trans.to_s, "r0 *1 42,-17")
 
     a = RBA::DCellInstArray::new(0, RBA::DCplxTrans::new(1.5))
     assert_equal(a.is_complex?, true)
@@ -226,9 +210,9 @@ class DBCellInst_TestClass < TestBase
     assert_equal(at.trans.to_s, "r90 0,0")
     assert_equal(at.cplx_trans.to_s, "r135 *1 0,0")
 
-    assert_equal(at < a, false)
+    assert_equal(at < a, true)
     assert_equal(at < atdup, false)
-    assert_equal(a < at, true)
+    assert_equal(a < at, false)
     assert_equal(atdup < at, false)
     assert_equal(a != at, true)
     assert_equal(a == at, false)
@@ -250,12 +234,6 @@ class DBCellInst_TestClass < TestBase
     assert_equal(a.trans.to_s, "r90 0,0")
     assert_equal(a.cplx_trans.to_s, "r90 *1 0,0")
     assert_equal(a.to_s, "#0 r90 0,0 [10,20*3;30,40*5]")
-
-    a = RBA::DCellInstArray::new(0, RBA::DVector::new(42, -17), RBA::DVector::new(10, 20), RBA::DVector::new(30, 40), 3, 5)
-    assert_equal(a.is_complex?, false)
-    assert_equal(a.trans.to_s, "r0 42,-17")
-    assert_equal(a.cplx_trans.to_s, "r0 *1 42,-17")
-    assert_equal(a.to_s, "#0 r0 42,-17 [10,20*3;30,40*5]")
 
     a = RBA::DCellInstArray::new(0, RBA::DCplxTrans::new(1.5), RBA::DVector::new(10, 20), RBA::DVector::new(30, 40), 3, 5)
     assert_equal(a.is_complex?, true)
@@ -294,9 +272,9 @@ class DBCellInst_TestClass < TestBase
     assert_equal(at.cplx_trans.to_s, "r135 *1 0,0")
     assert_equal(at.to_s, "#0 r135 *1 0,0 [-20,10*3;-40,30*5]")
 
-    assert_equal(at < a, false)
+    assert_equal(at < a, true)
     assert_equal(at < atdup, false)
-    assert_equal(a < at, true)
+    assert_equal(a < at, false)
     assert_equal(atdup < at, false)
     assert_equal(a != at, true)
     assert_equal(a == at, false)
@@ -387,27 +365,6 @@ class DBCellInst_TestClass < TestBase
     ii.na = 0
     assert_equal(ii.to_s, "#8 r270 0,0")
 
-    i = RBA::CellInstArray.new(0, RBA::Vector::new(1, 2), RBA::Vector::new(10, 20), RBA::Vector::new, 2, 2)
-    assert_equal(i.to_s, "#0 r0 1,2 [10,20*2;0,0*1]")
-
-    i = RBA::CellInstArray.new(0, RBA::Vector::new(1, 2), RBA::Vector::new(10, 20), RBA::Vector::new(11, 21), 2, 2)
-    assert_equal(i.to_s, "#0 r0 1,2 [10,20*2;11,21*2]")
-
-    i = RBA::CellInstArray.new(0, RBA::Vector::new(1, 2), RBA::Vector::new, RBA::Vector::new(11, 21), 2, 2)
-    assert_equal(i.to_s, "#0 r0 1,2 [0,0*1;11,21*2]")
-
-    i = RBA::CellInstArray.new(0, RBA::Vector::new(1, 2), RBA::Vector::new, RBA::Vector::new, 2, 2)
-    assert_equal(i.to_s, "#0 r0 1,2")
-
-    i = RBA::CellInstArray.new(0, RBA::Vector::new(1, 2), RBA::Vector::new(10, 20), RBA::Vector::new(11, 21), 0, 2)
-    assert_equal(i.to_s, "#0 r0 1,2 [10,20*1;11,21*2]")
-
-    i = RBA::CellInstArray.new(0, RBA::Vector::new(1, 2), RBA::Vector::new(10, 20), RBA::Vector::new(11, 21), 2, 0)
-    assert_equal(i.to_s, "#0 r0 1,2 [10,20*2;11,21*1]")
-
-    i = RBA::CellInstArray.new(0, RBA::Vector::new(1, 2), RBA::Vector::new(10, 20), RBA::Vector::new(11, 21), 0, 0)
-    assert_equal(i.to_s, "#0 r0 1,2")
-
   end
 
   # DCellInstArray functions
@@ -479,27 +436,6 @@ class DBCellInst_TestClass < TestBase
     assert_equal(cci2str(ii), "r270 *1 0,0;r270 *1 30,40;r270 *1 60,80")
     ii.na = 0
     assert_equal(ii.to_s, "#8 r270 0,0")
-
-    i = RBA::DCellInstArray.new(0, RBA::DVector::new(1, 2), RBA::DVector::new(10, 20), RBA::DVector::new, 2, 2)
-    assert_equal(i.to_s, "#0 r0 1,2 [10,20*2;0,0*1]")
-
-    i = RBA::DCellInstArray.new(0, RBA::DVector::new(1, 2), RBA::DVector::new(10, 20), RBA::DVector::new(11, 21), 2, 2)
-    assert_equal(i.to_s, "#0 r0 1,2 [10,20*2;11,21*2]")
-
-    i = RBA::DCellInstArray.new(0, RBA::DVector::new(1, 2), RBA::DVector::new, RBA::DVector::new(11, 21), 2, 2)
-    assert_equal(i.to_s, "#0 r0 1,2 [0,0*1;11,21*2]")
-
-    i = RBA::DCellInstArray.new(0, RBA::DVector::new(1, 2), RBA::DVector::new, RBA::DVector::new, 2, 2)
-    assert_equal(i.to_s, "#0 r0 1,2")
-
-    i = RBA::DCellInstArray.new(0, RBA::DVector::new(1, 2), RBA::DVector::new(10, 20), RBA::DVector::new(11, 21), 0, 2)
-    assert_equal(i.to_s, "#0 r0 1,2 [10,20*1;11,21*2]")
-
-    i = RBA::DCellInstArray.new(0, RBA::DVector::new(1, 2), RBA::DVector::new(10, 20), RBA::DVector::new(11, 21), 2, 0)
-    assert_equal(i.to_s, "#0 r0 1,2 [10,20*2;11,21*1]")
-
-    i = RBA::DCellInstArray.new(0, RBA::DVector::new(1, 2), RBA::DVector::new(10, 20), RBA::DVector::new(11, 21), 0, 0)
-    assert_equal(i.to_s, "#0 r0 1,2")
 
   end
 
@@ -628,35 +564,6 @@ class DBCellInst_TestClass < TestBase
     assert_equal(i1.eql?(i3), false)
     assert_equal(i1 < i3, true)
     assert_equal(i3 < i1, false)
-
-  end
-
-  # Cell * variants
-  def test_5_CellPointer
-
-    ly = RBA::Layout::new
-    cell = ly.create_cell("TOP")
-
-    a = RBA::CellInstArray::new(cell, RBA::Trans::new(RBA::Trans::R90))
-    assert_equal(a.cell_index, cell.cell_index)
-
-    a = RBA::CellInstArray::new(cell, RBA::Vector::new(42, -17))
-    assert_equal(a.cell_index, cell.cell_index)
-
-    a = RBA::CellInstArray::new(cell, RBA::ICplxTrans::new(1.5))
-    assert_equal(a.cell_index, cell.cell_index)
-
-    a = RBA::CellInstArray::new(cell, RBA::ICplxTrans::new(1.0, 45, false, RBA::Vector::new))
-    assert_equal(a.cell_index, cell.cell_index)
-
-    a = RBA::CellInstArray::new(cell, RBA::Trans::new(RBA::Trans::R90), RBA::Vector::new(10, 20), RBA::Vector::new(30, 40), 3, 5)
-    assert_equal(a.cell_index, cell.cell_index)
-
-    a = RBA::CellInstArray::new(cell, RBA::Vector::new(42, -17), RBA::Vector::new(10, 20), RBA::Vector::new(30, 40), 3, 5)
-    assert_equal(a.cell_index, cell.cell_index)
-
-    a = RBA::CellInstArray::new(cell, RBA::ICplxTrans::new(1.5), RBA::Vector::new(10, 20), RBA::Vector::new(30, 40), 3, 5)
-    assert_equal(a.cell_index, cell.cell_index)
 
   end
 

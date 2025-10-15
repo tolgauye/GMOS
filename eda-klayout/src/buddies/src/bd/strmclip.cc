@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -29,7 +29,6 @@
 #include "dbSaveLayoutOptions.h"
 #include "tlLog.h"
 #include "tlCommandLineParser.h"
-#include "tlTimer.h"
 
 
 struct ClipData
@@ -64,7 +63,7 @@ struct ClipData
 };
 
 
-void clip (ClipData &data)
+void clip (const ClipData &data)
 {
   db::Layout layout;
   db::Layout target_layout;
@@ -72,7 +71,10 @@ void clip (ClipData &data)
   {
     db::LoadLayoutOptions load_options;
     data.reader_options.configure (load_options);
-    bd::read_files (layout, data.file_in, load_options);
+
+    tl::InputStream stream (data.file_in);
+    db::Reader reader (stream);
+    reader.read (layout, load_options);
   }
 
   //  create the layers in the target layout as well
@@ -83,6 +85,7 @@ void clip (ClipData &data)
   }
 
   //  copy the properties repository in order to have the same ID mapping
+  target_layout.properties_repository () = layout.properties_repository ();
   target_layout.dbu (layout.dbu ());
 
   //  look for the clip layer
@@ -200,8 +203,6 @@ BD_PUBLIC int strmclip (int argc, char *argv[])
   cmd.brief ("This program will produce clips from an input layout and writes them to another layout");
 
   cmd.parse (argc, argv);
-
-  tl::SelfTimer timer (tl::verbosity () >= 11, tl::to_string (tr ("Total")));
 
   clip (data);
 

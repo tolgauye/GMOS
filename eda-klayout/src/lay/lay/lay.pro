@@ -9,15 +9,13 @@ DEFINES += MAKE_LAY_LIBRARY
 HEADERS = \
     layApplication.h \
     layClipDialog.h \
-    layControlWidgetStack.h \
     layCrashMessage.h \
-    layEnhancedTabBar.h \
     layFillDialog.h \
     layGSIHelpProvider.h \
-    layHelpAboutDialog.h \
     layHelpDialog.h \
     layHelpProvider.h \
     layHelpSource.h \
+    layLayoutStatisticsForm.h \
     layLogViewerDialog.h \
     layMacroEditorDialog.h \
     layMacroEditorPage.h \
@@ -28,20 +26,17 @@ HEADERS = \
     layMainWindow.h \
     layNavigator.h \
     layProgress.h \
-    layProgressDialog.h \
     layProgressWidget.h \
     layResourceHelpProvider.h \
     layRuntimeErrorForm.h \
-    layReaderErrorForm.h \
-    laySaltParsedURL.h \
     laySearchReplaceConfigPage.h \
     laySearchReplaceDialog.h \
     laySearchReplacePropertiesWidgets.h \
+    laySelectCellViewForm.h \
     laySession.h \
     laySettingsForm.h \
     layTechSetupDialog.h \
     layTextProgress.h \
-    layTextProgressDelegate.h \
     layVersion.h \
     layCommon.h \
     layConfig.h \
@@ -59,12 +54,12 @@ HEADERS = \
     laySignalHandler.h \
     layLibraryController.h \
     layFontController.h \
+    layNativePlugin.h \
     laySystemPaths.h \
     layMacroEditorSetupPage.h \
     layPasswordDialog.h \
     layForceLink.h \
-    layInit.h \
-    layViewWidgetStack.h
+    layInit.h
 
 FORMS = \
     ClipDialog.ui \
@@ -73,7 +68,7 @@ FORMS = \
     DeleteModeDialog.ui \
     FillDialog.ui \
     HelpAboutDialog.ui \
-    HelpDialog.ui \
+    LayoutStatistics.ui \
     LogViewerDialog.ui \
     MacroEditorDialog.ui \
     MacroPropertiesDialog.ui \
@@ -90,7 +85,6 @@ FORMS = \
     ReplacePropertiesShape.ui \
     ReplacePropertiesText.ui \
     RuntimeErrorForm.ui \
-    ReaderErrorForm.ui \
     SearchPropertiesBox.ui \
     SearchPropertiesInstance.ui \
     SearchPropertiesPath.ui \
@@ -98,6 +92,7 @@ FORMS = \
     SearchPropertiesText.ui \
     SearchReplaceConfigPage.ui \
     SearchReplaceDialog.ui \
+    SelectCellViewForm.ui \
     SettingsForm.ui \
     TechBaseEditorPage.ui \
     TechComponentSetupDialog.ui \
@@ -121,15 +116,13 @@ SOURCES = \
     gsiDeclLayMainWindow.cc \
     layApplication.cc \
     layClipDialog.cc \
-    layControlWidgetStack.cc \
     layCrashMessage.cc \
-    layEnhancedTabBar.cc \
     layFillDialog.cc \
     layGSIHelpProvider.cc \
-    layHelpAboutDialog.cc \
     layHelpDialog.cc \
     layHelpProvider.cc \
     layHelpSource.cc \
+    layLayoutStatisticsForm.cc \
     layLogViewerDialog.cc \
     layMacroEditorDialog.cc \
     layMacroEditorPage.cc \
@@ -140,21 +133,18 @@ SOURCES = \
     layMainWindow.cc \
     layNavigator.cc \
     layProgress.cc \
-    layProgressDialog.cc \
     layProgressWidget.cc \
     layResourceHelpProvider.cc \
     layRuntimeErrorForm.cc \
-    layReaderErrorForm.cc \
-    laySaltParsedURL.cc \
     laySearchReplaceConfigPage.cc \
     laySearchReplaceDialog.cc \
     laySearchReplacePlugin.cc \
     laySearchReplacePropertiesWidgets.cc \
+    laySelectCellViewForm.cc \
     laySession.cc \
     laySettingsForm.cc \
     layTechSetupDialog.cc \
     layTextProgress.cc \
-    layTextProgressDelegate.cc \
     layVersion.cc \
     layMacroController.cc \
     layTechnologyController.cc \
@@ -170,31 +160,42 @@ SOURCES = \
     laySignalHandler.cc \
     layLibraryController.cc \
     layFontController.cc \
+    layNativePlugin.cc \
     laySystemPaths.cc \
     layMacroEditorSetupPage.cc \
     layPasswordDialog.cc \
     layForceLink.cc \
-    layInit.cc \
-    layViewWidgetStack.cc
+    layInit.cc
 
 RESOURCES = layBuildInMacros.qrc \
+    layHelpResources.qrc \
+    layLayoutStatistics.qrc \
     layMacroTemplates.qrc \
-    laySyntaxHighlighters.qrc \
-    laySaltTemplates.qrc \
+    layResources.qrc \
+    laySaltTemplates.qrc
 
-INCLUDEPATH += $$TL_INC $$GSI_INC $$DB_INC $$RDB_INC $$LAYBASIC_INC $$LAYUI_INC $$LAYVIEW_INC $$ANT_INC $$IMG_INC $$EDT_INC $$LYM_INC
-DEPENDPATH += $$TL_INC $$GSI_INC $$DB_INC $$RDB_INC $$LAYBASIC_INC $$LAYUI_INC $$LAYVIEW_INC $$ANT_INC $$IMG_INC $$EDT_INC $$LYM_INC
-LIBS += -L$$DESTDIR -lklayout_tl -lklayout_gsi -lklayout_db -lklayout_rdb -lklayout_lym -lklayout_laybasic -lklayout_layview -lklayout_layui -lklayout_ant -lklayout_img -lklayout_edt
+INCLUDEPATH += $$TL_INC $$GSI_INC $$DB_INC $$RDB_INC $$LAYBASIC_INC $$ANT_INC $$IMG_INC $$EDT_INC $$LYM_INC
+DEPENDPATH += $$TL_INC $$GSI_INC $$DB_INC $$RDB_INC $$LAYBASIC_INC $$ANT_INC $$IMG_INC $$EDT_INC $$LYM_INC
+LIBS += -L$$DESTDIR -lklayout_tl -lklayout_gsi -lklayout_db -lklayout_rdb -lklayout_lym -lklayout_laybasic -lklayout_ant -lklayout_img -lklayout_edt
+
+win32 {
+  # for stack trace support:
+  # lpsapi for GetModuleFileName and others
+  # dbghelp for SymFromAddr and other
+  LIBS += -lpsapi -ldbghelp
+}
+
+# Note: this accounts for UI-generated headers placed into the output folders in
+# shadow builds:
+INCLUDEPATH += $$DESTDIR/laybasic/laybasic
+DEPENDPATH += $$DESTDIR/laybasic/laybasic
 
 INCLUDEPATH += $$QTBASIC_INC
 DEPENDPATH += $$QTBASIC_INC
 
 equals(HAVE_QTBINDINGS, "1") {
-  LIBS += -lklayout_qtbasic -lklayout_QtGui -lklayout_QtCore
-  !equals(HAVE_QT_XML, "0") {
-    LIBS += -lklayout_QtXml
-  }
-  greaterThan(QT_MAJOR_VERSION, 4) {
+  LIBS += -lklayout_qtbasic -lklayout_QtGui -lklayout_QtXml -lklayout_QtCore
+  equals(HAVE_QT5, "1") {
     LIBS += -lklayout_QtWidgets
   }
 }

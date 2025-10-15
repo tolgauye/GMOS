@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -34,8 +34,6 @@
 namespace rba
 {
 
-void push_args (gsi::SerialArgs &arglist, const gsi::MethodBase *meth, VALUE *argv, int argc, VALUE kwargs, tl::Heap &heap);
-
 // -------------------------------------------------------------------
 //  Serialization adaptors for strings, variants, vectors and maps
 
@@ -48,7 +46,7 @@ class RubyBasedStringAdaptor
 public:
   RubyBasedStringAdaptor (VALUE value)
   {
-    m_string = rba_safe_obj_as_string (value);
+    m_string = rba_safe_string_value (value);
     gc_lock_object (m_string);
   }
 
@@ -70,49 +68,10 @@ public:
   virtual void set (const char * /*c_str*/, size_t /*s*/, tl::Heap & /*heap*/)
   {
     //  TODO: is there a setter for a string?
-    //  -> so far, string OUT parameters are not supported
   }
 
 private:
   VALUE m_string;
-};
-
-/**
- *  @brief An adaptor for a byte array from ruby objects
- */
-class RubyBasedByteArrayAdaptor
-  : public gsi::ByteArrayAdaptor
-{
-public:
-  RubyBasedByteArrayAdaptor (VALUE value)
-  {
-    m_bytes = rba_safe_string_value (value);
-    gc_lock_object (m_bytes);
-  }
-
-  ~RubyBasedByteArrayAdaptor ()
-  {
-    gc_unlock_object (m_bytes);
-  }
-
-  virtual const char *c_str () const
-  {
-    return RSTRING_PTR (m_bytes);
-  }
-
-  virtual size_t size () const
-  {
-    return RSTRING_LEN (m_bytes);
-  }
-
-  virtual void set (const char * /*c_str*/, size_t /*s*/, tl::Heap & /*heap*/)
-  {
-    //  TODO: is there a setter for a string?
-    //  -> so far, byte array OUT parameters are not supported
-  }
-
-private:
-  VALUE m_bytes;
 };
 
 /**
@@ -126,8 +85,7 @@ public:
   ~RubyBasedVariantAdaptor ();
 
   virtual tl::Variant var () const;
-  virtual void set (const tl::Variant &v, tl::Heap &heap);
-  VALUE value () const { return m_var; }
+  virtual void set (const tl::Variant &v);
 
 private:
   VALUE m_var;
@@ -256,7 +214,6 @@ struct get_boxed_value_func_error
 
 template <> struct get_boxed_value_func<gsi::VariantType> : get_boxed_value_func_error { };
 template <> struct get_boxed_value_func<gsi::StringType> : get_boxed_value_func_error { };
-template <> struct get_boxed_value_func<gsi::ByteArrayType> : get_boxed_value_func_error { };
 template <> struct get_boxed_value_func<gsi::ObjectType> : get_boxed_value_func_error { };
 template <> struct get_boxed_value_func<gsi::VectorType> : get_boxed_value_func_error { };
 template <> struct get_boxed_value_func<gsi::MapType> : get_boxed_value_func_error { };
@@ -365,55 +322,6 @@ struct writer<gsi::StringType>
 };
 
 /**
- *  @brief Serialization for strings
- */
-template <>
-struct writer<gsi::ByteArrayType>
-{
-  void operator() (gsi::SerialArgs *aa, VALUE arg, const gsi::ArgType &atype, tl::Heap *heap)
-  {
-    //  Cannot pass ownership currently
-    tl_assert (!atype.pass_obj ());
-
-    if (arg == Qnil) {
-
-      if (! (atype.is_ptr () || atype.is_cptr ())) {
-        //  nil is treated as an empty string for references
-        aa->write<void *> ((void *)new gsi::ByteArrayAdaptorImpl<std::vector<char> > (std::vector<char> ()));
-      } else {
-        aa->write<void *> ((void *)0);
-      }
-
-    } else {
-
-      if (atype.is_ref () || atype.is_ptr ()) {
-
-        // references or pointers require a boxed object. Pointers also allow nil.
-        void *vc = 0;
-        get_boxed_value_func<std::vector<char> > () (&vc, arg, heap);
-        if (! vc && atype.is_ref ()) {
-          throw tl::Exception (tl::to_string (tr ("Arguments or return values of reference or direct type cannot be passed nil or an empty boxed value object")));
-        }
-
-        //  NOTE: by convention we pass the ownership to the receiver for adaptors.
-        if (! vc) {
-          aa->write<void *> (0);
-        } else {
-          aa->write<void *> ((void *)new gsi::ByteArrayAdaptorImpl<std::vector<char> > ((std::vector<char> *) vc));
-        }
-
-      } else {
-
-        //  NOTE: by convention we pass the ownership to the receiver for adaptors.
-        aa->write<void *> ((void *)new RubyBasedByteArrayAdaptor (arg));
-
-      }
-
-    }
-  }
-};
-
-/**
  *  @brief Specialization for Variant
  */
 template <>
@@ -484,7 +392,7 @@ struct writer<gsi::MapType>
 };
 
 /**
- *  @brief A specialization of the write function for vector types
+ *  @brief A specialisation of the write function for vector types
  */
 template <>
 struct writer <gsi::ObjectType>
@@ -498,42 +406,6 @@ struct writer <gsi::ObjectType>
       } else {
         aa->write<void *> ((void *) 0);
       }
-
-    } else if (TYPE (arg) == T_ARRAY) {
-
-      //  we may implicitly convert an array into a constructor call of a target object -
-      //  for now we only check whether the number of arguments is compatible with the array given.
-
-      int n = RARRAY_LEN (arg);
-      const gsi::MethodBase *meth = 0;
-      for (gsi::ClassBase::method_iterator c = atype.cls ()->begin_constructors (); c != atype.cls ()->end_constructors (); ++c) {
-        if ((*c)->compatible_with_num_args (n)) {
-          meth = *c;
-          break;
-        }
-      }
-
-      if (!meth) {
-        throw tl::Exception (tl::to_string (tr ("No constructor of %s available that takes %d arguments (implicit call from tuple)")), atype.cls ()->name (), n);
-      }
-
-      //  implicit call of constructor
-      gsi::SerialArgs retlist (meth->retsize ());
-      gsi::SerialArgs arglist (meth->argsize ());
-
-      push_args (arglist, meth, RARRAY_PTR (arg), n, Qnil, *heap);
-
-      meth->call (0, arglist, retlist);
-
-      void *new_obj = retlist.read<void *> (*heap);
-      if (new_obj && (atype.is_ptr () || atype.is_cptr () || atype.is_ref () || atype.is_cref ())) {
-        //  For pointers or refs, ownership over these objects is not transferred.
-        //  Hence we have to keep them on the heap.
-        //  TODO: what if the called method takes ownership using keep()?
-        heap->push (new gsi::ObjectHolder (atype.cls (), new_obj));
-      }
-
-      aa->write<void *> (new_obj);
 
     } else {
 
@@ -615,7 +487,7 @@ push_arg (const gsi::ArgType &atype, gsi::SerialArgs &aserial, VALUE arg, tl::He
 }
 
 /**
- *  @brief Deserialization wrapper
+ *  @brief Deseralisation wrapper
  *
  *  The default implementation is for POD types, strings and variants
  */
@@ -649,7 +521,7 @@ struct reader
 };
 
 /**
- *  @brief Deserialization wrapper: specialization for void *
+ *  @brief Deseralisation wrapper: specialization for void *
  *
  *  Without that would would have to handle void *&, void * const &, ...
  *  TODO: right now these types are not supported.
@@ -668,31 +540,14 @@ struct reader<void *>
 };
 
 /**
- *  @brief Deserialization wrapper: specialization for strings
+ *  @brief Deseralisation wrapper: specialization for strings
  */
 template <>
 struct reader<gsi::StringType>
 {
   void operator() (gsi::SerialArgs *rr, VALUE *ret, Proxy * /*self*/, const gsi::ArgType &, tl::Heap *heap)
   {
-    std::unique_ptr<gsi::StringAdaptor> a ((gsi::StringAdaptor *) rr->read<void *>(*heap));
-    if (!a.get ()) {
-      *ret = Qnil;
-    } else {
-      *ret = rb_utf8_str_new (a->c_str (), long (a->size ()));
-    }
-  }
-};
-
-/**
- *  @brief Deserialization wrapper: specialization for strings
- */
-template <>
-struct reader<gsi::ByteArrayType>
-{
-  void operator() (gsi::SerialArgs *rr, VALUE *ret, Proxy * /*self*/, const gsi::ArgType &, tl::Heap *heap)
-  {
-    std::unique_ptr<gsi::ByteArrayAdaptor> a ((gsi::ByteArrayAdaptor *) rr->read<void *>(*heap));
+    std::auto_ptr<gsi::StringAdaptor> a ((gsi::StringAdaptor *) rr->read<void *>(*heap));
     if (!a.get ()) {
       *ret = Qnil;
     } else {
@@ -701,12 +556,11 @@ struct reader<gsi::ByteArrayType>
   }
 };
 
-static VALUE object_from_variant (tl::Variant &var, Proxy *self, const gsi::ArgType &atype, bool transfer = false)
+static VALUE object_from_variant (const tl::Variant &var, Proxy *self, const gsi::ArgType &atype)
 {
   if (var.is_user()) {
 
-    bool is_direct = (! atype.is_cptr() && ! atype.is_ptr () && ! atype.is_cref () && ! atype.is_ref ());
-    bool pass_obj = atype.pass_obj() || is_direct;
+    bool pass_obj = atype.pass_obj() || (! atype.is_cptr() && ! atype.is_ptr () && ! atype.is_cref () && ! atype.is_ref ());
     bool is_const = atype.is_cptr() || atype.is_cref();
     bool prefer_copy = false;
     bool can_destroy = false;
@@ -714,10 +568,7 @@ static VALUE object_from_variant (tl::Variant &var, Proxy *self, const gsi::ArgT
     //  TODO: ugly const_cast, but there is no "const shared reference" ...
     gsi::Proxy *holder = dynamic_cast<gsi::Proxy *>(const_cast<tl::Object *>(var.to_object ()));
 
-    void *obj = var.to_user ();
-    const gsi::ClassBase *cls = var.user_cls ()->gsi_cls ();
-
-    if (pass_obj || transfer) {
+    if (pass_obj) {
 
       if (holder) {
 
@@ -738,25 +589,19 @@ static VALUE object_from_variant (tl::Variant &var, Proxy *self, const gsi::ArgT
         //  If the object was not owned before, it is not owned after (bears risk of invalid
         //  pointers, but it's probably rarely the case. Non-managed objects are usually copied
         //  between the ownership spaces.
-        //  If the variant holds the user object, we can take it from it and claim ownership.
-        if (var.user_is_ref ()) {
+        if (var.user_is_ref()) {
           prefer_copy = false;   // unsafe
-          pass_obj = false;
         } else {
-          obj = var.user_take ();
-          can_destroy = true;
+          prefer_copy = true;   // safe
         }
+
+        pass_obj = false;
 
       }
 
-    } else {
-
-      //  This is the case for return values that prefer to be copied (e.g. from const &)
-      prefer_copy = atype.prefer_copy ();
-
     }
 
-    return object_to_ruby (obj, self, cls, pass_obj, is_const, prefer_copy, can_destroy);
+    return object_to_ruby ((void *) var.to_user (), self, var.user_cls ()->gsi_cls (), pass_obj, is_const, prefer_copy, can_destroy);
 
   } else {
     return c2ruby<tl::Variant> (var);
@@ -764,43 +609,37 @@ static VALUE object_from_variant (tl::Variant &var, Proxy *self, const gsi::ArgT
 }
 
 /**
- *  @brief Deserialization wrapper: specialization for variants
+ *  @brief Deseralisation wrapper: specialization for variants
  */
 template <>
 struct reader<gsi::VariantType>
 {
   void operator() (gsi::SerialArgs *rr, VALUE *ret, Proxy *self, const gsi::ArgType &atype, tl::Heap *heap)
   {
-    std::unique_ptr<gsi::VariantAdaptor> a ((gsi::VariantAdaptor *) rr->read<void *>(*heap));
+    std::auto_ptr<gsi::VariantAdaptor> a ((gsi::VariantAdaptor *) rr->read<void *>(*heap));
     if (!a.get ()) {
       *ret = Qnil;
     } else {
       gsi::VariantAdaptorImpl<tl::Variant> *aa = dynamic_cast<gsi::VariantAdaptorImpl<tl::Variant> *> (a.get ());
-      RubyBasedVariantAdaptor *pa = dynamic_cast<RubyBasedVariantAdaptor *> (a.get ());
       if (aa) {
         //  A small optimization that saves one variant copy
-        *ret = object_from_variant (aa->var_ref_nc (), self, atype);
-      } else if (pa) {
-        //  Optimization for Ruby to Ruby transfer
-        *ret = pa->value ();
+        *ret = object_from_variant (aa->var_ref (), self, atype);
       } else {
-        tl::Variant v = a->var ();
-        //  NOTE: as v may hold the object, we need to transfer ownership
-        *ret = object_from_variant (v, self, atype, true);
+        *ret = object_from_variant (a->var (), self, atype);
       }
     }
   }
 };
 
 /**
- *  @brief Deserialization wrapper: specialization for vectors
+ *  @brief Deseralisation wrapper: specialization for vectors
  */
 template <>
 struct reader<gsi::VectorType>
 {
   void operator() (gsi::SerialArgs *rr, VALUE *ret, Proxy * /*self*/, const gsi::ArgType &atype, tl::Heap *heap)
   {
-    std::unique_ptr<gsi::VectorAdaptor> a ((gsi::VectorAdaptor *) rr->read<void *>(*heap));
+    std::auto_ptr<gsi::VectorAdaptor> a ((gsi::VectorAdaptor *) rr->read<void *>(*heap));
     if (!a.get ()) {
       *ret = Qnil;
     } else {
@@ -813,14 +652,14 @@ struct reader<gsi::VectorType>
 };
 
 /**
- *  @brief Deserialization wrapper: specialization for maps
+ *  @brief Deseralisation wrapper: specialization for maps
  */
 template <>
 struct reader<gsi::MapType>
 {
   void operator() (gsi::SerialArgs *rr, VALUE *ret, Proxy * /*self*/, const gsi::ArgType &atype, tl::Heap *heap)
   {
-    std::unique_ptr<gsi::MapAdaptor> a ((gsi::MapAdaptor *) rr->read<void *>(*heap));
+    std::auto_ptr<gsi::MapAdaptor> a ((gsi::MapAdaptor *) rr->read<void *>(*heap));
     if (!a.get ()) {
       *ret = Qnil;
     } else {
@@ -834,7 +673,7 @@ struct reader<gsi::MapType>
 };
 
 /**
- *  @brief Deserialization wrapper: specialization for objects
+ *  @brief Deseralisation wrapper: specialization for objects
  */
 template <>
 struct reader<gsi::ObjectType>
@@ -878,7 +717,7 @@ tl::Variant RubyBasedVariantAdaptor::var () const
   return ruby2c<tl::Variant> (m_var);
 }
 
-void RubyBasedVariantAdaptor::set (const tl::Variant & /*v*/, tl::Heap & /*heap*/)
+void RubyBasedVariantAdaptor::set (const tl::Variant & /*v*/)
 {
   //  TODO: is there a setter for a string?
 }
@@ -1026,10 +865,10 @@ size_t RubyBasedMapAdaptor::serial_size () const
 }
 
 // -------------------------------------------------------------------
-//  Pulls an argument from the front of an argument queue
+//  Pops an argument from the call or return stack
 
 VALUE
-pull_arg (const gsi::ArgType &atype, Proxy *self, gsi::SerialArgs &aserial, tl::Heap &heap)
+pop_arg (const gsi::ArgType &atype, Proxy *self, gsi::SerialArgs &aserial, tl::Heap &heap)
 {
   VALUE ret = Qnil;
   gsi::do_on_type<reader> () (atype.type (), &aserial, &ret, self, atype, &heap);
@@ -1053,7 +892,7 @@ pull_arg (const gsi::ArgType &atype, Proxy *self, gsi::SerialArgs &aserial, tl::
 template <class R>
 struct test_arg_func
 {
-  void operator () (bool *ret, VALUE arg, const gsi::ArgType &atype, bool loose, bool /*object_substitution*/)
+  void operator () (bool *ret, VALUE arg, const gsi::ArgType &atype, bool loose)
   {
     if ((atype.is_cptr () || atype.is_ptr ()) && arg == Qnil) {
 
@@ -1101,7 +940,7 @@ struct test_vector
     unsigned int len = RARRAY_LEN(arr);
     VALUE *el = RARRAY_PTR(arr);
     while (len-- > 0) {
-      if (! test_arg (ainner, *el++, loose, true /*issue-1651*/)) {
+      if (! test_arg (ainner, *el++, loose)) {
         *ret = false;
         break;
       }
@@ -1112,12 +951,12 @@ struct test_vector
 template <>
 struct test_arg_func<gsi::VectorType>
 {
-  void operator () (bool *ret, VALUE arg, const gsi::ArgType &atype, bool loose, bool /*object_substitution*/)
+  void operator () (bool *ret, VALUE arg, const gsi::ArgType &atype, bool loose)
   {
     if ((atype.is_cptr () || atype.is_ptr ()) && arg == Qnil) {
       //  for pointers to vectors, nil is a valid value
       *ret = true;
-    } else if (TYPE (arg) != T_ARRAY) {
+    } if (TYPE (arg) != T_ARRAY) {
       *ret = false;
     } else {
 
@@ -1141,11 +980,11 @@ struct HashTestKeyValueData
 static int hash_test_value_key (VALUE key, VALUE value, VALUE a)
 {
   HashTestKeyValueData *args = (HashTestKeyValueData *)a;
-  if (! test_arg (*args->ainner_k, key, args->loose, true /*issue-1651*/)) {
+  if (! test_arg (*args->ainner_k, key, args->loose)) {
     *(args->ret) = false;
     return ST_STOP;
   }
-  if (! test_arg (*args->ainner, value, args->loose, true /*issue-1651*/)) {
+  if (! test_arg (*args->ainner, value, args->loose)) {
     *(args->ret) = false;
     return ST_STOP;
   }
@@ -1155,7 +994,7 @@ static int hash_test_value_key (VALUE key, VALUE value, VALUE a)
 template <>
 struct test_arg_func<gsi::MapType>
 {
-  void operator () (bool *ret, VALUE arg, const gsi::ArgType &atype, bool loose, bool /*object_substitution*/)
+  void operator () (bool *ret, VALUE arg, const gsi::ArgType &atype, bool loose)
   {
     if ((atype.is_cptr () || atype.is_ptr ()) && arg == Qnil) {
       //  for pointers to maps, nil is a valid value
@@ -1183,27 +1022,12 @@ struct test_arg_func<gsi::MapType>
 template <>
 struct test_arg_func<gsi::ObjectType>
 {
-  void operator () (bool *ret, VALUE arg, const gsi::ArgType &atype, bool loose, bool object_substitution)
+  void operator () (bool *ret, VALUE arg, const gsi::ArgType &atype, bool loose)
   {
     if ((atype.is_cptr () || atype.is_ptr ()) && arg == Qnil) {
 
       //  for const X * or X *, nil is an allowed value
       *ret = true;
-
-    } else if (object_substitution && TYPE (arg) == T_ARRAY) {
-
-      //  we may implicitly convert an array into a constructor call of a target object -
-      //  for now we only check whether the number of arguments is compatible with the array given.
-
-      int n = RARRAY_LEN (arg);
-
-      *ret = false;
-      for (gsi::ClassBase::method_iterator c = atype.cls ()->begin_constructors (); c != atype.cls ()->end_constructors (); ++c) {
-        if ((*c)->compatible_with_num_args (n)) {
-          *ret = true;
-          break;
-        }
-      }
 
     } else {
 
@@ -1217,7 +1041,7 @@ struct test_arg_func<gsi::ObjectType>
 
         //  in loose mode (second pass) try to match the types via implicit constructors,
         //  in strict mode (first pass) require direct type match
-        if (p->cls_decl () == atype.cls () || (loose && (p->cls_decl ()->is_derived_from (atype.cls ()) || (object_substitution && p->cls_decl ()->can_convert_to (atype.cls ()))))) {
+        if (p->cls_decl () == atype.cls () || (loose && (p->cls_decl ()->is_derived_from (atype.cls ()) || p->cls_decl ()->can_convert_to (atype.cls ())))) {
           //  type matches: check constness
           if ((atype.is_ref () || atype.is_ptr ()) && p->const_ref ()) {
             *ret = false;
@@ -1234,10 +1058,10 @@ struct test_arg_func<gsi::ObjectType>
 };
 
 bool
-test_arg (const gsi::ArgType &atype, VALUE arg, bool loose, bool object_substitution)
+test_arg (const gsi::ArgType &atype, VALUE arg, bool loose)
 {
   bool ret = false;
-  gsi::do_on_type<test_arg_func> () (atype.type (), &ret, arg, atype, loose, object_substitution);
+  gsi::do_on_type<test_arg_func> () (atype.type (), &ret, arg, atype, loose);
   return ret;
 }
 

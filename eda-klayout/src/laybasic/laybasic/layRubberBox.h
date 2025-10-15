@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -34,7 +34,7 @@ class LAYBASIC_PUBLIC RubberBox
   : public lay::ViewObject
 {
 public: 
-  RubberBox (lay::ViewObjectUI *canvas, unsigned int color, const db::DPoint &p1, const db::DPoint &p2);
+  RubberBox (lay::ViewObjectWidget *canvas, unsigned int color, const db::DPoint &p1, const db::DPoint &p2);
 
   void set_color (unsigned int color);
   void set_stipple (unsigned int s);

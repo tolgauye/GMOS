@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -218,7 +218,7 @@ void path<C>::create_shifted_points (C start, C end, C width, bool forward, Iter
 
   if (pp == to) {
 
-    //  Special case of degenerated path with one point: treat as infinitely small segment with direction (1,0)
+    //  Special case of degenerated path with one point: treat as infinitly small segment with direction (1,0)
     db::DVector ed (forward ? 1.0 : -1.0, 0.0);
     db::DVector nd (-ed.y (), ed.x ());
     db::DVector edd, ndd;
@@ -277,7 +277,7 @@ void path<C>::create_shifted_points (C start, C end, C width, bool forward, Iter
     Iter ppp = pp;
     ++ppp;
 
-    //  Compute the unit vector of the line and its normal (times width)
+    //  Compute the unit vector of the line and it's normal (times width)
 
     db::DVector ed (*pp - *p);
     ed *= 1.0 / ed.double_length ();
@@ -350,7 +350,7 @@ void path<C>::create_shifted_points (C start, C end, C width, bool forward, Iter
     } else {
 
       //  Points in between are determined from taking two 
-      //  edges being shifted perpendicular from the original
+      //  edges being shifted perpendicular from the orginal
       //  and being slightly extended. The intersection point
       //  of both gives the new vertex. If there is no intersection,
       //  the edges are simply connected.
@@ -372,12 +372,19 @@ void path<C>::create_shifted_points (C start, C end, C width, bool forward, Iter
         double l1 = db::vprod (nnd - nd, eed) / dv;
         double l2 = db::vprod (nd - nnd, ed) / dv;
 
-        if (l1 < l1min - db::epsilon || l2 < l2min - db::epsilon) {
+        if ((l1 < -db::epsilon) != (l2 < -db::epsilon)) {
+
+          //  No well-formed intersection (reflecting edge) ->
+          //  create a direct connection
+          *pts++ = *pp + vector<C> (nd);
+          *pts++ = *pp + vector<C> (nnd);
+
+        } else if (l1 < l1min - db::epsilon || l2 < l2min - db::epsilon) {
 
           //  Segments are too short - the won't intersect: In this case we create a loop of three 
           //  points which define the area in self-overlapping way but confined to the path within
-          //  the limits of its width.
-          //  HINT: the execution of this code is a pretty strong evidence for the existence to loops 
+          //  the limits of it's width. 
+          //  HINT: the execution of this code is a pretty strong evidence for the existance to loops 
           //  in the contour delivered. A proof however is missing ..
           *pts++ = *pp + vector<C> (nd);
           *pts++ = *pp;
@@ -518,7 +525,7 @@ round_path_corners (const db::DPath &input, double r, int n, double accuracy)
           //  is supposed to create a centerline with roughly the
           //  same length that the ideal line and end segments which are
           //  in the direction of the tangent, so they merge smoothly with
-          //  adjacent line segments.
+          //  adjancent line segments.
           double f0 = 1.0 / 3.0;
           double nn = npts - 1.0 + 2.0 * f0;
           double ract_outer = ract / cos (f0 * ac / nn);

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -31,8 +31,6 @@
 #include "dbCell.h"
 #include "dbInstElement.h"
 #include "tlEquivalenceClusters.h"
-#include "tlAssert.h"
-#include "tlSList.h"
 
 #include <map>
 #include <list>
@@ -60,11 +58,9 @@ class DeepLayer;
 class DB_PUBLIC Connectivity
 {
 public:
-  typedef std::set<unsigned int> all_layers_type;
-  typedef all_layers_type::const_iterator all_layer_iterator;
-  typedef std::map<unsigned int, int> layers_type;
+  typedef std::set<unsigned int> layers_type;
   typedef layers_type::const_iterator layer_iterator;
-  typedef std::map<unsigned int, int> global_nets_type;
+  typedef std::set<size_t> global_nets_type;
   typedef global_nets_type::const_iterator global_nets_iterator;
 
   /**
@@ -104,24 +100,9 @@ public:
   void connect (unsigned int la, unsigned int lb);
 
   /**
-   *  @brief Adds inter-layer connectivity of the soft type
-   *
-   *  Soft connections are directed and are reported during "interacts"
-   *  by the "soft" output argument. "la" is the "upper" layer and "lb" is the lower layer.
-   */
-  void soft_connect (unsigned int la, unsigned int lb);
-
-  /**
    *  @brief Adds a connection to a global net
    */
   size_t connect_global (unsigned int l, const std::string &gn);
-
-  /**
-   *  @brief Adds a soft connection to a global net
-   *
-   *  The global net is always the "lower" layer.
-   */
-  size_t soft_connect_global (unsigned int l, const std::string &gn);
 
   /**
    *  @brief Adds intra-layer connectivity for layer l
@@ -138,26 +119,9 @@ public:
   void connect (const db::DeepLayer &la, const db::DeepLayer &lb);
 
   /**
-   *  @brief Adds inter-layer connectivity
-   *  This is a convenience method that takes a db::DeepLayer object.
-   *  It is assumed that all those layers originate from the same deep shape store.
-   *
-   *  Soft connections are directed and are reported during "interacts"
-   *  by the "soft" output argument. "la" is the "upper" layer and "lb" is the lower layer.
-   */
-  void soft_connect (const db::DeepLayer &la, const db::DeepLayer &lb);
-
-  /**
    *  @brief Adds a connection to a global net
    */
   size_t connect_global (const db::DeepLayer &la, const std::string &gn);
-
-  /**
-   *  @brief Adds a soft connection to a global net
-   *
-   *  The global net is always the "lower" layer.
-   */
-  size_t soft_connect_global (const db::DeepLayer &la, const std::string &gn);
 
   /**
    *  @brief Gets the global net name per ID
@@ -177,19 +141,15 @@ public:
   /**
    *  @brief Begin iterator for the layers involved
    */
-  all_layer_iterator begin_layers () const;
+  layer_iterator begin_layers () const;
 
   /**
    *  @brief End iterator for the layers involved
    */
-  all_layer_iterator end_layers () const;
+  layer_iterator end_layers () const;
 
   /**
    *  @brief Begin iterator for the layers connected to a specific layer
-   *
-   *  The iterator returned is over a map of target layers and soft mode
-   *  (an int, being 0 for a hard connection, +1 for an upward soft connection
-   *  and -1 for a downward soft connection).
    */
   layer_iterator begin_connected (unsigned int layer) const;
 
@@ -200,10 +160,6 @@ public:
 
   /**
    *  @brief Begin iterator for the global connections for a specific layer
-   *
-   *  The iterator returned is over a map of global net ID and soft mode
-   *  (an int, being 0 for a hard connection, +1 for an upward soft connection
-   *  and -1 for a downward soft connection).
    */
   global_nets_iterator begin_global_connections (unsigned int layer) const;
 
@@ -217,45 +173,21 @@ public:
    *
    *  This method accepts a transformation. This transformation is applied
    *  to the b shape before checking against a.
-   *
-   *  The "soft" output argument will deliver the soft mode that applies
-   *  to the connection - 0: hard connection, -1: a is the lower layer, +1: a is
-   *  the upper layer.
    */
   template <class T, class Trans>
-  bool interacts (const T &a, unsigned int la, const T &b, unsigned int lb, const Trans &trans, int &soft) const;
+  bool interacts (const T &a, unsigned int la, const T &b, unsigned int lb, const Trans &trans) const;
 
   /**
    *  @brief Returns true, if the given shapes on the given layers interact
    */
   template <class T>
-  bool interacts (const T &a, unsigned int la, const T &b, unsigned int lb, int &soft) const
+  bool interacts (const T &a, unsigned int la, const T &b, unsigned int lb) const
   {
-    return interacts (a, la, b, lb, UnitTrans (), soft);
+    return interacts (a, la, b, lb, UnitTrans ());
   }
 
-  /**
-   *  @brief Returns true, if two sets of layers interact
-   */
-  bool interacts (const std::set<unsigned int> &la, const std::set<unsigned int> &lb) const;
-
-  /**
-   *  @brief Returns true, if two cells basically (without considering transformation) interact
-   *
-   *  This is a pretty basic check based on the cell's bounding boxes
-   */
-  bool interact (const db::Cell &a, const db::Cell &b) const;
-
-  /**
-   *  @brief Returns true, if two cells with the given transformations interact
-   *
-   *  This is a pretty basic check based on the cell's bounding boxes
-   */
-  template <class T>
-  bool interact (const db::Cell &a, const T &ta, const db::Cell &b, const T &tb) const;
-
 private:
-  all_layers_type m_all_layers;
+  layers_type m_all_layers;
   std::map<unsigned int, layers_type> m_connected;
   std::vector<std::string> m_global_net_names;
   std::map<unsigned int, global_nets_type> m_global_connections;
@@ -266,7 +198,7 @@ private:
  *  @brief Represents a cluster of shapes
  *
  *  A cluster of shapes is a set of shapes of type T which are connected in terms
- *  of a given connectivity. The shapes will still be organized in layers.
+ *  of a given connectivity. The shapes will still be organised in layers.
  */
 template <class T>
 class DB_PUBLIC_TEMPLATE local_cluster
@@ -277,17 +209,11 @@ public:
   typedef db::unstable_box_tree<box_type, T, db::box_convert<T> > tree_type;
   typedef typename tree_type::flat_iterator shape_iterator;
   typedef size_t attr_id;
+  typedef std::set<attr_id> attr_set;
+  typedef attr_set::const_iterator attr_iterator;
   typedef size_t global_net_id;
   typedef std::set<global_net_id> global_nets;
   typedef global_nets::const_iterator global_nets_iterator;
-
-  struct AttrCompare
-  {
-    bool operator() (attr_id a, attr_id b) const;
-  };
-
-  typedef std::set<attr_id, AttrCompare> attr_set;
-  typedef typename attr_set::const_iterator attr_iterator;
 
   /**
    *  @brief Creates an empty cluster
@@ -332,10 +258,8 @@ public:
    *
    *  "trans" is the transformation which is applied to the other cluster before
    *  the test.
-   *  If non-null "interacting_this" will receive all interacting shapes from *this in case of success.
-   *  If non-null "interacting_other" will receive all interacting shapes from other in case of success.
    */
-  bool interacts (const local_cluster<T> &other, const db::ICplxTrans &trans, const Connectivity &conn, int &soft, std::map<unsigned int, std::vector<const T *> > *interacting_this = 0, std::map<unsigned int, std::vector<const T *> > *interacting_other = 0) const;
+  bool interacts (const local_cluster<T> &other, const db::ICplxTrans &trans, const Connectivity &conn) const;
 
   /**
    *  @brief Tests whether this cluster interacts with the given cell
@@ -346,7 +270,7 @@ public:
   bool interacts (const db::Cell &cell, const db::ICplxTrans &trans, const Connectivity &conn) const;
 
   /**
-   *  @brief Gets the bounding box ofF this cluster
+   *  @brief Gets the bounding box of this cluster
    */
   const box_type &bbox () const
   {
@@ -396,22 +320,6 @@ public:
   void add_attr (attr_id a);
 
   /**
-   *  @brief Gets a value indicating whether the attributes of the clusters are identical
-   */
-  bool same_attrs (const local_cluster<T> &other) const
-  {
-    return m_attrs == other.m_attrs;
-  }
-
-  /**
-   *  @brief Gets the number of attributes
-   */
-  size_t attr_count () const
-  {
-    return m_attrs.size ();
-  }
-
-  /**
    *  @brief Gets the attribute iterator (begin)
    */
   attr_iterator begin_attr () const
@@ -456,11 +364,6 @@ public:
    */
   void set_global_nets (const global_nets &gn);
 
-  /**
-   *  @brief Collect memory statistics
-   */
-  void mem_stat (MemStatistics *stat, MemStatistics::purpose_t purpose, int cat, bool no_self, void *parent) const;
-
 private:
   template <typename> friend class local_clusters;
   template <typename> friend class hnp_interaction_receiver;
@@ -487,15 +390,6 @@ private:
   global_nets m_global_nets;
   size_t m_size;
 };
-
-/**
- *  @brief Memory statistics for local_cluster<T>
- */
-template <class T>
-inline void mem_stat (MemStatistics *stat, MemStatistics::purpose_t purpose, int cat, const local_cluster<T> &x, bool no_self, void *parent)
-{
-  x.mem_stat (stat, purpose, cat, no_self, parent);
-}
 
 /**
  *  @brief A box converter for the local_cluster class
@@ -529,7 +423,6 @@ public:
   typedef db::box_tree<box_type, local_cluster<T>, local_cluster_box_convert<T> > tree_type;
   typedef typename tree_type::touching_iterator touching_iterator;
   typedef typename tree_type::const_iterator const_iterator;
-  typedef typename tree_type::iterator iterator;
 
   /**
    *  @brief Creates an empty collection
@@ -584,22 +477,6 @@ public:
   }
 
   /**
-   *  @brief Gets the clusters (begin iterator)
-   */
-  iterator begin ()
-  {
-    return m_clusters.begin ();
-  }
-
-  /**
-   *  @brief Gets the clusters (end iterator)
-   */
-  iterator end ()
-  {
-    return m_clusters.end ();
-  }
-
-  /**
    *  @brief Gets a value indicating whether the cluster set is empty
    */
   bool empty () const
@@ -628,7 +505,7 @@ public:
    *  cluster joining may happen in this case, because multi-attribute
    *  assignment might create connections too.
    */
-  void build_clusters (const db::Cell &cell, const db::Connectivity &conn, const tl::equivalence_clusters<size_t> *attr_equivalence = 0, bool report_progress = false, bool separate_attributes = false);
+  void build_clusters (const db::Cell &cell, db::ShapeIterator::flags_type shape_flags, const db::Connectivity &conn, const tl::equivalence_clusters<unsigned int> *attr_equivalence = 0, bool report_progress = false);
 
   /**
    *  @brief Creates and inserts a new clusters
@@ -655,34 +532,6 @@ public:
     return id > m_clusters.size ();
   }
 
-  /**
-   *  @brief Makes a soft connection between clusters a and b (a: upper, b: lower)
-   */
-  void make_soft_connection (typename local_cluster<T>::id_type a, typename local_cluster<T>::id_type b);
-
-  /**
-   *  @brief Get the downward soft connections for a given cluster
-   */
-  const std::set<size_t> &downward_soft_connections (typename local_cluster<T>::id_type id) const;
-
-  /**
-   *  @brief Get the upward soft connections for a given cluster
-   */
-  const std::set<size_t> &upward_soft_connections (typename local_cluster<T>::id_type id) const;
-
-  /**
-   *  @brief Gets the number of clusters
-   */
-  size_t size () const
-  {
-    return m_clusters.size ();
-  }
-
-  /**
-   *  @brief Collect memory statistics
-   */
-  void mem_stat (MemStatistics *stat, MemStatistics::purpose_t purpose, int cat, bool no_self, void *parent) const;
-
 private:
   void ensure_sorted ();
 
@@ -690,21 +539,9 @@ private:
   box_type m_bbox;
   tree_type m_clusters;
   size_t m_next_dummy_id;
-  std::map<size_t, std::set<size_t> > m_soft_connections;
-  std::map<size_t, std::set<size_t> > m_soft_connections_rev;
 
-  void apply_attr_equivalences (const tl::equivalence_clusters<size_t> &attr_equivalence);
-  void remove_soft_connections_for (typename local_cluster<T>::id_type id);
+  void apply_attr_equivalences (const tl::equivalence_clusters<unsigned int> &attr_equivalence);
 };
-
-/**
- *  @brief Memory statistics for local_clusters<T>
- */
-template <class T>
-inline void mem_stat (MemStatistics *stat, MemStatistics::purpose_t purpose, int cat, const local_clusters<T> &x, bool no_self, void *parent)
-{
-  x.mem_stat (stat, purpose, cat, no_self, parent);
-}
 
 /**
  *  @brief The instance information for a cluster
@@ -895,61 +732,7 @@ private:
   size_t m_id;
 };
 
-struct ClusterInstancePair
-{
-  ClusterInstancePair (const ClusterInstance &_a, const ClusterInstance &_b, int _soft)
-    : a (_a), b (_b), soft (_soft)
-  { }
-
-  bool operator== (const ClusterInstancePair &other) const
-  {
-    return a == other.a && b == other.b && soft == other.soft;
-  }
-
-  bool operator< (const ClusterInstancePair &other) const
-  {
-    if (!(a == other.a)) {
-      return a < other.a;
-    }
-    if (!(b == other.b)) {
-      return b < other.b;
-    }
-    return soft < other.soft;
-  }
-
-  ClusterInstance a, b;
-  int soft;
-};
-
-typedef std::list<ClusterInstancePair> cluster_instance_pair_list_type;
-
-struct ClusterIDPair
-{
-  typedef size_t id_type;
-
-  ClusterIDPair (id_type _a, id_type _b, int _soft)
-    : a (_a), b (_b), soft (_soft)
-  { }
-
-  bool operator== (const ClusterIDPair &other) const
-  {
-    return a == other.a && b == other.b && soft == other.soft;
-  }
-
-  bool operator< (const ClusterIDPair &other) const
-  {
-    if (!(a == other.a)) {
-      return a < other.a;
-    }
-    if (!(b == other.b)) {
-      return b < other.b;
-    }
-    return soft < other.soft;
-  }
-
-  id_type a, b;
-  int soft;
-};
+typedef std::list<std::pair<ClusterInstance, ClusterInstance> > cluster_instance_pair_list_type;
 
 inline bool equal_array_delegates (const db::ArrayBase *a, const db::ArrayBase *b)
 {
@@ -976,79 +759,27 @@ inline bool less_array_delegates (const db::ArrayBase *a, const db::ArrayBase *b
 /**
  *  @brief A helper struct to describe a pair of cell instances with a specific relative transformation
  */
-struct DB_PUBLIC InstanceToInstanceInteraction
+struct InstanceToInstanceInteraction
 {
-  InstanceToInstanceInteraction (const db::ArrayBase *_array1, const db::ArrayBase *_array2, const db::ICplxTrans &_tn, const db::ICplxTrans &_t21)
-    : array1 (0), array2 (0), t21 (_t21)
-  {
-    if (_array1) {
-      array1 = _array1->basic_clone ();
-      static_cast<db::basic_array<db::Coord> *> (array1)->transform (_tn);
-    }
-
-    if (_array2) {
-      array2 = _array2->basic_clone ();
-      static_cast<db::basic_array<db::Coord> *> (array2)->transform (_tn);
-    }
-  }
-
-  InstanceToInstanceInteraction ()
-    : array1 (0), array2 (0)
-  {
-    //  .. nothing yet ..
-  }
-
-  InstanceToInstanceInteraction (const InstanceToInstanceInteraction &other)
-    : array1 (other.array1 ? other.array1->basic_clone () : 0),
-      array2 (other.array2 ? other.array2->basic_clone () : 0),
-      t21 (other.t21)
-  {
-    //  .. nothing yet ..
-  }
-
-  InstanceToInstanceInteraction &operator= (const InstanceToInstanceInteraction &other)
-  {
-    if (this != &other) {
-
-      if (array1) {
-        delete array1;
-      }
-      array1 = other.array1 ? other.array1->basic_clone () : 0;
-
-      if (array2) {
-        delete array2;
-      }
-      array2 = other.array2 ? other.array2->basic_clone () : 0;
-
-      t21 = other.t21;
-
-    }
-
-    return *this;
-  }
-
-  ~InstanceToInstanceInteraction ()
-  {
-    if (array1) {
-      delete array1;
-    }
-    array1 = 0;
-
-    if (array2) {
-      delete array2;
-    }
-    array2 = 0;
-  }
+  InstanceToInstanceInteraction (db::cell_index_type _ci1, const db::ArrayBase *_array1, db::cell_index_type _ci2, const db::ArrayBase *_array2, const db::ICplxTrans &_t21)
+    : ci1 (_ci1), ci2 (_ci2), array1 (_array1), array2 (_array2), t21 (_t21)
+  { }
 
   bool operator== (const InstanceToInstanceInteraction &other) const
   {
-    return t21.equal (other.t21) &&
+    return ci1 == other.ci1 && ci2 == other.ci2 && t21.equal (other.t21) &&
             equal_array_delegates (array1, other.array1) &&
             equal_array_delegates (array2, other.array2);
   }
 
   bool operator< (const InstanceToInstanceInteraction &other) const
   {
+    if (ci1 != other.ci1) {
+      return ci1 < other.ci1;
+    }
+    if (ci2 != other.ci2) {
+      return ci2 < other.ci2;
+    }
     if (! t21.equal (other.t21)) {
       return t21.less (other.t21);
     }
@@ -1060,109 +791,12 @@ struct DB_PUBLIC InstanceToInstanceInteraction
     return less_array_delegates (array2, other.array2);
   }
 
-  db::ArrayBase *array1, *array2;
+  db::cell_index_type ci1, ci2;
+  const db::ArrayBase *array1, *array2;
   db::ICplxTrans t21;
 };
 
-template <class Box>
-struct DB_PUBLIC_TEMPLATE interaction_key_for_clusters
-  : public InstanceToInstanceInteraction
-{
-  interaction_key_for_clusters (const db::ICplxTrans &_t1, const db::ICplxTrans &_t21, const Box &_box)
-    : InstanceToInstanceInteraction (0, 0, _t1, _t21), box (_box)
-  { }
-
-  bool operator== (const interaction_key_for_clusters &other) const
-  {
-    return InstanceToInstanceInteraction::operator== (other) && box == other.box;
-  }
-
-  bool operator< (const interaction_key_for_clusters &other) const
-  {
-    if (! InstanceToInstanceInteraction::operator== (other)) {
-      return InstanceToInstanceInteraction::operator< (other);
-    }
-    if (box != other.box) {
-      return box < other.box;
-    }
-    return false;
-  }
-
-  Box box;
-};
-
-/**
- *  @brief An object representing the instance interaction cache
- */
-template <class Key, class Value>
-class DB_PUBLIC_TEMPLATE instance_interaction_cache
-{
-public:
-  instance_interaction_cache ()
-    : m_hits (0), m_misses (0)
-  { }
-
-  size_t size () const
-  {
-    MemStatisticsSimple ms;
-    ms << m_map;
-    return ms.used ();
-  }
-
-  size_t hits () const
-  {
-    return m_hits;
-  }
-
-  size_t misses () const
-  {
-    return m_misses;
-  }
-
-  const Value *find (db::cell_index_type ci1, db::cell_index_type ci2, const Key &key) const
-  {
-    typename std::map <std::pair<db::cell_index_type, db::cell_index_type>, std::list <std::pair<Key, Value> > >::iterator i1 = m_map.find (std::make_pair (ci1, ci2));
-    if (i1 == m_map.end ()) {
-      ++m_misses;
-      return 0;
-    }
-
-    //  NOTE: the number of entries is low, so we can afford a linear search
-    typename std::list <std::pair<Key, Value> >::iterator i = i1->second.begin ();
-    while (i != i1->second.end () && ! (i->first == key)) {
-      ++i;
-    }
-
-    if (i == i1->second.end ()) {
-      ++m_misses;
-      return 0;
-    } else {
-      //  move the element to the front so the most frequently used ones are at the front
-      if (i != i1->second.begin ()) {
-        i1->second.splice (i1->second.begin(), i1->second, i, std::next (i));
-      }
-      ++m_hits;
-      return &i->second;
-    }
-  }
-
-  Value &insert (db::cell_index_type ci1, db::cell_index_type ci2, const Key &key)
-  {
-    const size_t instance_cache_variant_threshold = 20;
-
-    std::list <std::pair<Key, Value> > &m = m_map [std::make_pair (ci1, ci2)];
-    if (m.size () >= instance_cache_variant_threshold) {
-      m.pop_back ();
-    }
-
-    m.push_front (std::make_pair (key, Value ()));
-    return m.front ().second;
-  }
-
-private:
-  mutable size_t m_hits, m_misses;
-  mutable std::map <std::pair<db::cell_index_type, db::cell_index_type>, std::list <std::pair<Key, Value> > > m_map;
-};
+typedef std::map<InstanceToInstanceInteraction, cluster_instance_pair_list_type> instance_interaction_cache_type;
 
 template <class T> class hier_clusters;
 template <class T> class connected_clusters;
@@ -1204,7 +838,7 @@ public:
 
 private:
   typename local_clusters<T>::const_iterator m_lc_iter;
-  typedef tl::slist<ClusterInstance> connections_type;
+  typedef std::list<ClusterInstance> connections_type;
   typename std::map<typename local_cluster<T>::id_type, connections_type>::const_iterator m_x_iter, m_x_iter_end;
 };
 
@@ -1224,7 +858,7 @@ class DB_PUBLIC_TEMPLATE connected_clusters
 {
 public:
   typedef typename local_clusters<T>::id_type id_type;
-  typedef tl::slist<ClusterInstance> connections_type;
+  typedef std::list<ClusterInstance> connections_type;
   typedef typename local_clusters<T>::box_type box_type;
   typedef connected_clusters_iterator<T> all_iterator;
   typedef typename std::map<typename local_cluster<T>::id_type, connections_type>::const_iterator connections_iterator;
@@ -1261,7 +895,7 @@ public:
    *  The "with_id" cluster is removed. All connections of "with_id" are transferred to the
    *  first one. All shapes of "with_id" are transferred to "id".
    */
-  void join_cluster_with (typename local_cluster<T>::id_type id, typename local_cluster<T>::id_type with_id);
+  void join_cluster_with(typename local_cluster<T>::id_type id, typename local_cluster<T>::id_type with_id);
 
   /**
    *  @brief An iterator delivering all clusters (even the connectors)
@@ -1316,11 +950,6 @@ public:
     m_connected_clusters.insert (id);
   }
 
-  /**
-   *  @brief Collect memory statistics
-   */
-  void mem_stat (MemStatistics *stat, MemStatistics::purpose_t purpose, int cat, bool no_self, void *parent) const;
-
 private:
   template<typename> friend class connected_clusters_iterator;
 
@@ -1328,15 +957,6 @@ private:
   std::map<ClusterInstance, typename local_cluster<T>::id_type> m_rev_connections;
   std::set<id_type> m_connected_clusters;
 };
-
-/**
- *  @brief Memory statistics for connected_clusters<T>
- */
-template <class T>
-inline void mem_stat (MemStatistics *stat, MemStatistics::purpose_t purpose, int cat, const connected_clusters<T> &x, bool no_self, void *parent)
-{
-  x.mem_stat (stat, purpose, cat, no_self, parent);
-}
 
 template <typename> class cell_clusters_box_converter;
 
@@ -1351,8 +971,7 @@ class DB_PUBLIC_TEMPLATE hier_clusters
 {
 public:
   typedef typename local_cluster<T>::box_type box_type;
-
-  typedef instance_interaction_cache<InstanceToInstanceInteraction, cluster_instance_pair_list_type> instance_interaction_cache_type;
+  typedef std::map<InstanceToInstanceInteraction, cluster_instance_pair_list_type> instance_interaction_cache_type;
 
   /**
    *  @brief Creates an empty set of clusters
@@ -1375,7 +994,7 @@ public:
   /**
    *  @brief Builds a hierarchy of clusters from a cell hierarchy and given connectivity
    */
-  void build (const db::Layout &layout, const db::Cell &cell, const db::Connectivity &conn, const std::map<db::cell_index_type, tl::equivalence_clusters<size_t> > *attr_equivalence = 0, const std::set<cell_index_type> *breakout_cells = 0, bool separate_attributes = false);
+  void build (const db::Layout &layout, const db::Cell &cell, db::ShapeIterator::flags_type shape_flags, const db::Connectivity &conn, const std::map<db::cell_index_type, tl::equivalence_clusters<unsigned int> > *attr_equivalence = 0, const std::set<cell_index_type> *breakout_cells = 0);
 
   /**
    *  @brief Gets the connected clusters for a given cell
@@ -1412,16 +1031,11 @@ public:
    */
   size_t propagate_cluster_inst (const db::Layout &layout, const Cell &cell, const ClusterInstance &ci, db::cell_index_type parent_ci, bool with_self);
 
-  /**
-   *  @brief Collect memory statistics
-   */
-  void mem_stat (MemStatistics *stat, MemStatistics::purpose_t purpose, int cat, bool no_self, void *parent) const;
-
 private:
-  void build_local_cluster (const db::Layout &layout, const db::Cell &cell, const db::Connectivity &conn, const tl::equivalence_clusters<size_t> *attr_equivalence, bool separate_attributes);
-  void build_hier_connections (cell_clusters_box_converter<T> &cbc, const db::Layout &layout, const db::Cell &cell, const db::Connectivity &conn, const std::set<cell_index_type> *breakout_cells, instance_interaction_cache_type &instance_interaction_cache, bool separate_attributes);
-  void build_hier_connections_for_cells (cell_clusters_box_converter<T> &cbc, const db::Layout &layout, const std::vector<db::cell_index_type> &cells, const db::Connectivity &conn, const std::set<cell_index_type> *breakout_cells, tl::RelativeProgress &progress, instance_interaction_cache_type &instance_interaction_cache, bool separate_attributes);
-  void do_build (cell_clusters_box_converter<T> &cbc, const db::Layout &layout, const db::Cell &cell, const db::Connectivity &conn, const std::map<cell_index_type, tl::equivalence_clusters<size_t> > *attr_equivalence, const std::set<cell_index_type> *breakout_cells, bool separate_attributes);
+  void build_local_cluster (const db::Layout &layout, const db::Cell &cell, db::ShapeIterator::flags_type shape_flags, const db::Connectivity &conn, const tl::equivalence_clusters<unsigned int> *attr_equivalence);
+  void build_hier_connections (cell_clusters_box_converter<T> &cbc, const db::Layout &layout, const db::Cell &cell, const db::Connectivity &conn, const std::set<cell_index_type> *breakout_cells, instance_interaction_cache_type &instance_interaction_cache);
+  void build_hier_connections_for_cells (cell_clusters_box_converter<T> &cbc, const db::Layout &layout, const std::vector<db::cell_index_type> &cells, const db::Connectivity &conn, const std::set<cell_index_type> *breakout_cells, tl::RelativeProgress &progress, instance_interaction_cache_type &instance_interaction_cache);
+  void do_build (cell_clusters_box_converter<T> &cbc, const db::Layout &layout, const db::Cell &cell, db::ShapeIterator::flags_type shape_flags, const db::Connectivity &conn, const std::map<db::cell_index_type, tl::equivalence_clusters<unsigned int> > *attr_equivalence, const std::set<cell_index_type> *breakout_cells);
 
   std::map<db::cell_index_type, connected_clusters<T> > m_per_cell_clusters;
   int m_base_verbosity;
@@ -1716,85 +1330,6 @@ private:
   void ensure_computed (db::cell_index_type ci) const;
   void ensure_computed_parent (db::cell_index_type ci) const;
 };
-
-/**
- *  @brief A helper function generating an attribute ID from a property ID
- *  This function is used to provide a generic attribute wrapping a property ID, text ID and global net ID
- */
-inline size_t prop_id_to_attr (db::properties_id_type id)
-{
-  //  NOTE: properties ID are pointers, hence 32 bit aligned.
-  tl_assert ((id & 3) == 0);
-  return size_t (id);
-}
-
-/**
- *  @brief Gets a value indicating whether the attribute is a property ID
- */
-inline bool is_prop_id_attr (size_t attr)
-{
-  return (attr & 3) == 0;
-}
-
-/**
- *  @brief Gets the property ID from an attribute
- */
-inline db::properties_id_type prop_id_from_attr (size_t attr)
-{
-  return attr;
-}
-
-/**
- *  @brief A helper function generating an attribute ID from a global net ID
- *  This function is used to provide a generic attribute wrapping a property ID, text ID and global net ID
- */
-inline size_t global_net_id_to_attr (size_t id)
-{
-  return size_t (id) * 4 + 2;
-}
-
-/**
- *  @brief Gets a value indicating whether the attribute is a global net ID
- */
-inline bool is_global_net_id_attr (size_t attr)
-{
-  return (attr & 3) == 2;
-}
-
-/**
- *  @brief Gets the global net ID from an attribute
- */
-inline size_t global_net_id_from_attr (size_t attr)
-{
-  return attr / 4;
-}
-
-/**
- *  @brief A helper function generating an attribute from a StringRef
- */
-inline size_t text_ref_to_attr (const db::Text *tr)
-{
-  //  NOTE: pointers are 32bit aligned, hence the lower two bits are 0
-  return size_t (tr) + 1;
-}
-
-/**
- *  @brief Gets a value indicating whether the attribute is a StringRef
- */
-inline bool is_text_ref_attr (size_t attr)
-{
-  return (attr & 3) == 1;
-}
-
-/**
- *  @brief Gets the text value from an attribute ID
- */
-inline const char *text_from_attr (size_t attr)
-{
-  tl_assert ((attr & 1) != 0);
-  const db::Text *t = reinterpret_cast<const db::Text *> (attr - 1);
-  return t->string ();
-}
 
 }
 

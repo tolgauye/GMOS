@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -116,10 +116,12 @@ public:
   /**
    *  @brief Post-decrement
    */
-  weak_or_shared_collection_iterator<T, Holder, Shared> operator-- (int)
+  weak_or_shared_collection_iterator<T, Holder, Shared> operator-- (int n)
   {
     weak_or_shared_collection_iterator<T, Holder, Shared> ret = *this;
-    operator-- ();
+    while (n-- > 0) {
+      operator-- ();
+    }
     return ret;
   }
 
@@ -136,10 +138,12 @@ public:
   /**
    *  @brief Post-increment
    */
-  weak_or_shared_collection_iterator<T, Holder, Shared> operator++ (int)
+  weak_or_shared_collection_iterator<T, Holder, Shared> operator++ (int n)
   {
     weak_or_shared_collection_iterator<T, Holder, Shared> ret = *this;
-    operator++ ();
+    while (n-- > 0) {
+      operator++ ();
+    }
     return ret;
   }
 
@@ -172,36 +176,38 @@ public:
     : public weak_or_shared_ptr<T, Shared>
   {
   public:
-    holder_type (weak_or_shared_collection<T, Shared> *_collection)
-      : weak_or_shared_ptr<T, Shared> (), next (0), prev (0), collection (_collection)
+    holder_type (weak_or_shared_collection<T, Shared> *collection)
+      : weak_or_shared_ptr<T, Shared> (), next (0), prev (0), mp_collection (collection)
     {
       //  .. nothing yet ..
     }
 
-    holder_type (weak_or_shared_collection<T, Shared> *_collection, T *t)
-      : weak_or_shared_ptr<T, Shared> (t), next (0), prev (0), collection (_collection)
+    holder_type (weak_or_shared_collection<T, Shared> *collection, T *t)
+      : weak_or_shared_ptr<T, Shared> (t), next (0), prev (0), mp_collection (collection)
     {
       //  .. nothing yet ..
     }
 
-    holder_type (weak_or_shared_collection<T, Shared> *_collection, const weak_or_shared_ptr<T, Shared> &d)
-      : weak_or_shared_ptr<T, Shared> (d), next (0), prev (0), collection (_collection)
+    holder_type (weak_or_shared_collection<T, Shared> *collection, const weak_or_shared_ptr<T, Shared> &d)
+      : weak_or_shared_ptr<T, Shared> (d), next (0), prev (0), mp_collection (collection)
     {
       //  .. nothing yet ..
     }
 
     holder_type *next, *prev;
-    weak_or_shared_collection<T, Shared> *collection;
 
   protected:
     virtual void reset_object ()
     {
       weak_or_shared_ptr<T, Shared>::reset_object ();
-      if (collection) {
+      if (mp_collection) {
         //  Caution: this will probably delete "this"!
-        collection->remove_element (this);
+        mp_collection->remove_element (this);
       }
     }
+
+  private:
+    weak_or_shared_collection<T, Shared> *mp_collection;
   };
 
   typedef weak_or_shared_collection_iterator<T, holder_type, Shared> iterator;
@@ -219,61 +225,12 @@ public:
   }
 
   /**
-   *  @brief The copy constructor
-   */
-  weak_or_shared_collection (const weak_or_shared_collection<T, Shared> &other)
-    : mp_first (0), mp_last (0), m_size (0)
-  {
-    operator= (other);
-  }
-
-  /**
-   *  @brief The move constructor
-   */
-  weak_or_shared_collection (weak_or_shared_collection<T, Shared> &&other)
-    : mp_first (0), mp_last (0), m_size (0)
-  {
-    swap (other);
-  }
-
-  /**
    *  @brief Destructor
    */
   ~weak_or_shared_collection ()
   {
     while (! empty ()) {
       erase (mp_first);
-    }
-  }
-
-  /**
-   *  @brief Assignment
-   */
-  weak_or_shared_collection &operator= (const weak_or_shared_collection<T, Shared> &other)
-  {
-    if (this != &other) {
-      clear ();
-      for (auto i = other.begin (); i != other.end (); ++i) {
-        push_back (const_cast<T *> (i.operator-> ()));
-      }
-    }
-    return *this;
-  }
-
-  /**
-   *  @brief Swap
-   */
-  void swap (weak_or_shared_collection<T, Shared> &other)
-  {
-    std::swap (mp_first, other.mp_first);
-    std::swap (mp_last, other.mp_last);
-    std::swap (m_size, other.m_size);
-
-    for (holder_type *h = mp_first; h; h = h->next) {
-      h->collection = this;
-    }
-    for (holder_type *h = other.mp_first; h; h = h->next) {
-      h->collection = &other;
     }
   }
 

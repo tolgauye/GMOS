@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -56,7 +56,7 @@ public:
   /**
    *  @brief Add the given path to the search path ($: in ruby)
    */
-  void add_path (const std::string &path, bool prepend = false);
+  void add_path (const std::string &path);
 
   /**
    *  @brief Adds a package location to this interpreter
@@ -95,7 +95,7 @@ public:
   /**
    *  @brief Ignores the next exception
    *
-   *  This is useful for suppressing re-raised exceptions in the debugger.
+   *  This is useful for suppressing reraised exceptions in the debugger.
    */
   void ignore_next_exception ();
 
@@ -105,17 +105,17 @@ public:
   void load_file (const std::string &filename);
 
   /**
-   *  @brief Implementation of gsi::Interpreter::eval_string
+   *  @brief Implementatiom of gsi::Interpreter::eval_string
    */
   void eval_string (const char *string, const char *filename = 0, int line = 1, int context = -1);
 
   /**
-   *  @brief Implementation of gsi::Interpreter::eval_expr
+   *  @brief Implementatiom of gsi::Interpreter::eval_expr
    */
   tl::Variant eval_expr (const char *string, const char *filename = 0, int line = 1, int context = -1);
  
   /**
-   *  @brief Implementation of gsi::Interpreter::eval_string_and_print
+   *  @brief Implementatiom of gsi::Interpreter::eval_string_and_print
    */ 
   void eval_string_and_print (const char *string, const char *filename = 0, int line = 1, int context = -1);
 
@@ -127,7 +127,7 @@ public:
   /**
    *  @brief Defines a global variable with the given name and value 
    */
-  void define_variable (const std::string &name, const tl::Variant &value);
+  void define_variable (const std::string &name, const std::string &value);
 
   /**
    *  @brief Gets a value indicating whether the interpreter is available
@@ -179,16 +179,6 @@ public:
   void end_exec ();
 
   /**
-   *  @brief Gets a flag indicating whether exceptions are blocked from being seen in the debugger
-   */
-  bool exceptions_blocked ();
-
-  /**
-   *  @brief Sets a flag indicating whether exceptions are blocked from being seen in the debugger
-   */
-  void block_exceptions (bool f);
-
-  /**
    *  @brief Fetch the version string
    *
    *  Returns an empty string when no Ruby interpreter is installed.
@@ -224,29 +214,6 @@ public:
    *  @brief Stores internal data - do not use this!
    */
   RubyInterpreterPrivateData *d;
-};
-
-class RBA_PUBLIC RubyStackTraceProvider
-  : public gsi::StackTraceProvider
-{
-public:
-  RubyStackTraceProvider (const std::string &scope);
-
-  virtual std::vector<tl::BacktraceElement> stack_trace () const;
-  virtual size_t scope_index () const;
-  virtual int stack_depth () const;
-
-  static size_t scope_index (const std::vector<tl::BacktraceElement> &bt, const std::string &scope);
-
-  //  we could use this for ruby >= 1.9.3
-#if 0
-  static int count_stack_levels(void *arg, VALUE file, int line, VALUE method);
-  extern "C" int rb_backtrace_each (int (*iter)(void *arg, VALUE file, int line, VALUE method), void *arg);
-  virtual int stack_depth ();
-#endif
-
-private:
-  const std::string &m_scope;
 };
 
 }

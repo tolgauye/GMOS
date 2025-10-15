@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,6 @@
 
 
 #include "lymMacro.h"
-#include "lymMacroCollection.h"
 #include "lymMacroInterpreter.h"
 #include "tlExceptions.h"
 #include "gsiDecl.h"
@@ -34,20 +33,17 @@
 #include "tlLog.h"
 #include "tlXMLParser.h"
 #include "tlGlobPattern.h"
-#include "tlInclude.h"
-#include "tlProgress.h"
 
 #include "rba.h"
 #include "pya.h"
 
-#include "tlFileUtils.h"
-#include "tlUri.h"
+#include <QFile>
+#include <QDir>
+#include <QUrl>
+#include <QResource>
 
 #include <fstream>
 #include <memory>
-#include <string>
-#include <set>
-
 
 namespace lym
 {
@@ -55,32 +51,23 @@ namespace lym
 // ----------------------------------------------------------------------
 
 Macro::Macro ()
-  : m_modified (true), m_readonly (false),
-    m_autorun (false), m_autorun_default (false), m_autorun_early (false), m_was_autorun (false),
-    m_priority (0), m_show_in_menu (false), m_is_file (false),
-    m_interpreter (None), m_format (Macro::NoFormat)
+  : m_modified (true), m_readonly (false), m_autorun (false), m_autorun_default (false), m_autorun_early (false), m_show_in_menu (false), m_is_file (false), mp_parent (0), m_interpreter (None), m_format (Macro::NoFormat)
 {
-  mp_parent = 0;
+  // .. nothing yet ..
 }
 
 void Macro::on_menu_needs_update ()
 {
-#if defined(HAVE_QT)
   //  forward the signal to the root collection - the main window will attach to this
   MacroCollection::root ().on_menu_needs_update ();
-#endif
 }
 
 void Macro::on_changed ()
 {
-  m_was_autorun = false;
-
-#if defined(HAVE_QT)
   emit changed ();
   if (mp_parent) {
     mp_parent->on_macro_changed (this);
   }
-#endif
 }
 
 void Macro::assign (const lym::Macro &other)
@@ -98,7 +85,6 @@ void Macro::assign (const lym::Macro &other)
   m_autorun = other.m_autorun;
   m_autorun_default = other.m_autorun_default;
   m_autorun_early = other.m_autorun_early;
-  m_priority = other.m_priority;
   m_show_in_menu = other.m_show_in_menu;
   m_shortcut = other.m_shortcut;
   m_format = other.m_format;
@@ -123,7 +109,6 @@ bool Macro::operator== (const Macro &other) const
     m_text == other.m_text &&
     m_autorun == other.m_autorun &&
     m_autorun_early == other.m_autorun_early &&
-    m_priority == other.m_priority &&
     m_show_in_menu == other.m_show_in_menu &&
     m_shortcut == other.m_shortcut &&
     m_interpreter == other.m_interpreter &&
@@ -142,7 +127,8 @@ bool Macro::del ()
     if (tl::verbosity () >= 20) {
       tl::log << "Deleting macro " << path ();
     }
-    return tl::rm_file (path ());
+    QFile f (tl::to_qstring (path ()));
+    return f.remove ();
   } else {
     return true;
   }
@@ -194,7 +180,6 @@ static tl::XMLStruct<lym::Macro> xml_struct ("klayout-macro",
   tl::make_member (&Macro::doc, &Macro::set_doc, "doc") +
   tl::make_member (&Macro::is_autorun, &Macro::set_autorun, "autorun") +
   tl::make_member (&Macro::is_autorun_early, &Macro::set_autorun_early, "autorun-early") +
-  tl::make_member (&Macro::priority, &Macro::set_priority, "priority") +
   tl::make_member (&Macro::shortcut, &Macro::set_shortcut, "shortcut") +
   tl::make_member (&Macro::show_in_menu, &Macro::set_show_in_menu, "show-in-menu") +
   tl::make_member (&Macro::group_name, &Macro::set_group_name, "group-name") +
@@ -232,7 +217,6 @@ void Macro::save_to (const std::string &path)
 void Macro::load_from (const std::string &fn)
 {
   m_format = NoFormat;
-  m_interpreter = None;
 
   std::pair<bool, std::string> f = format_from_filename (fn, m_interpreter, m_dsl_interpreter, m_autorun_default, m_format);
   if (f.first) {
@@ -258,40 +242,27 @@ void Macro::load_from (const std::string &fn)
       tl::InputStream stream (path);
       tl::TextInputStream text_stream (stream);
       m_text = text_stream.read_all ();
-
-      if (m_format == PlainTextWithHashAnnotationsFormat) {
-        sync_properties_with_text ();
-      }
+      sync_properties_with_text ();
 
     }
 
   } else {
-
-    if (tl::verbosity () >= 20) {
-      tl::log << "Loading macro from " << fn;
-    }
-
-    tl::InputStream stream (fn);
-    tl::TextInputStream text_stream (stream);
-    m_text = text_stream.read_all ();
-
+    throw tl::Exception (tl::to_string (QObject::tr ("Unable to determine format for file from suffix or format spec ")) + fn);
   }
 
   m_modified = true;
-  m_is_file = true;
   on_changed ();
 }
 
 void Macro::load_from_string (const std::string &text, const std::string &url)
 {
   m_format = NoFormat;
-  m_interpreter = None;
 
   if (tl::verbosity () >= 20) {
     tl::log << "Loading macro from " << url;
   }
 
-  if (format_from_suffix (tl::URI (url).path (), m_interpreter, m_dsl_interpreter, m_autorun_default, m_format)) {
+  if (format_from_suffix (tl::to_string (QUrl (tl::to_qstring (url)).path ()), m_interpreter, m_dsl_interpreter, m_autorun_default, m_format)) {
 
     m_autorun = m_autorun_default;
 
@@ -312,7 +283,7 @@ void Macro::load_from_string (const std::string &text, const std::string &url)
     }
 
   } else {
-    m_text = text;
+    throw tl::Exception (tl::to_string (QObject::tr ("Unable to determine format for file from suffix ")) + url);
   }
 
   m_modified = true;
@@ -322,12 +293,16 @@ void Macro::load_from_string (const std::string &text, const std::string &url)
 void Macro::load ()
 {
   load_from (path ());
+  m_modified = false;
+  m_is_file = true;
+  on_changed ();
 }
 
 bool 
 Macro::format_from_suffix (const std::string &fn, Macro::Interpreter &interpreter, std::string &dsl_name, bool &autorun_pref, Macro::Format &format)
 {
-  return format_from_suffix_string (tl::extension_last (fn), interpreter, dsl_name, autorun_pref, format);
+  std::string suffix = tl::to_string (QFileInfo (tl::to_qstring (fn)).suffix ());
+  return format_from_suffix_string (suffix, interpreter, dsl_name, autorun_pref, format);
 }
 
 std::pair<bool, std::string>
@@ -445,9 +420,10 @@ std::string Macro::path () const
 
   std::string suffix = suffix_for_format (m_interpreter, m_dsl_interpreter, m_format);
   if (mp_parent) {
-    return tl::combine_path (mp_parent->path (), m_name + suffix);
+    return tl::to_string (QFileInfo (QDir (tl::to_qstring (mp_parent->path ())), tl::to_qstring (m_name + suffix)).filePath ());
+  } else {
+    return m_name + suffix;
   }
-  return m_name + suffix;
 }
 
 void Macro::set_file_path (const std::string &fp)
@@ -473,12 +449,13 @@ void Macro::reset_modified ()
 
 bool Macro::rename (const std::string &n)
 {
-  if (m_is_file && parent ()) {
+  if (m_is_file) {
     std::string suffix = suffix_for_format (m_interpreter, m_dsl_interpreter, m_format);
     if (tl::verbosity () >= 20) {
       tl::log << "Renaming macro " << path () << " to " << n;
     }
-    if (! tl::rename_file (path (), tl::combine_path (parent ()->path (), n + suffix))) {
+    QFile f (tl::to_qstring (path ()));
+    if (! f.rename (QFileInfo (QDir (tl::to_qstring (mp_parent->path ())), tl::to_qstring (n + suffix)).filePath ())) {
       return false;
     }
   }
@@ -496,8 +473,9 @@ std::string Macro::dir () const
 {
   if (mp_parent) {
     return mp_parent->path ();
+  } else {
+    return std::string ();
   }
-  return tl::dirname (path ());
 }
 
 std::string Macro::display_string () const
@@ -572,22 +550,19 @@ struct PropertyField
   void (lym::Macro::*string_setter) (const std::string &);
   bool (lym::Macro::*bool_getter) () const;
   void (lym::Macro::*bool_setter) (bool);
-  int (lym::Macro::*int_getter) () const;
-  void (lym::Macro::*int_setter) (int);
 };
 
 static PropertyField property_fields[] = {
-  { "description",    &lym::Macro::description, &lym::Macro::set_description,   0, 0,                                                            0, 0 },
-  { "prolog",         &lym::Macro::prolog, &lym::Macro::set_prolog,             0, 0,                                                            0, 0 },
-  { "epilog",         &lym::Macro::epilog, &lym::Macro::set_epilog,             0, 0,                                                            0, 0 },
-  { "version",        &lym::Macro::version, &lym::Macro::set_version,           0, 0,                                                            0, 0 },
-  { "autorun",        0, 0,                                                     &lym::Macro::is_autorun, &lym::Macro::set_autorun,               0, 0 },
-  { "autorun-early",  0, 0,                                                     &lym::Macro::is_autorun_early, &lym::Macro::set_autorun_early,   0, 0 },
-  { "show-in-menu",   0, 0,                                                     &lym::Macro::show_in_menu, &lym::Macro::set_show_in_menu,        0, 0 },
-  { "group-name",     &lym::Macro::group_name, &lym::Macro::set_group_name,     0, 0,                                                            0, 0 },
-  { "menu-path",      &lym::Macro::menu_path, &lym::Macro::set_menu_path,       0, 0,                                                            0, 0 },
-  { "shortcut",       &lym::Macro::shortcut, &lym::Macro::set_shortcut,         0, 0,                                                            0, 0 },
-  { "priority",       0, 0,                                                     0, 0,                                                            &lym::Macro::priority, &lym::Macro::set_priority }
+  { "description",    &lym::Macro::description, &lym::Macro::set_description,   0, 0 }, 
+  { "prolog",         &lym::Macro::prolog, &lym::Macro::set_prolog,             0, 0 }, 
+  { "epilog",         &lym::Macro::epilog, &lym::Macro::set_epilog,             0, 0 }, 
+  { "version",        &lym::Macro::version, &lym::Macro::set_version,           0, 0 }, 
+  { "autorun",        0, 0,                                                     &lym::Macro::is_autorun, &lym::Macro::set_autorun },
+  { "autorun-early",  0, 0,                                                     &lym::Macro::is_autorun_early, &lym::Macro::set_autorun_early},
+  { "show-in-menu",   0, 0,                                                     &lym::Macro::show_in_menu, &lym::Macro::set_show_in_menu },
+  { "group-name",     &lym::Macro::group_name, &lym::Macro::set_group_name,     0, 0 }, 
+  { "menu-path",      &lym::Macro::menu_path, &lym::Macro::set_menu_path,       0, 0 }, 
+  { "shortcut",       &lym::Macro::shortcut, &lym::Macro::set_shortcut,         0, 0 } 
 };
 
 static std::string escape_pta_string (const char *cp) 
@@ -648,11 +623,6 @@ void Macro::sync_text_with_properties ()
       if (v) {
         new_lines.push_back (std::string ("# $") + pf->name);
       }
-    } else if (pf->int_getter) {
-      int v = (this->*(pf->int_getter)) ();
-      if (v) {
-        new_lines.push_back (std::string ("# $") + pf->name + ": " + tl::to_string (v));
-      }
     }
   }
 
@@ -700,8 +670,6 @@ void Macro::sync_properties_with_text ()
       (this->*(pf->string_setter)) (std::string ());
     } else if (pf->bool_setter) {
       (this->*(pf->bool_setter)) (false);
-    } else if (pf->int_setter) {
-      (this->*(pf->int_setter)) (0);
     }
   }
 
@@ -726,10 +694,6 @@ void Macro::sync_properties_with_text ()
             (this->*(pf->string_setter)) (unescape_pta_string (pex.skip ()));
           } else if (pf->bool_setter) {
             (this->*(pf->bool_setter)) (true);
-          } else if (pf->int_setter) {
-            int v = 0;
-            tl::from_string (pex.skip (), v);
-            (this->*(pf->int_setter)) (v);
           }
 
           break;
@@ -797,20 +761,6 @@ void Macro::set_autorun (bool f)
   if (f != m_autorun) {
     m_modified = true;
     m_autorun = f;
-    on_changed ();
-  }
-}
-
-void Macro::set_was_autorun (bool f)
-{
-  m_was_autorun = f;
-}
-
-void Macro::set_priority (int p)
-{
-  if (p != m_priority) {
-    m_modified = true;
-    m_priority = p;
     on_changed ();
   }
 }
@@ -970,7 +920,7 @@ void Macro::install_doc () const
         --i;
 
         if (cls) {
-          tl::error << tl::to_string (tr ("Reading class doc from ")) << path () << ": " << tl::to_string (tr ("Duplicate @class"));
+          tl::error << tl::to_string (QObject::tr ("Reading class doc from ")) << path () << ": " << tl::to_string (QObject::tr ("Duplicate @class"));
           return;
         }
 
@@ -992,7 +942,7 @@ void Macro::install_doc () const
             }
           }
           if (! super_cls) {
-            tl::error << tl::to_string (tr ("Reading class doc from ")) << path () << ": " << tl::to_string (tr ("Cannot find super class: ")) << super_cls_name;
+            tl::error << tl::to_string (QObject::tr ("Reading class doc from ")) << path () << ": " << tl::to_string (QObject::tr ("Cannot find super class: ")) << super_cls_name;
             return;
           }
         }
@@ -1008,7 +958,7 @@ void Macro::install_doc () const
       } else if (ex.test ("@method") || (st = ex.test ("@static_method")) == true) {
 
         if (cls == 0) {
-          tl::error << tl::to_string (tr ("Reading class doc from ")) << path () << ": " << tl::to_string (tr ("@method without preceding @class"));
+          tl::error << tl::to_string (QObject::tr ("Reading class doc from ")) << path () << ": " << tl::to_string (QObject::tr ("@method without preceding @class"));
         } else {
 
           std::string n;
@@ -1065,86 +1015,909 @@ bool Macro::can_run () const
   }
 }
 
-static Macro *sp_current_macro = 0;
-
-Macro *
-Macro::current ()
-{
-  return sp_current_macro;
-}
-
-const tl::Variant &
-Macro::get_attribute (const std::string &name) const
-{
-  auto a = m_attributes.find (name);
-  if (a == m_attributes.end ()) {
-    static tl::Variant nil;
-    return nil;
-  } else {
-    return a->second;
-  }
-}
-
-bool
-Macro::has_attribute (const std::string &name) const
-{
-  return m_attributes.find (name) != m_attributes.end ();
-}
-
-void
-Macro::set_attribute (const std::string &name, const tl::Variant &value)
-{
-  m_attributes[name] = value;
-}
-
-void
-Macro::delete_attribute (const std::string &name)
-{
-  m_attributes.erase (name);
-}
-
 int Macro::run () const
 {
-  sp_current_macro = const_cast<Macro *> (this);
-
   if (tl::verbosity () >= 20) {
     tl::log << tl::to_string (tr ("Running macro ")) << path ();
   }
 
   try {
-
-    tl::ProgressGarbageCollector progress_gc;
-
     gsi::Interpreter *ip = script_interpreter (interpreter ());
     if (ip) {
-
-      static lym::MacroInterpreter def_interpreter;
-
       if (! prolog ().empty ()) {
         ip->eval_string (prolog ().c_str ());
       }
-
-      std::pair<std::string, std::string> ep = def_interpreter.include_expansion (this);
-      ip->eval_string (ep.second.c_str (), ep.first.c_str (), 1);
-
+      ip->eval_string (text ().c_str (), path ().c_str (), 1);
       if (! epilog ().empty ()) {
         ip->eval_string (epilog ().c_str ());
       }
-
     } else if (interpreter () == lym::Macro::DSLInterpreter) {
       lym::MacroInterpreter::execute_macro (this);
     } else {
       throw tl::Exception (tl::to_string (tr ("Can't run macro (no interpreter): ")) + path ());
     }
-
-    sp_current_macro = 0;
-
   } catch (tl::ExitException &ex) {
-    sp_current_macro = 0;
     return ex.status ();
   }
 
   return 0;
+}
+
+// ----------------------------------------------------------------------
+
+static MacroCollection ms_root;
+
+MacroCollection::MacroCollection ()
+  : mp_parent (0), m_virtual_mode (ProjectFolder), m_readonly (false)
+{
+  // .. nothing yet ..
+}
+
+MacroCollection::~MacroCollection ()
+{
+  for (iterator m = begin (); m != end (); ++m) {
+    delete m->second;
+  }
+  m_macros.clear ();
+
+  for (child_iterator mm = begin_children (); mm != end_children (); ++mm) {
+    delete mm->second;
+  }
+  m_folders.clear ();
+}
+
+void MacroCollection::begin_changes ()
+{
+  //  Note: it is very important that each on_changed occurs after exactly one begin_changes.
+  //  (See #459 for example)
+  if (mp_parent) {
+    mp_parent->begin_changes ();
+  } else {
+    emit about_to_change ();
+  }
+}
+
+void MacroCollection::on_menu_needs_update ()
+{
+  emit menu_needs_update ();
+}
+
+void MacroCollection::on_changed ()
+{
+  //  Note: it is very important that each on_changed occurs after exactly one begin_changes.
+  //  (See #459 for example)
+  emit changed ();
+  on_macro_collection_changed (this);
+}
+
+void MacroCollection::on_macro_collection_changed (MacroCollection *mc)
+{
+  if (mp_parent) {
+    mp_parent->on_macro_collection_changed (mc);
+  } else {
+    emit macro_collection_changed (mc);
+  }
+}
+
+void MacroCollection::on_child_deleted (MacroCollection *mc)
+{
+  emit child_deleted (mc);
+  on_macro_collection_deleted (mc);
+}
+
+void MacroCollection::on_macro_collection_deleted (MacroCollection *mc)
+{
+  if (mp_parent) {
+    mp_parent->on_macro_collection_deleted (mc);
+  } else {
+    emit macro_collection_deleted (mc);
+  }
+}
+
+void MacroCollection::on_macro_deleted_here (Macro *macro)
+{
+  emit macro_deleted_here (macro);
+  on_macro_deleted (macro);
+}
+
+void MacroCollection::on_macro_deleted (Macro *macro)
+{
+  if (mp_parent) {
+    mp_parent->on_macro_deleted (macro);
+  } else {
+    emit macro_deleted (macro);
+  }
+}
+
+void MacroCollection::on_macro_changed (Macro *macro)
+{
+  if (mp_parent) {
+    mp_parent->on_macro_changed (macro);
+  } else {
+    emit macro_changed (macro);
+  }
+}
+
+void MacroCollection::collect_used_nodes (std::set <Macro *> &macros, std::set <MacroCollection *> &macro_collections)
+{
+  for (MacroCollection::child_iterator c = begin_children (); c != end_children (); ++c) {
+    macro_collections.insert (c->second);
+    c->second->collect_used_nodes (macros, macro_collections);
+  }
+  for (MacroCollection::iterator c = begin (); c != end (); ++c) {
+    macros.insert (c->second);
+  }
+}
+
+Macro *MacroCollection::macro_by_name (const std::string &name, Macro::Format format)
+{
+  std::multimap <std::string, Macro *>::iterator i = m_macros.find (name);
+  while (i != m_macros.end () && i->first == name) {
+    if (format == Macro::NoFormat || i->second->format () == format) {
+      return i->second;
+    }
+    ++i;
+  } 
+  return 0;
+}
+
+const Macro *MacroCollection::macro_by_name (const std::string &name, Macro::Format format) const
+{
+  std::multimap <std::string, Macro *>::const_iterator i = m_macros.find (name);
+  while (i != m_macros.end () && i->first == name) {
+    if (format == Macro::NoFormat || i->second->format () == format) {
+      return i->second;
+    }
+    ++i;
+  } 
+  return 0;
+}
+
+MacroCollection *MacroCollection::folder_by_name (const std::string &name)
+{
+  std::map <std::string, MacroCollection *>::iterator i = m_folders.find (name);
+  if (i != m_folders.end ()) {
+    return i->second;
+  } else {
+    return 0;
+  }
+}
+
+const MacroCollection *MacroCollection::folder_by_name (const std::string &name) const
+{
+  std::map <std::string, MacroCollection *>::const_iterator i = m_folders.find (name);
+  if (i != m_folders.end ()) {
+    return i->second;
+  } else {
+    return 0;
+  }
+}
+
+std::string MacroCollection::path () const
+{
+  if (m_virtual_mode) {
+    return m_path;
+  } else if (mp_parent) {
+    return tl::to_string (QFileInfo (QDir (tl::to_qstring (mp_parent->path ())), tl::to_qstring (m_path)).filePath ());
+  } else {
+    return m_path;
+  }
+}
+
+std::string MacroCollection::display_string () const
+{
+  if (m_virtual_mode) {
+    return "[" + m_description + "]";
+  } else {
+    std::string r = name ();
+    if (! m_description.empty ()) {
+      r += " - " + m_description;
+    }
+    return r;
+  }
+}
+
+void
+MacroCollection::make_readonly (bool f)
+{
+  if (m_readonly != f) {
+    begin_changes ();
+    m_readonly = f;
+    on_changed ();
+  }
+}
+
+MacroCollection *
+MacroCollection::add_folder (const std::string &description, const std::string &path, const std::string &cat, bool readonly, bool force_create)
+{
+  if (! path.empty () && path[0] == ':') {
+    readonly = true;
+  } else {
+
+    QFileInfo file_info (tl::to_qstring (path));
+
+    if (! file_info.exists ()) {
+
+      //  Try to create the folder since it does not exist yet or skip that one
+      if (! force_create) {
+
+        if (tl::verbosity () >= 20) {
+          tl::log << "Folder does not exist - skipping: " << path;
+        }
+        return 0;
+
+      } else {
+
+        if (tl::verbosity () >= 20) {
+          tl::log << "Folder does not exist yet - trying to create it: " << path;
+        }
+        if (! QDir::root ().mkpath (file_info.absoluteFilePath ())) {
+          if (tl::verbosity () >= 10) {
+            tl::error << "Unable to create folder path: " << path;
+          }
+          return 0;
+        }
+      }
+
+      file_info.refresh ();
+
+    }
+
+    if (! file_info.isDir ()) {
+      if (tl::verbosity () >= 10) {
+        tl::error << "Folder is not a directory: " << path;
+      }
+      return 0;
+    }
+
+    QString cp = file_info.canonicalFilePath ();
+    if (cp.isEmpty ()) {
+      return 0;
+    }
+
+    for (child_iterator f = m_folders.begin (); f != m_folders.end (); ++f) {
+      //  skip, if that folder is in the collection already
+      if (QFileInfo (tl::to_qstring (f->first)).canonicalFilePath () == cp) {
+        return 0;
+      }
+    }
+
+    if (! readonly && ! file_info.isWritable ()) {
+      readonly = true;
+      if (tl::verbosity () >= 20) {
+        tl::log << "Folder is read-only: " << path;
+      }
+    }
+
+  }
+
+  begin_changes ();
+
+  MacroCollection *mc = m_folders.insert (std::make_pair (path, new MacroCollection ())).first->second;
+  mc->set_parent (this);
+  mc->set_name (path);
+  mc->set_description (description);
+  mc->set_category (cat);
+  mc->set_readonly (readonly);
+  mc->scan (path);
+
+  on_changed ();
+
+  return mc;
+}
+
+void MacroCollection::rescan ()
+{
+  for (std::map <std::string, MacroCollection *>::const_iterator m = m_folders.begin (); m != m_folders.end (); ++m) {
+    m->second->scan (m->first);
+  }
+}
+
+namespace {
+
+  /**
+   *  @brief A QResource variant that allows access to the children
+   */
+  class ResourceWithChildren
+    : public QResource
+  {
+  public:
+    ResourceWithChildren (const QString &path) : QResource (path) { }
+    using QResource::children;
+  };
+
+}
+
+void MacroCollection::scan (const std::string &path)
+{
+  if (tl::verbosity () >= 20) {
+    tl::info << "Scanning macro path " << path << " (readonly=" << m_readonly << ")";
+  }
+
+  if (! path.empty () && path[0] == ':') {
+
+    ResourceWithChildren res (tl::to_qstring (path));
+    QStringList children = res.children ();
+    children.sort ();
+
+    for (QStringList::const_iterator c = children.begin (); c != children.end (); ++c) {
+
+      std::string url = path + "/" + tl::to_string (*c);
+      QResource res (tl::to_qstring (url));
+      if (res.size () > 0) {
+
+        QByteArray data;
+        if (res.isCompressed ()) {
+          data = qUncompress ((const unsigned char *)res.data (), (int)res.size ());
+        } else {
+          data = QByteArray ((const char *)res.data (), (int)res.size ());
+        }
+
+        try {
+
+          Macro::Format format = Macro::NoFormat;
+          Macro::Interpreter interpreter = Macro::None;
+          std::string dsl_name;
+          bool autorun = false;
+
+          if (Macro::format_from_suffix (tl::to_string (*c), interpreter, dsl_name, autorun, format)) {
+
+            std::string n = tl::to_string (QFileInfo (*c).baseName ());
+
+            iterator mm = m_macros.find (n);
+            bool found = false;
+            while (mm != m_macros.end () && mm->first == n && ! found) {
+              if ((interpreter == Macro::None || mm->second->interpreter () == interpreter) &&
+                  (dsl_name.empty () || mm->second->dsl_interpreter () == dsl_name) &&
+                  mm->second->format () == format) {
+                found = true;
+              }
+              ++mm;
+            }
+            if (! found) {
+              Macro *m = m_macros.insert (std::make_pair (n, new Macro ()))->second;
+              m->set_parent (this);
+              m->set_interpreter (interpreter);
+              m->set_autorun_default (autorun);
+              m->set_autorun (autorun);
+              m->set_dsl_interpreter (dsl_name);
+              m->set_format (format);
+              m->set_name (n);
+              m->load_from_string (std::string (data.constData (), data.size ()), url);
+              m->set_readonly (m_readonly);
+              m->reset_modified ();
+              m->set_is_file ();
+            }
+
+          }
+
+        } catch (tl::Exception &ex) {
+          tl::error << "Reading " << url << ": " << ex.msg ();
+        }
+
+      }
+
+    }
+
+  } else {
+
+    QDir dir (tl::to_qstring (path));
+    QStringList filters;
+    filters << QString::fromUtf8 ("*.lym");
+    filters << QString::fromUtf8 ("*.txt");
+    //  TODO: should be either *.rb or *.python, depending on the category.
+    //  Right now we rely on the folders not containing foreign files.
+    filters << QString::fromUtf8 ("*.rb");
+    filters << QString::fromUtf8 ("*.py");
+
+    //  add the suffixes in the DSL interpreter declarations
+    for (tl::Registrar<lym::MacroInterpreter>::iterator cls = tl::Registrar<lym::MacroInterpreter>::begin (); cls != tl::Registrar<lym::MacroInterpreter>::end (); ++cls) {
+      if (! cls->suffix ().empty ()) {
+        filters << tl::to_qstring ("*." + cls->suffix ());
+      }
+    }
+
+    QStringList files = dir.entryList (filters, QDir::Files);
+    for (QStringList::ConstIterator f = files.begin (); f != files.end (); ++f) {
+
+      std::auto_ptr<lym::Macro> new_macro;
+
+      try {
+
+        std::string n = tl::to_string (QFileInfo (*f).completeBaseName ());
+
+        Macro::Format format = Macro::NoFormat;
+        Macro::Interpreter interpreter = Macro::None;
+        std::string dsl_name;
+        bool autorun = false;
+
+        if (Macro::format_from_suffix (tl::to_string (*f), interpreter, dsl_name, autorun, format)) {
+
+          iterator mm = m_macros.find (n);
+          bool found = false;
+          while (mm != m_macros.end () && mm->first == n && ! found) {
+            if ((interpreter == Macro::None || mm->second->interpreter () == interpreter) &&
+                (dsl_name.empty () || mm->second->dsl_interpreter () == dsl_name) && 
+                mm->second->format () == format) {
+              found = true;
+            }
+            ++mm;
+          }
+          if (! found) {
+            Macro *m = new Macro ();
+            new_macro.reset (m);
+            m->set_format (format);
+            m->set_autorun_default (autorun);
+            m->set_autorun (autorun);
+            m->set_interpreter (interpreter);
+            m->set_dsl_interpreter (dsl_name);
+            m->set_parent (this);
+            m->set_name (n);
+            m->load ();
+            m->set_readonly (m_readonly);
+          }
+
+        }
+
+        if (new_macro.get ()) {
+          m_macros.insert (std::make_pair (n, new_macro.release ()));
+        }
+
+      } catch (tl::Exception &ex) {
+        tl::error << "Reading " << tl::to_string (*f) << " in " << path << ": " << ex.msg ();
+      }
+
+    }
+
+    QStringList folders = dir.entryList (QDir::Dirs | QDir::NoDotAndDotDot);
+    for (QStringList::ConstIterator f = folders.begin (); f != folders.end (); ++f) {
+
+      try {
+
+        std::string n = tl::to_string (*f);
+        MacroCollection *&mc = m_folders.insert (std::make_pair (n, (MacroCollection *) 0)).first->second;
+        if (! mc) {
+          mc = new MacroCollection ();
+          mc->set_parent (this);
+          mc->set_name (n);
+          mc->set_virtual_mode (NotVirtual);
+          bool ro = (m_readonly || ! QFileInfo (dir.filePath (*f)).isWritable ());
+          mc->set_readonly (ro);
+          mc->scan (tl::to_string (dir.filePath (*f)));
+        }
+
+      } catch (tl::Exception &ex) {
+        tl::error << ex.msg ();
+      }
+
+    }
+
+  }
+}
+
+void MacroCollection::erase (lym::Macro *mp)
+{
+  for (iterator m = m_macros.begin (); m != m_macros.end (); ++m) {
+    if (m->second == mp) {
+      begin_changes ();
+      on_macro_deleted_here (mp);
+      m_macros.erase (m);
+      delete mp;
+      on_changed ();
+      return;
+    }
+  }
+}
+
+void MacroCollection::erase (lym::MacroCollection *mp)
+{
+  for (child_iterator f = m_folders.begin (); f != m_folders.end (); ++f) {
+    if (f->second == mp) {
+      begin_changes ();
+      on_child_deleted (mp);
+      m_folders.erase (f);
+      delete mp;
+      on_changed ();
+      return;
+    }
+  }
+}
+
+void MacroCollection::erase (iterator i) 
+{
+  begin_changes ();
+  on_macro_deleted_here (i->second);
+  delete i->second;
+  m_macros.erase (i);
+  on_changed ();
+}
+
+void MacroCollection::erase (child_iterator i)
+{
+  begin_changes ();
+  on_child_deleted (i->second);
+  delete i->second;
+  m_folders.erase (i);
+  on_changed ();
+}
+
+void MacroCollection::save ()
+{
+  for (child_iterator f = m_folders.begin (); f != m_folders.end (); ++f) {
+    f->second->save ();
+  }
+
+  for (iterator m = m_macros.begin (); m != m_macros.end (); ++m) {
+    if (m->second->is_modified () && ! m->second->is_readonly () && ! m->second->path ().empty ()) {
+      try {
+        m->second->save ();
+      } catch (tl::Exception &ex) {
+        tl::error << ex.msg ();
+      }
+    }
+  }
+}
+
+bool MacroCollection::rename (const std::string &n)
+{
+  if (tl::verbosity () >= 20) {
+    tl::info << "Renaming macro folder " << path () << " to " << n;
+  }
+  QFile f (tl::to_qstring (path ()));
+  begin_changes ();
+  if (! f.rename (QFileInfo (QDir (tl::to_qstring (mp_parent->path ())), tl::to_qstring (n)).filePath ())) {
+    on_changed ();
+    return false;
+  } else {
+    m_path = n;
+    on_changed ();
+    return true;
+  }
+}
+
+lym::MacroCollection *MacroCollection::create_folder (const char *prefix, bool mkdir)
+{
+  std::string name;
+  int n = 0;
+  do {
+    name = (prefix ? prefix : "new_folder");
+    if (n > 0) {
+      name += "_" + tl::to_string (n);
+    }
+    if (m_folders.find (name) == m_folders.end ()) {
+      break;
+    }
+    ++n;
+  } while (true);
+
+  if (mkdir && ! QDir (tl::to_qstring (path ())).mkdir (tl::to_qstring (name))) {
+    return 0;
+  }
+
+  begin_changes ();
+
+  lym::MacroCollection *m = m_folders.insert (std::make_pair (name, new lym::MacroCollection ())).first->second; 
+  m->set_virtual_mode (NotVirtual);
+  m->set_name (name);
+  m->set_parent (this);
+
+  on_changed ();
+
+  return m;
+}
+
+lym::Macro *MacroCollection::create (const char *prefix, Macro::Format format)
+{
+  std::string name;
+  int n = 0;
+  do {
+    name = (prefix ? prefix : "new_macro");
+    if (n > 0) {
+      name += "_" + tl::to_string (n);
+    }
+    if (! macro_by_name (name, format)) {
+      break;
+    }
+    ++n;
+  } while (true);
+
+  begin_changes ();
+
+  lym::Macro *m = m_macros.insert (std::make_pair (name, new lym::Macro ()))->second; 
+  m->set_name (name);
+  m->set_parent (this);
+
+  on_changed ();
+
+  return m;
+}
+
+void MacroCollection::add_unspecific (lym::Macro *m)
+{
+  begin_changes ();
+  m_macros.insert (std::make_pair (m->name (), m));
+  m->set_parent (this);
+  on_changed ();
+}
+
+bool MacroCollection::add (lym::Macro *m)
+{
+  QDir d (tl::to_qstring (path ()));
+  QDir dd = QFileInfo (tl::to_qstring (m->path ())).dir ();
+
+  if (d == dd) {
+
+    begin_changes ();
+    m_macros.insert (std::make_pair (m->name (), m));
+    m->set_parent (this);
+    on_changed ();
+    return true;
+
+  } else {
+
+    for (child_iterator c = begin_children (); c != end_children (); ++c) {
+      if (c->second->add (m)) {
+        return true;
+      }
+    }
+
+    //  try to detect new child folders. If that is the case, create that folder and add
+    //  the macro there.
+    QDir dm (tl::to_qstring (m->dir ()));
+    while (true) {
+
+      std::string folder_name = tl::to_string (dm.dirName ());
+      if (! dm.cdUp ()) {
+        break;
+      }
+
+      if (dm == d) {
+        begin_changes ();
+        lym::MacroCollection *mc = m_folders.insert (std::make_pair (folder_name, new MacroCollection ())).first->second;
+        mc->set_virtual_mode (NotVirtual);
+        mc->set_parent (this);
+        on_changed ();
+        return mc->add (m);
+      }
+
+    }
+
+  }
+
+  return false;
+}
+
+bool MacroCollection::del ()
+{
+  if (tl::verbosity () >= 20) {
+    tl::info << "Deleting macro folder " << path ();
+  }
+  return QDir ().rmdir (tl::to_qstring (path ()));
+}
+
+void MacroCollection::rename_macro (Macro *macro, const std::string &new_name)
+{
+  iterator m = m_macros.find (macro->name ());
+  while (m != m_macros.end () && m->first == macro->name ()) {
+    if (m->second == macro) {
+      m_macros.erase (m);
+      m_macros.insert (std::make_pair (new_name, macro));
+      return;
+    }
+    ++m;
+  }
+}
+
+lym::Macro *MacroCollection::find_macro (const std::string &path)
+{
+  for (iterator m = begin (); m != end (); ++m) {
+    if (m->second->path () == path) {
+      return m->second;
+    }
+  }
+
+  for (child_iterator mc = begin_children (); mc != end_children (); ++mc) {
+    lym::Macro *macro = mc->second->find_macro (path);
+    if (macro) {
+      return macro;
+    }
+  }
+
+  return 0;
+}
+
+MacroCollection &MacroCollection::root ()
+{
+  return ms_root;
+}
+
+static bool sync_macros (lym::MacroCollection *current, lym::MacroCollection *actual, bool safe)
+{
+  bool ret = false;
+
+  if (actual) {
+    current->make_readonly (actual->is_readonly ());
+  }
+
+  std::vector<lym::MacroCollection *> folders_to_delete;
+
+  for (lym::MacroCollection::child_iterator m = current->begin_children (); m != current->end_children (); ++m) {
+    lym::MacroCollection *cm = actual ? actual->folder_by_name (m->first) : 0;
+    if (! cm) {
+      folders_to_delete.push_back (m->second);
+    }
+  }
+
+  if (actual) {
+    for (lym::MacroCollection::child_iterator m = actual->begin_children (); m != actual->end_children (); ++m) {
+      lym::MacroCollection *cm = current->folder_by_name (m->first);
+      if (! cm) {
+        cm = current->create_folder (m->first.c_str (), false);
+        ret = true;
+      }
+      if (sync_macros(cm, m->second, safe)) {
+        ret = true;
+      }
+    }
+  }
+
+  //  delete folders which do no longer exist
+  for (std::vector<lym::MacroCollection *>::iterator m = folders_to_delete.begin (); m != folders_to_delete.end (); ++m) {
+    ret = true;
+    sync_macros (*m, 0, safe);
+    current->erase (*m);
+  }
+
+  std::vector<lym::Macro *> macros_to_delete;
+
+  for (lym::MacroCollection::iterator m = current->begin (); m != current->end (); ++m) {
+    lym::Macro *cm = actual ? actual->macro_by_name (m->first, m->second->format ()) : 0;
+    if (! cm) {
+      macros_to_delete.push_back (m->second);
+    }
+  }
+
+  if (actual) {
+    for (lym::MacroCollection::iterator m = actual->begin (); m != actual->end (); ++m) {
+      lym::Macro *cm = current->macro_by_name (m->first, m->second->format ());
+      if (cm) {
+        if (*cm != *m->second && (! safe || ! cm->is_modified ())) {
+          cm->assign (*m->second);
+        }
+        cm->set_readonly (m->second->is_readonly ());
+      } else {
+        cm = current->create (m->first.c_str (), m->second->format ());
+        cm->assign (*m->second);
+        cm->set_readonly (m->second->is_readonly ());
+        ret = true;
+      }
+    }
+  }
+
+  //  erase macros from collection which are no longer used
+  for (std::vector<lym::Macro *>::const_iterator m = macros_to_delete.begin (); m != macros_to_delete.end (); ++m) {
+    current->erase (*m);
+    ret = true;
+  }
+
+  return ret;
+}
+
+void MacroCollection::reload (bool safe)
+{
+  //  create a new collection and synchronize
+
+  lym::MacroCollection new_collection;
+  for (lym::MacroCollection::child_iterator c = begin_children (); c != end_children (); ++c) {
+    new_collection.add_folder (c->second->description (), c->second->path (), c->second->category (), c->second->is_readonly (), false /* don't force to create */);
+  }
+
+  //  and synchronize current with the actual one
+  sync_macros (this, &new_collection, safe);
+}
+
+static bool has_autorun_for (const lym::MacroCollection &collection, bool early)
+{
+  for (lym::MacroCollection::const_child_iterator c = collection.begin_children (); c != collection.end_children (); ++c) {
+    if (has_autorun_for (*c->second, early)) {
+      return true;
+    }
+  }
+
+  for (lym::MacroCollection::const_iterator c = collection.begin (); c != collection.end (); ++c) {
+    if ((early && c->second->is_autorun_early ()) || (!early && c->second->is_autorun () && !c->second->is_autorun_early ())) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+bool MacroCollection::has_autorun () const
+{
+  return has_autorun_for (*this, false);
+}
+
+bool MacroCollection::has_autorun_early () const
+{
+  return has_autorun_for (*this, true);
+}
+
+static void autorun_for (lym::MacroCollection &collection, bool early)
+{
+  for (lym::MacroCollection::child_iterator c = collection.begin_children (); c != collection.end_children (); ++c) {
+    autorun_for (*c->second, early);
+  }
+
+  for (lym::MacroCollection::iterator c = collection.begin (); c != collection.end (); ++c) {
+    if (c->second->can_run () && ((early && c->second->is_autorun_early ()) || (!early && c->second->is_autorun () && !c->second->is_autorun_early ()))) {
+      BEGIN_PROTECTED_SILENT
+        c->second->run ();
+        c->second->install_doc ();
+      END_PROTECTED_SILENT
+    }
+  }
+}
+
+void MacroCollection::autorun ()
+{
+  autorun_for (*this, false);
+}
+
+void MacroCollection::autorun_early ()
+{
+  autorun_for (*this, true);
+}
+
+void MacroCollection::dump (int l)
+{
+  for (int i = 0; i < l; ++i) { printf ("  "); }
+  printf ("----\n");
+  for (int i = 0; i < l; ++i) { printf ("  "); }
+  printf ("Collection: %s\n", name ().c_str ());
+  for (int i = 0; i < l; ++i) { printf ("  "); }
+  printf ("Collection-path: %s\n", path ().c_str ());
+  for (int i = 0; i < l; ++i) { printf ("  "); }
+  printf ("Collection-description: %s\n", description ().c_str ());
+  for (int i = 0; i < l; ++i) { printf ("  "); }
+  printf("Collection-readonly: %d\n", is_readonly ());
+  printf ("\n");
+
+  for (iterator m = begin (); m != end (); ++m) {
+    for (int i = 0; i < l; ++i) { printf ("  "); }
+    printf("Name: %s%s\n", m->second->name ().c_str (), m->second->is_modified() ? "*" : "");
+    for (int i = 0; i < l; ++i) { printf ("  "); }
+    printf("  Path: %s\n", m->second->path ().c_str ());
+    for (int i = 0; i < l; ++i) { printf ("  "); }
+    printf("  Readonly: %d\n", m->second->is_readonly ());
+    for (int i = 0; i < l; ++i) { printf ("  "); }
+    printf("  Autorun: %d\n", m->second->is_autorun ());
+    for (int i = 0; i < l; ++i) { printf ("  "); }
+    printf("  Autorun-early: %d\n", m->second->is_autorun_early ());
+    for (int i = 0; i < l; ++i) { printf ("  "); }
+    printf("  Description: %s\n", m->second->description ().c_str ());
+  }
+
+  for (child_iterator m = begin_children (); m != end_children (); ++m) {
+    m->second->dump (l + 1);
+  }
+}
+
+// ----------------------------------------------------------------------
+
+MacroSignalAdaptor::MacroSignalAdaptor (QObject *parent, Macro *macro)
+  : QObject (parent), mp_macro (macro)
+{
+  //  .. nothing yet ..
+}
+
+void MacroSignalAdaptor::run ()
+{
+BEGIN_PROTECTED
+  if (mp_macro) {
+    mp_macro->run ();
+  }
+END_PROTECTED
 }
 
 }

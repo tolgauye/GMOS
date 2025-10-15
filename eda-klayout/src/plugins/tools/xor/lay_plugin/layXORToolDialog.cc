@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -35,7 +35,6 @@
 #include "tlTimer.h"
 #include "tlProgress.h"
 #include "tlThreadedWorkers.h"
-#include "tlEnv.h"
 #include "tlExceptions.h"
 #include "tlMath.h"
 #include "layCellView.h"
@@ -51,12 +50,6 @@
 
 namespace lay
 {
-
-bool merge_before_bool ()
-{
-  //  $KLAYOUT_XOR_MERGE_BEFORE_BOOLEAN
-  return tl::app_flag ("xor-merge-before-boolean");
-}
 
 std::string cfg_xor_input_mode ("xor-input-mode");
 std::string cfg_xor_output_mode ("xor-output-mode");
@@ -192,7 +185,7 @@ XORToolDialog::~XORToolDialog ()
 }
 
 int 
-XORToolDialog::exec_dialog (lay::LayoutViewBase *view)
+XORToolDialog::exec_dialog (lay::LayoutView *view)
 {
   mp_view = view;
 
@@ -214,7 +207,7 @@ XORToolDialog::exec_dialog (lay::LayoutViewBase *view)
   }
 
   //  take current settings from the configurations
-  lay::Dispatcher *config_root = lay::Dispatcher::instance ();
+  lay::PluginRoot *config_root = lay::PluginRoot::instance ();
 
   input_mode_t im = IMAll;
   if (config_root->config_get (cfg_xor_input_mode, im, InputModeConverter ())) {
@@ -340,7 +333,7 @@ BEGIN_PROTECTED
     }
   }
   
-  lay::Dispatcher *config_root = lay::Dispatcher::instance ();
+  lay::PluginRoot *config_root = lay::PluginRoot::instance ();
 
   config_root->config_set (cfg_xor_input_mode, InputModeConverter ().to_string ((input_mode_t) mp_ui->input_layers_cbx->currentIndex ()));
   config_root->config_set (cfg_xor_output_mode, OutputModeConverter ().to_string ((output_mode_t) mp_ui->output_cbx->currentIndex ()));
@@ -772,9 +765,6 @@ XORWorker::do_perform_deep (const XORTask *xor_task)
           db::RecursiveShapeIterator s_a (mp_job->cva ()->layout (), mp_job->cva ()->layout ().cell (mp_job->cva ().cell_index ()), la, xor_task->region_a ());
           db::RecursiveShapeIterator s_b (mp_job->cvb ()->layout (), mp_job->cvb ()->layout ().cell (mp_job->cvb ().cell_index ()), lb, xor_task->region_b ());
 
-          s_a.set_for_merged_input (true);
-          s_b.set_for_merged_input (true);
-
           db::Region ra (s_a, dss, db::ICplxTrans (mp_job->cva ()->layout ().dbu () / mp_job->dbu ()));
           db::Region rb (s_b, dss, db::ICplxTrans (mp_job->cvb ()->layout ().dbu () / mp_job->dbu ()));
 
@@ -803,8 +793,6 @@ XORWorker::do_perform_deep (const XORTask *xor_task)
             dbu_scale = db::ICplxTrans (mp_job->cvb ()->layout ().dbu () / mp_job->dbu ());
           }
 
-          s.set_for_merged_input (true);
-
           rr = db::Region (s, dss, dbu_scale);
 
         }
@@ -813,14 +801,14 @@ XORWorker::do_perform_deep (const XORTask *xor_task)
 
       if (*t > 0) {
         tl::SelfTimer timer (tl::verbosity () >= 21, "Sizing part");
-        rr.size (-((*t + 1) / 2), (unsigned int)2);
-        rr.size (((*t + 1) / 2), (unsigned int)2);
+        rr.size (-((*t + 1) / 2), (unsigned int)2, false);
+        rr.size (((*t + 1) / 2), (unsigned int)2, false);
       }
 
-      //  TODO: no clipping for hierarchical mode yet
+      //  TODO: no clipping for hieararchical mode yet
       mp_job->issue_region (tol_index, xor_task->layer_index (), rr);
 
-      mp_job->add_results (xor_task->lp (), *t, rr.count (), xor_task->ix (), xor_task->iy ());
+      mp_job->add_results (xor_task->lp (), *t, rr.size (), xor_task->ix (), xor_task->iy ());
 
     } else if (mp_job->op () == db::BooleanOp::Xor ||
                (mp_job->op () == db::BooleanOp::ANotB && !la.empty ()) ||
@@ -872,11 +860,40 @@ XORWorker::do_perform_tiled (const XORTask *xor_task)
 
         if ((!la.empty () && !lb.empty ()) || mp_job->el_handling () == XORJob::EL_process) {
 
-          tl::SelfTimer timer (tl::verbosity () >= 31, "Boolean part");
-          size_t n;
+          if (! mp_job->has_tiles ()) {
 
-          if (! merge_before_bool ()) {
+            tl::SelfTimer timer (tl::verbosity () >= 21, "Boolean part");
+#if 0
+            //  Straightforward implementation
+            sp.boolean (mp_job->cva ()->layout (), mp_job->cva ()->layout ().cell (mp_job->cva ().cell_index ()), la,
+                        mp_job->cvb ()->layout (), mp_job->cvb ()->layout ().cell (mp_job->cvb ().cell_index ()), lb, 
+                        xor_results_cell.shapes (0), op, true, false, true);
+#else
+            //  This implementation is faster when a lot of overlapping shapes are involved
+            db::Layout merge_helper;
+            db::Cell &merge_helper_cell = merge_helper.cell (merge_helper.add_cell ());
+            merge_helper.insert_layer (0);
+            merge_helper.insert_layer (1);
 
+            if (!la.empty ()) {
+              sp.merge (mp_job->cva ()->layout (), mp_job->cva ()->layout ().cell (mp_job->cva ().cell_index ()), la,
+                        merge_helper_cell.shapes (0), true, 0, false, true);
+            }
+            if (!lb.empty ()) {
+              sp.merge (mp_job->cvb ()->layout (), mp_job->cvb ()->layout ().cell (mp_job->cvb ().cell_index ()), lb,
+                        merge_helper_cell.shapes (1), true, 0, false, true);
+            }
+            sp.boolean (merge_helper, merge_helper_cell, 0, 
+                        merge_helper, merge_helper_cell, 1, 
+                        xor_results_cell.shapes (0), mp_job->op (), true, false, true);
+#endif
+
+          } else {
+
+            tl::SelfTimer timer (tl::verbosity () >= 31, "Boolean part");
+            size_t n;
+
+#if 0
             //  Straightforward implementation
             sp.clear ();
 
@@ -884,36 +901,20 @@ XORWorker::do_perform_tiled (const XORTask *xor_task)
             db::CplxTrans dbu_scale_b (mp_job->cvb ()->layout ().dbu () / xor_results.dbu ());
 
             n = 0;
-            db::RecursiveShapeIterator s_a;
-            if (mp_job->has_tiles ()) {
-              s_a = db::RecursiveShapeIterator (mp_job->cva ()->layout (), *mp_job->cva ().cell (), la, xor_task->region_a ());
-            } else {
-              s_a = db::RecursiveShapeIterator (mp_job->cva ()->layout (), *mp_job->cva ().cell (), la);
-            }
-            s_a.set_for_merged_input (true);
-            for ( ; ! s_a.at_end (); ++s_a, ++n) {
-              sp.insert (s_a.shape (), dbu_scale_a * s_a.trans (), n * 2);
+            for (db::RecursiveShapeIterator s (mp_job->cva ()->layout (), mp_job->cva ().cell (), la, region_a); ! s.at_end (); ++s, ++n) {
+              sp.insert (s.shape (), dbu_scale_a * s.trans (), n * 2);
             }
 
             n = 0;
-            db::RecursiveShapeIterator s_b;
-            if (mp_job->has_tiles ()) {
-              s_b = db::RecursiveShapeIterator (mp_job->cvb ()->layout (), *mp_job->cvb ().cell (), lb, xor_task->region_b ());
-            } else {
-              s_b = db::RecursiveShapeIterator (mp_job->cvb ()->layout (), *mp_job->cvb ().cell (), lb);
-            }
-            s_b.set_for_merged_input (true);
-            for (; ! s_b.at_end (); ++s_b, ++n) {
-              sp.insert (s_b.shape (), dbu_scale_b * s_b.trans (), n * 2 + 1);
+            for (db::RecursiveShapeIterator s (mp_job->cvb ()->layout (), mp_job->cvb ().cell (), lb, region_b); ! s.at_end (); ++s, ++n) {
+              sp.insert (s.shape (), dbu_scale_b * s.trans (), n * 2 + 1);
             }
 
             db::BooleanOp bool_op (mp_job->op ());
             db::ShapeGenerator sg (xor_results_cell.shapes (0), true /*clear shapes*/);
             db::PolygonGenerator out (sg, false /*don't resolve holes*/, false /*no min. coherence*/);
-            sp.process (out, bool_op);
-
-          } else {
-
+            sp.process (out, mp_job->op ());
+#else
             //  This implementation is faster when a lot of overlapping shapes are involved
             db::Layout merge_helper;
             merge_helper.dbu (mp_job->dbu ());
@@ -929,14 +930,7 @@ XORWorker::do_perform_tiled (const XORTask *xor_task)
               db::CplxTrans dbu_scale (mp_job->cva ()->layout ().dbu () / xor_results.dbu ());
 
               n = 0;
-              db::RecursiveShapeIterator s;
-              if (mp_job->has_tiles ()) {
-                s = db::RecursiveShapeIterator (mp_job->cva ()->layout (), *mp_job->cva ().cell (), la, xor_task->region_a ());
-              } else {
-                s = db::RecursiveShapeIterator (mp_job->cva ()->layout (), *mp_job->cva ().cell (), la);
-              }
-              s.set_for_merged_input (true);
-              for ( ; ! s.at_end (); ++s, ++n) {
+              for (db::RecursiveShapeIterator s (mp_job->cva ()->layout (), *mp_job->cva ().cell (), la, xor_task->region_a ()); ! s.at_end (); ++s, ++n) {
                 sp.insert (s.shape (), dbu_scale * s.trans (), n);
               }
 
@@ -954,14 +948,7 @@ XORWorker::do_perform_tiled (const XORTask *xor_task)
               db::CplxTrans dbu_scale (mp_job->cvb ()->layout ().dbu () / xor_results.dbu ());
 
               n = 0;
-              db::RecursiveShapeIterator s;
-              if (mp_job->has_tiles ()) {
-                s = db::RecursiveShapeIterator (mp_job->cvb ()->layout (), *mp_job->cvb ().cell (), lb, xor_task->region_b ());
-              } else {
-                s = db::RecursiveShapeIterator (mp_job->cvb ()->layout (), *mp_job->cvb ().cell (), lb);
-              }
-              s.set_for_merged_input (true);
-              for ( ; ! s.at_end (); ++s, ++n) {
+              for (db::RecursiveShapeIterator s (mp_job->cvb ()->layout (), *mp_job->cvb ().cell (), lb, xor_task->region_b ()); ! s.at_end (); ++s, ++n) {
                 sp.insert (s.shape (), dbu_scale * s.trans (), n);
               }
 
@@ -972,9 +959,10 @@ XORWorker::do_perform_tiled (const XORTask *xor_task)
 
             }
 
-            sp.boolean (merge_helper, merge_helper_cell, 0,
-                        merge_helper, merge_helper_cell, 1,
+            sp.boolean (merge_helper, merge_helper_cell, 0, 
+                        merge_helper, merge_helper_cell, 1, 
                         xor_results_cell.shapes (0), mp_job->op (), true, false, true);
+#endif
 
           }
 
@@ -1000,8 +988,6 @@ XORWorker::do_perform_tiled (const XORTask *xor_task)
             }
             dbu_scale = db::CplxTrans (mp_job->cvb ()->layout ().dbu () / xor_results.dbu ());
           }
-
-          s.set_for_merged_input (true);
 
           for (; ! s.at_end (); ++s) {
             if (s->is_polygon () || s->is_box () || s->is_path ()) {
@@ -1099,7 +1085,7 @@ XORToolDialog::run_xor ()
 
   bool summarize = mp_ui->summarize_cb->isChecked ();
   //  TODO: make this a user interface feature later
-  bool process_el = tl::app_flag ("always-do-xor");
+  bool process_el = lay::ApplicationBase::instance ()->special_app_flag ("ALWAYS_DO_XOR");
 
   int cv_index_a = mp_ui->layouta->current_cv_index ();
   int cv_index_b = mp_ui->layoutb->current_cv_index ();
@@ -1433,15 +1419,14 @@ XORToolDialog::run_xor ()
 
     size_t todo_count = 0;
     XORJob::EmptyLayerHandling el_handling = XORJob::EL_optimize;
-    if (summarize && output_mode == OMMarkerDatabase) {
+    if (summarize) {
       el_handling = XORJob::EL_summarize;
     } else if (process_el) {
       el_handling = XORJob::EL_process;
     }
     XORJob job (nworkers, output_mode, op, el_handling, dbu, cva, cvb, tolerances, sub_categories, layer_categories, sub_cells, sub_output_layers, rdb, rdb_cell);
 
-    //  NOTE: uses min of both DBUs (see issue #1743)
-    double common_dbu = std::min (cva->layout ().dbu (), cvb->layout ().dbu ());
+    double common_dbu = tl::lcm (cva->layout ().dbu (), cvb->layout ().dbu ());
 
     for (std::vector<db::DBox>::const_iterator b = boxes.begin (); b != boxes.end (); ++b) {
 

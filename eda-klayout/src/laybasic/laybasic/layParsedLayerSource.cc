@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
 
 
 #include "layParsedLayerSource.h"
-#include "layLayoutViewBase.h"
+#include "layLayoutView.h"
 #include "tlString.h"
 #include "tlGlobPattern.h"
 
@@ -49,8 +49,8 @@ public:
   virtual PropertySelectorBase *clone () const = 0;
   virtual int compare (const PropertySelectorBase *b) const = 0;
   virtual unsigned int type_id () const = 0;
-  virtual bool check (const db::PropertiesSet &set) const = 0;
-  virtual bool selection (std::set<db::properties_id_type> &ids) const = 0;
+  virtual bool check (const db::PropertiesRepository &rep, const db::PropertiesRepository::properties_set &set) const = 0;
+  virtual bool selection (const db::PropertiesRepository &rep, std::set<db::properties_id_type> &ids) const = 0;
 };
 
 /**
@@ -134,18 +134,18 @@ public:
     return m_op;
   }
 
-  bool check (const db::PropertiesSet &set) const
+  bool check (const db::PropertiesRepository &rep, const db::PropertiesRepository::properties_set &set) const 
   {
     if (m_op == And) {
       for (std::vector<const PropertySelectorBase *>::const_iterator b = m_args.begin (); b != m_args.end (); ++b) {
-        if (! (*b)->check (set)) {
+        if (! (*b)->check (rep, set)) {
           return false;
         }
       }
       return true;
     } else {
       for (std::vector<const PropertySelectorBase *>::const_iterator b = m_args.begin (); b != m_args.end (); ++b) {
-        if ((*b)->check (set)) {
+        if ((*b)->check (rep, set)) {
           return true;
         }
       }
@@ -153,13 +153,13 @@ public:
     }
   }
 
-  bool selection (std::set<db::properties_id_type> &ids) const
+  bool selection (const db::PropertiesRepository &rep, std::set<db::properties_id_type> &ids) const 
   {
     //  this algorithm computes the "or" of two sets by using this relationship: a or b or c or .. = !((!a) and (!b) and (!c) and ..)
 
     //  get the selection of the first operand into ids
     std::vector<const PropertySelectorBase *>::const_iterator b = m_args.begin ();
-    bool inv = (*b)->selection (ids);
+    bool inv = (*b)->selection (rep, ids);
     if (m_op == Or) {
       inv = !inv;
     }
@@ -168,7 +168,7 @@ public:
 
       //  get the selection of the next operand into ids2
       std::set<db::properties_id_type> ids2;
-      bool inv2 = (*b)->selection (ids2);
+      bool inv2 = (*b)->selection (rep, ids2);
       if (m_op == Or) {
         inv2 = !inv2;
       }
@@ -270,14 +270,14 @@ public:
     return new PropertySelectorNot (mp_arg->clone ());
   }
 
-  bool check (const db::PropertiesSet &set) const
+  bool check (const db::PropertiesRepository &rep, const db::PropertiesRepository::properties_set &set) const 
   {
-    return ! mp_arg->check (set);
+    return ! mp_arg->check (rep, set);
   }
 
-  bool selection (std::set<db::properties_id_type> &ids) const
+  bool selection (const db::PropertiesRepository &rep, std::set<db::properties_id_type> &ids) const 
   {
-    return ! mp_arg->selection (ids);
+    return ! mp_arg->selection (rep, ids);
   }
 
   unsigned int type_id () const 
@@ -333,17 +333,23 @@ public:
     return new PropertySelectorEqual (m_name, m_value, m_equal);
   }
 
-  bool check (const db::PropertiesSet &set) const
+  bool check (const db::PropertiesRepository &rep, const db::PropertiesRepository::properties_set &set) const 
   {
-    const tl::Variant &value = set.value (m_name);
-    if (value.is_nil ()) {
+    std::pair<bool, db::property_names_id_type> p = rep.get_id_of_name (m_name);
+    if (! p.first) {
+      //  name is not known at all.
+      return false;
+    }
+
+    db::PropertiesRepository::properties_set::const_iterator i = set.find (p.second);
+    if (i == set.end ()) {
       //  name is not present in the property set
       return false;
     } else {
       //  check value
-      if (m_equal && value == m_value) {
+      if (m_equal && i->second == m_value) {
         return true;
-      } else if (! m_equal && value != m_value) {
+      } else if (! m_equal && i->second != m_value) {
         return true;
       } else {
         return false;
@@ -351,10 +357,18 @@ public:
     }
   }
 
-  bool selection (std::set<db::properties_id_type> &ids) const
+  bool selection (const db::PropertiesRepository &rep, std::set<db::properties_id_type> &ids) const 
   {
-    db::PropertiesRepository::properties_id_set idv = db::PropertiesRepository::instance ().properties_ids_by_name_value (db::property_names_id (m_name), db::property_values_id (m_value));
-    ids.insert (idv.begin (), idv.end ());
+    std::pair<bool, db::property_names_id_type> p = rep.get_id_of_name (m_name);
+    if (! p.first) {
+      //  name is not known at all.
+      return false;
+    }
+
+    const db::PropertiesRepository::properties_id_vector &idv = rep.properties_ids_by_name_value (std::make_pair (p.second, m_value));
+    for (db::PropertiesRepository::properties_id_vector::const_iterator id = idv.begin (); id != idv.end (); ++id) {
+      ids.insert (*id);
+    }
 
     return ! m_equal;
   }
@@ -401,14 +415,14 @@ extract_base (tl::Extractor &ex)
   } else if (ex.test ("!=")) {
     eq = false;
   } else {
-    ex.error (tl::to_string (tr ("'==' or '!=' operator expected")));
+    ex.error (tl::to_string (QObject::tr ("'==' or '!=' operator expected")));
   }
   ex.read (v);
   return new PropertySelectorEqual (n, v, eq);
 }
 
 /**
- *  @brief Expression parser: parse complex elements (bracketed expressions)
+ *  @brief Expression parser: parse complex elements (brackted expressions)
  */
 static PropertySelectorBase *
 extract_element (tl::Extractor &ex)
@@ -580,22 +594,22 @@ PropertySelector::join (const PropertySelector &d)
 }
 
 bool 
-PropertySelector::check (db::properties_id_type id) const
+PropertySelector::check (const db::PropertiesRepository &rep, db::properties_id_type id) const
 {
   if (is_null ()) {
     return true;
   } else {
-    return mp_base->check (db::properties (id));
+    return mp_base->check (rep, rep.properties (id));
   }
 }
 
 bool 
-PropertySelector::matching (std::set<db::properties_id_type> &ids) const
+PropertySelector::matching (const db::PropertiesRepository &rep, std::set<db::properties_id_type> &ids) const
 {
   if (is_null ()) {
     return true;
   } else {
-    return mp_base->selection (ids);
+    return mp_base->selection (rep, ids);
   }
 }
 
@@ -1149,7 +1163,7 @@ ParsedLayerSource::to_string () const
 }
 
 std::string
-ParsedLayerSource::display_string (const lay::LayoutViewBase *view) const
+ParsedLayerSource::display_string (const lay::LayoutView *view) const
 {
   std::string r;
 
@@ -1362,7 +1376,7 @@ ParsedLayerSource::parse_from_string (const char *cp)
       if (sp == "CellFrame" || sp == "cellframe" || sp == "CF" || sp == "cell-frame") {
         m_special_purpose = SP_CellFrame;
       } else {
-        throw tl::Exception (tl::to_string (tr ("Invalid special purpose '%s'")), sp);
+        throw tl::Exception (tl::to_string (QObject::tr ("Invalid special purpose '%s'")), sp);
       }
 
     } else if (x.test ("(")) {

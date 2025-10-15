@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -159,16 +159,6 @@ TaskList::put_front (Task *task)
   }
 }
 
-size_t
-TaskList::size () const
-{
-  size_t n = 0;
-  for (Task *t = mp_first; t; t = t->mp_next) {
-    ++n;
-  }
-  return n;
-}
-
 // -----------------------------------------------------------------------------
 //  tl::JobBase implementation
 
@@ -274,11 +264,6 @@ JobBase::start ()
     mp_workers.back ()->start (this, int (mp_workers.size ()) - 1);
   }
 
-  while (m_nworkers < int (mp_workers.size ())) {
-    delete mp_workers.back ();
-    mp_workers.pop_back ();
-  }
-
   for (int i = 0; i < int (mp_workers.size ()); ++i) {
     setup_worker (mp_workers [i]);
     mp_workers [i]->reset_stop_request ();
@@ -290,59 +275,39 @@ JobBase::start ()
 
     //  synchronous case: create a temporary worker and 
     //  perform the tasks in the order they were delivered
-    std::unique_ptr <Worker> sync_worker (create_worker ());
+    std::auto_ptr <Worker> sync_worker (create_worker ());
     setup_worker (sync_worker.get ());
 
-    try {
-
-      while (! m_task_list.is_empty ()) {
-
-        std::unique_ptr<Task> task (m_task_list.fetch ());
-        before_sync_task (task.get ());
-
-        try {
-          sync_worker->perform_task (task.get ());
-        } catch (TaskTerminatedException) {
-          //  Stop the thread.
-          break;
-        } catch (WorkerTerminatedException) {
-          //  Stop the thread.
-          break;
-        } catch (tl::Exception &ex) {
-          log_error (ex.msg ());
-        } catch (std::exception &ex) {
-          log_error (ex.what ());
-        } catch (...) {
-          log_error (tl::to_string (tr ("Unspecific error")));
-        }
-
-        after_sync_task (task.get ());
-
+    while (! m_task_list.is_empty ()) {
+      std::auto_ptr<Task> task (m_task_list.fetch ());
+      try {
+        sync_worker->perform_task (task.get ());
+      } catch (TaskTerminatedException) {
+        //  Stop the thread.
+        break;
+      } catch (WorkerTerminatedException) {
+        //  Stop the thread.
+        break;
+      } catch (tl::Exception &ex) {
+        log_error (ex.msg ());
+      } catch (std::exception &ex) {
+        log_error (ex.what ());
+      } catch (...) {
+        log_error (tl::to_string (tr ("Unspecific error")));
       }
-
-    } catch (...) {
-      //  handle exceptions raised by before_sync_task or after_sync_task
-      cleanup ();
-      m_running = false;
-      throw;
     }
 
-    cleanup ();
+    //  clean up any remaining tasks
+    while (! m_task_list.is_empty ()) {
+      Task *task = m_task_list.fetch ();
+      if (task) {
+        delete task;
+      }
+    }
+
     finished ();
     m_running = false;
 
-  }
-}
-
-void
-JobBase::cleanup ()
-{
-  //  clean up any remaining tasks
-  while (! m_task_list.is_empty ()) {
-    Task *task = m_task_list.fetch ();
-    if (task) {
-      delete task;
-    }
   }
 }
 
@@ -547,6 +512,8 @@ class TL_PUBLIC WorkerProgressAdaptor : public tl::ProgressAdaptor
 public:
   WorkerProgressAdaptor (Worker *worker);
   
+  virtual void register_object (Progress *progress);
+  virtual void unregister_object (Progress *progress);
   virtual void trigger (Progress *progress);
   virtual void yield (Progress *progress);
 
@@ -560,6 +527,16 @@ WorkerProgressAdaptor::WorkerProgressAdaptor (Worker *worker)
   // .. nothing yet .. 
 }
   
+void WorkerProgressAdaptor::register_object (Progress * /*progress*/)
+{
+  // .. nothing yet .. 
+}
+
+void WorkerProgressAdaptor::unregister_object (Progress * /*progress*/)
+{
+  // .. nothing yet .. 
+}
+
 void WorkerProgressAdaptor::trigger (Progress * /*progress*/)
 {
   // .. nothing yet .. 
@@ -609,7 +586,7 @@ Worker::run ()
   while (true)
   {
     try {
-      std::unique_ptr<Task> task (mp_job->get_task (m_worker_index));
+      std::auto_ptr<Task> task (mp_job->get_task (m_worker_index));
       perform_task (task.get ());
     } catch (TaskTerminatedException) {
       //  .. try again

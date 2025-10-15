@@ -1,7 +1,7 @@
 # encoding: UTF-8
 
 # KLayout Layout Viewer
-# Copyright (C) 2006-2025 Matthias Koefferlein
+# Copyright (C) 2006-2019 Matthias Koefferlein
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -33,12 +33,12 @@ class DBLayoutQuery_TestClass < TestBase
     q = RBA::LayoutQuery::new("select cell.name, cell.bbox from *")
     res = []
     q.each(ly) do |iter|
-      res << iter.data.map(&:to_s).join(", ")
+      res << iter.data.inspect
     end
 
     assert_equal(res.size, 2)
-    assert_equal(res[0], "TOPTOP, (0,0;32800,12800)")
-    assert_equal(res[1], "TOP, (0,0;900,900)")
+    assert_equal(res[0], "[\"TOPTOP\", (0,0;32800,12800)]")
+    assert_equal(res[1], "[\"TOP\", (0,0;900,900)]")
 
   end
 
@@ -53,18 +53,18 @@ class DBLayoutQuery_TestClass < TestBase
     q = RBA::LayoutQuery::new("select cell.name, cell.bbox from *")
     res = []
     q.each(ly) do |iter|
-      res << iter.data.map(&:to_s).join(", ")
+      res << iter.data.inspect
     end
 
     assert_equal(res.size, 1)
-    assert_equal(res[0], "TOPTOP, ()")
+    assert_equal(res[0], "[\"TOPTOP\", ()]")
 
   end
 
   def test_3
 
     q = RBA::LayoutQuery::new("delete TOP")
-    assert_equal(q.property_names.sort.join(","), "bbox,cell,cell_bbox,cell_dbbox,cell_index,cell_name,dbbox,hier_levels,initial_cell,initial_cell_index,initial_cell_name,inst,instances,path,path_dtrans,path_names,path_trans,references,shape,tot_weight,weight")
+    assert_equal(q.property_names.sort.join(","), "bbox,cell,cell_bbox,cell_index,cell_name,hier_levels,initial_cell,initial_cell_index,initial_cell_name,inst,instances,path,path_names,path_trans,references,shape,tot_weight,weight")
 
   end
 

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -54,7 +54,7 @@ public:
   virtual std::string format_name () const { return "CIF"; }
   virtual std::string format_desc () const { return "CIF"; }
   virtual std::string format_title () const { return "CIF (Caltech interchange format)"; }
-  virtual std::string file_format () const { return "CIF files (*.cif *.CIF *.cif.gz *.CIF.gz)"; }
+  virtual std::string file_format () const { return "CIF files (*.CIF *.cif *.cif.gz *.CIF.gz)"; }
 
   static tl::Extractor &skip_blanks (tl::Extractor &ex)
   {

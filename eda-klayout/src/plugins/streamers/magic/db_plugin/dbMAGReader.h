@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -131,7 +131,7 @@ public:
    *
    *  Reimplements MAGDiagnostics
    */
-  virtual void warn (const std::string &txt, int wl = 1);
+  virtual void warn (const std::string &txt);
 
 private:
   tl::TextInputStream m_stream;
@@ -145,7 +145,7 @@ private:
   std::map<std::string, std::string> m_use_lib_paths;
   db::VCplxTrans m_dbu_trans_inv;
   std::string m_tech;
-  const db::Technology *mp_klayout_tech;
+  db::Technology *mp_klayout_tech;
 
   void do_read (db::Layout &layout, db::cell_index_type to_cell, tl::TextInputStream &stream);
   void do_read_part (db::Layout &layout, db::cell_index_type cell_index, tl::TextInputStream &stream);

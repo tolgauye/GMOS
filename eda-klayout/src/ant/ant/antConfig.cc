@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -136,10 +136,6 @@ OutlineConverter::to_string (ant::Object::outline_type o)
     return "box";
   } else if (o == ant::Object::OL_ellipse) {
     return "ellipse";
-  } else if (o == ant::Object::OL_radius) {
-    return "radius";
-  } else if (o == ant::Object::OL_angle) {
-    return "angle";
   } else {
     return "";
   }
@@ -163,10 +159,6 @@ OutlineConverter::from_string (const std::string &s, ant::Object::outline_type &
     o = ant::Object::OL_box;
   } else if (t == "ellipse") {
     o = ant::Object::OL_ellipse;
-  } else if (t == "radius") {
-    o = ant::Object::OL_radius;
-  } else if (t == "angle") {
-    o = ant::Object::OL_angle;
   } else {
     o = ant::Object::OL_diag;
   }
@@ -247,12 +239,6 @@ RulerModeConverter::to_string (ant::Template::ruler_mode_type m)
     return "single_click";
   } else if (m == ant::Template::RulerAutoMetric) {
     return "auto_metric";
-  } else if (m == ant::Template::RulerAutoMetricEdge) {
-    return "auto_metric_edge";
-  } else if (m == ant::Template::RulerMultiSegment) {
-    return "multi_segment";
-  } else if (m == ant::Template::RulerThreeClicks) {
-    return "angle";
   } else {
     return "normal";
   }
@@ -268,12 +254,6 @@ RulerModeConverter::from_string (const std::string &s, ant::Template::ruler_mode
     a = ant::Template::RulerSingleClick;
   } else if (t == "auto_metric") {
     a = ant::Template::RulerAutoMetric;
-  } else if (t == "auto_metric_edge") {
-    a = ant::Template::RulerAutoMetricEdge;
-  } else if (t == "multi_segment") {
-    a = ant::Template::RulerMultiSegment;
-  } else if (t == "angle") {
-    a = ant::Template::RulerThreeClicks;
   } else {
     a = ant::Template::RulerNormal;
   }
@@ -302,7 +282,7 @@ const std::string cfg_ruler_snap_mode ("ruler-snap-mode");
 const std::string cfg_ruler_obj_snap ("ruler-obj-snap");
 const std::string cfg_ruler_grid_snap ("ruler-grid-snap");
 const std::string cfg_ruler_grid_micron ("grid-micron");
-const std::string cfg_ruler_templates ("ruler-templates-v2");
+const std::string cfg_ruler_templates ("ruler-templates");
 const std::string cfg_current_ruler_template ("current-ruler-template");
 
 } // namespace ant

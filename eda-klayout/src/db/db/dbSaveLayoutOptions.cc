@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -26,7 +26,6 @@
 #include "tlClassRegistry.h"
 #include "tlStream.h"
 #include "tlExpression.h"
-#include "tlInternational.h"
 
 namespace db
 {
@@ -138,7 +137,7 @@ SaveLayoutOptions::set_option_by_name (const std::string &method, const tl::Vari
   tl::Variant out;
   std::vector<tl::Variant> args;
   args.push_back (value);
-  eval_cls->execute (context, out, options_ref, method + "=", args, 0);
+  eval_cls->execute (context, out, options_ref, method + "=", args);
 }
 
 tl::Variant
@@ -151,7 +150,7 @@ SaveLayoutOptions::get_option_by_name (const std::string &method)
 
   tl::Variant out;
   std::vector<tl::Variant> args;
-  eval_cls->execute (context, out, options_ref, method, args, 0);
+  eval_cls->execute (context, out, options_ref, method, args);
 
   return out;
 }
@@ -239,7 +238,7 @@ SaveLayoutOptions::get_valid_layers (const db::Layout &layout, std::vector <std:
 
   if (m_all_layers) {
 
-    //  collect all layers if necessary
+    //  collect all layers if neccessary
     for (unsigned int l = 0; l < layout.layers (); ++l) {
       if (layout.is_valid_layer (l)) {
         const db::LayerProperties &prop = layout.get_properties (l);
@@ -328,7 +327,7 @@ SaveLayoutOptions::get_valid_layers (const db::Layout &layout, std::vector <std:
 }
 
 void 
-SaveLayoutOptions::get_cells (const db::Layout &layout, std::set <db::cell_index_type> &cells, const std::vector <std::pair <unsigned int, db::LayerProperties> > &valid_layers, bool require_unique_names) const
+SaveLayoutOptions::get_cells (const db::Layout &layout, std::set <db::cell_index_type> &cells, const std::vector <std::pair <unsigned int, db::LayerProperties> > &valid_layers) const
 {
   if (m_all_cells) {
 
@@ -406,26 +405,6 @@ SaveLayoutOptions::get_cells (const db::Layout &layout, std::set <db::cell_index
 
     for (std::set <db::cell_index_type>::const_iterator c = empty_cells.begin (); c != empty_cells.end (); ++c) {
       cells.erase (*c);
-    }
-
-  }
-
-  if (require_unique_names) {
-
-    std::map<std::string, unsigned int> use_count;
-    for (std::set <db::cell_index_type>::const_iterator c = cells.begin (); c != cells.end (); ++c) {
-      use_count.insert (std::make_pair (std::string (layout.cell_name (*c)), 0)).first->second += 1;
-    }
-
-    std::vector<std::string> multi;
-    for (std::map<std::string, unsigned int>::const_iterator u = use_count.begin (); u != use_count.end (); ++u) {
-      if (u->second > 1) {
-        multi.push_back (u->first);
-      }
-    }
-
-    if (! multi.empty ()) {
-      throw tl::Exception (tl::to_string (tr ("The following cell name(s) are used for more than one cell - can't write this layout:\n  ")) + tl::join (multi, "\n  "));
     }
 
   }

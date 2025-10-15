@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -30,8 +30,37 @@ namespace db
 // -----------------------------------------------------------------------------------------------
 //  class PolygonRefGenerator
 
-PolygonRefToShapesGenerator::PolygonRefToShapesGenerator (db::Layout *layout, db::Shapes *shapes, db::properties_id_type prop_id)
-  : PolygonSink (), mp_layout (layout), mp_shapes (shapes), m_prop_id (prop_id)
+PolygonRefGenerator::PolygonRefGenerator (db::Layout *layout, std::unordered_set<db::PolygonRef> &polyrefs)
+  : PolygonSink (), mp_layout (layout), mp_polyrefs (&polyrefs)
+{
+  //  .. nothing yet ..
+}
+
+void PolygonRefGenerator::put (const db::Polygon &polygon)
+{
+  tl::MutexLocker locker (&mp_layout->lock ());
+  mp_polyrefs->insert (db::PolygonRef (polygon, mp_layout->shape_repository ()));
+}
+
+// -----------------------------------------------------------------------------------------------
+//  class EdgeToEdgeSetGenerator
+
+EdgeToEdgeSetGenerator::EdgeToEdgeSetGenerator (std::unordered_set<db::Edge> &edges)
+  : mp_edges (&edges)
+{
+  //  .. nothing yet ..
+}
+
+void EdgeToEdgeSetGenerator::put (const db::Edge &edge)
+{
+  mp_edges->insert (edge);
+}
+
+// -----------------------------------------------------------------------------------------------
+//  class PolygonRefGenerator
+
+PolygonRefToShapesGenerator::PolygonRefToShapesGenerator (db::Layout *layout, db::Shapes *shapes)
+  : PolygonSink (), mp_layout (layout), mp_shapes (shapes)
 {
   //  .. nothing yet ..
 }
@@ -39,13 +68,7 @@ PolygonRefToShapesGenerator::PolygonRefToShapesGenerator (db::Layout *layout, db
 void PolygonRefToShapesGenerator::put (const db::Polygon &polygon)
 {
   tl::MutexLocker locker (&mp_layout->lock ());
-  if (polygon.is_empty ()) {
-    //  ignore empty polygons
-  } else if (m_prop_id != 0) {
-    mp_shapes->insert (db::PolygonRefWithProperties (db::PolygonRef (polygon, mp_layout->shape_repository ()), m_prop_id));
-  } else {
-    mp_shapes->insert (db::PolygonRef (polygon, mp_layout->shape_repository ()));
-  }
+  mp_shapes->insert (db::PolygonRef (polygon, mp_layout->shape_repository ()));
 }
 
 // -----------------------------------------------------------------------------------------------
@@ -60,9 +83,7 @@ PolygonSplitter::PolygonSplitter (PolygonSink &sink, double max_area_ratio, size
 void
 PolygonSplitter::put (const db::Polygon &poly)
 {
-  if (poly.is_empty ()) {
-    //  ignore empty polygons
-  } else if (db::suggest_split_polygon (poly, m_max_vertex_count, m_max_area_ratio)) {
+  if ((m_max_vertex_count > 0 && poly.vertices () > m_max_vertex_count) || (m_max_area_ratio > 0.0 && poly.area_ratio () > m_max_area_ratio)) {
 
     std::vector <db::Polygon> split_polygons;
     db::split_polygon (poly, split_polygons);

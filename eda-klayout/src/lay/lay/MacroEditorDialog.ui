@@ -94,14 +94,17 @@
            <item>
             <widget class="QToolButton" name="newFolderButton">
              <property name="toolTip">
-              <string>New folder</string>
+              <string>&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal; text-decoration:none;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;New folder&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
              <property name="text">
               <string>...</string>
              </property>
              <property name="icon">
-              <iconset resource="../../icons/icons.qrc">
-               <normaloff>:/new_folder_16px.png</normaloff>:/new_folder_16px.png</iconset>
+              <iconset resource="layResources.qrc">
+               <normaloff>:/new_folder.png</normaloff>:/new_folder.png</iconset>
              </property>
              <property name="autoRaise">
               <bool>true</bool>
@@ -118,14 +121,17 @@
            <item>
             <widget class="QToolButton" name="addButton">
              <property name="toolTip">
-              <string>New</string>
+              <string>&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal; text-decoration:none;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:10pt;&quot;&gt;New&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
              <property name="text">
               <string>...</string>
              </property>
              <property name="icon">
-              <iconset resource="../../icons/icons.qrc">
-               <normaloff>:/add_16px.png</normaloff>:/add_16px.png</iconset>
+              <iconset resource="layResources.qrc">
+               <normaloff>:/add.png</normaloff>:/add.png</iconset>
              </property>
              <property name="autoRaise">
               <bool>true</bool>
@@ -135,14 +141,17 @@
            <item>
             <widget class="QToolButton" name="deleteButton">
              <property name="toolTip">
-              <string>Delete</string>
+              <string>&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal; text-decoration:none;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:10pt;&quot;&gt;Delete&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
              <property name="text">
               <string>...</string>
              </property>
              <property name="icon">
-              <iconset resource="../../icons/icons.qrc">
-               <normaloff>:/clear_16px.png</normaloff>:/clear_16px.png</iconset>
+              <iconset resource="layResources.qrc">
+               <normaloff>:/clear.png</normaloff>:/clear.png</iconset>
              </property>
              <property name="autoRaise">
               <bool>true</bool>
@@ -152,14 +161,17 @@
            <item>
             <widget class="QToolButton" name="renameButton">
              <property name="toolTip">
-              <string>Rename</string>
+              <string>&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal; text-decoration:none;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Rename&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
              <property name="text">
               <string>Rename</string>
              </property>
              <property name="icon">
-              <iconset resource="../../icons/icons.qrc">
-               <normaloff>:/rename_16px.png</normaloff>:/rename_16px.png</iconset>
+              <iconset resource="layResources.qrc">
+               <normaloff>:/rename.png</normaloff>:/rename.png</iconset>
              </property>
              <property name="autoRaise">
               <bool>true</bool>
@@ -169,14 +181,17 @@
            <item>
             <widget class="QToolButton" name="importButton">
              <property name="toolTip">
-              <string>Import file</string>
+              <string>&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:10pt; font-weight:400; font-style:normal; text-decoration:none;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Import file&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
              <property name="text">
               <string>Import</string>
              </property>
              <property name="icon">
-              <iconset resource="../../icons/icons.qrc">
-               <normaloff>:/import_16px.png</normaloff>:/import_16px.png</iconset>
+              <iconset resource="layResources.qrc">
+               <normaloff>:/import.png</normaloff>:/import.png</iconset>
              </property>
              <property name="autoRaise">
               <bool>true</bool>
@@ -193,14 +208,14 @@
            <item>
             <widget class="QToolButton" name="saveAllButton">
              <property name="toolTip">
-              <string>Save all files (Ctrl+Shift+S)</string>
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Save all files (Ctrl+Shift+S)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
              <property name="text">
               <string>...</string>
              </property>
              <property name="icon">
-              <iconset resource="../../icons/icons.qrc">
-               <normaloff>:/save_all_16px.png</normaloff>:/save_all_16px.png</iconset>
+              <iconset resource="layResources.qrc">
+               <normaloff>:/save_all.png</normaloff>:/save_all.png</iconset>
              </property>
              <property name="shortcut">
               <string>Ctrl+Shift+S</string>
@@ -213,14 +228,14 @@
            <item>
             <widget class="QToolButton" name="saveButton">
              <property name="toolTip">
-              <string>Save current file (Ctrl+S)</string>
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Save current file (Ctrl+S)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
              <property name="text">
               <string>...</string>
              </property>
              <property name="icon">
-              <iconset resource="../../icons/icons.qrc">
-               <normaloff>:/save_16px.png</normaloff>:/save_16px.png</iconset>
+              <iconset resource="layResources.qrc">
+               <normaloff>:/save.png</normaloff>:/save.png</iconset>
              </property>
              <property name="shortcut">
               <string>Ctrl+S</string>
@@ -318,8 +333,8 @@
               <string>...</string>
              </property>
              <property name="icon">
-              <iconset resource="../../icons/icons.qrc">
-               <normaloff>:/back_16px.png</normaloff>:/back_16px.png</iconset>
+              <iconset resource="layResources.qrc">
+               <normaloff>:/back_16.png</normaloff>:/back_16.png</iconset>
              </property>
              <property name="autoRaise">
               <bool>true</bool>
@@ -332,8 +347,8 @@
               <string>...</string>
              </property>
              <property name="icon">
-              <iconset resource="../../icons/icons.qrc">
-               <normaloff>:/forward_16px.png</normaloff>:/forward_16px.png</iconset>
+              <iconset resource="layResources.qrc">
+               <normaloff>:/forward_16.png</normaloff>:/forward_16.png</iconset>
              </property>
              <property name="autoRaise">
               <bool>true</bool>
@@ -350,14 +365,17 @@
            <item>
             <widget class="QToolButton" name="closeButton">
              <property name="toolTip">
-              <string>Close tab</string>
+              <string>&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal; text-decoration:none;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Close tab&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
              <property name="text">
               <string>close</string>
              </property>
              <property name="icon">
-              <iconset resource="../../icons/icons.qrc">
-               <normaloff>:/del_16px.png</normaloff>:/del_16px.png</iconset>
+              <iconset resource="layResources.qrc">
+               <normaloff>:/del.png</normaloff>:/del.png</iconset>
              </property>
              <property name="autoRaise">
               <bool>true</bool>
@@ -380,8 +398,8 @@
               <string>run</string>
              </property>
              <property name="icon">
-              <iconset resource="../../icons/icons.qrc">
-               <normaloff>:/run_16px.png</normaloff>:/run_16px.png</iconset>
+              <iconset resource="layResources.qrc">
+               <normaloff>:/run.png</normaloff>:/run.png</iconset>
              </property>
              <property name="shortcut">
               <string>F5</string>
@@ -400,8 +418,8 @@
               <string>...</string>
              </property>
              <property name="icon">
-              <iconset resource="../../icons/icons.qrc">
-               <normaloff>:/runthis_16px.png</normaloff>:/runthis_16px.png</iconset>
+              <iconset resource="layResources.qrc">
+               <normaloff>:/runthis.png</normaloff>:/runthis.png</iconset>
              </property>
              <property name="shortcut">
               <string>Shift+F5</string>
@@ -414,14 +432,17 @@
            <item>
             <widget class="QToolButton" name="stopButton">
              <property name="toolTip">
-              <string>Stop script</string>
+              <string>&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal; text-decoration:none;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Stop script&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
              <property name="text">
               <string>...</string>
              </property>
              <property name="icon">
-              <iconset resource="../../icons/icons.qrc">
-               <normaloff>:/stop_16px.png</normaloff>:/stop_16px.png</iconset>
+              <iconset resource="layResources.qrc">
+               <normaloff>:/stop.png</normaloff>:/stop.png</iconset>
              </property>
              <property name="autoRaise">
               <bool>true</bool>
@@ -431,14 +452,17 @@
            <item>
             <widget class="QToolButton" name="pauseButton">
              <property name="toolTip">
-              <string>Pause script (Ctrl+F5)</string>
+              <string>&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal; text-decoration:none;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Pause script (Ctrl+F5)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
              <property name="text">
               <string>...</string>
              </property>
              <property name="icon">
-              <iconset resource="../../icons/icons.qrc">
-               <normaloff>:/pause_16px.png</normaloff>:/pause_16px.png</iconset>
+              <iconset resource="layResources.qrc">
+               <normaloff>:/pause.png</normaloff>:/pause.png</iconset>
              </property>
              <property name="shortcut">
               <string>Ctrl+F5</string>
@@ -458,14 +482,17 @@
            <item>
             <widget class="QToolButton" name="breakpointButton">
              <property name="toolTip">
-              <string>Set breakpoint (F9)</string>
+              <string>&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal; text-decoration:none;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Set breakpoint (F9)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
              <property name="text">
               <string>...</string>
              </property>
              <property name="icon">
-              <iconset resource="../../icons/icons.qrc">
-               <normaloff>:/breakpoint_16px.png</normaloff>:/breakpoint_16px.png</iconset>
+              <iconset resource="layResources.qrc">
+               <normaloff>:/breakpoint.png</normaloff>:/breakpoint.png</iconset>
              </property>
              <property name="shortcut">
               <string>F9</string>
@@ -478,14 +505,17 @@
            <item>
             <widget class="QToolButton" name="clearBreakpointsButton">
              <property name="toolTip">
-              <string>Clear all breakpoints (Ctrl+Shift+F9)</string>
+              <string>&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal; text-decoration:none;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Clear all breakpoints (Ctrl+Shift+F9)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
              <property name="text">
               <string>...</string>
              </property>
              <property name="icon">
-              <iconset resource="../../icons/icons.qrc">
-               <normaloff>:/clearbreakpoints_16px.png</normaloff>:/clearbreakpoints_16px.png</iconset>
+              <iconset resource="layResources.qrc">
+               <normaloff>:/clearbreakpoints.png</normaloff>:/clearbreakpoints.png</iconset>
              </property>
              <property name="shortcut">
               <string>Ctrl+Shift+F9</string>
@@ -505,14 +535,17 @@
            <item>
             <widget class="QToolButton" name="singleStepButton">
              <property name="toolTip">
-              <string>Step into procedure (F11)</string>
+              <string>&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal; text-decoration:none;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Step into procedure (F11)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
              <property name="text">
               <string>S</string>
              </property>
              <property name="icon">
-              <iconset resource="../../icons/icons.qrc">
-               <normaloff>:/singlestep_16px.png</normaloff>:/singlestep_16px.png</iconset>
+              <iconset resource="layResources.qrc">
+               <normaloff>:/singlestep.png</normaloff>:/singlestep.png</iconset>
              </property>
              <property name="shortcut">
               <string>F11</string>
@@ -525,14 +558,17 @@
            <item>
             <widget class="QToolButton" name="nextStepButton">
              <property name="toolTip">
-              <string>Step over procedure or block (F10)</string>
+              <string>&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal; text-decoration:none;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Step over procedure or block (F10)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
              <property name="text">
               <string>N</string>
              </property>
              <property name="icon">
-              <iconset resource="../../icons/icons.qrc">
-               <normaloff>:/nextstep_16px.png</normaloff>:/nextstep_16px.png</iconset>
+              <iconset resource="layResources.qrc">
+               <normaloff>:/nextstep.png</normaloff>:/nextstep.png</iconset>
              </property>
              <property name="shortcut">
               <string>F10</string>
@@ -552,14 +588,17 @@
            <item>
             <widget class="QToolButton" name="dbgOn">
              <property name="toolTip">
-              <string>Enable or disable debugging</string>
+              <string>&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal; text-decoration:none;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Enable or disable debugging&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
              <property name="text">
               <string>DBG</string>
              </property>
              <property name="icon">
-              <iconset resource="../../icons/icons.qrc">
-               <normaloff>:/debug_16px.png</normaloff>:/debug_16px.png</iconset>
+              <iconset resource="layResources.qrc">
+               <normaloff>:/debug.png</normaloff>:/debug.png</iconset>
              </property>
              <property name="checkable">
               <bool>true</bool>
@@ -579,14 +618,17 @@
            <item>
             <widget class="QToolButton" name="propertiesButton">
              <property name="toolTip">
-              <string>Edit properties of macro</string>
+              <string>&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal; text-decoration:none;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Edit properties of macro&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
              <property name="text">
               <string>P</string>
              </property>
              <property name="icon">
-              <iconset resource="../../icons/icons.qrc">
-               <normaloff>:/properties_16px.png</normaloff>:/properties_16px.png</iconset>
+              <iconset resource="layResources.qrc">
+               <normaloff>:/properties.png</normaloff>:/properties.png</iconset>
              </property>
              <property name="autoRaise">
               <bool>true</bool>
@@ -596,14 +638,17 @@
            <item>
             <widget class="QToolButton" name="setupButton">
              <property name="toolTip">
-              <string>Setup colors, formats, debugger</string>
+              <string>&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal; text-decoration:none;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Setup colors, formats, debugger&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
              <property name="text">
               <string>prop</string>
              </property>
              <property name="icon">
-              <iconset resource="../../icons/icons.qrc">
-               <normaloff>:/setup_16px.png</normaloff>:/setup_16px.png</iconset>
+              <iconset resource="layResources.qrc">
+               <normaloff>:/setup.png</normaloff>:/setup.png</iconset>
              </property>
              <property name="autoRaise">
               <bool>true</bool>
@@ -618,52 +663,31 @@
              <property name="sizeHint" stdset="0">
               <size>
                <width>40</width>
-               <height>16</height>
+               <height>20</height>
               </size>
              </property>
             </spacer>
            </item>
            <item>
-            <widget class="lay::DecoratedLineEdit" name="searchEditBox">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Expanding" vsizetype="Ignored">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-            </widget>
+            <widget class="lay::DecoratedLineEdit" name="searchEditBox"/>
            </item>
            <item>
             <widget class="QToolButton" name="findNextButton">
              <property name="toolTip">
-              <string>Find next (Ctrl+F)</string>
+              <string>&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal; text-decoration:none;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Find next&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
              <property name="text">
               <string>N</string>
              </property>
              <property name="icon">
-              <iconset resource="../../icons/icons.qrc">
-               <normaloff>:/find_next_16px.png</normaloff>:/find_next_16px.png</iconset>
+              <iconset resource="layResources.qrc">
+               <normaloff>:/find.png</normaloff>:/find.png</iconset>
              </property>
              <property name="shortcut">
-              <string>Ctrl+F</string>
-             </property>
-             <property name="autoRaise">
-              <bool>true</bool>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QToolButton" name="findPrevButton">
-             <property name="text">
-              <string>...</string>
-             </property>
-             <property name="icon">
-              <iconset resource="../../icons/icons.qrc">
-               <normaloff>:/find_prev_16px.png</normaloff>:/find_prev_16px.png</iconset>
-             </property>
-             <property name="shortcut">
-              <string>Ctrl+Shift+F</string>
+              <string>F3</string>
              </property>
              <property name="autoRaise">
               <bool>true</bool>
@@ -685,7 +709,10 @@
               </size>
              </property>
              <property name="toolTip">
-              <string>Show replace mode</string>
+              <string>&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal; text-decoration:none;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Show replace mode&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
              <property name="text">
               <string>...</string>
@@ -732,29 +759,25 @@
                <number>0</number>
               </property>
               <item>
-               <widget class="lay::DecoratedLineEdit" name="replaceText">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Expanding" vsizetype="Ignored">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-               </widget>
+               <widget class="lay::DecoratedLineEdit" name="replaceText"/>
               </item>
               <item>
                <widget class="QToolButton" name="replaceNextButton">
                 <property name="toolTip">
-                 <string>Replace and find next (Ctrl+R)</string>
+                 <string>&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal; text-decoration:none;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Replace and find next&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                 </property>
                 <property name="text">
                  <string>RN</string>
                 </property>
                 <property name="icon">
-                 <iconset resource="../../icons/icons.qrc">
-                  <normaloff>:/replace_16px.png</normaloff>:/replace_16px.png</iconset>
+                 <iconset resource="layResources.qrc">
+                  <normaloff>:/replace.png</normaloff>:/replace.png</iconset>
                 </property>
                 <property name="shortcut">
-                 <string>Ctrl+R</string>
+                 <string/>
                 </property>
                 <property name="autoRaise">
                  <bool>true</bool>
@@ -764,17 +787,17 @@
               <item>
                <widget class="QToolButton" name="replaceAllButton">
                 <property name="toolTip">
-                 <string>Replace all (Ctrl+Shift+R)</string>
+                 <string>&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal; text-decoration:none;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Replace all&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                 </property>
                 <property name="text">
                  <string>All</string>
                 </property>
                 <property name="icon">
-                 <iconset resource="../../icons/icons.qrc">
-                  <normaloff>:/replace_all_16px.png</normaloff>:/replace_all_16px.png</iconset>
-                </property>
-                <property name="shortcut">
-                 <string>Ctrl+Shift+R</string>
+                 <iconset resource="layResources.qrc">
+                  <normaloff>:/replace_all.png</normaloff>:/replace_all.png</iconset>
                 </property>
                 <property name="autoRaise">
                  <bool>true</bool>
@@ -797,8 +820,8 @@
               <string>Help</string>
              </property>
              <property name="icon">
-              <iconset resource="../../icons/icons.qrc">
-               <normaloff>:/help_16px.png</normaloff>:/help_16px.png</iconset>
+              <iconset resource="layResources.qrc">
+               <normaloff>:/help.png</normaloff>:/help.png</iconset>
              </property>
              <property name="shortcut">
               <string/>
@@ -1327,7 +1350,12 @@
         </spacer>
        </item>
        <item>
-        <widget class="QFrame" name="console_text_frame">
+        <widget class="QFrame" name="consoleTextFrame">
+         <property name="font">
+          <font>
+           <family>Monospace</family>
+          </font>
+         </property>
          <property name="frameShape">
           <enum>QFrame::NoFrame</enum>
          </property>
@@ -1338,6 +1366,11 @@
        </item>
        <item>
         <widget class="QComboBox" name="input_field">
+         <property name="font">
+          <font>
+           <family>Monospace</family>
+          </font>
+         </property>
          <property name="editable">
           <bool>true</bool>
          </property>
@@ -1350,11 +1383,68 @@
      </widget>
     </widget>
    </item>
+   <item>
+    <widget class="Line" name="line">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QFrame" name="frame_5">
+     <property name="frameShape">
+      <enum>QFrame::NoFrame</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Raised</enum>
+     </property>
+     <layout class="QHBoxLayout">
+      <property name="spacing">
+       <number>6</number>
+      </property>
+      <property name="leftMargin">
+       <number>0</number>
+      </property>
+      <property name="topMargin">
+       <number>0</number>
+      </property>
+      <property name="rightMargin">
+       <number>0</number>
+      </property>
+      <property name="bottomMargin">
+       <number>0</number>
+      </property>
+      <item>
+       <spacer>
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QPushButton" name="pushButton">
+        <property name="text">
+         <string>Close</string>
+        </property>
+        <property name="autoDefault">
+         <bool>false</bool>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
   </layout>
   <action name="actionNewFolder">
    <property name="icon">
-    <iconset resource="../../icons/icons.qrc">
-     <normaloff>:/new_folder_16px.png</normaloff>:/new_folder_16px.png</iconset>
+    <iconset resource="layResources.qrc">
+     <normaloff>:/new_folder.png</normaloff>:/new_folder.png</iconset>
    </property>
    <property name="text">
     <string>New Folder</string>
@@ -1362,8 +1452,8 @@
   </action>
   <action name="actionAddMacro">
    <property name="icon">
-    <iconset resource="../../icons/icons.qrc">
-     <normaloff>:/add_16px.png</normaloff>:/add_16px.png</iconset>
+    <iconset resource="layResources.qrc">
+     <normaloff>:/add.png</normaloff>:/add.png</iconset>
    </property>
    <property name="text">
     <string>New</string>
@@ -1371,8 +1461,8 @@
   </action>
   <action name="actionDelete">
    <property name="icon">
-    <iconset resource="../../icons/icons.qrc">
-     <normaloff>:/clear_16px.png</normaloff>:/clear_16px.png</iconset>
+    <iconset resource="layResources.qrc">
+     <normaloff>:/clear.png</normaloff>:/clear.png</iconset>
    </property>
    <property name="text">
     <string>Delete</string>
@@ -1380,8 +1470,8 @@
   </action>
   <action name="actionRename">
    <property name="icon">
-    <iconset resource="../../icons/icons.qrc">
-     <normaloff>:/rename_16px.png</normaloff>:/rename_16px.png</iconset>
+    <iconset resource="layResources.qrc">
+     <normaloff>:/rename.png</normaloff>:/rename.png</iconset>
    </property>
    <property name="text">
     <string>Rename</string>
@@ -1389,8 +1479,8 @@
   </action>
   <action name="actionImport">
    <property name="icon">
-    <iconset resource="../../icons/icons.qrc">
-     <normaloff>:/import_16px.png</normaloff>:/import_16px.png</iconset>
+    <iconset resource="layResources.qrc">
+     <normaloff>:/import.png</normaloff>:/import.png</iconset>
    </property>
    <property name="text">
     <string>Import</string>
@@ -1398,8 +1488,8 @@
   </action>
   <action name="actionSaveAll">
    <property name="icon">
-    <iconset resource="../../icons/icons.qrc">
-     <normaloff>:/save_all_16px.png</normaloff>:/save_all_16px.png</iconset>
+    <iconset resource="layResources.qrc">
+     <normaloff>:/save_all.png</normaloff>:/save_all.png</iconset>
    </property>
    <property name="text">
     <string>Save All</string>
@@ -1407,8 +1497,8 @@
   </action>
   <action name="actionSave">
    <property name="icon">
-    <iconset resource="../../icons/icons.qrc">
-     <normaloff>:/save_16px.png</normaloff>:/save_16px.png</iconset>
+    <iconset resource="layResources.qrc">
+     <normaloff>:/save.png</normaloff>:/save.png</iconset>
    </property>
    <property name="text">
     <string>Save</string>
@@ -1474,12 +1564,12 @@
     <string>Case Sensitive</string>
    </property>
   </action>
-  <action name="actionSaveAs">
+  <action name="actionSearchReplace">
    <property name="text">
-    <string>Save As</string>
+    <string>Search &amp; Replace</string>
    </property>
-   <property name="toolTip">
-    <string>Save As</string>
+   <property name="shortcut">
+    <string>Ctrl+F</string>
    </property>
   </action>
  </widget>
@@ -1496,7 +1586,24 @@
   </customwidget>
  </customwidgets>
  <resources>
-  <include location="../../icons/icons.qrc"/>
+  <include location="layResources.qrc"/>
  </resources>
- <connections/>
+ <connections>
+  <connection>
+   <sender>pushButton</sender>
+   <signal>clicked()</signal>
+   <receiver>MacroEditorDialog</receiver>
+   <slot>accept()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>905</x>
+     <y>694</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>929</x>
+     <y>696</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
 </ui>

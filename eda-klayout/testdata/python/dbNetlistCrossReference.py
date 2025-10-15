@@ -2,7 +2,7 @@
 # encoding: UTF-8
 
 # KLayout Layout Viewer
-# Copyright (C) 2006-2025 Matthias Koefferlein
+# Copyright (C) 2006-2019 Matthias Koefferlein
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@ import unittest
 import sys
 import os
 
-class DBNetlistCrossReferenceTests(unittest.TestCase):
+class DBLayoutToNetlistTests(unittest.TestCase):
 
   def test_1_Basic(self):
 
@@ -179,7 +179,7 @@ class DBNetlistCrossReferenceTests(unittest.TestCase):
 
 # run unit tests
 if __name__ == '__main__':
-  suite = unittest.TestLoader().loadTestsFromTestCase(DBNetlistCrossReferenceTests)
+  suite = unittest.TestLoader().loadTestsFromTestCase(DBLayoutToNetlistTests)
 
   if not unittest.TextTestRunner(verbosity = 1).run(suite).wasSuccessful():
     sys.exit(1)

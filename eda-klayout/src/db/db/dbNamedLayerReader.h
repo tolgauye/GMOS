@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -54,7 +54,6 @@ public:
    */
   NamedLayerReader ();
 
-protected:
   /**
    *  @brief Sets a value indicating whether to create new layers
    */
@@ -74,19 +73,11 @@ protected:
   void set_layer_map (const LayerMap &lm);
 
   /**
-   *  @brief Gets the input layer map
+   *  @brief Gets the layer map
    */
   const LayerMap &layer_map ()
   {
     return m_layer_map;
-  }
-
-  /**
-   *  @brief Gets the layer map
-   */
-  const LayerMap &layer_map_out ()
-  {
-    return m_layer_map_out;
   }
 
   /**
@@ -105,6 +96,7 @@ protected:
     return m_keep_layer_names;
   }
 
+protected:
   /**
    *  @brief Opens a new layer
    *  This method will create or locate a layer for a given name.
@@ -112,14 +104,6 @@ protected:
    *  or created. In this case, the second attribute is the layer index.
    */
   std::pair <bool, unsigned int> open_layer (db::Layout &layout, const std::string &name);
-
-  /**
-   *  @brief Opens a new layer
-   *  This method will create or locate a layer for a given name.
-   *  The result's first attribute is true, if such a layer could be found
-   *  or created. In this case, the second attribute is the layer index.
-   */
-  std::pair <bool, unsigned int> open_layer (db::Layout &layout, const std::string &name, bool keep_layer_name, bool create_layer);
 
   /**
    *  @brief Force mapping of a name to a layer index
@@ -137,7 +121,7 @@ protected:
    *  @brief Prepares reading
    *  This method must be called before the reading is done.
    */
-  void prepare_layers (db::Layout &layout);
+  void prepare_layers ();
 
 private:
   bool m_create_layers;
@@ -145,11 +129,6 @@ private:
   LayerMap m_layer_map;
   unsigned int m_next_layer_index;
   std::map <std::string, unsigned int> m_new_layers;
-  db::LayerMap m_layer_map_out;
-  std::map<std::string, std::pair <bool, unsigned int> > m_layer_cache;
-  std::map<std::set<unsigned int>, unsigned int> m_multi_mapping_placeholders;
-
-  std::pair <bool, unsigned int> open_layer_uncached (db::Layout &layout, const std::string &name, bool keep_layer_name, bool create_layer);
 };
 
 }

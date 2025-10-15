@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -41,7 +41,6 @@
 #include "tlAssert.h"
 
 #include <cstddef>
-#include <cmath>
 #include <string>
 #include <vector>
 #include <iterator>
@@ -744,29 +743,7 @@ public:
     return true;
   }
   
-  /**
-   *  @brief returns true if the contour is a half-manhattan contour (multiples of 45 degree)
-   */
-  bool is_halfmanhattan () const
-  {
-    if (((size_t) mp_points & 1) != 0) {
-      return true;
-    }
-    if (m_size < 2) {
-      return false;
-    }
-    point_type pl = mp_points [m_size - 1];
-    for (size_t i = 0; i < m_size; ++i) {
-      point_type p = mp_points [i];
-      if (! coord_traits::equals (p.x (), pl.x ()) && ! coord_traits::equals (p.y (), pl.y ()) && ! coord_traits::equals (std::abs (p.x () - pl.x ()), std::abs (p.y () - pl.y ()))) {
-        return false;
-      }
-      pl = p;
-    }
-    return true;
-  }
-
-  /**
+  /** 
    *  @brief Returns true if the contour is a hole
    *
    *  Since this method employs the orientation property the results are only valid for
@@ -783,14 +760,6 @@ public:
   area_type area () const 
   {
     return area2 () / 2;
-  }
-
-  /**
-   *  @brief The upper bound area for a manhattan approximation of the contour times
-   */
-  area_type area_upper_manhattan_bound () const
-  {
-    return area_upper_manhattan_bound2 () / 2;
   }
 
   /**
@@ -811,52 +780,6 @@ public:
       point_type pp = (*this) [p];
       a += db::vprod (pp - point_type (), pl - point_type ());
       pl = pp;
-    }
-    return a;
-  }
-
-  /**
-   *  @brief The upper bound area for a manhattan approximation of the contour times 2
-   *  This area takes non-manhattan edges as being manhattan-interpolated to the outside.
-   */
-  area_type area_upper_manhattan_bound2 () const
-  {
-    size_type n = size ();
-    if (n < 3) {
-      return 0;
-    }
-
-    area_type a = 0;
-    point_type pl = (*this) [n - 1];
-    for (size_type p = 0; p < n; ++p) {
-
-      point_type pp = (*this) [p];
-
-      int sdx = pp.x () < pl.x () ? -1 : (pp.x () == pl.x () ? 0 : 1);
-      int sdy = pp.y () < pl.y () ? -1 : (pp.y () == pl.y () ? 0 : 1);
-
-      if (sdx != 0 && sdy != 0) {
-
-        point_type pm;
-
-        //  determine an interpolation point
-        if (sdx * sdy < 0) {
-          pm = point_type (pp.x (), pl.y ());
-        } else {
-          pm = point_type (pl.x (), pp.y ());
-        }
-
-        a += db::vprod (pm - point_type (), pl - point_type ());
-        a += db::vprod (pp - point_type (), pm - point_type ());
-
-      } else {
-
-        a += db::vprod (pp - point_type (), pl - point_type ());
-
-      }
-
-      pl = pp;
-
     }
     return a;
   }
@@ -913,7 +836,7 @@ public:
    *  May create invalid (self-overlapping, reverse oriented) contours. 
    *  The sign of dx and dy should be identical.
    *
-   *  The mode defines at which bending angle cutoff occurs
+   *  The mode defines at which bending angle cutoff occures
    *    0: >0
    *    1: >45
    *    2: >90
@@ -1098,19 +1021,24 @@ private:
   }
 };
 
-} // namespace db
-
-namespace std
-{
-
-//  injecting a global std::swap for polygons into the
-//  std namespace
-template <class C>
-void swap (db::polygon_contour<C> &a, db::polygon_contour<C> &b)
-{
-  a.swap (b);
 }
 
+namespace tl
+{
+  /**
+   *  @brief The type traits for the contour type
+   */
+  template <class C>
+  struct type_traits <db::polygon_contour<C> > : public type_traits<void>
+  {
+    //  the contour just uses one pointer, hence the relocation requirements are simple
+    typedef typename tl::trivial_relocate_required relocate_requirements;
+    typedef true_tag has_efficient_swap;
+    typedef false_tag supports_extractor;
+    typedef false_tag supports_to_string;
+    typedef true_tag has_less_operator;
+    typedef true_tag has_equal_operator;
+  };
 }
 
 namespace db
@@ -1487,6 +1415,7 @@ public:
   typedef typename coord_traits::area_type area_type; 
   typedef polygon_contour<C> contour_type;
   typedef tl::vector<contour_type> contour_list_type;
+  typedef typename tl::type_traits<contour_list_type>::relocate_requirements relocate_requirements;
   typedef db::polygon_edge_iterator< polygon<C>, db::unit_trans<C> > polygon_edge_iterator;
   typedef db::polygon_contour_iterator< contour_type, db::unit_trans<C> > polygon_contour_iterator;
   typedef db::object_tag< polygon<C> > tag;
@@ -1512,17 +1441,16 @@ public:
    *  @param tr The transformation to apply on assignment
    *  @param compress True, if the contours shall be compressed
    *  @param remove_reflected True, if reflecting spikes shall be removed on compression
-   *  @param normalize If true, the orientation is normalized
    */
   template <class D, class T>
-  polygon (const db::polygon<D> &p, const T &tr, bool compress = default_compression<C> (), bool remove_reflected = false, bool normalize = true)
+  polygon (const db::polygon<D> &p, const T &tr, bool compress = default_compression<C> (), bool remove_reflected = false)
   {
     //  create an entry for the hull contour
     m_bbox = box_type (tr (p.box ().p1 ()), tr (p.box ().p2 ()));
     m_ctrs.resize (p.holes () + 1);
-    m_ctrs [0].assign (p.begin_hull (), p.end_hull (), tr, false, compress, normalize, remove_reflected);
+    m_ctrs [0].assign (p.begin_hull (), p.end_hull (), tr, false, compress, true /*normalize*/, remove_reflected);
     for (unsigned int i = 0; i < m_ctrs.size () - 1; ++i) {
-      m_ctrs [i + 1].assign (p.begin_hole (i), p.end_hole (i), tr, true, compress, normalize, remove_reflected);
+      m_ctrs [i + 1].assign (p.begin_hole (i), p.end_hole (i), tr, true, compress, true /*normalize*/, remove_reflected);
     }
   }
 
@@ -1534,16 +1462,16 @@ public:
    *  @param remove_reflected True, if reflecting spikes shall be removed on compression
    */
   template <class D>
-  explicit polygon (const db::polygon<D> &p, bool compress = default_compression<C> (), bool remove_reflected = false, bool normalize = true)
+  explicit polygon (const db::polygon<D> &p, bool compress = default_compression<C> (), bool remove_reflected = false)
   {
     db::point_coord_converter<C, D> tr;
 
     //  create an entry for the hull contour
     m_bbox = box_type (tr (p.box ().p1 ()), tr (p.box ().p2 ()));
     m_ctrs.resize (p.holes () + 1);
-    m_ctrs [0].assign (p.begin_hull (), p.end_hull (), tr, false, compress, normalize, remove_reflected);
+    m_ctrs [0].assign (p.begin_hull (), p.end_hull (), tr, false, compress, true /*normalize*/, remove_reflected);
     for (unsigned int i = 0; i < m_ctrs.size () - 1; ++i) {
-      m_ctrs [i + 1].assign (p.begin_hole (i), p.end_hole (i), tr, true, compress, normalize, remove_reflected);
+      m_ctrs [i + 1].assign (p.begin_hole (i), p.end_hole (i), tr, true, compress, true /*normalize*/, remove_reflected);
     }
   }
 
@@ -1723,22 +1651,6 @@ public:
   }
 
   /**
-   *  @brief Compatibility with polygon_ref
-   */
-  polygon<C> instantiate () const
-  {
-    return *this;
-  }
-
-  /**
-   *  @brief Compatibility with polygon_ref
-   */
-  void instantiate (polygon<C> &poly) const
-  {
-    poly = *this;
-  }
-
-  /**
    *  @brief Returns true, if the polygon is a simple box
    */
   bool is_box () const
@@ -1757,27 +1669,6 @@ public:
       }
     }
     return true;
-  }
-
-  /**
-   *  @brief Returns true, if the polygon is halfmanhattan
-   */
-  bool is_halfmanhattan () const
-  {
-    for (size_t i = 0; i < m_ctrs.size (); ++i) {
-      if (! m_ctrs [i].is_halfmanhattan ()) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  /**
-   *  @brief Returns a value indicating that the polygon is an empty one
-   */
-  bool is_empty () const
-  {
-    return m_ctrs.size () == size_t (1) && m_ctrs[0].size () == 0;
   }
 
   /**
@@ -1802,26 +1693,6 @@ public:
   double area_ratio () const
   {
     area_type a = area2 ();
-    if (a == 0) {
-      //  By our definition, an empty polygon has an area ratio of 0
-      return 0.0;
-    } else {
-      return double (box ().area ()) / (0.5 * a);
-    }
-  }
-
-  /**
-   *  @brief Returns the area ratio between the polygon's bounding box and upper manhattan approximation bound
-   *
-   *  This number is a measure how well the polygon is approximated by the bounding box,
-   *  while assuming an outer manhattan approximation is a good measure for the polygon's
-   *  area.
-   *  Values are bigger than 1 for well-formed polygons. Bigger values mean worse
-   *  approximation.
-   */
-  double area_upper_manhattan_bound_ratio () const
-  {
-    area_type a = this->area_upper_manhattan_bound2 ();
     if (a == 0) {
       //  By our definition, an empty polygon has an area ratio of 0
       return 0.0;
@@ -1888,7 +1759,6 @@ public:
     for (typename contour_list_type::iterator h = m_ctrs.begin (); h != m_ctrs.end (); ++h) {
       h->transform (db::unit_trans<C> (), true /*compress*/, remove_reflected);
     }
-    m_bbox = m_ctrs [0].bbox ();
     return *this;
   }
 
@@ -1938,7 +1808,7 @@ public:
    *  @return The transformed polygon.
    */
   template <class Tr>
-  polygon<typename Tr::target_coord_type> transformed_ext (const Tr &t, bool compress = default_compression<typename Tr::target_coord_type> (), bool remove_reflected = false) const
+  polygon<typename Tr::target_coord_type> transformed (const Tr &t, bool compress = default_compression<typename Tr::target_coord_type> (), bool remove_reflected = false) const
   {
     typedef typename Tr::target_coord_type target_coord_type;
     polygon<target_coord_type> poly;
@@ -1950,32 +1820,6 @@ public:
     }
 
     return poly;
-  }
-
-  /**
-   *  @brief Transform the polygon.
-   *
-   *  Transforms the polygon with the given transformation.
-   *  Does not modify the polygon but returns the transformed polygon.
-   *
-   *  @param t The transformation to apply.
-   *
-   *  @return The transformed polygon.
-   */
-  template <class Tr>
-  polygon<typename Tr::target_coord_type> transformed (const Tr &t) const
-  {
-    return this->transformed_ext<Tr> (t);
-  }
-
-  /**
-   *  @brief Returns the scaled polygon
-   */
-  db::polygon<db::DCoord>
-  scaled (double s) const
-  {
-    db::complex_trans<C, db::DCoord> ct (s);
-    return this->transformed (ct);
   }
 
   /**
@@ -2073,12 +1917,11 @@ public:
    *  @param end The end of the sequence of points for the contour
    *  @param compress true, if the sequence shall be compressed (colinear points removed)
    *  @param remove_reflected True, if reflecting spikes shall be removed on compression
-   *  @param normalize If true, the orientation is normalized
    */
   template <class I> 
-  void assign_hull (I start, I end, bool compress = default_compression<C> (), bool remove_reflected = false, bool normalize = true)
+  void assign_hull (I start, I end, bool compress = default_compression<C> (), bool remove_reflected = false) 
   {
-    m_ctrs [0].assign (start, end, false, compress, normalize, remove_reflected);
+    m_ctrs [0].assign (start, end, false, compress, true /*normalize*/, remove_reflected);
     m_bbox = m_ctrs [0].bbox ();
   }
 
@@ -2091,15 +1934,14 @@ public:
    *  so it is oriented properly.
    *  @param compress true, if the sequence shall be compressed (colinear points removed)
    *  @param remove_reflected True, if reflecting spikes shall be removed on compression
-   *  @param normalize If true, the orientation is normalized
    *
    *  @param start The start of the sequence of points for the contour
    *  @param end The end of the sequence of points for the contour
    */
   template <class I, class T> 
-  void assign_hull (I start, I end, T op, bool compress = default_compression<C> (), bool remove_reflected = false, bool normalize = true)
+  void assign_hull (I start, I end, T op, bool compress = default_compression<C> (), bool remove_reflected = false) 
   {
-    m_ctrs [0].assign (start, end, op, false, compress, normalize, remove_reflected);
+    m_ctrs [0].assign (start, end, op, false, compress, true /*normalize*/, remove_reflected);
     m_bbox = m_ctrs [0].bbox ();
   }
 
@@ -2131,12 +1973,11 @@ public:
    *  @param end The end of the sequence of points for the contour
    *  @param compress true, if the sequence shall be compressed (colinear points removed)
    *  @param remove_reflected True, if reflecting spikes shall be removed on compression
-   *  @param normalize If true, the orientation is normalized
    */
   template <class I> 
-  void assign_hole (unsigned int h, I start, I end, bool compress = default_compression<C> (), bool remove_reflected = false, bool normalize = true)
+  void assign_hole (unsigned int h, I start, I end, bool compress = default_compression<C> (), bool remove_reflected = false) 
   {
-    m_ctrs [h + 1].assign (start, end, true, compress, normalize, remove_reflected);
+    m_ctrs [h + 1].assign (start, end, true, compress, true /*normalize*/, remove_reflected);
   }
 
   /** 
@@ -2148,15 +1989,14 @@ public:
    *  so it is oriented properly.
    *  @param compress true, if the sequence shall be compressed (colinear points removed)
    *  @param remove_reflected True, if reflecting spikes shall be removed on compression
-   *  @param normalize If true, the orientation is normalized
    *
    *  @param start The start of the sequence of points for the contour
    *  @param end The end of the sequence of points for the contour
    */
   template <class I, class T> 
-  void assign_hole (unsigned int h, I start, I end, T op, bool compress = default_compression<C> (), bool remove_reflected = false, bool normalize = true)
+  void assign_hole (unsigned int h, I start, I end, T op, bool compress = default_compression<C> (), bool remove_reflected = false) 
   {
-    m_ctrs [h + 1].assign (start, end, op, true, compress, normalize, remove_reflected);
+    m_ctrs [h + 1].assign (start, end, op, true, compress, true /*normalize*/, remove_reflected);
   }
 
   /** 
@@ -2188,12 +2028,11 @@ public:
    *  @param end The end of the sequence of points for the contour
    *  @param compress true, if the sequence shall be compressed (colinear points removed)
    *  @param remove_reflected True, if reflecting spikes shall be removed on compression
-   *  @param normalize If true, the orientation is normalized
    */
   template <class I> 
-  void insert_hole (I start, I end, bool compress = default_compression<C> (), bool remove_reflected = false, bool normalize = true)
+  void insert_hole (I start, I end, bool compress = default_compression<C> (), bool remove_reflected = false) 
   {
-    insert_hole (start, end, db::unit_trans<C> (), compress, remove_reflected, normalize);
+    insert_hole (start, end, db::unit_trans<C> (), compress, remove_reflected);
   }
 
   /** 
@@ -2210,25 +2049,28 @@ public:
    *  @param end The end of the sequence of points for the contour
    *  @param compress true, if the sequence shall be compressed (colinear points removed)
    *  @param remove_reflected True, if reflecting spikes shall be removed on compression
-   *  @param normalize If true, the orientation is normalized
    */
   template <class I, class T> 
-  void insert_hole (I start, I end, T op, bool compress = default_compression<C> (), bool remove_reflected = false, bool normalize = true)
+  void insert_hole (I start, I end, T op, bool compress = default_compression<C> (), bool remove_reflected = false) 
   {
     //  add the hole
     contour_type &h = add_hole ();
-    h.assign (start, end, op, true, compress, normalize, remove_reflected);
-  }
+    h.assign (start, end, op, true, compress, true /*normalize*/, remove_reflected);
 
-  /**
-   *  @brief Sort the holes
-   *
-   *  Sorting the holes makes certain algorithms more effective.
-   */
-  void sort_holes ()
-  {
-    if (! m_ctrs.empty ()) {
-      std::sort (m_ctrs.begin () + 1, m_ctrs.end ());
+    //  and keep the list sorted by swapping the 
+    //  elements and move the last one to the right 
+    //  position
+    //  KLUDGE: this is probably a performance bottleneck from applications
+    //  with polygons with may holes ..
+    if (holes () > 1) {
+      typename contour_list_type::iterator ins_pos = std::lower_bound (m_ctrs.begin () + 1, m_ctrs.end () - 1, h);
+      typename contour_list_type::iterator p = m_ctrs.end () - 1;
+      if (ins_pos != p) {
+        while (p != ins_pos) {
+          p->swap (p [-1]);
+          --p;
+        }
+      }
     }
   }
 
@@ -2300,26 +2142,11 @@ public:
   /** 
    *  @brief The area of the polygon
    */
-  area_type area () const
+  area_type area () const 
   {
     area_type a = 0;
     for (typename contour_list_type::const_iterator h = m_ctrs.begin (); h != m_ctrs.end (); ++h) {
       a += h->area ();
-    }
-    return a;
-  }
-
-  /**
-   *  @brief The area of the polygon - upper manhattan bound
-   *
-   *  This gives the upper area bound for a manhattan approximation of the
-   *  polygon.
-   */
-  area_type area_upper_manhattan_bound () const
-  {
-    area_type a = 0;
-    for (typename contour_list_type::const_iterator h = m_ctrs.begin (); h != m_ctrs.end (); ++h) {
-      a += h->area_upper_manhattan_bound ();
     }
     return a;
   }
@@ -2334,21 +2161,6 @@ public:
     area_type a = 0;
     for (typename contour_list_type::const_iterator h = m_ctrs.begin (); h != m_ctrs.end (); ++h) {
       a += h->area2 ();
-    }
-    return a;
-  }
-
-  /**
-   *  @brief The area of the polygon - upper manhattan bound times 2
-   *
-   *  This gives the upper area bound for a manhattan approximation of the
-   *  polygon.
-   */
-  area_type area_upper_manhattan_bound2 () const
-  {
-    area_type a = 0;
-    for (typename contour_list_type::const_iterator h = m_ctrs.begin (); h != m_ctrs.end (); ++h) {
-      a += h->area_upper_manhattan_bound2 ();
     }
     return a;
   }
@@ -2484,7 +2296,7 @@ public:
    *  algorithm using a merge step. 
    *  The sign of dx and dy should be identical.
    *
-   *  The mode defines at which bending angle cutoff occurs
+   *  The mode defines at which bending angle cutoff occures
    *    0: >0
    *    1: >45
    *    2: >90
@@ -2592,6 +2404,7 @@ public:
   typedef typename coord_traits::area_type area_type; 
   typedef polygon_contour<C> contour_type;
   typedef tl::vector<contour_type> contour_list_type;
+  typedef typename tl::type_traits<contour_type>::relocate_requirements relocate_requirements;
   typedef db::polygon_edge_iterator< simple_polygon<C>, db::unit_trans<C> > polygon_edge_iterator;
   typedef db::polygon_contour_iterator< contour_type, db::unit_trans<C> > polygon_contour_iterator;
   typedef db::object_tag< simple_polygon<C> > tag;
@@ -2644,14 +2457,13 @@ public:
    *  @param tr The transformation to apply
    *  @param compress true, if the sequence shall be compressed (colinear points removed)
    *  @param remove_reflected True, if reflecting spikes shall be removed on compression
-   *  @param normalize If true, the orientation is normalized
    */
   template <class D, class T>
-  simple_polygon (const db::simple_polygon<D> &p, const T &tr, bool compress = default_compression<C> (), bool remove_reflected = false, bool normalize = true)
+  simple_polygon (const db::simple_polygon<D> &p, const T &tr, bool compress = default_compression<C> (), bool remove_reflected = false)
   {
     //  create an entry for the hull contour
     m_bbox = box_type (tr (p.box ().p1 ()), tr (p.box ().p2 ()));
-    m_hull.assign (p.begin_hull (), p.end_hull (), tr, false, compress, normalize, remove_reflected);
+    m_hull.assign (p.begin_hull (), p.end_hull (), tr, false, compress, true /*normalize*/, remove_reflected);
   }
 
   /**
@@ -2660,32 +2472,15 @@ public:
    *  @param p The source polygon
    *  @param compress true, if the sequence shall be compressed (colinear points removed)
    *  @param remove_reflected True, if reflecting spikes shall be removed on compression
-   *  @param normalize If true, the orientation is normalized
    */
   template <class D>
-  explicit simple_polygon (const db::simple_polygon<D> &p, bool compress = default_compression<C> (), bool remove_reflected = false, bool normalize = true)
+  explicit simple_polygon (const db::simple_polygon<D> &p, bool compress = default_compression<C> (), bool remove_reflected = false)
   {
     db::point_coord_converter<C, D> tr;
 
     //  create an entry for the hull contour
     m_bbox = box_type (tr (p.box ().p1 ()), tr (p.box ().p2 ()));
-    m_hull.assign (p.begin_hull (), p.end_hull (), tr, false, compress, normalize, remove_reflected);
-  }
-
-  /**
-   *  @brief Compatibility with polygon_ref
-   */
-  simple_polygon<C> instantiate () const
-  {
-    return *this;
-  }
-
-  /**
-   *  @brief Compatibility with polygon_ref
-   */
-  void instantiate (simple_polygon<C> &poly) const
-  {
-    poly = *this;
+    m_hull.assign (p.begin_hull (), p.end_hull (), tr, false, compress, true /*normalize*/, remove_reflected);
   }
 
   /**
@@ -2822,7 +2617,6 @@ public:
   {
     //  compress the polygon by employing the transform method 
     m_hull.transform (db::unit_trans<C> (), true, remove_reflected);
-    m_bbox = m_hull.bbox ();
     return *this;
   }
 
@@ -2866,7 +2660,7 @@ public:
    *  @return The transformed polygon.
    */
   template <class Tr>
-  simple_polygon<typename Tr::target_coord_type> transformed_ext (const Tr &t, bool compress = default_compression<typename Tr::target_coord_type> (), bool remove_reflected = false) const
+  simple_polygon<typename Tr::target_coord_type> transformed (const Tr &t, bool compress = default_compression<typename Tr::target_coord_type> (), bool remove_reflected = false) const
   {
     typedef typename Tr::target_coord_type target_coord_type;
     simple_polygon<target_coord_type> poly;
@@ -2875,32 +2669,6 @@ public:
     poly.assign_hull (begin_hull (), end_hull (), t, compress, remove_reflected);
 
     return poly;
-  }
-
-  /**
-   *  @brief Transform the polygon.
-   *
-   *  Transforms the polygon with the given transformation.
-   *  Does not modify the polygon but returns the transformed polygon.
-   *
-   *  @param t The transformation to apply.
-   *
-   *  @return The transformed polygon.
-   */
-  template <class Tr>
-  simple_polygon<typename Tr::target_coord_type> transformed (const Tr &t) const
-  {
-    return this->transformed_ext<Tr> (t);
-  }
-
-  /**
-   *  @brief Returns the scaled polygon
-   */
-  db::simple_polygon<db::DCoord>
-  scaled (double s) const
-  {
-    db::complex_trans<C, db::DCoord> ct (s);
-    return this->transformed (ct);
   }
 
   /**
@@ -3001,12 +2769,11 @@ public:
    *  @param end The end of the sequence of points for the contour
    *  @param compress true, if the sequence shall be compressed (colinear segments joined)
    *  @param remove_reflected True, if reflecting spikes shall be removed on compression
-   *  @param normalize If true, the orientation is normalized
    */
   template <class I, class T> 
-  void assign_hull (I start, I end, T op, bool compress = default_compression<C> (), bool remove_reflected = false, bool normalize = true)
+  void assign_hull (I start, I end, T op, bool compress = default_compression<C> (), bool remove_reflected = false) 
   {
-    m_hull.assign (start, end, op, false, compress, normalize, remove_reflected);
+    m_hull.assign (start, end, op, false, compress, true /*normalize*/, remove_reflected);
     m_bbox = m_hull.bbox ();
   }
 
@@ -3032,22 +2799,6 @@ public:
   bool is_rectilinear () const
   {
     return m_hull.is_rectilinear ();
-  }
-
-  /**
-   *  @brief Returns true, if the polygon is halfmanhattan
-   */
-  bool is_halfmanhattan () const
-  {
-    return m_hull.is_halfmanhattan ();
-  }
-
-  /**
-   *  @brief Returns a value indicating that the polygon is an empty one
-   */
-  bool is_empty () const
-  {
-    return m_hull.size () == 0;
   }
 
   /**
@@ -3110,16 +2861,6 @@ public:
   }
 
   /**
-   *  @brief A dummy implementation of "sort_holes" provided for template instantiation
-   *
-   *  Asserts, if begin called.
-   */
-  void sort_holes ()
-  {
-    tl_assert (false);
-  }
-
-  /**
    *  @brief A dummy implementation of "hole" provided for template instantiation
    *
    *  Asserts, if begin called.
@@ -3151,17 +2892,6 @@ public:
   }
 
   /**
-   *  @brief The area of the polygon - upper manhattan bound
-   *
-   *  This gives the upper area bound for a manhattan approximation of the
-   *  polygon.
-   */
-  area_type area_upper_manhattan_bound () const
-  {
-    return m_hull.area_upper_manhattan_bound ();
-  }
-
-  /**
    *  @brief The area of the polygon times 2
    *  For integer area types, this is the more precise value as the division
    *  by 2 might round off.
@@ -3169,17 +2899,6 @@ public:
   area_type area2 () const
   {
     return m_hull.area2 ();
-  }
-
-  /**
-   *  @brief The area of the polygon - upper manhattan bound times 2
-   *
-   *  This gives the upper area bound for a manhattan approximation of the
-   *  polygon.
-   */
-  area_type area_upper_manhattan_bound2 () const
-  {
-    return m_hull.area_upper_manhattan_bound2 ();
   }
 
   /**
@@ -3307,26 +3026,6 @@ public:
     }
   }
 
-  /**
-   *  @brief Returns the area ratio between the polygon's bounding box and upper manhattan approximation bound
-   *
-   *  This number is a measure how well the polygon is approximated by the bounding box,
-   *  while assuming an outer manhattan approximation is a good measure for the polygon's
-   *  area.
-   *  Values are bigger than 1 for well-formed polygons. Bigger values mean worse
-   *  approximation.
-   */
-  double area_upper_manhattan_bound_ratio () const
-  {
-    area_type a = this->area_upper_manhattan_bound2 ();
-    if (a == 0) {
-      //  By our definition, an empty polygon has an area ratio of 0
-      return 0.0;
-    } else {
-      return double (box ().area ()) / (0.5 * a);
-    }
-  }
-
   void mem_stat (MemStatistics *stat, MemStatistics::purpose_t purpose, int cat, bool no_self = false, void *parent = 0) const
   {
     db::mem_stat (stat, purpose, cat, m_hull, no_self, parent);
@@ -3353,7 +3052,6 @@ public:
   typedef typename Poly::coord_type coord_type;
   typedef typename Poly::point_type point_type;
   typedef typename Poly::box_type box_type;
-  typedef typename Poly::edge_type edge_type;
   typedef Trans trans_type;
   typedef Poly polygon_type;
   typedef db::polygon_edge_iterator<Poly, trans_type> polygon_edge_iterator;
@@ -3389,8 +3087,9 @@ public:
    *
    *  The polygon pointer passed is assumed to reside in a proper repository.
    */
-  polygon_ref (const polygon_type *p, const Trans &t)
-    : shape_ref<Poly, Trans> (p, t)
+  template <class TransIn>
+  polygon_ref (const polygon_type *p, const TransIn &t)
+    : shape_ref<Poly, Trans> (p, Trans (t))
   {
     // .. nothing yet ..
   }
@@ -3408,6 +3107,19 @@ public:
   }
 
   /**
+   *  @brief The transformation translation constructor
+   *  
+   *  This constructor allows one to copy a polygon reference with a certain transformation
+   *  to one with another transformation
+   */
+  template <class TransIn>
+  polygon_ref (const polygon_ref<Poly, TransIn> &ref)
+    : shape_ref<Poly, Trans> (ref.ptr (), Trans (ref.trans ()))
+  {
+    // .. nothing yet ..
+  }
+
+  /** 
    *  @brief The edge iterator 
    *
    *  The edge iterator delivers all edges of the polygon.
@@ -3480,15 +3192,7 @@ public:
     }
   }
   
-  /**
-   *  @brief The area ratio of the polygon
-   */
-  double area_ratio () const
-  {
-    return this->obj ().area_ratio ();
-  }
-
-  /**
+  /** 
    *  @brief The area of the polygon
    */
   area_type area () const 
@@ -3514,30 +3218,6 @@ public:
     return this->obj ().perimeter ();
   }
 
-  /**
-   *  @brief Returns a value indicating whether the polygon is a box
-   */
-  bool is_box () const
-  {
-    return this->obj ().is_box ();
-  }
-
-  /**
-   *  @brief Returns a value indicating whether the polygon is rectilinear
-   */
-  bool is_rectilinear () const
-  {
-    return this->obj ().is_rectilinear ();
-  }
-
-  /**
-   *  @brief Returns the number of vertices
-   */
-  size_t vertices () const
-  {
-    return this->obj ().vertices ();
-  }
-
   /** 
    *  @brief Return the transformed object
    * 
@@ -3546,18 +3226,9 @@ public:
   template <class TargetTrans>
   polygon_ref<Poly, TargetTrans> transformed (const TargetTrans &t) const
   {
-    polygon_ref<Poly, TargetTrans> pref (this->ptr (), this->trans ());
+    polygon_ref<Poly, TargetTrans> pref (*this);
     pref.transform (t);
     return pref;
-  }
-
-  /**
-   *  @brief A dummy implementation of the "scaled" function for API compatibility
-   */
-  polygon_ref<Poly, Trans> scaled (double) const
-  {
-    tl_assert (false); // not implemented
-    return *this;
   }
 };
 
@@ -3621,10 +3292,11 @@ operator* (const Tr &t, const simple_polygon<typename Tr::coord_type> &p)
  *  @return The scaled polygon
  */
 template <class C>
-inline polygon<db::DCoord>
+inline polygon<double>
 operator* (const polygon<C> &p, double s)
 {
-  return p.scaled (s);
+  db::complex_trans<C, double> ct (s);
+  return ct * p;
 }
 
 /**
@@ -3636,10 +3308,11 @@ operator* (const polygon<C> &p, double s)
  *  @return The scaled polygon
  */
 template <class C>
-inline simple_polygon<db::DCoord>
+inline simple_polygon<double>
 operator* (const simple_polygon<C> &p, double s)
 {
-  return p.scaled (s);
+  db::complex_trans<C, double> ct (s);
+  return ct * p;
 }
 
 /**
@@ -3800,7 +3473,7 @@ inline void mem_stat (MemStatistics *stat, MemStatistics::purpose_t purpose, int
 namespace std
 {
 
-//  injecting a global std::swap for polygons into the
+//  injecting a global std::swap for polygons into the 
 //  std namespace
 template <class C>
 void swap (db::polygon<C> &a, db::polygon<C> &b)
@@ -3820,6 +3493,33 @@ void swap (db::simple_polygon<C> &a, db::simple_polygon<C> &b)
 
 namespace tl 
 {
+  /**
+   *  @brief The type traits for the polygon type
+   */
+  template <class C>
+  struct type_traits <db::polygon<C> > : public type_traits<void> 
+  {
+    typedef typename db::polygon<C>::relocate_requirements relocate_requirements;
+    typedef true_tag has_efficient_swap;
+    typedef true_tag supports_extractor;
+    typedef true_tag supports_to_string;
+    typedef true_tag has_less_operator;
+    typedef true_tag has_equal_operator;
+  };
+
+  /**
+   *  @brief The type traits for the simple_polygon type
+   */
+  template <class C>
+  struct type_traits <db::simple_polygon<C> > : public type_traits<void> 
+  {
+    typedef typename db::simple_polygon<C>::relocate_requirements relocate_requirements;
+    typedef true_tag supports_extractor;
+    typedef true_tag supports_to_string;
+    typedef true_tag has_less_operator;
+    typedef true_tag has_equal_operator;
+  };
+
   /**
    *  @brief Special extractors for the polygons
    */

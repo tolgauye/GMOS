@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -33,6 +33,7 @@
 #include <QSize>
 #include "gsiQt.h"
 #include "gsiQtMultimediaCommon.h"
+#include "gsiDeclQtMultimediaTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -816,7 +817,6 @@ static gsi::Enum<QVideoFrame::PixelFormat> decl_QVideoFrame_PixelFormat_Enum ("Q
     gsi::enum_const ("Format_Jpeg", QVideoFrame::Format_Jpeg, "@brief Enum constant QVideoFrame::Format_Jpeg") +
     gsi::enum_const ("Format_CameraRaw", QVideoFrame::Format_CameraRaw, "@brief Enum constant QVideoFrame::Format_CameraRaw") +
     gsi::enum_const ("Format_AdobeDng", QVideoFrame::Format_AdobeDng, "@brief Enum constant QVideoFrame::Format_AdobeDng") +
-    gsi::enum_const ("NPixelFormats", QVideoFrame::NPixelFormats, "@brief Enum constant QVideoFrame::NPixelFormats") +
     gsi::enum_const ("Format_User", QVideoFrame::Format_User, "@brief Enum constant QVideoFrame::Format_User"),
   "@qt\n@brief This class represents the QVideoFrame::PixelFormat enum");
 

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -20,17 +20,11 @@
 
 */
 
-#if defined(HAVE_QT)
 
 #include "edtPropertiesPageUtils.h"
 
 #include "dbShapes.h"
 #include "dbLayout.h"
-#include "dbLibrary.h"
-#include "dbPCellDeclaration.h"
-#include "layBusy.h"
-
-#include <QLineEdit>
 
 namespace edt
 {
@@ -69,7 +63,7 @@ CombinedChangeApplicator::~CombinedChangeApplicator ()
 bool CombinedChangeApplicator::supports_relative_mode () const 
 { 
   for (std::vector<ChangeApplicator *>::const_iterator a = m_appl.begin (); a != m_appl.end (); ++a) {
-    if ((*a) && (*a)->supports_relative_mode ()) {
+    if ((*a)->supports_relative_mode ()) {
       return true;
     }
   }
@@ -192,42 +186,6 @@ db::Shape BoxDimensionsChangeApplicator::do_apply (db::Shapes &shapes, const db:
   if (new_box != org_box) {
     //  shape changed - replace the old by the new one
     return shapes.replace (shape, new_box);
-  } else {
-    //  shape did not change
-    return shape;
-  }
-}
-
-// -------------------------------------------------------------------------
-//  PointDimensionsChangeApplicator implementation
-
-PointDimensionsChangeApplicator::PointDimensionsChangeApplicator (const db::Point &point, const db::Point &org_point)
-  : m_point (point), m_org_point (org_point)
-{
-  //  .. nothing yet ..
-}
-
-db::Shape PointDimensionsChangeApplicator::do_apply (db::Shapes &shapes, const db::Shape &shape, double /*dbu*/, bool relative) const
-{
-  db::Point org_point;
-  shape.point (org_point);
-
-  db::Point new_point;
-  if (relative) {
-    new_point = org_point + (m_point - m_org_point);
-  } else if (m_point != m_org_point) {
-    new_point = org_point;
-    if (m_point.x () != m_org_point.x ()) {
-      new_point.set_x (m_point.x ());
-    }
-    if (m_point.y () != m_org_point.y ()) {
-      new_point.set_y (m_point.y ());
-    }
-  }
-
-  if (new_point != org_point) {
-    //  shape changed - replace the old by the new one
-    return shapes.replace (shape, new_point);
   } else {
     //  shape did not change
     return shape;
@@ -620,90 +578,6 @@ db::Instance ChangeTargetCellApplicator::do_apply_inst (db::Cell &cell, const db
 }
 
 // -------------------------------------------------------------------------
-//  ChangeTargetPCellApplicator implementation
-
-ChangeTargetPCellApplicator::ChangeTargetPCellApplicator (db::pcell_id_type pcell_id, bool apply_new_id, db::Library *new_lib, bool apply_new_lib, const std::map<std::string, tl::Variant> &modified_parameters)
-  : m_pcell_id (pcell_id), m_apply_new_id (apply_new_id), mp_new_lib (new_lib), m_apply_new_lib (apply_new_lib), m_modified_parameters (modified_parameters)
-{
-  //  .. nothing yet ..
-}
-
-db::Instance
-ChangeTargetPCellApplicator::do_apply_inst (db::Cell &cell, const db::Instance &instance, double /*dbu*/, bool /*relative*/) const
-{
-  //  Prevent recursion due to processEvents produced by macro code when
-  //  executing inside the IDE
-  lay::BusySection busy;
-
-  tl_assert (cell.layout ());
-
-  db::Layout *layout = cell.layout ();
-
-  std::pair<bool, db::pcell_id_type> pci = layout->is_pcell_instance (instance.cell_index ());
-  std::pair<bool, db::cell_index_type> ci (false, 0);
-
-  db::Library *lib = layout->defining_library (instance.cell_index ()).first;
-
-  std::map<std::string, tl::Variant> named_parameters;
-  if (pci.first) {
-    named_parameters = layout->get_named_pcell_parameters (instance.cell_index ());
-  }
-  for (std::map<std::string, tl::Variant>::const_iterator p = m_modified_parameters.begin (); p != m_modified_parameters.end (); ++p) {
-    named_parameters [p->first] = p->second;
-  }
-
-  if ((m_apply_new_lib && lib != mp_new_lib) || (m_apply_new_id && (lib != mp_new_lib || ! pci.first || pci.second != m_pcell_id))) {
-
-    if (m_apply_new_id) {
-
-      lib = mp_new_lib;
-      pci.first = true;
-      pci.second = m_pcell_id;
-
-    } else if (m_apply_new_lib) {
-
-      if (! pci.first) {
-        std::string cell_name = (lib ? &lib->layout () : layout)->cell_name (instance.cell_index ());
-        ci = (mp_new_lib ? &mp_new_lib->layout () : layout)->cell_by_name (cell_name.c_str ());
-      } else {
-        std::string pcell_name = (lib ? &lib->layout () : layout)->pcell_declaration (pci.second)->name ();
-        pci = (mp_new_lib ? &mp_new_lib->layout () : layout)->pcell_by_name (pcell_name.c_str ());
-      }
-
-      lib = mp_new_lib;
-
-    }
-
-  }
-
-  db::CellInstArray arr = instance.cell_inst ();
-  db::cell_index_type inst_cell_index = arr.object ().cell_index ();
-
-  if (ci.first || pci.first) {
-
-    //  instantiates the PCell
-    if (pci.first) {
-      inst_cell_index = (lib ? &lib->layout () : layout)->get_pcell_variant_dict (pci.second, named_parameters);
-    } else {
-      inst_cell_index = ci.second;
-    }
-
-    //  references the library
-    if (lib) {
-      inst_cell_index = layout->get_lib_proxy (lib, inst_cell_index);
-    }
-
-  }
-
-  if (arr.object ().cell_index () != inst_cell_index) {
-    arr.object ().cell_index (inst_cell_index);
-    return cell.replace (instance, arr);
-  } else {
-    return instance;
-  }
-}
-
-// -------------------------------------------------------------------------
 //  ChangeInstanceTransApplicator implementation
 
 ChangeInstanceTransApplicator::ChangeInstanceTransApplicator (double a, double org_a, bool mirror, bool org_mirror, double m, double org_m, const db::DVector &disp, const db::DVector &org_disp)
@@ -892,7 +766,7 @@ db::DCoord
 dcoord_from_string (const char *txt, double dbu, bool du, const db::DCplxTrans &t)
 {
   double d = 0.0;
-  tl::from_string_ext (txt, d);
+  tl::from_string (txt, d);
   return dcoord_from_dcoord (d, dbu, du, t);
 }
 
@@ -900,7 +774,7 @@ db::Coord
 coord_from_string (const char *txt, double dbu, bool du, const db::VCplxTrans &t)
 {
   double d = 0.0;
-  tl::from_string_ext (txt, d);
+  tl::from_string (txt, d);
   return coord_from_dcoord (d, dbu, du, t);
 }
 
@@ -912,4 +786,3 @@ coords_to_string (const db::DPoint &dp, double dbu, bool du, const char *sep)
 
 }
 
-#endif

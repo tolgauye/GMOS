@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -31,13 +31,15 @@
 #include <list>
 #include <utility>
 
+#include <QDialog>
+
 #include "dbInstElement.h"
 #include "dbClipboardData.h"
 #include "dbClipboard.h"
 
 namespace lay
 {
-  class LayoutViewBase;
+  class LayoutView;
 }
 
 namespace lay {
@@ -46,7 +48,7 @@ namespace lay {
  *  @brief A class encapsulating an instantiation path and the element addressed by it
  *
  *  This class either addresses an instance (in which case the path is that to the instance 
- *  addressed) or a shape (in which case the path leads to the cell that has this shape and
+ *  adressed) or a shape (in which case the path leads to the cell that has this shape and
  *  the layer and shape is specified additionally).
  */
 
@@ -298,15 +300,6 @@ public:
   {
     m_seq = s;
   }
-
-  /**
-   *  @brief Gets a value indicating whether the object path is valid
-   *
-   *  After the layout has been modified, this method is able to check
-   *  whether the object path (including shape if applicable) still points
-   *  to a valid object.
-   */
-  bool is_valid (lay::LayoutViewBase *view) const;
 
 private:
   unsigned int m_cv_index;

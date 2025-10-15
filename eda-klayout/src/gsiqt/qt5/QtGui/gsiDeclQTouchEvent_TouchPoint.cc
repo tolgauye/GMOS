@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -29,12 +29,11 @@
 
 #include <QTouchEvent>
 #include <QPointF>
-#include <QPointingDeviceUniqueId>
 #include <QRectF>
-#include <QSizeF>
 #include <QVector2D>
 #include "gsiQt.h"
 #include "gsiQtGuiCommon.h"
+#include "gsiDeclQtGuiTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -75,21 +74,6 @@ static void _call_ctor_QTouchEvent_TouchPoint_3576 (const qt_gsi::GenericStaticM
   tl::Heap heap;
   const QTouchEvent::TouchPoint &arg1 = gsi::arg_reader<const QTouchEvent::TouchPoint & >() (args, heap);
   ret.write<QTouchEvent::TouchPoint *> (new QTouchEvent::TouchPoint (arg1));
-}
-
-
-// QSizeF QTouchEvent::TouchPoint::ellipseDiameters()
-
-
-static void _init_f_ellipseDiameters_c0 (qt_gsi::GenericMethod *decl)
-{
-  decl->set_return<QSizeF > ();
-}
-
-static void _call_f_ellipseDiameters_c0 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  ret.write<QSizeF > ((QSizeF)((QTouchEvent::TouchPoint *)cls)->ellipseDiameters ());
 }
 
 
@@ -277,21 +261,6 @@ static void _call_f_rect_c0 (const qt_gsi::GenericMethod * /*decl*/, void *cls, 
 }
 
 
-// double QTouchEvent::TouchPoint::rotation()
-
-
-static void _init_f_rotation_c0 (qt_gsi::GenericMethod *decl)
-{
-  decl->set_return<double > ();
-}
-
-static void _call_f_rotation_c0 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  ret.write<double > ((double)((QTouchEvent::TouchPoint *)cls)->rotation ());
-}
-
-
 // QPointF QTouchEvent::TouchPoint::scenePos()
 
 
@@ -349,26 +318,6 @@ static void _call_f_screenRect_c0 (const qt_gsi::GenericMethod * /*decl*/, void 
 {
   __SUPPRESS_UNUSED_WARNING(args);
   ret.write<QRectF > ((QRectF)((QTouchEvent::TouchPoint *)cls)->screenRect ());
-}
-
-
-// void QTouchEvent::TouchPoint::setEllipseDiameters(const QSizeF &dia)
-
-
-static void _init_f_setEllipseDiameters_1875 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("dia");
-  decl->add_arg<const QSizeF & > (argspec_0);
-  decl->set_return<void > ();
-}
-
-static void _call_f_setEllipseDiameters_1875 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const QSizeF &arg1 = gsi::arg_reader<const QSizeF & >() (args, heap);
-  __SUPPRESS_UNUSED_WARNING(ret);
-  ((QTouchEvent::TouchPoint *)cls)->setEllipseDiameters (arg1);
 }
 
 
@@ -592,26 +541,6 @@ static void _call_f_setRect_1862 (const qt_gsi::GenericMethod * /*decl*/, void *
 }
 
 
-// void QTouchEvent::TouchPoint::setRotation(double angle)
-
-
-static void _init_f_setRotation_1071 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("angle");
-  decl->add_arg<double > (argspec_0);
-  decl->set_return<void > ();
-}
-
-static void _call_f_setRotation_1071 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  double arg1 = gsi::arg_reader<double >() (args, heap);
-  __SUPPRESS_UNUSED_WARNING(ret);
-  ((QTouchEvent::TouchPoint *)cls)->setRotation (arg1);
-}
-
-
 // void QTouchEvent::TouchPoint::setScenePos(const QPointF &scenePos)
 
 
@@ -792,26 +721,6 @@ static void _call_f_setState_2995 (const qt_gsi::GenericMethod * /*decl*/, void 
 }
 
 
-// void QTouchEvent::TouchPoint::setUniqueId(qint64 uid)
-
-
-static void _init_f_setUniqueId_986 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("uid");
-  decl->add_arg<qint64 > (argspec_0);
-  decl->set_return<void > ();
-}
-
-static void _call_f_setUniqueId_986 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  qint64 arg1 = gsi::arg_reader<qint64 >() (args, heap);
-  __SUPPRESS_UNUSED_WARNING(ret);
-  ((QTouchEvent::TouchPoint *)cls)->setUniqueId (arg1);
-}
-
-
 // void QTouchEvent::TouchPoint::setVelocity(const QVector2D &v)
 
 
@@ -927,21 +836,6 @@ static void _call_f_swap_2881 (const qt_gsi::GenericMethod * /*decl*/, void *cls
 }
 
 
-// QPointingDeviceUniqueId QTouchEvent::TouchPoint::uniqueId()
-
-
-static void _init_f_uniqueId_c0 (qt_gsi::GenericMethod *decl)
-{
-  decl->set_return<QPointingDeviceUniqueId > ();
-}
-
-static void _call_f_uniqueId_c0 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  ret.write<QPointingDeviceUniqueId > ((QPointingDeviceUniqueId)((QTouchEvent::TouchPoint *)cls)->uniqueId ());
-}
-
-
 // QVector2D QTouchEvent::TouchPoint::velocity()
 
 
@@ -965,7 +859,6 @@ static gsi::Methods methods_QTouchEvent_TouchPoint () {
   gsi::Methods methods;
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QTouchEvent::TouchPoint::TouchPoint(int id)\nThis method creates an object of class QTouchEvent::TouchPoint.", &_init_ctor_QTouchEvent_TouchPoint_767, &_call_ctor_QTouchEvent_TouchPoint_767);
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QTouchEvent::TouchPoint::TouchPoint(const QTouchEvent::TouchPoint &other)\nThis method creates an object of class QTouchEvent::TouchPoint.", &_init_ctor_QTouchEvent_TouchPoint_3576, &_call_ctor_QTouchEvent_TouchPoint_3576);
-  methods += new qt_gsi::GenericMethod ("ellipseDiameters", "@brief Method QSizeF QTouchEvent::TouchPoint::ellipseDiameters()\n", true, &_init_f_ellipseDiameters_c0, &_call_f_ellipseDiameters_c0);
   methods += new qt_gsi::GenericMethod ("flags", "@brief Method QFlags<QTouchEvent::TouchPoint::InfoFlag> QTouchEvent::TouchPoint::flags()\n", true, &_init_f_flags_c0, &_call_f_flags_c0);
   methods += new qt_gsi::GenericMethod ("id", "@brief Method int QTouchEvent::TouchPoint::id()\n", true, &_init_f_id_c0, &_call_f_id_c0);
   methods += new qt_gsi::GenericMethod ("lastNormalizedPos", "@brief Method QPointF QTouchEvent::TouchPoint::lastNormalizedPos()\n", true, &_init_f_lastNormalizedPos_c0, &_call_f_lastNormalizedPos_c0);
@@ -978,12 +871,10 @@ static gsi::Methods methods_QTouchEvent_TouchPoint () {
   methods += new qt_gsi::GenericMethod ("pressure", "@brief Method double QTouchEvent::TouchPoint::pressure()\n", true, &_init_f_pressure_c0, &_call_f_pressure_c0);
   methods += new qt_gsi::GenericMethod ("rawScreenPositions", "@brief Method QVector<QPointF> QTouchEvent::TouchPoint::rawScreenPositions()\n", true, &_init_f_rawScreenPositions_c0, &_call_f_rawScreenPositions_c0);
   methods += new qt_gsi::GenericMethod ("rect", "@brief Method QRectF QTouchEvent::TouchPoint::rect()\n", true, &_init_f_rect_c0, &_call_f_rect_c0);
-  methods += new qt_gsi::GenericMethod ("rotation", "@brief Method double QTouchEvent::TouchPoint::rotation()\n", true, &_init_f_rotation_c0, &_call_f_rotation_c0);
   methods += new qt_gsi::GenericMethod ("scenePos", "@brief Method QPointF QTouchEvent::TouchPoint::scenePos()\n", true, &_init_f_scenePos_c0, &_call_f_scenePos_c0);
   methods += new qt_gsi::GenericMethod ("sceneRect", "@brief Method QRectF QTouchEvent::TouchPoint::sceneRect()\n", true, &_init_f_sceneRect_c0, &_call_f_sceneRect_c0);
   methods += new qt_gsi::GenericMethod ("screenPos", "@brief Method QPointF QTouchEvent::TouchPoint::screenPos()\n", true, &_init_f_screenPos_c0, &_call_f_screenPos_c0);
   methods += new qt_gsi::GenericMethod ("screenRect", "@brief Method QRectF QTouchEvent::TouchPoint::screenRect()\n", true, &_init_f_screenRect_c0, &_call_f_screenRect_c0);
-  methods += new qt_gsi::GenericMethod ("setEllipseDiameters", "@brief Method void QTouchEvent::TouchPoint::setEllipseDiameters(const QSizeF &dia)\n", false, &_init_f_setEllipseDiameters_1875, &_call_f_setEllipseDiameters_1875);
   methods += new qt_gsi::GenericMethod ("setFlags", "@brief Method void QTouchEvent::TouchPoint::setFlags(QFlags<QTouchEvent::TouchPoint::InfoFlag> flags)\n", false, &_init_f_setFlags_4285, &_call_f_setFlags_4285);
   methods += new qt_gsi::GenericMethod ("setId", "@brief Method void QTouchEvent::TouchPoint::setId(int id)\n", false, &_init_f_setId_767, &_call_f_setId_767);
   methods += new qt_gsi::GenericMethod ("setLastNormalizedPos", "@brief Method void QTouchEvent::TouchPoint::setLastNormalizedPos(const QPointF &lastNormalizedPos)\n", false, &_init_f_setLastNormalizedPos_1986, &_call_f_setLastNormalizedPos_1986);
@@ -995,7 +886,6 @@ static gsi::Methods methods_QTouchEvent_TouchPoint () {
   methods += new qt_gsi::GenericMethod ("setPressure", "@brief Method void QTouchEvent::TouchPoint::setPressure(double pressure)\n", false, &_init_f_setPressure_1071, &_call_f_setPressure_1071);
   methods += new qt_gsi::GenericMethod ("setRawScreenPositions", "@brief Method void QTouchEvent::TouchPoint::setRawScreenPositions(const QVector<QPointF> &positions)\n", false, &_init_f_setRawScreenPositions_2816, &_call_f_setRawScreenPositions_2816);
   methods += new qt_gsi::GenericMethod ("setRect", "@brief Method void QTouchEvent::TouchPoint::setRect(const QRectF &rect)\n", false, &_init_f_setRect_1862, &_call_f_setRect_1862);
-  methods += new qt_gsi::GenericMethod ("setRotation", "@brief Method void QTouchEvent::TouchPoint::setRotation(double angle)\n", false, &_init_f_setRotation_1071, &_call_f_setRotation_1071);
   methods += new qt_gsi::GenericMethod ("setScenePos", "@brief Method void QTouchEvent::TouchPoint::setScenePos(const QPointF &scenePos)\n", false, &_init_f_setScenePos_1986, &_call_f_setScenePos_1986);
   methods += new qt_gsi::GenericMethod ("setSceneRect", "@brief Method void QTouchEvent::TouchPoint::setSceneRect(const QRectF &sceneRect)\n", false, &_init_f_setSceneRect_1862, &_call_f_setSceneRect_1862);
   methods += new qt_gsi::GenericMethod ("setScreenPos", "@brief Method void QTouchEvent::TouchPoint::setScreenPos(const QPointF &screenPos)\n", false, &_init_f_setScreenPos_1986, &_call_f_setScreenPos_1986);
@@ -1005,7 +895,6 @@ static gsi::Methods methods_QTouchEvent_TouchPoint () {
   methods += new qt_gsi::GenericMethod ("setStartScenePos", "@brief Method void QTouchEvent::TouchPoint::setStartScenePos(const QPointF &startScenePos)\n", false, &_init_f_setStartScenePos_1986, &_call_f_setStartScenePos_1986);
   methods += new qt_gsi::GenericMethod ("setStartScreenPos", "@brief Method void QTouchEvent::TouchPoint::setStartScreenPos(const QPointF &startScreenPos)\n", false, &_init_f_setStartScreenPos_1986, &_call_f_setStartScreenPos_1986);
   methods += new qt_gsi::GenericMethod ("setState", "@brief Method void QTouchEvent::TouchPoint::setState(QFlags<Qt::TouchPointState> state)\n", false, &_init_f_setState_2995, &_call_f_setState_2995);
-  methods += new qt_gsi::GenericMethod ("setUniqueId", "@brief Method void QTouchEvent::TouchPoint::setUniqueId(qint64 uid)\n", false, &_init_f_setUniqueId_986, &_call_f_setUniqueId_986);
   methods += new qt_gsi::GenericMethod ("setVelocity", "@brief Method void QTouchEvent::TouchPoint::setVelocity(const QVector2D &v)\n", false, &_init_f_setVelocity_2139, &_call_f_setVelocity_2139);
   methods += new qt_gsi::GenericMethod ("startNormalizedPos", "@brief Method QPointF QTouchEvent::TouchPoint::startNormalizedPos()\n", true, &_init_f_startNormalizedPos_c0, &_call_f_startNormalizedPos_c0);
   methods += new qt_gsi::GenericMethod ("startPos", "@brief Method QPointF QTouchEvent::TouchPoint::startPos()\n", true, &_init_f_startPos_c0, &_call_f_startPos_c0);
@@ -1013,7 +902,6 @@ static gsi::Methods methods_QTouchEvent_TouchPoint () {
   methods += new qt_gsi::GenericMethod ("startScreenPos", "@brief Method QPointF QTouchEvent::TouchPoint::startScreenPos()\n", true, &_init_f_startScreenPos_c0, &_call_f_startScreenPos_c0);
   methods += new qt_gsi::GenericMethod ("state", "@brief Method Qt::TouchPointState QTouchEvent::TouchPoint::state()\n", true, &_init_f_state_c0, &_call_f_state_c0);
   methods += new qt_gsi::GenericMethod ("swap", "@brief Method void QTouchEvent::TouchPoint::swap(QTouchEvent::TouchPoint &other)\n", false, &_init_f_swap_2881, &_call_f_swap_2881);
-  methods += new qt_gsi::GenericMethod ("uniqueId", "@brief Method QPointingDeviceUniqueId QTouchEvent::TouchPoint::uniqueId()\n", true, &_init_f_uniqueId_c0, &_call_f_uniqueId_c0);
   methods += new qt_gsi::GenericMethod ("velocity", "@brief Method QVector2D QTouchEvent::TouchPoint::velocity()\n", true, &_init_f_velocity_c0, &_call_f_velocity_c0);
   return methods;
 }
@@ -1034,8 +922,7 @@ namespace qt_gsi
 {
 
 static gsi::Enum<QTouchEvent::TouchPoint::InfoFlag> decl_QTouchEvent_TouchPoint_InfoFlag_Enum ("QtGui", "QTouchEvent_TouchPoint_InfoFlag",
-    gsi::enum_const ("Pen", QTouchEvent::TouchPoint::Pen, "@brief Enum constant QTouchEvent::TouchPoint::Pen") +
-    gsi::enum_const ("Token", QTouchEvent::TouchPoint::Token, "@brief Enum constant QTouchEvent::TouchPoint::Token"),
+    gsi::enum_const ("Pen", QTouchEvent::TouchPoint::Pen, "@brief Enum constant QTouchEvent::TouchPoint::Pen"),
   "@qt\n@brief This class represents the QTouchEvent::TouchPoint::InfoFlag enum");
 
 static gsi::QFlagsClass<QTouchEvent::TouchPoint::InfoFlag > decl_QTouchEvent_TouchPoint_InfoFlag_Enums ("QtGui", "QTouchEvent_TouchPoint_QFlags_InfoFlag",

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -228,7 +228,7 @@ public:
 
   std::string description () const
   {
-    return ruby2c<std::string> (rba_safe_inspect (m_obj));
+    return ruby2c<std::string> (rba_safe_obj_as_string (m_obj));
   }
 
   VALUE rb_key (size_t index) const
@@ -338,7 +338,7 @@ public:
     : m_obj (obj), mp_cls (0), m_members (Qnil)
   {
     rb_gc_register_address (&m_obj);
-    mp_cls = find_cclass_maybe_null (rb_class_of (m_obj));
+    mp_cls = find_cclass (rb_class_of (m_obj));
     m_members = rb_obj_instance_variables (m_obj);
     rb_gc_register_address (&m_members);
 
@@ -357,7 +357,7 @@ public:
 
   std::string description () const
   {
-    return ruby2c<std::string> (rba_safe_inspect (m_obj));
+    return ruby2c<std::string> (rba_safe_obj_as_string (m_obj));
   }
 
   virtual std::string key (size_t index) const
@@ -416,7 +416,7 @@ public:
         meth->call (obj, arglist, retlist);
 
         tl::Heap heap;
-        return pull_arg (meth->ret_type (), p, retlist, heap);
+        return pop_arg (meth->ret_type (), p, retlist, heap);
 
       }
 

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -31,7 +31,6 @@
 #include "dbSubCircuit.h"
 #include "dbNetlistUtils.h"
 #include "dbPolygon.h"
-#include "dbMemStatistics.h"
 
 #include "tlObject.h"
 #include "tlObjectCollection.h"
@@ -323,13 +322,13 @@ public:
   /**
    *  @brief Adds a pin to this circuit
    */
-  Pin &add_pin (const std::string &name);
+  const Pin &add_pin (const std::string &name);
 
   /**
    *  @brief Adds a pin to this circuit
    *  This version uses the given pin as the template.
    */
-  Pin &add_pin (const Pin &pin);
+  const Pin &add_pin (const Pin &pin);
 
   /**
    *  @brief Removes the pin with the given ID
@@ -418,11 +417,6 @@ public:
   void remove_net (Net *net);
 
   /**
-   *  @brief Joins the second net with the first one and removes the second net
-   */
-  void join_nets (Net *net, Net *with);
-
-  /**
    *  @brief Gets the number of nets
    */
   size_t net_count () const
@@ -497,7 +491,10 @@ public:
    *
    *  If the name is not valid, null is returned.
    */
-  Net *net_by_name (const std::string &name);
+  Net *net_by_name (const std::string &name)
+  {
+    return m_net_by_name.object_by (name);
+  }
 
   /**
    *  @brief Adds a device to this circuit
@@ -554,7 +551,10 @@ public:
    *
    *  If the name is not valid, null is returned.
    */
-  Device *device_by_name (const std::string &name);
+  Device *device_by_name (const std::string &name)
+  {
+    return m_device_by_name.object_by (name);
+  }
 
   /**
    *  @brief Begin iterator for the devices of the circuit (non-const version)
@@ -643,7 +643,10 @@ public:
    *
    *  If the name is not valid, null is returned.
    */
-  SubCircuit *subcircuit_by_name (const std::string &name);
+  SubCircuit *subcircuit_by_name (const std::string &name)
+  {
+    return m_subcircuit_by_name.object_by (name);
+  }
 
   /**
    *  @brief Begin iterator for the subcircuits of the circuit (non-const version)
@@ -703,15 +706,6 @@ public:
   void connect_pin (size_t pin_id, Net *net);
 
   /**
-   *  @brief Adds a pin to the given net
-   *  The pin will be added to the net. If there is already a pin
-   *  on the net, the existing and new pin will be joined.
-   *  This usually implies that nets further up in the hierarchy
-   *  are joined too.
-   */
-  void join_pin_with_net (size_t pin_id, Net *net);
-
-  /**
    *  @brief Renames the pin with the given ID
    */
   void rename_pin (size_t pin_id, const std::string &name);
@@ -731,14 +725,6 @@ public:
    *  Pins on these nets will be kept but their net will be 0.
    */
   void purge_nets_keep_pins ();
-
-  /**
-   *  @brief Purges invalid devices
-   *
-   *  This method will purge all invalid devices, i.e. those
-   *  whose terminals are all connected to the same net.
-   */
-  void purge_devices ();
 
   /**
    *  @brief Combine devices
@@ -766,37 +752,6 @@ public:
    *  containing only pins.
    */
   void blank ();
-
-  /**
-   *  @brief Gets a value indicating whether the circuit is empty
-   */
-  bool is_empty () const;
-
-  /**
-   *  @brief Generate memory statistics
-   */
-  void mem_stat (MemStatistics *stat, MemStatistics::purpose_t purpose, int cat, bool no_self = false, void *parent = 0) const
-  {
-    if (! no_self) {
-      stat->add (typeid (*this), (void *) this, sizeof (*this), sizeof (*this), parent, purpose, cat);
-    }
-
-    db::mem_stat (stat, purpose, cat, m_name, true, (void *) this);
-    db::mem_stat (stat, purpose, cat, m_boundary, true, (void *) this);
-    db::mem_stat (stat, purpose, cat, m_nets, true, (void *) this);
-    db::mem_stat (stat, purpose, cat, m_pins, true, (void *) this);
-    db::mem_stat (stat, purpose, cat, m_pin_by_id, true, (void *) this);
-    db::mem_stat (stat, purpose, cat, m_devices, true, (void *) this);
-    db::mem_stat (stat, purpose, cat, m_subcircuits, true, (void *) this);
-    db::mem_stat (stat, purpose, cat, m_pin_refs, true, (void *) this);
-    db::mem_stat (stat, purpose, cat, m_device_by_id, true, (void *) this);
-    db::mem_stat (stat, purpose, cat, m_subcircuit_by_id, true, (void *) this);
-    db::mem_stat (stat, purpose, cat, m_net_by_cluster_id, true, (void *) this);
-    db::mem_stat (stat, purpose, cat, m_device_by_name, true, (void *) this);
-    db::mem_stat (stat, purpose, cat, m_subcircuit_by_name, true, (void *) this);
-    db::mem_stat (stat, purpose, cat, m_net_by_name, true, (void *) this);
-    db::mem_stat (stat, purpose, cat, m_refs, true, (void *) this);
-  }
 
 private:
   friend class Netlist;
@@ -841,19 +796,11 @@ private:
   bool combine_parallel_devices (const db::DeviceClass &cls);
   bool combine_serial_devices (const db::DeviceClass &cls);
   void do_purge_nets (bool keep_pins);
-  void join_pins (size_t pin_id, size_t with);
+
   void devices_changed ();
   void subcircuits_changed ();
   void nets_changed ();
 };
-
-/**
- *  @brief Memory statistics for Circuit
- */
-inline void mem_stat (MemStatistics *stat, MemStatistics::purpose_t purpose, int cat, const Circuit &x, bool no_self, void *parent)
-{
-  x.mem_stat (stat, purpose, cat, no_self, parent);
-}
 
 }
 

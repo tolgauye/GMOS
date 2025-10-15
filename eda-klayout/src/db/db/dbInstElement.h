@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -85,8 +85,7 @@ struct DB_PUBLIC InstElement
    *
    *  @param bc The bounding box converter for the cell instance (db::box_convert<db::CellInst>)
    */
-  template <class BoxConvert>
-  db::Box bbox (const BoxConvert &bc) const
+  db::Box bbox (const db::box_convert<db::CellInst> &bc) const
   {
     if (whole_array ()) {
       //  this is the whole array
@@ -149,28 +148,9 @@ struct DB_PUBLIC InstElement
    */
   db::ICplxTrans complex_trans () const
   {
-    if (array_inst.at_end ()) {
-      return inst_ptr.cell_inst ().complex_trans ();
-    } else {
-      return inst_ptr.cell_inst ().complex_trans (*array_inst);
-    }
+    return inst_ptr.cell_inst ().complex_trans (*array_inst);
   }
-
-  /**
-   *  @brief Returns a string representation of the element
-   */
-  std::string to_string (bool resolve_cell_name = false) const;
 };
-
-/**
- *  @brief Finds a path from the "from" to the "to" cell
- *
- *  This function will determine one representative instantiation path leading
- *  from the "from" cell to the "to" cell. If such a path exists, it is stored
- *  in "path" and true is returned. If no such path exists, false is returned.
- */
-DB_PUBLIC bool
-find_path (const db::Layout &layout, db::cell_index_type from, db::cell_index_type to, std::vector<db::InstElement> &path);
 
 } // namespace db
 

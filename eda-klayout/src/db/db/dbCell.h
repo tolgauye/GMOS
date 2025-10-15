@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -55,9 +55,6 @@ template <class Coord> class generic_repository;
 class Layout;
 class Library;
 class ImportLayerMapping;
-class CellMapping;
-class LayerMapping;
-class PCellDeclaration;
 
 /**
  *  @brief The cell object
@@ -66,7 +63,7 @@ class PCellDeclaration;
  *  a set of child cell instances and auxiliary information such as
  *  the parent instance list.
  *  A cell is identified through an index given to the cell upon instantiation.
- *  The cell index is valid in the context of a layout object which
+ *  The cell index is valid in the context of a cell graph object which
  *  must issue the cell index.
  */
 
@@ -184,25 +181,11 @@ public:
   void copy (unsigned int src, unsigned int dest);
 
   /**
-   *  @brief Copy the shapes from layer src to dest (only shapes from given classes)
-   *
-   *  The target layer is not overwritten. Instead, the shapes are added to the target layer's shapes.
-   */
-  void copy (unsigned int src, unsigned int dest, unsigned int types);
-
-  /**
    *  @brief Move the shapes from layer src to dest
    *
    *  The target layer is not overwritten. Instead, the shapes are added to the target layer's shapes.
    */
   void move (unsigned int src, unsigned int dest);
-
-  /**
-   *  @brief Move the shapes from layer src to dest (only shapes from given classes)
-   *
-   *  The target layer is not overwritten. Instead, the shapes are added to the target layer's shapes.
-   */
-  void move (unsigned int src, unsigned int dest, unsigned int types);
 
   /**
    *  @brief Swap the layers given
@@ -214,12 +197,7 @@ public:
    */
   void clear (unsigned int index);
 
-  /**
-   *  @brief Clear the shapes on the given layer (only the shapes from the given classes)
-   */
-  void clear (unsigned int index, unsigned int types);
-
-  /**
+  /** 
    *  @brief Erase a cell instance given by a instance proxy
    *
    *  Erasing a cell instance will destroy the sorting order and invalidate
@@ -324,30 +302,6 @@ public:
   }
 
   /**
-   *  @brief Transforms the cell by the given transformation.
-   *
-   *  The transformation is applied to all instances and shapes. Magnified transformations will
-   *  render magnified instances. See \transform_into for a version which avoids this.
-   *
-   *  @param t The transformation to apply
-   */
-  template <class Trans>
-  void transform (const Trans &t)
-  {
-    m_instances.transform (t);
-    for (typename shapes_map::iterator s = m_shapes_map.begin (); s != m_shapes_map.end (); ++s) {
-      if (! s->second.empty ()) {
-        //  Note: don't use the copy ctor here - it will copy the attachment to the manager
-        //  and create problems when destroyed. Plus: swap would be more efficient. But by using
-        //  assign_transformed we get undo support for free.
-        shapes_type d;
-        d = s->second;
-        s->second.assign_transformed (d, t);
-      }
-    }
-  }
-
-  /**
    *  @brief Transforms the cell into a new coordinate system.
    *
    *  The transformation is not applied to the children, but this method enables propagation 
@@ -373,17 +327,18 @@ public:
   }
 
   /**
-   *  @brief Insert an instance given by a instance reference with a different cell index
+   *  @brief Insert an instance given by a instance reference with a different cell index and property ID
    *
    *  This member may be used to map an instance to another layout object. 
    *
    *  @param ref The instance reference of which to insert a copy
    *  @param im The mapper to new cell index to use (for mapping to a different layout for example)
+   *  @param pm The mapper to new cell property ID use (for mapping to a different layout for example)
    */
-  template <class IndexMap>
-  instance_type insert (const instance_type &ref, IndexMap &im)
+  template <class IndexMap, class PropIdMap>
+  instance_type insert (const instance_type &ref, IndexMap &im, PropIdMap &pm)
   {
-    return (m_instances.insert (ref, im));
+    return (m_instances.insert (ref, im, pm));
   }
 
   /**
@@ -475,27 +430,6 @@ public:
   instance_type change_pcell_parameters (const instance_type &ref, const std::vector<tl::Variant> &new_parameters);
 
   /**
-   *  @brief Changes the PCell parameters of a PCell instance using a dict
-   *
-   *  @return A reference to the new instance. The original reference may be invalid.
-   */
-  instance_type change_pcell_parameters (const instance_type &ref, const std::map<std::string, tl::Variant> &new_parameters);
-
-  /**
-   *  @brief Gets the PCellDeclaration object of the instance if the instance is a PCell instance
-   *
-   *  If the instance is not a PCell instance, 0 is returned.
-   */
-  const db::PCellDeclaration *pcell_declaration_of_inst (const db::Cell::instance_type &ref) const;
-
-  /**
-   *  @brief Gets the PCellDeclaration object of the cell is the cell is a PCell variant
-   *
-   *  If the cell is not a PCell variant, 0 is returned.
-   */
-  const db::PCellDeclaration *pcell_declaration () const;
-
-  /**
    *  @brief The cell index accessor method
    *
    *  @return The cell index of the cell
@@ -523,22 +457,21 @@ public:
   bool is_shape_bbox_dirty () const;
 
   /** 
-   *  @brief Updates the bbox
+   *  @brief Update the bbox 
    *
    *  This will update the bbox from the shapes and instances.
    *  This requires the bboxes of the child cells to be computed
    *  before. Practically this will be done by computing the
    *  bboxes bottom-up in the hierarchy.
-   *  In addition, the number of hierarchy levels below is also
+   *  In addition, the number of hierarchy leves below is also
    *  updated.
    *
    *  @param layers The max. number of layers in the child cells
    *  @return true, if the bounding box has changed.
    */
   bool update_bbox (unsigned int layers);
-
   /**
-   *  @brief Sorts the shapes lists
+   *  @brief Sort the shapes lists 
    *
    *  This will sort the shapes lists for query of regions 
    *  on a per-shape basis. Since sorting of the shapes is
@@ -552,29 +485,18 @@ public:
    *
    *  Before the bounding box can be retrieved, it must have
    *  been computed using update_bbox. This is performed by 
-   *  requesting an update from the layout.
+   *  requesting an update from the graph.
    *
    *  @return The bounding box that was computed by update_bbox
    */
   const box_type &bbox () const;
 
   /**
-   *  @brief Retrieve the bounding box of the cell, including empty cells
-   *
-   *  This method behaves like "bbox", but includes empty cells as single-point
-   *  boxes (0,0;0,0). This bounding box is used for drawing and allows
-   *  including empty cells.
-   *
-   *  @return The bounding box that was computed by update_bbox
-   */
-  const box_type &bbox_with_empty () const;
-
-  /**
    *  @brief Retrieve the per-layer bounding box of the cell
    *
    *  Before the bounding box can be retrieved, it must have
    *  been computed using update_bbox. This is performed by 
-   *  requesting an update from the layout.
+   *  requesting an update from the graph.
    *
    *  @return The bounding box that was computed by update_bbox
    */
@@ -774,11 +696,6 @@ public:
   }
 
   /**
-   *  @brief A quick, recursive test whether the cell has shapes touching the given box on the given layer
-   */
-  bool has_shapes_touching (unsigned int layer, const db::Box &box) const;
-
-  /**
    *  @brief Collect all calling cells (either calling this cell directly or indirectly)
    *
    *  This method adds all cell indices of all cells that either directly or indirectly 
@@ -865,13 +782,6 @@ public:
   virtual void update (ImportLayerMapping * /*layer_mapping*/ = 0) { }
 
   /**
-   *  @brief Checks if the cell is locked
-   *
-   *  This method throws an exception if the cell is locked.
-   */
-  void check_locked () const;
-
-  /**
    *  @brief Tell, if this cell is a proxy cell
    *
    *  Proxy cells are such whose layout represents a snapshot of another entity.
@@ -943,27 +853,6 @@ public:
   }
 
   /**
-   *  @brief Gets a value indicating whether the cell is locked
-   *
-   *  A locked cell cannot be modified in terms of instances or shapes.
-   *  The name of a locked cell can be changed though.
-   */
-  bool is_locked () const
-  {
-    return m_locked;
-  }
-
-  /**
-   *  @brief Sets the locked state of the cell
-   *
-   *  See \is_locked for details about locked state.
-   */
-  void set_locked (bool f)
-  {
-    m_locked = f;
-  }
-
-  /**
    *  @brief Returns a value indicating whether the cell is empty
    *
    *  An empty cell is a cell not containing instances nor shapes.
@@ -1024,92 +913,14 @@ public:
     return mp_layout;
   }
 
-  /**
-   *  @brief Copies the shapes from the source cell's tree to this cell
-   *
-   *  This variant uses the given cell mapping and layer mapping.
-   */
-  void copy_tree_shapes (const db::Cell &source_cell, const db::CellMapping &cm);
-
-  /**
-   *  @brief Copies the shapes from the source cell's tree to this cell
-   *
-   *  This variant uses the given cell mapping and layer mapping.
-   */
-  void copy_tree_shapes (const db::Cell &source_cell, const db::CellMapping &cm, const db::LayerMapping &lm);
-
-  /**
-   *  @brief Copies instances and shapes from the source cell to this cell
-   *
-   *  If the source and target layout are different ones, the whole cell tree of the source cell
-   *  will be copied.
-   *  This will create new cells in the target layout to accommodate the source cell tree.
-   *  Returns an array with the freshly created cells which accommodate the cell tree.
-   */
-  std::vector<db::cell_index_type> copy_tree (const db::Cell &source_cell);
-
-  /**
-   *  @brief Copies the instances from the source to this cell.
-   */
-  void copy_instances (const db::Cell &source_cell);
-
-  /**
-   *  @brief Copies all shapes from the source cell to this cell
-   */
-  void copy_shapes (const db::Cell &source_cell);
-
-  /**
-   *  @brief Copies all shapes from the source cell to this cell using the given layer mapping
-   */
-  void copy_shapes (const db::Cell &source_cell, const db::LayerMapping &layer_mapping);
-
-  /**
-   *  @brief Moves the shapes from the source cell's tree to this cell
-   *
-   *  This variant uses the given cell mapping and layer mapping.
-   */
-  void move_tree_shapes (db::Cell &source_cell, const db::CellMapping &cm);
-
-  /**
-   *  @brief Moves the shapes from the source cell's tree to this cell
-   *
-   *  This variant uses the given cell mapping and layer mapping.
-   */
-  void move_tree_shapes (db::Cell &source_cell, const db::CellMapping &cm, const db::LayerMapping &lm);
-
-  /**
-   *  @brief Moves instances and shapes from the source cell to this cell
-   *
-   *  If the source and target layout are different ones, the whole cell tree of the source cell
-   *  will be copied.
-   *  This will create new cells in the target layout to accommodate the source cell tree.
-   *  Returns an array with the freshly created cells which accommodate the cell tree.
-   */
-  std::vector<db::cell_index_type> move_tree (db::Cell &source_cell);
-
-  /**
-   *  @brief Moves the instances from the source to this cell.
-   */
-  void move_instances (db::Cell &source_cell);
-
-  /**
-   *  @brief Moves all shapes from the source cell to this cell
-   */
-  void move_shapes (db::Cell &source_cell);
-
-  /**
-   *  @brief Moves all shapes from the source cell to this cell using the given layer mapping
-   */
-  void move_shapes (db::Cell &source_cell, const db::LayerMapping &layer_mapping);
-
 protected:
   /**
    *  @brief Standard constructor: create an empty cell object
    * 
-   *  Takes the manager object from the layout object.
+   *  Takes the manager object from the graph object.
    *
    *  @param ci The index of the cell
-   *  @param g A reference to the layout object that owns the cell
+   *  @param g A reference to the graph object that owns the cell
    */
   Cell (cell_index_type ci, db::Layout &g);
 
@@ -1131,14 +942,13 @@ private:
   mutable db::Layout *mp_layout;
   shapes_map m_shapes_map;
   instances_type m_instances;
-  box_type m_bbox, m_bbox_with_empty;
+  box_type m_bbox;
   box_map m_bboxes;
   db::properties_id_type m_prop_id;
 
   // packed fields
   unsigned int m_hier_levels : 29;
   bool m_bbox_needs_update : 1;
-  bool m_locked : 1;
   bool m_ghost_cell : 1;
 
   static box_type ms_empty_box;
@@ -1146,7 +956,7 @@ private:
   //  linked list, used by Layout
   Cell *mp_last, *mp_next;
 
-  //  clear the shapes without telling the layout
+  //  clear the shapes without telling the graph
   void clear_shapes_no_invalidate ();
 
   //  helper function for computing the number of hierarchy levels
@@ -1208,9 +1018,9 @@ private:
    *  This will sort the cell instance list. As a prerequesite
    *  the cell's bounding boxes must have been computed.
    *
-   *  @param force Force sorting, even if not strictly needed
+   *  @param layers The maximum number of layers in the child cells
    */
-  void sort_inst_tree (bool force);
+  void sort_inst_tree ();
 };
 
 /**
@@ -1223,6 +1033,17 @@ mem_stat (MemStatistics *stat, MemStatistics::purpose_t purpose, int cat, const 
 }
 
 } // namespace db
+
+namespace tl
+{
+  /**
+   *  @brief Type traits 
+   */
+  template <> struct type_traits <db::Cell> : public type_traits<void> {
+    typedef tl::false_tag has_copy_constructor;
+    typedef tl::false_tag has_default_constructor;
+  };
+}
 
 #endif
 

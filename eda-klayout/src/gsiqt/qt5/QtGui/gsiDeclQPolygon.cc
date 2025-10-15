@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -32,6 +32,7 @@
 #include <QRect>
 #include "gsiQt.h"
 #include "gsiQtGuiCommon.h"
+#include "gsiDeclQtGuiTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -91,52 +92,52 @@
 
   static void f_QPolygon_clear (QPolygon *m)
   {
-    m->clear();
+    return m->clear();
   }
 
   static void f_QPolygon_remove (QPolygon *m, int i)
   {
-    m->remove (i);
+    return m->remove (i);
   }
 
   static void f_QPolygon_insert (QPolygon *m, int i, const QPoint &p)
   {
-    m->insert (i, p);
+    return m->insert (i, p);
   }
 
   static void f_QPolygon_replace (QPolygon *m, int i, const QPoint &p)
   {
-    m->replace (i, p);
+    return m->replace (i, p);
   }
 
   static void f_QPolygon_pop_front (QPolygon *m)
   {
-    m->pop_front ();
+    return m->pop_front ();
   }
 
   static void f_QPolygon_pop_back (QPolygon *m)
   {
-    m->pop_back ();
+    return m->pop_back ();
   }
 
   static void f_QPolygon_push_front (QPolygon *m, const QPoint &p)
   {
-    m->push_front (p);
+    return m->push_front (p);
   }
 
   static void f_QPolygon_push_back (QPolygon *m, const QPoint &p)
   {
-    m->push_back (p);
+    return m->push_back (p);
   }
 
   static void f_QPolygon_reserve (QPolygon *m, int n)
   {
-    m->reserve (n);
+    return m->reserve (n);
   }
 
   static void f_QPolygon_resize (QPolygon *m, int n)
   {
-    m->resize (n);
+    return m->resize (n);
   }
 
   static void f_QPolygon_fill (QPolygon *m, const QPoint &p, int n)
@@ -174,6 +175,25 @@ static void _call_ctor_QPolygon_767 (const qt_gsi::GenericStaticMethod * /*decl*
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   int arg1 = gsi::arg_reader<int >() (args, heap);
+  ret.write<QPolygon *> (new QPolygon (arg1));
+}
+
+
+//  Constructor QPolygon::QPolygon(const QPolygon &a)
+
+
+static void _init_ctor_QPolygon_2138 (qt_gsi::GenericStaticMethod *decl)
+{
+  static gsi::ArgSpecBase argspec_0 ("a");
+  decl->add_arg<const QPolygon & > (argspec_0);
+  decl->set_return_new<QPolygon> ();
+}
+
+static void _call_ctor_QPolygon_2138 (const qt_gsi::GenericStaticMethod * /*decl*/, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
+{
+  __SUPPRESS_UNUSED_WARNING(args);
+  tl::Heap heap;
+  const QPolygon &arg1 = gsi::arg_reader<const QPolygon & >() (args, heap);
   ret.write<QPolygon *> (new QPolygon (arg1));
 }
 
@@ -216,25 +236,6 @@ static void _call_ctor_QPolygon_2548 (const qt_gsi::GenericStaticMethod * /*decl
   const QRect &arg1 = gsi::arg_reader<const QRect & >() (args, heap);
   bool arg2 = args ? gsi::arg_reader<bool >() (args, heap) : gsi::arg_maker<bool >() (false, heap);
   ret.write<QPolygon *> (new QPolygon (arg1, arg2));
-}
-
-
-//  Constructor QPolygon::QPolygon(const QPolygon &other)
-
-
-static void _init_ctor_QPolygon_2138 (qt_gsi::GenericStaticMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("other");
-  decl->add_arg<const QPolygon & > (argspec_0);
-  decl->set_return_new<QPolygon> ();
-}
-
-static void _call_ctor_QPolygon_2138 (const qt_gsi::GenericStaticMethod * /*decl*/, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const QPolygon &arg1 = gsi::arg_reader<const QPolygon & >() (args, heap);
-  ret.write<QPolygon *> (new QPolygon (arg1));
 }
 
 
@@ -291,44 +292,6 @@ static void _call_f_intersected_c2138 (const qt_gsi::GenericMethod * /*decl*/, v
   tl::Heap heap;
   const QPolygon &arg1 = gsi::arg_reader<const QPolygon & >() (args, heap);
   ret.write<QPolygon > ((QPolygon)((QPolygon *)cls)->intersected (arg1));
-}
-
-
-// bool QPolygon::intersects(const QPolygon &r)
-
-
-static void _init_f_intersects_c2138 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("r");
-  decl->add_arg<const QPolygon & > (argspec_0);
-  decl->set_return<bool > ();
-}
-
-static void _call_f_intersects_c2138 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const QPolygon &arg1 = gsi::arg_reader<const QPolygon & >() (args, heap);
-  ret.write<bool > ((bool)((QPolygon *)cls)->intersects (arg1));
-}
-
-
-// QPolygon &QPolygon::operator=(const QPolygon &other)
-
-
-static void _init_f_operator_eq__2138 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("other");
-  decl->add_arg<const QPolygon & > (argspec_0);
-  decl->set_return<QPolygon & > ();
-}
-
-static void _call_f_operator_eq__2138 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const QPolygon &arg1 = gsi::arg_reader<const QPolygon & >() (args, heap);
-  ret.write<QPolygon & > ((QPolygon &)((QPolygon *)cls)->operator= (arg1));
 }
 
 
@@ -654,12 +617,12 @@ static void _call_f_united_c2138 (const qt_gsi::GenericMethod * /*decl*/, void *
 
 //  QPolygon ::operator *(const QPolygon &a, const QMatrix &m)
 static QPolygon op_QPolygon_operator_star__4053(const QPolygon *_self, const QMatrix &m) {
-  return operator *(*_self, m);
+  return ::operator *(*_self, m);
 }
 
 //  QPolygon ::operator *(const QPolygon &a, const QTransform &m)
 static QPolygon op_QPolygon_operator_star__4380(const QPolygon *_self, const QTransform &m) {
-  return operator *(*_self, m);
+  return ::operator *(*_self, m);
 }
 
 
@@ -670,14 +633,12 @@ static gsi::Methods methods_QPolygon () {
   gsi::Methods methods;
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QPolygon::QPolygon()\nThis method creates an object of class QPolygon.", &_init_ctor_QPolygon_0, &_call_ctor_QPolygon_0);
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QPolygon::QPolygon(int size)\nThis method creates an object of class QPolygon.", &_init_ctor_QPolygon_767, &_call_ctor_QPolygon_767);
+  methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QPolygon::QPolygon(const QPolygon &a)\nThis method creates an object of class QPolygon.", &_init_ctor_QPolygon_2138, &_call_ctor_QPolygon_2138);
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QPolygon::QPolygon(const QVector<QPoint> &v)\nThis method creates an object of class QPolygon.", &_init_ctor_QPolygon_2746, &_call_ctor_QPolygon_2746);
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QPolygon::QPolygon(const QRect &r, bool closed)\nThis method creates an object of class QPolygon.", &_init_ctor_QPolygon_2548, &_call_ctor_QPolygon_2548);
-  methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QPolygon::QPolygon(const QPolygon &other)\nThis method creates an object of class QPolygon.", &_init_ctor_QPolygon_2138, &_call_ctor_QPolygon_2138);
   methods += new qt_gsi::GenericMethod ("boundingRect", "@brief Method QRect QPolygon::boundingRect()\n", true, &_init_f_boundingRect_c0, &_call_f_boundingRect_c0);
   methods += new qt_gsi::GenericMethod ("containsPoint", "@brief Method bool QPolygon::containsPoint(const QPoint &pt, Qt::FillRule fillRule)\n", true, &_init_f_containsPoint_c3356, &_call_f_containsPoint_c3356);
   methods += new qt_gsi::GenericMethod ("intersected", "@brief Method QPolygon QPolygon::intersected(const QPolygon &r)\n", true, &_init_f_intersected_c2138, &_call_f_intersected_c2138);
-  methods += new qt_gsi::GenericMethod ("intersects", "@brief Method bool QPolygon::intersects(const QPolygon &r)\n", true, &_init_f_intersects_c2138, &_call_f_intersects_c2138);
-  methods += new qt_gsi::GenericMethod ("assign", "@brief Method QPolygon &QPolygon::operator=(const QPolygon &other)\n", false, &_init_f_operator_eq__2138, &_call_f_operator_eq__2138);
   methods += new qt_gsi::GenericMethod ("point", "@brief Method void QPolygon::point(int i, int *x, int *y)\n", true, &_init_f_point_c2457, &_call_f_point_c2457);
   methods += new qt_gsi::GenericMethod ("point", "@brief Method QPoint QPolygon::point(int i)\n", true, &_init_f_point_c767, &_call_f_point_c767);
   methods += new qt_gsi::GenericMethod ("putPoints", "@brief Method void QPolygon::putPoints(int index, int nPoints, int firstx, int firsty, ...)\n", false, &_init_f_putPoints_2744, &_call_f_putPoints_2744);
@@ -698,24 +659,24 @@ static gsi::Methods methods_QPolygon () {
 }
 
 gsi::Class<QPolygon> decl_QPolygon ("QtGui", "QPolygon",
-  gsi::constructor("new", &ctor_QPolygon_from_polygon, gsi::arg ("p"), "@brief Creates a polygon from the given KLayout Polygon\nRemark: holes are not transferred into the QPolygon.") +
-  gsi::constructor("new", &ctor_QPolygon_from_simple_polygon, gsi::arg ("p"), "@brief Creates a polygon from the given KLayout SimplePolygon") +
+  gsi::constructor("new", &ctor_QPolygon_from_polygon, "@brief Creates a polygon from the given KLayout Polygon\n@args p\nRemark: holes are not transferred into the QPolygon.") +
+  gsi::constructor("new", &ctor_QPolygon_from_simple_polygon, "@brief Creates a polygon from the given KLayout SimplePolygon\n@args p") +
   gsi::iterator_ext ("each", &f_QPolygon_each_begin, &f_QPolygon_each_end, "@brief Iterates over all points of the polygon.") +
-  gsi::method_ext("[]", &f_QPolygon_at, gsi::arg ("index"), "@brief Gets the point at the given position") +
+  gsi::method_ext("[]", &f_QPolygon_at, "@brief Gets the point at the given position\n@args index") +
   gsi::method_ext("front", &f_QPolygon_front, "@brief Gets the first point") +
   gsi::method_ext("back", &f_QPolygon_back, "@brief Gets the last point") +
   gsi::method_ext("size", &f_QPolygon_size, "@brief Gets the number of points in the polygon") +
   gsi::method_ext("clear", &f_QPolygon_clear, "@brief Empties the polygon") +
-  gsi::method_ext("remove", &f_QPolygon_remove, gsi::arg ("index"), "@brief Removes the point at the given position") +
-  gsi::method_ext("insert", &f_QPolygon_insert, gsi::arg ("p"), gsi::arg ("p"), "@brief Inserts the point after the given position") +
-  gsi::method_ext("replace", &f_QPolygon_replace, gsi::arg ("p"), gsi::arg ("p"), "@brief Replaces the point at the given position") +
+  gsi::method_ext("remove", &f_QPolygon_remove, "@brief Removes the point at the given position\n@args index") +
+  gsi::method_ext("insert", &f_QPolygon_insert, "@brief Inserts the point after the given position\n@args index, p") +
+  gsi::method_ext("replace", &f_QPolygon_replace, "@brief Replaces the point at the given position\n@args index, p") +
   gsi::method_ext("pop_front", &f_QPolygon_pop_front, "@brief Removes the point at the beginning of the list") +
   gsi::method_ext("pop_back", &f_QPolygon_pop_back, "@brief Removes the point at the end of the list") +
-  gsi::method_ext("push_front", &f_QPolygon_push_front, gsi::arg ("p"), "@brief Inserts the point at the beginning of the list") +
-  gsi::method_ext("push_back", &f_QPolygon_push_back, gsi::arg ("p"), "@brief Inserts the point at the end of the list") +
-  gsi::method_ext("reserve", &f_QPolygon_reserve, gsi::arg ("n"), "@brief Reserve memory for the given number of points") +
-  gsi::method_ext("resize", &f_QPolygon_resize, gsi::arg ("l"), "@brief Sets the number of points to the given length") +
-  gsi::method_ext("fill", &f_QPolygon_fill, gsi::arg ("p"), gsi::arg ("l"), "@brief Resizes the polygon to l points and sets all elements to the given point") 
+  gsi::method_ext("push_front", &f_QPolygon_push_front, "@brief Inserts the point at the beginning of the list\n@args p") +
+  gsi::method_ext("push_back", &f_QPolygon_push_back, "@brief Inserts the point at the end of the list\n@args p") +
+  gsi::method_ext("reserve", &f_QPolygon_reserve, "@brief Reserve memory for the given number of points\n@args n") +
+  gsi::method_ext("resize", &f_QPolygon_resize, "@brief Sets the number of points to the given length\n@args l") +
+  gsi::method_ext("fill", &f_QPolygon_fill, "@brief Resizes the polygon to l points and ets all elements to the given point\n@args p,l") 
 +
   methods_QPolygon (),
   "@qt\n@brief Binding of QPolygon");

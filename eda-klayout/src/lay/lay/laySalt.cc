@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -21,19 +21,11 @@
 */
 
 #include "laySalt.h"
-#include "laySaltParsedURL.h"
-
 #include "tlString.h"
 #include "tlFileUtils.h"
 #include "tlLog.h"
 #include "tlInternational.h"
 #include "tlWebDAV.h"
-#include "tlEnv.h"
-#if defined(HAVE_GIT2)
-#  include "tlGit.h"
-#endif
-
-#include "lymMacro.h"
 
 #include <QFileInfo>
 #include <QDir>
@@ -68,13 +60,6 @@ SaltGrains &
 Salt::root ()
 {
   return m_root;
-}
-
-bool
-Salt::download_package_information () const
-{
-  //  $KLAYOUT_ALWAYS_DOWNLOAD_PACKAGE_INFO
-  return tl::app_flag ("always-download-package-info") || m_root.sparse ();
 }
 
 Salt::flat_iterator
@@ -214,7 +199,7 @@ Salt::validate ()
       m_grains_by_name.insert (std::make_pair ((*i)->name (), *i));
     }
 
-    //  Compute a set of topological indexes. Packages which serve dependencies of other packages have a higher
+    //  Compute a set of topological indexes. Packages which serve depedencies of other packages have a higher
     //  topological index. Later we sort the packages by descending topo index to ensure the packages which are
     //  input to others come first.
 
@@ -296,21 +281,6 @@ Salt::remove_grain (const SaltGrain &grain)
 
   QString name = tl::to_qstring (grain.name ());
   tl::info << QObject::tr ("Removing package '%1' ..").arg (name);
-
-  //  Execute "_uninstall.lym" if it exists
-  try {
-    QFile uninstall_lym (QDir (tl::to_qstring (grain.path ())).absoluteFilePath (tl::to_qstring ("_uninstall.lym")));
-    if (uninstall_lym.exists ()) {
-      lym::Macro uninstall;
-      uninstall.load_from (tl::to_string (uninstall_lym.fileName ()));
-      uninstall.set_file_path (tl::to_string (uninstall_lym.fileName ()));
-      uninstall.run ();
-    }
-  } catch (tl::Exception &ex) {
-    //  Errors in the uninstallation script are only logged, but do not prevent uninstallation
-    tl::error << ex.msg ();
-  }
-
   bool res = remove_from_collection (m_root, grain.name ());
   if (res) {
     tl::info << QObject::tr ("Package '%1' removed.").arg (name);
@@ -366,11 +336,7 @@ public:
           }
 
           QByteArray data;
-#if QT_VERSION >= 0x60000
-          if (child_res.compressionAlgorithm () == QResource::ZlibCompression) {
-#else
           if (child_res.isCompressed ()) {
-#endif
             data = qUncompress ((const unsigned char *)child_res.data (), (int)child_res.size ());
           } else {
             data = QByteArray ((const char *)child_res.data (), (int)child_res.size ());
@@ -410,7 +376,7 @@ public:
 }
 
 bool
-Salt::create_grain (const SaltGrain &templ, SaltGrain &target, double timeout, tl::InputHttpStreamCallback *callback)
+Salt::create_grain (const SaltGrain &templ, SaltGrain &target)
 {
   tl_assert (m_root.begin_collections () != m_root.end_collections ());
 
@@ -497,27 +463,11 @@ Salt::create_grain (const SaltGrain &templ, SaltGrain &target, double timeout, t
 
   } else if (! templ.url ().empty ()) {
 
-    lay::SaltParsedURL purl (templ.url ());
+    if (templ.url ().find ("http:") == 0 || templ.url ().find ("https:") == 0) {
 
-    if (purl.url ().find ("http:") == 0 || purl.url ().find ("https:") == 0) {
-
-      //  otherwise download from the URL using Git or SVN
-
-      if (purl.protocol () == Git) {
-
-#if defined(HAVE_GIT2)
-        tl::info << QObject::tr ("Downloading package from '%1' to '%2' using Git protocol (ref='%3', subdir='%4') ..").arg (tl::to_qstring (purl.url ())).arg (tl::to_qstring (target.path ())).arg (tl::to_qstring (purl.branch ())).arg (tl::to_qstring (purl.subfolder ()));
-        res = tl::GitObject::download (purl.url (), target.path (), purl.subfolder (), purl.branch (), timeout, callback);
-#else
-        throw tl::Exception (tl::to_string (QObject::tr ("Unable to install package '%1' - git protocol not compiled in").arg (tl::to_qstring (target.name ()))));
-#endif
-
-      } else if (purl.protocol () == WebDAV || purl.protocol () == DefaultProtocol) {
-
-        tl::info << QObject::tr ("Downloading package from '%1' to '%2' using SVN/WebDAV protocol ..").arg (tl::to_qstring (purl.url ())).arg (tl::to_qstring (target.path ()));
-        res = tl::WebDAVObject::download (purl.url (), target.path (), timeout, callback);
-
-      }
+      //  otherwise download from the URL
+      tl::info << QObject::tr ("Downloading package from '%1' to '%2' ..").arg (tl::to_qstring (templ.url ())).arg (tl::to_qstring (target.path ()));
+      res = tl::WebDAVObject::download (templ.url (), target.path ());
 
     } else {
 
@@ -539,24 +489,9 @@ Salt::create_grain (const SaltGrain &templ, SaltGrain &target, double timeout, t
 
   if (res) {
 
+    tl::info << QObject::tr ("Package '%1' installed").arg (tl::to_qstring (target.name ()));
     target.set_installed_time (QDateTime::currentDateTime ());
     target.save ();
-
-    //  Execute "_install.lym" if it exists
-    try {
-      QFile install_lym (QDir (tl::to_qstring (target.path ())).absoluteFilePath (tl::to_qstring ("_install.lym")));
-      if (install_lym.exists ()) {
-        lym::Macro install;
-        install.load_from (tl::to_string (install_lym.fileName ()));
-        install.set_file_path (tl::to_string (install_lym.fileName ()));
-        install.run ();
-      }
-    } catch (tl::Exception &ex) {
-      //  Errors in the installation script are only logged, but do not prevent installation
-      tl::error << ex.msg ();
-    }
-
-    tl::info << QObject::tr ("Package '%1' installed").arg (tl::to_qstring (target.name ()));
 
     //  NOTE: this is a bit brute force .. we could as well try to insert the new grain into the existing structure
     refresh ();

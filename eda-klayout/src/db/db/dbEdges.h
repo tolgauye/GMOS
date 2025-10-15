@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -27,20 +27,176 @@
 #include "dbEdgesDelegate.h"
 #include "dbRecursiveShapeIterator.h"
 #include "dbCellVariants.h"
-#include "dbShapeCollection.h"
-#include "dbGenericShapeIterator.h"
+
+#include "gsiObject.h"
 
 #include <list>
 
 namespace db {
 
 class EdgeFilterBase;
-class MutableEdges;
+class FlatEdges;
 class EmptyEdges;
 class DeepShapeStore;
 
-typedef generic_shape_iterator<db::Edge> EdgesIterator;
-typedef addressable_shape_delivery<Edge> AddressableEdgeDelivery;
+/**
+ *  @brief An edge set iterator
+ *
+ *  The iterator delivers the edges of the edge set
+ */
+class DB_PUBLIC EdgesIterator
+{
+public:
+  typedef EdgesIteratorDelegate::value_type value_type;
+  typedef const value_type &reference;
+  typedef const value_type *pointer;
+  typedef std::forward_iterator_tag iterator_category;
+  typedef void difference_type;
+
+  /**
+   *  @brief Default constructor
+   */
+  EdgesIterator ()
+    : mp_delegate (0)
+  {
+    //  .. nothing yet ..
+  }
+
+  /**
+   *  @brief Constructor from a delegate
+   *  The iterator will take ownership over the delegate
+   */
+  EdgesIterator (EdgesIteratorDelegate *delegate)
+    : mp_delegate (delegate)
+  {
+    //  .. nothing yet ..
+  }
+
+  /**
+   *  @brief Destructor
+   */
+  ~EdgesIterator ()
+  {
+    delete mp_delegate;
+    mp_delegate = 0;
+  }
+
+  /**
+   *  @brief Copy constructor and assignment
+   */
+  EdgesIterator (const EdgesIterator &other)
+    : mp_delegate (0)
+  {
+    operator= (other);
+  }
+
+  /**
+   *  @brief Assignment
+   */
+  EdgesIterator &operator= (const EdgesIterator &other)
+  {
+    if (this != &other) {
+      delete mp_delegate;
+      mp_delegate = other.mp_delegate ? other.mp_delegate->clone () : 0;
+    }
+    return *this;
+  }
+
+  /**
+   *  @Returns true, if the iterator is at the end
+   */
+  bool at_end () const
+  {
+    return mp_delegate == 0 || mp_delegate->at_end ();
+  }
+
+  /**
+   *  @brief Increment
+   */
+  EdgesIterator &operator++ ()
+  {
+    if (mp_delegate) {
+      mp_delegate->increment ();
+    }
+    return *this;
+  }
+
+  /**
+   *  @brief Access
+   */
+  reference operator* () const
+  {
+    const value_type *value = operator-> ();
+    tl_assert (value != 0);
+    return *value;
+  }
+
+  /**
+   *  @brief Access
+   */
+  pointer operator-> () const
+  {
+    return mp_delegate ? mp_delegate->get () : 0;
+  }
+
+private:
+  EdgesIteratorDelegate *mp_delegate;
+};
+
+/**
+ *  @brief A helper class allowing delivery of addressable edges
+ *
+ *  In some applications (i.e. box scanner), edges need to be taken
+ *  by address. The edge set cannot always deliver adressable edges.
+ *  This class help providing this ability by keeping a temporary copy
+ *  if required.
+ */
+
+class DB_PUBLIC AddressableEdgeDelivery
+{
+public:
+  AddressableEdgeDelivery ()
+    : m_iter (), m_valid (false)
+  {
+    //  .. nothing yet ..
+  }
+
+  AddressableEdgeDelivery (const EdgesIterator &iter, bool valid)
+    : m_iter (iter), m_valid (valid)
+  {
+    if (! m_valid && ! m_iter.at_end ()) {
+      m_heap.push_back (*m_iter);
+    }
+  }
+
+  bool at_end () const
+  {
+    return m_iter.at_end ();
+  }
+
+  AddressableEdgeDelivery &operator++ ()
+  {
+    ++m_iter;
+    if (! m_valid && ! m_iter.at_end ()) {
+      m_heap.push_back (*m_iter);
+    }
+    return *this;
+  }
+
+  const db::Edge *operator-> () const
+  {
+    if (m_valid) {
+      return m_iter.operator-> ();
+    } else {
+      return &m_heap.back ();
+    }
+  }
+
+private:
+  EdgesIterator m_iter;
+  bool m_valid;
+  std::list<db::Edge> m_heap;
+};
 
 class Edges;
 
@@ -59,7 +215,7 @@ class Edges;
  */
 
 class DB_PUBLIC Edges
-  : public db::ShapeCollection
+  : public gsi::ObjectBase
 {
 public:
   typedef db::Coord coord_type;
@@ -113,33 +269,11 @@ public:
   }
 
   /**
-   *  @brief Constructor from a box with properties
-   *
-   *  Creates an edge set representing the contour of the box
-   */
-  explicit Edges (const db::BoxWithProperties &s)
-    : mp_delegate (0)
-  {
-    insert (s);
-  }
-
-  /**
    *  @brief Constructor from a simple polygon
    *
    *  Creates an edge set representing the contour of the polygon
    */
   explicit Edges (const db::SimplePolygon &s)
-    : mp_delegate (0)
-  {
-    insert (s);
-  }
-
-  /**
-   *  @brief Constructor from a simple polygon with properties
-   *
-   *  Creates an edge set representing the contour of the polygon
-   */
-  explicit Edges (const db::SimplePolygonWithProperties &s)
     : mp_delegate (0)
   {
     insert (s);
@@ -157,17 +291,6 @@ public:
   }
 
   /**
-   *  @brief Constructor from a polygon with properties
-   *
-   *  Creates an edge set representing the contour of the polygon
-   */
-  explicit Edges (const db::PolygonWithProperties &s)
-    : mp_delegate (0)
-  {
-    insert (s);
-  }
-
-  /**
    *  @brief Constructor from a path
    *
    *  Creates an edge set representing the contour of the path
@@ -179,33 +302,11 @@ public:
   }
 
   /**
-   *  @brief Constructor from a path with properties
-   *
-   *  Creates an edge set representing the contour of the path
-   */
-  explicit Edges (const db::PathWithProperties &s)
-    : mp_delegate (0)
-  {
-    insert (s);
-  }
-
-  /**
    *  @brief Constructor from an edge
    *
    *  Creates an edge set representing the single edge
    */
   explicit Edges (const db::Edge &s)
-    : mp_delegate (0)
-  {
-    insert (s);
-  }
-
-  /**
-   *  @brief Constructor from an edge with properties
-   *
-   *  Creates an edge set representing the single edge
-   */
-  explicit Edges (const db::EdgeWithProperties &s)
     : mp_delegate (0)
   {
     insert (s);
@@ -259,43 +360,11 @@ public:
   explicit Edges (const RecursiveShapeIterator &si, DeepShapeStore &dss, const db::ICplxTrans &trans, bool as_edges = true, bool merged_semantics = true);
 
   /**
-   *  @brief Creates a new empty layer inside the dss
-   *  This method requires the DSS to be singular.
-   */
-  explicit Edges (DeepShapeStore &dss);
-
-  /**
-   *  @brief Implementation of the ShapeCollection interface
-   */
-  ShapeCollectionDelegateBase *get_delegate () const
-  {
-    return mp_delegate;
-  }
-
-  /**
    *  @brief Gets the underlying delegate object
    */
-  const EdgesDelegate *delegate () const
+  EdgesDelegate *delegate () const
   {
     return mp_delegate;
-  }
-
-  /**
-   *  @brief Gets the underlying delegate object
-   */
-  EdgesDelegate *delegate ()
-  {
-    return mp_delegate;
-  }
-
-  /**
-   *  @brief Takes the underlying delegate object
-   */
-  EdgesDelegate *take_delegate ()
-  {
-    EdgesDelegate *delegate = mp_delegate;
-    mp_delegate = 0;
-    return delegate;
   }
 
   /**
@@ -399,19 +468,11 @@ public:
   }
 
   /**
-   *  @brief Returns the number of (flat) edges in the edge set
+   *  @brief Returns the number of edges in the edge set
    */
-  size_t count () const
+  size_t size () const
   {
-    return mp_delegate->count ();
-  }
-
-  /**
-   *  @brief Returns the number of (hierarchical) edges in the edge set
-   */
-  size_t hier_count () const
-  {
-    return mp_delegate->hier_count ();
+    return mp_delegate->size ();
   }
 
   /**
@@ -530,18 +591,6 @@ public:
   }
 
   /**
-   *  @brief Returns the filtered edges and the others
-   *
-   *  This method will return a new edge collection with only those edges which
-   *  conform to the filter criterion and another for those which don't.
-   */
-  std::pair<Edges, Edges> split_filter (const EdgeFilterBase &filter) const
-  {
-    std::pair<db::EdgesDelegate *, db::EdgesDelegate *> p = mp_delegate->filtered_pair (filter);
-    return std::make_pair (Edges (p.first), Edges (p.second));
-  }
-
-  /**
    *  @brief Processes the (merged) edges
    *
    *  This method will keep all edges which the processor returns.
@@ -603,17 +652,30 @@ public:
    *  @brief Applies a width check and returns EdgePairs which correspond to violation markers
    *
    *  The width check will create a edge pairs if the width of the area between the 
-   *  edges is less than the specified threshold d.
+   *  edges is less than the specified threshold d. Without "whole_edges", the parts of
+   *  the edges are returned which violate the condition. If "whole_edges" is true, the 
+   *  result will contain the complete edges participating in the result.
    *
-   *  "options" specifies various options to configure the check and it's output.
+   *  "Width" refers to the space between the "inside" sides of the edges.
+   *
+   *  The metrics parameter specifies which metrics to use. "Euclidian", "Square" and "Projected"
+   *  metrics are available.
+   *
+   *  ignore_angle allows specification of a maximum angle the edges can have to not participate
+   *  in the check. By choosing 90 degree, edges having an angle of 90 degree and larger are not checked,
+   *  but acute corners are for example. 
+   *
+   *  With min_projection and max_projection it is possible to specify how edges must be related 
+   *  to each other. If the length of the projection of either edge on the other is >= min_projection
+   *  or < max_projection, the edges are considered for the check.
    *
    *  The order of the edges in the resulting edge pairs is undefined.
    *
    *  Merged semantics applies.
    */
-  EdgePairs width_check (db::Coord d, const db::EdgesCheckOptions &options = db::EdgesCheckOptions ()) const
+  EdgePairs width_check (db::Coord d, bool whole_edges = false, metrics_type metrics = db::Euclidian, double ignore_angle = 90, distance_type min_projection = 0, distance_type max_projection = std::numeric_limits<distance_type>::max ()) const
   {
-    return EdgePairs (mp_delegate->width_check (d, options));
+    return EdgePairs (mp_delegate->width_check (d, whole_edges, metrics, ignore_angle, min_projection, max_projection));
   }
 
   /**
@@ -626,9 +688,9 @@ public:
    *
    *  Merged semantics applies.
    */
-  EdgePairs space_check (db::Coord d, const db::EdgesCheckOptions &options = db::EdgesCheckOptions ()) const
+  EdgePairs space_check (db::Coord d, bool whole_edges = false, metrics_type metrics = db::Euclidian, double ignore_angle = 90, distance_type min_projection = 0, distance_type max_projection = std::numeric_limits<distance_type>::max ()) const
   {
-    return EdgePairs (mp_delegate->space_check (d, options));
+    return EdgePairs (mp_delegate->space_check (d, whole_edges, metrics, ignore_angle, min_projection, max_projection));
   }
 
   /**
@@ -644,9 +706,9 @@ public:
    *
    *  Merged semantics applies.
    */
-  EdgePairs enclosing_check (const Edges &other, db::Coord d, const db::EdgesCheckOptions &options = db::EdgesCheckOptions ()) const
+  EdgePairs enclosing_check (const Edges &other, db::Coord d, bool whole_edges = false, metrics_type metrics = db::Euclidian, double ignore_angle = 90, distance_type min_projection = 0, distance_type max_projection = std::numeric_limits<distance_type>::max ()) const
   {
-    return EdgePairs (mp_delegate->enclosing_check (other, d, options));
+    return EdgePairs (mp_delegate->enclosing_check (other, d, whole_edges, metrics, ignore_angle, min_projection, max_projection));
   }
 
   /**
@@ -662,9 +724,9 @@ public:
    *
    *  Merged semantics applies.
    */
-  EdgePairs overlap_check (const Edges &other, db::Coord d, const db::EdgesCheckOptions &options = db::EdgesCheckOptions ()) const
+  EdgePairs overlap_check (const Edges &other, db::Coord d, bool whole_edges = false, metrics_type metrics = db::Euclidian, double ignore_angle = 90, distance_type min_projection = 0, distance_type max_projection = std::numeric_limits<distance_type>::max ()) const
   {
-    return EdgePairs (mp_delegate->overlap_check (other, d, options));
+    return EdgePairs (mp_delegate->overlap_check (other, d, whole_edges, metrics, ignore_angle, min_projection, max_projection));
   }
 
   /**
@@ -680,9 +742,9 @@ public:
    *
    *  Merged semantics applies.
    */
-  EdgePairs separation_check (const Edges &other, db::Coord d, const db::EdgesCheckOptions &options = db::EdgesCheckOptions ()) const
+  EdgePairs separation_check (const Edges &other, db::Coord d, bool whole_edges = false, metrics_type metrics = db::Euclidian, double ignore_angle = 90, distance_type min_projection = 0, distance_type max_projection = std::numeric_limits<distance_type>::max ()) const
   {
-    return EdgePairs (mp_delegate->separation_check (other, d, options));
+    return EdgePairs (mp_delegate->separation_check (other, d, whole_edges, metrics, ignore_angle, min_projection, max_projection));
   }
 
   /**
@@ -698,9 +760,9 @@ public:
    *
    *  Merged semantics applies.
    */
-  EdgePairs inside_check (const Edges &other, db::Coord d, const db::EdgesCheckOptions &options = db::EdgesCheckOptions ()) const
+  EdgePairs inside_check (const Edges &other, db::Coord d, bool whole_edges = false, metrics_type metrics = db::Euclidian, double ignore_angle = 90, distance_type min_projection = 0, distance_type max_projection = std::numeric_limits<distance_type>::max ()) const
   {
-    return EdgePairs (mp_delegate->inside_check (other, d, options));
+    return EdgePairs (mp_delegate->inside_check (other, d, whole_edges, metrics, ignore_angle, min_projection, max_projection));
   }
 
   /**
@@ -831,24 +893,6 @@ public:
   }
 
   /**
-   *  @brief Boolean AND/NOT operator in the same operation
-   */
-  std::pair<Edges, Edges> andnot (const Edges &other) const
-  {
-    std::pair<db::EdgesDelegate *, db::EdgesDelegate *> p = mp_delegate->andnot_with (other);
-    return std::pair<Edges, Edges> (Edges (p.first), Edges (p.second));
-  }
-
-  /**
-   *  @brief Boolean AND/NOT operator with a region in the same operation
-   */
-  std::pair<Edges, Edges> andnot (const Region &other) const
-  {
-    std::pair<db::EdgesDelegate *, db::EdgesDelegate *> p = mp_delegate->andnot_with (other);
-    return std::pair<Edges, Edges> (Edges (p.first), Edges (p.second));
-  }
-
-  /**
    *  @brief Boolean XOR operator
    */
   Edges operator^ (const Edges &other) const
@@ -905,14 +949,6 @@ public:
     set_delegate (mp_delegate->add_in_place (other));
     return *this;
   }
-
-  /**
-   *  @brief Writes the edge collection to a file
-   *
-   *  This method is provided for debugging purposes. A flat image of the
-   *  region is written to a layout file with a single top cell on layer 0/0.
-   */
-  void write (const std::string &fn) const;
 
   /**
    *  @brief Intersections with other edges
@@ -1037,17 +1073,6 @@ public:
   }
 
   /**
-   *  @brief Returns the eges inside the given region and the ones outside the region.
-   *
-   *  This method combined both inside_part and outside_part.
-   */
-  std::pair<Edges, Edges> inside_outside_part (const Region &other) const
-  {
-    std::pair<db::EdgesDelegate *, db::EdgesDelegate *> p = mp_delegate->inside_outside_part_pair (other);
-    return std::pair<Edges, Edges> (Edges (p.first), Edges (p.second));
-  }
-
-  /**
    *  @brief Selects all polygons of the other region set which overlap or touch edges from this edge set
    *
    *  Merged semantics applies for the other region. Merged polygons will be selected from the other region
@@ -1072,9 +1097,9 @@ public:
    *  Merged semantics applies. If merged semantics is chosen, the connected edge parts will be 
    *  selected as a whole.
    */
-  Edges &select_interacting (const Region &other, size_t min_count = 1, size_t max_count = std::numeric_limits<size_t>::max ())
+  Edges &select_interacting (const Region &other)
   {
-    set_delegate (mp_delegate->selected_interacting (other, min_count, max_count));
+    set_delegate (mp_delegate->selected_interacting (other));
     return *this;
   }
 
@@ -1083,9 +1108,9 @@ public:
    *
    *  This method is an out-of-place version of select_interacting.
    */
-  Edges selected_interacting (const Region &other, size_t min_count = 1, size_t max_count = std::numeric_limits<size_t>::max ()) const
+  Edges selected_interacting (const Region &other) const
   {
-    return Edges (mp_delegate->selected_interacting (other, min_count, max_count));
+    return Edges (mp_delegate->selected_interacting (other));
   }
 
   /**
@@ -1094,9 +1119,9 @@ public:
    *  Merged semantics applies. If merged semantics is chosen, the connected edge parts will be 
    *  selected as a whole.
    */
-  Edges &select_not_interacting (const Region &other, size_t min_count = 1, size_t max_count = std::numeric_limits<size_t>::max ())
+  Edges &select_not_interacting (const Region &other)
   {
-    set_delegate (mp_delegate->selected_not_interacting (other, min_count, max_count));
+    set_delegate (mp_delegate->selected_not_interacting (other));
     return *this;
   }
 
@@ -1105,254 +1130,9 @@ public:
    *
    *  This method is an out-of-place version of select_not_interacting.
    */
-  Edges selected_not_interacting (const Region &other, size_t min_count = 1, size_t max_count = std::numeric_limits<size_t>::max ()) const
+  Edges selected_not_interacting (const Region &other) const
   {
-    return Edges (mp_delegate->selected_not_interacting (other, min_count, max_count));
-  }
-
-  /**
-   *  @brief Returns all edges of this edge set which do not overlap or touch with polygons from the region together with the ones that do not
-   */
-  std::pair<Edges, Edges> selected_interacting_differential (const Region &other, size_t min_count = 1, size_t max_count = std::numeric_limits<size_t>::max ()) const
-  {
-    std::pair<db::EdgesDelegate *, db::EdgesDelegate *> p = mp_delegate->selected_interacting_pair (other, min_count, max_count);
-    return std::pair<Edges, Edges> (Edges (p.first), Edges (p.second));
-  }
-
-  /**
-   *  @brief Selects all edges of this edge collection which are completely outside polygons from the region
-   *
-   *  Merged semantics applies.
-   */
-  Edges &select_outside (const Region &other)
-  {
-    set_delegate (mp_delegate->selected_outside (other));
-    return *this;
-  }
-
-  /**
-   *  @brief Selects all edges of this edge collection which are not completely outside polygons from the region
-   *
-   *  Merged semantics applies.
-   */
-  Edges &select_not_outside (const Region &other)
-  {
-    set_delegate (mp_delegate->selected_not_outside (other));
-    return *this;
-  }
-
-  /**
-   *  @brief Returns all edges of this edge collection which are completely outside polygons from the region
-   *
-   *  This method is an out-of-place version of select_outside.
-   *
-   *  Merged semantics applies.
-   */
-  Edges selected_outside (const Region &other) const
-  {
-    return Edges (mp_delegate->selected_outside (other));
-  }
-
-  /**
-   *  @brief Returns all edges of this edge collection which are not completely outside polygons from the region
-   *
-   *  This method is an out-of-place version of select_not_outside.
-   *
-   *  Merged semantics applies.
-   */
-  Edges selected_not_outside (const Region &other) const
-  {
-    return Edges (mp_delegate->selected_not_outside (other));
-  }
-
-  /**
-   *  @brief Returns all edges of this which are completely outside polygons from the region and the opposite ones at the same time
-   *
-   *  This method is equivalent to calling selected_outside and selected_not_outside, but faster.
-   *
-   *  Merged semantics applies.
-   */
-  std::pair<Edges, Edges> selected_outside_differential (const Region &other) const
-  {
-    std::pair<db::EdgesDelegate *, db::EdgesDelegate *> p = mp_delegate->selected_outside_pair (other);
-    return std::pair<Edges, Edges> (Edges (p.first), Edges (p.second));
-  }
-
-  /**
-   *  @brief Selects all edges of this edge collection which are completely inside polygons from the region
-   *
-   *  Merged semantics applies.
-   */
-  Edges &select_inside (const Region &other)
-  {
-    set_delegate (mp_delegate->selected_inside (other));
-    return *this;
-  }
-
-  /**
-   *  @brief Selects all edges of this edge collection which are not completely inside polygons from the region
-   *
-   *  Merged semantics applies.
-   */
-  Edges &select_not_inside (const Region &other)
-  {
-    set_delegate (mp_delegate->selected_not_inside (other));
-    return *this;
-  }
-
-  /**
-   *  @brief Returns all edges of this which are completely inside polygons from the region
-   *
-   *  This method is an out-of-place version of select_inside.
-   *
-   *  Merged semantics applies.
-   */
-  Edges selected_inside (const Region &other) const
-  {
-    return Edges (mp_delegate->selected_inside (other));
-  }
-
-  /**
-   *  @brief Returns all edges of this which are not completely inside polygons from the region
-   *
-   *  This method is an out-of-place version of select_not_inside.
-   *
-   *  Merged semantics applies.
-   */
-  Edges selected_not_inside (const Region &other) const
-  {
-    return Edges (mp_delegate->selected_not_inside (other));
-  }
-
-  /**
-   *  @brief Returns all edges of this which are completely inside polygons from the region and the opposite ones at the same time
-   *
-   *  This method is equivalent to calling selected_inside and selected_not_inside, but faster.
-   *
-   *  Merged semantics applies.
-   */
-  std::pair<Edges, Edges> selected_inside_differential (const Region &other) const
-  {
-    std::pair<db::EdgesDelegate *, db::EdgesDelegate *> p = mp_delegate->selected_inside_pair (other);
-    return std::pair<Edges, Edges> (Edges (p.first), Edges (p.second));
-  }
-
-  /**
-   *  @brief Selects all edges of this edge collection which are completely outside edges from the other edge collection
-   *
-   *  Merged semantics applies.
-   */
-  Edges &select_outside (const Edges &other)
-  {
-    set_delegate (mp_delegate->selected_outside (other));
-    return *this;
-  }
-
-  /**
-   *  @brief Selects all edges of this edge collection which are not completely outside edges from the other edge collection
-   *
-   *  Merged semantics applies.
-   */
-  Edges &select_not_outside (const Edges &other)
-  {
-    set_delegate (mp_delegate->selected_not_outside (other));
-    return *this;
-  }
-
-  /**
-   *  @brief Returns all edges of this edge collection which are completely outside edges from the other edge collection
-   *
-   *  This method is an out-of-place version of select_outside.
-   *
-   *  Merged semantics applies.
-   */
-  Edges selected_outside (const Edges &other) const
-  {
-    return Edges (mp_delegate->selected_outside (other));
-  }
-
-  /**
-   *  @brief Returns all edges of this edge collection which are not completely outside edges from the other edge collection
-   *
-   *  This method is an out-of-place version of select_not_outside.
-   *
-   *  Merged semantics applies.
-   */
-  Edges selected_not_outside (const Edges &other) const
-  {
-    return Edges (mp_delegate->selected_not_outside (other));
-  }
-
-  /**
-   *  @brief Returns all edges of this which are completely outside edges from the other edge collection and the opposite ones at the same time
-   *
-   *  This method is equivalent to calling selected_outside and selected_not_outside, but faster.
-   *
-   *  Merged semantics applies.
-   */
-  std::pair<Edges, Edges> selected_outside_differential (const Edges &other) const
-  {
-    std::pair<db::EdgesDelegate *, db::EdgesDelegate *> p = mp_delegate->selected_outside_pair (other);
-    return std::pair<Edges, Edges> (Edges (p.first), Edges (p.second));
-  }
-
-  /**
-   *  @brief Selects all edges of this edge collection which are completely inside edges from the other edge collection
-   *
-   *  Merged semantics applies.
-   */
-  Edges &select_inside (const Edges &other)
-  {
-    set_delegate (mp_delegate->selected_inside (other));
-    return *this;
-  }
-
-  /**
-   *  @brief Selects all edges of this edge collection which are not completely inside edges from the other edge collection
-   *
-   *  Merged semantics applies.
-   */
-  Edges &select_not_inside (const Edges &other)
-  {
-    set_delegate (mp_delegate->selected_not_inside (other));
-    return *this;
-  }
-
-  /**
-   *  @brief Returns all edges of this which are completely inside edgess from the other edge collection
-   *
-   *  This method is an out-of-place version of select_inside.
-   *
-   *  Merged semantics applies.
-   */
-  Edges selected_inside (const Edges &other) const
-  {
-    return Edges (mp_delegate->selected_inside (other));
-  }
-
-  /**
-   *  @brief Returns all edges of this which are not completely inside edges from the other edge collection
-   *
-   *  This method is an out-of-place version of select_not_inside.
-   *
-   *  Merged semantics applies.
-   */
-  Edges selected_not_inside (const Edges &other) const
-  {
-    return Edges (mp_delegate->selected_not_inside (other));
-  }
-
-  /**
-   *  @brief Returns all edges of this which are completely inside edges from the other edge collection and the opposite ones at the same time
-   *
-   *  This method is equivalent to calling selected_inside and selected_not_inside, but faster.
-   *
-   *  Merged semantics applies.
-   */
-  std::pair<Edges, Edges> selected_inside_differential (const Edges &other) const
-  {
-    std::pair<db::EdgesDelegate *, db::EdgesDelegate *> p = mp_delegate->selected_inside_pair (other);
-    return std::pair<Edges, Edges> (Edges (p.first), Edges (p.second));
+    return Edges (mp_delegate->selected_not_interacting (other));
   }
 
   /**
@@ -1361,9 +1141,9 @@ public:
    *  Merged semantics applies. If merged semantics is chosen, the connected edge parts will be 
    *  selected as a whole.
    */
-  Edges &select_interacting (const Edges &other, size_t min_count = 1, size_t max_count = std::numeric_limits<size_t>::max ())
+  Edges &select_interacting (const Edges &other)
   {
-    set_delegate (mp_delegate->selected_interacting (other, min_count, max_count));
+    set_delegate (mp_delegate->selected_interacting (other));
     return *this;
   }
 
@@ -1372,18 +1152,9 @@ public:
    *
    *  This method is an out-of-place version of select_interacting.
    */
-  Edges selected_interacting (const Edges &other, size_t min_count = 1, size_t max_count = std::numeric_limits<size_t>::max ()) const
+  Edges selected_interacting (const Edges &other) const
   {
-    return Edges (mp_delegate->selected_interacting (other, min_count, max_count));
-  }
-
-  /**
-   *  @brief Returns all edges of this edge set which do not overlap or touch with edges from the other edge set together with the ones that do not
-   */
-  std::pair<Edges, Edges> selected_interacting_differential (const Edges &other, size_t min_count = 1, size_t max_count = std::numeric_limits<size_t>::max ()) const
-  {
-    std::pair<db::EdgesDelegate *, db::EdgesDelegate *> p = mp_delegate->selected_interacting_pair (other, min_count, max_count);
-    return std::pair<Edges, Edges> (Edges (p.first), Edges (p.second));
+    return Edges (mp_delegate->selected_interacting (other));
   }
 
   /**
@@ -1392,9 +1163,9 @@ public:
    *  Merged semantics applies. If merged semantics is chosen, the connected edge parts will be 
    *  selected as a whole.
    */
-  Edges &select_not_interacting (const Edges &other, size_t min_count = 1, size_t max_count = std::numeric_limits<size_t>::max ())
+  Edges &select_not_interacting (const Edges &other)
   {
-    set_delegate (mp_delegate->selected_not_interacting (other, min_count, max_count));
+    set_delegate (mp_delegate->selected_not_interacting (other));
     return *this;
   }
 
@@ -1403,9 +1174,9 @@ public:
    *
    *  This method is an out-of-place version of select_not_interacting.
    */
-  Edges selected_not_interacting (const Edges &other, size_t min_count = 1, size_t max_count = std::numeric_limits<size_t>::max ()) const
+  Edges selected_not_interacting (const Edges &other) const
   {
-    return Edges (mp_delegate->selected_not_interacting (other, min_count, max_count));
+    return Edges (mp_delegate->selected_not_interacting (other));
   }
 
   /**
@@ -1425,22 +1196,9 @@ public:
   }
 
   /**
-   *  @brief Returns all edges which are in the other edge set and which are not.
-   *
-   *  This method is equivalent to calling in with invert = false and true, but more efficient.
-   *
-   *  Merged semantics applies.
-   */
-  std::pair<Edges, Edges> in_and_out (const Edges &other) const
-  {
-    std::pair<db::EdgesDelegate *, db::EdgesDelegate *> p = mp_delegate->in_and_out (other);
-    return std::pair<Edges, Edges> (Edges (p.first), Edges (p.second));
-  }
-
-  /**
    *  @brief Returns the nth edge
    *
-   *  This operation is available only for flat edge collections - i.e. such for which "has_valid_edges" is true.
+   *  This operation is available only for flat regions - i.e. such for which "has_valid_edges" is true.
    */
   const db::Edge *nth (size_t n) const
   {
@@ -1448,22 +1206,14 @@ public:
   }
 
   /**
-   *  @brief Returns the nth edge's property ID
-   *
-   *  This operation is available only for flat edge collections - i.e. such for which
-   *  "has_valid_edges" is true.
-   */
-  db::properties_id_type nth_prop_id (size_t n) const
-  {
-    return mp_delegate->nth_prop_id (n);
-  }
-
-  /**
    *  @brief Forces flattening of the edge collection
    *
    *  This method will turn any edge collection into a flat one.
    */
-  void flatten ();
+  void flatten ()
+  {
+    flat_edges ();
+  }
 
   /**
    *  @brief Returns true, if the edge set has valid edges stored within itself
@@ -1486,7 +1236,7 @@ public:
    */
   AddressableEdgeDelivery addressable_edges () const
   {
-    return AddressableEdgeDelivery (begin ());
+    return AddressableEdgeDelivery (begin (), has_valid_edges ());
   }
 
   /**
@@ -1505,7 +1255,7 @@ public:
    */
   AddressableEdgeDelivery addressable_merged_edges () const
   {
-    return AddressableEdgeDelivery (begin_merged ());
+    return AddressableEdgeDelivery (begin_merged (), has_valid_merged_edges ());
   }
 
   /**
@@ -1514,20 +1264,6 @@ public:
    *  This method is intended for users who know what they are doing
    */
   const db::RecursiveShapeIterator &iter () const;
-
-  /**
-   *  @brief Gets the property repository
-   *
-   *  Use this object to decode property IDs.
-   */
-  const db::PropertiesRepository &properties_repository () const;
-
-  /**
-   *  @brief Gets the property repository
-   *
-   *  Use this object to decode and encode property IDs.
-   */
-  db::PropertiesRepository &properties_repository ();
 
   /**
    *  @brief Equality
@@ -1565,20 +1301,29 @@ public:
 
 private:
   friend class EdgePairs;
-  friend class Texts;
 
   EdgesDelegate *mp_delegate;
 
   void set_delegate (EdgesDelegate *delegate, bool keep_attributes = true);
-  MutableEdges *mutable_edges();
+  FlatEdges *flat_edges ();
 };
 
 } // namespace db
 
-namespace tl
+namespace tl 
 {
-  template<> DB_PUBLIC bool test_extractor_impl (tl::Extractor &ex, db::Edges &b);
-  template<> DB_PUBLIC void extractor_impl (tl::Extractor &ex, db::Edges &b);
+  /**
+   *  @brief The type traits for the region type
+   */
+  template <>
+  struct type_traits <db::Edges> : public type_traits<void> 
+  {
+    typedef true_tag supports_extractor;
+    typedef true_tag supports_to_string;
+    typedef true_tag has_less_operator;
+    typedef true_tag has_equal_operator;
+  };
+
 }
 
 #endif

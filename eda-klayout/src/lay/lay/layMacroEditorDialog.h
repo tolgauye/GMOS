@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -35,7 +35,6 @@
 #include "tlFileSystemWatcher.h"
 #include "tlDeferredExecution.h"
 #include "tlScriptError.h"
-#include "tlInclude.h"
 #include "lymMacro.h"
 #include "gsiInterpreter.h"
 
@@ -99,7 +98,7 @@ public:
   /**
    *  @brief Constructor
    */
-  MacroEditorDialog (lay::Dispatcher *pr, lym::MacroCollection *root);
+  MacroEditorDialog (lay::PluginRoot *pr, lym::MacroCollection *root);
 
   /**
    *  @brief Destructor
@@ -167,14 +166,6 @@ public:
   }
 
   /**
-   *  @brief Returns true while the macro IDE is in breakpoint mode
-   */
-  bool in_breakpoint () const
-  {
-    return m_in_breakpoint;
-  }
-
-  /**
    *  @brief Selects the current category in the tree view
    */
   void select_category (const std::string &cat);
@@ -195,7 +186,6 @@ private slots:
   void new_folder_button_clicked ();
   void save_all_button_clicked ();
   void save_button_clicked ();
-  void save_as_button_clicked ();
   void run_button_clicked ();
   void run_this_button_clicked ();
   void single_step_button_clicked ();
@@ -217,21 +207,12 @@ private slots:
   void commit ();
   void stack_element_double_clicked (QListWidgetItem *item);
   void search_edited ();
-  void search_editing ();
-  void search_finished ();
   void tab_close_requested (int);
-  void close_requested ();
-  void close_all ();
-  void close_all_but_this ();
-  void close_all_left ();
-  void close_all_right ();
   void replace_mode_button_clicked ();
   void replace_next_button_clicked ();
   void replace_all_button_clicked ();
   void find_next_button_clicked ();
-  void find_prev_button_clicked ();
   void help_requested (const QString &s);
-  void search_requested (const QString &s, bool prev);
   void macro_changed (lym::Macro *macro);
   void macro_deleted (lym::Macro *macro);
   void macro_collection_deleted (lym::MacroCollection *collection);
@@ -241,8 +222,6 @@ private slots:
   void del_watches ();
   void clear_watches ();
   void set_debugging_on (bool on);
-  void tabs_menu_about_to_show ();
-  void tab_menu_selected ();
 
   //  edit trace navigation
   void forward ();
@@ -256,6 +235,7 @@ protected slots:
   void file_changed (const QString &path);
   void file_removed (const QString &path);
   void clear_log ();
+  void search_replace ();
   void apply_search ()
   {
     apply_search (false);
@@ -275,11 +255,8 @@ private:
   lym::Macro *create_macro_here(const char *name = 0);
   void move_subfolder (lym::MacroCollection *source, lym::MacroCollection *target);
   lay::MacroEditorPage *create_page (lym::Macro *macro);
-  void open_macro (lym::Macro *macro);
-  void close_many (int which_relative_to_current);
   void ensure_writeable_collection_selected ();
   void update_console_text ();
-  void do_current_tab_changed ();
   void start_exec (gsi::Interpreter *interpreter);
   void end_exec (gsi::Interpreter *interpreter);
   size_t id_for_path (gsi::Interpreter *interpreter, const std::string &path);
@@ -308,21 +285,19 @@ private:
   void update_watches ();
   lym::Macro *new_macro ();
   void do_search_edited ();
-  void set_editor_focus ();
   void select_trace (size_t index);
   bool configure (const std::string &name, const std::string &value);
   void config_finalize ();
-  void translate_pseudo_id (size_t &file_id, int &line);
-  void exit_if_needed ();
 
-  lay::Dispatcher *mp_plugin_root;
+  lay::PluginRoot *mp_plugin_root;
   lym::MacroCollection *mp_root;
   bool m_first_show;
-  QPoint m_mouse_pos;
+  bool m_in_processing;
   bool m_debugging_on;
   lym::Macro *mp_run_macro;
   std::vector<lym::Macro *> m_macro_templates;
   tl::DeferredMethod<MacroEditorDialog> md_update_console_text;
+  tl::DeferredMethod<MacroEditorDialog> md_search_edited;
   TextEditWidget *mp_console_text;
   std::map <lym::Macro *, MacroEditorPage *> m_tab_widgets;
   int m_history_index;
@@ -335,11 +310,8 @@ private:
   QTextCharFormat m_stderr_format;
   MacroEditorHighlighters m_highlighters;
   std::vector<std::pair<lym::Macro *, MacroEditorPage *> > m_file_to_widget;
-  std::vector<tl::IncludeExpander> m_include_expanders;
-  std::map<std::string, size_t> m_include_paths_to_ids;
-  std::map<std::pair<size_t, int>, std::pair<size_t, int> > m_include_file_id_cache;
   std::vector<lay::MacroEditorTree *> m_macro_trees;
-  bool m_in_exec, m_in_breakpoint, m_ignore_exec_events;
+  bool m_in_exec, m_in_breakpoint;
   gsi::Interpreter *mp_exec_controller, *mp_current_interpreter;
   bool m_continue;
   int m_trace_count;
@@ -369,8 +341,6 @@ private:
   std::vector<QString> m_changed_files, m_removed_files;
   tl::DeferredMethod<MacroEditorDialog> dm_refresh_file_watcher;
   tl::DeferredMethod<MacroEditorDialog> dm_update_ui_to_run_mode;
-  tl::DeferredMethod<MacroEditorDialog> dm_current_tab_changed;
-  QMenu *mp_tabs_menu;
 };
 
 }

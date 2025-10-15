@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -22,10 +22,12 @@
 
 #include "../pymodHelper.h"
 
+//  to force linking of the lib module
+#include "../../lib/lib/libForceLink.h"
+
 static PyObject *lib_module_init (const char *pymod_name, const char *mod_name, const char *mod_description)
 {
   return module_init (pymod_name, mod_name, mod_description);
 }
 
-#include "libMain.h"
 DEFINE_PYMOD_WITH_INIT(libcore, "lib", "KLayout core module 'lib'", lib_module_init)

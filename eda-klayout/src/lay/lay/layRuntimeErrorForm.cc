@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,6 @@
 
 
 #include "layRuntimeErrorForm.h"
-#include "layQtTools.h"
 #include "tlScriptError.h"
 
 #include <QMessageBox>
@@ -41,7 +40,6 @@ RuntimeErrorForm::RuntimeErrorForm (QWidget *parent, const char *name, const tl:
 
   msg_label->setText (tl::to_qstring (error->basic_msg ()));
   details_text->setText (tl::to_qstring (error->msg ()));
-  details_text->setFont (lay::monospace_font ());
   details_frame->hide ();
 
   //  "borrow" the error pixmap from the message box

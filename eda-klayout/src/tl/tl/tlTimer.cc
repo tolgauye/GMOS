@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -25,21 +25,24 @@
 #include "tlLog.h"
 #include "tlString.h"
 
-#if defined(_MSC_VER) || defined(_WIN32)
-#  include <Windows.h>
-#  include <Psapi.h>
-#elif defined(__MACH__) && defined(__APPLE__)
-#  include <mach/clock.h>
-#  include <mach/mach.h>
+#ifndef _WIN32
 #  include <sys/times.h>
-#  include <unistd.h>
-#  include <libproc.h>
-#else
-#  include <sys/times.h>
-#  include <unistd.h>
 #endif
 
 #include <stdio.h>
+
+#if !defined(_MSC_VER) // not available on MS VC++
+#  include <unistd.h>
+#endif
+
+#if defined(_MSC_VER)
+#  include <Windows.h>
+#endif
+
+#if defined(__MACH__)
+#  include <mach/clock.h>
+#  include <mach/mach.h>
+#endif
 
 namespace tl
 {
@@ -55,7 +58,7 @@ const uint64_t ft_to_epoch_offset = uint64_t (11644473600) * uint64_t (10000000)
 void current_utc_time (struct timespec *ts)
 {
 
-#if defined(__MACH__) && defined(__APPLE__)
+#if defined(__MACH__)
 
   clock_serv_t cclock;
   mach_timespec_t mts;
@@ -83,11 +86,11 @@ void current_utc_time (struct timespec *ts)
 }
 
 // -------------------------------------------------------------
-//  Gets the current time in ns from epoch
+//  Gets the current time in ms from epoch
 
-static int64_t ns_time ()
+static int64_t ms_time ()
 {
-#if defined(__MACH__) && defined(__APPLE__)
+#if defined(__MACH__)
 
   clock_serv_t cclock;
   mach_timespec_t mts;
@@ -95,27 +98,24 @@ static int64_t ns_time ()
   clock_get_time(cclock, &mts);
   mach_port_deallocate(mach_task_self(), cclock);
 
-  return int64_t (mts.tv_sec) * 1000000000 + int64_t (mts.tv_nsec);
+  return int64_t (mts.tv_sec) * 1000 + int64_t (0.5 + mts.tv_nsec / 1.0e6);
 
 #elif defined(_MSC_VER)
 
-  static LARGE_INTEGER freq = { 0 };
+  FILETIME ft;
+  GetSystemTimeAsFileTime (&ft);
 
-  if (freq.QuadPart == 0) {
-    QueryPerformanceFrequency (&freq);
-    tl_assert (freq.QuadPart > 0);
-  }
+  uint64_t t = (uint64_t (ft.dwHighDateTime) << (sizeof (ft.dwHighDateTime) * 8)) | uint64_t (ft.dwLowDateTime);
+  t -= ft_to_epoch_offset;
 
-  LARGE_INTEGER qpc;
-  QueryPerformanceCounter (&qpc);
-
-  return int64_t (double (qpc.QuadPart) / double (freq.QuadPart) * 1e9 + 0.5);
+  //  FILETIME uses 100ns resolution, hence divide by 10000 to get ms:
+  return int64_t (t / 10000);
 
 #else
 
   timespec ts;
   clock_gettime (CLOCK_REALTIME, &ts);
-  return int64_t (ts.tv_sec) * 1000000000 + int64_t (ts.tv_nsec);
+  return int64_t (ts.tv_sec) * 1000 + int64_t (0.5 + ts.tv_nsec / 1.0e6);
 
 #endif
 }
@@ -124,8 +124,8 @@ static int64_t ns_time ()
 //  Implementation of Timer
 
 Timer::Timer ()
-    : m_user_ms (0), m_sys_ms (0), m_wall_ns (0),
-      m_user_ms_res (0), m_sys_ms_res (0), m_wall_ns_res (0)
+    : m_user_ms (0), m_sys_ms (0), m_wall_ms (0),
+      m_user_ms_res (0), m_sys_ms_res (0), m_wall_ms_res (0)
 {
   // ..
 }
@@ -146,7 +146,7 @@ Timer::start ()
   m_sys_ms += (timer_t) ((clks.tms_stime + clks.tms_cstime) * clk2msec + 0.5);
 #endif
 
-  m_wall_ns += ns_time ();
+  m_wall_ms += ms_time ();
 }
 
 void
@@ -154,15 +154,15 @@ Timer::stop ()
 {
   m_user_ms = -m_user_ms;
   m_sys_ms = -m_sys_ms;
-  m_wall_ns = -m_wall_ns;
+  m_wall_ms = -m_wall_ms;
   start ();
 
   m_user_ms_res = m_user_ms;
   m_sys_ms_res = m_sys_ms;
-  m_wall_ns_res = m_wall_ns;
+  m_wall_ms_res = m_wall_ms;
   m_user_ms = 0;
   m_sys_ms = 0;
-  m_wall_ns = 0;
+  m_wall_ms = 0;
 }
 
 void
@@ -170,56 +170,35 @@ Timer::take ()
 {
   timer_t user_ms = m_user_ms;
   timer_t sys_ms = m_sys_ms;
-  timer_t wall_ns = m_wall_ns;
+  timer_t wall_ms = m_wall_ms;
 
   m_user_ms = -m_user_ms;
   m_sys_ms = -m_sys_ms;
-  m_wall_ns = -m_wall_ns;
+  m_wall_ms = -m_wall_ms;
   start ();
 
   m_user_ms_res = m_user_ms;
   m_sys_ms_res = m_sys_ms;
-  m_wall_ns_res = m_wall_ns;
+  m_wall_ms_res = m_wall_ms;
 
   m_user_ms = user_ms;
   m_sys_ms = sys_ms;
-  m_wall_ns = wall_ns;
+  m_wall_ms = wall_ms;
 }
 
-size_t
-Timer::memory_size ()
+void
+SelfTimer::start_report () const
+{
+  tl::info << m_desc << ": " << tl::to_string (tr ("started"));
+}
+
+void
+SelfTimer::report () const
 {
 #ifdef _WIN32
+  tl::info << m_desc << ": (user) " << sec_user () << " (sys) " << sec_sys ();
+#else
 
-  size_t mem = 0;
-
-  HANDLE h_process = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, GetCurrentProcessId ());
-  if (h_process != NULL) {
-
-    PROCESS_MEMORY_COUNTERS pmc;
-    if (GetProcessMemoryInfo (h_process, &pmc, sizeof (pmc))) {
-      mem = size_t (pmc.WorkingSetSize);
-    }
-
-    CloseHandle (h_process);
-
-  }
-
-  return mem;
-
-#elif defined(__APPLE__)
-
-  pid_t pid = getpid();
-  struct proc_taskinfo taskinfo;
-  if (proc_pidinfo(pid, PROC_PIDTASKINFO, 0, &taskinfo, sizeof(taskinfo)) <= 0) {
-    perror("proc_pidinfo failed");
-    return 0;
-  }
-  
-  return taskinfo.pti_resident_size;
-  
-#elif defined(__linux__)
-    
   unsigned long memsize = 0;
   FILE *procfile = fopen ("/proc/self/stat", "r");
   if (procfile != NULL) {
@@ -245,8 +224,8 @@ Timer::memory_size ()
                               "%*d " // 0
                               "%*d " // itrealvalue
                               "%*u " // starttime
-                              "%*u " // vsize
-                              "%lu " // rss
+                              "%lu " // vsize
+                              "%*d " // rss
                               "%*u " // rlim
                               "%*u " // startcode
                               "%*u " // endcode
@@ -271,33 +250,12 @@ Timer::memory_size ()
     }
   }
 
-  return size_t (memsize) * size_t (getpagesize ());
-
-#else
-#  error Unsupported platform
-#endif
-}
-
-void
-SelfTimer::start_report () const
-{
-  tl::info << m_desc << ": " << tl::to_string (tr ("started"));
-}
-
-void
-SelfTimer::report () const
-{
-  size_t memsize = memory_size ();
-
   tl::info << m_desc << ": " << sec_user () << " (user) "
            << sec_sys () << " (sys) "
-           << sec_wall () << " (wall)" << tl::noendl;
-
-  if (memsize > 0) {
-    tl::info << " " << tl::sprintf ("%.2fM", double (memsize) / (1024.0 * 1024.0)) << " (mem)";
-  } else {
-    tl::info << "";
-  }
+           << sec_wall () << " (wall) "
+           << tl::sprintf ("%.2fM", double (memsize) / (1024.0 * 1024.0)) << " (mem)"
+           ;
+#endif
 }
 
 // -------------------------------------------------------------
@@ -305,20 +263,20 @@ SelfTimer::report () const
 
 Clock::Clock (double s)
 {
-  m_clock_ns = s * 1e9;
+  m_clock_ms = s * 1000.0;
 }
 
 double 
 Clock::seconds () const
 {
-  return double (m_clock_ns) * 1e-9;
+  return double (m_clock_ms) * 0.001;
 }
 
 Clock
 Clock::current ()
 {
   Clock c;
-  c.m_clock_ns += ns_time ();
+  c.m_clock_ms += ms_time ();
   return c;
 }
 

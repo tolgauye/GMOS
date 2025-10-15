@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -32,19 +32,19 @@ namespace pya
 //  PythonRef implementation
 
 PythonRef::PythonRef ()
-  : mp_obj (NULL), m_owns_pointer (true)
+  : mp_obj (NULL)
 { 
   //  .. nothing yet ..
 }
 
 PythonRef::PythonRef (const PythonPtr &ptr)
-  : mp_obj (ptr.get ()), m_owns_pointer (true)
+  : mp_obj (ptr.get ())
 { 
   Py_XINCREF (mp_obj);
 }
 
 PythonRef::PythonRef (PyObject *obj, bool new_ref)
-  : mp_obj (obj), m_owns_pointer (true)
+  : mp_obj (obj)
 { 
   if (! new_ref) {
     Py_XINCREF (mp_obj);
@@ -53,49 +53,38 @@ PythonRef::PythonRef (PyObject *obj, bool new_ref)
 
 PythonRef &PythonRef::operator= (PyObject *obj)
 {
-  if (m_owns_pointer) {
-    Py_XDECREF (mp_obj);
-  }
+  Py_XDECREF (mp_obj);
   mp_obj = obj;
-  m_owns_pointer = true;
   return *this;
 }
 
 PythonRef &PythonRef::operator= (const PythonPtr &ptr)
 {
-  if (m_owns_pointer) {
-    Py_XDECREF (mp_obj);
-  }
+  Py_XDECREF (mp_obj);
   mp_obj = ptr.get ();
   Py_XINCREF (mp_obj);
-  m_owns_pointer = true;
   return *this;
 }
 
 PythonRef &PythonRef::operator= (const PythonRef &other)
 {
   if (this != &other && mp_obj != other.mp_obj) {
-    if (m_owns_pointer) {
-      Py_XDECREF (mp_obj);
-    }
+    Py_XDECREF (mp_obj);
     mp_obj = other.mp_obj;
-    m_owns_pointer = true;
     Py_XINCREF (mp_obj);
   }
   return *this;
 }
 
 PythonRef::PythonRef (const PythonRef &other)
-  : mp_obj (other.mp_obj), m_owns_pointer (true)
+  : mp_obj (other.mp_obj)
 {
   Py_XINCREF (mp_obj);
 }
 
 PythonRef::~PythonRef ()
 {
-  if (m_owns_pointer) {
-    Py_XDECREF (mp_obj);
-  }
+  Py_XDECREF (mp_obj);
 }
 
 PythonRef::operator bool () const
@@ -118,12 +107,6 @@ PyObject *PythonRef::release ()
   PyObject *o = mp_obj;
   mp_obj = NULL;
   return o;
-}
-
-PyObject *PythonRef::release_const () const
-{
-  m_owns_pointer = false;
-  return mp_obj;
 }
 
 // --------------------------------------------------------------------------
@@ -166,13 +149,6 @@ PythonPtr::PythonPtr (const PythonPtr &other)
 PythonPtr::~PythonPtr ()
 {
   Py_XDECREF (mp_obj);
-}
-
-PyObject *PythonPtr::release ()
-{
-  PyObject *obj = mp_obj;
-  mp_obj = NULL;
-  return obj;
 }
 
 PythonPtr::operator bool () const

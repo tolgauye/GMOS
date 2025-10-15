@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -20,7 +20,6 @@
 
 */
 
-#if defined(HAVE_QT)
 
 #ifndef HDR_edtPropertiesPageUtils
 #define HDR_edtPropertiesPageUtils
@@ -33,8 +32,6 @@
 #include "dbCell.h"
 
 #include <vector>
-
-class QLineEdit;
 
 namespace edt
 {
@@ -67,10 +64,6 @@ public:
   { 
     return db::Instance ();
   }
-
-private:
-  ChangeApplicator (const ChangeApplicator &);
-  ChangeApplicator &operator= (const ChangeApplicator &);
 };
 
 /**
@@ -129,22 +122,6 @@ public:
 private:
   db::Coord m_dl, m_db, m_dr, m_dt;
   db::Coord m_l, m_b, m_r, m_t;
-};
-
-/**
- *  @brief A point change applicator
- */
-class PointDimensionsChangeApplicator
-  : public ChangeApplicator
-{
-public:
-  PointDimensionsChangeApplicator (const db::Point &point, const db::Point &org_point);
-
-  bool supports_relative_mode () const { return true; }
-  db::Shape do_apply (db::Shapes &shapes, const db::Shape &shape, double dbu, bool relative) const;
-
-private:
-  db::Point m_point, m_org_point;
 };
 
 /**
@@ -356,26 +333,6 @@ private:
 };
 
 /**
- *  @brief An applicator changing the target pcell of an instance
- */
-class ChangeTargetPCellApplicator
-  : public ChangeApplicator
-{
-public:
-  ChangeTargetPCellApplicator (db::pcell_id_type pcell_id, bool apply_new_id, db::Library *new_lib, bool apply_new_lib, const std::map<std::string, tl::Variant> &modified_parameters);
-
-  bool supports_relative_mode () const { return false; }
-  db::Instance do_apply_inst (db::Cell &cell, const db::Instance &instance, double dbu, bool relative) const;
-
-private:
-  db::pcell_id_type m_pcell_id;
-  bool m_apply_new_id;
-  db::Library *mp_new_lib;
-  bool m_apply_new_lib;
-  std::map<std::string, tl::Variant> m_modified_parameters;
-};
-
-/**
  *  @brief An applicator changing the transformation properties of an instance
  */
 class ChangeInstanceTransApplicator
@@ -480,20 +437,6 @@ db::DCoord dcoord_from_dcoord (double d, double dbu, bool du, const db::CplxTran
 db::DPoint dpoint_from_dpoint (const db::DPoint &dp, double dbu, bool du, const db::DCplxTrans &t);
 
 /**
- *  @brief Converts a micron or DBU vector to a micron point
- *
- *  @param dp The point to convert
- *  @param dbu The database unit
- *  @param du A flag indicating whether the input point is given in database units (du = true) or micron (du = false)
- *  @param t A transformation (in DBU space) to apply to the point
- *  @return The micron-unit point
- *
- *  The transformation is intended to be a global-to-local transformation so the output value is
- *  a point in local-cell micron units.
- */
-db::DVector dvector_from_dvector (const db::DVector &dp, double dbu, bool du, const db::DCplxTrans &t);
-
-/**
  *  @brief Gets a dimension value from a string
  *
  *  See dcoord_from_dcoord for a description of the arguments.
@@ -539,4 +482,3 @@ db::Coord coord_from_string (const char *txt, double dbu, bool du, const db::VCp
 
 #endif
 
-#endif

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -28,16 +28,13 @@
 #include "tlLog.h"
 #include "tlCommandLineParser.h"
 #include "tlFileUtils.h"
-#include "tlTimer.h"
 #include "rba.h"
 #include "pya.h"
 #include "gsi.h"
 #include "gsiExpression.h"
 #include "libForceLink.h"
 #include "rdbForceLink.h"
-#include "pexForceLink.h"
 #include "lymMacro.h"
-#include "lymMacroCollection.h"
 
 struct RunnerData
 {
@@ -86,21 +83,9 @@ BD_PUBLIC int strmrun (int argc, char *argv[])
     python.define_variable (v->first, v->second);
   }
 
-  //  install the built-in macros so we can run DRC and LVS scripts
-  lym::MacroCollection &lym_root = lym::MacroCollection::root ();
-  lym_root.add_folder (tl::to_string (tr ("Built-In")), ":/built-in-macros", "macros", true);
-  lym_root.add_folder (tl::to_string (tr ("Built-In")), ":/built-in-pymacros", "pymacros", true);
-
-  lym_root.autorun_early ();
-  lym_root.autorun ();
-
   std::string script = tl::absolute_file_path (data.script);
 
   lym::Macro macro;
   macro.load_from (script);
-  macro.set_file_path (script);
-
-  tl::SelfTimer timer (tl::verbosity () >= 11, tl::to_string (tr ("Total")));
-
   return macro.run ();
 }

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
 #include "edtService.h"
 #include "dbRecursiveShapeIterator.h"
 #include "layObjectInstPath.h"
-#include "layLayoutViewBase.h"
+#include "layLayoutView.h"
 
 namespace gsi
 {
@@ -71,13 +71,6 @@ static db::Layout *layout_from_inst_path (const lay::ObjectInstPath *p)
   }
 
   return cell ? cell->layout () : 0;
-}
-
-static db::Cell *cell_from_inst_path (const lay::ObjectInstPath *p)
-{
-  auto cell_index = p->cell_index_tot ();
-  db::Layout *layout = layout_from_inst_path (p);
-  return layout ? &layout->cell (cell_index) : 0;
 }
 
 static db::DCplxTrans source_dtrans (const lay::ObjectInstPath *p)
@@ -132,58 +125,39 @@ static lay::ObjectInstPath *from_si (const db::RecursiveShapeIterator &si, int c
   return ip;
 }
 
-static tl::Variant ip_layer (const lay::ObjectInstPath *ip)
-{
-  if (ip->is_cell_inst ()) {
-    return tl::Variant ();
-  } else {
-    return tl::Variant (ip->layer ());
-  }
-}
-
-static tl::Variant ip_shape (const lay::ObjectInstPath *ip)
-{
-  if (ip->is_cell_inst ()) {
-    return tl::Variant ();
-  } else {
-    return tl::Variant (ip->shape ());
-  }
-}
-
 gsi::Class<lay::ObjectInstPath> decl_ObjectInstPath ("lay", "ObjectInstPath",
   gsi::constructor ("new", &from_si, gsi::arg ("si"), gsi::arg ("cv_index"),
     "@brief Creates a new path object from a \\RecursiveShapeIterator\n"
     "Use this constructor to quickly turn a recursive shape iterator delivery "
     "into a shape selection."
   ) +
-  gsi::method ("<", &lay::ObjectInstPath::operator<, gsi::arg ("b"),
+  gsi::method ("<", &lay::ObjectInstPath::operator<,
     "@brief Provides an order criterion for two ObjectInstPath objects\n"
+    "@args b\n"
     "Note: this operator is just provided to establish any order, not a particular one.\n"
     "\n"
     "This method has been introduced with version 0.24.\n"
   ) +
-  gsi::method ("!=", &lay::ObjectInstPath::operator!=, gsi::arg ("b"),
+  gsi::method ("!=", &lay::ObjectInstPath::operator!=,
     "@brief Inequality of two ObjectInstPath objects\n"
+    "@args b\n"
     "See the comments on the == operator.\n"
     "\n"
     "This method has been introduced with version 0.24.\n"
   ) +
-  gsi::method ("==", &lay::ObjectInstPath::operator==, gsi::arg ("b"),
+  gsi::method ("==", &lay::ObjectInstPath::operator==,
     "@brief Equality of two ObjectInstPath objects\n"
+    "@args b\n"
     "Note: this operator returns true if both instance paths refer to the same object, not just identical ones.\n"
     "\n"
     "This method has been introduced with version 0.24.\n"
   ) +
-  gsi::method ("is_valid?", &lay::ObjectInstPath::is_valid, gsi::arg ("view"),
-    "@brief Gets a value indicating whether the instance path refers to a valid object in the context of the given view\n"
-    "\n"
-    "This predicate has been introduced in version 0.27.12.\n"
-  ) +
-  gsi::method ("cv_index", &lay::ObjectInstPath::cv_index,
+  gsi::method ("cv_index", &lay::ObjectInstPath::cv_index, 
     "@brief Gets the cellview index that describes which cell view the shape or instance is located in\n"
   ) + 
-  gsi::method ("cv_index=", &lay::ObjectInstPath::set_cv_index, gsi::arg ("index"),
+  gsi::method ("cv_index=", &lay::ObjectInstPath::set_cv_index, 
     "@brief Sets the cellview index that describes which cell view the shape or instance is located in\n"
+    "@args index\n"
     "\n"
     "This method has been introduced in version 0.24."
   ) + 
@@ -192,12 +166,13 @@ gsi::Class<lay::ObjectInstPath> decl_ObjectInstPath ("lay", "ObjectInstPath",
     "\n"
     "The top cell is identical to the current cell provided by the cell view.\n"
     "It is the cell from which is instantiation path originates and the container cell "
-    "if no instantiation path is set.\n"
+    "if not instantiation path is set.\n"
     "\n"
     "This method has been introduced in version 0.24."
   ) + 
-  gsi::method ("top=", &lay::ObjectInstPath::set_topcell, gsi::arg ("cell_index"),
+  gsi::method ("top=", &lay::ObjectInstPath::set_topcell, 
     "@brief Sets the cell index of the top cell the selection applies to\n"
+    "@args cell_index\n"
     "\n"
     "See \\top_cell for a description of this property.\n"
     "\n"
@@ -210,13 +185,6 @@ gsi::Class<lay::ObjectInstPath> decl_ObjectInstPath ("lay", "ObjectInstPath",
     "This property is set implicitly by setting the top cell and adding elements to the instantiation path.\n"
     "To obtain the index of the container cell, use \\source.\n"
   ) + 
-  gsi::method_ext ("cell", &cell_from_inst_path,
-    "@brief Gets the cell object that the selection applies to.\n"
-    "\n"
-    "This is a convenience method that returns a \\Cell objeact instead of a cell index (see \\cell_index).\n"
-    "\n"
-    "This method has been introduced in version 0.30.3.\n"
-  ) +
   gsi::method_ext ("layout", &layout_from_inst_path,
     "@brief Gets the Layout object the selected object lives in.\n"
     "\n"
@@ -282,31 +250,33 @@ gsi::Class<lay::ObjectInstPath> decl_ObjectInstPath ("lay", "ObjectInstPath",
     "\n"
     "The method has been introduced in version 0.25.\n"
   ) +
-  gsi::method_ext ("layer", &ip_layer,
+  gsi::method ("layer", &lay::ObjectInstPath::layer,
     "@brief Gets the layer index that describes which layer the selected shape is on\n"
     "\n"
-    "Starting with version 0.27, this method returns nil for this property if \\is_cell_inst? is false - "
-    "i.e. the selection does not represent a shape."
+    "This method delivers valid results only for object selections that represent shapes, i.e for "
+    "which \\is_cell_inst? is false."
   ) + 
-  gsi::method ("layer=", &lay::ObjectInstPath::set_layer, gsi::arg ("layer_index"),
+  gsi::method ("layer=", &lay::ObjectInstPath::set_layer, 
     "@brief Sets to the layer index that describes which layer the selected shape is on\n"
+    "@args layer_index\n"
     "\n"
     "Setting the layer property to a valid layer index makes the path a shape selection path.\n"
     "Setting the layer property to a negative layer index makes the selection an instance selection.\n"
     "\n"
     "This method has been introduced in version 0.24."
   ) + 
-  gsi::method_ext ("shape", &ip_shape,
-    "@brief Gets the selected shape\n"
+  gsi::method ("shape", (const db::Shape &(lay::ObjectInstPath::*) () const) &lay::ObjectInstPath::shape,
+    "@brief Gets the shape object that describes the selected shape geometrically\n"
+    "\n"
+    "This method delivers valid results only for object selections that represent shapes, i.e for "
+    "which \\is_cell_inst? is false.\n"
     "\n"
     "The shape object may be modified. This does not have an immediate effect on the selection. Instead, "
     "the selection must be set in the view using \\LayoutView#object_selection= or \\LayoutView#select_object.\n"
-    "\n"
-    "This method delivers valid results only for object selections that represent shapes. "
-    "Starting with version 0.27, this method returns nil for this property if \\is_cell_inst? is false."
-  ) +
-  gsi::method ("shape=", &lay::ObjectInstPath::set_shape, gsi::arg ("shape"),
+  ) + 
+  gsi::method ("shape=", &lay::ObjectInstPath::set_shape, 
     "@brief Sets the shape object that describes the selected shape geometrically\n"
+    "@args shape\n"
     "\n"
     "When using this setter, the layer index must be set to a valid layout layer (see \\layer=).\n"
     "Setting both properties makes the selection a shape selection.\n"
@@ -334,8 +304,9 @@ gsi::Class<lay::ObjectInstPath> decl_ObjectInstPath ("lay", "ObjectInstPath",
     "The sequence number describes when the item was selected.\n"
     "A sequence number of 0 indicates that the item was selected in the first selection action (without 'Shift' pressed).\n"
   ) + 
-  gsi::method ("seq=", &lay::ObjectInstPath::set_seq, gsi::arg ("n"),
+  gsi::method ("seq=", &lay::ObjectInstPath::set_seq, 
     "@brief Sets the sequence number\n"
+    "@args n\n"
     "\n"
     "See \\seq for a description of this property.\n"
     "\n"
@@ -357,8 +328,9 @@ gsi::Class<lay::ObjectInstPath> decl_ObjectInstPath ("lay", "ObjectInstPath",
     "\n"
     "This method was introduced in version 0.26.\n"
   ) +
-  gsi::method ("append_path", (void (lay::ObjectInstPath::*) (const db::InstElement &)) &lay::ObjectInstPath::add_path, gsi::arg ("element"),
+  gsi::method ("append_path", (void (lay::ObjectInstPath::*) (const db::InstElement &)) &lay::ObjectInstPath::add_path,
     "@brief Appends an element to the instantiation path\n"
+    "@args element\n"
     "\n"
     "This method allows building of an instantiation path pointing to the selected object.\n"
     "For an instance selection, the last component added is the instance which is selected.\n"
@@ -371,8 +343,9 @@ gsi::Class<lay::ObjectInstPath> decl_ObjectInstPath ("lay", "ObjectInstPath",
     "\n"
     "This method has been added in version 0.16."
   ) + 
-  gsi::method_ext ("path_nth", &gsi::path_nth, gsi::arg ("n"),
+  gsi::method_ext ("path_nth", &gsi::path_nth, 
     "@brief Returns the nth element of the path (similar to \\each_inst but with direct access through the index)\n"
+    "@args n\n"
     "\n"
     "@param n The index of the element to retrieve (0..\\path_length-1)\n"
     "This method has been added in version 0.16."
@@ -439,12 +412,175 @@ gsi::Class<lay::ObjectInstPath> decl_ObjectInstPath ("lay", "ObjectInstPath",
   "in the way shown above will help avoiding this issue.\n"
 );
 
+class EditableSelectionIterator 
+{
+public:
+  typedef edt::Service::objects::value_type value_type;
+  typedef edt::Service::objects::const_iterator iterator_type;
+  typedef void pointer; 
+  typedef const value_type &reference;
+  typedef std::forward_iterator_tag iterator_category;
+  typedef void difference_type;
+
+  EditableSelectionIterator (const std::vector<edt::Service *> &services, bool transient) 
+    : m_services (services), m_service (0), m_transient_selection (transient)
+  {
+    if (! m_services.empty ()) {
+      if (m_transient_selection) {
+        m_iter = m_services [m_service]->transient_selection ().begin ();
+        m_end = m_services [m_service]->transient_selection ().end ();
+      } else {
+        m_iter = m_services [m_service]->selection ().begin ();
+        m_end = m_services [m_service]->selection ().end ();
+      }
+      next ();
+    }
+  }
+
+  bool at_end () const
+  {
+    return (m_service >= m_services.size ());
+  }
+
+  EditableSelectionIterator &operator++ ()
+  {
+    ++m_iter;
+    next ();
+    return *this;
+  }
+
+  const value_type &operator* () const
+  {
+    return *m_iter;
+  }
+
+private:
+  std::vector<edt::Service *> m_services;
+  unsigned int m_service;
+  bool m_transient_selection;
+  iterator_type m_iter, m_end;
+
+  void next ()
+  {
+    while (m_iter == m_end) {
+      ++m_service;
+      if (m_service < m_services.size ()) {
+        if (m_transient_selection) {
+          m_iter = m_services [m_service]->transient_selection ().begin ();
+          m_end = m_services [m_service]->transient_selection ().end ();
+        } else {
+          m_iter = m_services [m_service]->selection ().begin ();
+          m_end = m_services [m_service]->selection ().end ();
+        }
+      } else {
+        break;
+      }
+    }
+  }
+};
+
+//  extend the layout view by "edtService" specific methods 
+
+static std::vector<edt::Service::objects::value_type> object_selection (const lay::LayoutView *view)
+{
+  std::vector<edt::Service::objects::value_type> result;
+  std::vector<edt::Service *> edt_services = view->get_plugins <edt::Service> ();
+  for (std::vector<edt::Service *>::const_iterator s = edt_services.begin (); s != edt_services.end (); ++s) {
+    std::vector<edt::Service::objects::value_type> sel;
+    (*s)->get_selection (sel);
+    result.insert (result.end (), sel.begin (), sel.end ());
+  }
+  return result;
+}
+
+static void set_object_selection (const lay::LayoutView *view, const std::vector<edt::Service::objects::value_type> &all_selected)
+{
+  std::vector<edt::Service::objects::value_type> sel;
+
+  std::vector<edt::Service *> edt_services = view->get_plugins <edt::Service> ();
+  for (std::vector<edt::Service *>::const_iterator s = edt_services.begin (); s != edt_services.end (); ++s) {
+
+    sel.clear ();
+
+    for (std::vector<edt::Service::objects::value_type>::const_iterator o = all_selected.begin (); o != all_selected.end (); ++o) {
+      if ((*s)->selection_applies (*o)) {
+        sel.push_back (*o);
+      }
+    }
+
+    (*s)->set_selection (sel.begin (), sel.end ());
+
+  }
+}
+
+static bool has_object_selection (const lay::LayoutView *view)
+{
+  std::vector<edt::Service *> edt_services = view->get_plugins <edt::Service> ();
+  for (std::vector<edt::Service *>::const_iterator s = edt_services.begin (); s != edt_services.end (); ++s) {
+    if ((*s)->selection_size () > 0) {
+      return true;
+    }
+  }
+  return false;
+}
+
+static void clear_object_selection (const lay::LayoutView *view)
+{
+  std::vector<edt::Service *> edt_services = view->get_plugins <edt::Service> ();
+  for (std::vector<edt::Service *>::const_iterator s = edt_services.begin (); s != edt_services.end (); ++s) {
+    (*s)->clear_selection ();
+  }
+}
+
+static void select_object (const lay::LayoutView *view, const edt::Service::objects::value_type &object)
+{
+  std::vector<edt::Service *> edt_services = view->get_plugins <edt::Service> ();
+  for (std::vector<edt::Service *>::const_iterator s = edt_services.begin (); s != edt_services.end (); ++s) {
+    if ((*s)->selection_applies (object)) {
+      (*s)->add_selection (object);
+      break;
+    }
+  }
+}
+
+static void unselect_object (const lay::LayoutView *view, const edt::Service::objects::value_type &object)
+{
+  std::vector<edt::Service *> edt_services = view->get_plugins <edt::Service> ();
+  for (std::vector<edt::Service *>::const_iterator s = edt_services.begin (); s != edt_services.end (); ++s) {
+    if ((*s)->selection_applies (object)) {
+      (*s)->remove_selection (object);
+      break;
+    }
+  }
+}
+
+static bool has_transient_object_selection (const lay::LayoutView *view)
+{
+  std::vector<edt::Service *> edt_services = view->get_plugins <edt::Service> ();
+  for (std::vector<edt::Service *>::const_iterator s = edt_services.begin (); s != edt_services.end (); ++s) {
+    if ((*s)->has_transient_selection ()) {
+      return true;
+    }
+  }
+  return false;
+}
+
+static EditableSelectionIterator begin_objects_selected (const lay::LayoutView *view)
+{
+  return EditableSelectionIterator (view->get_plugins <edt::Service> (), false);
+}
+
+static EditableSelectionIterator begin_objects_selected_transient (const lay::LayoutView *view)
+{
+  return EditableSelectionIterator (view->get_plugins <edt::Service> (), true);
+}
+
 static
-gsi::ClassExt<lay::LayoutViewBase> layout_view_decl (
-  gsi::method_ext ("has_object_selection?", &edt::has_object_selection,
+gsi::ClassExt<lay::LayoutView> layout_view_decl (
+  gsi::method_ext ("has_object_selection?", &has_object_selection, 
     "@brief Returns true, if geometrical objects (shapes or cell instances) are selected in this view"
   ) +
-  gsi::method_ext ("object_selection", &edt::object_selection,
+  gsi::method_ext ("object_selection", &object_selection, 
     "@brief Returns a list of selected objects\n"
     "This method will deliver an array of \\ObjectInstPath objects listing the selected geometrical "
     "objects. Other selected objects such as annotations and images will not be contained in that "
@@ -458,8 +594,9 @@ gsi::ClassExt<lay::LayoutViewBase> layout_view_decl (
     "\n"
     "This method has been introduced in version 0.24.\n"
   ) +
-  gsi::method_ext ("object_selection=", &edt::set_object_selection, gsi::arg ("sel"),
+  gsi::method_ext ("object_selection=", &set_object_selection, 
     "@brief Sets the list of selected objects\n"
+    "@args sel\n"
     "\n"
     "This method will set the selection of geometrical objects such as shapes and instances. "
     "It is the setter which complements the \\object_selection method.\n"
@@ -468,14 +605,15 @@ gsi::ClassExt<lay::LayoutViewBase> layout_view_decl (
     "\n"
     "This method has been introduced in version 0.24.\n"
   ) +
-  gsi::method_ext ("clear_object_selection", &edt::clear_object_selection,
+  gsi::method_ext ("clear_object_selection", &clear_object_selection,
     "@brief Clears the selection of geometrical objects (shapes or cell instances)\n"
     "The selection of other objects (such as annotations and images) will not be affected.\n"
     "\n"
     "This method has been introduced in version 0.24\n"
   ) +
-  gsi::method_ext ("select_object", &edt::select_object, gsi::arg ("obj"),
+  gsi::method_ext ("select_object", &select_object,
     "@brief Adds the given selection to the list of selected objects\n"
+    "@args obj\n"
     "\n"
     "The selection provided by the \\ObjectInstPath descriptor is added to the list of selected objects.\n"
     "To clear the previous selection, use \\clear_object_selection.\n"
@@ -486,8 +624,9 @@ gsi::ClassExt<lay::LayoutViewBase> layout_view_decl (
     "\n"
     "This method has been introduced in version 0.24\n"
   ) +
-  gsi::method_ext ("unselect_object", &edt::unselect_object, gsi::arg ("obj"),
+  gsi::method_ext ("unselect_object", &unselect_object,
     "@brief Removes the given selection from the list of selected objects\n"
+    "@args obj\n"
     "\n"
     "The selection provided by the \\ObjectInstPath descriptor is removed from the list of selected objects.\n"
     "If the given object was not part of the selection, nothing will be changed.\n"
@@ -495,7 +634,7 @@ gsi::ClassExt<lay::LayoutViewBase> layout_view_decl (
     "\n"
     "This method has been introduced in version 0.24\n"
   ) +
-  gsi::iterator_ext ("each_object_selected", &edt::begin_objects_selected,
+  gsi::iterator_ext ("each_object_selected", &begin_objects_selected,
     "@brief Iterates over each selected geometrical object, yielding a \\ObjectInstPath object for each of them\n"
     "\n"
     "This iterator will deliver const objects - they cannot be modified. In order to modify the selection, "
@@ -504,7 +643,7 @@ gsi::ClassExt<lay::LayoutViewBase> layout_view_decl (
     "\n"
     "Another way of obtaining the selection is \\object_selection, which returns an array of \\ObjectInstPath objects.\n"
   ) +
-  gsi::method_ext ("has_transient_object_selection?", &edt::has_transient_object_selection,
+  gsi::method_ext ("has_transient_object_selection?", &has_transient_object_selection,  
     "@brief Returns true, if geometrical objects (shapes or cell instances) are selected in this view in the transient selection\n"
     "\n"
     "The transient selection represents the objects selected when the mouse hovers over the "
@@ -513,7 +652,7 @@ gsi::ClassExt<lay::LayoutViewBase> layout_view_decl (
     "\n"
     "This method was introduced in version 0.18."
   ) +
-  gsi::iterator_ext ("each_object_selected_transient", &edt::begin_objects_selected_transient,
+  gsi::iterator_ext ("each_object_selected_transient", &begin_objects_selected_transient,
     "@brief Iterates over each geometrical objects in the transient selection, yielding a \\ObjectInstPath object for each of them\n"
     "\n"
     "This method was introduced in version 0.18."

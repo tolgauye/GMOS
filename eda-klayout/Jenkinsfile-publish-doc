@@ -1,16 +1,14 @@
 
 @Library("osconfig") _
 
-properties([disableConcurrentBuilds()])
-
-node("linux") {
+node("master") {
 
   stage("Checkout sources") {
     checkout scm
   }
 
   stage("Producing doc") {
-    linux_sh "./scripts/extract_user_doc.sh -i " + BRANCH_NAME
+    sh "./scripts/extract_user_doc.sh -i " + BRANCH_NAME
   }
 
   stage("Publish doc") {

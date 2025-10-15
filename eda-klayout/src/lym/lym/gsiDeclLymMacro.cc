@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -24,17 +24,25 @@
 #include "gsiDecl.h"
 #include "gsiDeclBasic.h"
 #include "gsiInterpreter.h"
-#include "gsiEnums.h"
 #include "lymMacroInterpreter.h"
 #include "lymMacro.h"
-#include "lymMacroCollection.h"
 #include "rba.h"
 
 #include "tlClassRegistry.h"
 #include "tlFileUtils.h"
-#include "tlInclude.h"
 
 #include <cstdio>
+
+namespace tl
+{
+
+//  type traits for BrowserDialog_Stub
+template <> 
+struct type_traits<lym::Macro> : public type_traits<void> {
+  typedef tl::false_tag has_copy_constructor;
+};
+
+}
 
 namespace gsi
 {
@@ -77,23 +85,23 @@ Class<gsi::MacroExecutionContext> decl_MacroExecutionContext ("lay", "MacroExecu
   gsi::method ("ignore_next_exception", &gsi::MacroExecutionContext::ignore_next_exception,
     "@brief Ignores the next exception in the debugger\n"
     "The next exception thrown will be ignored in the debugger. That feature is useful when "
-    "re-raising exceptions if those new exception shall not appear in the debugger."
+    "reraising exceptions if those new exception shall not appear in the debugger."
   ),
   "@brief Support for various debugger features\n"
   "\n"
   "This class implements some features that allow customization of the debugger behavior, specifically "
   "the generation of back traces and the handling of exception. These functions are particular useful "
   "for implementing DSL interpreters and providing proper error locations in the back traces or to "
-  "suppress exceptions when re-raising them."
+  "suppress exceptions when reraising them."
 );
 
-class MacroInterpreterImpl
+class MacroInterpreter
   : public lym::MacroInterpreter
 {
 public:
-  MacroInterpreterImpl ()
+  MacroInterpreter ()
     : lym::MacroInterpreter (), 
-      mp_registration (0), m_supports_include_expansion (true)
+      mp_registration (0) 
   {
     m_suffix = lym::MacroInterpreter::suffix ();
     m_description = lym::MacroInterpreter::description ();
@@ -102,7 +110,7 @@ public:
     m_debugger_scheme = lym::MacroInterpreter::debugger_scheme ();
   }
 
-  ~MacroInterpreterImpl ()
+  ~MacroInterpreter ()
   {
     delete mp_registration;
     mp_registration = 0;
@@ -112,57 +120,28 @@ public:
     m_templates.clear ();
   }
 
-  std::pair<std::string, std::string> include_expansion (const lym::Macro *macro)
-  {
-    if (m_supports_include_expansion) {
-      return lym::MacroInterpreter::include_expansion (macro);
-    } else {
-      return std::pair<std::string, std::string> (macro->path (), macro->text ());
-    }
-  }
-
   void register_gsi (const char *name)
   {
-    m_name = name;
-
-    //  do not register an interpreter again (this is important as registration code
-    //  may be executed again and we do not want to have two interpreters for the same thing)
-    for (tl::Registrar<lym::MacroInterpreter>::iterator cls = tl::Registrar<lym::MacroInterpreter>::begin (); cls != tl::Registrar<lym::MacroInterpreter>::end (); ++cls) {
-      if (cls.current_name () == m_name) {
-        return;
-      }
-    }
-
     //  makes the object owned by the C++ side
     keep ();
 
     //  cancel any previous registration and register (again)
     delete mp_registration;
     mp_registration = new tl::RegisteredClass<lym::MacroInterpreter> (this, 0 /*position*/, name, false /*does not own object*/);
+
+    m_name = name;
   }
 
-  virtual tl::Executable *executable (const lym::Macro *macro) const
+  virtual void execute (const lym::Macro *macro) const
   {
-    if (f_executable.can_issue ()) {
-      return f_executable.issue<MacroInterpreter, tl::Executable *, const lym::Macro *> (&MacroInterpreter::executable, macro);
-    } else {
-      return 0;
+    if (f_execute.can_issue ()) {
+      f_execute.issue<MacroInterpreter, const lym::Macro *> (&MacroInterpreter::execute, macro);
     }
   }
 
-  void set_supports_include_expansion (bool f)
+  void set_storage_scheme (int scheme)
   {
-    m_supports_include_expansion = f;
-  }
-
-  virtual bool supports_include_expansion () const
-  {
-    return m_supports_include_expansion;
-  }
-
-  void set_storage_scheme (lym::Macro::Format scheme)
-  {
-    m_storage_scheme = scheme;
+    m_storage_scheme = lym::Macro::Format (scheme);
   }
 
   virtual lym::Macro::Format storage_scheme () const
@@ -170,9 +149,9 @@ public:
     return m_storage_scheme;
   }
 
-  void set_debugger_scheme (lym::Macro::Interpreter scheme)
+  void set_debugger_scheme (int scheme)
   {
-    m_debugger_scheme = scheme;
+    m_debugger_scheme = lym::Macro::Interpreter (scheme);
   }
 
   virtual lym::Macro::Interpreter debugger_scheme () const
@@ -212,8 +191,8 @@ public:
 
   lym::Macro *create_template (const std::string &url)
   {
-    if (m_name.empty ()) {
-      throw std::runtime_error (tl::to_string (tr ("MacroInterpreter::create_template must be called after register")));
+    if (! mp_registration) {
+      throw std::runtime_error (tl::to_string (QObject::tr ("MacroInterpreter::create_template must be called after register")));
     }
 
     lym::Macro *m = new lym::Macro ();
@@ -228,16 +207,6 @@ public:
     m->set_interpreter (lym::Macro::DSLInterpreter);
     m->set_format (storage_scheme ());
 
-    //  avoid registering the same template twice
-    for (auto t = m_templates.begin (); t != m_templates.end (); ++t) {
-      if ((*t)->path () == m->path ()) {
-        delete *t;
-        *t = m;
-        return m;
-      }
-    }
-
-    //  not present yet - install at end
     m_templates.push_back (m);
     return m;
   }
@@ -251,7 +220,7 @@ public:
     }
   }
 
-  gsi::Callback f_executable;
+  gsi::Callback f_execute;
 
 private:
   tl::RegisteredClass <lym::MacroInterpreter> *mp_registration;
@@ -262,80 +231,52 @@ private:
   lym::Macro::Interpreter m_debugger_scheme;
   std::string m_suffix;
   std::string m_description;
-  bool m_supports_include_expansion;
 };
 
-static std::vector<std::string>
-include_expansion (MacroInterpreterImpl *interp, lym::Macro *macro)
+int const_PlainTextFormat ()
 {
-  std::vector<std::string> res;
-
-  auto sp = interp->include_expansion (macro);
-  res.push_back (sp.first);
-  res.push_back (sp.second);
-
-  return res;
+  return int (lym::Macro::PlainTextFormat);
 }
 
-gsi::EnumIn<lym::Macro, lym::Macro::Format> decl_FormatEnum ("lay", "Format",
-  gsi::enum_const ("PlainTextFormat", lym::Macro::PlainTextFormat,
-    "@brief The macro has plain text format"
-  ) +
-  gsi::enum_const ("PlainTextWithHashAnnotationsFormat", lym::Macro::PlainTextWithHashAnnotationsFormat,
-    "@brief The macro has plain text format with special pseudo-comment annotations"
-  ) +
-  gsi::enum_const ("MacroFormat", lym::Macro::MacroFormat,
-    "@brief The macro has macro (XML) format"
-  ),
-  "@brief Specifies the format of a macro\n"
-  "This enum has been introduced in version 0.27.5."
-);
-
-gsi::EnumIn<lym::Macro, lym::Macro::Interpreter> decl_InterpreterEnum ("lay", "Interpreter",
-  gsi::enum_const ("Ruby", lym::Macro::Ruby,
-    "@brief The interpreter is Ruby"
-  ) +
-  gsi::enum_const ("Python", lym::Macro::Python,
-    "@brief The interpreter is Python"
-  ) +
-  gsi::enum_const ("Text", lym::Macro::Text,
-    "@brief Plain text"
-  ) +
-  gsi::enum_const ("DSLInterpreter", lym::Macro::DSLInterpreter,
-    "@brief A domain-specific interpreter (DSL)"
-  ) +
-  gsi::enum_const ("None", lym::Macro::None,
-    "@brief No specific interpreter"
-  ),
-  "@brief Specifies the interpreter used for executing a macro\n"
-  "This enum has been introduced in version 0.27.5."
-);
-
-lym::Macro::Interpreter const_RubyDebugger ()
+int const_PlainTextWithHashAnnotationsFormat ()
 {
-  return lym::Macro::Ruby;
+  return int (lym::Macro::PlainTextWithHashAnnotationsFormat);
 }
 
-lym::Macro::Interpreter const_NoDebugger ()
+int const_MacroFormat ()
 {
-  return lym::Macro::None;
+  return int (lym::Macro::MacroFormat);
 }
 
-Class<MacroInterpreterImpl> decl_MacroInterpreter ("lay", "MacroInterpreter",
+int const_RubyDebugger ()
+{
+  return int (lym::Macro::Ruby);
+}
+
+int const_NoDebugger ()
+{
+  return int (lym::Macro::None);
+}
+
+Class<gsi::MacroInterpreter> decl_MacroInterpreter ("lay", "MacroInterpreter",
+  gsi::method ("PlainTextFormat", &const_PlainTextFormat,
+    "@brief Indicates plain text format for \\storage_scheme\n"
+  ) +
+  gsi::method ("PlainTextWithHashAnnotationsFormat", &const_PlainTextWithHashAnnotationsFormat,
+    "@brief Indicates plain text format for \\storage_scheme\n"
+    "This format is identical to \\PlainTextFormat but indicates that it is possible "
+    "to insert annotations (properties) into the text in a hash-commented header."
+  ) +
+  gsi::method ("MacroFormat", &const_MacroFormat,
+    "@brief Indicates macro (XML) format for \\storage_scheme\n"
+  ) +
   gsi::method ("RubyDebugger", &const_RubyDebugger,
     "@brief Indicates Ruby debugger for \\debugger_scheme\n"
   ) +
   gsi::method ("NoDebugger", &const_NoDebugger,
     "@brief Indicates no debugging for \\debugger_scheme\n"
   ) +
-  gsi::method_ext ("include_expansion", &include_expansion, gsi::arg ("macro"),
-    "@brief Provides include expansion as defined by the interpreter\n"
-    "The return value will be a two-element array with the encoded file path "
-    "and the include-expanded text.\n"
-    "\n"
-    "This method has been introduced in version 0.28.12."
-  ) +
-  gsi::method ("register", &MacroInterpreterImpl::register_gsi, gsi::arg ("name"),
+  gsi::method ("register", &MacroInterpreter::register_gsi, gsi::arg ("name"),
     "@brief Registers the macro interpreter\n"
     "@param name The interpreter name. This is an arbitrary string which should be unique.\n"
     "\n"
@@ -343,9 +284,9 @@ Class<MacroInterpreterImpl> decl_MacroInterpreter ("lay", "MacroInterpreter",
     "is set to 'dsl' can use this object to run the script. For executing a script, the system will "
     "call the interpreter's \\execute method.\n"
   ) + 
-  gsi::method ("create_template", &MacroInterpreterImpl::create_template, gsi::arg ("url"),
+  gsi::method ("create_template", &MacroInterpreter::create_template, gsi::arg ("url"),
     "@brief Creates a new macro template\n"
-    "@param url The template will be initialized from that URL.\n"
+    "@url The template will be initialized from that URL.\n"
     "\n"
     "This method will create a register a new macro template. It returns a \\Macro object which "
     "can be modified in order to adjust the template (for example to set description, add a content, "
@@ -353,15 +294,7 @@ Class<MacroInterpreterImpl> decl_MacroInterpreter ("lay", "MacroInterpreter",
     "\n"
     "This method must be called after \\register has called.\n"
   ) + 
-  gsi::method ("supports_include_expansion=", &MacroInterpreterImpl::set_supports_include_expansion, gsi::arg ("flag"),
-    "@brief Sets a value indicating whether this interpreter supports the default include file expansion scheme.\n"
-    "If this value is set to true (the default), lines like '# %include ...' will be substituted by the "
-    "content of the file following the '%include' keyword.\n"
-    "Set this value to false if you don't want to support this feature.\n"
-    "\n"
-    "This attribute has been introduced in version 0.27.\n"
-  ) +
-  gsi::method ("syntax_scheme=", &MacroInterpreterImpl::set_syntax_scheme, gsi::arg ("scheme"),
+  gsi::method ("syntax_scheme=", &gsi::MacroInterpreter::set_syntax_scheme, gsi::arg ("scheme"),
     "@brief Sets a string indicating the syntax highlighter scheme\n"
     "\n"
     "The scheme string can be empty (indicating no syntax highlighting), \"ruby\" for the Ruby syntax "
@@ -370,20 +303,20 @@ Class<MacroInterpreterImpl> decl_MacroInterpreter ("lay", "MacroInterpreter",
     "\n"
     "Use this attribute setter in the initializer before registering the interpreter.\n"
     "\n"
-    "Before version 0.25 this attribute was a re-implementable method. It has been turned into an attribute for "
+    "Before version 0.25 this attribute was a reimplementable method. It has been turned into an attribute for "
     "performance reasons in version 0.25.\n"
   ) +
-  gsi::method ("debugger_scheme=", &MacroInterpreterImpl::set_debugger_scheme, gsi::arg ("scheme"),
+  gsi::method ("debugger_scheme=", &gsi::MacroInterpreter::set_debugger_scheme, gsi::arg ("scheme"),
     "@brief Sets the debugger scheme (which debugger to use for the DSL macro)\n"
     "\n"
     "The value can be one of the constants \\RubyDebugger or \\NoDebugger.\n"
     "\n"
     "Use this attribute setter in the initializer before registering the interpreter.\n"
     "\n"
-    "Before version 0.25 this attribute was a re-implementable method. It has been turned into an attribute for "
+    "Before version 0.25 this attribute was a reimplementable method. It has been turned into an attribute for "
     "performance reasons in version 0.25.\n"
   ) +
-  gsi::method ("storage_scheme=", &MacroInterpreterImpl::set_storage_scheme, gsi::arg ("scheme"),
+  gsi::method ("storage_scheme=", &gsi::MacroInterpreter::set_storage_scheme, gsi::arg ("scheme"),
     "@brief Sets the storage scheme (the format as which the macro is stored)\n"
     "\n"
     "This value indicates how files for this DSL macro type shall be stored. "
@@ -391,10 +324,10 @@ Class<MacroInterpreterImpl> decl_MacroInterpreter ("lay", "MacroInterpreter",
     "\n"
     "Use this attribute setter in the initializer before registering the interpreter.\n"
     "\n"
-    "Before version 0.25 this attribute was a re-implementable method. It has been turned into an attribute for "
+    "Before version 0.25 this attribute was a reimplementable method. It has been turned into an attribute for "
     "performance reasons in version 0.25.\n"
   ) +
-  gsi::method ("description=", &MacroInterpreterImpl::set_description, gsi::arg ("description"),
+  gsi::method ("description=", &gsi::MacroInterpreter::set_description, gsi::arg ("description"),
     "@brief Sets a description string\n"
     "\n"
     "This string is used for showing the type of DSL macro in the file selection box together with the "
@@ -402,10 +335,10 @@ Class<MacroInterpreterImpl> decl_MacroInterpreter ("lay", "MacroInterpreter",
     "\n"
     "Use this attribute setter in the initializer before registering the interpreter.\n"
     "\n"
-    "Before version 0.25 this attribute was a re-implementable method. It has been turned into an attribute for "
+    "Before version 0.25 this attribute was a reimplementable method. It has been turned into an attribute for "
     "performance reasons in version 0.25.\n"
   ) +
-  gsi::method ("suffix=", &MacroInterpreterImpl::set_suffix, gsi::arg ("suffix"),
+  gsi::method ("suffix=", &gsi::MacroInterpreter::set_suffix, gsi::arg ("suffix"),
     "@brief Sets the file suffix\n"
     "\n"
     "This string defines which file suffix to associate with the DSL macro. If an empty string is given (the default) "
@@ -413,18 +346,16 @@ Class<MacroInterpreterImpl> decl_MacroInterpreter ("lay", "MacroInterpreter",
     "\n"
     "Use this attribute setter in the initializer before registering the interpreter.\n"
     "\n"
-    "Before version 0.25 this attribute was a re-implementable method. It has been turned into an attribute for "
+    "Before version 0.25 this attribute was a reimplementable method. It has been turned into an attribute for "
     "performance reasons in version 0.25.\n"
   ) +
-  gsi::callback ("executable", &MacroInterpreterImpl::executable, &MacroInterpreterImpl::f_executable, gsi::arg ("macro"),
-    "@brief Returns the executable object which implements the macro execution\n"
-    "This method must be reimplemented to return an \\Executable object for the actual implementation. "
-    "The system will use this function to execute the script when a macro with interpreter type 'dsl' and the "
-    "name of this interpreter is run.\n"
+  gsi::callback ("execute", &gsi::MacroInterpreter::execute, &gsi::MacroInterpreter::f_execute, gsi::arg ("macro"),
+    "@brief Gets called to execute a macro\n"
+    "This method must be reimplemented to execute the macro. "
+    "The system will call this script when a macro with interpreter type 'dsl' and the "
+    "name of this interpreter is run."
     "\n"
     "@param macro The macro to execute\n"
-    "\n"
-    "This method has been introduced in version 0.27 and replaces the 'execute' method.\n"
   ),
   "@brief A custom interpreter for a DSL (domain specific language)\n"
   "\n"
@@ -453,21 +384,6 @@ Class<MacroInterpreterImpl> decl_MacroInterpreter ("lay", "MacroInterpreter",
   "just evaluates the script text:\n"
   "\n"
   "@code\n"
-  "class SimpleExecutable < RBA::Excutable\n"
-  "\n"
-  "  # Constructor\n"
-  "  def initialize(macro)\n"
-  "    \\@macro = macro\n"
-  "  end\n"
-  "  \n"
-  "  # Implements the execute method\n"
-  "  def execute\n"
-  "    eval(\\@macro.text, nil, \\@macro.path)\n"
-  "    nil\n"
-  "  end\n"
-  "\n"
-  "end\n"
-  "\n"
   "class SimpleInterpreter < RBA::MacroInterpreter\n"
   "\n"
   "  # Constructor\n"
@@ -482,9 +398,9 @@ Class<MacroInterpreterImpl> decl_MacroInterpreter ("lay", "MacroInterpreter",
   "    mt.description = \"Special;;Simple interpreter macro\"\n" 
   "  end\n"
   "  \n"
-  "  # Creates the executable delegate\n"
-  "  def executable(macro)\n"
-  "    SimpleExecutable::new(macro)\n"
+  "  # Implements the execute method\n"
+  "  def execute(macro)\n"
+  "    eval(macro.text, nil, macro.path)\n"
   "  end\n"
   "\n"
   "end\n"
@@ -502,222 +418,15 @@ Class<MacroInterpreterImpl> decl_MacroInterpreter ("lay", "MacroInterpreter",
   "\n"
   "In order to make the above code effective, store the code in an macro, set \"early auto-run\" and restart KLayout.\n"
   "\n"
-  "This class has been introduced in version 0.23 and modified in 0.27.\n"
+  "This class has been introduced in version 0.23.\n"
 );
-
-//  Inject the Macro::Format declarations into MacroInterpreter:
-gsi::ClassExt<MacroInterpreterImpl> inject_Format_in_parent (decl_FormatEnum.defs ());
 
 static lym::Macro *macro_by_path (const std::string &path)
 {
-#if defined(HAVE_QT)
   return lym::MacroCollection::root ().find_macro (path);
-#else
-  return 0;
-#endif
-}
-
-static std::string real_path (const std::string &path, int line)
-{
-  if (! path.empty () && path[0] == '@') {
-    return tl::IncludeExpander::from_string (path).translate_to_original (line).first;
-  } else {
-    return path;
-  }
-}
-
-static int real_line (const std::string &path, int line)
-{
-  if (! path.empty () && path[0] == '@') {
-    return tl::IncludeExpander::from_string (path).translate_to_original (line).second;
-  } else {
-    return line;
-  }
-}
-
-lym::Macro *new_from_path (const std::string &path)
-{
-  std::unique_ptr<lym::Macro> m (new lym::Macro ());
-  m->set_is_file ();
-  m->set_file_path (path);
-  m->load_from (path);
-  return m.release ();
 }
 
 Class<lym::Macro> decl_Macro ("lay", "Macro",
-  gsi::constructor ("new", &new_from_path, gsi::arg ("path"),
-    "@brief Loads the macro from the given file path\n"
-    "\n"
-    "This constructor has been introduced in version 0.27.5.\n"
-  ) +
-  gsi::method ("run", &lym::Macro::run,
-    "@brief Executes the macro\n"
-    "\n"
-    "This method has been introduced in version 0.27.5.\n"
-  ) +
-  gsi::method ("current", &lym::Macro::current,
-    "@brief Gets the macro currently executed\n"
-    "\n"
-    "This method can be used inside scripts running in that macro "
-    "to identify the currently running macro. It returns nil outside the "
-    "'run' context. The Macro object can be used to pass information "
-    "in and out of the script using macro attributes (see \\set_attribute and "
-    "related methods).\n"
-    "\n"
-    "@code\n"
-    "macro = RBA::Macro::new\n"
-    "macro.interpreter = RBA::Macro::Ruby\n"
-    "\n"
-    "macro.text = <<\"END\"\n"
-    "  macro = RBA::Macro::current\n"
-    "  x = macro.get_attribute(\"x\")\n"
-    "  macro.set_attribute(\"y\", x + 1)\n"
-    "END\n"
-    "\n"
-    "macro.set_attribute(\"x\", 17)\n"
-    "macro.run\n"
-    "macro.get_attribute(\"y\")  # -> 18\n"
-    "@/code\n"
-    "\n"
-    "This method has been introduced in version 0.30.3.\n"
-  ) +
-  gsi::method ("set_attribute", &lym::Macro::set_attribute, gsi::arg ("name"), gsi::arg ("value"),
-    "@brief Gets the attribute with the given name\n"
-    "\n"
-    "Attributes are generic key/value pairs that can be added to the Macro object.\n"
-    "This allows passing information in and out of the macro run (see \\current).\n"
-    "\n"
-    "This method has been introduced in version 0.30.3.\n"
-  ) +
-  gsi::method ("has_attribute", &lym::Macro::has_attribute, gsi::arg ("name"),
-    "@brief Gets a value indicating whether the Macro has an attribute with the given name\n"
-    "\n"
-    "See \\set_attribute for a description of Macro attributes.\n"
-    "\n"
-    "This method has been introduced in version 0.30.3.\n"
-  ) +
-  gsi::method ("get_attribute", &lym::Macro::get_attribute, gsi::arg ("name"),
-    "@brief Gets the value of the attribute with the given name\n"
-    "\n"
-    "See \\set_attribute for a description of Macro attributes.\n"
-    "If no attribute is present with the given name, nil is returned.\n"
-    "\n"
-    "This method has been introduced in version 0.30.3.\n"
-  ) +
-  gsi::method ("delete_attribute", &lym::Macro::delete_attribute, gsi::arg ("name"),
-    "@brief Deletes the attribute with the given name\n"
-    "\n"
-    "See \\set_attribute for a description of Macro attributes.\n"
-    "\n"
-    "This method has been introduced in version 0.30.3.\n"
-  ) +
-  gsi::method ("save_to", &lym::Macro::save_to, gsi::arg ("path"),
-    "@brief Saves the macro to the given file\n"
-    "\n"
-    "This method has been introduced in version 0.27.5.\n"
-  ) +
-  gsi::method ("version", &lym::Macro::version,
-    "@brief Gets the macro's version\n"
-    "\n"
-    "This method has been introduced in version 0.27.5.\n"
-  ) +
-  gsi::method ("version=", &lym::Macro::set_version, gsi::arg ("version"),
-    "@brief Sets the macro's version\n"
-    "\n"
-    "This method has been introduced in version 0.27.5.\n"
-  ) +
-  gsi::method ("doc", &lym::Macro::doc,
-    "@brief Gets the macro's documentation string\n"
-    "\n"
-    "This method has been introduced in version 0.27.5.\n"
-  ) +
-  gsi::method ("doc=", &lym::Macro::set_doc, gsi::arg ("doc"),
-    "@brief Sets the macro's documentation string\n"
-    "\n"
-    "This method has been introduced in version 0.27.5.\n"
-  ) +
-  gsi::method ("shortcut", &lym::Macro::shortcut,
-    "@brief Gets the macro's keyboard shortcut\n"
-    "\n"
-    "This method has been introduced in version 0.27.5.\n"
-  ) +
-  gsi::method ("shortcut=", &lym::Macro::set_shortcut, gsi::arg ("shortcut"),
-    "@brief Sets the macro's keyboard shortcut\n"
-    "\n"
-    "This method has been introduced in version 0.27.5.\n"
-  ) +
-  gsi::method ("is_autorun?", &lym::Macro::is_autorun,
-    "@brief Gets a flag indicating whether the macro is automatically executed on startup\n"
-    "\n"
-    "This method has been introduced in version 0.27.5.\n"
-  ) +
-  gsi::method ("is_autorun=", &lym::Macro::set_autorun, gsi::arg ("flag"),
-    "@brief Sets a flag indicating whether the macro is automatically executed on startup\n"
-    "\n"
-    "This method has been introduced in version 0.27.5.\n"
-  ) +
-  gsi::method ("is_autorun_early?", &lym::Macro::is_autorun_early,
-    "@brief Gets a flag indicating whether the macro is automatically executed early on startup\n"
-    "\n"
-    "This method has been introduced in version 0.27.5.\n"
-  ) +
-  gsi::method ("is_autorun_early=", &lym::Macro::set_autorun_early, gsi::arg ("flag"),
-    "@brief Sets a flag indicating whether the macro is automatically executed early on startup\n"
-    "\n"
-    "This method has been introduced in version 0.27.5.\n"
-  ) +
-  gsi::method ("format", &lym::Macro::format,
-    "@brief Gets the macro's storage format\n"
-    "\n"
-    "This method has been introduced in version 0.27.5.\n"
-  ) +
-  gsi::method ("format=", &lym::Macro::set_format, gsi::arg ("format"),
-    "@brief Sets the macro's storage format\n"
-    "\n"
-    "This method has been introduced in version 0.27.5.\n"
-  ) +
-  gsi::method ("interpreter", &lym::Macro::interpreter,
-    "@brief Gets the macro's interpreter\n"
-    "\n"
-    "This method has been introduced in version 0.27.5.\n"
-  ) +
-  gsi::method ("interpreter=", &lym::Macro::set_interpreter, gsi::arg ("interpreter"),
-    "@brief Sets the macro's interpreter\n"
-    "\n"
-    "This method has been introduced in version 0.27.5.\n"
-  ) +
-  gsi::method ("interpreter_name", &lym::Macro::interpreter_name,
-    "@brief Gets the macro interpreter name\n"
-    "This is the string version of \\interpreter.\n"
-    "\n"
-    "This method has been introduced in version 0.27.5.\n"
-  ) +
-  gsi::method ("dsl_interpreter", &lym::Macro::dsl_interpreter,
-    "@brief Gets the macro's DSL interpreter name (if interpreter is DSLInterpreter)\n"
-    "\n"
-    "This method has been introduced in version 0.27.5.\n"
-  ) +
-  gsi::method ("dsl_interpreter=", &lym::Macro::set_dsl_interpreter, gsi::arg ("dsl_interpreter"),
-    "@brief Sets the macro's DSL interpreter name (if interpreter is DSLInterpreter)\n"
-    "\n"
-    "This method has been introduced in version 0.27.5.\n"
-  ) +
-  gsi::method ("sync_text_with_properties", &lym::Macro::sync_text_with_properties,
-    "@brief Synchronizes the macro text with the properties\n"
-    "\n"
-    "This method applies to PlainTextWithHashAnnotationsFormat format. The macro text will "
-    "be enhanced with pseudo-comments reflecting the macro properties. This way, the macro "
-    "properties can be stored in plain files.\n"
-    "\n"
-    "This method has been introduced in version 0.27.5.\n"
-  ) +
-  gsi::method ("sync_properties_with_text", &lym::Macro::sync_properties_with_text,
-    "@brief Synchronizes the macro properties with the text\n"
-    "\n"
-    "This method performs the reverse process of \\sync_text_with_properties.\n"
-    "\n"
-    "This method has been introduced in version 0.27.5.\n"
-  ) +
   gsi::method ("path", &lym::Macro::path,
     "@brief Gets the path of the macro\n"
     "\n"
@@ -813,86 +522,13 @@ Class<lym::Macro> decl_Macro ("lay", "Macro",
   gsi::method ("menu_path=", &lym::Macro::set_menu_path, gsi::arg ("string"),
     "@brief Sets the menu path\n"
     "See \\menu_path for details.\n"
-  ) +
-  gsi::method ("real_path", &real_path, gsi::arg ("path"), gsi::arg ("line"),
-    "@brief Gets the real path for an include-encoded path and line number\n"
-    "\n"
-    "When using KLayout's include scheme based on '# %include ...', __FILE__ and __LINE__ (Ruby) will "
-    "not have the proper values but encoded file names. This method allows retrieving the real file by using\n"
-    "\n"
-    "@code\n"
-    "# Ruby\n"
-    "real_file = RBA::Macro::real_path(__FILE__, __LINE__)\n"
-    "@/code\n"
-    "\n"
-    "This substitution is not required for top-level macros as KLayout's interpreter will automatically use this "
-    "function instead of __FILE__. Call this function when you need __FILE__ from files "
-    "included through the languages mechanisms such as 'require' or 'load' where this substitution does not happen.\n"
-    "\n"
-    "For Python there is no equivalent for __LINE__, so you always have to use:\n"
-    "\n"
-    "@code\n"
-    "# Python"
-    "import inspect\n"
-    "real_file = pya.Macro.real_path(__file__, inspect.currentframe().f_back.f_lineno)\n"
-    "@/code\n"
-    "\n"
-    "This feature has been introduced in version 0.27."
-  ) +
-  gsi::method ("real_line", &real_line, gsi::arg ("path"), gsi::arg ("line"),
-    "@brief Gets the real line number for an include-encoded path and line number\n"
-    "\n"
-    "When using KLayout's include scheme based on '# %include ...', __FILE__ and __LINE__ (Ruby) will "
-    "not have the proper values but encoded file names. This method allows retrieving the real line number by using\n"
-    "\n"
-    "@code\n"
-    "# Ruby\n"
-    "real_line = RBA::Macro::real_line(__FILE__, __LINE__)\n"
-    "\n"
-    "# Python\n"
-    "real_line = pya::Macro::real_line(__file__, __line__)\n"
-    "@/code\n"
-    "\n"
-    "This substitution is not required for top-level macros as KLayout's interpreter will automatically use this "
-    "function instead of __FILE__. Call this function when you need __FILE__ from files "
-    "included through the languages mechanisms such as 'require' or 'load' where this substitution does not happen.\n"
-    "\n"
-    "For Python there is no equivalent for __LINE__, so you always have to use:\n"
-    "\n"
-    "@code\n"
-    "# Python"
-    "import inspect\n"
-    "real_line = pya.Macro.real_line(__file__, inspect.currentframe().f_back.f_lineno)\n"
-    "@/code\n"
-    "\n"
-    "This feature has been introduced in version 0.27."
   ),
   "@brief A macro class\n"
   "\n"
   "This class is provided mainly to support generation of template macros in the "
   "DSL interpreter framework provided by \\MacroInterpreter. The implementation may be "
   "enhanced in future versions and provide access to macros stored inside KLayout's macro repository."
-  "\n"
-  "But it can be used to execute macro code in a consistent way:\n"
-  "\n"
-  "@code\n"
-  "path = \"path-to-macro.lym\"\n"
-  "RBA::Macro::new(path).run()\n"
-  "@/code\n"
-  "\n"
-  "Using the Macro class with \\run for executing code will chose the right interpreter and is "
-  "able to execute DRC and LVS scripts in the proper environment. This also provides an option to "
-  "execute Ruby code from Python and vice versa.\n"
-  "\n"
-  "In this scenario you can pass values to the script using \\Interpreter#define_variable. "
-  "The interpreter to choose for DRC and LVS scripts is \\Interpreter#ruby_interpreter. "
-  "For passing values back from the script, wrap the variable value into a \\Value object "
-  "which can be modified by the called script and read back by the caller."
 );
-
-//  Inject the Macro::Format declarations into MacroInterpreter:
-gsi::ClassExt<lym::Macro> inject_Format_in_macro (decl_FormatEnum.defs ());
-gsi::ClassExt<lym::Macro> inject_Interpreter_in_macro (decl_InterpreterEnum.defs ());
 
 }
 

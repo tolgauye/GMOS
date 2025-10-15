@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -53,11 +53,9 @@ public:
   virtual bool empty () const;
 
   virtual const db::EdgePair *nth (size_t n) const;
-  virtual db::properties_id_type nth_prop_id (size_t n) const;
   virtual bool has_valid_edge_pairs () const;
 
   virtual const db::RecursiveShapeIterator *iter () const;
-  virtual void apply_property_translator (const db::PropertiesTranslator &pt);
 
   virtual bool equals (const EdgePairs &other) const;
   virtual bool less (const EdgePairs &other) const;

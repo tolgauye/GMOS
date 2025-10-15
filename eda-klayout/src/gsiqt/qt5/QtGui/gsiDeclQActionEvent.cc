@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -32,6 +32,7 @@
 #include <QEvent>
 #include "gsiQt.h"
 #include "gsiQtGuiCommon.h"
+#include "gsiDeclQtGuiTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -119,7 +120,7 @@ static void _init_ctor_QActionEvent_Adaptor_3169 (qt_gsi::GenericStaticMethod *d
   decl->add_arg<int > (argspec_0);
   static gsi::ArgSpecBase argspec_1 ("action");
   decl->add_arg<QAction * > (argspec_1);
-  static gsi::ArgSpecBase argspec_2 ("before", true, "nullptr");
+  static gsi::ArgSpecBase argspec_2 ("before", true, "0");
   decl->add_arg<QAction * > (argspec_2);
   decl->set_return_new<QActionEvent_Adaptor> ();
 }
@@ -130,7 +131,7 @@ static void _call_ctor_QActionEvent_Adaptor_3169 (const qt_gsi::GenericStaticMet
   tl::Heap heap;
   int arg1 = gsi::arg_reader<int >() (args, heap);
   QAction *arg2 = gsi::arg_reader<QAction * >() (args, heap);
-  QAction *arg3 = args ? gsi::arg_reader<QAction * >() (args, heap) : gsi::arg_maker<QAction * >() (nullptr, heap);
+  QAction *arg3 = args ? gsi::arg_reader<QAction * >() (args, heap) : gsi::arg_maker<QAction * >() (0, heap);
   ret.write<QActionEvent_Adaptor *> (new QActionEvent_Adaptor (arg1, arg2, arg3));
 }
 

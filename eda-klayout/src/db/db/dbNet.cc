@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -202,16 +202,6 @@ Net &Net::operator= (const Net &other)
 Net::~Net ()
 {
   clear ();
-}
-
-Netlist *Net::netlist ()
-{
-  return mp_circuit ? mp_circuit->netlist () : 0;
-}
-
-const Netlist *Net::netlist () const
-{
-  return mp_circuit ? mp_circuit->netlist () : 0;
 }
 
 void Net::clear ()

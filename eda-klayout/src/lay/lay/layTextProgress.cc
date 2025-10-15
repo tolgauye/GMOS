@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -35,10 +35,6 @@ TextProgress::TextProgress (int verbosity)
 
 void TextProgress::update_progress (tl::Progress *progress)
 {
-  if (! progress || progress->is_abstract ()) {
-    return;
-  }
-
   std::string text = progress->desc ();
   if (m_progress_text != text && tl::verbosity () >= m_verbosity) {
     tl::info << text << " ..";

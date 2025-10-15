@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -26,8 +26,6 @@
 
 #include "tlStream.h"
 #include "tlUniqueName.h"
-#include "tlTimer.h"
-#include "tlLog.h"
 
 #include <sstream>
 #include <set>
@@ -94,10 +92,8 @@ void NetlistSpiceWriterDelegate::write_device (const db::Device &dev) const
 {
   const db::DeviceClass *dc = dev.device_class ();
   const db::DeviceClassCapacitor *cap = dynamic_cast<const db::DeviceClassCapacitor *> (dc);
-  const db::DeviceClassCapacitor *cap3 = dynamic_cast<const db::DeviceClassCapacitorWithBulk *> (dc);
   const db::DeviceClassInductor *ind = dynamic_cast<const db::DeviceClassInductor *> (dc);
   const db::DeviceClassResistor *res = dynamic_cast<const db::DeviceClassResistor *> (dc);
-  const db::DeviceClassResistor *res3 = dynamic_cast<const db::DeviceClassResistorWithBulk *> (dc);
   const db::DeviceClassDiode *diode = dynamic_cast<const db::DeviceClassDiode *> (dc);
   const db::DeviceClassMOS3Transistor *mos3 = dynamic_cast<const db::DeviceClassMOS3Transistor *> (dc);
   const db::DeviceClassMOS4Transistor *mos4 = dynamic_cast<const db::DeviceClassMOS4Transistor *> (dc);
@@ -106,18 +102,13 @@ void NetlistSpiceWriterDelegate::write_device (const db::Device &dev) const
 
   std::ostringstream os;
 
-  if (cap || cap3) {
+  if (cap) {
 
     os << "C";
     os << format_name (dev.expanded_name ());
-    os << format_terminals (dev, size_t (3));
+    os << format_terminals (dev, size_t (2));
     os << " ";
     os << tl::sprintf ("%.12g", dev.parameter_value (db::DeviceClassCapacitor::param_id_C));
-    if (! dev.device_class ()->name ().empty ()) {
-      os << " ";
-      os << format_name (dev.device_class ()->name ());
-    }
-    os << format_params (dev, db::DeviceClassCapacitor::param_id_C, true);
 
   } else if (ind) {
 
@@ -126,24 +117,14 @@ void NetlistSpiceWriterDelegate::write_device (const db::Device &dev) const
     os << format_terminals (dev, size_t (2));
     os << " ";
     os << tl::sprintf ("%.12g", dev.parameter_value (db::DeviceClassInductor::param_id_L));
-    if (! dev.device_class ()->name ().empty ()) {
-      os << " ";
-      os << format_name (dev.device_class ()->name ());
-    }
-    os << format_params (dev, db::DeviceClassInductor::param_id_L, true);
 
-  } else if (res || res3) {
+  } else if (res) {
 
     os << "R";
     os << format_name (dev.expanded_name ());
-    os << format_terminals (dev, size_t (3));
+    os << format_terminals (dev, size_t (2));
     os << " ";
     os << tl::sprintf ("%.12g", dev.parameter_value (db::DeviceClassResistor::param_id_R));
-    if (! dev.device_class ()->name ().empty ()) {
-      os << " ";
-      os << format_name (dev.device_class ()->name ());
-    }
-    os << format_params (dev, db::DeviceClassResistor::param_id_R, true);
 
   } else if (diode) {
 
@@ -160,21 +141,12 @@ void NetlistSpiceWriterDelegate::write_device (const db::Device &dev) const
 
     os << "M";
     os << format_name (dev.expanded_name ());
-
-    //  issue #1304
-    os << " ";
-    os << net_to_string (dev.net_for_terminal (db::DeviceClassMOS3Transistor::terminal_id_D));
-    os << " ";
-    os << net_to_string (dev.net_for_terminal (db::DeviceClassMOS3Transistor::terminal_id_G));
-    os << " ";
-    os << net_to_string (dev.net_for_terminal (db::DeviceClassMOS3Transistor::terminal_id_S));
-      os << " ";
+    os << format_terminals (dev);
 
     if (! mos4) {
       //  we assume for the MOS3 type the bulk is connected to Source
+      os << " ";
       os << net_to_string (dev.net_for_terminal (db::DeviceClassMOS3Transistor::terminal_id_S));
-    } else {
-      os << net_to_string (dev.net_for_terminal (db::DeviceClassMOS4Transistor::terminal_id_B));
     }
 
     //  Use device class name for the model
@@ -221,13 +193,13 @@ std::string NetlistSpiceWriterDelegate::format_terminals (const db::Device &dev,
   return os.str ();
 }
 
-std::string NetlistSpiceWriterDelegate::format_params (const db::Device &dev, size_t without_id, bool only_primary) const
+std::string NetlistSpiceWriterDelegate::format_params (const db::Device &dev, size_t without_id) const
 {
   std::ostringstream os;
 
   const std::vector<db::DeviceParameterDefinition> &pd = dev.device_class ()->parameter_definitions ();
   for (std::vector<db::DeviceParameterDefinition>::const_iterator i = pd.begin (); i != pd.end (); ++i) {
-    if (i->id () != without_id && (! only_primary || i->is_primary ())) {
+    if (i->id () != without_id) {
       double sis = i->si_scaling ();
       os << " " << i->name () << "=";
       //  for compatibility
@@ -272,8 +244,6 @@ void NetlistSpiceWriter::set_with_comments (bool with_comments)
 
 void NetlistSpiceWriter::write (tl::OutputStream &stream, const db::Netlist &netlist, const std::string &description)
 {
-  tl::SelfTimer timer (tl::verbosity () >= 21, tl::to_string (tr ("Writing netlist ")) + stream.path ());
-
   mp_stream = &stream;
   mp_netlist = &netlist;
   mp_delegate->attach_writer (this);

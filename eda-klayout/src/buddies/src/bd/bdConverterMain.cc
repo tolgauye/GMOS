@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -27,7 +27,6 @@
 #include "dbReader.h"
 #include "dbWriter.h"
 #include "tlCommandLineParser.h"
-#include "tlTimer.h"
 
 namespace bd
 {
@@ -42,14 +41,7 @@ int converter_main (int argc, char *argv[], const std::string &format)
   generic_writer_options.add_options (cmd, format);
   generic_reader_options.add_options (cmd);
 
-  cmd << tl::arg ("input",  &infile,  "The input file (any format, may be gzip compressed)",
-                  "Multiple files can be combined using '+' or ','. '+' will combine the files in 'blending' mode. "
-                  "In this mode it is possible to combine identically named cells into one cell for example. This mode "
-                  "needs to be used with care and there some constraints - e.g. the database unit of the involved "
-                  "layouts needs to be the same. When using ',' as a separator, blending is not used, but the layouts "
-                  "are merged by first creating two layouts and then combining them into one. This mode is more robust "
-                  "but does not allow cell merging. '+' combination has higher priority than ',' - i.e. 'a+b,c' is "
-                  "understood as '(a+b),c'.")
+  cmd << tl::arg ("input",  &infile,  "The input file (any format, may be gzip compressed)")
       << tl::arg ("output", &outfile, tl::sprintf ("The output file (%s format)", format))
     ;
 
@@ -59,12 +51,13 @@ int converter_main (int argc, char *argv[], const std::string &format)
 
   db::Layout layout;
 
-  tl::SelfTimer timer (tl::verbosity () >= 11, tl::to_string (tr ("Total")));
-
   {
     db::LoadLayoutOptions load_options;
     generic_reader_options.configure (load_options);
-    read_files (layout, infile, load_options);
+
+    tl::InputStream stream (infile);
+    db::Reader reader (stream);
+    reader.read (layout, load_options);
   }
 
   {

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -31,6 +31,7 @@
 #include <QMediaTimeInterval>
 #include "gsiQt.h"
 #include "gsiQtMultimediaCommon.h"
+#include "gsiDeclQtMultimediaTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -463,22 +464,22 @@ static void _call_f_removeTimeRange_2766 (const qt_gsi::GenericMethod * /*decl*/
 
 //  bool ::operator==(const QMediaTimeRange &, const QMediaTimeRange &)
 static bool op_QMediaTimeRange_operator_eq__eq__5424(const QMediaTimeRange *_self, const QMediaTimeRange &arg2) {
-  return operator==(*_self, arg2);
+  return ::operator==(*_self, arg2);
 }
 
 //  bool ::operator!=(const QMediaTimeRange &, const QMediaTimeRange &)
 static bool op_QMediaTimeRange_operator_excl__eq__5424(const QMediaTimeRange *_self, const QMediaTimeRange &arg2) {
-  return operator!=(*_self, arg2);
+  return ::operator!=(*_self, arg2);
 }
 
 //  QMediaTimeRange ::operator+(const QMediaTimeRange &, const QMediaTimeRange &)
 static QMediaTimeRange op_QMediaTimeRange_operator_plus__5424(const QMediaTimeRange *_self, const QMediaTimeRange &arg2) {
-  return operator+(*_self, arg2);
+  return ::operator+(*_self, arg2);
 }
 
 //  QMediaTimeRange ::operator-(const QMediaTimeRange &, const QMediaTimeRange &)
 static QMediaTimeRange op_QMediaTimeRange_operator_minus__5424(const QMediaTimeRange *_self, const QMediaTimeRange &arg2) {
-  return operator-(*_self, arg2);
+  return ::operator-(*_self, arg2);
 }
 
 

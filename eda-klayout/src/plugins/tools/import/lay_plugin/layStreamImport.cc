@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -61,7 +61,7 @@ public:
   virtual void get_menu_entries (std::vector<lay::MenuEntry> &menu_entries) const
   {
     lay::PluginDeclaration::get_menu_entries (menu_entries);
-    menu_entries.push_back (lay::menu_item ("lay::import_stream", "import_stream:edit", "file_menu.import_menu.end", tl::to_string (QObject::tr ("Other Files Into Current"))));
+    menu_entries.push_back (lay::MenuEntry ("lay::import_stream", "import_stream:edit", "file_menu.import_menu.end", tl::to_string (QObject::tr ("Other Files Into Current"))));
   }
 
   virtual bool configure (const std::string &name, const std::string &value)
@@ -95,7 +95,7 @@ public:
         data = StreamImportData ();
       }
 
-      lay::Dispatcher *config_root = lay::Dispatcher::instance ();
+      lay::PluginRoot *config_root = lay::PluginRoot::instance ();
 
       StreamImportDialog dialog (QApplication::activeWindow (), &data);
       lay::StreamImporter importer;

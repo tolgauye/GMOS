@@ -108,64 +108,54 @@
           </property>
           <item>
            <widget class="QToolButton" name="add_pb">
-            <property name="toolTip">
-             <string>Add technology</string>
-            </property>
             <property name="text">
              <string>...</string>
             </property>
             <property name="icon">
-             <iconset resource="../../icons/icons.qrc">
-              <normaloff>:/add_16px.png</normaloff>:/add_16px.png</iconset>
+             <iconset resource="layResources.qrc">
+              <normaloff>:/add.png</normaloff>:/add.png</iconset>
             </property>
             <property name="autoRaise">
-             <bool>false</bool>
+             <bool>true</bool>
             </property>
            </widget>
           </item>
           <item>
            <widget class="QToolButton" name="delete_pb">
-            <property name="toolTip">
-             <string>Delete technology</string>
-            </property>
             <property name="text">
              <string>...</string>
             </property>
             <property name="icon">
-             <iconset resource="../../icons/icons.qrc">
-              <normaloff>:/clear_16px.png</normaloff>:/clear_16px.png</iconset>
+             <iconset resource="layResources.qrc">
+              <normaloff>:/clear.png</normaloff>:/clear.png</iconset>
             </property>
             <property name="autoRaise">
-             <bool>false</bool>
+             <bool>true</bool>
             </property>
            </widget>
           </item>
           <item>
-           <widget class="QToolButton" name="rename_pb">
-            <property name="toolTip">
-             <string>Rename technology</string>
-            </property>
-            <property name="text">
-             <string>Rename</string>
-            </property>
-            <property name="icon">
-             <iconset resource="../../icons/icons.qrc">
-              <normaloff>:/rename_16px@2x.png</normaloff>:/rename_16px@2x.png</iconset>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <spacer name="horizontalSpacer">
+           <spacer>
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
             </property>
+            <property name="sizeType">
+             <enum>QSizePolicy::Expanding</enum>
+            </property>
             <property name="sizeHint" stdset="0">
              <size>
-              <width>40</width>
+              <width>141</width>
               <height>20</height>
              </size>
             </property>
            </spacer>
+          </item>
+          <item>
+           <widget class="QToolButton" name="rename_pb">
+            <property name="text">
+             <string>Rename</string>
+            </property>
+           </widget>
           </item>
          </layout>
         </widget>
@@ -313,7 +303,7 @@
   <tabstop>buttonBox</tabstop>
  </tabstops>
  <resources>
-  <include location="../../icons/icons.qrc"/>
+  <include location="layResources.qrc"/>
  </resources>
  <connections>
   <connection>

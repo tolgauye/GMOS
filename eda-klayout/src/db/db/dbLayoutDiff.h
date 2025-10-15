@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -56,9 +56,6 @@ const unsigned int f_no_text_orientation = 0x02;
 //  Ignore properties
 const unsigned int f_no_properties = 0x04;
 
-//  With meta info
-const unsigned int f_with_meta = 0x08;
-
 //  Do not compare layer names
 const unsigned int f_no_layer_names = 0x10;
 
@@ -77,14 +74,11 @@ const unsigned int f_paths_as_polygons = 0x100;
 //  Derive smart cell mapping instead of name mapping (available only if top cells are specified)
 const unsigned int f_smart_cell_mapping = 0x200;
 
-//  Don't summarize missing layers - print them in detail
+//  Don't summarize missing layers
 const unsigned int f_dont_summarize_missing_layers = 0x400;
 
 //  Ignore text details (font, size, presentation)
 const unsigned int f_no_text_details = 0x800;
-
-//  Ignore duplicate instances or shapes
-const unsigned int f_ignore_duplicates = 0x1000;
 
 }
 
@@ -97,7 +91,6 @@ public:
   virtual ~DifferenceReceiver () { }
 
   virtual void dbu_differs (double /*dbu_a*/, double /*dbu_b*/) { }
-  virtual void layout_meta_info_differs (const std::string & /*name*/, const tl::Variant & /*value_a*/, const tl::Variant & /*value_b*/) { }
   virtual void layer_in_a_only (const db::LayerProperties & /*la*/) { }
   virtual void layer_in_b_only (const db::LayerProperties & /*lb*/) { }
   virtual void layer_name_differs (const db::LayerProperties & /*la*/, const db::LayerProperties & /*lb*/) { }
@@ -106,32 +99,28 @@ public:
   virtual void cell_in_b_only (const std::string & /*cellname*/, db::cell_index_type  /*ci*/) { }
   virtual void bbox_differs (const db::Box & /*ba*/, const db::Box & /*bb*/) { }
   virtual void begin_cell (const std::string & /*cellname*/, db::cell_index_type  /*cia*/, db::cell_index_type /*cib*/) { }
-  virtual void cell_meta_info_differs (const std::string & /*name*/, const tl::Variant & /*value_a*/, const tl::Variant & /*value_b*/) { }
   virtual void begin_inst_differences () { }
-  virtual void instances_in_a (const std::vector <db::CellInstArrayWithProperties> & /*insts_a*/, const std::vector <std::string> & /*cell_names*/) { }
-  virtual void instances_in_b (const std::vector <db::CellInstArrayWithProperties> & /*insts_b*/, const std::vector <std::string> & /*cell_names*/) { }
+  virtual void instances_in_a (const std::vector <db::CellInstArrayWithProperties> & /*insts_a*/, const std::vector <std::string> & /*cell_names*/, const db::PropertiesRepository & /*props*/) { }
+  virtual void instances_in_b (const std::vector <db::CellInstArrayWithProperties> & /*insts_b*/, const std::vector <std::string> & /*cell_names*/, const db::PropertiesRepository & /*props*/) { }
   virtual void instances_in_a_only (const std::vector <db::CellInstArrayWithProperties> & /*anotb*/, const db::Layout & /*a*/) { }
   virtual void instances_in_b_only (const std::vector <db::CellInstArrayWithProperties> & /*bnota*/, const db::Layout & /*b*/) { }
   virtual void end_inst_differences () { }
   virtual void begin_layer (const db::LayerProperties & /*layer*/, unsigned int  /*layer_index_a*/, bool  /*is_valid_a*/, unsigned int  /*layer_index_b*/, bool  /*is_valid_b*/) { }
   virtual void per_layer_bbox_differs (const db::Box & /*ba*/, const db::Box & /*bb*/) { }
   virtual void begin_polygon_differences () { }
-  virtual void detailed_diff (const std::vector <std::pair <db::Polygon, db::properties_id_type> > & /*a*/, const std::vector <std::pair <db::Polygon, db::properties_id_type> > & /*b*/) { }
+  virtual void detailed_diff (const db::PropertiesRepository & /*pr*/, const std::vector <std::pair <db::Polygon, db::properties_id_type> > & /*a*/, const std::vector <std::pair <db::Polygon, db::properties_id_type> > & /*b*/) { }
   virtual void end_polygon_differences () { }
   virtual void begin_path_differences () { }
-  virtual void detailed_diff (const std::vector <std::pair <db::Path, db::properties_id_type> > & /*a*/, const std::vector <std::pair <db::Path, db::properties_id_type> > & /*b*/) { }
+  virtual void detailed_diff (const db::PropertiesRepository & /*pr*/, const std::vector <std::pair <db::Path, db::properties_id_type> > & /*a*/, const std::vector <std::pair <db::Path, db::properties_id_type> > & /*b*/) { }
   virtual void end_path_differences () { }
   virtual void begin_box_differences () { }
-  virtual void detailed_diff (const std::vector <std::pair <db::Box, db::properties_id_type> > & /*a*/, const std::vector <std::pair <db::Box, db::properties_id_type> > & /*b*/) { }
+  virtual void detailed_diff (const db::PropertiesRepository & /*pr*/, const std::vector <std::pair <db::Box, db::properties_id_type> > & /*a*/, const std::vector <std::pair <db::Box, db::properties_id_type> > & /*b*/) { }
   virtual void end_box_differences () { }
   virtual void begin_edge_differences () { }
-  virtual void detailed_diff (const std::vector <std::pair <db::Edge, db::properties_id_type> > & /*a*/, const std::vector <std::pair <db::Edge, db::properties_id_type> > & /*b*/) { }
+  virtual void detailed_diff (const db::PropertiesRepository & /*pr*/, const std::vector <std::pair <db::Edge, db::properties_id_type> > & /*a*/, const std::vector <std::pair <db::Edge, db::properties_id_type> > & /*b*/) { }
   virtual void end_edge_differences () { }
-  virtual void begin_edge_pair_differences () { }
-  virtual void detailed_diff (const std::vector <std::pair <db::EdgePair, db::properties_id_type> > & /*a*/, const std::vector <std::pair <db::EdgePair, db::properties_id_type> > & /*b*/) { }
-  virtual void end_edge_pair_differences () { }
   virtual void begin_text_differences () { }
-  virtual void detailed_diff (const std::vector <std::pair <db::Text, db::properties_id_type> > & /*a*/, const std::vector <std::pair <db::Text, db::properties_id_type> > & /*b*/) { }
+  virtual void detailed_diff (const db::PropertiesRepository & /*pr*/, const std::vector <std::pair <db::Text, db::properties_id_type> > & /*a*/, const std::vector <std::pair <db::Text, db::properties_id_type> > & /*b*/) { }
   virtual void end_text_differences () { }
   virtual void end_layer () { }
   virtual void end_cell () { }
@@ -157,7 +146,7 @@ public:
  *
  *  @return True, if the layouts are identical
  */
-bool DB_PUBLIC compare_layouts (const db::Layout &a, const db::Layout &b, unsigned int flags, db::Coord tolerance, size_t max_count = 0, bool print_properties = true);
+bool DB_PUBLIC compare_layouts (const db::Layout &a, const db::Layout &b, unsigned int flags, db::Coord tolerance, size_t max_count = 0, bool print_properties = false);
 
 /**
  *  @brief Compare two layout objects
@@ -176,7 +165,7 @@ bool DB_PUBLIC compare_layouts (const db::Layout &a, const db::Layout &b, unsign
  *
  *  @return True, if the layouts are identical
  */
-bool DB_PUBLIC compare_layouts (const db::Layout &a, db::cell_index_type top_a, const db::Layout &b, db::cell_index_type top_b, unsigned int flags, db::Coord tolerance, size_t max_count = 0, bool print_properties = true);
+bool DB_PUBLIC compare_layouts (const db::Layout &a, db::cell_index_type top_a, const db::Layout &b, db::cell_index_type top_b, unsigned int flags, db::Coord tolerance, size_t max_count = 0, bool print_properties = false);
 
 /**
  *  @brief Compare two layout objects with a custom receiver for the differences

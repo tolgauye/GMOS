@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -32,6 +32,7 @@
 #include <QVideoSurfaceFormat>
 #include "gsiQt.h"
 #include "gsiQtMultimediaCommon.h"
+#include "gsiDeclQtMultimediaTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -166,8 +167,8 @@ gsi::Class<QVideoFilterRunnable> &qtdecl_QVideoFilterRunnable ();
 static gsi::Methods methods_QVideoFilterRunnable_Adaptor () {
   gsi::Methods methods;
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QVideoFilterRunnable::QVideoFilterRunnable()\nThis method creates an object of class QVideoFilterRunnable.", &_init_ctor_QVideoFilterRunnable_Adaptor_0, &_call_ctor_QVideoFilterRunnable_Adaptor_0);
-  methods += new qt_gsi::GenericMethod ("run", "@brief Virtual method QVideoFrame QVideoFilterRunnable::run(QVideoFrame *input, const QVideoSurfaceFormat &surfaceFormat, QFlags<QVideoFilterRunnable::RunFlag> flags)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_run_8664_0, &_call_cbs_run_8664_0);
-  methods += new qt_gsi::GenericMethod ("run", "@hide", false, &_init_cbs_run_8664_0, &_call_cbs_run_8664_0, &_set_callback_cbs_run_8664_0);
+  methods += new qt_gsi::GenericMethod ("run", "@hide", false, &_init_cbs_run_8664_0, &_call_cbs_run_8664_0);
+  methods += new qt_gsi::GenericMethod ("run", "@brief Virtual method QVideoFrame QVideoFilterRunnable::run(QVideoFrame *input, const QVideoSurfaceFormat &surfaceFormat, QFlags<QVideoFilterRunnable::RunFlag> flags)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_run_8664_0, &_call_cbs_run_8664_0, &_set_callback_cbs_run_8664_0);
   return methods;
 }
 

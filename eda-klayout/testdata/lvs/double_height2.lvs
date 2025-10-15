@@ -3,8 +3,6 @@ source($lvs_test_source)
 
 report_lvs($lvs_test_target_lvsdb)
 
-ignore_extraction_errors(true)
-
 writer = write_spice(true, false)
 target_netlist($lvs_test_target_cir, writer, "Extracted by KLayout")
 
@@ -132,8 +130,6 @@ connect_implicit("DOESNOTEXIST", "DOESNOTEXIST")
 
 netlist.simplify
 align
-
-consider_net_names(false)
 
 compare
 

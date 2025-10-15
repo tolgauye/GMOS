@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -30,13 +30,11 @@
 #include "ui_SaltGrainTemplateSelectionDialog.h"
 #include "tlString.h"
 #include "tlExceptions.h"
-#include "tlEnv.h"
 
 #include "rba.h"
 #include "pya.h"
 
 #include <QTextDocument>
-#include <QApplication>
 #include <QPainter>
 #include <QDir>
 #include <QTextStream>
@@ -45,7 +43,6 @@
 #include <QMessageBox>
 #include <QAbstractItemModel>
 #include <QStyledItemDelegate>
-#include <QRegExp>
 
 namespace lay
 {
@@ -291,9 +288,7 @@ SaltManagerDialog::SaltManagerDialog (QWidget *parent, lay::Salt *salt, const st
   : QDialog (parent),
     m_salt_mine_url (salt_mine_url),
     dm_update_models (this, &SaltManagerDialog::update_models), m_current_tab (-1),
-    mp_downloaded_target (0),
-    dm_mine_update_selected_changed (this, &SaltManagerDialog::do_mine_update_selected_changed),
-    dm_mine_new_selected_changed (this, &SaltManagerDialog::do_mine_new_selected_changed)
+    mp_downloaded_target (0)
 {
   Ui::SaltManagerDialog::setupUi (this);
   mp_properties_dialog = new lay::SaltGrainPropertiesDialog (this);
@@ -849,8 +844,6 @@ SaltManagerDialog::salt_mine_about_to_change ()
 void
 SaltManagerDialog::refresh ()
 {
-  m_salt_grain_cache.clear ();
-
   if (! m_salt_mine_url.empty ()) {
 
     tl::log << tl::to_string (tr ("Downloading package repository from %1").arg (tl::to_qstring (m_salt_mine_url)));
@@ -1005,7 +998,7 @@ SaltManagerDialog::update_models ()
   }
 
   if (has_warning) {
-    mode_tab->setTabIcon (1, QIcon (":/warn_16px.png"));
+    mode_tab->setTabIcon (1, QIcon (":/warn_16.png"));
   } else {
     mode_tab->setTabIcon (1, QIcon ());
   }
@@ -1100,12 +1093,8 @@ SaltManagerDialog::current_grains ()
 void
 SaltManagerDialog::mine_update_selected_changed ()
 {
-  dm_mine_update_selected_changed ();
-}
+BEGIN_PROTECTED
 
-void
-SaltManagerDialog::do_mine_update_selected_changed ()
-{
   SaltModel *model = dynamic_cast <SaltModel *> (salt_mine_view_update->model ());
   tl_assert (model != 0);
 
@@ -1118,17 +1107,15 @@ SaltManagerDialog::do_mine_update_selected_changed ()
   details_update_frame->setEnabled (g != 0);
 
   get_remote_grain_info (g, details_update_text);
+
+END_PROTECTED
 }
 
 void
 SaltManagerDialog::mine_new_selected_changed ()
 {
-  dm_mine_new_selected_changed ();
-}
+BEGIN_PROTECTED
 
-void
-SaltManagerDialog::do_mine_new_selected_changed ()
-{
   SaltModel *model = dynamic_cast <SaltModel *> (salt_mine_view_new->model ());
   tl_assert (model != 0);
 
@@ -1141,181 +1128,80 @@ SaltManagerDialog::do_mine_new_selected_changed ()
   details_new_frame->setEnabled (g != 0);
 
   get_remote_grain_info (g, details_new_text);
-}
 
-namespace
-{
-
-/**
- * @brief A callback to keep the UI alive (mainly used for Git grain retrieval)
- */
-class ProcessEventCallback
-  : public tl::InputHttpStreamCallback
-{
-public:
-  virtual void wait_for_input ()
-  {
-    QApplication::processEvents (QEventLoop::ExcludeUserInputEvents);
-  }
-};
-
-class FetchGrainInfoProgressAdaptor
-  : public tl::ProgressAdaptor
-{
-public:
-  FetchGrainInfoProgressAdaptor (SaltGrainDetailsTextWidget *details, const std::string &name, const QString &html)
-    : mp_details (details), m_name (name), m_html (html)
-  {
-    mp_details->setHtml (m_html.arg (QString ()));
-    m_counter = 0;
-  }
-
-  virtual void yield (tl::Progress *progress)
-  {
-    QCoreApplication::processEvents (QEventLoop::ExcludeUserInputEvents | QEventLoop::WaitForMoreEvents, 100);
-
-    ++m_counter;
-    std::string all_dots = "..........";
-    m_counter = m_counter % all_dots.size ();
-    std::string dots = std::string (all_dots, 0, m_counter);
-    mp_details->setHtml (m_html.arg (tl::to_qstring (tl::sprintf (tl::to_string (tr ("Downloading %.0f%% %s")), progress->value (), dots))));
-  }
-
-  virtual void trigger (tl::Progress * /*progress*/)
-  {
-    //  .. nothing yet ..
-  }
-
-  void error ()
-  {
-    mp_details->setHtml (m_html.arg (QString ()));
-  }
-
-  void success ()
-  {
-    mp_details->setHtml (m_html.arg (QString ()));
-  }
-
-  bool is_aborted () const
-  {
-    return false;
-  }
-
-private:
-  lay::SaltGrainDetailsTextWidget *mp_details;
-  std::string m_name;
-  QString m_html;
-  unsigned int m_counter;
-};
-
+END_PROTECTED
 }
 
 void
 SaltManagerDialog::get_remote_grain_info (lay::SaltGrain *g, SaltGrainDetailsTextWidget *details)
 {
-  //  NOTE: we don't want to interfere with download here, so refuse to do update
-  //  the info while a package is downloaded.
-  if (! g || m_downloaded_grain.get ()) {
+  if (! g) {
     details->setHtml (QString ());
     return;
   }
 
   m_downloaded_grain.reset (0);
-
   if (m_downloaded_grain_reader.get ()) {
+    //  NOTE: don't delete the reader in the slot it triggered
     m_downloaded_grain_reader->close ();
   }
-  m_downloaded_grain_reader.reset (0);
-
   mp_downloaded_target = details;
   m_salt_mine_grain.reset (new lay::SaltGrain (*g));
 
-  if (m_salt_mine.download_package_information () && m_salt_mine.grain_by_name (g->name ())) {
+  //  Download actual grain definition file
+  try {
 
-    //  Download actual grain definition file
-    try {
-
-      if (g->url ().empty ()) {
-        throw tl::Exception (tl::to_string (tr ("No download link available")));
-      }
-
-      QString html = tr (
-        "<html>"
-          "<body>"
-            "<font color=\"#c0c0c0\">"
-              "<h2>Fetching Package Definition ...</h2>"
-              "<p><b>URL</b>: %1</p>"
-              "<p>%2</p>"
-            "</font>"
-          "</body>"
-        "</html>"
-      )
-      .arg (tl::to_qstring (g->url ()));
-
-      details->setHtml (html.arg (QString ()));
-
-      FetchGrainInfoProgressAdaptor pa (details, g->name (), html);
-
-      std::string url = g->url ();
-
-      auto sg = m_salt_grain_cache.find (url);
-      if (sg == m_salt_grain_cache.end ()) {
-
-        m_downloaded_grain.reset (new SaltGrain ());
-        m_downloaded_grain->set_url (url);
-
-        //  NOTE: stream_from_url may modify the URL, hence we set it again
-        ProcessEventCallback callback;
-        m_downloaded_grain_reader.reset (SaltGrain::stream_from_url (url, 60.0, &callback));
-        m_downloaded_grain->set_url (url);
-
-        tl::InputHttpStream *http = dynamic_cast<tl::InputHttpStream *> (m_downloaded_grain_reader->base ());
-        if (http) {
-          //  async reading on HTTP
-          http->ready ().add (this, &SaltManagerDialog::data_ready);
-          http->send ();
-        } else {
-          data_ready ();
-        }
-
-      } else {
-
-        m_downloaded_grain.reset (new SaltGrain (sg->second));
-        data_ready ();
-
-      }
-
-    } catch (tl::Exception &ex) {
-      show_error (ex);
+    if (g->url ().empty ()) {
+      throw tl::Exception (tl::to_string (tr ("No download link available")));
     }
 
-  } else {
+    QString html = tr (
+      "<html>"
+        "<body>"
+          "<font color=\"#c0c0c0\">"
+            "<h2>Fetching Package Definition ...</h2>"
+            "<p><b>URL</b>: %1</p>"
+          "</font>"
+        "</body>"
+      "</html>"
+    )
+    .arg (tl::to_qstring (SaltGrain::spec_url (g->url ())));
 
-    //  Download denied - take information from index
-    m_downloaded_grain.reset (new SaltGrain (*g));
-    data_ready ();
+    details->setHtml (html);
 
+    std::string url = g->url ();
+    m_downloaded_grain.reset (new SaltGrain ());
+    m_downloaded_grain->set_url (url);
+
+    //  NOTE: stream_from_url may modify the URL, hence we set it again
+    m_downloaded_grain_reader.reset (SaltGrain::stream_from_url (url));
+    m_downloaded_grain->set_url (url);
+
+    tl::InputHttpStream *http = dynamic_cast<tl::InputHttpStream *> (m_downloaded_grain_reader->base ());
+    if (http) {
+      //  async reading on HTTP
+      http->ready ().add (this, &SaltManagerDialog::data_ready);
+      http->send ();
+    } else {
+      data_ready ();
+    }
+
+  } catch (tl::Exception &ex) {
+    show_error (ex);
   }
 }
 
 void
 SaltManagerDialog::data_ready ()
 {
-  if (! m_salt_mine_grain.get () || ! m_downloaded_grain.get () || ! mp_downloaded_target) {
+  if (! m_salt_mine_grain.get () || ! m_downloaded_grain.get () || ! m_downloaded_grain_reader.get () || ! mp_downloaded_target) {
     return;
   }
 
   //  Load the grain file (save URL as it is overwritten by the grain.xml content)
   std::string url = m_downloaded_grain->url ();
-  if (m_downloaded_grain_reader.get ()) {
-    m_downloaded_grain->load (*m_downloaded_grain_reader);
-    m_downloaded_grain->set_url (url);
-  }
-
-  //  commit to cache
-  if (m_salt_grain_cache.find (url) == m_salt_grain_cache.end ()) {
-    m_salt_grain_cache [url] = *m_downloaded_grain;
-  }
+  m_downloaded_grain->load (*m_downloaded_grain_reader);
+  m_downloaded_grain->set_url (url);
 
   try {
 
@@ -1336,7 +1222,6 @@ SaltManagerDialog::data_ready ()
     m_salt_mine_grain.reset (0);
 
   } catch (tl::Exception &ex) {
-    m_downloaded_grain.reset (0);
     show_error (ex);
   }
 }

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -31,6 +31,7 @@
 #include <QIODevice>
 #include "gsiQt.h"
 #include "gsiQtCoreCommon.h"
+#include "gsiDeclQtCoreTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -112,25 +113,25 @@
     return v;
   }
 
-  static qt_gsi::Converter<QChar>::target_type f_QDataStream_read_qchar(QDataStream *s)
+  static qt_gsi::Converter<class QChar>::target_type f_QDataStream_read_qchar(QDataStream *s)
   {
-    QChar v = QChar (0);
+    QChar v = 0;
     *s >> v;
-    return qt_gsi::Converter<QChar>::toc (v);
+    return qt_gsi::Converter<class QChar>::toc (v);
   }
 
-  static qt_gsi::Converter<QList<int> >::target_type f_QDataStream_read_int_list(QDataStream *s)
+  static qt_gsi::Converter<class QList<int> >::target_type f_QDataStream_read_int_list(QDataStream *s)
   {
     QList<int> v;
     *s >> v;
-    return qt_gsi::Converter<QList<int> >::toc (v);
+    return qt_gsi::Converter<class QList<int> >::toc (v);
   }
 
-  static qt_gsi::Converter<QVector<int> >::target_type f_QDataStream_read_int_vector(QDataStream *s)
+  static qt_gsi::Converter<class QVector<int> >::target_type f_QDataStream_read_int_vector(QDataStream *s)
   {
     QVector<int> v;
     *s >> v;
-    return qt_gsi::Converter<QVector<int> >::toc (v);
+    return qt_gsi::Converter<class QVector<int> >::toc (v);
   }
 
   static QString f_QDataStream_read_string(QDataStream *s)
@@ -213,21 +214,21 @@
     return s;
   }
 
-  static QDataStream *f_QDataStream_put_qchar(QDataStream *s, const qt_gsi::Converter<QChar>::target_type &v)
+  static QDataStream *f_QDataStream_put_qchar(QDataStream *s, const qt_gsi::Converter<class QChar>::target_type &v)
   {
-    *s << qt_gsi::Converter<QChar>::toq (v);
+    *s << qt_gsi::Converter<class QChar>::toq (v);
     return s;
   }
 
-  static QDataStream *f_QDataStream_put_int_list(QDataStream *s, const qt_gsi::Converter<QList<int> >::target_type &v)
+  static QDataStream *f_QDataStream_put_int_list(QDataStream *s, const qt_gsi::Converter<class QList<int> >::target_type &v)
   {
-    *s << qt_gsi::Converter<QList<int> >::toq (v);
+    *s << qt_gsi::Converter<class QList<int> >::toq (v);
     return s;
   }
 
-  static QDataStream *f_QDataStream_put_int_vector(QDataStream *s, const qt_gsi::Converter<QVector<int> >::target_type &v)
+  static QDataStream *f_QDataStream_put_int_vector(QDataStream *s, const qt_gsi::Converter<class QVector<int> >::target_type &v)
   {
-    *s << qt_gsi::Converter<QVector<int> >::toq (v);
+    *s << qt_gsi::Converter<class QVector<int> >::toq (v);
     return s;
   }
 
@@ -319,22 +320,6 @@ static void _call_ctor_QDataStream_2309 (const qt_gsi::GenericStaticMethod * /*d
 }
 
 
-// void QDataStream::abortTransaction()
-
-
-static void _init_f_abortTransaction_0 (qt_gsi::GenericMethod *decl)
-{
-  decl->set_return<void > ();
-}
-
-static void _call_f_abortTransaction_0 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  __SUPPRESS_UNUSED_WARNING(ret);
-  ((QDataStream *)cls)->abortTransaction ();
-}
-
-
 // bool QDataStream::atEnd()
 
 
@@ -362,21 +347,6 @@ static void _call_f_byteOrder_c0 (const qt_gsi::GenericMethod * /*decl*/, void *
 {
   __SUPPRESS_UNUSED_WARNING(args);
   ret.write<qt_gsi::Converter<QDataStream::ByteOrder>::target_type > ((qt_gsi::Converter<QDataStream::ByteOrder>::target_type)qt_gsi::CppToQtAdaptor<QDataStream::ByteOrder>(((QDataStream *)cls)->byteOrder ()));
-}
-
-
-// bool QDataStream::commitTransaction()
-
-
-static void _init_f_commitTransaction_0 (qt_gsi::GenericMethod *decl)
-{
-  decl->set_return<bool > ();
-}
-
-static void _call_f_commitTransaction_0 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  ret.write<bool > ((bool)((QDataStream *)cls)->commitTransaction ());
 }
 
 
@@ -423,22 +393,6 @@ static void _call_f_resetStatus_0 (const qt_gsi::GenericMethod * /*decl*/, void 
   __SUPPRESS_UNUSED_WARNING(args);
   __SUPPRESS_UNUSED_WARNING(ret);
   ((QDataStream *)cls)->resetStatus ();
-}
-
-
-// void QDataStream::rollbackTransaction()
-
-
-static void _init_f_rollbackTransaction_0 (qt_gsi::GenericMethod *decl)
-{
-  decl->set_return<void > ();
-}
-
-static void _call_f_rollbackTransaction_0 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  __SUPPRESS_UNUSED_WARNING(ret);
-  ((QDataStream *)cls)->rollbackTransaction ();
 }
 
 
@@ -561,22 +515,6 @@ static void _call_f_skipRawData_767 (const qt_gsi::GenericMethod * /*decl*/, voi
 }
 
 
-// void QDataStream::startTransaction()
-
-
-static void _init_f_startTransaction_0 (qt_gsi::GenericMethod *decl)
-{
-  decl->set_return<void > ();
-}
-
-static void _call_f_startTransaction_0 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  __SUPPRESS_UNUSED_WARNING(ret);
-  ((QDataStream *)cls)->startTransaction ();
-}
-
-
 // QDataStream::Status QDataStream::status()
 
 
@@ -677,21 +615,17 @@ static gsi::Methods methods_QDataStream () {
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QDataStream::QDataStream(QIODevice *)\nThis method creates an object of class QDataStream.", &_init_ctor_QDataStream_1447, &_call_ctor_QDataStream_1447);
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QDataStream::QDataStream(QByteArray *, QFlags<QIODevice::OpenModeFlag> flags)\nThis method creates an object of class QDataStream.", &_init_ctor_QDataStream_4752, &_call_ctor_QDataStream_4752);
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QDataStream::QDataStream(const QByteArray &)\nThis method creates an object of class QDataStream.", &_init_ctor_QDataStream_2309, &_call_ctor_QDataStream_2309);
-  methods += new qt_gsi::GenericMethod ("abortTransaction", "@brief Method void QDataStream::abortTransaction()\n", false, &_init_f_abortTransaction_0, &_call_f_abortTransaction_0);
   methods += new qt_gsi::GenericMethod ("atEnd", "@brief Method bool QDataStream::atEnd()\n", true, &_init_f_atEnd_c0, &_call_f_atEnd_c0);
   methods += new qt_gsi::GenericMethod (":byteOrder", "@brief Method QDataStream::ByteOrder QDataStream::byteOrder()\n", true, &_init_f_byteOrder_c0, &_call_f_byteOrder_c0);
-  methods += new qt_gsi::GenericMethod ("commitTransaction", "@brief Method bool QDataStream::commitTransaction()\n", false, &_init_f_commitTransaction_0, &_call_f_commitTransaction_0);
   methods += new qt_gsi::GenericMethod (":device", "@brief Method QIODevice *QDataStream::device()\n", true, &_init_f_device_c0, &_call_f_device_c0);
   methods += new qt_gsi::GenericMethod (":floatingPointPrecision", "@brief Method QDataStream::FloatingPointPrecision QDataStream::floatingPointPrecision()\n", true, &_init_f_floatingPointPrecision_c0, &_call_f_floatingPointPrecision_c0);
   methods += new qt_gsi::GenericMethod ("resetStatus", "@brief Method void QDataStream::resetStatus()\n", false, &_init_f_resetStatus_0, &_call_f_resetStatus_0);
-  methods += new qt_gsi::GenericMethod ("rollbackTransaction", "@brief Method void QDataStream::rollbackTransaction()\n", false, &_init_f_rollbackTransaction_0, &_call_f_rollbackTransaction_0);
   methods += new qt_gsi::GenericMethod ("setByteOrder|byteOrder=", "@brief Method void QDataStream::setByteOrder(QDataStream::ByteOrder)\n", false, &_init_f_setByteOrder_2543, &_call_f_setByteOrder_2543);
   methods += new qt_gsi::GenericMethod ("setDevice|device=", "@brief Method void QDataStream::setDevice(QIODevice *)\n", false, &_init_f_setDevice_1447, &_call_f_setDevice_1447);
   methods += new qt_gsi::GenericMethod ("setFloatingPointPrecision|floatingPointPrecision=", "@brief Method void QDataStream::setFloatingPointPrecision(QDataStream::FloatingPointPrecision precision)\n", false, &_init_f_setFloatingPointPrecision_3913, &_call_f_setFloatingPointPrecision_3913);
   methods += new qt_gsi::GenericMethod ("setStatus|status=", "@brief Method void QDataStream::setStatus(QDataStream::Status status)\n", false, &_init_f_setStatus_2275, &_call_f_setStatus_2275);
   methods += new qt_gsi::GenericMethod ("setVersion|version=", "@brief Method void QDataStream::setVersion(int)\n", false, &_init_f_setVersion_767, &_call_f_setVersion_767);
   methods += new qt_gsi::GenericMethod ("skipRawData", "@brief Method int QDataStream::skipRawData(int len)\n", false, &_init_f_skipRawData_767, &_call_f_skipRawData_767);
-  methods += new qt_gsi::GenericMethod ("startTransaction", "@brief Method void QDataStream::startTransaction()\n", false, &_init_f_startTransaction_0, &_call_f_startTransaction_0);
   methods += new qt_gsi::GenericMethod (":status", "@brief Method QDataStream::Status QDataStream::status()\n", true, &_init_f_status_c0, &_call_f_status_c0);
   methods += new qt_gsi::GenericMethod ("unsetDevice", "@brief Method void QDataStream::unsetDevice()\n", false, &_init_f_unsetDevice_0, &_call_f_unsetDevice_0);
   methods += new qt_gsi::GenericMethod (":version", "@brief Method int QDataStream::version()\n", true, &_init_f_version_c0, &_call_f_version_c0);

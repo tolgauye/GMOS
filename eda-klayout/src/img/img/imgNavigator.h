@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -20,7 +20,6 @@
 
 */
 
-#if defined(HAVE_QT)
 
 #ifndef HDR_imgNavigator
 #define HDR_imgNavigator
@@ -29,8 +28,7 @@
 
 namespace lay
 {
-  class Dispatcher;
-  class LayoutViewWidget;
+  class PluginRoot;
   class LayoutView;
   class ZoomService;
   class ViewService;
@@ -54,14 +52,17 @@ public:
   ~Navigator ();
 
   void background_color (QColor c);
-  img::Object *setup (lay::Dispatcher *root, img::Object *img);
+  img::Object *setup (lay::PluginRoot *root, img::Object *img);
 
-  lay::LayoutView *view ();
+  lay::LayoutView *view () 
+  {
+    return mp_view;
+  }
 
   void activate_service (lay::ViewService *service);
 
 private:
-  lay::LayoutViewWidget *mp_view;
+  lay::LayoutView *mp_view;  
   lay::ZoomService *mp_zoom_service;
 };
 
@@ -69,4 +70,3 @@ private:
 
 #endif
 
-#endif

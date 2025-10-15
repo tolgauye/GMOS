@@ -1,7 +1,7 @@
 # encoding: UTF-8
 
 # KLayout Layout Viewer
-# Copyright (C) 2006-2025 Matthias Koefferlein
+# Copyright (C) 2006-2019 Matthias Koefferlein
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,9 +17,8 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-ruby_dir = File.join(File::dirname($0), "..", "ruby")
-if !$:.member?(ruby_dir)
-  $:.push(ruby_dir)
+if !$:.member?(File::dirname($0))
+  $:.push(File::dirname($0))
 end
 
 load("test_prologue.rb")
@@ -32,7 +31,7 @@ load("test_prologue.rb")
 class Buddies_TestClass < TestBase
 
   def buddy_bin(name)
-    file = File.join($ut_inst_path, name)
+    file = File.join(RBA::Application::instance.inst_path, name)
     return file
   end
 
@@ -72,15 +71,15 @@ class Buddies_TestClass < TestBase
       else
         out_file = File.join($ut_testtmp, "out_" + bin)
       end
-      if File.exist?(out_file)
+      if File.exists?(out_file)
         File.unlink(out_file)
       end
-      assert_equal(File.exist?(out_file), false)
+      assert_equal(File.exists?(out_file), false)
 
       in_file = File.join(File.dirname(__FILE__), "test1.gds")
 
       log = bin + "\n" + `#{self.buddy_bin(bin)} #{in_file} #{out_file} 2>&1`
-      assert_equal(File.exist?(out_file), true)
+      assert_equal(File.exists?(out_file), true)
       assert_equal(log, bin + "\n")
 
       File.open(out_file, "rb") do |file|
@@ -96,16 +95,16 @@ class Buddies_TestClass < TestBase
   def test_strmxor
 
     out_file = File.join($ut_testtmp, "out")
-    if File.exist?(out_file)
+    if File.exists?(out_file)
       File.unlink(out_file)
     end
-    assert_equal(File.exist?(out_file), false)
+    assert_equal(File.exists?(out_file), false)
 
     in_file1 = File.join(File.dirname(__FILE__), "test1.gds")
     in_file2 = File.join(File.dirname(__FILE__), "test2.gds")
 
     log = "strmxor\n" + `#{self.buddy_bin("strmxor")} #{in_file1} #{in_file2} #{out_file} 2>&1`
-    assert_equal(File.exist?(out_file), true)
+    assert_equal(File.exists?(out_file), true)
     assert_equal(log, <<"END")
 strmxor
 Warning: Layer 1/0 is not present in second layout, but in first
@@ -113,7 +112,7 @@ Warning: Layer 2/0 is not present in first layout, but in second
 Result summary (layers without differences are not shown):
 
   Layer      Output       Differences (shape count)
-  ----------------------------------------------------------------
+  -------------------------------------------------------
   1/0        -            (no such layer in second layout)
   2/0        -            (no such layer in first layout)
 
@@ -141,15 +140,15 @@ END
   def test_strmclip
 
     out_file = File.join($ut_testtmp, "out")
-    if File.exist?(out_file)
+    if File.exists?(out_file)
       File.unlink(out_file)
     end
-    assert_equal(File.exist?(out_file), false)
+    assert_equal(File.exists?(out_file), false)
 
     in_file = File.join(File.dirname(__FILE__), "test1.gds")
 
     log = "strmclip\n" + `#{self.buddy_bin("strmclip")} #{in_file} #{out_file} 2>&1`
-    assert_equal(File.exist?(out_file), true)
+    assert_equal(File.exists?(out_file), true)
     assert_equal(log, "strmclip\n")
 
   end

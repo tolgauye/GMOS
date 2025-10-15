@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -34,7 +34,7 @@ ViewOp::ViewOp ()
   init (0, Copy);
 }
 
-ViewOp::ViewOp (tl::color_t color, Mode mode, unsigned int line_style_index, unsigned int dither_index, unsigned int dither_offset, Shape shape, int width, int bitmap_index)
+ViewOp::ViewOp (color_t color, Mode mode, unsigned int line_style_index, unsigned int dither_index, unsigned int dither_offset, Shape shape, int width, int bitmap_index)
   : m_line_style_index (line_style_index),
     m_dither_index (dither_index), m_dither_offset (dither_offset),
     m_shape (shape),
@@ -45,7 +45,7 @@ ViewOp::ViewOp (tl::color_t color, Mode mode, unsigned int line_style_index, uns
 }
 
 void
-ViewOp::init (tl::color_t color, Mode mode)
+ViewOp::init (color_t color, Mode mode)
 {
   m_or  = (mode == Copy || mode == Or)  ? color : 0;
   m_and = (mode == Copy || mode == And) ? color : wordones;

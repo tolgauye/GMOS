@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -36,7 +36,12 @@ DB_PUBLIC db::Box cellinst_box_convert_impl (const db::CellInst &inst, const db:
   } else if (allow_empty) {
     return inst.bbox (*layout);
   } else {
-    return inst.bbox_with_empty (*layout);
+    db::Box box = inst.bbox (*layout);
+    if (box.empty ()) {
+      return db::Box (db::Point (0, 0), db::Point (0, 0));
+    } else {
+      return box;
+    }
   }
 }
 
@@ -47,7 +52,11 @@ DB_PUBLIC db::Box cell_box_convert_impl (const db::Cell &c, int layer, bool allo
   } else if (allow_empty) {
     return c.bbox ();
   } else {
-    return c.bbox_with_empty ();
+    if (c.bbox ().empty ()) {
+      return db::Box (db::Point (0, 0), db::Point (0, 0));
+    } else {
+      return c.bbox ();
+    }
   }
 }
 

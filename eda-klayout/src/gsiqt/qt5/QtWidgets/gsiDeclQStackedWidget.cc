@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -82,6 +82,7 @@
 #include <QWindow>
 #include "gsiQt.h"
 #include "gsiQtWidgetsCommon.h"
+#include "gsiDeclQtWidgetsTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -291,7 +292,7 @@ static void _init_f_tr_4013 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("s");
   decl->add_arg<const char * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("c", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("c", true, "__null");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("n", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -303,7 +304,7 @@ static void _call_f_tr_4013 (const qt_gsi::GenericStaticMethod * /*decl*/, gsi::
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (__null, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QStackedWidget::tr (arg1, arg2, arg3));
 }
@@ -316,7 +317,7 @@ static void _init_f_trUtf8_4013 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("s");
   decl->add_arg<const char * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("c", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("c", true, "__null");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("n", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -328,7 +329,7 @@ static void _call_f_trUtf8_4013 (const qt_gsi::GenericStaticMethod * /*decl*/, g
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (__null, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QStackedWidget::trUtf8 (arg1, arg2, arg3));
 }
@@ -353,7 +354,6 @@ static gsi::Methods methods_QStackedWidget () {
   methods += gsi::qt_signal<int > ("currentChanged(int)", "currentChanged", gsi::arg("arg1"), "@brief Signal declaration for QStackedWidget::currentChanged(int)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<const QPoint & > ("customContextMenuRequested(const QPoint &)", "customContextMenuRequested", gsi::arg("pos"), "@brief Signal declaration for QStackedWidget::customContextMenuRequested(const QPoint &pos)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<QObject * > ("destroyed(QObject *)", "destroyed", gsi::arg("arg1"), "@brief Signal declaration for QStackedWidget::destroyed(QObject *)\nYou can bind a procedure to this signal.");
-  methods += gsi::qt_signal<const QString & > ("objectNameChanged(const QString &)", "objectNameChanged", gsi::arg("objectName"), "@brief Signal declaration for QStackedWidget::objectNameChanged(const QString &objectName)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<int > ("widgetRemoved(int)", "widgetRemoved", gsi::arg("index"), "@brief Signal declaration for QStackedWidget::widgetRemoved(int index)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<const QIcon & > ("windowIconChanged(const QIcon &)", "windowIconChanged", gsi::arg("icon"), "@brief Signal declaration for QStackedWidget::windowIconChanged(const QIcon &icon)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<const QString & > ("windowIconTextChanged(const QString &)", "windowIconTextChanged", gsi::arg("iconText"), "@brief Signal declaration for QStackedWidget::windowIconTextChanged(const QString &iconText)\nYou can bind a procedure to this signal.");
@@ -465,18 +465,18 @@ public:
     emit QStackedWidget::destroyed(arg1);
   }
 
-  //  [adaptor impl] bool QStackedWidget::eventFilter(QObject *watched, QEvent *event)
-  bool cbs_eventFilter_2411_0(QObject *watched, QEvent *event)
+  //  [adaptor impl] bool QStackedWidget::eventFilter(QObject *, QEvent *)
+  bool cbs_eventFilter_2411_0(QObject *arg1, QEvent *arg2)
   {
-    return QStackedWidget::eventFilter(watched, event);
+    return QStackedWidget::eventFilter(arg1, arg2);
   }
 
-  virtual bool eventFilter(QObject *watched, QEvent *event)
+  virtual bool eventFilter(QObject *arg1, QEvent *arg2)
   {
     if (cb_eventFilter_2411_0.can_issue()) {
-      return cb_eventFilter_2411_0.issue<QStackedWidget_Adaptor, bool, QObject *, QEvent *>(&QStackedWidget_Adaptor::cbs_eventFilter_2411_0, watched, event);
+      return cb_eventFilter_2411_0.issue<QStackedWidget_Adaptor, bool, QObject *, QEvent *>(&QStackedWidget_Adaptor::cbs_eventFilter_2411_0, arg1, arg2);
     } else {
-      return QStackedWidget::eventFilter(watched, event);
+      return QStackedWidget::eventFilter(arg1, arg2);
     }
   }
 
@@ -538,13 +538,6 @@ public:
     } else {
       return QStackedWidget::minimumSizeHint();
     }
-  }
-
-  //  [emitter impl] void QStackedWidget::objectNameChanged(const QString &objectName)
-  void emitter_QStackedWidget_objectNameChanged_4567(const QString &objectName)
-  {
-    __SUPPRESS_UNUSED_WARNING (objectName);
-    throw tl::Exception ("Can't emit private signal 'void QStackedWidget::objectNameChanged(const QString &objectName)'");
   }
 
   //  [adaptor impl] QPaintEngine *QStackedWidget::paintEngine()
@@ -616,18 +609,18 @@ public:
     emit QStackedWidget::windowTitleChanged(title);
   }
 
-  //  [adaptor impl] void QStackedWidget::actionEvent(QActionEvent *event)
-  void cbs_actionEvent_1823_0(QActionEvent *event)
+  //  [adaptor impl] void QStackedWidget::actionEvent(QActionEvent *)
+  void cbs_actionEvent_1823_0(QActionEvent *arg1)
   {
-    QStackedWidget::actionEvent(event);
+    QStackedWidget::actionEvent(arg1);
   }
 
-  virtual void actionEvent(QActionEvent *event)
+  virtual void actionEvent(QActionEvent *arg1)
   {
     if (cb_actionEvent_1823_0.can_issue()) {
-      cb_actionEvent_1823_0.issue<QStackedWidget_Adaptor, QActionEvent *>(&QStackedWidget_Adaptor::cbs_actionEvent_1823_0, event);
+      cb_actionEvent_1823_0.issue<QStackedWidget_Adaptor, QActionEvent *>(&QStackedWidget_Adaptor::cbs_actionEvent_1823_0, arg1);
     } else {
-      QStackedWidget::actionEvent(event);
+      QStackedWidget::actionEvent(arg1);
     }
   }
 
@@ -646,63 +639,63 @@ public:
     }
   }
 
-  //  [adaptor impl] void QStackedWidget::childEvent(QChildEvent *event)
-  void cbs_childEvent_1701_0(QChildEvent *event)
+  //  [adaptor impl] void QStackedWidget::childEvent(QChildEvent *)
+  void cbs_childEvent_1701_0(QChildEvent *arg1)
   {
-    QStackedWidget::childEvent(event);
+    QStackedWidget::childEvent(arg1);
   }
 
-  virtual void childEvent(QChildEvent *event)
+  virtual void childEvent(QChildEvent *arg1)
   {
     if (cb_childEvent_1701_0.can_issue()) {
-      cb_childEvent_1701_0.issue<QStackedWidget_Adaptor, QChildEvent *>(&QStackedWidget_Adaptor::cbs_childEvent_1701_0, event);
+      cb_childEvent_1701_0.issue<QStackedWidget_Adaptor, QChildEvent *>(&QStackedWidget_Adaptor::cbs_childEvent_1701_0, arg1);
     } else {
-      QStackedWidget::childEvent(event);
+      QStackedWidget::childEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QStackedWidget::closeEvent(QCloseEvent *event)
-  void cbs_closeEvent_1719_0(QCloseEvent *event)
+  //  [adaptor impl] void QStackedWidget::closeEvent(QCloseEvent *)
+  void cbs_closeEvent_1719_0(QCloseEvent *arg1)
   {
-    QStackedWidget::closeEvent(event);
+    QStackedWidget::closeEvent(arg1);
   }
 
-  virtual void closeEvent(QCloseEvent *event)
+  virtual void closeEvent(QCloseEvent *arg1)
   {
     if (cb_closeEvent_1719_0.can_issue()) {
-      cb_closeEvent_1719_0.issue<QStackedWidget_Adaptor, QCloseEvent *>(&QStackedWidget_Adaptor::cbs_closeEvent_1719_0, event);
+      cb_closeEvent_1719_0.issue<QStackedWidget_Adaptor, QCloseEvent *>(&QStackedWidget_Adaptor::cbs_closeEvent_1719_0, arg1);
     } else {
-      QStackedWidget::closeEvent(event);
+      QStackedWidget::closeEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QStackedWidget::contextMenuEvent(QContextMenuEvent *event)
-  void cbs_contextMenuEvent_2363_0(QContextMenuEvent *event)
+  //  [adaptor impl] void QStackedWidget::contextMenuEvent(QContextMenuEvent *)
+  void cbs_contextMenuEvent_2363_0(QContextMenuEvent *arg1)
   {
-    QStackedWidget::contextMenuEvent(event);
+    QStackedWidget::contextMenuEvent(arg1);
   }
 
-  virtual void contextMenuEvent(QContextMenuEvent *event)
+  virtual void contextMenuEvent(QContextMenuEvent *arg1)
   {
     if (cb_contextMenuEvent_2363_0.can_issue()) {
-      cb_contextMenuEvent_2363_0.issue<QStackedWidget_Adaptor, QContextMenuEvent *>(&QStackedWidget_Adaptor::cbs_contextMenuEvent_2363_0, event);
+      cb_contextMenuEvent_2363_0.issue<QStackedWidget_Adaptor, QContextMenuEvent *>(&QStackedWidget_Adaptor::cbs_contextMenuEvent_2363_0, arg1);
     } else {
-      QStackedWidget::contextMenuEvent(event);
+      QStackedWidget::contextMenuEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QStackedWidget::customEvent(QEvent *event)
-  void cbs_customEvent_1217_0(QEvent *event)
+  //  [adaptor impl] void QStackedWidget::customEvent(QEvent *)
+  void cbs_customEvent_1217_0(QEvent *arg1)
   {
-    QStackedWidget::customEvent(event);
+    QStackedWidget::customEvent(arg1);
   }
 
-  virtual void customEvent(QEvent *event)
+  virtual void customEvent(QEvent *arg1)
   {
     if (cb_customEvent_1217_0.can_issue()) {
-      cb_customEvent_1217_0.issue<QStackedWidget_Adaptor, QEvent *>(&QStackedWidget_Adaptor::cbs_customEvent_1217_0, event);
+      cb_customEvent_1217_0.issue<QStackedWidget_Adaptor, QEvent *>(&QStackedWidget_Adaptor::cbs_customEvent_1217_0, arg1);
     } else {
-      QStackedWidget::customEvent(event);
+      QStackedWidget::customEvent(arg1);
     }
   }
 
@@ -721,78 +714,78 @@ public:
     }
   }
 
-  //  [adaptor impl] void QStackedWidget::dragEnterEvent(QDragEnterEvent *event)
-  void cbs_dragEnterEvent_2109_0(QDragEnterEvent *event)
+  //  [adaptor impl] void QStackedWidget::dragEnterEvent(QDragEnterEvent *)
+  void cbs_dragEnterEvent_2109_0(QDragEnterEvent *arg1)
   {
-    QStackedWidget::dragEnterEvent(event);
+    QStackedWidget::dragEnterEvent(arg1);
   }
 
-  virtual void dragEnterEvent(QDragEnterEvent *event)
+  virtual void dragEnterEvent(QDragEnterEvent *arg1)
   {
     if (cb_dragEnterEvent_2109_0.can_issue()) {
-      cb_dragEnterEvent_2109_0.issue<QStackedWidget_Adaptor, QDragEnterEvent *>(&QStackedWidget_Adaptor::cbs_dragEnterEvent_2109_0, event);
+      cb_dragEnterEvent_2109_0.issue<QStackedWidget_Adaptor, QDragEnterEvent *>(&QStackedWidget_Adaptor::cbs_dragEnterEvent_2109_0, arg1);
     } else {
-      QStackedWidget::dragEnterEvent(event);
+      QStackedWidget::dragEnterEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QStackedWidget::dragLeaveEvent(QDragLeaveEvent *event)
-  void cbs_dragLeaveEvent_2092_0(QDragLeaveEvent *event)
+  //  [adaptor impl] void QStackedWidget::dragLeaveEvent(QDragLeaveEvent *)
+  void cbs_dragLeaveEvent_2092_0(QDragLeaveEvent *arg1)
   {
-    QStackedWidget::dragLeaveEvent(event);
+    QStackedWidget::dragLeaveEvent(arg1);
   }
 
-  virtual void dragLeaveEvent(QDragLeaveEvent *event)
+  virtual void dragLeaveEvent(QDragLeaveEvent *arg1)
   {
     if (cb_dragLeaveEvent_2092_0.can_issue()) {
-      cb_dragLeaveEvent_2092_0.issue<QStackedWidget_Adaptor, QDragLeaveEvent *>(&QStackedWidget_Adaptor::cbs_dragLeaveEvent_2092_0, event);
+      cb_dragLeaveEvent_2092_0.issue<QStackedWidget_Adaptor, QDragLeaveEvent *>(&QStackedWidget_Adaptor::cbs_dragLeaveEvent_2092_0, arg1);
     } else {
-      QStackedWidget::dragLeaveEvent(event);
+      QStackedWidget::dragLeaveEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QStackedWidget::dragMoveEvent(QDragMoveEvent *event)
-  void cbs_dragMoveEvent_2006_0(QDragMoveEvent *event)
+  //  [adaptor impl] void QStackedWidget::dragMoveEvent(QDragMoveEvent *)
+  void cbs_dragMoveEvent_2006_0(QDragMoveEvent *arg1)
   {
-    QStackedWidget::dragMoveEvent(event);
+    QStackedWidget::dragMoveEvent(arg1);
   }
 
-  virtual void dragMoveEvent(QDragMoveEvent *event)
+  virtual void dragMoveEvent(QDragMoveEvent *arg1)
   {
     if (cb_dragMoveEvent_2006_0.can_issue()) {
-      cb_dragMoveEvent_2006_0.issue<QStackedWidget_Adaptor, QDragMoveEvent *>(&QStackedWidget_Adaptor::cbs_dragMoveEvent_2006_0, event);
+      cb_dragMoveEvent_2006_0.issue<QStackedWidget_Adaptor, QDragMoveEvent *>(&QStackedWidget_Adaptor::cbs_dragMoveEvent_2006_0, arg1);
     } else {
-      QStackedWidget::dragMoveEvent(event);
+      QStackedWidget::dragMoveEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QStackedWidget::dropEvent(QDropEvent *event)
-  void cbs_dropEvent_1622_0(QDropEvent *event)
+  //  [adaptor impl] void QStackedWidget::dropEvent(QDropEvent *)
+  void cbs_dropEvent_1622_0(QDropEvent *arg1)
   {
-    QStackedWidget::dropEvent(event);
+    QStackedWidget::dropEvent(arg1);
   }
 
-  virtual void dropEvent(QDropEvent *event)
+  virtual void dropEvent(QDropEvent *arg1)
   {
     if (cb_dropEvent_1622_0.can_issue()) {
-      cb_dropEvent_1622_0.issue<QStackedWidget_Adaptor, QDropEvent *>(&QStackedWidget_Adaptor::cbs_dropEvent_1622_0, event);
+      cb_dropEvent_1622_0.issue<QStackedWidget_Adaptor, QDropEvent *>(&QStackedWidget_Adaptor::cbs_dropEvent_1622_0, arg1);
     } else {
-      QStackedWidget::dropEvent(event);
+      QStackedWidget::dropEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QStackedWidget::enterEvent(QEvent *event)
-  void cbs_enterEvent_1217_0(QEvent *event)
+  //  [adaptor impl] void QStackedWidget::enterEvent(QEvent *)
+  void cbs_enterEvent_1217_0(QEvent *arg1)
   {
-    QStackedWidget::enterEvent(event);
+    QStackedWidget::enterEvent(arg1);
   }
 
-  virtual void enterEvent(QEvent *event)
+  virtual void enterEvent(QEvent *arg1)
   {
     if (cb_enterEvent_1217_0.can_issue()) {
-      cb_enterEvent_1217_0.issue<QStackedWidget_Adaptor, QEvent *>(&QStackedWidget_Adaptor::cbs_enterEvent_1217_0, event);
+      cb_enterEvent_1217_0.issue<QStackedWidget_Adaptor, QEvent *>(&QStackedWidget_Adaptor::cbs_enterEvent_1217_0, arg1);
     } else {
-      QStackedWidget::enterEvent(event);
+      QStackedWidget::enterEvent(arg1);
     }
   }
 
@@ -811,18 +804,18 @@ public:
     }
   }
 
-  //  [adaptor impl] void QStackedWidget::focusInEvent(QFocusEvent *event)
-  void cbs_focusInEvent_1729_0(QFocusEvent *event)
+  //  [adaptor impl] void QStackedWidget::focusInEvent(QFocusEvent *)
+  void cbs_focusInEvent_1729_0(QFocusEvent *arg1)
   {
-    QStackedWidget::focusInEvent(event);
+    QStackedWidget::focusInEvent(arg1);
   }
 
-  virtual void focusInEvent(QFocusEvent *event)
+  virtual void focusInEvent(QFocusEvent *arg1)
   {
     if (cb_focusInEvent_1729_0.can_issue()) {
-      cb_focusInEvent_1729_0.issue<QStackedWidget_Adaptor, QFocusEvent *>(&QStackedWidget_Adaptor::cbs_focusInEvent_1729_0, event);
+      cb_focusInEvent_1729_0.issue<QStackedWidget_Adaptor, QFocusEvent *>(&QStackedWidget_Adaptor::cbs_focusInEvent_1729_0, arg1);
     } else {
-      QStackedWidget::focusInEvent(event);
+      QStackedWidget::focusInEvent(arg1);
     }
   }
 
@@ -841,33 +834,33 @@ public:
     }
   }
 
-  //  [adaptor impl] void QStackedWidget::focusOutEvent(QFocusEvent *event)
-  void cbs_focusOutEvent_1729_0(QFocusEvent *event)
+  //  [adaptor impl] void QStackedWidget::focusOutEvent(QFocusEvent *)
+  void cbs_focusOutEvent_1729_0(QFocusEvent *arg1)
   {
-    QStackedWidget::focusOutEvent(event);
+    QStackedWidget::focusOutEvent(arg1);
   }
 
-  virtual void focusOutEvent(QFocusEvent *event)
+  virtual void focusOutEvent(QFocusEvent *arg1)
   {
     if (cb_focusOutEvent_1729_0.can_issue()) {
-      cb_focusOutEvent_1729_0.issue<QStackedWidget_Adaptor, QFocusEvent *>(&QStackedWidget_Adaptor::cbs_focusOutEvent_1729_0, event);
+      cb_focusOutEvent_1729_0.issue<QStackedWidget_Adaptor, QFocusEvent *>(&QStackedWidget_Adaptor::cbs_focusOutEvent_1729_0, arg1);
     } else {
-      QStackedWidget::focusOutEvent(event);
+      QStackedWidget::focusOutEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QStackedWidget::hideEvent(QHideEvent *event)
-  void cbs_hideEvent_1595_0(QHideEvent *event)
+  //  [adaptor impl] void QStackedWidget::hideEvent(QHideEvent *)
+  void cbs_hideEvent_1595_0(QHideEvent *arg1)
   {
-    QStackedWidget::hideEvent(event);
+    QStackedWidget::hideEvent(arg1);
   }
 
-  virtual void hideEvent(QHideEvent *event)
+  virtual void hideEvent(QHideEvent *arg1)
   {
     if (cb_hideEvent_1595_0.can_issue()) {
-      cb_hideEvent_1595_0.issue<QStackedWidget_Adaptor, QHideEvent *>(&QStackedWidget_Adaptor::cbs_hideEvent_1595_0, event);
+      cb_hideEvent_1595_0.issue<QStackedWidget_Adaptor, QHideEvent *>(&QStackedWidget_Adaptor::cbs_hideEvent_1595_0, arg1);
     } else {
-      QStackedWidget::hideEvent(event);
+      QStackedWidget::hideEvent(arg1);
     }
   }
 
@@ -901,48 +894,48 @@ public:
     }
   }
 
-  //  [adaptor impl] void QStackedWidget::keyPressEvent(QKeyEvent *event)
-  void cbs_keyPressEvent_1514_0(QKeyEvent *event)
+  //  [adaptor impl] void QStackedWidget::keyPressEvent(QKeyEvent *)
+  void cbs_keyPressEvent_1514_0(QKeyEvent *arg1)
   {
-    QStackedWidget::keyPressEvent(event);
+    QStackedWidget::keyPressEvent(arg1);
   }
 
-  virtual void keyPressEvent(QKeyEvent *event)
+  virtual void keyPressEvent(QKeyEvent *arg1)
   {
     if (cb_keyPressEvent_1514_0.can_issue()) {
-      cb_keyPressEvent_1514_0.issue<QStackedWidget_Adaptor, QKeyEvent *>(&QStackedWidget_Adaptor::cbs_keyPressEvent_1514_0, event);
+      cb_keyPressEvent_1514_0.issue<QStackedWidget_Adaptor, QKeyEvent *>(&QStackedWidget_Adaptor::cbs_keyPressEvent_1514_0, arg1);
     } else {
-      QStackedWidget::keyPressEvent(event);
+      QStackedWidget::keyPressEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QStackedWidget::keyReleaseEvent(QKeyEvent *event)
-  void cbs_keyReleaseEvent_1514_0(QKeyEvent *event)
+  //  [adaptor impl] void QStackedWidget::keyReleaseEvent(QKeyEvent *)
+  void cbs_keyReleaseEvent_1514_0(QKeyEvent *arg1)
   {
-    QStackedWidget::keyReleaseEvent(event);
+    QStackedWidget::keyReleaseEvent(arg1);
   }
 
-  virtual void keyReleaseEvent(QKeyEvent *event)
+  virtual void keyReleaseEvent(QKeyEvent *arg1)
   {
     if (cb_keyReleaseEvent_1514_0.can_issue()) {
-      cb_keyReleaseEvent_1514_0.issue<QStackedWidget_Adaptor, QKeyEvent *>(&QStackedWidget_Adaptor::cbs_keyReleaseEvent_1514_0, event);
+      cb_keyReleaseEvent_1514_0.issue<QStackedWidget_Adaptor, QKeyEvent *>(&QStackedWidget_Adaptor::cbs_keyReleaseEvent_1514_0, arg1);
     } else {
-      QStackedWidget::keyReleaseEvent(event);
+      QStackedWidget::keyReleaseEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QStackedWidget::leaveEvent(QEvent *event)
-  void cbs_leaveEvent_1217_0(QEvent *event)
+  //  [adaptor impl] void QStackedWidget::leaveEvent(QEvent *)
+  void cbs_leaveEvent_1217_0(QEvent *arg1)
   {
-    QStackedWidget::leaveEvent(event);
+    QStackedWidget::leaveEvent(arg1);
   }
 
-  virtual void leaveEvent(QEvent *event)
+  virtual void leaveEvent(QEvent *arg1)
   {
     if (cb_leaveEvent_1217_0.can_issue()) {
-      cb_leaveEvent_1217_0.issue<QStackedWidget_Adaptor, QEvent *>(&QStackedWidget_Adaptor::cbs_leaveEvent_1217_0, event);
+      cb_leaveEvent_1217_0.issue<QStackedWidget_Adaptor, QEvent *>(&QStackedWidget_Adaptor::cbs_leaveEvent_1217_0, arg1);
     } else {
-      QStackedWidget::leaveEvent(event);
+      QStackedWidget::leaveEvent(arg1);
     }
   }
 
@@ -961,78 +954,78 @@ public:
     }
   }
 
-  //  [adaptor impl] void QStackedWidget::mouseDoubleClickEvent(QMouseEvent *event)
-  void cbs_mouseDoubleClickEvent_1738_0(QMouseEvent *event)
+  //  [adaptor impl] void QStackedWidget::mouseDoubleClickEvent(QMouseEvent *)
+  void cbs_mouseDoubleClickEvent_1738_0(QMouseEvent *arg1)
   {
-    QStackedWidget::mouseDoubleClickEvent(event);
+    QStackedWidget::mouseDoubleClickEvent(arg1);
   }
 
-  virtual void mouseDoubleClickEvent(QMouseEvent *event)
+  virtual void mouseDoubleClickEvent(QMouseEvent *arg1)
   {
     if (cb_mouseDoubleClickEvent_1738_0.can_issue()) {
-      cb_mouseDoubleClickEvent_1738_0.issue<QStackedWidget_Adaptor, QMouseEvent *>(&QStackedWidget_Adaptor::cbs_mouseDoubleClickEvent_1738_0, event);
+      cb_mouseDoubleClickEvent_1738_0.issue<QStackedWidget_Adaptor, QMouseEvent *>(&QStackedWidget_Adaptor::cbs_mouseDoubleClickEvent_1738_0, arg1);
     } else {
-      QStackedWidget::mouseDoubleClickEvent(event);
+      QStackedWidget::mouseDoubleClickEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QStackedWidget::mouseMoveEvent(QMouseEvent *event)
-  void cbs_mouseMoveEvent_1738_0(QMouseEvent *event)
+  //  [adaptor impl] void QStackedWidget::mouseMoveEvent(QMouseEvent *)
+  void cbs_mouseMoveEvent_1738_0(QMouseEvent *arg1)
   {
-    QStackedWidget::mouseMoveEvent(event);
+    QStackedWidget::mouseMoveEvent(arg1);
   }
 
-  virtual void mouseMoveEvent(QMouseEvent *event)
+  virtual void mouseMoveEvent(QMouseEvent *arg1)
   {
     if (cb_mouseMoveEvent_1738_0.can_issue()) {
-      cb_mouseMoveEvent_1738_0.issue<QStackedWidget_Adaptor, QMouseEvent *>(&QStackedWidget_Adaptor::cbs_mouseMoveEvent_1738_0, event);
+      cb_mouseMoveEvent_1738_0.issue<QStackedWidget_Adaptor, QMouseEvent *>(&QStackedWidget_Adaptor::cbs_mouseMoveEvent_1738_0, arg1);
     } else {
-      QStackedWidget::mouseMoveEvent(event);
+      QStackedWidget::mouseMoveEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QStackedWidget::mousePressEvent(QMouseEvent *event)
-  void cbs_mousePressEvent_1738_0(QMouseEvent *event)
+  //  [adaptor impl] void QStackedWidget::mousePressEvent(QMouseEvent *)
+  void cbs_mousePressEvent_1738_0(QMouseEvent *arg1)
   {
-    QStackedWidget::mousePressEvent(event);
+    QStackedWidget::mousePressEvent(arg1);
   }
 
-  virtual void mousePressEvent(QMouseEvent *event)
+  virtual void mousePressEvent(QMouseEvent *arg1)
   {
     if (cb_mousePressEvent_1738_0.can_issue()) {
-      cb_mousePressEvent_1738_0.issue<QStackedWidget_Adaptor, QMouseEvent *>(&QStackedWidget_Adaptor::cbs_mousePressEvent_1738_0, event);
+      cb_mousePressEvent_1738_0.issue<QStackedWidget_Adaptor, QMouseEvent *>(&QStackedWidget_Adaptor::cbs_mousePressEvent_1738_0, arg1);
     } else {
-      QStackedWidget::mousePressEvent(event);
+      QStackedWidget::mousePressEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QStackedWidget::mouseReleaseEvent(QMouseEvent *event)
-  void cbs_mouseReleaseEvent_1738_0(QMouseEvent *event)
+  //  [adaptor impl] void QStackedWidget::mouseReleaseEvent(QMouseEvent *)
+  void cbs_mouseReleaseEvent_1738_0(QMouseEvent *arg1)
   {
-    QStackedWidget::mouseReleaseEvent(event);
+    QStackedWidget::mouseReleaseEvent(arg1);
   }
 
-  virtual void mouseReleaseEvent(QMouseEvent *event)
+  virtual void mouseReleaseEvent(QMouseEvent *arg1)
   {
     if (cb_mouseReleaseEvent_1738_0.can_issue()) {
-      cb_mouseReleaseEvent_1738_0.issue<QStackedWidget_Adaptor, QMouseEvent *>(&QStackedWidget_Adaptor::cbs_mouseReleaseEvent_1738_0, event);
+      cb_mouseReleaseEvent_1738_0.issue<QStackedWidget_Adaptor, QMouseEvent *>(&QStackedWidget_Adaptor::cbs_mouseReleaseEvent_1738_0, arg1);
     } else {
-      QStackedWidget::mouseReleaseEvent(event);
+      QStackedWidget::mouseReleaseEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QStackedWidget::moveEvent(QMoveEvent *event)
-  void cbs_moveEvent_1624_0(QMoveEvent *event)
+  //  [adaptor impl] void QStackedWidget::moveEvent(QMoveEvent *)
+  void cbs_moveEvent_1624_0(QMoveEvent *arg1)
   {
-    QStackedWidget::moveEvent(event);
+    QStackedWidget::moveEvent(arg1);
   }
 
-  virtual void moveEvent(QMoveEvent *event)
+  virtual void moveEvent(QMoveEvent *arg1)
   {
     if (cb_moveEvent_1624_0.can_issue()) {
-      cb_moveEvent_1624_0.issue<QStackedWidget_Adaptor, QMoveEvent *>(&QStackedWidget_Adaptor::cbs_moveEvent_1624_0, event);
+      cb_moveEvent_1624_0.issue<QStackedWidget_Adaptor, QMoveEvent *>(&QStackedWidget_Adaptor::cbs_moveEvent_1624_0, arg1);
     } else {
-      QStackedWidget::moveEvent(event);
+      QStackedWidget::moveEvent(arg1);
     }
   }
 
@@ -1081,18 +1074,18 @@ public:
     }
   }
 
-  //  [adaptor impl] void QStackedWidget::resizeEvent(QResizeEvent *event)
-  void cbs_resizeEvent_1843_0(QResizeEvent *event)
+  //  [adaptor impl] void QStackedWidget::resizeEvent(QResizeEvent *)
+  void cbs_resizeEvent_1843_0(QResizeEvent *arg1)
   {
-    QStackedWidget::resizeEvent(event);
+    QStackedWidget::resizeEvent(arg1);
   }
 
-  virtual void resizeEvent(QResizeEvent *event)
+  virtual void resizeEvent(QResizeEvent *arg1)
   {
     if (cb_resizeEvent_1843_0.can_issue()) {
-      cb_resizeEvent_1843_0.issue<QStackedWidget_Adaptor, QResizeEvent *>(&QStackedWidget_Adaptor::cbs_resizeEvent_1843_0, event);
+      cb_resizeEvent_1843_0.issue<QStackedWidget_Adaptor, QResizeEvent *>(&QStackedWidget_Adaptor::cbs_resizeEvent_1843_0, arg1);
     } else {
-      QStackedWidget::resizeEvent(event);
+      QStackedWidget::resizeEvent(arg1);
     }
   }
 
@@ -1111,63 +1104,63 @@ public:
     }
   }
 
-  //  [adaptor impl] void QStackedWidget::showEvent(QShowEvent *event)
-  void cbs_showEvent_1634_0(QShowEvent *event)
+  //  [adaptor impl] void QStackedWidget::showEvent(QShowEvent *)
+  void cbs_showEvent_1634_0(QShowEvent *arg1)
   {
-    QStackedWidget::showEvent(event);
+    QStackedWidget::showEvent(arg1);
   }
 
-  virtual void showEvent(QShowEvent *event)
+  virtual void showEvent(QShowEvent *arg1)
   {
     if (cb_showEvent_1634_0.can_issue()) {
-      cb_showEvent_1634_0.issue<QStackedWidget_Adaptor, QShowEvent *>(&QStackedWidget_Adaptor::cbs_showEvent_1634_0, event);
+      cb_showEvent_1634_0.issue<QStackedWidget_Adaptor, QShowEvent *>(&QStackedWidget_Adaptor::cbs_showEvent_1634_0, arg1);
     } else {
-      QStackedWidget::showEvent(event);
+      QStackedWidget::showEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QStackedWidget::tabletEvent(QTabletEvent *event)
-  void cbs_tabletEvent_1821_0(QTabletEvent *event)
+  //  [adaptor impl] void QStackedWidget::tabletEvent(QTabletEvent *)
+  void cbs_tabletEvent_1821_0(QTabletEvent *arg1)
   {
-    QStackedWidget::tabletEvent(event);
+    QStackedWidget::tabletEvent(arg1);
   }
 
-  virtual void tabletEvent(QTabletEvent *event)
+  virtual void tabletEvent(QTabletEvent *arg1)
   {
     if (cb_tabletEvent_1821_0.can_issue()) {
-      cb_tabletEvent_1821_0.issue<QStackedWidget_Adaptor, QTabletEvent *>(&QStackedWidget_Adaptor::cbs_tabletEvent_1821_0, event);
+      cb_tabletEvent_1821_0.issue<QStackedWidget_Adaptor, QTabletEvent *>(&QStackedWidget_Adaptor::cbs_tabletEvent_1821_0, arg1);
     } else {
-      QStackedWidget::tabletEvent(event);
+      QStackedWidget::tabletEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QStackedWidget::timerEvent(QTimerEvent *event)
-  void cbs_timerEvent_1730_0(QTimerEvent *event)
+  //  [adaptor impl] void QStackedWidget::timerEvent(QTimerEvent *)
+  void cbs_timerEvent_1730_0(QTimerEvent *arg1)
   {
-    QStackedWidget::timerEvent(event);
+    QStackedWidget::timerEvent(arg1);
   }
 
-  virtual void timerEvent(QTimerEvent *event)
+  virtual void timerEvent(QTimerEvent *arg1)
   {
     if (cb_timerEvent_1730_0.can_issue()) {
-      cb_timerEvent_1730_0.issue<QStackedWidget_Adaptor, QTimerEvent *>(&QStackedWidget_Adaptor::cbs_timerEvent_1730_0, event);
+      cb_timerEvent_1730_0.issue<QStackedWidget_Adaptor, QTimerEvent *>(&QStackedWidget_Adaptor::cbs_timerEvent_1730_0, arg1);
     } else {
-      QStackedWidget::timerEvent(event);
+      QStackedWidget::timerEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QStackedWidget::wheelEvent(QWheelEvent *event)
-  void cbs_wheelEvent_1718_0(QWheelEvent *event)
+  //  [adaptor impl] void QStackedWidget::wheelEvent(QWheelEvent *)
+  void cbs_wheelEvent_1718_0(QWheelEvent *arg1)
   {
-    QStackedWidget::wheelEvent(event);
+    QStackedWidget::wheelEvent(arg1);
   }
 
-  virtual void wheelEvent(QWheelEvent *event)
+  virtual void wheelEvent(QWheelEvent *arg1)
   {
     if (cb_wheelEvent_1718_0.can_issue()) {
-      cb_wheelEvent_1718_0.issue<QStackedWidget_Adaptor, QWheelEvent *>(&QStackedWidget_Adaptor::cbs_wheelEvent_1718_0, event);
+      cb_wheelEvent_1718_0.issue<QStackedWidget_Adaptor, QWheelEvent *>(&QStackedWidget_Adaptor::cbs_wheelEvent_1718_0, arg1);
     } else {
-      QStackedWidget::wheelEvent(event);
+      QStackedWidget::wheelEvent(arg1);
     }
   }
 
@@ -1224,7 +1217,7 @@ QStackedWidget_Adaptor::~QStackedWidget_Adaptor() { }
 
 static void _init_ctor_QStackedWidget_Adaptor_1315 (qt_gsi::GenericStaticMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("parent", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("parent", true, "0");
   decl->add_arg<QWidget * > (argspec_0);
   decl->set_return_new<QStackedWidget_Adaptor> ();
 }
@@ -1233,16 +1226,16 @@ static void _call_ctor_QStackedWidget_Adaptor_1315 (const qt_gsi::GenericStaticM
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  QWidget *arg1 = args ? gsi::arg_reader<QWidget * >() (args, heap) : gsi::arg_maker<QWidget * >() (nullptr, heap);
+  QWidget *arg1 = args ? gsi::arg_reader<QWidget * >() (args, heap) : gsi::arg_maker<QWidget * >() (0, heap);
   ret.write<QStackedWidget_Adaptor *> (new QStackedWidget_Adaptor (arg1));
 }
 
 
-// void QStackedWidget::actionEvent(QActionEvent *event)
+// void QStackedWidget::actionEvent(QActionEvent *)
 
 static void _init_cbs_actionEvent_1823_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QActionEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1286,11 +1279,11 @@ static void _set_callback_cbs_changeEvent_1217_0 (void *cls, const gsi::Callback
 }
 
 
-// void QStackedWidget::childEvent(QChildEvent *event)
+// void QStackedWidget::childEvent(QChildEvent *)
 
 static void _init_cbs_childEvent_1701_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QChildEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1310,11 +1303,11 @@ static void _set_callback_cbs_childEvent_1701_0 (void *cls, const gsi::Callback 
 }
 
 
-// void QStackedWidget::closeEvent(QCloseEvent *event)
+// void QStackedWidget::closeEvent(QCloseEvent *)
 
 static void _init_cbs_closeEvent_1719_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QCloseEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1334,11 +1327,11 @@ static void _set_callback_cbs_closeEvent_1719_0 (void *cls, const gsi::Callback 
 }
 
 
-// void QStackedWidget::contextMenuEvent(QContextMenuEvent *event)
+// void QStackedWidget::contextMenuEvent(QContextMenuEvent *)
 
 static void _init_cbs_contextMenuEvent_2363_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QContextMenuEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1419,11 +1412,11 @@ static void _call_emitter_customContextMenuRequested_1916 (const qt_gsi::Generic
 }
 
 
-// void QStackedWidget::customEvent(QEvent *event)
+// void QStackedWidget::customEvent(QEvent *)
 
 static void _init_cbs_customEvent_1217_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1469,7 +1462,7 @@ static void _call_fp_destroy_1620 (const qt_gsi::GenericMethod * /*decl*/, void 
 
 static void _init_emitter_destroyed_1302 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("arg1", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("arg1", true, "0");
   decl->add_arg<QObject * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1478,7 +1471,7 @@ static void _call_emitter_destroyed_1302 (const qt_gsi::GenericMethod * /*decl*/
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (nullptr, heap);
+  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (0, heap);
   ((QStackedWidget_Adaptor *)cls)->emitter_QStackedWidget_destroyed_1302 (arg1);
 }
 
@@ -1507,11 +1500,11 @@ static void _set_callback_cbs_disconnectNotify_2394_0 (void *cls, const gsi::Cal
 }
 
 
-// void QStackedWidget::dragEnterEvent(QDragEnterEvent *event)
+// void QStackedWidget::dragEnterEvent(QDragEnterEvent *)
 
 static void _init_cbs_dragEnterEvent_2109_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QDragEnterEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1531,11 +1524,11 @@ static void _set_callback_cbs_dragEnterEvent_2109_0 (void *cls, const gsi::Callb
 }
 
 
-// void QStackedWidget::dragLeaveEvent(QDragLeaveEvent *event)
+// void QStackedWidget::dragLeaveEvent(QDragLeaveEvent *)
 
 static void _init_cbs_dragLeaveEvent_2092_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QDragLeaveEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1555,11 +1548,11 @@ static void _set_callback_cbs_dragLeaveEvent_2092_0 (void *cls, const gsi::Callb
 }
 
 
-// void QStackedWidget::dragMoveEvent(QDragMoveEvent *event)
+// void QStackedWidget::dragMoveEvent(QDragMoveEvent *)
 
 static void _init_cbs_dragMoveEvent_2006_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QDragMoveEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1598,11 +1591,11 @@ static void _call_fp_drawFrame_1426 (const qt_gsi::GenericMethod * /*decl*/, voi
 }
 
 
-// void QStackedWidget::dropEvent(QDropEvent *event)
+// void QStackedWidget::dropEvent(QDropEvent *)
 
 static void _init_cbs_dropEvent_1622_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QDropEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1622,11 +1615,11 @@ static void _set_callback_cbs_dropEvent_1622_0 (void *cls, const gsi::Callback &
 }
 
 
-// void QStackedWidget::enterEvent(QEvent *event)
+// void QStackedWidget::enterEvent(QEvent *)
 
 static void _init_cbs_enterEvent_1217_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1669,13 +1662,13 @@ static void _set_callback_cbs_event_1217_0 (void *cls, const gsi::Callback &cb)
 }
 
 
-// bool QStackedWidget::eventFilter(QObject *watched, QEvent *event)
+// bool QStackedWidget::eventFilter(QObject *, QEvent *)
 
 static void _init_cbs_eventFilter_2411_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("watched");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QObject * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("event");
+  static gsi::ArgSpecBase argspec_1 ("arg2");
   decl->add_arg<QEvent * > (argspec_1);
   decl->set_return<bool > ();
 }
@@ -1695,11 +1688,11 @@ static void _set_callback_cbs_eventFilter_2411_0 (void *cls, const gsi::Callback
 }
 
 
-// void QStackedWidget::focusInEvent(QFocusEvent *event)
+// void QStackedWidget::focusInEvent(QFocusEvent *)
 
 static void _init_cbs_focusInEvent_1729_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QFocusEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1756,11 +1749,11 @@ static void _set_callback_cbs_focusNextPrevChild_864_0 (void *cls, const gsi::Ca
 }
 
 
-// void QStackedWidget::focusOutEvent(QFocusEvent *event)
+// void QStackedWidget::focusOutEvent(QFocusEvent *)
 
 static void _init_cbs_focusOutEvent_1729_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QFocusEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1836,11 +1829,11 @@ static void _set_callback_cbs_heightForWidth_c767_0 (void *cls, const gsi::Callb
 }
 
 
-// void QStackedWidget::hideEvent(QHideEvent *event)
+// void QStackedWidget::hideEvent(QHideEvent *)
 
 static void _init_cbs_hideEvent_1595_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QHideEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1968,11 +1961,11 @@ static void _call_fp_isSignalConnected_c2394 (const qt_gsi::GenericMethod * /*de
 }
 
 
-// void QStackedWidget::keyPressEvent(QKeyEvent *event)
+// void QStackedWidget::keyPressEvent(QKeyEvent *)
 
 static void _init_cbs_keyPressEvent_1514_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QKeyEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1992,11 +1985,11 @@ static void _set_callback_cbs_keyPressEvent_1514_0 (void *cls, const gsi::Callba
 }
 
 
-// void QStackedWidget::keyReleaseEvent(QKeyEvent *event)
+// void QStackedWidget::keyReleaseEvent(QKeyEvent *)
 
 static void _init_cbs_keyReleaseEvent_1514_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QKeyEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -2016,11 +2009,11 @@ static void _set_callback_cbs_keyReleaseEvent_1514_0 (void *cls, const gsi::Call
 }
 
 
-// void QStackedWidget::leaveEvent(QEvent *event)
+// void QStackedWidget::leaveEvent(QEvent *)
 
 static void _init_cbs_leaveEvent_1217_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -2082,11 +2075,11 @@ static void _set_callback_cbs_minimumSizeHint_c0_0 (void *cls, const gsi::Callba
 }
 
 
-// void QStackedWidget::mouseDoubleClickEvent(QMouseEvent *event)
+// void QStackedWidget::mouseDoubleClickEvent(QMouseEvent *)
 
 static void _init_cbs_mouseDoubleClickEvent_1738_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QMouseEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -2106,11 +2099,11 @@ static void _set_callback_cbs_mouseDoubleClickEvent_1738_0 (void *cls, const gsi
 }
 
 
-// void QStackedWidget::mouseMoveEvent(QMouseEvent *event)
+// void QStackedWidget::mouseMoveEvent(QMouseEvent *)
 
 static void _init_cbs_mouseMoveEvent_1738_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QMouseEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -2130,11 +2123,11 @@ static void _set_callback_cbs_mouseMoveEvent_1738_0 (void *cls, const gsi::Callb
 }
 
 
-// void QStackedWidget::mousePressEvent(QMouseEvent *event)
+// void QStackedWidget::mousePressEvent(QMouseEvent *)
 
 static void _init_cbs_mousePressEvent_1738_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QMouseEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -2154,11 +2147,11 @@ static void _set_callback_cbs_mousePressEvent_1738_0 (void *cls, const gsi::Call
 }
 
 
-// void QStackedWidget::mouseReleaseEvent(QMouseEvent *event)
+// void QStackedWidget::mouseReleaseEvent(QMouseEvent *)
 
 static void _init_cbs_mouseReleaseEvent_1738_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QMouseEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -2178,11 +2171,11 @@ static void _set_callback_cbs_mouseReleaseEvent_1738_0 (void *cls, const gsi::Ca
 }
 
 
-// void QStackedWidget::moveEvent(QMoveEvent *event)
+// void QStackedWidget::moveEvent(QMoveEvent *)
 
 static void _init_cbs_moveEvent_1624_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QMoveEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -2228,24 +2221,6 @@ static void _call_cbs_nativeEvent_4678_0 (const qt_gsi::GenericMethod * /*decl*/
 static void _set_callback_cbs_nativeEvent_4678_0 (void *cls, const gsi::Callback &cb)
 {
   ((QStackedWidget_Adaptor *)cls)->cb_nativeEvent_4678_0 = cb;
-}
-
-
-// emitter void QStackedWidget::objectNameChanged(const QString &objectName)
-
-static void _init_emitter_objectNameChanged_4567 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("objectName");
-  decl->add_arg<const QString & > (argspec_0);
-  decl->set_return<void > ();
-}
-
-static void _call_emitter_objectNameChanged_4567 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs & /*ret*/) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const QString &arg1 = gsi::arg_reader<const QString & >() (args, heap);
-  ((QStackedWidget_Adaptor *)cls)->emitter_QStackedWidget_objectNameChanged_4567 (arg1);
 }
 
 
@@ -2333,11 +2308,11 @@ static void _set_callback_cbs_redirected_c1225_0 (void *cls, const gsi::Callback
 }
 
 
-// void QStackedWidget::resizeEvent(QResizeEvent *event)
+// void QStackedWidget::resizeEvent(QResizeEvent *)
 
 static void _init_cbs_resizeEvent_1843_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QResizeEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -2428,11 +2403,11 @@ static void _set_callback_cbs_sharedPainter_c0_0 (void *cls, const gsi::Callback
 }
 
 
-// void QStackedWidget::showEvent(QShowEvent *event)
+// void QStackedWidget::showEvent(QShowEvent *)
 
 static void _init_cbs_showEvent_1634_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QShowEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -2471,11 +2446,11 @@ static void _set_callback_cbs_sizeHint_c0_0 (void *cls, const gsi::Callback &cb)
 }
 
 
-// void QStackedWidget::tabletEvent(QTabletEvent *event)
+// void QStackedWidget::tabletEvent(QTabletEvent *)
 
 static void _init_cbs_tabletEvent_1821_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QTabletEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -2495,11 +2470,11 @@ static void _set_callback_cbs_tabletEvent_1821_0 (void *cls, const gsi::Callback
 }
 
 
-// void QStackedWidget::timerEvent(QTimerEvent *event)
+// void QStackedWidget::timerEvent(QTimerEvent *)
 
 static void _init_cbs_timerEvent_1730_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QTimerEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -2534,11 +2509,11 @@ static void _call_fp_updateMicroFocus_0 (const qt_gsi::GenericMethod * /*decl*/,
 }
 
 
-// void QStackedWidget::wheelEvent(QWheelEvent *event)
+// void QStackedWidget::wheelEvent(QWheelEvent *)
 
 static void _init_cbs_wheelEvent_1718_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QWheelEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -2638,111 +2613,110 @@ gsi::Class<QStackedWidget> &qtdecl_QStackedWidget ();
 static gsi::Methods methods_QStackedWidget_Adaptor () {
   gsi::Methods methods;
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QStackedWidget::QStackedWidget(QWidget *parent)\nThis method creates an object of class QStackedWidget.", &_init_ctor_QStackedWidget_Adaptor_1315, &_call_ctor_QStackedWidget_Adaptor_1315);
-  methods += new qt_gsi::GenericMethod ("*actionEvent", "@brief Virtual method void QStackedWidget::actionEvent(QActionEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_actionEvent_1823_0, &_call_cbs_actionEvent_1823_0);
-  methods += new qt_gsi::GenericMethod ("*actionEvent", "@hide", false, &_init_cbs_actionEvent_1823_0, &_call_cbs_actionEvent_1823_0, &_set_callback_cbs_actionEvent_1823_0);
-  methods += new qt_gsi::GenericMethod ("*changeEvent", "@brief Virtual method void QStackedWidget::changeEvent(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_changeEvent_1217_0, &_call_cbs_changeEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*changeEvent", "@hide", false, &_init_cbs_changeEvent_1217_0, &_call_cbs_changeEvent_1217_0, &_set_callback_cbs_changeEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*childEvent", "@brief Virtual method void QStackedWidget::childEvent(QChildEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0);
-  methods += new qt_gsi::GenericMethod ("*childEvent", "@hide", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0, &_set_callback_cbs_childEvent_1701_0);
-  methods += new qt_gsi::GenericMethod ("*closeEvent", "@brief Virtual method void QStackedWidget::closeEvent(QCloseEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_closeEvent_1719_0, &_call_cbs_closeEvent_1719_0);
-  methods += new qt_gsi::GenericMethod ("*closeEvent", "@hide", false, &_init_cbs_closeEvent_1719_0, &_call_cbs_closeEvent_1719_0, &_set_callback_cbs_closeEvent_1719_0);
-  methods += new qt_gsi::GenericMethod ("*contextMenuEvent", "@brief Virtual method void QStackedWidget::contextMenuEvent(QContextMenuEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_contextMenuEvent_2363_0, &_call_cbs_contextMenuEvent_2363_0);
-  methods += new qt_gsi::GenericMethod ("*contextMenuEvent", "@hide", false, &_init_cbs_contextMenuEvent_2363_0, &_call_cbs_contextMenuEvent_2363_0, &_set_callback_cbs_contextMenuEvent_2363_0);
-  methods += new qt_gsi::GenericMethod ("*create|qt_create", "@brief Method void QStackedWidget::create(WId, bool initializeWindow, bool destroyOldWindow)\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_create_2208, &_call_fp_create_2208);
+  methods += new qt_gsi::GenericMethod ("*actionEvent", "@hide", false, &_init_cbs_actionEvent_1823_0, &_call_cbs_actionEvent_1823_0);
+  methods += new qt_gsi::GenericMethod ("*actionEvent", "@brief Virtual method void QStackedWidget::actionEvent(QActionEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_actionEvent_1823_0, &_call_cbs_actionEvent_1823_0, &_set_callback_cbs_actionEvent_1823_0);
+  methods += new qt_gsi::GenericMethod ("*changeEvent", "@hide", false, &_init_cbs_changeEvent_1217_0, &_call_cbs_changeEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*changeEvent", "@brief Virtual method void QStackedWidget::changeEvent(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_changeEvent_1217_0, &_call_cbs_changeEvent_1217_0, &_set_callback_cbs_changeEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*childEvent", "@hide", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0);
+  methods += new qt_gsi::GenericMethod ("*childEvent", "@brief Virtual method void QStackedWidget::childEvent(QChildEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0, &_set_callback_cbs_childEvent_1701_0);
+  methods += new qt_gsi::GenericMethod ("*closeEvent", "@hide", false, &_init_cbs_closeEvent_1719_0, &_call_cbs_closeEvent_1719_0);
+  methods += new qt_gsi::GenericMethod ("*closeEvent", "@brief Virtual method void QStackedWidget::closeEvent(QCloseEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_closeEvent_1719_0, &_call_cbs_closeEvent_1719_0, &_set_callback_cbs_closeEvent_1719_0);
+  methods += new qt_gsi::GenericMethod ("*contextMenuEvent", "@hide", false, &_init_cbs_contextMenuEvent_2363_0, &_call_cbs_contextMenuEvent_2363_0);
+  methods += new qt_gsi::GenericMethod ("*contextMenuEvent", "@brief Virtual method void QStackedWidget::contextMenuEvent(QContextMenuEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_contextMenuEvent_2363_0, &_call_cbs_contextMenuEvent_2363_0, &_set_callback_cbs_contextMenuEvent_2363_0);
+  methods += new qt_gsi::GenericMethod ("*qt_create", "@brief Method void QStackedWidget::create(WId, bool initializeWindow, bool destroyOldWindow)\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_create_2208, &_call_fp_create_2208);
   methods += new qt_gsi::GenericMethod ("emit_currentChanged", "@brief Emitter for signal void QStackedWidget::currentChanged(int)\nCall this method to emit this signal.", false, &_init_emitter_currentChanged_767, &_call_emitter_currentChanged_767);
   methods += new qt_gsi::GenericMethod ("emit_customContextMenuRequested", "@brief Emitter for signal void QStackedWidget::customContextMenuRequested(const QPoint &pos)\nCall this method to emit this signal.", false, &_init_emitter_customContextMenuRequested_1916, &_call_emitter_customContextMenuRequested_1916);
-  methods += new qt_gsi::GenericMethod ("*customEvent", "@brief Virtual method void QStackedWidget::customEvent(QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*customEvent", "@hide", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0, &_set_callback_cbs_customEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*destroy|qt_destroy", "@brief Method void QStackedWidget::destroy(bool destroyWindow, bool destroySubWindows)\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_destroy_1620, &_call_fp_destroy_1620);
+  methods += new qt_gsi::GenericMethod ("*customEvent", "@hide", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*customEvent", "@brief Virtual method void QStackedWidget::customEvent(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0, &_set_callback_cbs_customEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*qt_destroy", "@brief Method void QStackedWidget::destroy(bool destroyWindow, bool destroySubWindows)\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_destroy_1620, &_call_fp_destroy_1620);
   methods += new qt_gsi::GenericMethod ("emit_destroyed", "@brief Emitter for signal void QStackedWidget::destroyed(QObject *)\nCall this method to emit this signal.", false, &_init_emitter_destroyed_1302, &_call_emitter_destroyed_1302);
-  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@brief Virtual method void QStackedWidget::disconnectNotify(const QMetaMethod &signal)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0);
-  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@hide", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0, &_set_callback_cbs_disconnectNotify_2394_0);
-  methods += new qt_gsi::GenericMethod ("*dragEnterEvent", "@brief Virtual method void QStackedWidget::dragEnterEvent(QDragEnterEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_dragEnterEvent_2109_0, &_call_cbs_dragEnterEvent_2109_0);
-  methods += new qt_gsi::GenericMethod ("*dragEnterEvent", "@hide", false, &_init_cbs_dragEnterEvent_2109_0, &_call_cbs_dragEnterEvent_2109_0, &_set_callback_cbs_dragEnterEvent_2109_0);
-  methods += new qt_gsi::GenericMethod ("*dragLeaveEvent", "@brief Virtual method void QStackedWidget::dragLeaveEvent(QDragLeaveEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_dragLeaveEvent_2092_0, &_call_cbs_dragLeaveEvent_2092_0);
-  methods += new qt_gsi::GenericMethod ("*dragLeaveEvent", "@hide", false, &_init_cbs_dragLeaveEvent_2092_0, &_call_cbs_dragLeaveEvent_2092_0, &_set_callback_cbs_dragLeaveEvent_2092_0);
-  methods += new qt_gsi::GenericMethod ("*dragMoveEvent", "@brief Virtual method void QStackedWidget::dragMoveEvent(QDragMoveEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_dragMoveEvent_2006_0, &_call_cbs_dragMoveEvent_2006_0);
-  methods += new qt_gsi::GenericMethod ("*dragMoveEvent", "@hide", false, &_init_cbs_dragMoveEvent_2006_0, &_call_cbs_dragMoveEvent_2006_0, &_set_callback_cbs_dragMoveEvent_2006_0);
+  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@hide", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0);
+  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@brief Virtual method void QStackedWidget::disconnectNotify(const QMetaMethod &signal)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0, &_set_callback_cbs_disconnectNotify_2394_0);
+  methods += new qt_gsi::GenericMethod ("*dragEnterEvent", "@hide", false, &_init_cbs_dragEnterEvent_2109_0, &_call_cbs_dragEnterEvent_2109_0);
+  methods += new qt_gsi::GenericMethod ("*dragEnterEvent", "@brief Virtual method void QStackedWidget::dragEnterEvent(QDragEnterEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_dragEnterEvent_2109_0, &_call_cbs_dragEnterEvent_2109_0, &_set_callback_cbs_dragEnterEvent_2109_0);
+  methods += new qt_gsi::GenericMethod ("*dragLeaveEvent", "@hide", false, &_init_cbs_dragLeaveEvent_2092_0, &_call_cbs_dragLeaveEvent_2092_0);
+  methods += new qt_gsi::GenericMethod ("*dragLeaveEvent", "@brief Virtual method void QStackedWidget::dragLeaveEvent(QDragLeaveEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_dragLeaveEvent_2092_0, &_call_cbs_dragLeaveEvent_2092_0, &_set_callback_cbs_dragLeaveEvent_2092_0);
+  methods += new qt_gsi::GenericMethod ("*dragMoveEvent", "@hide", false, &_init_cbs_dragMoveEvent_2006_0, &_call_cbs_dragMoveEvent_2006_0);
+  methods += new qt_gsi::GenericMethod ("*dragMoveEvent", "@brief Virtual method void QStackedWidget::dragMoveEvent(QDragMoveEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_dragMoveEvent_2006_0, &_call_cbs_dragMoveEvent_2006_0, &_set_callback_cbs_dragMoveEvent_2006_0);
   methods += new qt_gsi::GenericMethod ("*drawFrame", "@brief Method void QStackedWidget::drawFrame(QPainter *)\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_drawFrame_1426, &_call_fp_drawFrame_1426);
-  methods += new qt_gsi::GenericMethod ("*dropEvent", "@brief Virtual method void QStackedWidget::dropEvent(QDropEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_dropEvent_1622_0, &_call_cbs_dropEvent_1622_0);
-  methods += new qt_gsi::GenericMethod ("*dropEvent", "@hide", false, &_init_cbs_dropEvent_1622_0, &_call_cbs_dropEvent_1622_0, &_set_callback_cbs_dropEvent_1622_0);
-  methods += new qt_gsi::GenericMethod ("*enterEvent", "@brief Virtual method void QStackedWidget::enterEvent(QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_enterEvent_1217_0, &_call_cbs_enterEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*enterEvent", "@hide", false, &_init_cbs_enterEvent_1217_0, &_call_cbs_enterEvent_1217_0, &_set_callback_cbs_enterEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*event", "@brief Virtual method bool QStackedWidget::event(QEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0);
-  methods += new qt_gsi::GenericMethod ("*event", "@hide", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0, &_set_callback_cbs_event_1217_0);
-  methods += new qt_gsi::GenericMethod ("eventFilter", "@brief Virtual method bool QStackedWidget::eventFilter(QObject *watched, QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0);
-  methods += new qt_gsi::GenericMethod ("eventFilter", "@hide", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0, &_set_callback_cbs_eventFilter_2411_0);
-  methods += new qt_gsi::GenericMethod ("*focusInEvent", "@brief Virtual method void QStackedWidget::focusInEvent(QFocusEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_focusInEvent_1729_0, &_call_cbs_focusInEvent_1729_0);
-  methods += new qt_gsi::GenericMethod ("*focusInEvent", "@hide", false, &_init_cbs_focusInEvent_1729_0, &_call_cbs_focusInEvent_1729_0, &_set_callback_cbs_focusInEvent_1729_0);
+  methods += new qt_gsi::GenericMethod ("*dropEvent", "@hide", false, &_init_cbs_dropEvent_1622_0, &_call_cbs_dropEvent_1622_0);
+  methods += new qt_gsi::GenericMethod ("*dropEvent", "@brief Virtual method void QStackedWidget::dropEvent(QDropEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_dropEvent_1622_0, &_call_cbs_dropEvent_1622_0, &_set_callback_cbs_dropEvent_1622_0);
+  methods += new qt_gsi::GenericMethod ("*enterEvent", "@hide", false, &_init_cbs_enterEvent_1217_0, &_call_cbs_enterEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*enterEvent", "@brief Virtual method void QStackedWidget::enterEvent(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_enterEvent_1217_0, &_call_cbs_enterEvent_1217_0, &_set_callback_cbs_enterEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*event", "@hide", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0);
+  methods += new qt_gsi::GenericMethod ("*event", "@brief Virtual method bool QStackedWidget::event(QEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0, &_set_callback_cbs_event_1217_0);
+  methods += new qt_gsi::GenericMethod ("eventFilter", "@hide", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0);
+  methods += new qt_gsi::GenericMethod ("eventFilter", "@brief Virtual method bool QStackedWidget::eventFilter(QObject *, QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0, &_set_callback_cbs_eventFilter_2411_0);
+  methods += new qt_gsi::GenericMethod ("*focusInEvent", "@hide", false, &_init_cbs_focusInEvent_1729_0, &_call_cbs_focusInEvent_1729_0);
+  methods += new qt_gsi::GenericMethod ("*focusInEvent", "@brief Virtual method void QStackedWidget::focusInEvent(QFocusEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_focusInEvent_1729_0, &_call_cbs_focusInEvent_1729_0, &_set_callback_cbs_focusInEvent_1729_0);
   methods += new qt_gsi::GenericMethod ("*focusNextChild", "@brief Method bool QStackedWidget::focusNextChild()\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_focusNextChild_0, &_call_fp_focusNextChild_0);
-  methods += new qt_gsi::GenericMethod ("*focusNextPrevChild", "@brief Virtual method bool QStackedWidget::focusNextPrevChild(bool next)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_focusNextPrevChild_864_0, &_call_cbs_focusNextPrevChild_864_0);
-  methods += new qt_gsi::GenericMethod ("*focusNextPrevChild", "@hide", false, &_init_cbs_focusNextPrevChild_864_0, &_call_cbs_focusNextPrevChild_864_0, &_set_callback_cbs_focusNextPrevChild_864_0);
-  methods += new qt_gsi::GenericMethod ("*focusOutEvent", "@brief Virtual method void QStackedWidget::focusOutEvent(QFocusEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_focusOutEvent_1729_0, &_call_cbs_focusOutEvent_1729_0);
-  methods += new qt_gsi::GenericMethod ("*focusOutEvent", "@hide", false, &_init_cbs_focusOutEvent_1729_0, &_call_cbs_focusOutEvent_1729_0, &_set_callback_cbs_focusOutEvent_1729_0);
+  methods += new qt_gsi::GenericMethod ("*focusNextPrevChild", "@hide", false, &_init_cbs_focusNextPrevChild_864_0, &_call_cbs_focusNextPrevChild_864_0);
+  methods += new qt_gsi::GenericMethod ("*focusNextPrevChild", "@brief Virtual method bool QStackedWidget::focusNextPrevChild(bool next)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_focusNextPrevChild_864_0, &_call_cbs_focusNextPrevChild_864_0, &_set_callback_cbs_focusNextPrevChild_864_0);
+  methods += new qt_gsi::GenericMethod ("*focusOutEvent", "@hide", false, &_init_cbs_focusOutEvent_1729_0, &_call_cbs_focusOutEvent_1729_0);
+  methods += new qt_gsi::GenericMethod ("*focusOutEvent", "@brief Virtual method void QStackedWidget::focusOutEvent(QFocusEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_focusOutEvent_1729_0, &_call_cbs_focusOutEvent_1729_0, &_set_callback_cbs_focusOutEvent_1729_0);
   methods += new qt_gsi::GenericMethod ("*focusPreviousChild", "@brief Method bool QStackedWidget::focusPreviousChild()\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_focusPreviousChild_0, &_call_fp_focusPreviousChild_0);
-  methods += new qt_gsi::GenericMethod ("hasHeightForWidth", "@brief Virtual method bool QStackedWidget::hasHeightForWidth()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_hasHeightForWidth_c0_0, &_call_cbs_hasHeightForWidth_c0_0);
-  methods += new qt_gsi::GenericMethod ("hasHeightForWidth", "@hide", true, &_init_cbs_hasHeightForWidth_c0_0, &_call_cbs_hasHeightForWidth_c0_0, &_set_callback_cbs_hasHeightForWidth_c0_0);
-  methods += new qt_gsi::GenericMethod ("heightForWidth", "@brief Virtual method int QStackedWidget::heightForWidth(int)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_heightForWidth_c767_0, &_call_cbs_heightForWidth_c767_0);
-  methods += new qt_gsi::GenericMethod ("heightForWidth", "@hide", true, &_init_cbs_heightForWidth_c767_0, &_call_cbs_heightForWidth_c767_0, &_set_callback_cbs_heightForWidth_c767_0);
-  methods += new qt_gsi::GenericMethod ("*hideEvent", "@brief Virtual method void QStackedWidget::hideEvent(QHideEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_hideEvent_1595_0, &_call_cbs_hideEvent_1595_0);
-  methods += new qt_gsi::GenericMethod ("*hideEvent", "@hide", false, &_init_cbs_hideEvent_1595_0, &_call_cbs_hideEvent_1595_0, &_set_callback_cbs_hideEvent_1595_0);
-  methods += new qt_gsi::GenericMethod ("*initPainter", "@brief Virtual method void QStackedWidget::initPainter(QPainter *painter)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_initPainter_c1426_0, &_call_cbs_initPainter_c1426_0);
-  methods += new qt_gsi::GenericMethod ("*initPainter", "@hide", true, &_init_cbs_initPainter_c1426_0, &_call_cbs_initPainter_c1426_0, &_set_callback_cbs_initPainter_c1426_0);
+  methods += new qt_gsi::GenericMethod ("hasHeightForWidth", "@hide", true, &_init_cbs_hasHeightForWidth_c0_0, &_call_cbs_hasHeightForWidth_c0_0);
+  methods += new qt_gsi::GenericMethod ("hasHeightForWidth", "@brief Virtual method bool QStackedWidget::hasHeightForWidth()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_hasHeightForWidth_c0_0, &_call_cbs_hasHeightForWidth_c0_0, &_set_callback_cbs_hasHeightForWidth_c0_0);
+  methods += new qt_gsi::GenericMethod ("heightForWidth", "@hide", true, &_init_cbs_heightForWidth_c767_0, &_call_cbs_heightForWidth_c767_0);
+  methods += new qt_gsi::GenericMethod ("heightForWidth", "@brief Virtual method int QStackedWidget::heightForWidth(int)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_heightForWidth_c767_0, &_call_cbs_heightForWidth_c767_0, &_set_callback_cbs_heightForWidth_c767_0);
+  methods += new qt_gsi::GenericMethod ("*hideEvent", "@hide", false, &_init_cbs_hideEvent_1595_0, &_call_cbs_hideEvent_1595_0);
+  methods += new qt_gsi::GenericMethod ("*hideEvent", "@brief Virtual method void QStackedWidget::hideEvent(QHideEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_hideEvent_1595_0, &_call_cbs_hideEvent_1595_0, &_set_callback_cbs_hideEvent_1595_0);
+  methods += new qt_gsi::GenericMethod ("*initPainter", "@hide", true, &_init_cbs_initPainter_c1426_0, &_call_cbs_initPainter_c1426_0);
+  methods += new qt_gsi::GenericMethod ("*initPainter", "@brief Virtual method void QStackedWidget::initPainter(QPainter *painter)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_initPainter_c1426_0, &_call_cbs_initPainter_c1426_0, &_set_callback_cbs_initPainter_c1426_0);
   methods += new qt_gsi::GenericMethod ("*initStyleOption", "@brief Method void QStackedWidget::initStyleOption(QStyleOptionFrame *option)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_initStyleOption_c2356, &_call_fp_initStyleOption_c2356);
-  methods += new qt_gsi::GenericMethod ("*inputMethodEvent", "@brief Virtual method void QStackedWidget::inputMethodEvent(QInputMethodEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_inputMethodEvent_2354_0, &_call_cbs_inputMethodEvent_2354_0);
-  methods += new qt_gsi::GenericMethod ("*inputMethodEvent", "@hide", false, &_init_cbs_inputMethodEvent_2354_0, &_call_cbs_inputMethodEvent_2354_0, &_set_callback_cbs_inputMethodEvent_2354_0);
-  methods += new qt_gsi::GenericMethod ("inputMethodQuery", "@brief Virtual method QVariant QStackedWidget::inputMethodQuery(Qt::InputMethodQuery)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_inputMethodQuery_c2420_0, &_call_cbs_inputMethodQuery_c2420_0);
-  methods += new qt_gsi::GenericMethod ("inputMethodQuery", "@hide", true, &_init_cbs_inputMethodQuery_c2420_0, &_call_cbs_inputMethodQuery_c2420_0, &_set_callback_cbs_inputMethodQuery_c2420_0);
+  methods += new qt_gsi::GenericMethod ("*inputMethodEvent", "@hide", false, &_init_cbs_inputMethodEvent_2354_0, &_call_cbs_inputMethodEvent_2354_0);
+  methods += new qt_gsi::GenericMethod ("*inputMethodEvent", "@brief Virtual method void QStackedWidget::inputMethodEvent(QInputMethodEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_inputMethodEvent_2354_0, &_call_cbs_inputMethodEvent_2354_0, &_set_callback_cbs_inputMethodEvent_2354_0);
+  methods += new qt_gsi::GenericMethod ("inputMethodQuery", "@hide", true, &_init_cbs_inputMethodQuery_c2420_0, &_call_cbs_inputMethodQuery_c2420_0);
+  methods += new qt_gsi::GenericMethod ("inputMethodQuery", "@brief Virtual method QVariant QStackedWidget::inputMethodQuery(Qt::InputMethodQuery)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_inputMethodQuery_c2420_0, &_call_cbs_inputMethodQuery_c2420_0, &_set_callback_cbs_inputMethodQuery_c2420_0);
   methods += new qt_gsi::GenericMethod ("*isSignalConnected", "@brief Method bool QStackedWidget::isSignalConnected(const QMetaMethod &signal)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_isSignalConnected_c2394, &_call_fp_isSignalConnected_c2394);
-  methods += new qt_gsi::GenericMethod ("*keyPressEvent", "@brief Virtual method void QStackedWidget::keyPressEvent(QKeyEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_keyPressEvent_1514_0, &_call_cbs_keyPressEvent_1514_0);
-  methods += new qt_gsi::GenericMethod ("*keyPressEvent", "@hide", false, &_init_cbs_keyPressEvent_1514_0, &_call_cbs_keyPressEvent_1514_0, &_set_callback_cbs_keyPressEvent_1514_0);
-  methods += new qt_gsi::GenericMethod ("*keyReleaseEvent", "@brief Virtual method void QStackedWidget::keyReleaseEvent(QKeyEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_keyReleaseEvent_1514_0, &_call_cbs_keyReleaseEvent_1514_0);
-  methods += new qt_gsi::GenericMethod ("*keyReleaseEvent", "@hide", false, &_init_cbs_keyReleaseEvent_1514_0, &_call_cbs_keyReleaseEvent_1514_0, &_set_callback_cbs_keyReleaseEvent_1514_0);
-  methods += new qt_gsi::GenericMethod ("*leaveEvent", "@brief Virtual method void QStackedWidget::leaveEvent(QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_leaveEvent_1217_0, &_call_cbs_leaveEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*leaveEvent", "@hide", false, &_init_cbs_leaveEvent_1217_0, &_call_cbs_leaveEvent_1217_0, &_set_callback_cbs_leaveEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*metric", "@brief Virtual method int QStackedWidget::metric(QPaintDevice::PaintDeviceMetric)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_metric_c3445_0, &_call_cbs_metric_c3445_0);
-  methods += new qt_gsi::GenericMethod ("*metric", "@hide", true, &_init_cbs_metric_c3445_0, &_call_cbs_metric_c3445_0, &_set_callback_cbs_metric_c3445_0);
-  methods += new qt_gsi::GenericMethod ("minimumSizeHint", "@brief Virtual method QSize QStackedWidget::minimumSizeHint()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_minimumSizeHint_c0_0, &_call_cbs_minimumSizeHint_c0_0);
-  methods += new qt_gsi::GenericMethod ("minimumSizeHint", "@hide", true, &_init_cbs_minimumSizeHint_c0_0, &_call_cbs_minimumSizeHint_c0_0, &_set_callback_cbs_minimumSizeHint_c0_0);
-  methods += new qt_gsi::GenericMethod ("*mouseDoubleClickEvent", "@brief Virtual method void QStackedWidget::mouseDoubleClickEvent(QMouseEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_mouseDoubleClickEvent_1738_0, &_call_cbs_mouseDoubleClickEvent_1738_0);
-  methods += new qt_gsi::GenericMethod ("*mouseDoubleClickEvent", "@hide", false, &_init_cbs_mouseDoubleClickEvent_1738_0, &_call_cbs_mouseDoubleClickEvent_1738_0, &_set_callback_cbs_mouseDoubleClickEvent_1738_0);
-  methods += new qt_gsi::GenericMethod ("*mouseMoveEvent", "@brief Virtual method void QStackedWidget::mouseMoveEvent(QMouseEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_mouseMoveEvent_1738_0, &_call_cbs_mouseMoveEvent_1738_0);
-  methods += new qt_gsi::GenericMethod ("*mouseMoveEvent", "@hide", false, &_init_cbs_mouseMoveEvent_1738_0, &_call_cbs_mouseMoveEvent_1738_0, &_set_callback_cbs_mouseMoveEvent_1738_0);
-  methods += new qt_gsi::GenericMethod ("*mousePressEvent", "@brief Virtual method void QStackedWidget::mousePressEvent(QMouseEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_mousePressEvent_1738_0, &_call_cbs_mousePressEvent_1738_0);
-  methods += new qt_gsi::GenericMethod ("*mousePressEvent", "@hide", false, &_init_cbs_mousePressEvent_1738_0, &_call_cbs_mousePressEvent_1738_0, &_set_callback_cbs_mousePressEvent_1738_0);
-  methods += new qt_gsi::GenericMethod ("*mouseReleaseEvent", "@brief Virtual method void QStackedWidget::mouseReleaseEvent(QMouseEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_mouseReleaseEvent_1738_0, &_call_cbs_mouseReleaseEvent_1738_0);
-  methods += new qt_gsi::GenericMethod ("*mouseReleaseEvent", "@hide", false, &_init_cbs_mouseReleaseEvent_1738_0, &_call_cbs_mouseReleaseEvent_1738_0, &_set_callback_cbs_mouseReleaseEvent_1738_0);
-  methods += new qt_gsi::GenericMethod ("*moveEvent", "@brief Virtual method void QStackedWidget::moveEvent(QMoveEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_moveEvent_1624_0, &_call_cbs_moveEvent_1624_0);
-  methods += new qt_gsi::GenericMethod ("*moveEvent", "@hide", false, &_init_cbs_moveEvent_1624_0, &_call_cbs_moveEvent_1624_0, &_set_callback_cbs_moveEvent_1624_0);
-  methods += new qt_gsi::GenericMethod ("*nativeEvent", "@brief Virtual method bool QStackedWidget::nativeEvent(const QByteArray &eventType, void *message, long int *result)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_nativeEvent_4678_0, &_call_cbs_nativeEvent_4678_0);
-  methods += new qt_gsi::GenericMethod ("*nativeEvent", "@hide", false, &_init_cbs_nativeEvent_4678_0, &_call_cbs_nativeEvent_4678_0, &_set_callback_cbs_nativeEvent_4678_0);
-  methods += new qt_gsi::GenericMethod ("emit_objectNameChanged", "@brief Emitter for signal void QStackedWidget::objectNameChanged(const QString &objectName)\nCall this method to emit this signal.", false, &_init_emitter_objectNameChanged_4567, &_call_emitter_objectNameChanged_4567);
-  methods += new qt_gsi::GenericMethod ("paintEngine", "@brief Virtual method QPaintEngine *QStackedWidget::paintEngine()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_paintEngine_c0_0, &_call_cbs_paintEngine_c0_0);
-  methods += new qt_gsi::GenericMethod ("paintEngine", "@hide", true, &_init_cbs_paintEngine_c0_0, &_call_cbs_paintEngine_c0_0, &_set_callback_cbs_paintEngine_c0_0);
-  methods += new qt_gsi::GenericMethod ("*paintEvent", "@brief Virtual method void QStackedWidget::paintEvent(QPaintEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_paintEvent_1725_0, &_call_cbs_paintEvent_1725_0);
-  methods += new qt_gsi::GenericMethod ("*paintEvent", "@hide", false, &_init_cbs_paintEvent_1725_0, &_call_cbs_paintEvent_1725_0, &_set_callback_cbs_paintEvent_1725_0);
+  methods += new qt_gsi::GenericMethod ("*keyPressEvent", "@hide", false, &_init_cbs_keyPressEvent_1514_0, &_call_cbs_keyPressEvent_1514_0);
+  methods += new qt_gsi::GenericMethod ("*keyPressEvent", "@brief Virtual method void QStackedWidget::keyPressEvent(QKeyEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_keyPressEvent_1514_0, &_call_cbs_keyPressEvent_1514_0, &_set_callback_cbs_keyPressEvent_1514_0);
+  methods += new qt_gsi::GenericMethod ("*keyReleaseEvent", "@hide", false, &_init_cbs_keyReleaseEvent_1514_0, &_call_cbs_keyReleaseEvent_1514_0);
+  methods += new qt_gsi::GenericMethod ("*keyReleaseEvent", "@brief Virtual method void QStackedWidget::keyReleaseEvent(QKeyEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_keyReleaseEvent_1514_0, &_call_cbs_keyReleaseEvent_1514_0, &_set_callback_cbs_keyReleaseEvent_1514_0);
+  methods += new qt_gsi::GenericMethod ("*leaveEvent", "@hide", false, &_init_cbs_leaveEvent_1217_0, &_call_cbs_leaveEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*leaveEvent", "@brief Virtual method void QStackedWidget::leaveEvent(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_leaveEvent_1217_0, &_call_cbs_leaveEvent_1217_0, &_set_callback_cbs_leaveEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*metric", "@hide", true, &_init_cbs_metric_c3445_0, &_call_cbs_metric_c3445_0);
+  methods += new qt_gsi::GenericMethod ("*metric", "@brief Virtual method int QStackedWidget::metric(QPaintDevice::PaintDeviceMetric)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_metric_c3445_0, &_call_cbs_metric_c3445_0, &_set_callback_cbs_metric_c3445_0);
+  methods += new qt_gsi::GenericMethod ("minimumSizeHint", "@hide", true, &_init_cbs_minimumSizeHint_c0_0, &_call_cbs_minimumSizeHint_c0_0);
+  methods += new qt_gsi::GenericMethod ("minimumSizeHint", "@brief Virtual method QSize QStackedWidget::minimumSizeHint()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_minimumSizeHint_c0_0, &_call_cbs_minimumSizeHint_c0_0, &_set_callback_cbs_minimumSizeHint_c0_0);
+  methods += new qt_gsi::GenericMethod ("*mouseDoubleClickEvent", "@hide", false, &_init_cbs_mouseDoubleClickEvent_1738_0, &_call_cbs_mouseDoubleClickEvent_1738_0);
+  methods += new qt_gsi::GenericMethod ("*mouseDoubleClickEvent", "@brief Virtual method void QStackedWidget::mouseDoubleClickEvent(QMouseEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_mouseDoubleClickEvent_1738_0, &_call_cbs_mouseDoubleClickEvent_1738_0, &_set_callback_cbs_mouseDoubleClickEvent_1738_0);
+  methods += new qt_gsi::GenericMethod ("*mouseMoveEvent", "@hide", false, &_init_cbs_mouseMoveEvent_1738_0, &_call_cbs_mouseMoveEvent_1738_0);
+  methods += new qt_gsi::GenericMethod ("*mouseMoveEvent", "@brief Virtual method void QStackedWidget::mouseMoveEvent(QMouseEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_mouseMoveEvent_1738_0, &_call_cbs_mouseMoveEvent_1738_0, &_set_callback_cbs_mouseMoveEvent_1738_0);
+  methods += new qt_gsi::GenericMethod ("*mousePressEvent", "@hide", false, &_init_cbs_mousePressEvent_1738_0, &_call_cbs_mousePressEvent_1738_0);
+  methods += new qt_gsi::GenericMethod ("*mousePressEvent", "@brief Virtual method void QStackedWidget::mousePressEvent(QMouseEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_mousePressEvent_1738_0, &_call_cbs_mousePressEvent_1738_0, &_set_callback_cbs_mousePressEvent_1738_0);
+  methods += new qt_gsi::GenericMethod ("*mouseReleaseEvent", "@hide", false, &_init_cbs_mouseReleaseEvent_1738_0, &_call_cbs_mouseReleaseEvent_1738_0);
+  methods += new qt_gsi::GenericMethod ("*mouseReleaseEvent", "@brief Virtual method void QStackedWidget::mouseReleaseEvent(QMouseEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_mouseReleaseEvent_1738_0, &_call_cbs_mouseReleaseEvent_1738_0, &_set_callback_cbs_mouseReleaseEvent_1738_0);
+  methods += new qt_gsi::GenericMethod ("*moveEvent", "@hide", false, &_init_cbs_moveEvent_1624_0, &_call_cbs_moveEvent_1624_0);
+  methods += new qt_gsi::GenericMethod ("*moveEvent", "@brief Virtual method void QStackedWidget::moveEvent(QMoveEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_moveEvent_1624_0, &_call_cbs_moveEvent_1624_0, &_set_callback_cbs_moveEvent_1624_0);
+  methods += new qt_gsi::GenericMethod ("*nativeEvent", "@hide", false, &_init_cbs_nativeEvent_4678_0, &_call_cbs_nativeEvent_4678_0);
+  methods += new qt_gsi::GenericMethod ("*nativeEvent", "@brief Virtual method bool QStackedWidget::nativeEvent(const QByteArray &eventType, void *message, long int *result)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_nativeEvent_4678_0, &_call_cbs_nativeEvent_4678_0, &_set_callback_cbs_nativeEvent_4678_0);
+  methods += new qt_gsi::GenericMethod ("paintEngine", "@hide", true, &_init_cbs_paintEngine_c0_0, &_call_cbs_paintEngine_c0_0);
+  methods += new qt_gsi::GenericMethod ("paintEngine", "@brief Virtual method QPaintEngine *QStackedWidget::paintEngine()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_paintEngine_c0_0, &_call_cbs_paintEngine_c0_0, &_set_callback_cbs_paintEngine_c0_0);
+  methods += new qt_gsi::GenericMethod ("*paintEvent", "@hide", false, &_init_cbs_paintEvent_1725_0, &_call_cbs_paintEvent_1725_0);
+  methods += new qt_gsi::GenericMethod ("*paintEvent", "@brief Virtual method void QStackedWidget::paintEvent(QPaintEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_paintEvent_1725_0, &_call_cbs_paintEvent_1725_0, &_set_callback_cbs_paintEvent_1725_0);
   methods += new qt_gsi::GenericMethod ("*receivers", "@brief Method int QStackedWidget::receivers(const char *signal)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_receivers_c1731, &_call_fp_receivers_c1731);
-  methods += new qt_gsi::GenericMethod ("*redirected", "@brief Virtual method QPaintDevice *QStackedWidget::redirected(QPoint *offset)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_redirected_c1225_0, &_call_cbs_redirected_c1225_0);
-  methods += new qt_gsi::GenericMethod ("*redirected", "@hide", true, &_init_cbs_redirected_c1225_0, &_call_cbs_redirected_c1225_0, &_set_callback_cbs_redirected_c1225_0);
-  methods += new qt_gsi::GenericMethod ("*resizeEvent", "@brief Virtual method void QStackedWidget::resizeEvent(QResizeEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_resizeEvent_1843_0, &_call_cbs_resizeEvent_1843_0);
-  methods += new qt_gsi::GenericMethod ("*resizeEvent", "@hide", false, &_init_cbs_resizeEvent_1843_0, &_call_cbs_resizeEvent_1843_0, &_set_callback_cbs_resizeEvent_1843_0);
+  methods += new qt_gsi::GenericMethod ("*redirected", "@hide", true, &_init_cbs_redirected_c1225_0, &_call_cbs_redirected_c1225_0);
+  methods += new qt_gsi::GenericMethod ("*redirected", "@brief Virtual method QPaintDevice *QStackedWidget::redirected(QPoint *offset)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_redirected_c1225_0, &_call_cbs_redirected_c1225_0, &_set_callback_cbs_redirected_c1225_0);
+  methods += new qt_gsi::GenericMethod ("*resizeEvent", "@hide", false, &_init_cbs_resizeEvent_1843_0, &_call_cbs_resizeEvent_1843_0);
+  methods += new qt_gsi::GenericMethod ("*resizeEvent", "@brief Virtual method void QStackedWidget::resizeEvent(QResizeEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_resizeEvent_1843_0, &_call_cbs_resizeEvent_1843_0, &_set_callback_cbs_resizeEvent_1843_0);
   methods += new qt_gsi::GenericMethod ("*sender", "@brief Method QObject *QStackedWidget::sender()\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_sender_c0, &_call_fp_sender_c0);
   methods += new qt_gsi::GenericMethod ("*senderSignalIndex", "@brief Method int QStackedWidget::senderSignalIndex()\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_senderSignalIndex_c0, &_call_fp_senderSignalIndex_c0);
-  methods += new qt_gsi::GenericMethod ("setVisible", "@brief Virtual method void QStackedWidget::setVisible(bool visible)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setVisible_864_0, &_call_cbs_setVisible_864_0);
-  methods += new qt_gsi::GenericMethod ("setVisible", "@hide", false, &_init_cbs_setVisible_864_0, &_call_cbs_setVisible_864_0, &_set_callback_cbs_setVisible_864_0);
-  methods += new qt_gsi::GenericMethod ("*sharedPainter", "@brief Virtual method QPainter *QStackedWidget::sharedPainter()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_sharedPainter_c0_0, &_call_cbs_sharedPainter_c0_0);
-  methods += new qt_gsi::GenericMethod ("*sharedPainter", "@hide", true, &_init_cbs_sharedPainter_c0_0, &_call_cbs_sharedPainter_c0_0, &_set_callback_cbs_sharedPainter_c0_0);
-  methods += new qt_gsi::GenericMethod ("*showEvent", "@brief Virtual method void QStackedWidget::showEvent(QShowEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_showEvent_1634_0, &_call_cbs_showEvent_1634_0);
-  methods += new qt_gsi::GenericMethod ("*showEvent", "@hide", false, &_init_cbs_showEvent_1634_0, &_call_cbs_showEvent_1634_0, &_set_callback_cbs_showEvent_1634_0);
-  methods += new qt_gsi::GenericMethod ("sizeHint", "@brief Virtual method QSize QStackedWidget::sizeHint()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_sizeHint_c0_0, &_call_cbs_sizeHint_c0_0);
-  methods += new qt_gsi::GenericMethod ("sizeHint", "@hide", true, &_init_cbs_sizeHint_c0_0, &_call_cbs_sizeHint_c0_0, &_set_callback_cbs_sizeHint_c0_0);
-  methods += new qt_gsi::GenericMethod ("*tabletEvent", "@brief Virtual method void QStackedWidget::tabletEvent(QTabletEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_tabletEvent_1821_0, &_call_cbs_tabletEvent_1821_0);
-  methods += new qt_gsi::GenericMethod ("*tabletEvent", "@hide", false, &_init_cbs_tabletEvent_1821_0, &_call_cbs_tabletEvent_1821_0, &_set_callback_cbs_tabletEvent_1821_0);
-  methods += new qt_gsi::GenericMethod ("*timerEvent", "@brief Virtual method void QStackedWidget::timerEvent(QTimerEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0);
-  methods += new qt_gsi::GenericMethod ("*timerEvent", "@hide", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0, &_set_callback_cbs_timerEvent_1730_0);
+  methods += new qt_gsi::GenericMethod ("setVisible", "@hide", false, &_init_cbs_setVisible_864_0, &_call_cbs_setVisible_864_0);
+  methods += new qt_gsi::GenericMethod ("setVisible", "@brief Virtual method void QStackedWidget::setVisible(bool visible)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setVisible_864_0, &_call_cbs_setVisible_864_0, &_set_callback_cbs_setVisible_864_0);
+  methods += new qt_gsi::GenericMethod ("*sharedPainter", "@hide", true, &_init_cbs_sharedPainter_c0_0, &_call_cbs_sharedPainter_c0_0);
+  methods += new qt_gsi::GenericMethod ("*sharedPainter", "@brief Virtual method QPainter *QStackedWidget::sharedPainter()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_sharedPainter_c0_0, &_call_cbs_sharedPainter_c0_0, &_set_callback_cbs_sharedPainter_c0_0);
+  methods += new qt_gsi::GenericMethod ("*showEvent", "@hide", false, &_init_cbs_showEvent_1634_0, &_call_cbs_showEvent_1634_0);
+  methods += new qt_gsi::GenericMethod ("*showEvent", "@brief Virtual method void QStackedWidget::showEvent(QShowEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_showEvent_1634_0, &_call_cbs_showEvent_1634_0, &_set_callback_cbs_showEvent_1634_0);
+  methods += new qt_gsi::GenericMethod ("sizeHint", "@hide", true, &_init_cbs_sizeHint_c0_0, &_call_cbs_sizeHint_c0_0);
+  methods += new qt_gsi::GenericMethod ("sizeHint", "@brief Virtual method QSize QStackedWidget::sizeHint()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_sizeHint_c0_0, &_call_cbs_sizeHint_c0_0, &_set_callback_cbs_sizeHint_c0_0);
+  methods += new qt_gsi::GenericMethod ("*tabletEvent", "@hide", false, &_init_cbs_tabletEvent_1821_0, &_call_cbs_tabletEvent_1821_0);
+  methods += new qt_gsi::GenericMethod ("*tabletEvent", "@brief Virtual method void QStackedWidget::tabletEvent(QTabletEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_tabletEvent_1821_0, &_call_cbs_tabletEvent_1821_0, &_set_callback_cbs_tabletEvent_1821_0);
+  methods += new qt_gsi::GenericMethod ("*timerEvent", "@hide", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0);
+  methods += new qt_gsi::GenericMethod ("*timerEvent", "@brief Virtual method void QStackedWidget::timerEvent(QTimerEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0, &_set_callback_cbs_timerEvent_1730_0);
   methods += new qt_gsi::GenericMethod ("*updateMicroFocus", "@brief Method void QStackedWidget::updateMicroFocus()\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_updateMicroFocus_0, &_call_fp_updateMicroFocus_0);
-  methods += new qt_gsi::GenericMethod ("*wheelEvent", "@brief Virtual method void QStackedWidget::wheelEvent(QWheelEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_wheelEvent_1718_0, &_call_cbs_wheelEvent_1718_0);
-  methods += new qt_gsi::GenericMethod ("*wheelEvent", "@hide", false, &_init_cbs_wheelEvent_1718_0, &_call_cbs_wheelEvent_1718_0, &_set_callback_cbs_wheelEvent_1718_0);
+  methods += new qt_gsi::GenericMethod ("*wheelEvent", "@hide", false, &_init_cbs_wheelEvent_1718_0, &_call_cbs_wheelEvent_1718_0);
+  methods += new qt_gsi::GenericMethod ("*wheelEvent", "@brief Virtual method void QStackedWidget::wheelEvent(QWheelEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_wheelEvent_1718_0, &_call_cbs_wheelEvent_1718_0, &_set_callback_cbs_wheelEvent_1718_0);
   methods += new qt_gsi::GenericMethod ("emit_widgetRemoved", "@brief Emitter for signal void QStackedWidget::widgetRemoved(int index)\nCall this method to emit this signal.", false, &_init_emitter_widgetRemoved_767, &_call_emitter_widgetRemoved_767);
   methods += new qt_gsi::GenericMethod ("emit_windowIconChanged", "@brief Emitter for signal void QStackedWidget::windowIconChanged(const QIcon &icon)\nCall this method to emit this signal.", false, &_init_emitter_windowIconChanged_1787, &_call_emitter_windowIconChanged_1787);
   methods += new qt_gsi::GenericMethod ("emit_windowIconTextChanged", "@brief Emitter for signal void QStackedWidget::windowIconTextChanged(const QString &iconText)\nCall this method to emit this signal.", false, &_init_emitter_windowIconTextChanged_2025, &_call_emitter_windowIconTextChanged_2025);

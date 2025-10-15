@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -23,7 +23,6 @@
 
 
 #include "dbPolygonGenerators.h"
-#include "tlTimer.h"
 
 #include <vector>
 #include <deque>
@@ -52,18 +51,18 @@ struct PGPoint
 class PGPolyContour
 {
 public:
-  typedef std::list <db::Point> contour_type;
+  typedef std::deque <db::Point> contour_type;
   typedef contour_type::const_iterator const_iterator;
   typedef contour_type::iterator iterator;
 
   PGPolyContour ()
-    : m_is_hole (false), m_next (-1), m_last (-1), m_size (0)
+    : m_is_hole (false), m_next (-1), m_last (-1)
   {
     // ...
   }
 
   PGPolyContour (const PGPolyContour &d)
-    : m_contour (d.m_contour), m_is_hole (d.m_is_hole), m_next (d.m_next), m_last (d.m_last), m_size (d.m_size)
+    : m_contour (d.m_contour), m_is_hole (d.m_is_hole), m_next (d.m_next), m_last (d.m_last)
   {
     // ...
   }
@@ -75,7 +74,6 @@ public:
       m_is_hole = d.m_is_hole;
       m_next = d.m_next;
       m_last = d.m_last;
-      m_size = d.m_size;
     }
     return *this;
   }
@@ -88,45 +86,12 @@ public:
   db::Point &front () { return m_contour.front (); }
   const db::Point &back () const { return m_contour.back (); }
   db::Point &back () { return m_contour.back (); }
-
-  void push_back (const db::Point &p)
-  {
-    m_contour.push_back (p);
-    ++m_size;
-  }
-
-  void push_front (const db::Point &p)
-  {
-    m_contour.push_front (p);
-    ++m_size;
-  }
-
-  void pop_back ()
-  {
-    m_contour.pop_back ();
-    --m_size;
-  }
-
-  void pop_front ()
-  {
-    m_contour.pop_front ();
-    --m_size;
-  }
-
-  iterator erase (iterator i)
-  {
-    --m_size;
-    return m_contour.erase (i);
-  }
-
-  iterator insert (iterator i, const db::Point &p)
-  {
-    ++m_size;
-    return m_contour.insert (i, p);
-  }
-
+  void push_back (const db::Point &p) { m_contour.push_back (p); }
+  void push_front (const db::Point &p) { m_contour.push_front (p); }
+  void pop_back () { m_contour.pop_back (); }
+  void pop_front () { m_contour.pop_front (); }
   bool empty () const { return m_contour.empty (); }
-  size_t size () const { return m_size; }
+  size_t size () const { return m_contour.size (); }
 
   void last (long n) 
   {
@@ -160,40 +125,20 @@ public:
 
   void clear ()
   { 
-    m_size = 0;
     m_next = -1;
     m_last = -1;
     m_contour.clear ();
   }
 
-  void erase (iterator from, iterator to)
+  void erase (iterator from, iterator to) 
   {
-    m_size -= std::distance (from, to);
     m_contour.erase (from, to);
   }
 
-  void splice (iterator at, PGPolyContour &contour)
-  {
-    m_size += contour.size ();
-    contour.m_size = 0;
-    m_contour.splice (at, contour.m_contour);
-  }
-
   template <class I>
-  iterator insert (iterator at, I from, I to)
+  void insert (iterator at, I from, I to) 
   {
-    //  NOTE: in some STL m_contour.insert already returns the new iterator
-    //  For CentOS7 we compute the result explicitly
-    m_size += std::distance (from, to);
-    if (at == m_contour.begin ()) {
-      m_contour.insert (at, from, to);
-      return m_contour.begin ();
-    } else {
-      iterator prev = at;
-      --prev;
-      m_contour.insert (at, from, to);
-      return ++prev;
-    }
+    m_contour.insert (at, from, to);
   }
 
 private:
@@ -201,46 +146,10 @@ private:
   bool m_is_hole;
   long m_next;
   long m_last;
-  size_t m_size;
 };
 
-static inline
-PGPolyContour::const_iterator operator+ (PGPolyContour::const_iterator i, int n)
-{
-  while (n-- > 0) {
-    ++i;
-  }
-  return i;
-}
 
-static inline
-PGPolyContour::iterator operator+ (PGPolyContour::iterator i, int n)
-{
-  while (n-- > 0) {
-    ++i;
-  }
-  return i;
-}
-
-static inline
-PGPolyContour::const_iterator operator- (PGPolyContour::const_iterator i, int n)
-{
-  while (n-- > 0) {
-    --i;
-  }
-  return i;
-}
-
-static inline
-PGPolyContour::iterator operator- (PGPolyContour::iterator i, int n)
-{
-  while (n-- > 0) {
-    --i;
-  }
-  return i;
-}
-
-class PGContourList
+class PGContourList 
 {
 public:
   PGContourList () 
@@ -560,7 +469,7 @@ void PolygonGenerator::eliminate_hole ()
     return;
   }
 
-  //  We found the initial edges of a new hole: connect the (partial) hole with a stitch line to the left.
+  //  We found the intial edges of a new hole: connect the (partial) hole with a stitch line to the left.
   //  This way we can turn the hole into a non-hole contour.
   tl_assert (m_open_pos != m_open.begin ());
   --m_open_pos;
@@ -573,7 +482,7 @@ void PolygonGenerator::eliminate_hole ()
   tl_assert (cprev.size () >= 2);
 
   //  Compute intersection point with next edge
-  db::Edge eprev (*(cprev.end () - 2), cprev.back ());
+  db::Edge eprev (cprev.end ()[-2], cprev.back ());
   db::Coord xprev = db::coord_traits<db::Coord>::rounded (edge_xaty (eprev, m_y));
   db::Point pprev (xprev, m_y);
 
@@ -583,7 +492,7 @@ void PolygonGenerator::eliminate_hole ()
 
   cc.is_hole (false);
   cc.push_back (c.front ());
-  cc.push_back (*(c.begin () + 1));
+  cc.push_back (c.begin ()[1]);
   if (pprev != cc.back ()) {
     cc.push_back (pprev);
   }
@@ -592,7 +501,7 @@ void PolygonGenerator::eliminate_hole ()
   }
 
   cprev.back () = pprev;
-  while (cprev.size () > 2 && cprev.back ().y () == m_y && (cprev.end () - 2)->y () == m_y && cprev.back ().x () <= (cprev.end () - 2)->x ()) {
+  while (cprev.size () > 2 && cprev.back ().y () == m_y && cprev.end ()[-2].y () == m_y && cprev.back ().x () <= cprev.end ()[-2].x ()) {
     cprev.pop_back ();
   }
   cprev.insert (cprev.end (), c.end () - 2, c.end ());
@@ -683,7 +592,7 @@ PolygonGenerator::join_contours (db::Coord x)
         tl_assert (cprev.size () >= 2);
 
         //  compute intersection point with next edge
-        db::Edge eprev (*(cprev.end () - 2), cprev.back ());
+        db::Edge eprev (cprev.end ()[-2], cprev.back ());
         db::Coord xprev = db::coord_traits<db::Coord>::rounded (edge_xaty (eprev, m_y));
         db::Point pprev (xprev, m_y);
 
@@ -691,13 +600,13 @@ PolygonGenerator::join_contours (db::Coord x)
         tl_assert (c2.size () >= 2);
 
         cprev.back () = pprev;
-        while (cprev.size () > 2 && cprev.back ().y () == m_y && (cprev.end () - 2)->y () == m_y && cprev.back ().x () <= (cprev.end () - 2)->x ()) {
+        while (cprev.size () > 2 && cprev.back ().y () == m_y && cprev.end ()[-2].y () == m_y && cprev.back ().x () <= cprev.end ()[-2].x ()) {
           cprev.pop_back ();
         }
 
         if (iprev == i1) {
 
-          if (cprev.front ().y () == m_y && (cprev.begin () + 1)->y () == m_y && cprev.front ().x () >= (cprev.begin () + 1)->x ()) {
+          if (cprev.begin ()->y () == m_y && cprev.begin ()[1].y () == m_y && cprev.front ().x () >= cprev.begin ()[1].x ()) {
             cprev.front () = cprev.back ();
           } else {
             cprev.push_front (cprev.back ());
@@ -707,7 +616,7 @@ PolygonGenerator::join_contours (db::Coord x)
 
         } else {
 
-          cprev.splice (cprev.end (), c1);
+          cprev.insert (cprev.end (), c1.begin (), c1.end ());
           cprev.is_hole (false);
 
           mp_contours->join (iprev, i1);
@@ -752,11 +661,9 @@ PolygonGenerator::join_contours (db::Coord x)
 
         //  remove c1 from list of contours, join with c2
         if (c2.is_hole ()) {
-          c1.pop_front ();
-          c2.splice (c2.end (), c1);
+          c2.insert (c2.end (), c1.begin () + 1, c1.end ());
         } else {
-          c1.pop_back ();
-          c2.splice (c2.begin (), c1);
+          c2.insert (c2.begin (), c1.begin (), c1.end () - 1);
         }
 
         mp_contours->join (i2, i1);
@@ -773,11 +680,9 @@ PolygonGenerator::join_contours (db::Coord x)
 
         //  remove c1 from list of contours, join with c2
         if (c2.is_hole ()) {  // yes! c2 is correct!
-          c2.pop_front ();
-          c1.splice (c1.end (), c2);
+          c1.insert (c1.end (), c2.begin () + 1, c2.end ());
         } else {
-          c2.pop_back ();
-          c1.splice (c1.begin (), c2);
+          c1.insert (c1.begin (), c2.begin (), c2.end () - 1);
         }
 
         mp_contours->join (i1, i2);
@@ -820,56 +725,27 @@ PolygonGenerator::join_contours (db::Coord x)
         PGPolyContour &cprev = (*mp_contours) [iprev];
 
         tl_assert (cprev.size () >= 2);
-        tl_assert (c1.size () >= 2);
-
-        PGPolyContour::iterator ins = cprev.end ();
-        db::Coord xprev = 0;
-        db::Edge eprev;
-
-#if 1
-        //  shallow analysis: insert the cutline at the end of the sequence - this may
-        //  cut lines collinear with contour edges
-
-        eprev = db::Edge (*(ins - 2), *(ins - 1));
-        xprev = db::coord_traits<db::Coord>::rounded (edge_xaty (db::Edge (*(ins - 2), *(ins - 1)), m_y));
-#else
-        //  deep analysis: determine insertion point: pick the one where the cutline is shortest
-
-        for (PGPolyContour::iterator i = ins; i > cprev.begin () + 1; --i) {
-
-          db::Edge ecut (i[-2], i[-1]);
-          db::Coord xcut = db::coord_traits<db::Coord>::rounded (edge_xaty (db::Edge (i[-2], i[-1]), m_y));
-
-          if (ins == i || (i[-1].y () >= m_y && i[-2].y () < m_y && xcut < c1.back ().x () && xcut > xprev)) {
-            xprev = xcut;
-            eprev = ecut;
-            ins = i;
-          }
-
-        }
-#endif
 
         //  compute intersection point with next edge
+        db::Edge eprev (cprev.end ()[-2], cprev.back ());
+        db::Coord xprev = db::coord_traits<db::Coord>::rounded (edge_xaty (eprev, m_y));
         db::Point pprev (xprev, m_y);
 
         //  remove collinear edges along the cut line
-        *(ins - 1) = pprev;
-        while (ins - 1 != cprev.begin () && (ins - 2)->y () == m_y && (ins - 1)->y () == m_y) {
-          ins = cprev.erase (ins - 1);
+        cprev.back () = pprev;
+        while (cprev.size () > 1 && cprev.end ()[-2].y () == m_y && cprev.end ()[-1].y () == m_y) {
+          cprev.pop_back ();
         }
 
+        tl_assert (c1.size () >= 2);
         if ((c1.begin () + 1)->y () == m_y) {
-          ins = cprev.insert (ins, c1.begin () + 1, c1.end ());
-          ins = ins + (c1.size () - 1);
+          cprev.insert (cprev.end (), c1.begin () + 1, c1.end ());
         } else {
-          ins = cprev.insert (ins, c1.begin (), c1.end ());
-          ins = ins + c1.size ();
+          cprev.insert (cprev.end (), c1.begin (), c1.end ());
         }
-
-        ins = cprev.insert (ins, pprev);
-        ++ins;
+        cprev.push_back (pprev);
         if (eprev.p2 () != pprev) {
-          cprev.insert (ins, eprev.p2 ());
+          cprev.push_back (eprev.p2 ());
         }
 
         mp_contours->free (i1);
@@ -954,8 +830,6 @@ PolygonGenerator::produce_poly (const PGPolyContour &c)
         m_poly.insert_hole (p0, p1, reduce /*compress*/);
 
       }
-
-      m_poly.sort_holes ();
 
     }
 

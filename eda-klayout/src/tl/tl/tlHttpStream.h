@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -27,8 +27,6 @@
 #include "tlException.h"
 #include "tlStream.h"
 #include "tlEvents.h"
-
-class QNetworkReply;
 
 namespace tl
 {
@@ -56,23 +54,9 @@ class TL_PUBLIC HttpErrorException
   : public tl::Exception
 {
 public:
-  HttpErrorException (const std::string &f, int ec, const std::string &url, const std::string &body = std::string ())
-    : tl::Exception (format_error (f, ec, url, body))
+  HttpErrorException (const std::string &f, int en, const std::string &url)
+    : tl::Exception (tl::to_string (tr ("Error %d: %s, fetching %s")), en, f, url)
   { }
-
-  static std::string format_error (const std::string &em, int ec, const std::string &url, const std::string &body);
-};
-
-/**
- *  @brief A callback function during waiting for a response
- */
-class TL_PUBLIC InputHttpStreamCallback
-{
-public:
-  InputHttpStreamCallback () { }
-  virtual ~InputHttpStreamCallback () { }
-
-  virtual void wait_for_input () { }
 };
 
 class InputHttpStreamPrivateData;
@@ -99,11 +83,6 @@ public:
   virtual ~InputHttpStream ();
 
   /**
-   *  @brief Gets the timeout value (in seconds)
-   */
-  static double get_default_timeout ();
-
-  /**
    *  @brief Sets the credential provider
    */
   static void set_credential_provider (HttpCredentialProvider *cp);
@@ -114,32 +93,10 @@ public:
   static bool is_available ();
 
   /**
-   *  @brief Polling: call this function regularly to explicitly establish polling
+   *  @brief Polling: call this function regularily to explicitly establish polling
    *  (in the Qt framework, this is done automatically within the event loop)
-   *  May throw a tl::CancelException to stop.
    */
   void tick ();
-
-  /**
-   *  @brief Sets a timeout callback
-   *  The callback's wait_for_input method is called regularily while the stream
-   *  waits for HTTP responses.
-   *  The implementation may throw a tl::CancelException to stop the polling.
-   */
-  void set_callback (tl::InputHttpStreamCallback *callback)
-  {
-    mp_callback = callback;
-  }
-
-  /**
-   *  @brief Sets the timeout in seconds
-   */
-  void set_timeout (double to);
-
-  /**
-   *  @brief Gets the timeout in seconds or zero if no timeout is set.
-   */
-  double timeout () const;
 
   /**
    *  @brief Sends the request for data
@@ -186,7 +143,7 @@ public:
 
   /**
    *  @brief Gets the "ready" event
-   *  Connect to this event for the asynchronous interface.
+   *  Connect to this event for the asynchroneous interface.
    *  This event is fired when data becomes available or the
    *  connection has terminated with an error.
    */
@@ -210,22 +167,6 @@ public:
 
 private:
   InputHttpStreamPrivateData *mp_data;
-  InputHttpStreamCallback *mp_callback;
-};
-
-/**
- *  @brief A HTTP stream with .gz support
- */
-class TL_PUBLIC InflatingInputHttpStream
-  : public inflating_input_stream<InputHttpStream>
-{
-public:
-  /**
-   *  @brief Open a stream with the given URL
-   */
-  InflatingInputHttpStream (const std::string &url)
-    : inflating_input_stream<InputHttpStream> (new InputHttpStream (url))
-  { }
 };
 
 }

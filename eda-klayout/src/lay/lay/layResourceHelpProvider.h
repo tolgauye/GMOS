@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -40,17 +40,17 @@ class ResourceHelpProvider
 public:
   ResourceHelpProvider (const char *folder, const std::string &title);
 
-  std::string folder (lay::HelpSource * /*src*/) const
+  std::string folder () const
   {
     return m_folder;
   }
 
-  std::string title (lay::HelpSource * /*src*/) const
+  std::string title () const
   {
     return m_title;
   }
 
-  virtual QDomDocument get (lay::HelpSource *src, const std::string &path) const;
+  virtual QDomDocument get (const std::string &path) const;
 
 private:
   std::string m_folder, m_title;

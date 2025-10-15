@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -29,23 +29,15 @@
 #include "layCanvasPlane.h"
 #include "layViewOp.h"
 #include "layRenderer.h"
-#include "layLayoutViewBase.h"
-#include "layTextInfo.h"
+#include "layLayoutView.h"
 #include "tlAssert.h"
 
 namespace lay
 {
 
-static db::DVector text_box_enlargement (const db::DCplxTrans &vp_trans)
-{
-  //  4.0 is the text box border in pixels
-  double b = 4.0 / vp_trans.mag ();
-  return db::DVector (b, b);
-}
-
 // ------------------------------------------------------------------------
 
-void render_cell_inst (const db::Layout &layout, const db::CellInstArray &inst, const db::CplxTrans &trans, lay::Renderer &r,
+void render_cell_inst (const db::Layout &layout, const db::CellInstArray &inst, const db::CplxTrans &tr, lay::Renderer &r,
                        unsigned int font, lay::CanvasPlane *fill, lay::CanvasPlane *contour, lay::CanvasPlane *vertex, lay::CanvasPlane *text,
                        bool cell_name_text_transform, int min_size_for_label, bool draw_outline, size_t max_shapes)
 {
@@ -53,7 +45,7 @@ void render_cell_inst (const db::Layout &layout, const db::CellInstArray &inst, 
 
   const db::Cell &cell = layout.cell (inst.object ().cell_index ());
   std::string cell_name = layout.display_name (inst.object ().cell_index ());
-  db::Box cell_box = cell.bbox_with_empty ();
+  db::Box cell_box = cell.bbox ();
 
   db::Vector a, b;
   unsigned long amax = 0, bmax = 0;
@@ -91,29 +83,29 @@ void render_cell_inst (const db::Layout &layout, const db::CellInstArray &inst, 
       db::Vector av(a), bv(b);
 
       //  fallback to simpler representation using a description text
-      db::CplxTrans tbox (trans * inst.complex_trans ());
+      db::CplxTrans tbox (tr * inst.complex_trans ());
 
       //  one representative instance
       r.draw (cell_box, tbox, fill, contour, 0, text);
-      r.draw (cell_box, db::CplxTrans (trans * (av * long (amax - 1))) * tbox, fill, contour, 0, text);
-      r.draw (cell_box, db::CplxTrans (trans * (bv * long (bmax - 1))) * tbox, fill, contour, 0, text);
-      r.draw (cell_box, db::CplxTrans (trans * (av * long (amax - 1) + bv * long (bmax - 1))) * tbox, fill, contour, 0, text);
+      r.draw (cell_box, db::CplxTrans (tr * (av * long (amax - 1))) * tbox, fill, contour, 0, text);
+      r.draw (cell_box, db::CplxTrans (tr * (bv * long (bmax - 1))) * tbox, fill, contour, 0, text);
+      r.draw (cell_box, db::CplxTrans (tr * (av * long (amax - 1) + bv * long (bmax - 1))) * tbox, fill, contour, 0, text);
 
       db::DBox cb (tbox * cell_box);
       db::DPolygon p;
       db::DPoint points[] = {
         db::DPoint (cb.lower_left ()), 
-        db::DPoint (cb.lower_left () + trans * (av * long (amax - 1))),
-        db::DPoint (cb.lower_left () + trans * (av * long (amax - 1) + bv * long (bmax - 1))),
-        db::DPoint (cb.lower_left () + trans * (bv * long (bmax - 1))),
+        db::DPoint (cb.lower_left () + tr * (av * long (amax - 1))),
+        db::DPoint (cb.lower_left () + tr * (av * long (amax - 1) + bv * long (bmax - 1))),
+        db::DPoint (cb.lower_left () + tr * (bv * long (bmax - 1))),
       };
       p.assign_hull (points, points + sizeof (points) / sizeof (points[0]));
       r.draw (p, fill, contour, 0, text);
 
       if (text) {
-        db::DBox arr_box (db::DPoint (), db::DPoint () + trans * (av * long (amax - 1) + bv * long (bmax - 1)));
+        db::DBox arr_box (db::DPoint (), db::DPoint () + tr * (av * long (amax - 1) + bv * long (bmax - 1)));
         arr_box *= cb;
-        r.draw (arr_box, tl::sprintf (tl::to_string (tr ("Array %ldx%ld")), amax, bmax), db::Font (font), db::HAlignCenter, db::VAlignCenter, db::DFTrans (db::DFTrans::r0), 0, 0, 0, text);
+        r.draw (arr_box, tl::sprintf (tl::to_string (QObject::tr ("Array %ldx%ld")), amax, bmax), db::Font (font), db::HAlignCenter, db::VAlignCenter, db::DFTrans (db::DFTrans::r0), 0, 0, 0, text);
       }
 
     } else {
@@ -121,7 +113,7 @@ void render_cell_inst (const db::Layout &layout, const db::CellInstArray &inst, 
       for (db::CellInstArray::iterator arr = inst.begin (); ! arr.at_end (); ++arr) {
 
         //  fallback to simpler representation using a description text
-        db::CplxTrans tbox (trans * inst.complex_trans ());
+        db::CplxTrans tbox (tr * inst.complex_trans ());
 
         r.draw (cell_box, tbox, fill, contour, 0, 0);
 
@@ -134,7 +126,7 @@ void render_cell_inst (const db::Layout &layout, const db::CellInstArray &inst, 
                   db::HAlignCenter,
                   db::VAlignCenter,
                   //  TODO: apply "real" transformation?
-                  db::DFTrans (cell_name_text_transform ? tbox.fp_trans ().rot () : db::DFTrans::r0), 0, 0, 0, contour);
+                  db::DFTrans (cell_name_text_transform ? tbox.fp_trans ().rot () : db::DFTrans::r0), 0, 0, 0, text);
 
         }
 
@@ -157,7 +149,7 @@ void render_cell_inst (const db::Layout &layout, const db::CellInstArray &inst, 
       while (! shapes.at_end ()) {
 
         for (db::CellInstArray::iterator arr = inst.begin (); ! arr.at_end (); ++arr) {
-          r.draw (*shapes, trans * inst.complex_trans (*arr) * shapes.trans (), fill, contour, 0 /*use vertex for origin*/, text);
+          r.draw (*shapes, tr * inst.complex_trans (*arr) * shapes.trans (), fill, contour, 0 /*use vertex for origin*/, text);
         }
 
         ++shapes;
@@ -172,7 +164,7 @@ void render_cell_inst (const db::Layout &layout, const db::CellInstArray &inst, 
   if (render_origins && vertex) {
 
     for (db::CellInstArray::iterator arr = inst.begin (); ! arr.at_end (); ++arr) {
-      db::DPoint dp = db::DPoint () + (trans * inst.complex_trans (*arr)).disp ();
+      db::DPoint dp = db::DPoint () + (tr * inst.complex_trans (*arr)).disp ();
       r.draw (db::DEdge (dp, dp), 0, 0, vertex, 0);
     }
 
@@ -181,25 +173,15 @@ void render_cell_inst (const db::Layout &layout, const db::CellInstArray &inst, 
 
 // ------------------------------------------------------------------------
 
-MarkerBase::MarkerBase (lay::LayoutViewBase *view)
-  : lay::ViewObject (view ? view->canvas () : 0),
+MarkerBase::MarkerBase (lay::LayoutView *view)
+  : lay::ViewObject (view->view_object_widget ()),
     m_line_width (-1), m_vertex_size (-1), m_halo (-1), m_text_enabled (true), m_vertex_shape (lay::ViewOp::Rect), m_line_style (-1), m_dither_pattern (-1), m_frame_pattern (0), mp_view (view)
 { 
   // .. nothing yet ..
 }
 
-void
-MarkerBase::set_view (LayoutViewBase *view)
-{
-  if (mp_view != view) {
-    mp_view = view;
-    mp_view->canvas ()->add_object (this);
-    redraw ();
-  }
-}
-
-void
-MarkerBase::set_frame_color (tl::Color color)
+void 
+MarkerBase::set_frame_color (QColor color)
 {
   if (color != m_frame_color) {
     m_frame_color = color;
@@ -208,7 +190,7 @@ MarkerBase::set_frame_color (tl::Color color)
 }
 
 void 
-MarkerBase::set_color (tl::Color color)
+MarkerBase::set_color (QColor color)
 {
   if (color != m_color) {
     m_color = color;
@@ -295,16 +277,16 @@ MarkerBase::get_bitmaps (const Viewport & /*vp*/, ViewObjectCanvas &canvas, lay:
   int basic_width = int(0.5 + 1.0 / resolution);
 
   //  obtain bitmaps
-  tl::Color color = m_color;
-  if (! color.is_valid ()) {
+  QColor color = m_color;
+  if (! color.isValid ()) {
     color = mp_view->default_marker_color ();
   }
-  if (! color.is_valid ()) {
+  if (! color.isValid ()) {
     color = canvas.foreground_color ();
   }
 
-  tl::Color frame_color = m_frame_color;
-  if (! frame_color.is_valid ()) {
+  QColor frame_color = m_frame_color;
+  if (! frame_color.isValid ()) {
     frame_color = color;
   }
 
@@ -375,8 +357,8 @@ MarkerBase::get_bitmaps (const Viewport & /*vp*/, ViewObjectCanvas &canvas, lay:
 
 // ------------------------------------------------------------------------
 
-GenericMarkerBase::GenericMarkerBase (lay::LayoutViewBase *view, unsigned int cv_index)
-  : MarkerBase (view), mp_trans_vector (0), m_cv_index (cv_index)
+GenericMarkerBase::GenericMarkerBase (lay::LayoutView *view, unsigned int cv_index)
+  : MarkerBase (view), mp_trans_vector (0), mp_view (view), m_cv_index (cv_index)
 { 
   // .. nothing yet ..
 }
@@ -458,7 +440,7 @@ GenericMarkerBase::set (const db::DCplxTrans &t1, const std::vector<db::DCplxTra
 db::DBox
 GenericMarkerBase::bbox () const
 {
-  const lay::CellView &cv = view ()->cellview (m_cv_index);
+  const lay::CellView &cv = mp_view->cellview (m_cv_index);
   if (! cv.is_valid ()) {
     return db::DBox ();
   }
@@ -478,11 +460,11 @@ GenericMarkerBase::bbox () const
 const db::Layout *
 GenericMarkerBase::layout () const
 {
-  if (m_cv_index >= (unsigned int) (view ()->cellviews ())) {
+  if (m_cv_index >= (unsigned int) (mp_view->cellviews ())) {
     return 0;
   }
 
-  const lay::CellView &cv = view ()->cellview (m_cv_index);
+  const lay::CellView &cv = mp_view->cellview (m_cv_index);
   if (! cv.is_valid ()) {
     return 0;
   } else {
@@ -499,7 +481,7 @@ GenericMarkerBase::dbu () const
 
 // ------------------------------------------------------------------------
 
-InstanceMarker::InstanceMarker (LayoutViewBase *view, unsigned int cv_index, bool draw_outline, size_t max_shapes)
+InstanceMarker::InstanceMarker (lay::LayoutView *view, unsigned int cv_index, bool draw_outline, size_t max_shapes)
   : GenericMarkerBase (view, cv_index), m_draw_outline (draw_outline), m_max_shapes (max_shapes), m_inst ()
 { 
   // .. nothing yet ..
@@ -574,17 +556,12 @@ InstanceMarker::set_max_shapes (size_t s)
 db::DBox
 InstanceMarker::item_bbox () const 
 {
-  const db::Layout *ly = layout ();
-  if (! ly) {
-    return db::DBox ();
-  }
-
-  return db::DBox (m_inst.bbox_with_empty ());
+  return db::DBox (m_inst.bbox ());
 }
 
 // ------------------------------------------------------------------------
 
-ShapeMarker::ShapeMarker (LayoutViewBase *view, unsigned int cv_index)
+ShapeMarker::ShapeMarker (lay::LayoutView *view, unsigned int cv_index)
   : GenericMarkerBase (view, cv_index), m_shape ()
 { 
   // .. nothing yet ..
@@ -627,40 +604,19 @@ ShapeMarker::render (const Viewport &vp, ViewObjectCanvas &canvas)
 
   r.set_font (db::Font (view ()->text_font ()));
   r.apply_text_trans (view ()->apply_text_trans ());
-  r.default_text_size (view ()->default_text_size () / ly->dbu ());
+  r.default_text_size (db::Coord (view ()->default_text_size () / ly->dbu ()));
   r.set_precise (true);
 
   if (trans_vector ()) {
     for (std::vector<db::DCplxTrans>::const_iterator tr = trans_vector ()->begin (); tr != trans_vector ()->end (); ++tr) {
       db::CplxTrans t = vp.trans () * *tr * trans ();
-      if (m_shape.is_text () && text) {
-        //  draw a frame around the text
-        lay::TextInfo ti (view ());
-        db::DCplxTrans vp_trans = vp.trans () * *tr;
-        db::Text t;
-        m_shape.text (t);
-        db::DBox box = ti.bbox (trans () * t, vp_trans).enlarged (text_box_enlargement (vp_trans));
-        if (! box.is_point ()) {
-          r.draw (box, vp_trans, 0, text, 0, 0);
-        }
-      }
       r.draw (m_shape, t, fill, contour, vertex, text);
-      r.draw_propstring (m_shape, text, t);
+      r.draw_propstring (m_shape, &ly->properties_repository (), text, t);
     }
   } else {
     db::CplxTrans t = vp.trans () * trans ();
-    if (m_shape.is_text () && text) {
-      //  draw a frame around the text
-      lay::TextInfo ti (view ());
-      db::Text t;
-      m_shape.text (t);
-      db::DBox box = ti.bbox (trans () * t, vp.trans ()).enlarged (text_box_enlargement (vp.trans ()));
-      if (! box.is_point ()) {
-        r.draw (box, vp.trans (), 0, text, 0, 0);
-      }
-    }
     r.draw (m_shape, t, fill, contour, vertex, text);
-    r.draw_propstring (m_shape, text, t);
+    r.draw_propstring (m_shape, &ly->properties_repository (), text, t);
   }
 }
 
@@ -672,7 +628,7 @@ ShapeMarker::item_bbox () const
 
 // ------------------------------------------------------------------------
 
-Marker::Marker (lay::LayoutViewBase *view, unsigned int cv_index, bool draw_outline, size_t max_shapes)
+Marker::Marker (lay::LayoutView *view, unsigned int cv_index, bool draw_outline, size_t max_shapes)
   : GenericMarkerBase (view, cv_index), m_draw_outline (draw_outline), m_max_shapes (max_shapes) 
 { 
   m_type = None;
@@ -1049,7 +1005,7 @@ Marker::item_bbox () const
   } else if (m_type == Instance) {
     const db::Layout *ly = layout ();
     if (ly) {
-      return db::DBox (m_object.inst->bbox (db::box_convert <db::CellInst, false> (*ly)));
+      return db::DBox (m_object.inst->bbox (db::box_convert <db::CellInst> (*ly)));
     }
   }
   return db::DBox ();
@@ -1110,18 +1066,8 @@ Marker::draw (lay::Renderer &r, const db::CplxTrans &t, lay::CanvasPlane *fill, 
   } else if (m_type == DPath) {
     r.draw (*m_object.dpath, db::DCplxTrans (t), fill, contour, vertex, text);
   } else if (m_type == Text) {
-    //  TODO: in order to draw the box we'd need a separation of dbu-to-micron and micron-to-pixel transformations ...
     r.draw (*m_object.text, t, fill, contour, vertex, text);
   } else if (m_type == DText) {
-    if (view () && text) {
-      //  draw a frame around the text
-      lay::TextInfo ti (view ());
-      db::DCplxTrans dt (t);
-      db::DBox box = ti.bbox (*m_object.dtext, dt).enlarged (text_box_enlargement (dt));
-      if (! box.is_point ()) {
-        r.draw (box, dt, 0, text, 0, 0);
-      }
-    }
     r.draw (*m_object.dtext, db::DCplxTrans (t), fill, contour, vertex, text);
   } else if (m_type == Edge) {
     r.draw (*m_object.edge, t, fill, contour, vertex, text);
@@ -1158,7 +1104,7 @@ Marker::render (const Viewport &vp, ViewObjectCanvas &canvas)
 
   r.set_font (db::Font (view ()->text_font ()));
   r.apply_text_trans (view ()->apply_text_trans ());
-  r.default_text_size (view ()->default_text_size () / dbu ());
+  r.default_text_size (db::Coord (view ()->default_text_size () / dbu ()));
   r.set_precise (true);
 
   if (! trans_vector ()) {
@@ -1174,8 +1120,8 @@ Marker::render (const Viewport &vp, ViewObjectCanvas &canvas)
 
 // ------------------------------------------------------------------------
 
-DMarker::DMarker (LayoutViewBase *view)
-  : MarkerBase (view)
+DMarker::DMarker (lay::LayoutView *view)
+  : MarkerBase (view), mp_view (view)
 { 
   m_type = None;
   m_object.any = 0;
@@ -1304,9 +1250,9 @@ DMarker::render (const Viewport &vp, ViewObjectCanvas &canvas)
 
   lay::Renderer &r = canvas.renderer ();
 
-  r.set_font (db::Font (view ()->text_font ()));
-  r.apply_text_trans (view ()->apply_text_trans ());
-  r.default_text_size_dbl (view ()->default_text_size ());
+  r.set_font (db::Font (mp_view->text_font ()));
+  r.apply_text_trans (mp_view->apply_text_trans ());
+  r.default_text_size (mp_view->default_text_size ());
   r.set_precise (true);
 
   db::DCplxTrans t = vp.trans ();
@@ -1318,14 +1264,6 @@ DMarker::render (const Viewport &vp, ViewObjectCanvas &canvas)
   } else if (m_type == Path) {
     r.draw (*m_object.path, t, fill, contour, vertex, text);
   } else if (m_type == Text) {
-    if (view () && text) {
-      //  draw a frame around the text
-      lay::TextInfo ti (view ());
-      db::DBox box = ti.bbox (*m_object.text, t).enlarged (text_box_enlargement (t));
-      if (! box.is_point ()) {
-        r.draw (box, t, 0, text, 0, 0);
-      }
-    }
     r.draw (*m_object.text, t, fill, contour, vertex, text);
   } else if (m_type == Edge) {
     r.draw (*m_object.edge, t, fill, contour, vertex, text);

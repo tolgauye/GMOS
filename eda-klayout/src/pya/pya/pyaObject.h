@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -45,6 +45,7 @@ namespace gsi
 namespace pya
 {
 
+class PYAObjectBase;
 class Callee;
 class StatusChangedListener;
 
@@ -71,18 +72,22 @@ public:
 
   /**
    *  @brief Gets the PYAObjectBase pointer from a PyObject pointer
-   *  This version doesn't check anything.
    */
-  static PYAObjectBase *from_pyobject_unsafe (PyObject *py_object)
+  static PYAObjectBase *from_pyobject (PyObject *py_object)
   {
-    //  the objects must not be a pure static extension
-    return (PYAObjectBase *)((char *) py_object + Py_TYPE (py_object)->tp_basicsize - sizeof (PYAObjectBase));
+    PYAObjectBase *pya_object = (PYAObjectBase *)((char *) py_object + Py_TYPE (py_object)->tp_basicsize - sizeof (PYAObjectBase));
+    tl_assert (pya_object->py_object () == py_object);
+    return pya_object;
   }
 
   /**
    *  @brief Gets the PYAObjectBase pointer from a PyObject pointer
+   *  This version doesn't check anything.
    */
-  static PYAObjectBase *from_pyobject (PyObject *py_object);
+  static PYAObjectBase *from_pyobject_unsafe (PyObject *py_object)
+  {
+    return (PYAObjectBase *)((char *) py_object + Py_TYPE (py_object)->tp_basicsize - sizeof (PYAObjectBase));
+  }
 
   /**
    *  @brief Indicates that a C++ object is present
@@ -200,7 +205,7 @@ public:
   /**
    *  @brief Clears the callbacks cache
    */
-  static void clear_callbacks_cache (bool embedded);
+  static void clear_callbacks_cache ();
 
 private:
   friend class StatusChangedListener;

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -37,6 +37,7 @@
 #include <QTransform>
 #include "gsiQt.h"
 #include "gsiQtGuiCommon.h"
+#include "gsiDeclQtGuiTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -1744,12 +1745,12 @@ static void _call_f_united_c2514 (const qt_gsi::GenericMethod * /*decl*/, void *
 
 //  QPainterPath ::operator *(const QPainterPath &p, const QMatrix &m)
 static QPainterPath op_QPainterPath_operator_star__4429(const QPainterPath *_self, const QMatrix &m) {
-  return operator *(*_self, m);
+  return ::operator *(*_self, m);
 }
 
 //  QPainterPath ::operator *(const QPainterPath &p, const QTransform &m)
 static QPainterPath op_QPainterPath_operator_star__4756(const QPainterPath *_self, const QTransform &m) {
-  return operator *(*_self, m);
+  return ::operator *(*_self, m);
 }
 
 

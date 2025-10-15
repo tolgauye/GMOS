@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -29,9 +29,9 @@
 
 #include <QWindow>
 #include <QScreen>
-#include <QAccessibleInterface>
 #include "gsiQt.h"
 #include "gsiQtGuiCommon.h"
+#include "gsiDeclQtGuiTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -644,25 +644,6 @@ static void _call_f_opacity_c0 (const qt_gsi::GenericMethod * /*decl*/, void *cl
 }
 
 
-// QWindow *QWindow::parent(QWindow::AncestorMode mode)
-
-
-static void _init_f_parent_c2485 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("mode");
-  decl->add_arg<const qt_gsi::Converter<QWindow::AncestorMode>::target_type & > (argspec_0);
-  decl->set_return<QWindow * > ();
-}
-
-static void _call_f_parent_c2485 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const qt_gsi::Converter<QWindow::AncestorMode>::target_type & arg1 = gsi::arg_reader<const qt_gsi::Converter<QWindow::AncestorMode>::target_type & >() (args, heap);
-  ret.write<QWindow * > ((QWindow *)((QWindow *)cls)->parent (qt_gsi::QtToCppAdaptor<QWindow::AncestorMode>(arg1).cref()));
-}
-
-
 // QWindow *QWindow::parent()
 
 
@@ -891,29 +872,6 @@ static void _call_f_setFilePath_2025 (const qt_gsi::GenericMethod * /*decl*/, vo
   const QString &arg1 = gsi::arg_reader<const QString & >() (args, heap);
   __SUPPRESS_UNUSED_WARNING(ret);
   ((QWindow *)cls)->setFilePath (arg1);
-}
-
-
-// void QWindow::setFlag(Qt::WindowType, bool on)
-
-
-static void _init_f_setFlag_2555 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("arg1");
-  decl->add_arg<const qt_gsi::Converter<Qt::WindowType>::target_type & > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("on", true, "true");
-  decl->add_arg<bool > (argspec_1);
-  decl->set_return<void > ();
-}
-
-static void _call_f_setFlag_2555 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const qt_gsi::Converter<Qt::WindowType>::target_type & arg1 = gsi::arg_reader<const qt_gsi::Converter<Qt::WindowType>::target_type & >() (args, heap);
-  bool arg2 = args ? gsi::arg_reader<bool >() (args, heap) : gsi::arg_maker<bool >() (true, heap);
-  __SUPPRESS_UNUSED_WARNING(ret);
-  ((QWindow *)cls)->setFlag (qt_gsi::QtToCppAdaptor<Qt::WindowType>(arg1).cref(), arg2);
 }
 
 
@@ -1527,26 +1485,6 @@ static void _call_f_setWindowState_1894 (const qt_gsi::GenericMethod * /*decl*/,
 }
 
 
-// void QWindow::setWindowStates(QFlags<Qt::WindowState> states)
-
-
-static void _init_f_setWindowStates_2590 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("states");
-  decl->add_arg<QFlags<Qt::WindowState> > (argspec_0);
-  decl->set_return<void > ();
-}
-
-static void _call_f_setWindowStates_2590 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  QFlags<Qt::WindowState> arg1 = gsi::arg_reader<QFlags<Qt::WindowState> >() (args, heap);
-  __SUPPRESS_UNUSED_WARNING(ret);
-  ((QWindow *)cls)->setWindowStates (arg1);
-}
-
-
 // void QWindow::setX(int arg)
 
 
@@ -1833,21 +1771,6 @@ static void _call_f_windowState_c0 (const qt_gsi::GenericMethod * /*decl*/, void
 }
 
 
-// QFlags<Qt::WindowState> QWindow::windowStates()
-
-
-static void _init_f_windowStates_c0 (qt_gsi::GenericMethod *decl)
-{
-  decl->set_return<QFlags<Qt::WindowState> > ();
-}
-
-static void _call_f_windowStates_c0 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  ret.write<QFlags<Qt::WindowState> > ((QFlags<Qt::WindowState>)((QWindow *)cls)->windowStates ());
-}
-
-
 // int QWindow::x()
 
 
@@ -1904,7 +1827,7 @@ static void _init_f_tr_4013 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("s");
   decl->add_arg<const char * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("c", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("c", true, "__null");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("n", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -1916,7 +1839,7 @@ static void _call_f_tr_4013 (const qt_gsi::GenericStaticMethod * /*decl*/, gsi::
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (__null, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QWindow::tr (arg1, arg2, arg3));
 }
@@ -1929,7 +1852,7 @@ static void _init_f_trUtf8_4013 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("s");
   decl->add_arg<const char * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("c", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("c", true, "__null");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("n", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -1941,7 +1864,7 @@ static void _call_f_trUtf8_4013 (const qt_gsi::GenericStaticMethod * /*decl*/, g
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (__null, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QWindow::trUtf8 (arg1, arg2, arg3));
 }
@@ -2003,9 +1926,9 @@ static gsi::Methods methods_QWindow () {
   methods += new qt_gsi::GenericMethod (":baseSize", "@brief Method QSize QWindow::baseSize()\n", true, &_init_f_baseSize_c0, &_call_f_baseSize_c0);
   methods += new qt_gsi::GenericMethod ("close", "@brief Method bool QWindow::close()\n", false, &_init_f_close_0, &_call_f_close_0);
   methods += new qt_gsi::GenericMethod (":contentOrientation", "@brief Method Qt::ScreenOrientation QWindow::contentOrientation()\n", true, &_init_f_contentOrientation_c0, &_call_f_contentOrientation_c0);
-  methods += new qt_gsi::GenericMethod ("create|qt_create", "@brief Method void QWindow::create()\n", false, &_init_f_create_0, &_call_f_create_0);
+  methods += new qt_gsi::GenericMethod ("qt_create", "@brief Method void QWindow::create()\n", false, &_init_f_create_0, &_call_f_create_0);
   methods += new qt_gsi::GenericMethod (":cursor", "@brief Method QCursor QWindow::cursor()\n", true, &_init_f_cursor_c0, &_call_f_cursor_c0);
-  methods += new qt_gsi::GenericMethod ("destroy|qt_destroy", "@brief Method void QWindow::destroy()\n", false, &_init_f_destroy_0, &_call_f_destroy_0);
+  methods += new qt_gsi::GenericMethod ("qt_destroy", "@brief Method void QWindow::destroy()\n", false, &_init_f_destroy_0, &_call_f_destroy_0);
   methods += new qt_gsi::GenericMethod ("devicePixelRatio", "@brief Method double QWindow::devicePixelRatio()\n", true, &_init_f_devicePixelRatio_c0, &_call_f_devicePixelRatio_c0);
   methods += new qt_gsi::GenericMethod (":filePath", "@brief Method QString QWindow::filePath()\n", true, &_init_f_filePath_c0, &_call_f_filePath_c0);
   methods += new qt_gsi::GenericMethod (":flags", "@brief Method QFlags<Qt::WindowType> QWindow::flags()\n", true, &_init_f_flags_c0, &_call_f_flags_c0);
@@ -2036,10 +1959,9 @@ static gsi::Methods methods_QWindow () {
   methods += new qt_gsi::GenericMethod (":minimumWidth", "@brief Method int QWindow::minimumWidth()\n", true, &_init_f_minimumWidth_c0, &_call_f_minimumWidth_c0);
   methods += new qt_gsi::GenericMethod (":modality", "@brief Method Qt::WindowModality QWindow::modality()\n", true, &_init_f_modality_c0, &_call_f_modality_c0);
   methods += new qt_gsi::GenericMethod (":opacity", "@brief Method double QWindow::opacity()\n", true, &_init_f_opacity_c0, &_call_f_opacity_c0);
-  methods += new qt_gsi::GenericMethod ("parent", "@brief Method QWindow *QWindow::parent(QWindow::AncestorMode mode)\n", true, &_init_f_parent_c2485, &_call_f_parent_c2485);
   methods += new qt_gsi::GenericMethod (":parent", "@brief Method QWindow *QWindow::parent()\n", true, &_init_f_parent_c0, &_call_f_parent_c0);
   methods += new qt_gsi::GenericMethod (":position", "@brief Method QPoint QWindow::position()\n", true, &_init_f_position_c0, &_call_f_position_c0);
-  methods += new qt_gsi::GenericMethod ("raise|qt_raise", "@brief Method void QWindow::raise()\n", false, &_init_f_raise_0, &_call_f_raise_0);
+  methods += new qt_gsi::GenericMethod ("qt_raise", "@brief Method void QWindow::raise()\n", false, &_init_f_raise_0, &_call_f_raise_0);
   methods += new qt_gsi::GenericMethod ("reportContentOrientationChange", "@brief Method void QWindow::reportContentOrientationChange(Qt::ScreenOrientation orientation)\n", false, &_init_f_reportContentOrientationChange_2521, &_call_f_reportContentOrientationChange_2521);
   methods += new qt_gsi::GenericMethod ("requestActivate", "@brief Method void QWindow::requestActivate()\n", false, &_init_f_requestActivate_0, &_call_f_requestActivate_0);
   methods += new qt_gsi::GenericMethod ("requestUpdate", "@brief Method void QWindow::requestUpdate()\n", false, &_init_f_requestUpdate_0, &_call_f_requestUpdate_0);
@@ -2050,7 +1972,6 @@ static gsi::Methods methods_QWindow () {
   methods += new qt_gsi::GenericMethod ("setBaseSize|baseSize=", "@brief Method void QWindow::setBaseSize(const QSize &size)\n", false, &_init_f_setBaseSize_1805, &_call_f_setBaseSize_1805);
   methods += new qt_gsi::GenericMethod ("setCursor|cursor=", "@brief Method void QWindow::setCursor(const QCursor &)\n", false, &_init_f_setCursor_2032, &_call_f_setCursor_2032);
   methods += new qt_gsi::GenericMethod ("setFilePath|filePath=", "@brief Method void QWindow::setFilePath(const QString &filePath)\n", false, &_init_f_setFilePath_2025, &_call_f_setFilePath_2025);
-  methods += new qt_gsi::GenericMethod ("setFlag", "@brief Method void QWindow::setFlag(Qt::WindowType, bool on)\n", false, &_init_f_setFlag_2555, &_call_f_setFlag_2555);
   methods += new qt_gsi::GenericMethod ("setFlags|flags=", "@brief Method void QWindow::setFlags(QFlags<Qt::WindowType> flags)\n", false, &_init_f_setFlags_2495, &_call_f_setFlags_2495);
   methods += new qt_gsi::GenericMethod ("setFormat|format=", "@brief Method void QWindow::setFormat(const QSurfaceFormat &format)\n", false, &_init_f_setFormat_2724, &_call_f_setFormat_2724);
   methods += new qt_gsi::GenericMethod ("setFramePosition|framePosition=", "@brief Method void QWindow::setFramePosition(const QPoint &point)\n", false, &_init_f_setFramePosition_1916, &_call_f_setFramePosition_1916);
@@ -2081,7 +2002,6 @@ static gsi::Methods methods_QWindow () {
   methods += new qt_gsi::GenericMethod ("setVisible|visible=", "@brief Method void QWindow::setVisible(bool visible)\n", false, &_init_f_setVisible_864, &_call_f_setVisible_864);
   methods += new qt_gsi::GenericMethod ("setWidth|width=", "@brief Method void QWindow::setWidth(int arg)\n", false, &_init_f_setWidth_767, &_call_f_setWidth_767);
   methods += new qt_gsi::GenericMethod ("setWindowState|windowState=", "@brief Method void QWindow::setWindowState(Qt::WindowState state)\n", false, &_init_f_setWindowState_1894, &_call_f_setWindowState_1894);
-  methods += new qt_gsi::GenericMethod ("setWindowStates|windowStates=", "@brief Method void QWindow::setWindowStates(QFlags<Qt::WindowState> states)\n", false, &_init_f_setWindowStates_2590, &_call_f_setWindowStates_2590);
   methods += new qt_gsi::GenericMethod ("setX|x=", "@brief Method void QWindow::setX(int arg)\n", false, &_init_f_setX_767, &_call_f_setX_767);
   methods += new qt_gsi::GenericMethod ("setY|y=", "@brief Method void QWindow::setY(int arg)\n", false, &_init_f_setY_767, &_call_f_setY_767);
   methods += new qt_gsi::GenericMethod ("show", "@brief Method void QWindow::show()\n", false, &_init_f_show_0, &_call_f_show_0);
@@ -2100,7 +2020,6 @@ static gsi::Methods methods_QWindow () {
   methods += new qt_gsi::GenericMethod (":width", "@brief Method int QWindow::width()\n", true, &_init_f_width_c0, &_call_f_width_c0);
   methods += new qt_gsi::GenericMethod ("winId", "@brief Method WId QWindow::winId()\n", true, &_init_f_winId_c0, &_call_f_winId_c0);
   methods += new qt_gsi::GenericMethod (":windowState", "@brief Method Qt::WindowState QWindow::windowState()\n", true, &_init_f_windowState_c0, &_call_f_windowState_c0);
-  methods += new qt_gsi::GenericMethod (":windowStates", "@brief Method QFlags<Qt::WindowState> QWindow::windowStates()\n", true, &_init_f_windowStates_c0, &_call_f_windowStates_c0);
   methods += new qt_gsi::GenericMethod (":x", "@brief Method int QWindow::x()\n", true, &_init_f_x_c0, &_call_f_x_c0);
   methods += new qt_gsi::GenericMethod (":y", "@brief Method int QWindow::y()\n", true, &_init_f_y_c0, &_call_f_y_c0);
   methods += gsi::qt_signal ("activeChanged()", "activeChanged", "@brief Signal declaration for QWindow::activeChanged()\nYou can bind a procedure to this signal.");
@@ -2113,7 +2032,6 @@ static gsi::Methods methods_QWindow () {
   methods += gsi::qt_signal<int > ("minimumHeightChanged(int)", "minimumHeightChanged", gsi::arg("arg"), "@brief Signal declaration for QWindow::minimumHeightChanged(int arg)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<int > ("minimumWidthChanged(int)", "minimumWidthChanged", gsi::arg("arg"), "@brief Signal declaration for QWindow::minimumWidthChanged(int arg)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<const qt_gsi::Converter<Qt::WindowModality>::target_type & > ("modalityChanged(Qt::WindowModality)", "modalityChanged", gsi::arg("modality"), "@brief Signal declaration for QWindow::modalityChanged(Qt::WindowModality modality)\nYou can bind a procedure to this signal.");
-  methods += gsi::qt_signal<const QString & > ("objectNameChanged(const QString &)", "objectNameChanged", gsi::arg("objectName"), "@brief Signal declaration for QWindow::objectNameChanged(const QString &objectName)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<double > ("opacityChanged(double)", "opacityChanged", gsi::arg("opacity"), "@brief Signal declaration for QWindow::opacityChanged(double opacity)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<QScreen * > ("screenChanged(QScreen *)", "screenChanged", gsi::arg("screen"), "@brief Signal declaration for QWindow::screenChanged(QScreen *screen)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<const qt_gsi::Converter<QWindow::Visibility>::target_type & > ("visibilityChanged(QWindow::Visibility)", "visibilityChanged", gsi::arg("visibility"), "@brief Signal declaration for QWindow::visibilityChanged(QWindow::Visibility visibility)\nYou can bind a procedure to this signal.");
@@ -2138,12 +2056,6 @@ gsi::Class<QObject> &qtdecl_QObject ();
 qt_gsi::QtNativeClass<QWindow> decl_QWindow (qtdecl_QObject (), "QtGui", "QWindow_Native",
   methods_QWindow (),
   "@hide\n@alias QWindow");
-
-//  Additional base classes
-
-gsi::Class<QSurface> &qtdecl_QSurface ();
-
-gsi::ClassExt<QWindow> base_class_QSurface_in_QWindow (qtdecl_QSurface ());
 
 GSI_QTGUI_PUBLIC gsi::Class<QWindow> &qtdecl_QWindow () { return decl_QWindow; }
 
@@ -2227,18 +2139,18 @@ public:
     emit QWindow::destroyed(arg1);
   }
 
-  //  [adaptor impl] bool QWindow::eventFilter(QObject *watched, QEvent *event)
-  bool cbs_eventFilter_2411_0(QObject *watched, QEvent *event)
+  //  [adaptor impl] bool QWindow::eventFilter(QObject *, QEvent *)
+  bool cbs_eventFilter_2411_0(QObject *arg1, QEvent *arg2)
   {
-    return QWindow::eventFilter(watched, event);
+    return QWindow::eventFilter(arg1, arg2);
   }
 
-  virtual bool eventFilter(QObject *watched, QEvent *event)
+  virtual bool eventFilter(QObject *arg1, QEvent *arg2)
   {
     if (cb_eventFilter_2411_0.can_issue()) {
-      return cb_eventFilter_2411_0.issue<QWindow_Adaptor, bool, QObject *, QEvent *>(&QWindow_Adaptor::cbs_eventFilter_2411_0, watched, event);
+      return cb_eventFilter_2411_0.issue<QWindow_Adaptor, bool, QObject *, QEvent *>(&QWindow_Adaptor::cbs_eventFilter_2411_0, arg1, arg2);
     } else {
-      return QWindow::eventFilter(watched, event);
+      return QWindow::eventFilter(arg1, arg2);
     }
   }
 
@@ -2312,13 +2224,6 @@ public:
   void emitter_QWindow_modalityChanged_2216(Qt::WindowModality modality)
   {
     emit QWindow::modalityChanged(modality);
-  }
-
-  //  [emitter impl] void QWindow::objectNameChanged(const QString &objectName)
-  void emitter_QWindow_objectNameChanged_4567(const QString &objectName)
-  {
-    __SUPPRESS_UNUSED_WARNING (objectName);
-    throw tl::Exception ("Can't emit private signal 'void QWindow::objectNameChanged(const QString &objectName)'");
   }
 
   //  [emitter impl] void QWindow::opacityChanged(double opacity)
@@ -2405,33 +2310,33 @@ public:
     emit QWindow::yChanged(arg);
   }
 
-  //  [adaptor impl] void QWindow::childEvent(QChildEvent *event)
-  void cbs_childEvent_1701_0(QChildEvent *event)
+  //  [adaptor impl] void QWindow::childEvent(QChildEvent *)
+  void cbs_childEvent_1701_0(QChildEvent *arg1)
   {
-    QWindow::childEvent(event);
+    QWindow::childEvent(arg1);
   }
 
-  virtual void childEvent(QChildEvent *event)
+  virtual void childEvent(QChildEvent *arg1)
   {
     if (cb_childEvent_1701_0.can_issue()) {
-      cb_childEvent_1701_0.issue<QWindow_Adaptor, QChildEvent *>(&QWindow_Adaptor::cbs_childEvent_1701_0, event);
+      cb_childEvent_1701_0.issue<QWindow_Adaptor, QChildEvent *>(&QWindow_Adaptor::cbs_childEvent_1701_0, arg1);
     } else {
-      QWindow::childEvent(event);
+      QWindow::childEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QWindow::customEvent(QEvent *event)
-  void cbs_customEvent_1217_0(QEvent *event)
+  //  [adaptor impl] void QWindow::customEvent(QEvent *)
+  void cbs_customEvent_1217_0(QEvent *arg1)
   {
-    QWindow::customEvent(event);
+    QWindow::customEvent(arg1);
   }
 
-  virtual void customEvent(QEvent *event)
+  virtual void customEvent(QEvent *arg1)
   {
     if (cb_customEvent_1217_0.can_issue()) {
-      cb_customEvent_1217_0.issue<QWindow_Adaptor, QEvent *>(&QWindow_Adaptor::cbs_customEvent_1217_0, event);
+      cb_customEvent_1217_0.issue<QWindow_Adaptor, QEvent *>(&QWindow_Adaptor::cbs_customEvent_1217_0, arg1);
     } else {
-      QWindow::customEvent(event);
+      QWindow::customEvent(arg1);
     }
   }
 
@@ -2690,18 +2595,18 @@ public:
     }
   }
 
-  //  [adaptor impl] void QWindow::timerEvent(QTimerEvent *event)
-  void cbs_timerEvent_1730_0(QTimerEvent *event)
+  //  [adaptor impl] void QWindow::timerEvent(QTimerEvent *)
+  void cbs_timerEvent_1730_0(QTimerEvent *arg1)
   {
-    QWindow::timerEvent(event);
+    QWindow::timerEvent(arg1);
   }
 
-  virtual void timerEvent(QTimerEvent *event)
+  virtual void timerEvent(QTimerEvent *arg1)
   {
     if (cb_timerEvent_1730_0.can_issue()) {
-      cb_timerEvent_1730_0.issue<QWindow_Adaptor, QTimerEvent *>(&QWindow_Adaptor::cbs_timerEvent_1730_0, event);
+      cb_timerEvent_1730_0.issue<QWindow_Adaptor, QTimerEvent *>(&QWindow_Adaptor::cbs_timerEvent_1730_0, arg1);
     } else {
-      QWindow::timerEvent(event);
+      QWindow::timerEvent(arg1);
     }
   }
 
@@ -2771,7 +2676,7 @@ QWindow_Adaptor::~QWindow_Adaptor() { }
 
 static void _init_ctor_QWindow_Adaptor_1311 (qt_gsi::GenericStaticMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("screen", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("screen", true, "0");
   decl->add_arg<QScreen * > (argspec_0);
   decl->set_return_new<QWindow_Adaptor> ();
 }
@@ -2780,7 +2685,7 @@ static void _call_ctor_QWindow_Adaptor_1311 (const qt_gsi::GenericStaticMethod *
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  QScreen *arg1 = args ? gsi::arg_reader<QScreen * >() (args, heap) : gsi::arg_maker<QScreen * >() (nullptr, heap);
+  QScreen *arg1 = args ? gsi::arg_reader<QScreen * >() (args, heap) : gsi::arg_maker<QScreen * >() (0, heap);
   ret.write<QWindow_Adaptor *> (new QWindow_Adaptor (arg1));
 }
 
@@ -2836,11 +2741,11 @@ static void _call_emitter_activeChanged_0 (const qt_gsi::GenericMethod * /*decl*
 }
 
 
-// void QWindow::childEvent(QChildEvent *event)
+// void QWindow::childEvent(QChildEvent *)
 
 static void _init_cbs_childEvent_1701_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QChildEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -2878,11 +2783,11 @@ static void _call_emitter_contentOrientationChanged_2521 (const qt_gsi::GenericM
 }
 
 
-// void QWindow::customEvent(QEvent *event)
+// void QWindow::customEvent(QEvent *)
 
 static void _init_cbs_customEvent_1217_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -2906,7 +2811,7 @@ static void _set_callback_cbs_customEvent_1217_0 (void *cls, const gsi::Callback
 
 static void _init_emitter_destroyed_1302 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("arg1", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("arg1", true, "0");
   decl->add_arg<QObject * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -2915,7 +2820,7 @@ static void _call_emitter_destroyed_1302 (const qt_gsi::GenericMethod * /*decl*/
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (nullptr, heap);
+  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (0, heap);
   ((QWindow_Adaptor *)cls)->emitter_QWindow_destroyed_1302 (arg1);
 }
 
@@ -2967,13 +2872,13 @@ static void _set_callback_cbs_event_1217_0 (void *cls, const gsi::Callback &cb)
 }
 
 
-// bool QWindow::eventFilter(QObject *watched, QEvent *event)
+// bool QWindow::eventFilter(QObject *, QEvent *)
 
 static void _init_cbs_eventFilter_2411_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("watched");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QObject * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("event");
+  static gsi::ArgSpecBase argspec_1 ("arg2");
   decl->add_arg<QEvent * > (argspec_1);
   decl->set_return<bool > ();
 }
@@ -3468,24 +3373,6 @@ static void _set_callback_cbs_nativeEvent_4678_0 (void *cls, const gsi::Callback
 }
 
 
-// emitter void QWindow::objectNameChanged(const QString &objectName)
-
-static void _init_emitter_objectNameChanged_4567 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("objectName");
-  decl->add_arg<const QString & > (argspec_0);
-  decl->set_return<void > ();
-}
-
-static void _call_emitter_objectNameChanged_4567 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs & /*ret*/) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const QString &arg1 = gsi::arg_reader<const QString & >() (args, heap);
-  ((QWindow_Adaptor *)cls)->emitter_QWindow_objectNameChanged_4567 (arg1);
-}
-
-
 // emitter void QWindow::opacityChanged(double opacity)
 
 static void _init_emitter_opacityChanged_1071 (qt_gsi::GenericMethod *decl)
@@ -3678,11 +3565,11 @@ static void _set_callback_cbs_tabletEvent_1821_0 (void *cls, const gsi::Callback
 }
 
 
-// void QWindow::timerEvent(QTimerEvent *event)
+// void QWindow::timerEvent(QTimerEvent *)
 
 static void _init_cbs_timerEvent_1730_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QTimerEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -3885,81 +3772,80 @@ static gsi::Methods methods_QWindow_Adaptor () {
   gsi::Methods methods;
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QWindow::QWindow(QScreen *screen)\nThis method creates an object of class QWindow.", &_init_ctor_QWindow_Adaptor_1311, &_call_ctor_QWindow_Adaptor_1311);
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QWindow::QWindow(QWindow *parent)\nThis method creates an object of class QWindow.", &_init_ctor_QWindow_Adaptor_1335, &_call_ctor_QWindow_Adaptor_1335);
-  methods += new qt_gsi::GenericMethod ("accessibleRoot", "@brief Virtual method QAccessibleInterface *QWindow::accessibleRoot()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_accessibleRoot_c0_0, &_call_cbs_accessibleRoot_c0_0);
-  methods += new qt_gsi::GenericMethod ("accessibleRoot", "@hide", true, &_init_cbs_accessibleRoot_c0_0, &_call_cbs_accessibleRoot_c0_0, &_set_callback_cbs_accessibleRoot_c0_0);
+  methods += new qt_gsi::GenericMethod ("accessibleRoot", "@hide", true, &_init_cbs_accessibleRoot_c0_0, &_call_cbs_accessibleRoot_c0_0);
+  methods += new qt_gsi::GenericMethod ("accessibleRoot", "@brief Virtual method QAccessibleInterface *QWindow::accessibleRoot()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_accessibleRoot_c0_0, &_call_cbs_accessibleRoot_c0_0, &_set_callback_cbs_accessibleRoot_c0_0);
   methods += new qt_gsi::GenericMethod ("emit_activeChanged", "@brief Emitter for signal void QWindow::activeChanged()\nCall this method to emit this signal.", false, &_init_emitter_activeChanged_0, &_call_emitter_activeChanged_0);
-  methods += new qt_gsi::GenericMethod ("*childEvent", "@brief Virtual method void QWindow::childEvent(QChildEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0);
-  methods += new qt_gsi::GenericMethod ("*childEvent", "@hide", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0, &_set_callback_cbs_childEvent_1701_0);
+  methods += new qt_gsi::GenericMethod ("*childEvent", "@hide", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0);
+  methods += new qt_gsi::GenericMethod ("*childEvent", "@brief Virtual method void QWindow::childEvent(QChildEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0, &_set_callback_cbs_childEvent_1701_0);
   methods += new qt_gsi::GenericMethod ("emit_contentOrientationChanged", "@brief Emitter for signal void QWindow::contentOrientationChanged(Qt::ScreenOrientation orientation)\nCall this method to emit this signal.", false, &_init_emitter_contentOrientationChanged_2521, &_call_emitter_contentOrientationChanged_2521);
-  methods += new qt_gsi::GenericMethod ("*customEvent", "@brief Virtual method void QWindow::customEvent(QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*customEvent", "@hide", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0, &_set_callback_cbs_customEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*customEvent", "@hide", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*customEvent", "@brief Virtual method void QWindow::customEvent(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0, &_set_callback_cbs_customEvent_1217_0);
   methods += new qt_gsi::GenericMethod ("emit_destroyed", "@brief Emitter for signal void QWindow::destroyed(QObject *)\nCall this method to emit this signal.", false, &_init_emitter_destroyed_1302, &_call_emitter_destroyed_1302);
-  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@brief Virtual method void QWindow::disconnectNotify(const QMetaMethod &signal)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0);
-  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@hide", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0, &_set_callback_cbs_disconnectNotify_2394_0);
-  methods += new qt_gsi::GenericMethod ("*event", "@brief Virtual method bool QWindow::event(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0);
-  methods += new qt_gsi::GenericMethod ("*event", "@hide", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0, &_set_callback_cbs_event_1217_0);
-  methods += new qt_gsi::GenericMethod ("eventFilter", "@brief Virtual method bool QWindow::eventFilter(QObject *watched, QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0);
-  methods += new qt_gsi::GenericMethod ("eventFilter", "@hide", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0, &_set_callback_cbs_eventFilter_2411_0);
-  methods += new qt_gsi::GenericMethod ("*exposeEvent", "@brief Virtual method void QWindow::exposeEvent(QExposeEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_exposeEvent_1845_0, &_call_cbs_exposeEvent_1845_0);
-  methods += new qt_gsi::GenericMethod ("*exposeEvent", "@hide", false, &_init_cbs_exposeEvent_1845_0, &_call_cbs_exposeEvent_1845_0, &_set_callback_cbs_exposeEvent_1845_0);
-  methods += new qt_gsi::GenericMethod ("*focusInEvent", "@brief Virtual method void QWindow::focusInEvent(QFocusEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_focusInEvent_1729_0, &_call_cbs_focusInEvent_1729_0);
-  methods += new qt_gsi::GenericMethod ("*focusInEvent", "@hide", false, &_init_cbs_focusInEvent_1729_0, &_call_cbs_focusInEvent_1729_0, &_set_callback_cbs_focusInEvent_1729_0);
-  methods += new qt_gsi::GenericMethod ("focusObject", "@brief Virtual method QObject *QWindow::focusObject()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_focusObject_c0_0, &_call_cbs_focusObject_c0_0);
-  methods += new qt_gsi::GenericMethod ("focusObject", "@hide", true, &_init_cbs_focusObject_c0_0, &_call_cbs_focusObject_c0_0, &_set_callback_cbs_focusObject_c0_0);
+  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@hide", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0);
+  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@brief Virtual method void QWindow::disconnectNotify(const QMetaMethod &signal)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0, &_set_callback_cbs_disconnectNotify_2394_0);
+  methods += new qt_gsi::GenericMethod ("*event", "@hide", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0);
+  methods += new qt_gsi::GenericMethod ("*event", "@brief Virtual method bool QWindow::event(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0, &_set_callback_cbs_event_1217_0);
+  methods += new qt_gsi::GenericMethod ("eventFilter", "@hide", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0);
+  methods += new qt_gsi::GenericMethod ("eventFilter", "@brief Virtual method bool QWindow::eventFilter(QObject *, QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0, &_set_callback_cbs_eventFilter_2411_0);
+  methods += new qt_gsi::GenericMethod ("*exposeEvent", "@hide", false, &_init_cbs_exposeEvent_1845_0, &_call_cbs_exposeEvent_1845_0);
+  methods += new qt_gsi::GenericMethod ("*exposeEvent", "@brief Virtual method void QWindow::exposeEvent(QExposeEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_exposeEvent_1845_0, &_call_cbs_exposeEvent_1845_0, &_set_callback_cbs_exposeEvent_1845_0);
+  methods += new qt_gsi::GenericMethod ("*focusInEvent", "@hide", false, &_init_cbs_focusInEvent_1729_0, &_call_cbs_focusInEvent_1729_0);
+  methods += new qt_gsi::GenericMethod ("*focusInEvent", "@brief Virtual method void QWindow::focusInEvent(QFocusEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_focusInEvent_1729_0, &_call_cbs_focusInEvent_1729_0, &_set_callback_cbs_focusInEvent_1729_0);
+  methods += new qt_gsi::GenericMethod ("focusObject", "@hide", true, &_init_cbs_focusObject_c0_0, &_call_cbs_focusObject_c0_0);
+  methods += new qt_gsi::GenericMethod ("focusObject", "@brief Virtual method QObject *QWindow::focusObject()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_focusObject_c0_0, &_call_cbs_focusObject_c0_0, &_set_callback_cbs_focusObject_c0_0);
   methods += new qt_gsi::GenericMethod ("emit_focusObjectChanged", "@brief Emitter for signal void QWindow::focusObjectChanged(QObject *object)\nCall this method to emit this signal.", false, &_init_emitter_focusObjectChanged_1302, &_call_emitter_focusObjectChanged_1302);
-  methods += new qt_gsi::GenericMethod ("*focusOutEvent", "@brief Virtual method void QWindow::focusOutEvent(QFocusEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_focusOutEvent_1729_0, &_call_cbs_focusOutEvent_1729_0);
-  methods += new qt_gsi::GenericMethod ("*focusOutEvent", "@hide", false, &_init_cbs_focusOutEvent_1729_0, &_call_cbs_focusOutEvent_1729_0, &_set_callback_cbs_focusOutEvent_1729_0);
-  methods += new qt_gsi::GenericMethod ("format", "@brief Virtual method QSurfaceFormat QWindow::format()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_format_c0_0, &_call_cbs_format_c0_0);
-  methods += new qt_gsi::GenericMethod ("format", "@hide", true, &_init_cbs_format_c0_0, &_call_cbs_format_c0_0, &_set_callback_cbs_format_c0_0);
+  methods += new qt_gsi::GenericMethod ("*focusOutEvent", "@hide", false, &_init_cbs_focusOutEvent_1729_0, &_call_cbs_focusOutEvent_1729_0);
+  methods += new qt_gsi::GenericMethod ("*focusOutEvent", "@brief Virtual method void QWindow::focusOutEvent(QFocusEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_focusOutEvent_1729_0, &_call_cbs_focusOutEvent_1729_0, &_set_callback_cbs_focusOutEvent_1729_0);
+  methods += new qt_gsi::GenericMethod ("format", "@hide", true, &_init_cbs_format_c0_0, &_call_cbs_format_c0_0);
+  methods += new qt_gsi::GenericMethod ("format", "@brief Virtual method QSurfaceFormat QWindow::format()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_format_c0_0, &_call_cbs_format_c0_0, &_set_callback_cbs_format_c0_0);
   methods += new qt_gsi::GenericMethod ("emit_heightChanged", "@brief Emitter for signal void QWindow::heightChanged(int arg)\nCall this method to emit this signal.", false, &_init_emitter_heightChanged_767, &_call_emitter_heightChanged_767);
-  methods += new qt_gsi::GenericMethod ("*hideEvent", "@brief Virtual method void QWindow::hideEvent(QHideEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_hideEvent_1595_0, &_call_cbs_hideEvent_1595_0);
-  methods += new qt_gsi::GenericMethod ("*hideEvent", "@hide", false, &_init_cbs_hideEvent_1595_0, &_call_cbs_hideEvent_1595_0, &_set_callback_cbs_hideEvent_1595_0);
+  methods += new qt_gsi::GenericMethod ("*hideEvent", "@hide", false, &_init_cbs_hideEvent_1595_0, &_call_cbs_hideEvent_1595_0);
+  methods += new qt_gsi::GenericMethod ("*hideEvent", "@brief Virtual method void QWindow::hideEvent(QHideEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_hideEvent_1595_0, &_call_cbs_hideEvent_1595_0, &_set_callback_cbs_hideEvent_1595_0);
   methods += new qt_gsi::GenericMethod ("*isSignalConnected", "@brief Method bool QWindow::isSignalConnected(const QMetaMethod &signal)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_isSignalConnected_c2394, &_call_fp_isSignalConnected_c2394);
-  methods += new qt_gsi::GenericMethod ("*keyPressEvent", "@brief Virtual method void QWindow::keyPressEvent(QKeyEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_keyPressEvent_1514_0, &_call_cbs_keyPressEvent_1514_0);
-  methods += new qt_gsi::GenericMethod ("*keyPressEvent", "@hide", false, &_init_cbs_keyPressEvent_1514_0, &_call_cbs_keyPressEvent_1514_0, &_set_callback_cbs_keyPressEvent_1514_0);
-  methods += new qt_gsi::GenericMethod ("*keyReleaseEvent", "@brief Virtual method void QWindow::keyReleaseEvent(QKeyEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_keyReleaseEvent_1514_0, &_call_cbs_keyReleaseEvent_1514_0);
-  methods += new qt_gsi::GenericMethod ("*keyReleaseEvent", "@hide", false, &_init_cbs_keyReleaseEvent_1514_0, &_call_cbs_keyReleaseEvent_1514_0, &_set_callback_cbs_keyReleaseEvent_1514_0);
+  methods += new qt_gsi::GenericMethod ("*keyPressEvent", "@hide", false, &_init_cbs_keyPressEvent_1514_0, &_call_cbs_keyPressEvent_1514_0);
+  methods += new qt_gsi::GenericMethod ("*keyPressEvent", "@brief Virtual method void QWindow::keyPressEvent(QKeyEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_keyPressEvent_1514_0, &_call_cbs_keyPressEvent_1514_0, &_set_callback_cbs_keyPressEvent_1514_0);
+  methods += new qt_gsi::GenericMethod ("*keyReleaseEvent", "@hide", false, &_init_cbs_keyReleaseEvent_1514_0, &_call_cbs_keyReleaseEvent_1514_0);
+  methods += new qt_gsi::GenericMethod ("*keyReleaseEvent", "@brief Virtual method void QWindow::keyReleaseEvent(QKeyEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_keyReleaseEvent_1514_0, &_call_cbs_keyReleaseEvent_1514_0, &_set_callback_cbs_keyReleaseEvent_1514_0);
   methods += new qt_gsi::GenericMethod ("emit_maximumHeightChanged", "@brief Emitter for signal void QWindow::maximumHeightChanged(int arg)\nCall this method to emit this signal.", false, &_init_emitter_maximumHeightChanged_767, &_call_emitter_maximumHeightChanged_767);
   methods += new qt_gsi::GenericMethod ("emit_maximumWidthChanged", "@brief Emitter for signal void QWindow::maximumWidthChanged(int arg)\nCall this method to emit this signal.", false, &_init_emitter_maximumWidthChanged_767, &_call_emitter_maximumWidthChanged_767);
   methods += new qt_gsi::GenericMethod ("emit_minimumHeightChanged", "@brief Emitter for signal void QWindow::minimumHeightChanged(int arg)\nCall this method to emit this signal.", false, &_init_emitter_minimumHeightChanged_767, &_call_emitter_minimumHeightChanged_767);
   methods += new qt_gsi::GenericMethod ("emit_minimumWidthChanged", "@brief Emitter for signal void QWindow::minimumWidthChanged(int arg)\nCall this method to emit this signal.", false, &_init_emitter_minimumWidthChanged_767, &_call_emitter_minimumWidthChanged_767);
   methods += new qt_gsi::GenericMethod ("emit_modalityChanged", "@brief Emitter for signal void QWindow::modalityChanged(Qt::WindowModality modality)\nCall this method to emit this signal.", false, &_init_emitter_modalityChanged_2216, &_call_emitter_modalityChanged_2216);
-  methods += new qt_gsi::GenericMethod ("*mouseDoubleClickEvent", "@brief Virtual method void QWindow::mouseDoubleClickEvent(QMouseEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_mouseDoubleClickEvent_1738_0, &_call_cbs_mouseDoubleClickEvent_1738_0);
-  methods += new qt_gsi::GenericMethod ("*mouseDoubleClickEvent", "@hide", false, &_init_cbs_mouseDoubleClickEvent_1738_0, &_call_cbs_mouseDoubleClickEvent_1738_0, &_set_callback_cbs_mouseDoubleClickEvent_1738_0);
-  methods += new qt_gsi::GenericMethod ("*mouseMoveEvent", "@brief Virtual method void QWindow::mouseMoveEvent(QMouseEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_mouseMoveEvent_1738_0, &_call_cbs_mouseMoveEvent_1738_0);
-  methods += new qt_gsi::GenericMethod ("*mouseMoveEvent", "@hide", false, &_init_cbs_mouseMoveEvent_1738_0, &_call_cbs_mouseMoveEvent_1738_0, &_set_callback_cbs_mouseMoveEvent_1738_0);
-  methods += new qt_gsi::GenericMethod ("*mousePressEvent", "@brief Virtual method void QWindow::mousePressEvent(QMouseEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_mousePressEvent_1738_0, &_call_cbs_mousePressEvent_1738_0);
-  methods += new qt_gsi::GenericMethod ("*mousePressEvent", "@hide", false, &_init_cbs_mousePressEvent_1738_0, &_call_cbs_mousePressEvent_1738_0, &_set_callback_cbs_mousePressEvent_1738_0);
-  methods += new qt_gsi::GenericMethod ("*mouseReleaseEvent", "@brief Virtual method void QWindow::mouseReleaseEvent(QMouseEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_mouseReleaseEvent_1738_0, &_call_cbs_mouseReleaseEvent_1738_0);
-  methods += new qt_gsi::GenericMethod ("*mouseReleaseEvent", "@hide", false, &_init_cbs_mouseReleaseEvent_1738_0, &_call_cbs_mouseReleaseEvent_1738_0, &_set_callback_cbs_mouseReleaseEvent_1738_0);
-  methods += new qt_gsi::GenericMethod ("*moveEvent", "@brief Virtual method void QWindow::moveEvent(QMoveEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_moveEvent_1624_0, &_call_cbs_moveEvent_1624_0);
-  methods += new qt_gsi::GenericMethod ("*moveEvent", "@hide", false, &_init_cbs_moveEvent_1624_0, &_call_cbs_moveEvent_1624_0, &_set_callback_cbs_moveEvent_1624_0);
-  methods += new qt_gsi::GenericMethod ("*nativeEvent", "@brief Virtual method bool QWindow::nativeEvent(const QByteArray &eventType, void *message, long int *result)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_nativeEvent_4678_0, &_call_cbs_nativeEvent_4678_0);
-  methods += new qt_gsi::GenericMethod ("*nativeEvent", "@hide", false, &_init_cbs_nativeEvent_4678_0, &_call_cbs_nativeEvent_4678_0, &_set_callback_cbs_nativeEvent_4678_0);
-  methods += new qt_gsi::GenericMethod ("emit_objectNameChanged", "@brief Emitter for signal void QWindow::objectNameChanged(const QString &objectName)\nCall this method to emit this signal.", false, &_init_emitter_objectNameChanged_4567, &_call_emitter_objectNameChanged_4567);
+  methods += new qt_gsi::GenericMethod ("*mouseDoubleClickEvent", "@hide", false, &_init_cbs_mouseDoubleClickEvent_1738_0, &_call_cbs_mouseDoubleClickEvent_1738_0);
+  methods += new qt_gsi::GenericMethod ("*mouseDoubleClickEvent", "@brief Virtual method void QWindow::mouseDoubleClickEvent(QMouseEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_mouseDoubleClickEvent_1738_0, &_call_cbs_mouseDoubleClickEvent_1738_0, &_set_callback_cbs_mouseDoubleClickEvent_1738_0);
+  methods += new qt_gsi::GenericMethod ("*mouseMoveEvent", "@hide", false, &_init_cbs_mouseMoveEvent_1738_0, &_call_cbs_mouseMoveEvent_1738_0);
+  methods += new qt_gsi::GenericMethod ("*mouseMoveEvent", "@brief Virtual method void QWindow::mouseMoveEvent(QMouseEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_mouseMoveEvent_1738_0, &_call_cbs_mouseMoveEvent_1738_0, &_set_callback_cbs_mouseMoveEvent_1738_0);
+  methods += new qt_gsi::GenericMethod ("*mousePressEvent", "@hide", false, &_init_cbs_mousePressEvent_1738_0, &_call_cbs_mousePressEvent_1738_0);
+  methods += new qt_gsi::GenericMethod ("*mousePressEvent", "@brief Virtual method void QWindow::mousePressEvent(QMouseEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_mousePressEvent_1738_0, &_call_cbs_mousePressEvent_1738_0, &_set_callback_cbs_mousePressEvent_1738_0);
+  methods += new qt_gsi::GenericMethod ("*mouseReleaseEvent", "@hide", false, &_init_cbs_mouseReleaseEvent_1738_0, &_call_cbs_mouseReleaseEvent_1738_0);
+  methods += new qt_gsi::GenericMethod ("*mouseReleaseEvent", "@brief Virtual method void QWindow::mouseReleaseEvent(QMouseEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_mouseReleaseEvent_1738_0, &_call_cbs_mouseReleaseEvent_1738_0, &_set_callback_cbs_mouseReleaseEvent_1738_0);
+  methods += new qt_gsi::GenericMethod ("*moveEvent", "@hide", false, &_init_cbs_moveEvent_1624_0, &_call_cbs_moveEvent_1624_0);
+  methods += new qt_gsi::GenericMethod ("*moveEvent", "@brief Virtual method void QWindow::moveEvent(QMoveEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_moveEvent_1624_0, &_call_cbs_moveEvent_1624_0, &_set_callback_cbs_moveEvent_1624_0);
+  methods += new qt_gsi::GenericMethod ("*nativeEvent", "@hide", false, &_init_cbs_nativeEvent_4678_0, &_call_cbs_nativeEvent_4678_0);
+  methods += new qt_gsi::GenericMethod ("*nativeEvent", "@brief Virtual method bool QWindow::nativeEvent(const QByteArray &eventType, void *message, long int *result)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_nativeEvent_4678_0, &_call_cbs_nativeEvent_4678_0, &_set_callback_cbs_nativeEvent_4678_0);
   methods += new qt_gsi::GenericMethod ("emit_opacityChanged", "@brief Emitter for signal void QWindow::opacityChanged(double opacity)\nCall this method to emit this signal.", false, &_init_emitter_opacityChanged_1071, &_call_emitter_opacityChanged_1071);
   methods += new qt_gsi::GenericMethod ("*receivers", "@brief Method int QWindow::receivers(const char *signal)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_receivers_c1731, &_call_fp_receivers_c1731);
-  methods += new qt_gsi::GenericMethod ("*resizeEvent", "@brief Virtual method void QWindow::resizeEvent(QResizeEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_resizeEvent_1843_0, &_call_cbs_resizeEvent_1843_0);
-  methods += new qt_gsi::GenericMethod ("*resizeEvent", "@hide", false, &_init_cbs_resizeEvent_1843_0, &_call_cbs_resizeEvent_1843_0, &_set_callback_cbs_resizeEvent_1843_0);
+  methods += new qt_gsi::GenericMethod ("*resizeEvent", "@hide", false, &_init_cbs_resizeEvent_1843_0, &_call_cbs_resizeEvent_1843_0);
+  methods += new qt_gsi::GenericMethod ("*resizeEvent", "@brief Virtual method void QWindow::resizeEvent(QResizeEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_resizeEvent_1843_0, &_call_cbs_resizeEvent_1843_0, &_set_callback_cbs_resizeEvent_1843_0);
   methods += new qt_gsi::GenericMethod ("emit_screenChanged", "@brief Emitter for signal void QWindow::screenChanged(QScreen *screen)\nCall this method to emit this signal.", false, &_init_emitter_screenChanged_1311, &_call_emitter_screenChanged_1311);
   methods += new qt_gsi::GenericMethod ("*sender", "@brief Method QObject *QWindow::sender()\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_sender_c0, &_call_fp_sender_c0);
   methods += new qt_gsi::GenericMethod ("*senderSignalIndex", "@brief Method int QWindow::senderSignalIndex()\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_senderSignalIndex_c0, &_call_fp_senderSignalIndex_c0);
-  methods += new qt_gsi::GenericMethod ("*showEvent", "@brief Virtual method void QWindow::showEvent(QShowEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_showEvent_1634_0, &_call_cbs_showEvent_1634_0);
-  methods += new qt_gsi::GenericMethod ("*showEvent", "@hide", false, &_init_cbs_showEvent_1634_0, &_call_cbs_showEvent_1634_0, &_set_callback_cbs_showEvent_1634_0);
-  methods += new qt_gsi::GenericMethod ("size", "@brief Virtual method QSize QWindow::size()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_size_c0_0, &_call_cbs_size_c0_0);
-  methods += new qt_gsi::GenericMethod ("size", "@hide", true, &_init_cbs_size_c0_0, &_call_cbs_size_c0_0, &_set_callback_cbs_size_c0_0);
-  methods += new qt_gsi::GenericMethod ("surfaceType", "@brief Virtual method QSurface::SurfaceType QWindow::surfaceType()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_surfaceType_c0_0, &_call_cbs_surfaceType_c0_0);
-  methods += new qt_gsi::GenericMethod ("surfaceType", "@hide", true, &_init_cbs_surfaceType_c0_0, &_call_cbs_surfaceType_c0_0, &_set_callback_cbs_surfaceType_c0_0);
-  methods += new qt_gsi::GenericMethod ("*tabletEvent", "@brief Virtual method void QWindow::tabletEvent(QTabletEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_tabletEvent_1821_0, &_call_cbs_tabletEvent_1821_0);
-  methods += new qt_gsi::GenericMethod ("*tabletEvent", "@hide", false, &_init_cbs_tabletEvent_1821_0, &_call_cbs_tabletEvent_1821_0, &_set_callback_cbs_tabletEvent_1821_0);
-  methods += new qt_gsi::GenericMethod ("*timerEvent", "@brief Virtual method void QWindow::timerEvent(QTimerEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0);
-  methods += new qt_gsi::GenericMethod ("*timerEvent", "@hide", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0, &_set_callback_cbs_timerEvent_1730_0);
-  methods += new qt_gsi::GenericMethod ("*touchEvent", "@brief Virtual method void QWindow::touchEvent(QTouchEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_touchEvent_1732_0, &_call_cbs_touchEvent_1732_0);
-  methods += new qt_gsi::GenericMethod ("*touchEvent", "@hide", false, &_init_cbs_touchEvent_1732_0, &_call_cbs_touchEvent_1732_0, &_set_callback_cbs_touchEvent_1732_0);
+  methods += new qt_gsi::GenericMethod ("*showEvent", "@hide", false, &_init_cbs_showEvent_1634_0, &_call_cbs_showEvent_1634_0);
+  methods += new qt_gsi::GenericMethod ("*showEvent", "@brief Virtual method void QWindow::showEvent(QShowEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_showEvent_1634_0, &_call_cbs_showEvent_1634_0, &_set_callback_cbs_showEvent_1634_0);
+  methods += new qt_gsi::GenericMethod ("size", "@hide", true, &_init_cbs_size_c0_0, &_call_cbs_size_c0_0);
+  methods += new qt_gsi::GenericMethod ("size", "@brief Virtual method QSize QWindow::size()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_size_c0_0, &_call_cbs_size_c0_0, &_set_callback_cbs_size_c0_0);
+  methods += new qt_gsi::GenericMethod ("surfaceType", "@hide", true, &_init_cbs_surfaceType_c0_0, &_call_cbs_surfaceType_c0_0);
+  methods += new qt_gsi::GenericMethod ("surfaceType", "@brief Virtual method QSurface::SurfaceType QWindow::surfaceType()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_surfaceType_c0_0, &_call_cbs_surfaceType_c0_0, &_set_callback_cbs_surfaceType_c0_0);
+  methods += new qt_gsi::GenericMethod ("*tabletEvent", "@hide", false, &_init_cbs_tabletEvent_1821_0, &_call_cbs_tabletEvent_1821_0);
+  methods += new qt_gsi::GenericMethod ("*tabletEvent", "@brief Virtual method void QWindow::tabletEvent(QTabletEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_tabletEvent_1821_0, &_call_cbs_tabletEvent_1821_0, &_set_callback_cbs_tabletEvent_1821_0);
+  methods += new qt_gsi::GenericMethod ("*timerEvent", "@hide", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0);
+  methods += new qt_gsi::GenericMethod ("*timerEvent", "@brief Virtual method void QWindow::timerEvent(QTimerEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0, &_set_callback_cbs_timerEvent_1730_0);
+  methods += new qt_gsi::GenericMethod ("*touchEvent", "@hide", false, &_init_cbs_touchEvent_1732_0, &_call_cbs_touchEvent_1732_0);
+  methods += new qt_gsi::GenericMethod ("*touchEvent", "@brief Virtual method void QWindow::touchEvent(QTouchEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_touchEvent_1732_0, &_call_cbs_touchEvent_1732_0, &_set_callback_cbs_touchEvent_1732_0);
   methods += new qt_gsi::GenericMethod ("emit_visibilityChanged", "@brief Emitter for signal void QWindow::visibilityChanged(QWindow::Visibility visibility)\nCall this method to emit this signal.", false, &_init_emitter_visibilityChanged_2329, &_call_emitter_visibilityChanged_2329);
   methods += new qt_gsi::GenericMethod ("emit_visibleChanged", "@brief Emitter for signal void QWindow::visibleChanged(bool arg)\nCall this method to emit this signal.", false, &_init_emitter_visibleChanged_864, &_call_emitter_visibleChanged_864);
-  methods += new qt_gsi::GenericMethod ("*wheelEvent", "@brief Virtual method void QWindow::wheelEvent(QWheelEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_wheelEvent_1718_0, &_call_cbs_wheelEvent_1718_0);
-  methods += new qt_gsi::GenericMethod ("*wheelEvent", "@hide", false, &_init_cbs_wheelEvent_1718_0, &_call_cbs_wheelEvent_1718_0, &_set_callback_cbs_wheelEvent_1718_0);
+  methods += new qt_gsi::GenericMethod ("*wheelEvent", "@hide", false, &_init_cbs_wheelEvent_1718_0, &_call_cbs_wheelEvent_1718_0);
+  methods += new qt_gsi::GenericMethod ("*wheelEvent", "@brief Virtual method void QWindow::wheelEvent(QWheelEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_wheelEvent_1718_0, &_call_cbs_wheelEvent_1718_0, &_set_callback_cbs_wheelEvent_1718_0);
   methods += new qt_gsi::GenericMethod ("emit_widthChanged", "@brief Emitter for signal void QWindow::widthChanged(int arg)\nCall this method to emit this signal.", false, &_init_emitter_widthChanged_767, &_call_emitter_widthChanged_767);
   methods += new qt_gsi::GenericMethod ("emit_windowStateChanged", "@brief Emitter for signal void QWindow::windowStateChanged(Qt::WindowState windowState)\nCall this method to emit this signal.", false, &_init_emitter_windowStateChanged_1894, &_call_emitter_windowStateChanged_1894);
   methods += new qt_gsi::GenericMethod ("emit_windowTitleChanged", "@brief Emitter for signal void QWindow::windowTitleChanged(const QString &title)\nCall this method to emit this signal.", false, &_init_emitter_windowTitleChanged_2025, &_call_emitter_windowTitleChanged_2025);

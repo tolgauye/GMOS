@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -22,15 +22,11 @@
 
 #include "laySaltGrain.h"
 #include "laySaltController.h"
-#include "laySaltParsedURL.h"
 #include "tlString.h"
 #include "tlXMLParser.h"
 #include "tlHttpStream.h"
-#include "tlFileUtils.h"
 #include "tlWebDAV.h"
-#if defined(HAVE_GIT2)
-#  include "tlGit.h"
-#endif
+#include "tlFileUtils.h"
 
 #include <memory>
 #include <QDir>
@@ -69,8 +65,7 @@ SaltGrain::operator== (const SaltGrain &other) const
          m_license == other.m_license &&
          m_hidden == other.m_hidden &&
          m_authored_time == other.m_authored_time &&
-         m_installed_time == other.m_installed_time
-      ;
+         m_installed_time == other.m_installed_time;
 }
 
 void
@@ -258,10 +253,18 @@ SaltGrain::compare_versions (const std::string &v1, const std::string &v2)
   }
 }
 
-const std::string &
-SaltGrain::spec_file ()
+std::string
+SaltGrain::spec_url (const std::string &url)
 {
-  return grain_filename;
+  std::string res = url;
+  if (! res.empty()) {
+    //  TODO: use system path separator unless this is a URL
+    if (res [res.size () - 1] != '/') {
+      res += "/";
+    }
+    res += grain_filename;
+  }
+  return res;
 }
 
 bool
@@ -277,7 +280,7 @@ SaltGrain::valid_name (const std::string &n)
   }
 
   std::string s;
-  if (! ex.try_read_word (s, "_.-")) {
+  if (! ex.try_read_word (s, "_.")) {
     return false;
   }
   res += s;
@@ -290,7 +293,7 @@ SaltGrain::valid_name (const std::string &n)
     if (ex.test (".")) {
       return false;
     }
-    if (! ex.try_read_word (s, "_.-")) {
+    if (! ex.try_read_word (s, "_.")) {
       return false;
     }
     res += "/";
@@ -460,11 +463,7 @@ SaltGrain::load (const std::string &p)
 
     QResource res (tl::to_qstring (p));
     QByteArray data;
-#if QT_VERSION >= 0x60000
-    if (res.compressionAlgorithm () == QResource::ZlibCompression) {
-#else
     if (res.isCompressed ()) {
-#endif
       data = qUncompress ((const unsigned char *)res.data (), (int)res.size ());
     } else {
       data = QByteArray ((const char *)res.data (), (int)res.size ());
@@ -487,7 +486,7 @@ SaltGrain::load (tl::InputStream &p)
 void
 SaltGrain::save () const
 {
-  save (tl::to_string (QDir (tl::to_qstring (path ())).filePath (tl::to_qstring (SaltGrain::spec_file ()))));
+  save (tl::to_string (QDir (tl::to_qstring (path ())).filePath (tl::to_qstring (grain_filename))));
 }
 
 void
@@ -503,27 +502,20 @@ SaltGrain::from_path (const std::string &path)
   QDir dir (tl::to_qstring (path));
 
   SaltGrain g;
-  g.load (tl::to_string (dir.filePath (tl::to_qstring (SaltGrain::spec_file ()))));
+  g.load (tl::to_string (dir.filePath (tl::to_qstring (grain_filename))));
   g.set_path (tl::to_string (dir.absolutePath ()));
   return g;
 }
 
 tl::InputStream *
-SaltGrain::stream_from_url (std::string &generic_url, double timeout, tl::InputHttpStreamCallback *callback)
+SaltGrain::stream_from_url (std::string &url)
 {
-  if (generic_url.empty ()) {
+  if (url.empty ()) {
     throw tl::Exception (tl::to_string (QObject::tr ("No download link available")));
   }
 
-  if (tl::verbosity () >= 20) {
-    tl::info << tr ("Downloading package info from ") << generic_url;
-  }
-
-  lay::SaltParsedURL purl (generic_url);
-  const std::string &url = purl.url ();
-
   //  base relative URL's on the salt mine URL
-  if (purl.protocol () == lay::DefaultProtocol && url.find ("http:") != 0 && url.find ("https:") != 0 && url.find ("file:") != 0 && !url.empty() && url[0] != '/' && url[0] != '\\' && lay::SaltController::instance ()) {
+  if (url.find ("http:") != 0 && url.find ("https:") != 0 && url.find ("file:") != 0 && !url.empty() && url[0] != '/' && url[0] != '\\' && lay::SaltController::instance ()) {
 
     //  replace the last component ("repository.xml") by the given path
     QUrl sami_url (tl::to_qstring (lay::SaltController::instance ()->salt_mine_url ()));
@@ -533,35 +525,23 @@ SaltGrain::stream_from_url (std::string &generic_url, double timeout, tl::InputH
     }
     sami_url.setPath (path_comp.join (QString::fromUtf8 ("/")));
 
-    //  return the full path as a file path, not an URL
-    generic_url = tl::to_string (sami_url.toString ());
+    url = tl::to_string (sami_url.toString ());
 
   }
 
-  if (url.find ("http:") == 0 || url.find ("https:") == 0) {
-
-    if (purl.protocol () == lay::Git) {
-#if defined(HAVE_GIT2)
-      return tl::GitObject::download_item (url, SaltGrain::spec_file (), purl.subfolder (), purl.branch (), timeout, callback);
-#else
-      throw tl::Exception (tl::to_string (QObject::tr ("Cannot download from Git - Git support not compiled in")));
-#endif
-    } else {
-      return tl::WebDAVObject::download_item (url + "/" + SaltGrain::spec_file (), timeout, callback);
-    }
-
+  std::string spec_url = SaltGrain::spec_url (url);
+  if (spec_url.find ("http:") == 0 || spec_url.find ("https:") == 0) {
+    return tl::WebDAVObject::download_item (spec_url);
   } else {
-
-    return new tl::InputStream (url + "/" + SaltGrain::spec_file ());
-
+    return new tl::InputStream (spec_url);
   }
 }
 
 SaltGrain
-SaltGrain::from_url (const std::string &url_in, double timeout, tl::InputHttpStreamCallback *callback)
+SaltGrain::from_url (const std::string &url_in)
 {
   std::string url = url_in;
-  std::unique_ptr<tl::InputStream> stream (stream_from_url (url, timeout, callback));
+  std::auto_ptr<tl::InputStream> stream (stream_from_url (url));
 
   SaltGrain g;
   g.load (*stream);
@@ -576,10 +556,10 @@ SaltGrain::is_grain (const std::string &path)
 
   if (path[0] != ':') {
     QDir dir (tl::to_qstring (path));
-    QString gf = dir.filePath (tl::to_qstring (SaltGrain::spec_file ()));
+    QString gf = dir.filePath (tl::to_qstring (grain_filename));
     return QFileInfo (gf).exists ();
   } else {
-    return QResource (tl::to_qstring (path + "/" + SaltGrain::spec_file ())).isValid ();
+    return QResource (tl::to_qstring (path + "/" + grain_filename)).isValid ();
   }
 }
 

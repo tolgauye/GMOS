@@ -10,10 +10,7 @@ FORMS =
 
 SOURCES = \
     tlAssert.cc \
-    tlBase64.cc \
-    tlColor.cc \
     tlClassRegistry.cc \
-    tlCopyOnWrite.cc \
     tlDataMapping.cc \
     tlDeflate.cc \
     tlException.cc \
@@ -23,15 +20,11 @@ SOURCES = \
     tlGlobPattern.cc \
     tlHeap.cc \
     tlHttpStream.cc \
-    tlInclude.cc \
     tlInternational.cc \
     tlLog.cc \
     tlObject.cc \
     tlProgress.cc \
-    tlPixelBuffer.cc \
-    tlResources.cc \
     tlScriptError.cc \
-    tlSleep.cc \
     tlStaticObjects.cc \
     tlStream.cc \
     tlString.cc \
@@ -51,20 +44,14 @@ SOURCES = \
     tlLongInt.cc \
     tlUniqueId.cc \
     tlList.cc \
-    tlSList.cc \
     tlEquivalenceClusters.cc \
     tlUniqueName.cc \
-    tlRecipe.cc \
-    tlEnv.cc \
-    tlOptional.cc
+    tlRecipe.cc
 
 HEADERS = \
     tlAlgorithm.h \
     tlAssert.h \
-    tlBase64.h \
-    tlColor.h \
     tlClassRegistry.h \
-    tlCopyOnWrite.h \
     tlDataMapping.h \
     tlDeflate.h \
     tlException.h \
@@ -73,10 +60,8 @@ HEADERS = \
     tlEvents.h \
     tlFixedVector.h \
     tlGlobPattern.h \
-    tlHash.h \
     tlHeap.h \
     tlHttpStream.h \
-    tlInclude.h \
     tlInternational.h \
     tlIntervalMap.h \
     tlIntervalSet.h \
@@ -85,11 +70,8 @@ HEADERS = \
     tlObject.h \
     tlObjectCollection.h \
     tlProgress.h \
-    tlPixelBuffer.h \
-    tlResources.h \
     tlReuseVector.h \
     tlScriptError.h \
-    tlSleep.h \
     tlStableVector.h \
     tlStaticObjects.h \
     tlStream.h \
@@ -118,23 +100,10 @@ HEADERS = \
     tlLongInt.h \
     tlUniqueId.h \
     tlList.h \
-    tlSList.h \
     tlEquivalenceClusters.h \
     tlUniqueName.h \
     tlRecipe.h \
-    tlSelect.h \
-    tlEnv.h \
-    tlOptional.h
-
-equals(HAVE_GIT2, "1") {
-
-  HEADERS += \
-    tlGit.h
-
-  SOURCES += \
-    tlGit.cc
-
-}
+    tlSelect.h
 
 equals(HAVE_CURL, "1") {
 

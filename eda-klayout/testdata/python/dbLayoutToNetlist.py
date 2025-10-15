@@ -1,7 +1,7 @@
 # encoding: UTF-8
 
 # KLayout Layout Viewer
-# Copyright (C) 2006-2025 Matthias Koefferlein
+# Copyright (C) 2006-2019 Matthias Koefferlein
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -46,7 +46,7 @@ class DBLayoutToNetlistTests(unittest.TestCase):
     self.assertEqual(l2n.internal_layout().top_cell().name, ly.top_cell().name)
     self.assertEqual(l2n.internal_top_cell().name, ly.top_cell().name)
 
-    self.assertNotEqual(l2n.layer_of(r), ly.layer(6, 0))  # would be a strange coincidence ...
+    self.assertNotEqual(l2n.layer_of(r), ly.layer(6, 0))  # would be a strange coincidence ... 
 
     cm = l2n.const_cell_mapping_into(ly, ly.top_cell())
     for ci in range(0, l2n.internal_layout().cells()):
@@ -69,7 +69,7 @@ class DBLayoutToNetlistTests(unittest.TestCase):
     ut_testsrc = os.getenv("TESTSRC")
 
     ly = pya.Layout()
-    ly.read(os.path.join(ut_testsrc, "testdata", "algo", "device_extract_l1_with_inv_nodes.gds"))
+    ly.read(os.path.join(ut_testsrc, "testdata", "algo", "device_extract_l1.gds"))
 
     l2n = pya.LayoutToNetlist(pya.RecursiveShapeIterator(ly, ly.top_cell(), []))
 
@@ -80,7 +80,7 @@ class DBLayoutToNetlistTests(unittest.TestCase):
     rvia1       = l2n.make_polygon_layer( ly.layer(7, 0), "via1" )
     rmetal2     = l2n.make_polygon_layer( ly.layer(8, 0), "metal2" )
     rmetal2_lbl = l2n.make_text_layer(    ly.layer(8, 1), "metal2_lbl" )
-
+    
     # Intra-layer
     l2n.connect(rmetal1)
     l2n.connect(rvia1)
@@ -92,61 +92,45 @@ class DBLayoutToNetlistTests(unittest.TestCase):
     l2n.connect(rmetal1,    rmetal1_lbl)   #  attaches labels
     l2n.connect(rmetal2,    rmetal2_lbl)   #  attaches labels
 
-    # Perform netlist extraction
+    # Perform netlist extraction 
     l2n.extract_netlist()
 
     self.assertEqual(str(l2n.netlist()), """circuit TRANS ($1=$1,$2=$2);
 end;
-circuit INV2 (OUT=OUT,$2=$3,$3=$4);
+circuit INV2 (OUT=OUT,$2=$2,$3=$3,$4=$4);
   subcircuit TRANS $1 ($1=$4,$2=OUT);
   subcircuit TRANS $2 ($1=$3,$2=OUT);
   subcircuit TRANS $3 ($1=$2,$2=$4);
   subcircuit TRANS $4 ($1=$2,$2=$3);
 end;
 circuit RINGO ();
-  subcircuit INV2 $1 (OUT='FB,OSC',$2=VSS,$3=VDD);
-  subcircuit INV2 $2 (OUT=$I20,$2=VSS,$3=VDD);
-  subcircuit INV2 $3 (OUT=$I19,$2=VSS,$3=VDD);
-  subcircuit INV2 $4 (OUT=$I21,$2=VSS,$3=VDD);
-  subcircuit INV2 $5 (OUT=$I22,$2=VSS,$3=VDD);
-  subcircuit INV2 $6 (OUT=$I23,$2=VSS,$3=VDD);
-  subcircuit INV2 $7 (OUT=$I24,$2=VSS,$3=VDD);
-  subcircuit INV2 $8 (OUT=$I25,$2=VSS,$3=VDD);
-  subcircuit INV2 $9 (OUT=$I26,$2=VSS,$3=VDD);
-  subcircuit INV2 $10 (OUT=$I27,$2=VSS,$3=VDD);
+  subcircuit INV2 $1 (OUT=OSC,$2=FB,$3=VSS,$4=VDD);
+  subcircuit INV2 $2 (OUT=$I29,$2=$I20,$3=VSS,$4=VDD);
+  subcircuit INV2 $3 (OUT=$I28,$2=$I19,$3=VSS,$4=VDD);
+  subcircuit INV2 $4 (OUT=$I30,$2=$I21,$3=VSS,$4=VDD);
+  subcircuit INV2 $5 (OUT=$I31,$2=$I22,$3=VSS,$4=VDD);
+  subcircuit INV2 $6 (OUT=$I32,$2=$I23,$3=VSS,$4=VDD);
+  subcircuit INV2 $7 (OUT=$I33,$2=$I24,$3=VSS,$4=VDD);
+  subcircuit INV2 $8 (OUT=$I34,$2=$I25,$3=VSS,$4=VDD);
+  subcircuit INV2 $9 (OUT=$I35,$2=$I26,$3=VSS,$4=VDD);
+  subcircuit INV2 $10 (OUT=$I36,$2=$I27,$3=VSS,$4=VDD);
 end;
 """)
 
-    self.assertEqual(str(l2n.probe_net(rmetal2, pya.DPoint(0.0, 1.8))), "RINGO:FB,OSC")
-    sc_path = []
-    self.assertEqual(str(l2n.probe_net(rmetal2, pya.DPoint(0.0, 1.8), sc_path)), "RINGO:FB,OSC")
-    self.assertEqual(len(sc_path), 0)
+    self.assertEqual(repr(l2n.probe_net(rmetal2, pya.DPoint(0.0, 1.8))), "RINGO:FB")
     self.assertEqual(repr(l2n.probe_net(rmetal2, pya.DPoint(-2.0, 1.8))), "None")
 
-    n = l2n.probe_net(rmetal1, pya.Point(2600, 1000), None)
-    self.assertEqual(str(n), "INV2:$2")
-    sc_path = []
-    n = l2n.probe_net(rmetal1, pya.Point(2600, 1000), sc_path)
-    self.assertEqual(str(n), "INV2:$2")
-    self.assertEqual(len(sc_path), 1)
-    a = []
-    t = pya.DCplxTrans()
-    for sc in sc_path:
-      a.append(sc.expanded_name())
-      t = t * sc.trans
-    self.assertEqual(",".join(a), "$2")
-    self.assertEqual(str(t), "r0 *1 2.64,0")
+    n = l2n.probe_net(rmetal1, pya.Point(2600, 1000))
+    self.assertEqual(repr(n), "RINGO:$I20")
 
-    self.assertEqual(str(l2n.shapes_of_net(n, rmetal1, True)),
-        "(-980,-420;-980,2420;-620,2420;-620,-420);(-800,820;-800,1180;580,1180;580,820);(-980,2420;-980,3180;-620,3180;-620,2420);(-980,-380;-980,380;-620,380;-620,-380)")
+    self.assertEqual(str(l2n.shapes_of_net(n, rmetal1, True)), "(1660,-420;1660,2420;2020,2420;2020,-420);(1840,820;1840,1180;3220,1180;3220,820);(1660,2420;1660,3180;2020,3180;2020,2420);(1660,-380;1660,380;2020,380;2020,-380)")
 
     shapes = pya.Shapes()
     l2n.shapes_of_net(n, rmetal1, True, shapes)
     r = pya.Region()
-    for s in shapes.each():
-      r.insert(s.polygon)
-    self.assertEqual(str(r),
-        "(-980,-420;-980,2420;-620,2420;-620,-420);(-800,820;-800,1180;580,1180;580,820);(-980,2420;-980,3180;-620,3180;-620,2420);(-980,-380;-980,380;-620,380;-620,-380)")
+    for s in shapes.each(): 
+      r.insert(s.polygon) 
+    self.assertEqual(str(r), "(1660,-420;1660,2420;2020,2420;2020,-420);(1840,820;1840,1180;3220,1180;3220,820);(1660,2420;1660,3180;2020,3180;2020,2420);(1660,-380;1660,380;2020,380;2020,-380)")
 
   def test_10_LayoutToNetlistExtractionWithoutDevices(self):
 
@@ -169,7 +153,7 @@ end;
     rvia1       = l2n.make_polygon_layer( ly.layer(7, 0), "via1" )
     rmetal2     = l2n.make_polygon_layer( ly.layer(8, 0), "metal2" )
     rmetal2_lbl = l2n.make_text_layer(    ly.layer(8, 1), "metal2_lbl" )
-
+    
     rsd         = ractive - rpoly
 
     l2n.register(rsd, "sd")
@@ -194,7 +178,7 @@ end;
     l2n.connect(rmetal1,    rmetal1_lbl)   #  attaches labels
     l2n.connect(rmetal2,    rmetal2_lbl)   #  attaches labels
 
-    # Perform netlist extraction
+    # Perform netlist extraction 
     l2n.extract_netlist()
 
     self.assertEqual(str(l2n.netlist()), """circuit TRANS ($1=$1,$2=$2,$3=$3);
@@ -247,7 +231,7 @@ end;
     rnactive    = ractive - rnwell
     rngate      = rnactive & rpoly
     rnsd        = rnactive - rngate
-
+    
     # PMOS transistor device extraction
     pmos_ex = pya.DeviceExtractorMOS3Transistor("PMOS")
     l2n.extract_devices(pmos_ex, { "SD": rpsd, "G": rpgate, "P": rpoly })
@@ -282,8 +266,8 @@ end;
     l2n.connect(rpoly,      rpoly_lbl)     #  attaches labels
     l2n.connect(rmetal1,    rmetal1_lbl)   #  attaches labels
     l2n.connect(rmetal2,    rmetal2_lbl)   #  attaches labels
-
-    # Perform netlist extraction
+    
+    # Perform netlist extraction 
     l2n.extract_netlist()
 
     self.assertEqual(str(l2n.netlist()), """circuit RINGO ();
@@ -397,8 +381,8 @@ end;
     # Global connections
     l2n.connect_global(rptie, "BULK")
     l2n.connect_global(rbulk, "BULK")
-
-    # Perform netlist extraction
+    
+    # Perform netlist extraction 
     l2n.extract_netlist()
 
     self.assertEqual(str(l2n.netlist()), """circuit RINGO ();
@@ -455,11 +439,11 @@ end;
   def test_13_ReadAndWrite(self):
 
     ut_testsrc = os.getenv("TESTSRC")
-    ut_testtmp = os.getenv("TESTTMP", "")
+    ut_testtmp = os.getenv("TESTTMP")
 
     l2n = pya.LayoutToNetlist()
 
-    infile = os.path.join(ut_testsrc, "testdata", "algo", "l2n_reader_in.txt")
+    infile = os.path.join(ut_testsrc, "testdata", "algo", "l2n_writer_au.txt")
     l2n.read(infile)
 
     tmp = os.path.join(ut_testtmp, "tmp.txt")
@@ -576,54 +560,6 @@ end;
     self.assertEqual(str(a1_10.flatten() ^ pya.Region(ly_au.top_cell().begin_shapes_rec(ly_au.layer(101, 0)))), "")
     self.assertEqual(str(a1_30.flatten() ^ pya.Region(ly_au.top_cell().begin_shapes_rec(ly_au.layer(102, 0)))), "")
 
-    # --- simple incremental antenna check with metal1 + metal2
-
-    l2n._destroy()
-    l2n = pya.LayoutToNetlist(dss)
-
-    l2n.register(rdiode, "diode")
-    l2n.register(rpoly, "poly")
-    l2n.register(rcont, "cont")
-    l2n.register(rmetal1, "metal1")
-    l2n.register(rvia1, "via1")
-    l2n.register(rmetal2, "metal2")
-
-    l2n.connect(rpoly)
-    l2n.connect(rcont)
-    l2n.connect(rmetal1)
-    l2n.connect(rmetal2)
-    l2n.connect(rpoly, rcont)
-    l2n.connect(rcont, rmetal1)
-
-    self.assertEqual(l2n.is_extracted(), False)
-    l2n.extract_netlist()
-    self.assertEqual(l2n.is_extracted(), True)
-
-    a1_3 = l2n.antenna_check(rpoly, rmetal1, 3)
-    a1_10 = l2n.antenna_check(rpoly, rmetal1, 10)
-    a1_30 = l2n.antenna_check(rpoly, rmetal1, 30)
-
-    # Note: flatten.merged performs some normalization
-    self.assertEqual(str(a1_3.flatten() ^ pya.Region(ly_au.top_cell().begin_shapes_rec(ly_au.layer(100, 0)))), "")
-    self.assertEqual(str(a1_10.flatten() ^ pya.Region(ly_au.top_cell().begin_shapes_rec(ly_au.layer(101, 0)))), "")
-    self.assertEqual(str(a1_30.flatten() ^ pya.Region(ly_au.top_cell().begin_shapes_rec(ly_au.layer(102, 0)))), "")
-
-    l2n.connect(rmetal1, rvia1)
-    l2n.connect(rvia1, rmetal2)
-
-    self.assertEqual(l2n.is_extracted(), False)
-    l2n.extract_netlist()
-    self.assertEqual(l2n.is_extracted(), True)
-
-    a2_5 = l2n.antenna_check(rpoly, rmetal2, 5)
-    a2_10 = l2n.antenna_check(rpoly, rmetal2, 10)
-    a2_17 = l2n.antenna_check(rpoly, rmetal2, 17)
-
-    # Note: flatten.merged performs some normalization
-    self.assertEqual(str(a2_5.flatten() ^ pya.Region(ly_au.top_cell().begin_shapes_rec(ly_au.layer(200, 0)))), "")
-    self.assertEqual(str(a2_10.flatten() ^ pya.Region(ly_au.top_cell().begin_shapes_rec(ly_au.layer(201, 0)))), "")
-    self.assertEqual(str(a2_17.flatten() ^ pya.Region(ly_au.top_cell().begin_shapes_rec(ly_au.layer(202, 0)))), "")
-
     # --- simple antenna check with metal2
 
     l2n._destroy()
@@ -725,3 +661,4 @@ if __name__ == '__main__':
 
   if not unittest.TextTestRunner(verbosity = 1).run(suite).wasSuccessful():
     sys.exit(1)
+

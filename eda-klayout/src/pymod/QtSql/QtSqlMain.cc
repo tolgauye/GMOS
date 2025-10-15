@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -22,5 +22,8 @@
 
 #include "../pymodHelper.h"
 
-#include "QtSqlMain.h"
+//  To force linking of the QtSql module
+#include "../../gsiqt/qtbasic/gsiQtSqlExternals.h"
+FORCE_LINK_GSI_QTSQL
+
 DEFINE_PYMOD(QtSql, "QtSql", "KLayout/Qt module 'QtSql'")

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@
 #include <QRunnable>
 #include "gsiQt.h"
 #include "gsiQtCoreCommon.h"
+#include "gsiDeclQtCoreTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -180,8 +181,8 @@ gsi::Class<QRunnable> &qtdecl_QRunnable ();
 static gsi::Methods methods_QRunnable_Adaptor () {
   gsi::Methods methods;
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QRunnable::QRunnable()\nThis method creates an object of class QRunnable.", &_init_ctor_QRunnable_Adaptor_0, &_call_ctor_QRunnable_Adaptor_0);
-  methods += new qt_gsi::GenericMethod ("run", "@brief Virtual method void QRunnable::run()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_run_0_0, &_call_cbs_run_0_0);
-  methods += new qt_gsi::GenericMethod ("run", "@hide", false, &_init_cbs_run_0_0, &_call_cbs_run_0_0, &_set_callback_cbs_run_0_0);
+  methods += new qt_gsi::GenericMethod ("run", "@hide", false, &_init_cbs_run_0_0, &_call_cbs_run_0_0);
+  methods += new qt_gsi::GenericMethod ("run", "@brief Virtual method void QRunnable::run()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_run_0_0, &_call_cbs_run_0_0, &_set_callback_cbs_run_0_0);
   return methods;
 }
 

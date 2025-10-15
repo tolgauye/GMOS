@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -40,6 +40,7 @@
 #include <QTextOption>
 #include "gsiQt.h"
 #include "gsiQtGuiCommon.h"
+#include "gsiDeclQtGuiTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -88,7 +89,7 @@ static void _init_ctor_QTextLayout_5413 (qt_gsi::GenericStaticMethod *decl)
   decl->add_arg<const QString & > (argspec_0);
   static gsi::ArgSpecBase argspec_1 ("font");
   decl->add_arg<const QFont & > (argspec_1);
-  static gsi::ArgSpecBase argspec_2 ("paintdevice", true, "nullptr");
+  static gsi::ArgSpecBase argspec_2 ("paintdevice", true, "0");
   decl->add_arg<QPaintDevice * > (argspec_2);
   decl->set_return_new<QTextLayout> ();
 }
@@ -99,7 +100,7 @@ static void _call_ctor_QTextLayout_5413 (const qt_gsi::GenericStaticMethod * /*d
   tl::Heap heap;
   const QString &arg1 = gsi::arg_reader<const QString & >() (args, heap);
   const QFont &arg2 = gsi::arg_reader<const QFont & >() (args, heap);
-  QPaintDevice *arg3 = args ? gsi::arg_reader<QPaintDevice * >() (args, heap) : gsi::arg_maker<QPaintDevice * >() (nullptr, heap);
+  QPaintDevice *arg3 = args ? gsi::arg_reader<QPaintDevice * >() (args, heap) : gsi::arg_maker<QPaintDevice * >() (0, heap);
   ret.write<QTextLayout *> (new QTextLayout (arg1, arg2, arg3));
 }
 
@@ -197,22 +198,6 @@ static void _call_f_clearAdditionalFormats_0 (const qt_gsi::GenericMethod * /*de
   __SUPPRESS_UNUSED_WARNING(args);
   __SUPPRESS_UNUSED_WARNING(ret);
   ((QTextLayout *)cls)->clearAdditionalFormats ();
-}
-
-
-// void QTextLayout::clearFormats()
-
-
-static void _init_f_clearFormats_0 (qt_gsi::GenericMethod *decl)
-{
-  decl->set_return<void > ();
-}
-
-static void _call_f_clearFormats_0 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  __SUPPRESS_UNUSED_WARNING(ret);
-  ((QTextLayout *)cls)->clearFormats ();
 }
 
 
@@ -374,21 +359,6 @@ static void _call_f_font_c0 (const qt_gsi::GenericMethod * /*decl*/, void *cls, 
 {
   __SUPPRESS_UNUSED_WARNING(args);
   ret.write<QFont > ((QFont)((QTextLayout *)cls)->font ());
-}
-
-
-// QVector<QTextLayout::FormatRange> QTextLayout::formats()
-
-
-static void _init_f_formats_c0 (qt_gsi::GenericMethod *decl)
-{
-  decl->set_return<QVector<QTextLayout::FormatRange> > ();
-}
-
-static void _call_f_formats_c0 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  ret.write<QVector<QTextLayout::FormatRange> > ((QVector<QTextLayout::FormatRange>)((QTextLayout *)cls)->formats ());
 }
 
 
@@ -743,26 +713,6 @@ static void _call_f_setFont_1801 (const qt_gsi::GenericMethod * /*decl*/, void *
 }
 
 
-// void QTextLayout::setFormats(const QVector<QTextLayout::FormatRange> &overrides)
-
-
-static void _init_f_setFormats_4509 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("overrides");
-  decl->add_arg<const QVector<QTextLayout::FormatRange> & > (argspec_0);
-  decl->set_return<void > ();
-}
-
-static void _call_f_setFormats_4509 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const QVector<QTextLayout::FormatRange> &arg1 = gsi::arg_reader<const QVector<QTextLayout::FormatRange> & >() (args, heap);
-  __SUPPRESS_UNUSED_WARNING(ret);
-  ((QTextLayout *)cls)->setFormats (arg1);
-}
-
-
 // void QTextLayout::setPosition(const QPointF &p)
 
 
@@ -911,7 +861,6 @@ static gsi::Methods methods_QTextLayout () {
   methods += new qt_gsi::GenericMethod ("boundingRect", "@brief Method QRectF QTextLayout::boundingRect()\n", true, &_init_f_boundingRect_c0, &_call_f_boundingRect_c0);
   methods += new qt_gsi::GenericMethod (":cacheEnabled", "@brief Method bool QTextLayout::cacheEnabled()\n", true, &_init_f_cacheEnabled_c0, &_call_f_cacheEnabled_c0);
   methods += new qt_gsi::GenericMethod ("clearAdditionalFormats", "@brief Method void QTextLayout::clearAdditionalFormats()\n", false, &_init_f_clearAdditionalFormats_0, &_call_f_clearAdditionalFormats_0);
-  methods += new qt_gsi::GenericMethod ("clearFormats", "@brief Method void QTextLayout::clearFormats()\n", false, &_init_f_clearFormats_0, &_call_f_clearFormats_0);
   methods += new qt_gsi::GenericMethod ("clearLayout", "@brief Method void QTextLayout::clearLayout()\n", false, &_init_f_clearLayout_0, &_call_f_clearLayout_0);
   methods += new qt_gsi::GenericMethod ("createLine", "@brief Method QTextLine QTextLayout::createLine()\n", false, &_init_f_createLine_0, &_call_f_createLine_0);
   methods += new qt_gsi::GenericMethod (":cursorMoveStyle", "@brief Method Qt::CursorMoveStyle QTextLayout::cursorMoveStyle()\n", true, &_init_f_cursorMoveStyle_c0, &_call_f_cursorMoveStyle_c0);
@@ -920,7 +869,6 @@ static gsi::Methods methods_QTextLayout () {
   methods += new qt_gsi::GenericMethod ("drawCursor", "@brief Method void QTextLayout::drawCursor(QPainter *p, const QPointF &pos, int cursorPosition, int width)\n", true, &_init_f_drawCursor_c4622, &_call_f_drawCursor_c4622);
   methods += new qt_gsi::GenericMethod ("endLayout", "@brief Method void QTextLayout::endLayout()\n", false, &_init_f_endLayout_0, &_call_f_endLayout_0);
   methods += new qt_gsi::GenericMethod (":font", "@brief Method QFont QTextLayout::font()\n", true, &_init_f_font_c0, &_call_f_font_c0);
-  methods += new qt_gsi::GenericMethod (":formats", "@brief Method QVector<QTextLayout::FormatRange> QTextLayout::formats()\n", true, &_init_f_formats_c0, &_call_f_formats_c0);
   methods += new qt_gsi::GenericMethod ("glyphRuns", "@brief Method QList<QGlyphRun> QTextLayout::glyphRuns(int from, int length)\n", true, &_init_f_glyphRuns_c1426, &_call_f_glyphRuns_c1426);
   methods += new qt_gsi::GenericMethod ("isValidCursorPosition?", "@brief Method bool QTextLayout::isValidCursorPosition(int pos)\n", true, &_init_f_isValidCursorPosition_c767, &_call_f_isValidCursorPosition_c767);
   methods += new qt_gsi::GenericMethod ("leftCursorPosition", "@brief Method int QTextLayout::leftCursorPosition(int oldPos)\n", true, &_init_f_leftCursorPosition_c767, &_call_f_leftCursorPosition_c767);
@@ -940,7 +888,6 @@ static gsi::Methods methods_QTextLayout () {
   methods += new qt_gsi::GenericMethod ("setCursorMoveStyle|cursorMoveStyle=", "@brief Method void QTextLayout::setCursorMoveStyle(Qt::CursorMoveStyle style)\n", false, &_init_f_setCursorMoveStyle_2323, &_call_f_setCursorMoveStyle_2323);
   methods += new qt_gsi::GenericMethod ("setFlags", "@brief Method void QTextLayout::setFlags(int flags)\n", false, &_init_f_setFlags_767, &_call_f_setFlags_767);
   methods += new qt_gsi::GenericMethod ("setFont|font=", "@brief Method void QTextLayout::setFont(const QFont &f)\n", false, &_init_f_setFont_1801, &_call_f_setFont_1801);
-  methods += new qt_gsi::GenericMethod ("setFormats|formats=", "@brief Method void QTextLayout::setFormats(const QVector<QTextLayout::FormatRange> &overrides)\n", false, &_init_f_setFormats_4509, &_call_f_setFormats_4509);
   methods += new qt_gsi::GenericMethod ("setPosition|position=", "@brief Method void QTextLayout::setPosition(const QPointF &p)\n", false, &_init_f_setPosition_1986, &_call_f_setPosition_1986);
   methods += new qt_gsi::GenericMethod ("setPreeditArea", "@brief Method void QTextLayout::setPreeditArea(int position, const QString &text)\n", false, &_init_f_setPreeditArea_2684, &_call_f_setPreeditArea_2684);
   methods += new qt_gsi::GenericMethod ("setRawFont", "@brief Method void QTextLayout::setRawFont(const QRawFont &rawFont)\n", false, &_init_f_setRawFont_2099, &_call_f_setRawFont_2099);

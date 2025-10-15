@@ -48,6 +48,7 @@
        <widget class="QLabel" name="label">
         <property name="font">
          <font>
+          <weight>75</weight>
           <bold>true</bold>
          </font>
         </property>
@@ -84,6 +85,7 @@
        <widget class="QLabel" name="label_14">
         <property name="font">
          <font>
+          <weight>75</weight>
           <bold>true</bold>
          </font>
         </property>
@@ -176,8 +178,8 @@
             <string>...</string>
            </property>
            <property name="icon">
-            <iconset resource="../../icons/icons.qrc">
-             <normaloff>:/clear_16px.png</normaloff>:/clear_16px.png</iconset>
+            <iconset resource="layResources.qrc">
+             <normaloff>:/clear.png</normaloff>:/clear.png</iconset>
            </property>
            <property name="autoRaise">
             <bool>true</bool>
@@ -193,8 +195,8 @@
             <string>...</string>
            </property>
            <property name="icon">
-            <iconset resource="../../icons/icons.qrc">
-             <normaloff>:/add_16px.png</normaloff>:/add_16px.png</iconset>
+            <iconset resource="layResources.qrc">
+             <normaloff>:/add.png</normaloff>:/add.png</iconset>
            </property>
            <property name="autoRaise">
             <bool>true</bool>
@@ -241,8 +243,8 @@
             <string>...</string>
            </property>
            <property name="icon">
-            <iconset resource="../../icons/icons.qrc">
-             <normaloff>:/warn_16px.png</normaloff>:/warn_16px.png</iconset>
+            <iconset resource="layResources.qrc">
+             <normaloff>:/warn.png</normaloff>:/warn.png</iconset>
            </property>
            <property name="autoRaise">
             <bool>true</bool>
@@ -256,6 +258,7 @@
        <widget class="QLabel" name="label_2">
         <property name="font">
          <font>
+          <weight>75</weight>
           <bold>true</bold>
          </font>
         </property>
@@ -271,6 +274,7 @@
        <widget class="QLabel" name="label_15">
         <property name="font">
          <font>
+          <weight>75</weight>
           <bold>true</bold>
          </font>
         </property>
@@ -286,6 +290,7 @@
        <widget class="QLabel" name="label_8">
         <property name="font">
          <font>
+          <weight>75</weight>
           <bold>true</bold>
          </font>
         </property>
@@ -339,8 +344,8 @@
             <string>...</string>
            </property>
            <property name="icon">
-            <iconset resource="../../icons/icons.qrc">
-             <normaloff>:/clear_edit_16px.png</normaloff>:/clear_edit_16px.png</iconset>
+            <iconset resource="layResources.qrc">
+             <normaloff>:/clear_edit.png</normaloff>:/clear_edit.png</iconset>
            </property>
            <property name="autoRaise">
             <bool>true</bool>
@@ -364,7 +369,7 @@
             <string>...</string>
            </property>
            <property name="icon">
-            <iconset resource="../../icons/icons.qrc">
+            <iconset resource="layResources.qrc">
              <normaloff>:/salt_icon.png</normaloff>:/salt_icon.png</iconset>
            </property>
            <property name="iconSize">
@@ -384,8 +389,8 @@
             <string>...</string>
            </property>
            <property name="icon">
-            <iconset resource="../../icons/icons.qrc">
-             <normaloff>:/add_16px.png</normaloff>:/add_16px.png</iconset>
+            <iconset resource="layResources.qrc">
+             <normaloff>:/add.png</normaloff>:/add.png</iconset>
            </property>
            <property name="iconSize">
             <size>
@@ -446,8 +451,8 @@
             <string>...</string>
            </property>
            <property name="icon">
-            <iconset resource="../../icons/icons.qrc">
-             <normaloff>:/clear_edit_16px.png</normaloff>:/clear_edit_16px.png</iconset>
+            <iconset resource="layResources.qrc">
+             <normaloff>:/clear_edit.png</normaloff>:/clear_edit.png</iconset>
            </property>
            <property name="autoRaise">
             <bool>true</bool>
@@ -511,8 +516,8 @@
             <string>...</string>
            </property>
            <property name="icon">
-            <iconset resource="../../icons/icons.qrc">
-             <normaloff>:/warn_16px.png</normaloff>:/warn_16px.png</iconset>
+            <iconset resource="layResources.qrc">
+             <normaloff>:/warn.png</normaloff>:/warn.png</iconset>
            </property>
            <property name="autoRaise">
             <bool>true</bool>
@@ -538,6 +543,7 @@
        <widget class="QLabel" name="label_3">
         <property name="font">
          <font>
+          <weight>75</weight>
           <bold>true</bold>
          </font>
         </property>
@@ -553,6 +559,7 @@
        <widget class="QLabel" name="label_9">
         <property name="font">
          <font>
+          <weight>75</weight>
           <bold>true</bold>
          </font>
         </property>
@@ -610,8 +617,8 @@
             <string>...</string>
            </property>
            <property name="icon">
-            <iconset resource="../../icons/icons.qrc">
-             <normaloff>:/warn_16px.png</normaloff>:/warn_16px.png</iconset>
+            <iconset resource="layResources.qrc">
+             <normaloff>:/warn.png</normaloff>:/warn.png</iconset>
            </property>
            <property name="autoRaise">
             <bool>true</bool>
@@ -653,6 +660,7 @@
        <widget class="QLabel" name="label_12">
         <property name="font">
          <font>
+          <weight>75</weight>
           <bold>true</bold>
          </font>
         </property>
@@ -668,6 +676,7 @@
        <widget class="QLabel" name="label_5">
         <property name="font">
          <font>
+          <weight>75</weight>
           <bold>true</bold>
          </font>
         </property>
@@ -722,8 +731,8 @@
             <string>...</string>
            </property>
            <property name="icon">
-            <iconset resource="../../icons/icons.qrc">
-             <normaloff>:/warn_16px.png</normaloff>:/warn_16px.png</iconset>
+            <iconset resource="layResources.qrc">
+             <normaloff>:/warn.png</normaloff>:/warn.png</iconset>
            </property>
            <property name="autoRaise">
             <bool>true</bool>
@@ -763,6 +772,7 @@
        <widget class="QLabel" name="label_7">
         <property name="font">
          <font>
+          <weight>75</weight>
           <bold>true</bold>
          </font>
         </property>
@@ -813,8 +823,8 @@
             <string>...</string>
            </property>
            <property name="icon">
-            <iconset resource="../../icons/icons.qrc">
-             <normaloff>:/warn_16px.png</normaloff>:/warn_16px.png</iconset>
+            <iconset resource="layResources.qrc">
+             <normaloff>:/warn.png</normaloff>:/warn.png</iconset>
            </property>
            <property name="autoRaise">
             <bool>true</bool>
@@ -872,7 +882,7 @@
   <tabstop>remove_dependency</tabstop>
  </tabstops>
  <resources>
-  <include location="../../icons/icons.qrc"/>
+  <include location="layResources.qrc"/>
  </resources>
  <connections>
   <connection>

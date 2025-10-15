@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -339,15 +339,6 @@ public:
   cell_inst_array_type::box_type bbox () const;
 
   /**
-   *  @brief Returns the bounding box of this array, including empty instances
-   *
-   *  This method uses the pointers provided internally to identify container and cell.
-   *  In constrast to normal "bbox", this bounding box considers empty cells as
-   *  point-like with a box of (0,0;0,0).
-   */
-  cell_inst_array_type::box_type bbox_with_empty () const;
-
-  /**
    *  @brief Return the iterator for the instances of the array
    *
    *  This method is basically provided for convenience
@@ -399,7 +390,7 @@ public:
    *
    *  Ordering of instances is not specified by the identity of the objects but by the
    *  order of the pointers.
-   *  Since pointers are volatile objects, the ordering is not strictly reproducible!
+   *  Since pointers are volatile objects, the ordering is not strictly reproducable!
    *  The order is designed such that different types of instances are separated in
    *  an order sequence of instance proxies. This is an important fact for the 
    *  "erase" functionality of the instances container when erasing a set of objects.
@@ -536,9 +527,7 @@ public:
   typedef typename IterTraits::iter_wp_type iter_wp_type;
   typedef typename IterTraits::stable_iter_type stable_iter_type;
   typedef typename IterTraits::stable_iter_wp_type stable_iter_wp_type;
-  typedef typename IterTraits::stable_unsorted_iter_type stable_unsorted_iter_type;
-  typedef typename IterTraits::stable_unsorted_iter_wp_type stable_unsorted_iter_wp_type;
-  typedef const value_type *pointer;
+  typedef const value_type *pointer; 
   typedef value_type reference;   //  operator* returns a value
   typedef std::forward_iterator_tag iterator_category;
   typedef void difference_type;
@@ -552,7 +541,7 @@ public:
    *  @brief Default ctor
    */
   instance_iterator ()
-    : m_type (TNull), m_with_props (false), m_stable (false), m_unsorted (false), m_traits ()
+    : m_with_props (false), m_stable (false), m_type (TNull), m_traits ()
   { }
 
   /**
@@ -567,7 +556,7 @@ public:
    *  @brief Constructor
    */
   instance_iterator (const IterTraits &traits)
-    : m_type (TInstance), m_with_props (false), m_stable (traits.instances ()->is_editable ()), m_unsorted (traits.instances ()->instance_tree_needs_sort ()), m_traits (traits)
+    : m_with_props (false), m_stable (traits.instances ()->is_editable ()), m_type (TInstance), m_traits (traits)
   { 
     make_iter ();
     make_next ();
@@ -578,7 +567,7 @@ public:
    *  @brief Copy constructor
    */
   instance_iterator (const instance_iterator &iter)
-    : m_type (TNull), m_with_props (false), m_stable (false), m_unsorted (false), m_traits ()
+    : m_with_props (false), m_stable (false), m_type (TNull), m_traits ()
   {
     operator= (iter);
   }
@@ -672,7 +661,7 @@ public:
    */
   stable_iter_type &basic_iter (cell_inst_array_type::tag, InstancesEditableTag)
   {
-    tl_assert (m_type == TInstance && m_stable == true && m_with_props == false && m_unsorted == false);
+    tl_assert (m_type == TInstance && m_stable == true && m_with_props == false);
     return *((stable_iter_type *) m_generic.stable_iter);
   }
 
@@ -681,26 +670,8 @@ public:
    */
   const stable_iter_type &basic_iter (cell_inst_array_type::tag, InstancesEditableTag) const
   {
-    tl_assert (m_type == TInstance && m_stable == true && m_with_props == false && m_unsorted == false);
+    tl_assert (m_type == TInstance && m_stable == true && m_with_props == false);
     return *((stable_iter_type *) m_generic.stable_iter);
-  }
-
-  /**
-   *  @brief Gets the basic iterator in the editable case without properties and in the unsorted case
-   */
-  stable_unsorted_iter_type &basic_unsorted_iter (cell_inst_array_type::tag, InstancesEditableTag)
-  {
-    tl_assert (m_type == TInstance && m_stable == true && m_with_props == false && m_unsorted == true);
-    return *((stable_unsorted_iter_type *) m_generic.stable_unsorted_iter);
-  }
-
-  /**
-   *  @brief Gets the basic iterator in the editable case without properties and in the unsorted case (const version)
-   */
-  const stable_unsorted_iter_type &basic_unsorted_iter (cell_inst_array_type::tag, InstancesEditableTag) const
-  {
-    tl_assert (m_type == TInstance && m_stable == true && m_with_props == false && m_unsorted == true);
-    return *((stable_unsorted_iter_type *) m_generic.stable_unsorted_iter);
   }
 
   /**
@@ -726,7 +697,7 @@ public:
    */
   stable_iter_wp_type &basic_iter (cell_inst_wp_array_type::tag, InstancesEditableTag)
   {
-    tl_assert (m_type == TInstance && m_stable == true && m_with_props == true && m_unsorted == false);
+    tl_assert (m_type == TInstance && m_stable == true && m_with_props == true);
     return *((stable_iter_wp_type *) m_generic.pstable_iter);
   }
 
@@ -735,26 +706,8 @@ public:
    */
   const stable_iter_wp_type &basic_iter (cell_inst_wp_array_type::tag, InstancesEditableTag) const
   {
-    tl_assert (m_type == TInstance && m_stable == true && m_with_props == true && m_unsorted == false);
+    tl_assert (m_type == TInstance && m_stable == true && m_with_props == true);
     return *((stable_iter_wp_type *) m_generic.pstable_iter);
-  }
-
-  /**
-   *  @brief Gets the basic iterator in the editable case with properties and in the unsorted case
-   */
-  stable_unsorted_iter_wp_type &basic_unsorted_iter (cell_inst_wp_array_type::tag, InstancesEditableTag)
-  {
-    tl_assert (m_type == TInstance && m_stable == true && m_with_props == true && m_unsorted == true);
-    return *((stable_unsorted_iter_wp_type *) m_generic.pstable_unsorted_iter);
-  }
-
-  /**
-   *  @brief Gets the basic iterator in the editable case with properties and in the unsorted case (const version)
-   */
-  const stable_unsorted_iter_wp_type &basic_unsorted_iter (cell_inst_wp_array_type::tag, InstancesEditableTag) const
-  {
-    tl_assert (m_type == TInstance && m_stable == true && m_with_props == true && m_unsorted == true);
-    return *((stable_unsorted_iter_wp_type *) m_generic.pstable_unsorted_iter);
   }
 
 private:
@@ -767,14 +720,11 @@ private:
     char piter[sizeof (iter_wp_type)];
     char stable_iter[sizeof (stable_iter_type)];
     char pstable_iter[sizeof (stable_iter_wp_type)];
-    char stable_unsorted_iter[sizeof (stable_unsorted_iter_type)];
-    char pstable_unsorted_iter[sizeof (stable_unsorted_iter_wp_type)];
   } m_generic;
 
+  bool m_with_props : 8;
+  bool m_stable : 8;
   object_type m_type : 16;
-  bool m_with_props : 1;
-  bool m_stable : 1;
-  bool m_unsorted : 1;
   value_type m_ref;
   IterTraits m_traits;
 
@@ -809,8 +759,6 @@ struct DB_PUBLIC NormalInstanceIteratorTraits
   typedef tl::iterator_pair<cell_inst_wp_tree_type::const_iterator> iter_wp_type;
   typedef stable_cell_inst_tree_type::flat_iterator stable_iter_type;
   typedef stable_cell_inst_wp_tree_type::flat_iterator stable_iter_wp_type;
-  typedef tl::iterator_pair<stable_cell_inst_tree_type::const_iterator> stable_unsorted_iter_type;
-  typedef tl::iterator_pair<stable_cell_inst_wp_tree_type::const_iterator> stable_unsorted_iter_wp_type;
 
   NormalInstanceIteratorTraits ();
   NormalInstanceIteratorTraits (const instances_type *insts);
@@ -856,8 +804,6 @@ struct DB_PUBLIC TouchingInstanceIteratorTraits
   typedef cell_inst_wp_tree_type::touching_iterator iter_wp_type;
   typedef stable_cell_inst_tree_type::touching_iterator stable_iter_type;
   typedef stable_cell_inst_wp_tree_type::touching_iterator stable_iter_wp_type;
-  typedef stable_iter_type stable_unsorted_iter_type;
-  typedef stable_iter_wp_type stable_unsorted_iter_wp_type;
 
   TouchingInstanceIteratorTraits ();
   TouchingInstanceIteratorTraits (const instances_type *insts, const box_type &box, const layout_type *layout);
@@ -909,8 +855,6 @@ struct DB_PUBLIC OverlappingInstanceIteratorTraits
   typedef cell_inst_wp_tree_type::overlapping_iterator iter_wp_type;
   typedef stable_cell_inst_tree_type::overlapping_iterator stable_iter_type;
   typedef stable_cell_inst_wp_tree_type::overlapping_iterator stable_iter_wp_type;
-  typedef stable_iter_type stable_unsorted_iter_type;
-  typedef stable_iter_wp_type stable_unsorted_iter_wp_type;
 
   OverlappingInstanceIteratorTraits ();
   OverlappingInstanceIteratorTraits (const instances_type *insts, const box_type &box, const layout_type *layout);
@@ -1001,6 +945,7 @@ public:
 
 private:
   inst_iterator_type m_iter, m_end;
+  const instances_type *mp_insts;
 };
 
 /**
@@ -1474,7 +1419,8 @@ public:
   instance_type insert (const instance_type &ref)
   {
     tl::ident_map<cell_index_type> im;
-    return insert (ref, im);
+    tl::ident_map<db::properties_id_type> pm;
+    return insert (ref, im, pm);
   }
 
   /**
@@ -1488,11 +1434,12 @@ public:
    *  @param im The mapper to new cell index to use (for mapping to a different layout for example)
    *  @param pm The mapper to new cell property ID use (for mapping to a different layout for example)
    */
-  template <class IndexMap>
-  instance_type insert (const instance_type &ref, IndexMap &im)
+  template <class IndexMap, class PropIdMap>
+  instance_type insert (const instance_type &ref, IndexMap &im, PropIdMap &pm)
   {
     tl::func_delegate <IndexMap, db::cell_index_type> im_delegate (im);
-    return do_insert (ref, im_delegate);
+    tl::func_delegate <PropIdMap, db::properties_id_type> pm_delegate (pm);
+    return do_insert (ref, im_delegate, pm_delegate);
   }
 
   /** 
@@ -1505,13 +1452,6 @@ public:
    *  @return The reference to the new instance
    */
   instance_type replace_prop_id (const instance_type &ref, db::properties_id_type prop_id);
-
-  /**
-   *  @brief Clears the properties
-   *
-   *  @return The reference to the new instance
-   */
-  instance_type clear_properties (const instance_type &ref);
 
   /**
    *  @brief Replace the instance pointed to by the iterator with the given instance
@@ -1608,18 +1548,16 @@ public:
 
   /**
    *  @brief Establish the instance index list giving the instances by cell index
-   *  If force is true, the instance tree is always sorted.
    */
-  void sort_child_insts (bool force);
+  void sort_child_insts ();
 
   /**
    *  @brief Sort the cell instance list
    *
-   *  This will sort the cell instance list (quad tree sort). As a prerequesite
+   *  This will sort the cell instance list. As a prerequesite
    *  the cell's bounding boxes must have been computed.
-   *  If force is true, the instance tree is always sorted.
    */
-  void sort_inst_tree (const layout_type *g, bool force);
+  void sort_inst_tree (const layout_type *g);
 
   /**
    *  @brief Update the child-parent relationships
@@ -1765,6 +1703,14 @@ public:
   }
 
   /**
+   *  @brief Gets the cell pointer the instance container is in
+   */
+  db::Cell *cell () const
+  {
+    return mp_cell;
+  }
+
+  /**
    *  @brief Gets the layout the instances collection lives in
    */
   db::Layout *layout () const;
@@ -1780,14 +1726,6 @@ public:
   bool is_editable () const;
 
   /**
-   *  @brief Gets the cell pointer
-   */
-  cell_type *cell () const
-  {
-    return reinterpret_cast<cell_type *> (size_t (mp_cell) & ~size_t (3));
-  }
-
-  /**
    *  @brief Delegate for the undo method
    */
   void undo (db::Op *op);
@@ -1798,11 +1736,9 @@ public:
   void redo (db::Op *op);
 
 private:
-  friend class Instance;
   friend struct NormalInstanceIteratorTraits;
   friend struct TouchingInstanceIteratorTraits;
   friend struct OverlappingInstanceIteratorTraits;
-  template <class Traits> friend class instance_iterator;
   template <class Inst, class ET> friend class InstOp;
 
   union {
@@ -1825,48 +1761,6 @@ private:
   static cell_inst_tree_type ms_empty_tree;
   static stable_cell_inst_wp_tree_type ms_empty_stable_wp_tree;
   static stable_cell_inst_tree_type ms_empty_stable_tree;
-
-  /**
-   *  @brief Sets a flag indicating that the instance tree needs sorting
-   */
-  void set_instance_tree_needs_sort (bool f)
-  {
-    mp_cell = reinterpret_cast<cell_type *> ((size_t (mp_cell) & ~size_t (1)) | size_t (f ? 1 : 0));
-  }
-
-  /**
-   *  @brief Gets a flag indicating that the instance tree needs sorting
-   */
-  bool instance_tree_needs_sort () const
-  {
-    return (size_t (mp_cell) & 1) != 0;
-  }
-
-  /**
-   *  @brief Sets a flag indicating that the instance by cell index cache needs made
-   */
-  void set_instance_by_cell_index_needs_made (bool f)
-  {
-    mp_cell = reinterpret_cast<cell_type *> ((size_t (mp_cell) & ~size_t (2)) | size_t (f ? 2 : 0));
-  }
-
-  /**
-   *  @brief Sets a flag indicating that the instance tree needs sorting
-   */
-  bool instance_by_cell_index_needs_made () const
-  {
-    return (size_t (mp_cell) & 2) != 0;
-  }
-
-  /**
-   *  @brief Invalidates the instance information - called whenever something changes
-   */
-  void invalidate_insts ();
-
-  /**
-   *  @brief Invalidates the properties IDs - called when some ID has changed
-   */
-  void invalidate_prop_ids ();
 
   /**
    *  @brief Get the non-editable instance tree by instance type
@@ -1956,7 +1850,8 @@ private:
   Instances (const Instances &d);
 
   instance_type do_insert (const instance_type &ref, 
-                           tl::func_delegate_base <db::cell_index_type> &im);
+                           tl::func_delegate_base <db::cell_index_type> &im,
+                           tl::func_delegate_base <db::properties_id_type> &pm);
 
   void do_clear_insts ();
 
@@ -2043,20 +1938,7 @@ OverlappingInstanceIteratorTraits::instance_from_stable_iter (const Iter &iter) 
   //  box tree iterators deliver pointers, not iterators. Use instance_from_pointer to do this conversion.
   return mp_insts->instance_from_pointer (&*iter);
 }
-
-/**
- *  @brief A compare function for db::Instance that uses "less" for value compare
- *
- *  In contrast, "operator<" will compare the instance reference, not value.
- */
-struct InstanceCompareFunction
-{
-  bool operator() (const db::Instance &a, const db::Instance &b) const
-  {
-    return a.less (b);
-  }
-};
-
+ 
 }
 
 #endif

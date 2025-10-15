@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -20,16 +20,13 @@
 
 */
 
-#if defined(HAVE_QT)
 
 #ifndef HDR_layProperties
 #define HDR_layProperties
 
 #include "laybasicCommon.h"
-#include "layEditable.h"
 
 #include <QFrame>
-#include <QIcon>
 
 namespace db
 {
@@ -51,8 +48,6 @@ class Editable;
 class LAYBASIC_PUBLIC PropertiesPage
   : public QFrame
 {
-Q_OBJECT
-
 public:
   /**
    *  @brief The constructor attaching the properties page to a parent widget
@@ -70,64 +65,82 @@ public:
   virtual ~PropertiesPage ();
 
   /**
-   *  @brief Gets the number of entries represented by this page
-   */
-  virtual size_t count () const = 0;
-
-  /**
-   *  @brief Selects the entries with the given indexes
+   *  @brief Move the current pointer to the end of the selected objects list
    *
-   *  If multiple indexes are selected, the properties page shows
-   *  all items with different values as "leave as is". Items with
-   *  same value are shown with the given value.
+   *  Must be implemented by the Editable function and must set the 
+   *  selected object pointer to past-the-end of the list. at_end () must 
+   *  return true after this.
    */
-  virtual void select_entries (const std::vector<size_t> &entries) = 0;
+  virtual void back () = 0;
 
   /**
-   *  @brief Convenience function to select a specific entry
+   *  @brief A helper function for the dialog that additionally reports
+   *  if there are any elements in the selection
    */
-  void select_entry (size_t entry)
+  bool back_checked () 
   {
-    std::vector<size_t> entries;
-    entries.push_back (entry);
-    select_entries (entries);
+    back ();
+    return ! at_begin ();
   }
 
   /**
-   *  @brief Gets a description text for the nth entry
-   */
-  virtual std::string description (size_t entry) const = 0;
-
-  /**
-   *  @brief Gets the icon for the nth entry
-   */
-  virtual QIcon icon (size_t /*entry*/, int /*w*/, int /*h*/) const
-  {
-    return QIcon ();
-  }
-
-  /**
-   *  @brief Gets a description text for the whole group
-   */
-  virtual std::string description () const = 0;
-
-  /**
-   *  @brief Gets the icon associated with the whole group
-   */
-  virtual QIcon icon (int /*w*/, int /*h*/) const
-  {
-    return QIcon ();
-  }
-
-  /**
-   *  @brief Confines the selection to the given selection indexes
+   *  @brief Move the current pointer to the beginning of the selected objects list
    *
-   *  After this operation, the selection entries are renumbered with only
-   *  the remaining ones present.
+   *  Must be implemented by the Editable function and must set the 
+   *  selected object pointer to the beginning of the list. at_begin () must 
+   *  return true after this.
+   *  This method must return true, if there are any elements in the selection
+   *  - i.e. operator++ () will be successful afterwards.
    */
-  virtual void confine_selection (const std::vector<size_t> &remaining_entries) = 0;
+  virtual void front () = 0;
 
   /**
+   *  @brief A helper function for the dialog that additionally reports
+   *  if there are any elements in the selection
+   */
+  bool front_checked () 
+  {
+    front ();
+    return ! at_end ();
+  }
+
+  /**
+   *  @brief Tell if the current object references the first one
+   *
+   *  Must be implemented by the Editable function and must return
+   *  true if the current object is the first one - i.e. if an
+   *  operator-- would render the status invalid.
+   *  If no object is referenced, this method and at_end () must return true.
+   */
+  virtual bool at_begin () const = 0;
+
+  /**
+   *  @brief Tell if the current object references past the last one
+   *
+   *  If the current object pointer is past the end of the selected
+   *  object space, 
+   */
+  virtual bool at_end () const = 0;
+
+  /**
+   *  @brief Step one elemement back 
+   *
+   *  This method is supposed to move the current pointer one position
+   *  back. If at_begin () was true before, the result may be unpredictable.
+   *  The dialog will call update () to update the display accordingly.
+   */
+  virtual void operator-- () = 0;
+
+  /**
+   *  @brief Advance one element
+   *
+   *  This method is supposed to move the current pointer one position
+   *  forward. If at_end () was true before, the result may be unpredictable.
+   *  The dialog will call update () to update the display accordingly.
+   */
+  virtual void operator++ () = 0;
+
+  /** 
    *  @brief Update the display
    *
    *  This method is called by the dialog to transfer data from the
@@ -159,13 +172,11 @@ public:
   /** 
    *  @brief Apply any changes to the current object
    *
-   *  Apply any changes to the current objects. If nothing was
+   *  Apply any changes to the current object. If nothing was 
    *  changed, the object may be left untouched.
    *  The dialog will start a transaction on the manager object.
-   *
-   *  @param commit Is true for the "final" changes (i.e. not during editing)
    */
-  virtual void apply (bool /*commit*/)
+  virtual void apply () 
   {
     //  default implementation is empty.
   }
@@ -184,11 +195,8 @@ public:
    *  Apply any changes to the current object plus all other objects of the same kind. 
    *  If nothing was changed, the objects may be left untouched.
    *  The dialog will start a transaction on the manager object.
-   *
-   *  @param relative Is true if relative mode is selected
-   *  @param commit Is true for the "final" changes (i.e. not during editing)
    */
-  virtual void apply_to_all (bool /*relative*/, bool /*commit*/)
+  virtual void apply_to_all () 
   {
     //  default implementation is empty.
   }
@@ -199,7 +207,7 @@ public:
    */
   lay::Editable *editable () 
   {
-    return mp_editable.get ();
+    return mp_editable;
   }
 
   /**
@@ -211,19 +219,12 @@ public:
     return mp_manager;
   }
 
-signals:
-  /**
-   *  @brief This signal is emitted if a value has been changed
-   */
-  void edited ();
-
 private:
   db::Manager *mp_manager;
-  tl::weak_ptr<lay::Editable> mp_editable;
+  lay::Editable *mp_editable;
 };
 
 }
 
 #endif
 
-#endif  //  defined(HAVE_QT)

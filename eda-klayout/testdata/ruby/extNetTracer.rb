@@ -1,7 +1,7 @@
 # encoding: UTF-8
 
 # KLayout Layout Viewer
-# Copyright (C) 2006-2025 Matthias Koefferlein
+# Copyright (C) 2006-2019 Matthias Koefferlein
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,7 +32,7 @@ class EXT_TestClass < TestBase
 
     tracer = RBA::NetTracer::new
     
-    tech = RBA::NetTracerConnectivity::new
+    tech = RBA::NetTracerTechnology::new
     tech.connection("1/0", "2/0", "3/0")
 
     tracer.trace(tech, ly, ly.top_cell, RBA::Point::new(7000, 1500), ly.find_layer(1, 0))
@@ -77,7 +77,7 @@ class EXT_TestClass < TestBase
 
     tracer = RBA::NetTracer::new
     
-    tech = RBA::NetTracerConnectivity::new
+    tech = RBA::NetTracerTechnology::new
     tech.connection("1/0", "2/0", "3/0")
 
     tracer.trace(tech, ly, ly.top_cell, RBA::Point::new(7000, 1500), ly.find_layer(1, 0), RBA::Point::new(6000, -6000), ly.find_layer(3, 0))
@@ -122,7 +122,7 @@ class EXT_TestClass < TestBase
 
     tracer = RBA::NetTracer::new
     
-    tech = RBA::NetTracerConnectivity::new
+    tech = RBA::NetTracerTechnology::new
     tech.connection("1/0", "3/0")
 
     tracer.trace(tech, ly, ly.top_cell, RBA::Point::new(7000, 1500), ly.find_layer(1, 0))
@@ -155,39 +155,6 @@ class EXT_TestClass < TestBase
     tracer.clear
 
     assert_equal(tracer.num_elements, 0)
-
-  end
-
-  # Technology component
-  def test_4
-
-    c1 = RBA::NetTracerConnectivity::new
-    c1.connection("1/0", "3/0")
-    c1.name = "1to3"
-
-    c2 = RBA::NetTracerConnectivity::new
-    c2.connection("2/0", "3/0")
-    c2.name = "2to3"
-
-    tc = RBA::NetTracerTechnologyComponent::new
-    names = tc.each.collect { |c| c.name }.join(";")
-    assert_equal(names, "")
-
-    tc.add(c1)
-    names = tc.each.collect { |c| c.name }.join(";")
-    assert_equal(names, "1to3")
-
-    tc.add(c2)
-    names = tc.each.collect { |c| c.name }.join(";")
-    assert_equal(names, "1to3;2to3")
-
-    tc.clear
-    names = tc.each.collect { |c| c.name }.join(";")
-    assert_equal(names, "")
-
-    tc.add(c2)
-    names = tc.each.collect { |c| c.name }.join(";")
-    assert_equal(names, "2to3")
 
   end
 

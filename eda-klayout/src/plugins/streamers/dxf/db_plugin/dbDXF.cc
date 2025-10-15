@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -54,7 +54,7 @@ public:
   virtual std::string format_name () const { return "DXF"; }
   virtual std::string format_desc () const { return "DXF"; }
   virtual std::string format_title () const { return "DXF (AutoCAD)"; }
-  virtual std::string file_format () const { return "DXF files (*.dxf *.DXF *.dxf.gz *.DXF.gz)"; }
+  virtual std::string file_format () const { return "DXF files (*.DXF *.dxf *.dxf.gz *.DXF.gz)"; }
 
   virtual bool detect (tl::InputStream &s) const 
   {

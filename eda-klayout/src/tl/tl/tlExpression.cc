@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -26,7 +26,6 @@
 #include "tlString.h"
 #include "tlGlobPattern.h"
 #include "tlFileUtils.h"
-#include "tlEnv.h"
 
 #include <map>
 #include <vector>
@@ -36,6 +35,7 @@
 #define _USE_MATH_DEFINES // for MSVC
 #include <math.h>
 #include <string.h>
+#include <stdlib.h>
 #include <ctype.h>
 
 //  Suggestions for further functions:
@@ -104,7 +104,7 @@ ExpressionParserContext::where () const
 
       int line = 1;
       size_t col = 0;
-      for (size_t p = 0; p < pos; ++p) {
+      for (size_t p = 0; p < len; ++p, ++col) {
         if (text [p] == '\n') {
           ++line;
           col = 1;
@@ -145,14 +145,14 @@ ExpressionParserContext::where () const
 // ----------------------------------------------------------------------------
 //  Utilities for evaluation
 
-static double to_double (const ExpressionParserContext &context, const tl::Variant &v, unsigned int narg)
+static double to_double (const ExpressionParserContext &context, const tl::Variant &v)
 {
   if (v.can_convert_to_double ()) {
     return v.to_double ();
   } else if (v.is_list ()) {
     return v.get_list ().size ();
   } else {
-    throw EvalError (tl::to_string (tr ("Double precision floating point value expected for argument #")) + tl::to_string (narg + 1), context);
+    throw EvalError (tl::to_string (tr ("Double precision floating point value expected")), context);
   }
 }
 
@@ -162,50 +162,50 @@ static double to_double (const ExpressionParserContext &context, const std::vect
     throw EvalError (tl::to_string (tr ("Function expects a single numeric argument")), context);
   }
 
-  return to_double (context, v [0], 0);
+  return to_double (context, v [0]);
 }
 
-static long to_long (const ExpressionParserContext &context, const tl::Variant &v, int narg)
+static long to_long (const ExpressionParserContext &context, const tl::Variant &v)
 {
   if (v.can_convert_to_long ()) {
     return v.to_long ();
   } else if (v.is_list ()) {
     return long (v.get_list ().size ());
   } else {
-    throw EvalError (tl::to_string (tr ("Integer value expected for argument #")) + tl::to_string (narg + 1), context);
+    throw EvalError (tl::to_string (tr ("Integer value expected")), context);
   }
 }
 
-static unsigned long to_ulong (const ExpressionParserContext &context, const tl::Variant &v, int narg)
+static unsigned long to_ulong (const ExpressionParserContext &context, const tl::Variant &v)
 {
   if (v.can_convert_to_ulong ()) {
     return v.to_ulong ();
   } else if (v.is_list ()) {
     return (unsigned long) (v.get_list ().size ());
   } else {
-    throw EvalError (tl::to_string (tr ("Unsigned integer value expected for argument #")) + tl::to_string (narg + 1), context);
+    throw EvalError (tl::to_string (tr ("Unsigned integer value expected")), context);
   }
 }
 
-static long long to_longlong (const ExpressionParserContext &context, const tl::Variant &v, int narg)
+static long long to_longlong (const ExpressionParserContext &context, const tl::Variant &v)
 {
   if (v.can_convert_to_longlong ()) {
     return v.to_longlong ();
   } else if (v.is_list ()) {
     return long (v.get_list ().size ());
   } else {
-    throw EvalError (tl::to_string (tr ("Integer value expected for argument #")) + tl::to_string (narg + 1), context);
+    throw EvalError (tl::to_string (tr ("Integer value expected")), context);
   }
 }
 
-static unsigned long long to_ulonglong (const ExpressionParserContext &context, const tl::Variant &v, int narg)
+static unsigned long long to_ulonglong (const ExpressionParserContext &context, const tl::Variant &v)
 {
   if (v.can_convert_to_ulonglong ()) {
     return v.to_ulong ();
   } else if (v.is_list ()) {
     return (unsigned long long) (v.get_list ().size ());
   } else {
-    throw EvalError (tl::to_string (tr ("Unsigned integer value expected for argument #")) + tl::to_string (narg + 1), context);
+    throw EvalError (tl::to_string (tr ("Unsigned integer value expected")), context);
   }
 }
 
@@ -306,12 +306,12 @@ class TL_PUBLIC ListClass
   : public EvalClass
 {
 public:
-  void execute (const ExpressionParserContext &context, tl::Variant &out, tl::Variant &object, const std::string &method, const std::vector<tl::Variant> &args, const std::map<std::string, tl::Variant> *kwargs) const
+  void execute (const ExpressionParserContext &context, tl::Variant &out, tl::Variant &object, const std::string &method, const std::vector<tl::Variant> &args) const
   {
     if (method == "push") {
 
-      if (args.size () != 1 || kwargs) {
-        throw EvalError (tl::to_string (tr ("'push' method expects one argument (keyword arguments not permitted)")), context);
+      if (args.size () != 1) {
+        throw EvalError (tl::to_string (tr ("'push' method expects one argument")), context);
       }
 
       object.push (args [0]);
@@ -319,7 +319,7 @@ public:
 
     } else if (method == "size") {
       
-      if (args.size () != 0 || kwargs) {
+      if (args.size () != 0) {
         throw EvalError (tl::to_string (tr ("'size' method does not accept an argument")), context);
       }
 
@@ -343,12 +343,12 @@ class TL_PUBLIC ArrayClass
   : public EvalClass
 {
 public:
-  void execute (const ExpressionParserContext &context, tl::Variant &out, tl::Variant &object, const std::string &method, const std::vector<tl::Variant> &args, const std::map<std::string, tl::Variant> *kwargs) const
+  void execute (const ExpressionParserContext &context, tl::Variant &out, tl::Variant &object, const std::string &method, const std::vector<tl::Variant> &args) const
   {
     if (method == "insert") {
 
-      if (args.size () != 2 || kwargs) {
-        throw EvalError (tl::to_string (tr ("'insert' method expects two arguments (keyword arguments not permitted)")), context);
+      if (args.size () != 2) {
+        throw EvalError (tl::to_string (tr ("'insert' method expects two arguments")), context);
       }
 
       object.insert (args [0], args [1]);
@@ -356,7 +356,7 @@ public:
 
     } else if (method == "size") {
       
-      if (args.size () != 0 || kwargs) {
+      if (args.size () != 0) {
         throw EvalError (tl::to_string (tr ("'size' method does not accept an argument")), context);
       }
 
@@ -364,7 +364,7 @@ public:
     
     } else if (method == "keys") {
 
-      if (args.size () != 0 || kwargs) {
+      if (args.size () != 0) {
         throw EvalError (tl::to_string (tr ("'keys' method does not accept an argument")), context);
       }
 
@@ -375,7 +375,7 @@ public:
 
     } else if (method == "values") {
 
-      if (args.size () != 0 || kwargs) {
+      if (args.size () != 0) {
         throw EvalError (tl::to_string (tr ("'keys' method does not accept an argument")), context);
       }
 
@@ -411,7 +411,7 @@ ExpressionNode::ExpressionNode (const ExpressionParserContext &context, size_t c
 }
 
 ExpressionNode::ExpressionNode (const ExpressionNode &other, const tl::Expression *expr)
-  : m_context (other.m_context), m_name (other.m_name)
+  : m_context (other.m_context)
 {
   m_context.set_expr (expr);
   m_c.reserve (other.m_c.size ());
@@ -517,7 +517,7 @@ public:
       tl::Variant o;
       std::vector <tl::Variant> vv;
       vv.push_back (*b);
-      c->execute (m_context, o, v.get (), "<", vv, 0);
+      c->execute (m_context, o, v.get (), "<", vv);
       v.swap (o);
 
     } else {
@@ -567,7 +567,7 @@ public:
       tl::Variant o;
       std::vector <tl::Variant> vv;
       vv.push_back (*b);
-      c->execute (m_context, o, v.get (), "<=", vv, 0);
+      c->execute (m_context, o, v.get (), "<=", vv);
       v.swap (o);
 
     } else {
@@ -617,7 +617,7 @@ public:
       tl::Variant o;
       std::vector <tl::Variant> vv;
       vv.push_back (*b);
-      c->execute (m_context, o, v.get (), ">", vv, 0);
+      c->execute (m_context, o, v.get (), ">", vv);
       v.swap (o);
 
     } else {
@@ -667,7 +667,7 @@ public:
       tl::Variant o;
       std::vector <tl::Variant> vv;
       vv.push_back (*b);
-      c->execute (m_context, o, v.get (), ">=", vv, 0);
+      c->execute (m_context, o, v.get (), ">=", vv);
       v.swap (o);
 
     } else {
@@ -717,7 +717,7 @@ public:
       tl::Variant o;
       std::vector <tl::Variant> vv;
       vv.push_back (*b);
-      c->execute (m_context, o, v.get (), "==", vv, 0);
+      c->execute (m_context, o, v.get (), "==", vv);
       v.swap (o);
 
     } else {
@@ -767,7 +767,7 @@ public:
       tl::Variant o;
       std::vector <tl::Variant> vv;
       vv.push_back (*b);
-      c->execute (m_context, o, v.get (), "!=", vv, 0);
+      c->execute (m_context, o, v.get (), "!=", vv);
       v.swap (o);
 
     } else {
@@ -817,7 +817,7 @@ public:
       tl::Variant o;
       std::vector <tl::Variant> vv;
       vv.push_back (*b);
-      c->execute (m_context, o, v.get (), "~", vv, 0);
+      c->execute (m_context, o, v.get (), "~", vv);
       v.swap (o);
 
       mp_eval->match_substrings ().clear ();
@@ -914,7 +914,7 @@ public:
       tl::Variant o;
       std::vector <tl::Variant> vv;
       vv.push_back (*b);
-      c->execute (m_context, o, v.get (), "!~", vv, 0);
+      c->execute (m_context, o, v.get (), "!~", vv);
       v.swap (o);
 
     } else {
@@ -1085,17 +1085,17 @@ public:
       tl::Variant o;
       std::vector <tl::Variant> vv;
       vv.push_back (*b);
-      c->execute (m_context, o, v.get (), "<<", vv, 0);
+      c->execute (m_context, o, v.get (), "<<", vv);
       v.swap (o);
 
     } else if (v->is_longlong ()) {
-      v.set (tl::Variant (v->to_longlong () << to_longlong (m_context, *b, 1)));
+      v.set (tl::Variant (v->to_longlong () << to_longlong (m_context, *b)));
     } else if (v->is_ulonglong ()) {
-      v.set (tl::Variant (v->to_ulonglong () << to_ulonglong (m_context, *b, 1)));
+      v.set (tl::Variant (v->to_ulonglong () << to_ulonglong (m_context, *b)));
     } else if (v->is_ulong ()) {
-      v.set (tl::Variant (v->to_ulong () << to_ulong (m_context, *b, 1)));
+      v.set (tl::Variant (v->to_ulong () << to_ulong (m_context, *b)));
     } else {
-      v.set (tl::Variant (to_long (m_context, *v, 0) << to_long (m_context, *b, 1)));
+      v.set (tl::Variant (to_long (m_context, *v) << to_long (m_context, *b)));
     }
   }
 };
@@ -1141,17 +1141,17 @@ public:
       tl::Variant o;
       std::vector <tl::Variant> vv;
       vv.push_back (*b);
-      c->execute (m_context, o, v.get (), ">>", vv, 0);
+      c->execute (m_context, o, v.get (), ">>", vv);
       v.swap (o);
 
     } else if (v->is_longlong ()) {
-      v.set (tl::Variant (v->to_longlong () >> to_longlong (m_context, *b, 1)));
+      v.set (tl::Variant (v->to_longlong () >> to_longlong (m_context, *b)));
     } else if (v->is_ulonglong ()) {
-      v.set (tl::Variant (v->to_ulonglong () >> to_ulonglong (m_context, *b, 1)));
+      v.set (tl::Variant (v->to_ulonglong () >> to_ulonglong (m_context, *b)));
     } else if (v->is_ulong ()) {
-      v.set (tl::Variant (v->to_ulong () >> to_ulong (m_context, *b, 1)));
+      v.set (tl::Variant (v->to_ulong () >> to_ulong (m_context, *b)));
     } else {
-      v.set (tl::Variant (to_long (m_context, *v, 0) >> to_long (m_context, *b, 1)));
+      v.set (tl::Variant (to_long (m_context, *v) >> to_long (m_context, *b)));
     }
   }
 };
@@ -1197,23 +1197,23 @@ public:
       tl::Variant o;
       std::vector <tl::Variant> vv;
       vv.push_back (*b);
-      c->execute (m_context, o, v.get (), "+", vv, 0);
+      c->execute (m_context, o, v.get (), "+", vv);
       v.swap (o);
 
     } else if (v->is_a_string () || b->is_a_string ()) {
       v.set (tl::Variant (std::string (v->to_string ()) + b->to_string ()));
     } else if (v->is_double () || b->is_double ()) {
-      v.set (tl::Variant (to_double (m_context, *v, 0) + to_double (m_context, *b, 1)));
+      v.set (tl::Variant (to_double (m_context, *v) + to_double (m_context, *b)));
     } else if (v->is_ulonglong () || b->is_ulonglong ()) {
-      v.set (tl::Variant (to_ulonglong (m_context, *v, 0) + to_ulonglong (m_context, *b, 1)));
+      v.set (tl::Variant (to_ulonglong (m_context, *v) + to_ulonglong (m_context, *b)));
     } else if (v->is_longlong () || b->is_longlong ()) {
-      v.set (tl::Variant (to_longlong (m_context, *v, 0) + to_longlong (m_context, *b, 1)));
+      v.set (tl::Variant (to_longlong (m_context, *v) + to_longlong (m_context, *b)));
     } else if (v->is_ulong () || b->is_ulong ()) {
-      v.set (tl::Variant (to_ulong (m_context, *v, 0) + to_ulong (m_context, *b, 1)));
+      v.set (tl::Variant (to_ulong (m_context, *v) + to_ulong (m_context, *b)));
     } else if (v->is_long () || b->is_long ()) {
-      v.set (tl::Variant (to_long (m_context, *v, 0) + to_long (m_context, *b, 1)));
+      v.set (tl::Variant (to_long (m_context, *v) + to_long (m_context, *b)));
     } else {
-      v.set (tl::Variant (to_double (m_context, *v, 0) + to_double (m_context, *b, 1)));
+      v.set (tl::Variant (to_double (m_context, *v) + to_double (m_context, *b)));
     }
   }
 };
@@ -1259,21 +1259,21 @@ public:
       tl::Variant o;
       std::vector <tl::Variant> vv;
       vv.push_back (*b);
-      c->execute (m_context, o, v.get (), "-", vv, 0);
+      c->execute (m_context, o, v.get (), "-", vv);
       v.swap (o);
 
     } else if (v->is_double () || b->is_double ()) {
-      v.set (tl::Variant (to_double (m_context, *v, 0) - to_double (m_context, *b, 1)));
+      v.set (tl::Variant (to_double (m_context, *v) - to_double (m_context, *b)));
     } else if (v->is_ulonglong () || b->is_ulonglong ()) {
-      v.set (tl::Variant (to_ulonglong (m_context, *v, 0) - to_ulonglong (m_context, *b, 1)));
+      v.set (tl::Variant (to_ulonglong (m_context, *v) - to_ulonglong (m_context, *b)));
     } else if (v->is_longlong () || b->is_longlong ()) {
-      v.set (tl::Variant (to_longlong (m_context, *v, 0) - to_longlong (m_context, *b, 1)));
+      v.set (tl::Variant (to_longlong (m_context, *v) - to_longlong (m_context, *b)));
     } else if (v->is_ulong () || b->is_ulong ()) {
-      v.set (tl::Variant (to_ulong (m_context, *v, 0) - to_ulong (m_context, *b, 1)));
+      v.set (tl::Variant (to_ulong (m_context, *v) - to_ulong (m_context, *b)));
     } else if (v->is_long () || b->is_long ()) {
-      v.set (tl::Variant (to_long (m_context, *v, 0) - to_long (m_context, *b, 1)));
+      v.set (tl::Variant (to_long (m_context, *v) - to_long (m_context, *b)));
     } else {
-      v.set (tl::Variant (to_double (m_context, *v, 0) - to_double (m_context, *b, 1)));
+      v.set (tl::Variant (to_double (m_context, *v) - to_double (m_context, *b)));
     }
   }
 };
@@ -1319,12 +1319,12 @@ public:
       tl::Variant o;
       std::vector <tl::Variant> vv;
       vv.push_back (*b);
-      c->execute (m_context, o, v.get (), "*", vv, 0);
+      c->execute (m_context, o, v.get (), "*", vv);
       v.swap (o);
 
     } else if (v->is_a_string ()) {
 
-      long x = to_long (m_context, *b, 1);
+      long x = to_long (m_context, *b);
       if (x < 0) {
         throw EvalError (tl::to_string (tr ("Numeric argument of '*' operator with string must be positive")), m_context);
       }
@@ -1339,7 +1339,7 @@ public:
 
     } else if (b->is_a_string ()) {
 
-      long x = to_long (m_context, *v, 0);
+      long x = to_long (m_context, *v);
       if (x < 0) {
         throw EvalError (tl::to_string (tr ("Numeric argument of '*' operator with string must be positive")), m_context);
       }
@@ -1353,17 +1353,17 @@ public:
       v.set (tl::Variant (s));
 
     } else if (v->is_double () || b->is_double ()) {
-      v.set (tl::Variant (to_double (m_context, *v, 0) * to_double (m_context, *b, 1)));
+      v.set (tl::Variant (to_double (m_context, *v) * to_double (m_context, *b)));
     } else if (v->is_ulonglong () || b->is_ulonglong ()) {
-      v.set (tl::Variant (to_ulonglong (m_context, *v, 0) * to_ulonglong (m_context, *b, 1)));
+      v.set (tl::Variant (to_ulonglong (m_context, *v) * to_ulonglong (m_context, *b)));
     } else if (v->is_longlong () || b->is_longlong ()) {
-      v.set (tl::Variant (to_longlong (m_context, *v, 0) * to_longlong (m_context, *b, 1)));
+      v.set (tl::Variant (to_longlong (m_context, *v) * to_longlong (m_context, *b)));
     } else if (v->is_ulong () || b->is_ulong ()) {
-      v.set (tl::Variant (to_ulong (m_context, *v, 0) * to_ulong (m_context, *b, 1)));
+      v.set (tl::Variant (to_ulong (m_context, *v) * to_ulong (m_context, *b)));
     } else if (v->is_long () || b->is_long ()) {
-      v.set (tl::Variant (to_long (m_context, *v, 0) * to_long (m_context, *b, 1)));
+      v.set (tl::Variant (to_long (m_context, *v) * to_long (m_context, *b)));
     } else {
-      v.set (tl::Variant (to_double (m_context, *v, 0) * to_double (m_context, *b, 1)));
+      v.set (tl::Variant (to_double (m_context, *v) * to_double (m_context, *b)));
     }
   }
 };
@@ -1409,45 +1409,45 @@ public:
       tl::Variant o;
       std::vector <tl::Variant> vv;
       vv.push_back (*b);
-      c->execute (m_context, o, v.get (), "/", vv, 0);
+      c->execute (m_context, o, v.get (), "/", vv);
       v.swap (o);
 
     } else if (v->is_double () || b->is_double ()) {
-      double d = to_double (m_context, *b, 1);
+      double d = to_double (m_context, *b);
       if (d == 0) {
         throw EvalError (tl::to_string (tr ("Division by zero")), m_context);
       }
-      v.set (tl::Variant (to_double (m_context, *v, 0) / d));
+      v.set (tl::Variant (to_double (m_context, *v) / d));
     } else if (v->is_ulonglong () || b->is_ulonglong ()) {
-      unsigned long long d = to_ulonglong (m_context, *b, 1);
+      unsigned long long d = to_ulonglong (m_context, *b);
       if (d == 0) {
         throw EvalError (tl::to_string (tr ("Division by zero")), m_context);
       }
-      v.set (tl::Variant (to_ulonglong (m_context, *v, 0) / d));
+      v.set (tl::Variant (to_ulonglong (m_context, *v) / d));
     } else if (v->is_longlong () || b->is_longlong ()) {
-      long long d = to_longlong (m_context, *b, 1);
+      long long d = to_longlong (m_context, *b);
       if (d == 0) {
         throw EvalError (tl::to_string (tr ("Division by zero")), m_context);
       }
-      v.set (tl::Variant (to_longlong (m_context, *v, 0) / d));
+      v.set (tl::Variant (to_longlong (m_context, *v) / d));
     } else if (v->is_ulong () || b->is_ulong ()) {
-      unsigned long d = to_ulong (m_context, *b, 1);
+      unsigned long d = to_ulong (m_context, *b);
       if (d == 0) {
         throw EvalError (tl::to_string (tr ("Division by zero")), m_context);
       }
-      v.set (tl::Variant (to_ulong (m_context, *v, 0) / d));
+      v.set (tl::Variant (to_ulong (m_context, *v) / d));
     } else if (v->is_long () || b->is_long ()) {
-      long d = to_long (m_context, *b, 1);
+      long d = to_long (m_context, *b);
       if (d == 0) {
         throw EvalError (tl::to_string (tr ("Division by zero")), m_context);
       }
-      v.set (tl::Variant (to_long (m_context, *v, 0) / d));
+      v.set (tl::Variant (to_long (m_context, *v) / d));
     } else {
-      double d = to_double (m_context, *b, 1);
+      double d = to_double (m_context, *b);
       if (d == 0) {
         throw EvalError (tl::to_string (tr ("Division by zero")), m_context);
       }
-      v.set (tl::Variant (to_double (m_context, *v, 0) / d));
+      v.set (tl::Variant (to_double (m_context, *v) / d));
     }
   }
 };
@@ -1493,33 +1493,33 @@ public:
       tl::Variant o;
       std::vector <tl::Variant> vv;
       vv.push_back (*b);
-      c->execute (m_context, o, v.get (), "%", vv, 0);
+      c->execute (m_context, o, v.get (), "%", vv);
       v.swap (o);
 
     } else if (v->is_ulonglong () || b->is_ulonglong ()) {
-      unsigned long long d = to_ulonglong (m_context, *b, 1);
+      unsigned long long d = to_ulonglong (m_context, *b);
       if (d == 0) {
         throw EvalError (tl::to_string (tr ("Modulo by zero")), m_context);
       }
-      v.set (tl::Variant (to_ulonglong (m_context, *v, 0) % d));
+      v.set (tl::Variant (to_ulonglong (m_context, *v) % d));
     } else if (v->is_longlong () || b->is_longlong ()) {
-      long long d = to_longlong (m_context, *b, 1);
+      long long d = to_longlong (m_context, *b);
       if (d == 0) {
         throw EvalError (tl::to_string (tr ("Modulo by zero")), m_context);
       }
-      v.set (tl::Variant (to_longlong (m_context, *v, 0) % d));
+      v.set (tl::Variant (to_longlong (m_context, *v) % d));
     } else if (v->is_ulong () || b->is_ulong ()) {
-      unsigned long d = to_ulong (m_context, *b, 1);
+      unsigned long d = to_ulong (m_context, *b);
       if (d == 0) {
         throw EvalError (tl::to_string (tr ("Modulo by zero")), m_context);
       }
-      v.set (tl::Variant (to_ulong (m_context, *v, 0) % d));
+      v.set (tl::Variant (to_ulong (m_context, *v) % d));
     } else {
-      long d = to_long (m_context, *b, 1);
+      long d = to_long (m_context, *b);
       if (d == 0) {
         throw EvalError (tl::to_string (tr ("Modulo by zero")), m_context);
       }
-      v.set (tl::Variant (to_long (m_context, *v, 0) % d));
+      v.set (tl::Variant (to_long (m_context, *v) % d));
     }
   }
 };
@@ -1565,17 +1565,17 @@ public:
       tl::Variant o;
       std::vector <tl::Variant> vv;
       vv.push_back (*b);
-      c->execute (m_context, o, v.get (), "&", vv, 0);
+      c->execute (m_context, o, v.get (), "&", vv);
       v.swap (o);
 
     } else if (v->is_ulonglong () || b->is_ulonglong ()) {
-      v.set (tl::Variant (to_ulonglong (m_context, *v, 0) & to_ulonglong (m_context, *b, 1)));
+      v.set (tl::Variant (to_ulonglong (m_context, *v) & to_ulonglong (m_context, *b)));
     } else if (v->is_longlong () || b->is_longlong ()) {
-      v.set (tl::Variant (to_longlong (m_context, *v, 0) & to_longlong (m_context, *b, 1)));
+      v.set (tl::Variant (to_longlong (m_context, *v) & to_longlong (m_context, *b)));
     } else if (v->is_ulong () || b->is_ulong ()) {
-      v.set (tl::Variant (to_ulong (m_context, *v, 0) & to_ulong (m_context, *b, 1)));
+      v.set (tl::Variant (to_ulong (m_context, *v) & to_ulong (m_context, *b)));
     } else {
-      v.set (tl::Variant (to_long (m_context, *v, 0) & to_long (m_context, *b, 1)));
+      v.set (tl::Variant (to_long (m_context, *v) & to_long (m_context, *b)));
     }
   }
 };
@@ -1621,17 +1621,17 @@ public:
       tl::Variant o;
       std::vector <tl::Variant> vv;
       vv.push_back (*b);
-      c->execute (m_context, o, v.get (), "|", vv, 0);
+      c->execute (m_context, o, v.get (), "|", vv);
       v.swap (o);
 
     } else if (v->is_ulonglong () || b->is_ulonglong ()) {
-      v.set (tl::Variant (to_ulonglong (m_context, *v, 0) | to_ulonglong (m_context, *b, 1)));
+      v.set (tl::Variant (to_ulonglong (m_context, *v) | to_ulonglong (m_context, *b)));
     } else if (v->is_longlong () || b->is_longlong ()) {
-      v.set (tl::Variant (to_longlong (m_context, *v, 0) | to_longlong (m_context, *b, 1)));
+      v.set (tl::Variant (to_longlong (m_context, *v) | to_longlong (m_context, *b)));
     } else if (v->is_ulong () || b->is_ulong ()) {
-      v.set (tl::Variant (to_ulong (m_context, *v, 0) | to_ulong (m_context, *b, 1)));
+      v.set (tl::Variant (to_ulong (m_context, *v) | to_ulong (m_context, *b)));
     } else {
-      v.set (tl::Variant (to_long (m_context, *v, 0) | to_long (m_context, *b, 1)));
+      v.set (tl::Variant (to_long (m_context, *v) | to_long (m_context, *b)));
     }
   }
 };
@@ -1677,17 +1677,17 @@ public:
       tl::Variant o;
       std::vector <tl::Variant> vv;
       vv.push_back (*b);
-      c->execute (m_context, o, v.get (), "^", vv, 0);
+      c->execute (m_context, o, v.get (), "^", vv);
       v.swap (o);
 
     } else if (v->is_ulonglong () || b->is_ulonglong ()) {
-      v.set (tl::Variant (to_ulonglong (m_context, *v, 0) ^ to_ulonglong (m_context, *b, 1)));
+      v.set (tl::Variant (to_ulonglong (m_context, *v) ^ to_ulonglong (m_context, *b)));
     } else if (v->is_longlong () || b->is_longlong ()) {
-      v.set (tl::Variant (to_longlong (m_context, *v, 0) ^ to_longlong (m_context, *b, 1)));
+      v.set (tl::Variant (to_longlong (m_context, *v) ^ to_longlong (m_context, *b)));
     } else if (v->is_ulong () || b->is_ulong ()) {
-      v.set (tl::Variant (to_ulong (m_context, *v, 0) ^ to_ulong (m_context, *b, 1)));
+      v.set (tl::Variant (to_ulong (m_context, *v) ^ to_ulong (m_context, *b)));
     } else {
-      v.set (tl::Variant (to_long (m_context, *v, 0) ^ to_long (m_context, *b, 1)));
+      v.set (tl::Variant (to_long (m_context, *v) ^ to_long (m_context, *b)));
     }
   }
 };
@@ -1733,7 +1733,7 @@ public:
       tl::Variant o;
       std::vector <tl::Variant> vv;
       vv.push_back (*e);
-      c->execute (m_context, o, v.get (), "[]", vv, 0);
+      c->execute (m_context, o, v.get (), "[]", vv);
       v.swap (o);
 
     } else if (v->is_list ()) {
@@ -1826,7 +1826,7 @@ public:
     } else if (v->is_ulonglong ()) {
       v.set (-(long long)(v->to_ulonglong ()));
     } else {
-      v.set (-to_double (m_context, *v, 0));
+      v.set (-to_double (m_context, *v));
     }
   }
 };
@@ -1881,7 +1881,7 @@ public:
     } else if (v->is_ulonglong ()) {
       v.set (~v->to_ulonglong ());
     } else {
-      v.set (~to_long (m_context, *v, 0));
+      v.set (~to_long (m_context, *v));
     }
   }
 };
@@ -2025,17 +2025,11 @@ public:
     m_c[0]->execute (v);
 
     std::vector <tl::Variant> vv;
-    std::map <std::string, tl::Variant> kwargs;
-
     vv.reserve (m_c.size () - 1);
     for (std::vector<ExpressionNode *>::const_iterator c = m_c.begin () + 1; c != m_c.end (); ++c) {
       EvalTarget a;
       (*c)->execute (a);
-      if (! (*c)->name ().empty ()) {
-        kwargs [(*c)->name ()] = *a;
-      } else {
-        vv.push_back (*a);
-      }
+      vv.push_back (*a);
     }
 
     const EvalClass *c = 0;
@@ -2050,11 +2044,11 @@ public:
         throw EvalError (tl::sprintf (tl::to_string (tr ("Not a valid object for a method call (not an object) - value is %s")), v->to_parsable_string ()), m_context);
       }
     } else {
-      throw EvalError (tl::sprintf (tl::to_string (tr ("Not a valid object for a method call (wrong type) - value is %s")), v->to_parsable_string ()), m_context);
+      throw EvalError (tl::sprintf (tl::to_string (tr ("Not a valid object for a method call (wrong type) - value is %1")), v->to_parsable_string ()), m_context);
     }
 
     tl::Variant o;
-    c->execute (m_context, o, v.get (), m_method, vv, kwargs.empty () ? 0 : &kwargs);
+    c->execute (m_context, o, v.get (), m_method, vv);
     v.swap (o);
   }
 
@@ -2194,26 +2188,16 @@ public:
   void execute (EvalTarget &v) const 
   {
     std::vector<tl::Variant> vv;
-    std::map<std::string, tl::Variant> kwargs;
-
     vv.reserve (m_c.size ());
 
     for (std::vector<ExpressionNode *>::const_iterator c = m_c.begin (); c != m_c.end (); ++c) {
       EvalTarget a;
       (*c)->execute (a);
-      if ((*c)->name ().empty ()) {
-        vv.push_back (*a);
-      } else {
-        kwargs[(*c)->name ()] = *a;
-      }
-    }
-
-    if (! kwargs.empty () && ! mp_func->supports_keyword_parameters ()) {
-      throw EvalError (tl::to_string (tr ("Keyword parameters not permitted")), m_context);
+      vv.push_back (*a);
     }
 
     tl::Variant o;
-    mp_func->execute (m_context, o, vv, kwargs.empty () ? 0 : &kwargs);
+    mp_func->execute (m_context, o, vv);
     v.swap (o);
   }
 
@@ -2388,7 +2372,7 @@ abs_f (const ExpressionParserContext &context, tl::Variant &out, const std::vect
   } else if (v[0].is_double ()) {
     out = fabs (v[0].to_double ());
   } else {
-    out = labs (to_long (context, v[0], 0));
+    out = labs (to_long (context, v[0]));
   }
 }
 
@@ -2463,7 +2447,7 @@ pow_f (const ExpressionParserContext &context, tl::Variant &out, const std::vect
     throw EvalError (tl::to_string (tr ("'pow' function expects exactly two arguments")), context);
   }
 
-  out = pow (to_double (context, vv [0], 0), to_double (context, vv [1], 1));
+  out = pow (to_double (context, vv [0]), to_double (context, vv [1]));
 }
 
 static void
@@ -2473,7 +2457,7 @@ atan2_f (const ExpressionParserContext &context, tl::Variant &out, const std::ve
     throw EvalError (tl::to_string (tr ("'atan2' function expects exactly two arguments")), context);
   }
 
-  out = atan2 (to_double (context, vv [0], 0), to_double (context, vv [1], 1));
+  out = atan2 (to_double (context, vv [0]), to_double (context, vv [1]));
 }
 
 static void
@@ -2690,10 +2674,10 @@ substr_f (const ExpressionParserContext &context, tl::Variant &out, const std::v
 
   long len = -1;
   if (vv.size () > 2) {
-    len = std::max (long (0), to_long (context, vv [2], 2));
+    len = std::max (long (0), to_long (context, vv [2]));
   }
 
-  long l = to_long (context, vv [1], 1);
+  long l = to_long (context, vv [1]);
   if (l < 0) {
     l = long (s.size ()) + l;
     if (l < 0) {
@@ -2711,26 +2695,6 @@ substr_f (const ExpressionParserContext &context, tl::Variant &out, const std::v
   } else {
     out = std::string (s, from, len);
   }
-}
-
-static void
-upcase_f (const ExpressionParserContext &context, tl::Variant &out, const std::vector <tl::Variant> &vv)
-{
-  if (vv.size () != 1) {
-    throw EvalError (tl::to_string (tr ("'upcase' function expects one argument")), context);
-  }
-
-  out = tl::to_upper_case (vv [0].to_string ());
-}
-
-static void
-downcase_f (const ExpressionParserContext &context, tl::Variant &out, const std::vector <tl::Variant> &vv)
-{
-  if (vv.size () != 1) {
-    throw EvalError (tl::to_string (tr ("'upcase' function expects one argument")), context);
-  }
-
-  out = tl::to_lower_case (vv [0].to_string ());
 }
 
 static void
@@ -2772,7 +2736,7 @@ item_f (const ExpressionParserContext &context, tl::Variant &out, const std::vec
     throw EvalError (tl::to_string (tr ("First argument of 'item' function must be a list")), context);
   }
 
-  long index = to_long (context, vv [1], 1);
+  long index = to_long (context, vv [1]);
   if (index < 0 || index >= long (vv [0].end () - vv [0].begin ())) {
     out = tl::Variant ();
   } else {
@@ -2836,9 +2800,9 @@ env_f (const ExpressionParserContext &context, tl::Variant &out, const std::vect
     throw EvalError (tl::to_string (tr ("'env' function expects exactly two arguments")), context);
   }
 
-  const char *vn = vv [0].to_string ();
-  if (tl::has_env (vn)) {
-    out = tl::get_env (vn);
+  const char *env = getenv (vv [0].to_string ());
+  if (env) {
+    out = env;
   } else {
     out = tl::Variant ();
   }
@@ -2952,7 +2916,6 @@ printf_f (const ExpressionParserContext &context, tl::Variant &, const std::vect
   }
 
   std::cout << tl::sprintf (vv[0].to_string (), vv, 1);
-  std::cout.flush ();
 }
 
 // ----------------------------------------------------------------------------
@@ -2975,7 +2938,7 @@ public:
     ms_functions.erase (m_name);
   }
 
-  void execute (const ExpressionParserContext &context, tl::Variant &out, const std::vector<tl::Variant> &args, const std::map<std::string, tl::Variant> * /*kwargs*/) const
+  void execute (const ExpressionParserContext &context, tl::Variant &out, const std::vector<tl::Variant> &args) const 
   {
     m_func (context, out, args);
   }
@@ -3062,8 +3025,6 @@ static EvalStaticFunction f55 ("file_exists", &file_exists_f);
 static EvalStaticFunction f56 ("is_dir", &is_dir_f);
 static EvalStaticFunction f57 ("combine", &combine_f);
 static EvalStaticFunction f58 ("abs", &abs_f);
-static EvalStaticFunction f59 ("upcase", &upcase_f);
-static EvalStaticFunction f60 ("downcase", &downcase_f);
 
 // ----------------------------------------------------------------------------
 //  Implementation of a constant wrapper
@@ -3164,16 +3125,10 @@ Expression::execute (EvalTarget &v) const
 // ----------------------------------------------------------------------------
 //  Implementation of Eval
 
-Eval Eval::m_global (0, 0, false);
+Eval Eval::m_global;
 
 Eval::Eval (Eval *parent, bool sloppy)
-  : mp_parent (parent), mp_global (&Eval::m_global), m_sloppy (sloppy), mp_ctx_handler (0)
-{
-  // .. nothing yet ..
-}
-
-Eval::Eval (Eval *global, Eval *parent, bool sloppy)
-  : mp_parent (parent), mp_global (global), m_sloppy (sloppy), mp_ctx_handler (0)
+  : mp_parent (parent), m_sloppy (sloppy), mp_ctx_handler (0)
 {
   // .. nothing yet ..
 }
@@ -3192,17 +3147,6 @@ Eval::set_var (const std::string &name, const tl::Variant &var)
   m_local_vars.insert (std::make_pair (name, tl::Variant ())).first->second = var;
 }
 
-tl::Variant *
-Eval::var (const std::string &name)
-{
-  auto f = m_local_vars.find (name);
-  if (f != m_local_vars.end ()) {
-    return &f->second;
-  } else {
-    return 0;
-  }
-}
-
 void 
 Eval::define_function (const std::string &name, EvalFunction *function)
 {
@@ -3213,19 +3157,8 @@ Eval::define_function (const std::string &name, EvalFunction *function)
   f = function;
 }
 
-EvalFunction *
-Eval::function (const std::string &name)
-{
-  auto f = m_local_functions.find (name);
-  if (f != m_local_functions.end ()) {
-    return f->second;
-  } else {
-    return 0;
-  }
-}
-
 void
-Eval::eval_top (ExpressionParserContext &ex, std::unique_ptr<ExpressionNode> &n)
+Eval::eval_top (ExpressionParserContext &ex, std::auto_ptr<ExpressionNode> &n)
 {
   do {
 
@@ -3238,7 +3171,7 @@ Eval::eval_top (ExpressionParserContext &ex, std::unique_ptr<ExpressionNode> &n)
 
     } else {
 
-      std::unique_ptr<ExpressionNode> nn;
+      std::auto_ptr<ExpressionNode> nn;
 
       ExpressionParserContext ex1 = ex;
 
@@ -3249,7 +3182,7 @@ Eval::eval_top (ExpressionParserContext &ex, std::unique_ptr<ExpressionNode> &n)
         ExpressionParserContext exb = ex;
         if (! exb.test ("=>") && ! exb.test ("==") && ex.test ("=")) {
 
-          std::unique_ptr<ExpressionNode> b;
+          std::auto_ptr<ExpressionNode> b;
           eval_assign (ex, b);
           nn.reset (new AssignExpressionNode (ex1, nn.release (), b.release ()));
 
@@ -3280,7 +3213,7 @@ Eval::eval_top (ExpressionParserContext &ex, std::unique_ptr<ExpressionNode> &n)
 }
 
 void
-Eval::eval_assign (ExpressionParserContext &ex, std::unique_ptr<ExpressionNode> &n)
+Eval::eval_assign (ExpressionParserContext &ex, std::auto_ptr<ExpressionNode> &n)
 {
   eval_if (ex, n);
 
@@ -3289,7 +3222,7 @@ Eval::eval_assign (ExpressionParserContext &ex, std::unique_ptr<ExpressionNode> 
   if (! exb.test ("=>") && ! exb.test ("==") && ex.test ("=")) {
 
     exb = ex;
-    std::unique_ptr<ExpressionNode> b;
+    std::auto_ptr<ExpressionNode> b;
     eval_assign (ex, b);
     n.reset (new AssignExpressionNode (ex1, n.release (), b.release ()));
 
@@ -3297,14 +3230,14 @@ Eval::eval_assign (ExpressionParserContext &ex, std::unique_ptr<ExpressionNode> 
 }
 
 void
-Eval::eval_if (ExpressionParserContext &ex, std::unique_ptr<ExpressionNode> &n)
+Eval::eval_if (ExpressionParserContext &ex, std::auto_ptr<ExpressionNode> &n)
 {
   eval_boolean (ex, n);
 
   ExpressionParserContext ex1 = ex;
   if (ex.test ("?")) {
 
-    std::unique_ptr<ExpressionNode> b, c;
+    std::auto_ptr<ExpressionNode> b, c;
     eval_if (ex, b);
     if (! ex.test (":")) {
       throw EvalError (tl::to_string (tr ("Expected ':'")), ex);
@@ -3316,7 +3249,7 @@ Eval::eval_if (ExpressionParserContext &ex, std::unique_ptr<ExpressionNode> &n)
 }
 
 void
-Eval::eval_boolean (ExpressionParserContext &ex, std::unique_ptr<ExpressionNode> &n)
+Eval::eval_boolean (ExpressionParserContext &ex, std::auto_ptr<ExpressionNode> &n)
 {
   eval_conditional (ex, n);
 
@@ -3325,13 +3258,13 @@ Eval::eval_boolean (ExpressionParserContext &ex, std::unique_ptr<ExpressionNode>
     ExpressionParserContext ex1 = ex;
     if (ex.test("||")) {
 
-      std::unique_ptr<ExpressionNode> b;
+      std::auto_ptr<ExpressionNode> b;
       eval_conditional (ex, b);
       n.reset (new LogOrExpressionNode (ex1, n.release (), b.release ()));
 
     } else if (ex.test ("&&")) {
 
-      std::unique_ptr<ExpressionNode> b;
+      std::auto_ptr<ExpressionNode> b;
       eval_conditional (ex, b);
       n.reset (new LogAndExpressionNode (ex1, n.release (), b.release ()));
 
@@ -3343,7 +3276,7 @@ Eval::eval_boolean (ExpressionParserContext &ex, std::unique_ptr<ExpressionNode>
 }
 
 void
-Eval::eval_conditional (ExpressionParserContext &ex, std::unique_ptr<ExpressionNode> &n)
+Eval::eval_conditional (ExpressionParserContext &ex, std::auto_ptr<ExpressionNode> &n)
 {
   eval_shift (ex, n);
 
@@ -3352,49 +3285,49 @@ Eval::eval_conditional (ExpressionParserContext &ex, std::unique_ptr<ExpressionN
     ExpressionParserContext ex1 = ex;
     if (ex.test("<=")) {
 
-      std::unique_ptr<ExpressionNode> b;
+      std::auto_ptr<ExpressionNode> b;
       eval_shift (ex, b);
       n.reset (new LessOrEqualExpressionNode (ex1, n.release (), b.release ()));
 
     } else if (ex.test("<")) {
 
-      std::unique_ptr<ExpressionNode> b;
+      std::auto_ptr<ExpressionNode> b;
       eval_shift (ex, b);
       n.reset (new LessExpressionNode (ex1, n.release (), b.release ()));
 
     } else if (ex.test(">=")) {
 
-      std::unique_ptr<ExpressionNode> b;
+      std::auto_ptr<ExpressionNode> b;
       eval_shift (ex, b);
       n.reset (new GreaterOrEqualExpressionNode (ex1, n.release (), b.release ()));
 
     } else if (ex.test(">")) {
 
-      std::unique_ptr<ExpressionNode> b;
+      std::auto_ptr<ExpressionNode> b;
       eval_shift (ex, b);
       n.reset (new GreaterExpressionNode (ex1, n.release (), b.release ()));
 
     } else if (ex.test("==")) {
 
-      std::unique_ptr<ExpressionNode> b;
+      std::auto_ptr<ExpressionNode> b;
       eval_shift (ex, b);
       n.reset (new EqualExpressionNode (ex1, n.release (), b.release ()));
 
     } else if (ex.test("!=")) {
 
-      std::unique_ptr<ExpressionNode> b;
+      std::auto_ptr<ExpressionNode> b;
       eval_shift (ex, b);
       n.reset (new NotEqualExpressionNode (ex1, n.release (), b.release ()));
 
     } else if (ex.test("~")) {
 
-      std::unique_ptr<ExpressionNode> b;
+      std::auto_ptr<ExpressionNode> b;
       eval_shift (ex, b);
       n.reset (new MatchExpressionNode (ex1, n.release (), b.release (), this));
 
     } else if (ex.test("!~")) {
 
-      std::unique_ptr<ExpressionNode> b;
+      std::auto_ptr<ExpressionNode> b;
       eval_shift (ex, b);
       n.reset (new NoMatchExpressionNode (ex1, n.release (), b.release ()));
 
@@ -3406,7 +3339,7 @@ Eval::eval_conditional (ExpressionParserContext &ex, std::unique_ptr<ExpressionN
 }
 
 void
-Eval::eval_shift (ExpressionParserContext &ex, std::unique_ptr<ExpressionNode> &n)
+Eval::eval_shift (ExpressionParserContext &ex, std::auto_ptr<ExpressionNode> &n)
 {
   eval_addsub (ex, n);
 
@@ -3415,13 +3348,13 @@ Eval::eval_shift (ExpressionParserContext &ex, std::unique_ptr<ExpressionNode> &
     ExpressionParserContext ex1 = ex;
     if (ex.test("<<")) {
 
-      std::unique_ptr<ExpressionNode> b;
+      std::auto_ptr<ExpressionNode> b;
       eval_addsub (ex, b);
       n.reset (new ShiftLeftExpressionNode (ex1, n.release (), b.release ()));
 
     } else if (ex.test(">>")) {
 
-      std::unique_ptr<ExpressionNode> b;
+      std::auto_ptr<ExpressionNode> b;
       eval_addsub (ex, b);
       n.reset (new ShiftRightExpressionNode (ex1, n.release (), b.release ()));
 
@@ -3433,7 +3366,7 @@ Eval::eval_shift (ExpressionParserContext &ex, std::unique_ptr<ExpressionNode> &
 }
 
 void
-Eval::eval_addsub (ExpressionParserContext &ex, std::unique_ptr<ExpressionNode> &n)
+Eval::eval_addsub (ExpressionParserContext &ex, std::auto_ptr<ExpressionNode> &n)
 {
   eval_product (ex, n);
 
@@ -3442,13 +3375,13 @@ Eval::eval_addsub (ExpressionParserContext &ex, std::unique_ptr<ExpressionNode> 
     ExpressionParserContext ex1 = ex;
     if (ex.test("+")) {
 
-      std::unique_ptr<ExpressionNode> b;
+      std::auto_ptr<ExpressionNode> b;
       eval_product (ex, b);
       n.reset (new PlusExpressionNode (ex1, n.release (), b.release ()));
 
     } else if (ex.test("-")) {
 
-      std::unique_ptr<ExpressionNode> b;
+      std::auto_ptr<ExpressionNode> b;
       eval_product (ex, b);
       n.reset (new MinusExpressionNode (ex1, n.release (), b.release ()));
 
@@ -3460,7 +3393,7 @@ Eval::eval_addsub (ExpressionParserContext &ex, std::unique_ptr<ExpressionNode> 
 }
 
 void
-Eval::eval_product (ExpressionParserContext &ex, std::unique_ptr<ExpressionNode> &n)
+Eval::eval_product (ExpressionParserContext &ex, std::auto_ptr<ExpressionNode> &n)
 {
   eval_bitwise (ex, n);
 
@@ -3469,19 +3402,19 @@ Eval::eval_product (ExpressionParserContext &ex, std::unique_ptr<ExpressionNode>
     ExpressionParserContext ex1 = ex;
     if (ex.test("*")) {
 
-      std::unique_ptr<ExpressionNode> b;
+      std::auto_ptr<ExpressionNode> b;
       eval_bitwise (ex, b);
       n.reset (new StarExpressionNode (ex1, n.release (), b.release ()));
 
     } else if (ex.test("/")) {
 
-      std::unique_ptr<ExpressionNode> b;
+      std::auto_ptr<ExpressionNode> b;
       eval_bitwise (ex, b);
       n.reset (new SlashExpressionNode (ex1, n.release (), b.release ()));
 
     } else if (ex.test("%")) {
 
-      std::unique_ptr<ExpressionNode> b;
+      std::auto_ptr<ExpressionNode> b;
       eval_bitwise (ex, b);
       n.reset (new PercentExpressionNode (ex1, n.release (), b.release ()));
 
@@ -3493,7 +3426,7 @@ Eval::eval_product (ExpressionParserContext &ex, std::unique_ptr<ExpressionNode>
 }
 
 void
-Eval::eval_bitwise (ExpressionParserContext &ex, std::unique_ptr<ExpressionNode> &n)
+Eval::eval_bitwise (ExpressionParserContext &ex, std::auto_ptr<ExpressionNode> &n)
 {
   eval_unary (ex, n);
 
@@ -3507,19 +3440,19 @@ Eval::eval_bitwise (ExpressionParserContext &ex, std::unique_ptr<ExpressionNode>
       break; // not handled here
     } else if (ex.test("&")) {
 
-      std::unique_ptr<ExpressionNode> b;
+      std::auto_ptr<ExpressionNode> b;
       eval_unary (ex, b);
       n.reset (new AmpersandExpressionNode (ex1, n.release (), b.release ()));
 
     } else if (ex.test("|")) {
 
-      std::unique_ptr<ExpressionNode> b;
+      std::auto_ptr<ExpressionNode> b;
       eval_unary (ex, b);
       n.reset (new PipeExpressionNode (ex1, n.release (), b.release ()));
 
     } else if (ex.test("^")) {
 
-      std::unique_ptr<ExpressionNode> b;
+      std::auto_ptr<ExpressionNode> b;
       eval_unary (ex, b);
       n.reset (new AcuteExpressionNode (ex1, n.release (), b.release ()));
 
@@ -3531,7 +3464,7 @@ Eval::eval_bitwise (ExpressionParserContext &ex, std::unique_ptr<ExpressionNode>
 }
 
 void
-Eval::eval_unary (ExpressionParserContext &ex, std::unique_ptr<ExpressionNode> &n)
+Eval::eval_unary (ExpressionParserContext &ex, std::auto_ptr<ExpressionNode> &n)
 {
   ExpressionParserContext ex1 = ex;
   if (ex.test ("!")) {
@@ -3563,7 +3496,7 @@ static const char *operator_methods[] =
 };
 
 void
-Eval::eval_suffix (ExpressionParserContext &ex, std::unique_ptr<ExpressionNode> &n)
+Eval::eval_suffix (ExpressionParserContext &ex, std::auto_ptr<ExpressionNode> &n)
 {
   eval_atomic (ex, n, 1);
 
@@ -3597,7 +3530,7 @@ Eval::eval_suffix (ExpressionParserContext &ex, std::unique_ptr<ExpressionNode> 
 
         t += "=";
 
-        std::unique_ptr<ExpressionNode> a;
+        std::auto_ptr<ExpressionNode> a;
         eval_assign (ex, a);
 
         MethodExpressionNode *m = new MethodExpressionNode (ex1, t);
@@ -3616,19 +3549,8 @@ Eval::eval_suffix (ExpressionParserContext &ex, std::unique_ptr<ExpressionNode> 
 
           do {
 
-            tl::Extractor exn = ex;
-            std::string n;
-            if (exn.try_read_word (n, "_") && exn.test ("=")) {
-              //  keyword parameter -> read name again to skip it
-              ex.read_word (n, "_");
-              ex.expect ("=");
-            } else {
-              n.clear ();
-            }
-
-            std::unique_ptr<ExpressionNode> a;
+            std::auto_ptr<ExpressionNode> a;
             eval_assign (ex, a);
-            a->set_name (n);
             m->add_child (a.release ());
 
             if (ex.test (")")) {
@@ -3651,7 +3573,7 @@ Eval::eval_suffix (ExpressionParserContext &ex, std::unique_ptr<ExpressionNode> 
 
     } else if (ex.test ("[")) {
 
-      std::unique_ptr<ExpressionNode> a;
+      std::auto_ptr<ExpressionNode> a;
       eval_top (ex, a);
       n.reset (new IndexExpressionNode (ex1, n.release (), a.release ()));
 
@@ -3692,41 +3614,10 @@ scan_angle_bracket (tl::Extractor &ex, const char *term, std::string &s)
   ex.expect (term);
 }
 
-static bool
-get_match_group (tl::Extractor &ex, int &group)
-{
-  tl::Extractor ex1 = ex;
-  group = 0;
-  if (ex1.test ("$") && isdigit (*ex1)) {
-    ex1.read (group);
-    ex = ex1;
-    return true;
-  } else {
-    return false;
-  }
-}
-
-static bool
-get_variable_name (tl::Extractor &ex, std::string &name)
-{
-  tl::Extractor ex1 = ex;
-  if (ex1.try_read_word (name, "_")) {
-    ex = ex1;
-    return true;
-  } else if (ex1.test ("$")) {
-    name = "$";
-    ex = ex1;
-    return true;
-  } else {
-    return false;
-  }
-}
-
 void
-Eval::eval_atomic (ExpressionParserContext &ex, std::unique_ptr<ExpressionNode> &n, int am)
+Eval::eval_atomic (ExpressionParserContext &ex, std::auto_ptr<ExpressionNode> &n, int am)
 {
   double g = 0.0;
-  int match_group = 0;
   std::string t;
 
   ExpressionParserContext ex1 = ex;
@@ -3745,7 +3636,7 @@ Eval::eval_atomic (ExpressionParserContext &ex, std::unique_ptr<ExpressionNode> 
 
       do {
 
-        std::unique_ptr<ExpressionNode> a;
+        std::auto_ptr<ExpressionNode> a;
         eval_top (ex, a);
         n->add_child (a.release ());
 
@@ -3823,10 +3714,12 @@ Eval::eval_atomic (ExpressionParserContext &ex, std::unique_ptr<ExpressionNode> 
 
     }
 
-  } else if (get_match_group (ex, match_group)) {
+  } else if (ex.test ("$")) {
 
     //  match substring
-    n.reset (new MatchSubstringReferenceNode (ex1, this, match_group - 1));
+    int i = 0;
+    ex.read (i);
+    n.reset (new MatchSubstringReferenceNode (ex1, this, i - 1));
 
   } else if (ex.test ("{")) {
 
@@ -3837,12 +3730,12 @@ Eval::eval_atomic (ExpressionParserContext &ex, std::unique_ptr<ExpressionNode> 
       do {
 
         ExpressionParserContext ex2 = ex;
-        std::unique_ptr<ExpressionNode> k;
+        std::auto_ptr<ExpressionNode> k;
         eval_top (ex, k);
         n->add_child (k.release ());
 
         if (ex.test ("=>")) {
-          std::unique_ptr<ExpressionNode> v;
+          std::auto_ptr<ExpressionNode> v;
           eval_top (ex, v);
           n->add_child (v.release ());
         } else {
@@ -3963,7 +3856,12 @@ Eval::eval_atomic (ExpressionParserContext &ex, std::unique_ptr<ExpressionNode> 
 
     n.reset (new ConstantExpressionNode (ex1, tl::Variant (t)));
 
-  } else if (get_variable_name (ex, t)) {
+  } else if (ex.try_read_word (t, "_")) {
+
+    ExpressionParserContext ex2 = ex;
+
+    //  for a function: collect the parameter or check if it's an assignment
+    std::vector <tl::Variant> vv;
 
     const EvalFunction *function = 0;
     const tl::Variant *value = 0;
@@ -3993,7 +3891,7 @@ Eval::eval_atomic (ExpressionParserContext &ex, std::unique_ptr<ExpressionNode> 
 
           do {
 
-            std::unique_ptr<ExpressionNode> v;
+            std::auto_ptr<ExpressionNode> v;
             eval_top (ex, v);
             n->add_child (v.release ());
 
@@ -4060,8 +3958,8 @@ Eval::resolve_name (const std::string &t, const EvalFunction *&function, const t
   if (! function && ! value && ! var) {
     if (mp_parent) {
       mp_parent->resolve_name (t, function, value, var);
-    } else if (mp_global) {
-      mp_global->resolve_name (t, function, value, var);
+    } else if (this != &m_global) {
+      m_global.resolve_name (t, function, value, var);
     }
   }
 }
@@ -4083,6 +3981,7 @@ Eval::parse (Expression &expr, const std::string &s, bool top)
   expr = Expression (this, s);
 
   tl::Extractor ex (s.c_str ());
+  tl::Extractor ex0 = ex;
   ExpressionParserContext context (&expr, ex);
 
   if (top) {
@@ -4097,8 +3996,6 @@ Eval::parse (Expression &expr, const std::string &s, bool top)
 void 
 Eval::parse (Expression &expr, tl::Extractor &ex, bool top)
 {
-  ex.skip ();
-
   expr = Expression (this, ex.get ());
 
   tl::Extractor ex0 = ex;
@@ -4118,15 +4015,13 @@ Eval::parse (Expression &expr, tl::Extractor &ex, bool top)
 std::string 
 Eval::parse_expr (tl::Extractor &ex, bool top)
 {
-  ex.skip ();
-
   tl::Eval eval (0, true);
   Expression expr (&eval, ex.get ());
 
   tl::Extractor ex0 = ex;
   ExpressionParserContext context (&expr, ex);
 
-  std::unique_ptr<ExpressionNode> n;
+  std::auto_ptr<ExpressionNode> n;
   if (top) {
     eval.eval_top (context, n);
   } else {

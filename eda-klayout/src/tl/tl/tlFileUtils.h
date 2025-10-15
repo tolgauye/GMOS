@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -52,17 +52,10 @@ bool TL_PUBLIC rm_dir_recursive (const std::string &path);
 bool TL_PUBLIC mkpath (const std::string &path);
 
 /**
- *  @brief Recursively copy the given directory
+ *  @brief Recursively remove the given directory, the files from that directory and all sub-directories (version with std::string)
  *  @return True, if successful. false otherwise.
  */
 bool TL_PUBLIC cp_dir_recursive (const std::string &source, const std::string &target);
-
-/**
- *  @brief Recursively move the contents of the given directory
- *  @return True, if successful. false otherwise.
- *  After this operation, the source directory is deleted.
- */
-bool TL_PUBLIC mv_dir_recursive (const std::string &source, const std::string &target);
 
 /**
  *  @brief Gets the absolute path for a given file path
@@ -91,12 +84,6 @@ std::string TL_PUBLIC filename (const std::string &s);
  *  This will strip all extensions (i.e. "archive.tar.gz" will become "archive").
  */
 std::string TL_PUBLIC basename (const std::string &s);
-
-/**
- *  @brief Gets the basename for a given file path (file name without the last extensions)
- *  This will strip all extensions (i.e. "archive.tar.gz" will become "archive.tar").
- */
-std::string TL_PUBLIC complete_basename (const std::string &s);
 
 /**
  *  @brief Gets the complete extension for a given file path
@@ -139,19 +126,6 @@ bool TL_PUBLIC is_dir (const std::string &s);
 std::vector<std::string> TL_PUBLIC dir_entries (const std::string &s, bool with_files = true, bool with_dirs = true, bool without_dotfiles = false);
 
 /**
- *  @brief Expands a glob pattern into a set of files
- *
- *  This version supports "**" for recursive directory expansion.
- *  Apart from that the features of tl::GlobPattern are supported.
- */
-std::vector<std::string> TL_PUBLIC glob_expand (const std::string &path);
-
-/**
- *  @brief Rename the given file
- */
-bool TL_PUBLIC rename_file (const std::string &path, const std::string &new_name);
-
-/**
  *  @brief Removes the given file and returns true on success
  */
 bool TL_PUBLIC rm_file (const std::string &path);
@@ -192,73 +166,6 @@ std::string TL_PUBLIC combine_path (const std::string &p1, const std::string &p2
 std::string TL_PUBLIC current_dir ();
 
 /**
- *  @brief Change the current directory and returns true if the change was successful
- */
-bool TL_PUBLIC chdir (const std::string &path);
-
-/**
- *  @brief Gets a temporary file path
- *
- *  This function will make a temporary file with a unique name.
- *  The "domain" string is used as part of the file name as an disambiguator.
- *
- *  The function reads $TMPDIR or $TMP to define the location of the temporary
- *  directory. On Linux, the default is /tmp.
- *
- *  The file is created and it is the responsibility of the caller to remove
- *  the file.
- */
-std::string TL_PUBLIC tmpfile (const std::string &domain = std::string ());
-
-/**
- *  @brief A class wrapping a temporary file
- *
- *  In the destructor of this class, the temporary file will be deleted again.
- */
-class TL_PUBLIC TemporaryFile
-{
-public:
-  TemporaryFile (const std::string &domain = std::string ());
-  ~TemporaryFile ();
-
-  const std::string &path () const
-  {
-    return m_path;
-  }
-
-private:
-  std::string m_path;
-};
-
-/**
- *  @brief Gets a temporary folder path
- *
- *  Similar to "tmpfile", but will create a new, empty folder. Again it is the
- *  reposibility of the caller to clean up.
- */
-std::string TL_PUBLIC tmpdir (const std::string &domain = std::string ());
-
-/**
- *  @brief A class wrapping a temporary directory
- *
- *  In the destructor of this class, the temporary directory will be deleted again.
- */
-class TL_PUBLIC TemporaryDirectory
-{
-public:
-  TemporaryDirectory (const std::string &domain = std::string ());
-  ~TemporaryDirectory ();
-
-  const std::string &path () const
-  {
-    return m_path;
-  }
-
-private:
-  std::string m_path;
-};
-
-/**
  *  @brief This function splits the path into it's components
  *  On Windows, the first component may be the drive prefix ("C:") or
  *  UNC server name ("\\server").
@@ -272,19 +179,9 @@ private:
 std::vector<std::string> TL_PUBLIC split_path (const std::string &p, bool keep_last = false);
 
 /**
- *  @brief Gets the home directory path
- */
-std::string TL_PUBLIC get_home_path ();
-
-/**
- *  @brief Gets the path (directory) of the currently running process
+ *  @brief Gets the path of the currently running process
  */
 std::string TL_PUBLIC get_inst_path ();
-
-/**
- *  @brief Gets the path (full exe file name) of the currently running process
- */
-std::string TL_PUBLIC get_app_path ();
 
 /**
  *  @brief Gets the absolute path of the module (DLL/.so) which contains the given address

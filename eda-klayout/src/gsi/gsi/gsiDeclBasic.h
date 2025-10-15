@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -30,7 +30,6 @@
 #include <iostream>
 
 #include "tlVariant.h"
-#include "gsiObject.h"
 
 namespace gsi
 {
@@ -39,7 +38,6 @@ namespace gsi
  *  @brief Provides a basic implementation for a "boxed" plain value using a Variant as the basic type
  */
 class GSI_PUBLIC Value
-  : public gsi::ObjectBase
 {
 public:
   /**

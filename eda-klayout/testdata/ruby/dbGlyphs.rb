@@ -1,7 +1,7 @@
 # encoding: UTF-8
 
 # KLayout Layout Viewer
-# Copyright (C) 2006-2025 Matthias Koefferlein
+# Copyright (C) 2006-2019 Matthias Koefferlein
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -69,7 +69,7 @@ class DBGlyph_TestClass < TestBase
       tg.load_from_resource(":/fonts/does_not_exist.gds")
       assert_equal(false, true)
     rescue => ex
-      assert_equal(ex.to_s, "Resource not found: :/fonts/does_not_exist.gds in TextGenerator::load_from_resource")
+      assert_equal(ex.to_s, "Unable to load font resource from :/fonts/does_not_exist.gds in TextGenerator::load_from_resource")
     end
 
   end

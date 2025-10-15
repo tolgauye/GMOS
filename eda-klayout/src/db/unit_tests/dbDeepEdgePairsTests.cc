@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -35,8 +35,8 @@ TEST(1_Basics)
 {
   db::Layout ly;
   {
-    std::string fn (tl::testdata ());
-    fn += "/algo/deep_region_l1.gds";
+    std::string fn (tl::testsrc ());
+    fn += "/testdata/algo/deep_region_l1.gds";
     tl::InputStream stream (fn);
     db::Reader reader (stream);
     reader.read (ly);
@@ -74,8 +74,7 @@ TEST(1_Basics)
   EXPECT_EQ (ep100.empty (), true);
   EXPECT_EQ (ep2.empty (), false);
   EXPECT_EQ (ep2.bbox ().to_string (), "(-1050,-475;24810,3275)");
-  EXPECT_EQ (ep2.count (), size_t (40));
-  EXPECT_EQ (ep2.hier_count (), size_t (1));
+  EXPECT_EQ (ep2.size (), size_t (40));
   EXPECT_EQ (ep2.to_string ().substr (0, 42), "(-1050,-475;-1050,475)/(250,475;250,-475);");
 
   db::Layout target;
@@ -102,5 +101,5 @@ TEST(1_Basics)
   ep2_copy.insert_into_as_polygons (&target, target_top_cell_index, target.get_layer (db::LayerProperties (14, 0)), 1);
 
   CHECKPOINT();
-  db::compare_layouts (_this, target, tl::testdata () + "/algo/deep_edge_pairs_au1.gds");
+  db::compare_layouts (_this, target, tl::testsrc () + "/testdata/algo/deep_edge_pairs_au1.gds");
 }

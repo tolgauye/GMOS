@@ -1,5 +1,5 @@
 # KLayout Layout Viewer
-# Copyright (C) 2006-2025 Matthias Koefferlein
+# Copyright (C) 2006-2019 Matthias Koefferlein
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -75,20 +75,13 @@ class DBLayoutTest(unittest.TestCase):
     self.assertEqual( ly.cell_name(ci), "new_cell" )
 
     self.assertEqual( ly.cell_by_name("new_cell"), ci )
-    self.assertEqual( ly.cell(ci).cell_index(), ci )
     self.assertEqual( ly.cell("new_cell").name, "new_cell" )
     self.assertEqual( repr(ly.cell("x")), "None" )
-    lyc = ly.dup()
-    self.assertEqual( lyc._to_const_object().cell("new_cell").name, "new_cell" )
-    self.assertEqual( lyc._to_const_object().cell(ci).cell_index(), ci )
 
     ci2 = ly.add_cell( "new_cell_b" )
     self.assertEqual( ly.cells(), 2 )
     self.assertEqual( ly.cell_by_name("new_cell_b"), ci2 )
-    self.assertEqual( sorted([ c.name for c in ly.cells("new*") ]), ['new_cell', 'new_cell_b'] )
     self.assertEqual( ci != ci2, True )
-    lyc = ly.dup()
-    self.assertEqual( sorted([ c.name for c in lyc._to_const_object().cells("new*") ]), ['new_cell', 'new_cell_b'] )
 
     ly.rename_cell( ci2, "x" )
     self.assertEqual( ly.cell_by_name("x"), ci2 )
@@ -684,7 +677,7 @@ class DBLayoutTest(unittest.TestCase):
     ly = pya.Layout(True)
     pv = [ [ 17, "a" ], [ "b", [ 1, 5, 7 ] ] ]
     pid = ly.properties_id( pv )
-    # does not work? 
+    # does not work? @@@
     # pv = { 17: "a", "b": [ 1, 5, 7 ] }
     # pid2 = ly.properties_id( pv )
     # self.assertEqual( pid, pid2 )
@@ -824,6 +817,15 @@ class DBLayoutTest(unittest.TestCase):
       if r != "":
         r += ";"
       r += s.to_s()
+      if s.prop_id > 0:
+        pr = ""
+        for pp in ly.properties(s.prop_id):
+          if pr != "":
+            pr += ","
+          pr += str(pp[0]) + "=>" + str(pp[1])
+        r += "["
+        r += pr
+        r += "]"
     return r
 
   # Copy/move between cells
@@ -847,9 +849,9 @@ class DBLayoutTest(unittest.TestCase):
       
     ca1.copy(la1, lb1)
     cb1.copy(ca1, la1, lb1)
-    self.assertEqual(self.shapes_to_s(ly1, ca1.shapes(la1)), "box (0,500;1000,2000) props={17=>hallo}")
-    self.assertEqual(self.shapes_to_s(ly1, ca1.shapes(lb1)), "box (0,500;1000,2000) props={17=>hallo}")
-    self.assertEqual(self.shapes_to_s(ly1, cb1.shapes(lb1)), "box (0,500;1000,2000) props={17=>hallo}")
+    self.assertEqual(self.shapes_to_s(ly1, ca1.shapes(la1)), "box (0,500;1000,2000) prop_id=2[17=>hallo]")
+    self.assertEqual(self.shapes_to_s(ly1, ca1.shapes(lb1)), "box (0,500;1000,2000) prop_id=2[17=>hallo]")
+    self.assertEqual(self.shapes_to_s(ly1, cb1.shapes(lb1)), "box (0,500;1000,2000) prop_id=2[17=>hallo]")
     self.assertEqual(self.shapes_to_s(ly1, cb1.shapes(la1)), "")
 
     ly2 = pya.Layout()
@@ -860,8 +862,8 @@ class DBLayoutTest(unittest.TestCase):
     cb2 = ly2.cell(ly2.add_cell("b"))
 
     ca2.copy(ca1, la1, lb2)
-    self.assertEqual(self.shapes_to_s(ly2, ca2.shapes(lb2)), "box (0,1000;2000,4000) props={17=>hallo}")
-    self.assertEqual(self.shapes_to_s(ly1, ca1.shapes(la1)), "box (0,500;1000,2000) props={17=>hallo}")
+    self.assertEqual(self.shapes_to_s(ly2, ca2.shapes(lb2)), "box (0,1000;2000,4000) prop_id=1[17=>hallo]")
+    self.assertEqual(self.shapes_to_s(ly1, ca1.shapes(la1)), "box (0,500;1000,2000) prop_id=2[17=>hallo]")
 
     # move
     ca1.clear()
@@ -872,16 +874,16 @@ class DBLayoutTest(unittest.TestCase):
     s1 = ca1.shapes(la1).insert(pya.Box(0, 500, 1000, 2000))
     s1.set_property(17, 5.0)
     s1.set_property(17, "hallo")
-    self.assertEqual(self.shapes_to_s(ly1, ca1.shapes(la1)), "box (0,500;1000,2000) props={17=>hallo}")
+    self.assertEqual(self.shapes_to_s(ly1, ca1.shapes(la1)), "box (0,500;1000,2000) prop_id=2[17=>hallo]")
     self.assertEqual(self.shapes_to_s(ly1, ca1.shapes(lb1)), "")
     ca1.move(la1, lb1)
     self.assertEqual(self.shapes_to_s(ly1, ca1.shapes(la1)), "")
-    self.assertEqual(self.shapes_to_s(ly1, ca1.shapes(lb1)), "box (0,500;1000,2000) props={17=>hallo}")
+    self.assertEqual(self.shapes_to_s(ly1, ca1.shapes(lb1)), "box (0,500;1000,2000) prop_id=2[17=>hallo]")
 
     cb1.move(ca1, lb1, lb1)
     self.assertEqual(self.shapes_to_s(ly1, ca1.shapes(la1)), "")
     self.assertEqual(self.shapes_to_s(ly1, ca1.shapes(lb1)), "")
-    self.assertEqual(self.shapes_to_s(ly1, cb1.shapes(lb1)), "box (0,500;1000,2000) props={17=>hallo}")
+    self.assertEqual(self.shapes_to_s(ly1, cb1.shapes(lb1)), "box (0,500;1000,2000) prop_id=2[17=>hallo]")
     self.assertEqual(self.shapes_to_s(ly1, cb1.shapes(la1)), "")
 
     ly2 = pya.Layout()
@@ -896,7 +898,7 @@ class DBLayoutTest(unittest.TestCase):
     self.assertEqual(self.shapes_to_s(ly1, ca1.shapes(lb1)), "")
     self.assertEqual(self.shapes_to_s(ly1, cb1.shapes(lb1)), "")
     self.assertEqual(self.shapes_to_s(ly1, cb1.shapes(la1)), "")
-    self.assertEqual(self.shapes_to_s(ly2, ca2.shapes(lb2)), "box (0,1000;2000,4000) props={17=>hallo}")
+    self.assertEqual(self.shapes_to_s(ly2, ca2.shapes(lb2)), "box (0,1000;2000,4000) prop_id=1[17=>hallo]")
     
   # top cells
   def test_8(self):
@@ -916,8 +918,6 @@ class DBLayoutTest(unittest.TestCase):
       tc.append(l.cell(t).name) 
     self.assertEqual(",".join(tc), "c0")
     self.assertEqual(l.top_cell().name, "c0")
-    lc = l.dup()
-    self.assertEqual(lc._to_const_object().top_cell().name, "c0")  # const version
     tc = []
     for t in l.top_cells():
       tc.append(t.name) 
@@ -937,11 +937,6 @@ class DBLayoutTest(unittest.TestCase):
     self.assertEqual(error, True)
     tc = []
     for t in l.top_cells():
-      tc.append(t.name) 
-    self.assertEqual(",".join(tc), "c0,c1")
-    tc = []
-    lc = l.dup()
-    for t in lc._to_const_object().top_cells(): # const version
       tc.append(t.name) 
     self.assertEqual(",".join(tc), "c0,c1")
 
@@ -1068,20 +1063,17 @@ class DBLayoutTest(unittest.TestCase):
 
     ly = pya.Layout()
 
-    pid1 = ly.properties_id({ "x": 1 })
-    pid2 = ly.properties_id({ "x": 17 })
-
     self.assertEqual(ly.prop_id, 0)
-    ly.prop_id = pid1
-    self.assertEqual(ly.prop_id, pid1)
+    ly.prop_id = 1
+    self.assertEqual(ly.prop_id, 1)
     ly.prop_id = 0
     self.assertEqual(ly.prop_id, 0)
 
     ly.set_property("x", 1)
-    self.assertEqual(ly.prop_id, pid1)
+    self.assertEqual(ly.prop_id, 1)
     self.assertEqual(ly.property("x"), 1)
     ly.set_property("x", 17)
-    self.assertEqual(ly.prop_id, pid2)
+    self.assertEqual(ly.prop_id, 2)
     self.assertEqual(ly.property("x"), 17)
     self.assertEqual(ly.property("y"), None)
 
@@ -1130,11 +1122,7 @@ class DBLayoutTest(unittest.TestCase):
     shape.set_property("42", "the answer")
 
     ly.write(file_gds)
-
-    opt = pya.SaveLayoutOptions()
-    opt.format = "OASIS"
-    opt.oasis_strict_mode = False
-    ly.write(file_oas, opt)
+    ly.write(file_oas)
 
     ly2 = pya.Layout()
     ly2.read(file_gds)
@@ -1144,11 +1132,11 @@ class DBLayoutTest(unittest.TestCase):
       shape = s
     self.assertEqual(shape.property(2), "hello, world")
     self.assertEqual(shape.property("2"), None)
-    self.assertEqual(shape.property(2.0), None)
+    self.assertEqual(shape.property(2.0), "hello, world")
     self.assertEqual(shape.property(22), None)
     self.assertEqual(shape.property(42), "the answer")
     self.assertEqual(shape.property("42"), None)
-    self.assertEqual(shape.property(42.0), None)
+    self.assertEqual(shape.property(42.0), "the answer")
 
     ly2 = pya.Layout()
     ly2.read(file_oas)
@@ -1158,106 +1146,12 @@ class DBLayoutTest(unittest.TestCase):
       shape = s
     self.assertEqual(shape.property(2), "hello, world")
     self.assertEqual(shape.property("2"), None)
-    self.assertEqual(shape.property(2.0), None)
+    self.assertEqual(shape.property(2.0), "hello, world")
     self.assertEqual(shape.property(22), None)
     self.assertEqual(shape.property("42"), "the answer")
     self.assertEqual(shape.property(42), None)
     self.assertEqual(shape.property(42.0), None)
 
-  # Bug #1397
-  def test_bug1397(self):
-
-    testtmp = os.getenv("TESTTMP_WITH_NAME", os.getenv("TESTTMP", "."))
-    tmp = os.path.join(testtmp, "tmp.gds")
-
-    l = pya.Layout()
-
-    c = l.create_cell("test_cell")
-
-    li = pya.LayerInfo(1, 0)
-    t = pya.Trans.R180
-    c.add_meta_info(pya.LayoutMetaInfo("kfactory:li", li, None, True))
-    c.add_meta_info(pya.LayoutMetaInfo("kfactory:t", t, None, True))
-
-    l.write(tmp)
-
-    l2 = pya.Layout()
-    l2.read(tmp)
-
-    c2 = l2.cell("test_cell")
-
-    li = c2.meta_info("kfactory:li").value
-    self.assertEqual(li.layer, 1)
-    self.assertEqual(li.datatype, 0)
-
-    t = c2.meta_info("kfactory:t").value
-    self.assertEqual(str(t), "r180 0,0")
-    
-
-  def test_read_bytes(self):
-
-    testtmp = os.getenv("TESTTMP_WITH_NAME", os.getenv("TESTTMP", "."))
-
-    file_gds = os.path.join(testtmp, "bytes.gds")
-
-    ly = pya.Layout()
-    top = ly.create_cell("TOP")
-    l1 = ly.layer(1, 0)
-    shape = top.shapes(l1).insert(pya.Box(0, 10, 20, 30))
-    ly.write(file_gds)
-
-    with open(file_gds, "rb") as f:
-      byte_buffer = f.read()
-
-    ly2 = pya.Layout()
-    ly2.read_bytes(byte_buffer, pya.LoadLayoutOptions())
-    l2 = ly2.layer(1, 0)
-    self.assertEqual(ly2.top_cell().bbox().to_s(), "(0,10;20,30)")
-
-  def test_write_bytes(self):
-
-    ly = pya.Layout()
-    top = ly.create_cell("TOP")
-    l1 = ly.layer(1, 0)
-    shape = top.shapes(l1).insert(pya.Box(0, 10, 20, 30))
-    options = pya.SaveLayoutOptions()
-    options.format = "GDS2"
-    byte_buffer = ly.write_bytes(options)
-
-    ly2 = pya.Layout()
-    ly2.read_bytes(byte_buffer)
-    l2 = ly2.layer(1, 0)
-    self.assertEqual(ly2.top_cell().bbox().to_s(), "(0,10;20,30)")
-
-  # Properties IDs
-  def test_issue1549(self):
-
-    ly = pya.Layout.new()
-
-    ps1 = { 1: "one", "key": 17 }
-    ps2 = [ ( 2, "two" ), ( "key", 42 ) ]
-
-    pid1 = pya.Layout.properties_id(ps1)
-    # deprecated, for backward compatibility:
-    self.assertEqual(ly.properties_array(pid1), [[1, 'one'], ['key', 17]])
-    self.assertEqual(ly.properties_hash(pid1), {1: 'one', 'key': 17})
-    self.assertEqual(pid1, ly.properties_id(ps1))
-    # static method versions
-    self.assertEqual(pya.Layout.properties_array(pid1), [[1, 'one'], ['key', 17]])
-    self.assertEqual(pya.Layout.properties_hash(pid1), {1: 'one', 'key': 17})
-    self.assertEqual(pya.Layout.property(pid1, 42).__repr__(), "None")
-    self.assertEqual(pya.Layout.property(pid1, 1).__repr__(), "'one'")
-
-    pid2 = pya.Layout.properties_id(ps2)
-    # deprecated, for backward compatibility:
-    self.assertEqual(pid2, ly.properties_id(ps2))
-    self.assertEqual(ly.properties_array(pid2), [[2, 'two'], ['key', 42]])
-    self.assertEqual(ly.properties_hash(pid2), {2: 'two', 'key': 42})
-    # static method versions
-    self.assertEqual(pya.Layout.properties_array(pid2), [[2, 'two'], ['key', 42]])
-    self.assertEqual(pya.Layout.properties_hash(pid2), {2: 'two', 'key': 42})
-    self.assertEqual(pya.Layout.property(pid2, 42).__repr__(), "None")
-    self.assertEqual(pya.Layout.property(pid2, 2).__repr__(), "'two'")
 
 # run unit tests
 if __name__ == '__main__':

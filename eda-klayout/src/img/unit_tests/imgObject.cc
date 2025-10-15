@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -25,16 +25,9 @@
 #include "imgObject.h"
 #include "tlUnitTest.h"
 
-static img::Object from_s (const std::string &s)
-{
-  img::Object img;
-  img.from_string (s.c_str ());
-  return img;
-}
-
 TEST(1) 
 {
-  img::Object image (12, 8, db::DCplxTrans (), false, false);
+  img::Object image (12, 8, db::DCplxTrans (), false);
 
   EXPECT_EQ (image.is_color (), false);
   EXPECT_EQ (image.is_byte_data (), false);
@@ -101,42 +94,25 @@ TEST(1)
   dm.red_gain = 1.25;
   dm.green_gain = 0.75;
   dm.blue_gain = 2.5;
-  tl::Color c (128, 255, 64);
-  tl::Color c2 (64, 32, 192);
-  dm.false_color_nodes.insert (dm.false_color_nodes.begin () + 1, std::make_pair (0.5, std::make_pair (c, c)));
+  QColor c (128, 255, 64);
+  dm.false_color_nodes.insert (dm.false_color_nodes.begin () + 1, std::make_pair (0.5, c));
   image.set_data_mapping (dm);
   EXPECT_EQ (copy1.equals (&image), false);
-  EXPECT_EQ (from_s (image.to_string ()).equals (&image), true);
-  copy1 = image;
-  EXPECT_EQ (copy1.equals (&image), true);
 
-  dm.false_color_nodes.insert (dm.false_color_nodes.begin () + 1, std::make_pair (0.75, std::make_pair (c, c2)));
-  image.set_data_mapping (dm);
-  EXPECT_EQ (copy1.equals (&image), false);
-  EXPECT_EQ (from_s (image.to_string ()).equals (&image), true);
   copy1 = image;
   EXPECT_EQ (copy1.equals (&image), true);
 
   EXPECT_EQ (copy1.data_mapping ().brightness, 0.5);
   EXPECT_EQ (copy1.data_mapping ().red_gain, 1.25);
-  EXPECT_EQ (copy1.data_mapping ().false_color_nodes.size (), size_t (4));
+  EXPECT_EQ (copy1.data_mapping ().false_color_nodes.size (), size_t (3));
 
   img::Object copy2;
   copy2.from_string (image.to_string ().c_str ());
-  EXPECT_EQ (copy2.equals (&image), true);
 
   EXPECT_EQ (copy2.data_mapping ().brightness, 0.5);
   EXPECT_EQ (tl::to_string (copy2.data_mapping ().red_gain), "1.25");
-  EXPECT_EQ (copy2.data_mapping ().false_color_nodes.size (), size_t (4));
+  EXPECT_EQ (copy2.data_mapping ().false_color_nodes.size (), size_t (3));
   EXPECT_EQ (copy2.equals (&image), true);
-
-  img::Object copy3, empty;
-  copy3.swap (copy2);
-  EXPECT_EQ (copy3.equals (&image), true);
-  EXPECT_EQ (copy2.equals (&empty), true);
-  copy3.swap (copy2);
-  EXPECT_EQ (copy2.equals (&image), true);
-  EXPECT_EQ (copy3.equals (&empty), true);
 
   EXPECT_EQ (image.to_string (), copy2.to_string ());
 
@@ -158,7 +134,7 @@ TEST(1)
 TEST(2) 
 {
   for (unsigned int channel = 0; channel < 3; ++channel) {
-    img::Object image (12, 8, db::DCplxTrans (), true, false);
+    img::Object image (12, 8, db::DCplxTrans (), true);
 
     EXPECT_EQ (image.is_color (), true);
 
@@ -226,8 +202,8 @@ TEST(2)
     dm.red_gain = 1.25;
     dm.green_gain = 0.75;
     dm.blue_gain = 2.5;
-    tl::Color c (128, 255, 64);
-    dm.false_color_nodes.insert (dm.false_color_nodes.begin () + 1, std::make_pair (0.5, std::make_pair (c, c)));
+    QColor c (128, 255, 64);
+    dm.false_color_nodes.insert (dm.false_color_nodes.begin () + 1, std::make_pair (0.5, c));
     image.set_data_mapping (dm);
     EXPECT_EQ (copy1.equals (&image), false);
 

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -22,5 +22,7 @@
 
 #include "../pymodHelper.h"
 
-#include "rdbMain.h"
+//  to force linking of the rdb module
+#include "../../rdb/rdb/rdbForceLink.h"
+
 DEFINE_PYMOD(rdbcore, "rdb", "KLayout core module 'rdb'")

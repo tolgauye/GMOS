@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -50,7 +50,7 @@ public:
   };
 
   NavigatorService (LayoutView *view)
-    : ViewService (view->canvas ()), 
+    : ViewService (view->view_object_widget ()), 
       mp_view (view), mp_source_view (0),
       mp_viewport_marker (0),
       m_drag_mode (DM_none),
@@ -72,22 +72,18 @@ public:
 
   void background_color_changed ()
   {
-    tl::Color c = mp_view->background_color ();
+    QColor c = mp_view->background_color ();
 
     //  replace by "real" background color if required
-    if (! c.is_valid ()) {
-      if (mp_view->widget ()) {
-        c = tl::Color (mp_view->widget ()->palette ().color (QPalette::Normal, QPalette::Base).rgb ());
-      } else {
-        c = tl::Color (0xffffff);  //  white
-      }
+    if (! c.isValid ()) {
+      c = mp_view->palette ().color (QPalette::Normal, QPalette::Base);
     }
 
-    tl::Color contrast;
-    if (c.to_mono ()) {
-      contrast = tl::Color (0, 0, 0);
+    QColor contrast;
+    if (c.green () > 128) {
+      contrast = QColor (0, 0, 0);
     } else {
-      contrast = tl::Color (255, 255, 255);
+      contrast = QColor (255, 255, 255);
     }
 
     set_colors (c, contrast);
@@ -101,7 +97,7 @@ public:
       delete mp_box;
       mp_box = 0;
 
-      ui ()->ungrab_mouse (this);
+      widget ()->ungrab_mouse (this);
 
       if (mp_source_view) {
         mp_source_view->zoom_box (db::DBox (m_p1, m_p2));
@@ -112,7 +108,7 @@ public:
     } else if (m_dragging) {
 
       m_dragging = false;
-      ui ()->ungrab_mouse (this);
+      widget ()->ungrab_mouse (this);
       return true;
 
     } else {
@@ -123,7 +119,7 @@ public:
   bool mouse_click_event (const db::DPoint &p, unsigned int buttons, bool prio) 
   { 
     if (! prio && (buttons & lay::RightButton) != 0) {
-      db::DBox vp = ui ()->mouse_event_viewport ();
+      db::DBox vp = widget ()->mouse_event_viewport ();
       if (mp_source_view && vp.contains (p)) {
         db::DVector d = (vp.p2 () - vp.p1 ()) * 0.5;
         mp_source_view->zoom_box (db::DBox (p - d, p + d));
@@ -156,7 +152,7 @@ public:
       m_dragging = true;
       m_p0 = p;
       m_b0 = m_box;
-      ui ()->grab_mouse (this, true);
+      widget ()->grab_mouse (this, true);
       return true;
 
     } else {
@@ -389,10 +385,10 @@ public:
       delete mp_box;
       mp_box = 0;
     }
-    ui ()->ungrab_mouse (this);
+    widget ()->ungrab_mouse (this);
   }
 
-  void set_colors (tl::Color /*background*/, tl::Color color)
+  void set_colors (QColor /*background*/, QColor color)
   {
     //  set zoom box color
     m_color = color.rgb ();
@@ -426,9 +422,9 @@ private:
     mp_box = 0;
 
     m_p1 = pos;
-    m_vp = ui ()->mouse_event_viewport ();
+    m_vp = widget ()->mouse_event_viewport ();
 
-    ui ()->grab_mouse (this, true);
+    widget ()->grab_mouse (this, true);
   }
 
   void begin (const db::DPoint &pos)
@@ -439,9 +435,9 @@ private:
 
     m_p1 = pos;
     m_p2 = pos;
-    mp_box = new lay::RubberBox (ui (), m_color, pos, pos);
+    mp_box = new lay::RubberBox (widget (), m_color, pos, pos);
 
-    ui ()->grab_mouse (this, true);
+    widget ()->grab_mouse (this, true);
   }
 };
 
@@ -483,7 +479,7 @@ Navigator::Navigator (MainWindow *main_window)
   layout->addWidget (mp_menu_bar);
   layout->addWidget (mp_placeholder_label);
   layout->setStretchFactor (mp_placeholder_label, 1);
-  layout->setContentsMargins (0, 0, 0, 0);
+  layout->setMargin (0);
   layout->setSpacing (0);
   setLayout (layout);
 
@@ -505,6 +501,32 @@ Navigator::~Navigator ()
     delete mp_view;
     mp_view = 0;
   }
+}
+
+void 
+Navigator::init_menu (AbstractMenu &menu)
+{
+  MenuLayoutEntry navigator_main_menu [] = {
+    MenuLayoutEntry ("navigator_show_images",        tl::to_string (QObject::tr ("Show Images")),                std::make_pair (cfg_navigator_show_images, "?")),
+    MenuLayoutEntry ("navigator_all_hier_levels",    tl::to_string (QObject::tr ("Show All Hierarchy Levels")),  std::make_pair (cfg_navigator_all_hier_levels, "?")),
+    MenuLayoutEntry::separator ("navigator_options_group"),
+    MenuLayoutEntry ("navigator_freeze",             tl::to_string (QObject::tr ("Freeze")),                     SLOT (cm_navigator_freeze ())),
+    MenuLayoutEntry::last ()
+  };
+
+  MenuLayoutEntry navigator_menu [] = {
+    MenuLayoutEntry ("navigator_main_menu",          tl::to_string (QObject::tr ("Options")),                    navigator_main_menu),
+    MenuLayoutEntry::last ()
+  };
+
+  MenuLayoutEntry navigator_detached_menu [] = {
+    MenuLayoutEntry ("@@navigator_menu",             "",                                           navigator_menu),
+    MenuLayoutEntry::last ()
+  };
+
+  menu.init (navigator_detached_menu);
+
+  menu.action (freeze_action_path).set_checkable (true);
 }
 
 void
@@ -545,11 +567,11 @@ Navigator::all_hier_levels (bool f)
 void 
 Navigator::freeze_clicked ()
 {
-  Action *freeze_action = mp_main_window->menu ()->action (freeze_action_path);
+  Action freeze_action = mp_main_window->menu ()->action (freeze_action_path);
 
   m_frozen_list.erase (mp_source_view);
 
-  if (freeze_action->is_checked () && mp_source_view) {
+  if (freeze_action.is_checked () && mp_source_view) {
     NavigatorFrozenViewInfo &info = m_frozen_list.insert (std::make_pair (mp_source_view, NavigatorFrozenViewInfo ())).first->second;
     info.layer_properties = mp_source_view->get_properties ();
     info.hierarchy_levels = mp_source_view->get_hier_levels ();
@@ -576,8 +598,8 @@ Navigator::showEvent (QShowEvent *)
 void 
 Navigator::closeEvent (QCloseEvent *)
 {
-  mp_main_window->dispatcher ()->config_set (cfg_show_navigator, "false");
-  mp_main_window->dispatcher ()->config_end ();
+  lay::PluginRoot::instance ()->config_set (cfg_show_navigator, "false");
+  lay::PluginRoot::instance ()->config_end ();
 }
 
 void 
@@ -650,20 +672,20 @@ Navigator::attach_view (LayoutView *view)
     delete mp_service;
     mp_service = 0;
 
-    LayoutViewWidget *old_view = mp_view;
+    LayoutView *old_view = mp_view;
     mp_view = 0;
 
     if (mp_source_view) {
 
-      mp_view = new LayoutViewWidget (0, false, mp_source_view, this, LayoutView::LV_Naked + LayoutView::LV_NoZoom + LayoutView::LV_NoServices + LayoutView::LV_NoGrid);
+      mp_view = new LayoutView (0, false, mp_source_view, this, "navigator", LayoutView::LV_Naked + LayoutView::LV_NoZoom + LayoutView::LV_NoServices + LayoutView::LV_NoGrid);
       mp_view->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Expanding);
       mp_view->setMinimumWidth (100);
       mp_view->setMinimumHeight (100);
       mp_view->setGeometry (mp_placeholder_label->geometry ());
       mp_view->show ();
 
-      mp_service = new NavigatorService (mp_view->view ());
-      mp_view->view ()->canvas ()->activate (mp_service);
+      mp_service = new NavigatorService (mp_view);
+      mp_view->view_object_widget ()->activate (mp_service);
 
       mp_source_view->cellviews_changed_event.add (this, &Navigator::content_changed);
       mp_source_view->cellview_changed_event.add (this, &Navigator::content_changed_with_int);
@@ -694,8 +716,8 @@ Navigator::attach_view (LayoutView *view)
         all_views.erase (*v);
       }
 
-      Action *freeze_action = mp_main_window->menu ()->action (freeze_action_path);
-      freeze_action->set_checked (m_frozen_list.find (mp_source_view) != m_frozen_list.end ());
+      Action freeze_action = mp_main_window->menu ()->action (freeze_action_path);
+      freeze_action.set_checked (m_frozen_list.find (mp_source_view) != m_frozen_list.end ());
 
       //  Hint: this must happen before update ()
       mp_service->attach_view (mp_source_view);
@@ -713,7 +735,7 @@ void
 Navigator::hier_levels_changed ()
 {
   if (m_show_all_hier_levels && mp_source_view && m_frozen_list.find (mp_source_view) == m_frozen_list.end ()) {
-    mp_view->view ()->set_hier_levels (mp_source_view->get_hier_levels ());
+    mp_view->set_hier_levels (mp_source_view->get_hier_levels ());
   }
 }
 
@@ -728,19 +750,19 @@ Navigator::update_layers ()
 void
 Navigator::update ()
 {
-  if (! mp_view || ! mp_view->view () || ! mp_source_view) {
+  if (! mp_view || ! mp_source_view) {
     return;
   }
 
   if (m_frozen_list.find (mp_source_view) == m_frozen_list.end ()) {
-    mp_view->view ()->select_cellviews (mp_source_view->cellview_list ());
-    mp_view->view ()->set_properties (mp_source_view->get_properties ());
+    mp_view->select_cellviews (mp_source_view->cellview_list ());
+    mp_view->set_properties (mp_source_view->get_properties ());
   } else {
-    mp_view->view ()->select_cellviews (mp_source_view->cellview_list ());
-    mp_view->view ()->set_properties (m_frozen_list [mp_source_view].layer_properties);
+    mp_view->select_cellviews (mp_source_view->cellview_list ());
+    mp_view->set_properties (m_frozen_list [mp_source_view].layer_properties);
   }
 
-  img::Service *img_target = mp_view->view ()->get_plugin<img::Service> ();
+  img::Service *img_target = mp_view->get_plugin<img::Service> ();
   if (img_target) {
 
     img_target->clear_images ();
@@ -758,46 +780,18 @@ Navigator::update ()
 
   if (m_show_all_hier_levels && mp_source_view) {
     if (m_frozen_list.find (mp_source_view) == m_frozen_list.end ()) {
-      mp_view->view ()->set_hier_levels (mp_source_view->get_hier_levels ());
+      mp_view->set_hier_levels (mp_source_view->get_hier_levels ());
     } else {
-      mp_view->view ()->set_hier_levels (m_frozen_list [mp_source_view].hierarchy_levels);
+      mp_view->set_hier_levels (m_frozen_list [mp_source_view].hierarchy_levels);
     }
   } else {
-    mp_view->view ()->set_hier_levels (std::make_pair (0, 0));
+    mp_view->set_hier_levels (std::make_pair (0, 0));
   }
 
-  mp_view->view ()->zoom_fit ();
-  mp_view->view ()->update_content ();
+  mp_view->zoom_fit ();
+  mp_view->update_content ();
   mp_service->update_marker ();
 }
-
-// ------------------------------------------------------------
-//  Declaration of the "plugin" for the menu entries
-
-class NavigatorPluginDeclaration
-  : public lay::PluginDeclaration
-{
-public:
-  virtual void get_menu_entries (std::vector<lay::MenuEntry> &menu_entries) const
-  {
-    std::string at;
-
-    at = ".end";
-    menu_entries.push_back (lay::submenu ("@@navigator_menu", at, std::string ()));
-
-    at = "@@navigator_menu.end";
-    menu_entries.push_back (lay::submenu ("navigator_main_menu", at, tl::to_string (QObject::tr ("Options"))));
-
-    at = "@@navigator_menu.navigator_main_menu.end";
-    menu_entries.push_back (lay::config_menu_item ("navigator_show_images", at, tl::to_string (QObject::tr ("Show Images")), cfg_navigator_show_images, "?"));
-    menu_entries.push_back (lay::config_menu_item ("navigator_all_hier_levels", at, tl::to_string (QObject::tr ("Show All Hierarchy Levels")), cfg_navigator_all_hier_levels, "?"));
-    menu_entries.push_back (lay::separator ("navigator_options_group", at));
-    menu_entries.push_back (lay::menu_item ("cm_navigator_freeze", "navigator_freeze", at, tl::to_string (QObject::tr ("Freeze"))));
-    menu_entries.back ().checkable = true;
-  }
-};
-
-static tl::RegisteredClass<lay::PluginDeclaration> config_decl (new NavigatorPluginDeclaration (), -1, "NavigatorPlugin");
 
 }
 

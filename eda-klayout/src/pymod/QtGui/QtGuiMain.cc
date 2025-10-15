@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -22,5 +22,13 @@
 
 #include "../pymodHelper.h"
 
-#include "QtGuiMain.h"
+//  To force linking of the QtGui module
+#include "../../gsiqt/qtbasic/gsiQtGuiExternals.h"
+FORCE_LINK_GSI_QTGUI
+
+//  This is required because QAction and QWidget are used are arguments in QtGui, but are
+//  defined in QtWidgets
+#include "../../gsiqt/qtbasic/gsiQtWidgetsExternals.h"
+FORCE_LINK_GSI_QTWIDGETS
+
 DEFINE_PYMOD(QtGui, "QtGui", "KLayout/Qt module 'QtGui'")

@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2006-2025 Matthias Koefferlein
+# Copyright (C) 2006-2019 Matthias Koefferlein
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -128,7 +128,7 @@ module PEnumType
   def cpp
     name = id ? id.text_value : nil
     specs = bodyspec.nonterminal? ? bodyspec.body.cpp : nil
-    CPPEnum::new(name, specs, is_class.nonterminal?)
+    CPPEnum::new(name, specs)
   end
 end
 
@@ -211,19 +211,19 @@ end
 
 module PPointer
   def cpp
-    CPPPointer::new(itspec.nonterminal? ? itspec.it.cpp_reduced : CPPAnonymousId::new)
+    CPPCV::wrap(cvspec.nonterminal? && cvspec.cv.to_symbol, CPPPointer::new(itspec.nonterminal? ? itspec.it.cpp_reduced : CPPAnonymousId::new))
   end
 end
 
 module PReference
   def cpp
-    CPPReference::new(itspec.nonterminal? ? itspec.it.cpp_reduced : CPPAnonymousId::new)
+    CPPCV::wrap(cvspec.nonterminal? && cvspec.cv.to_symbol, CPPReference::new(itspec.nonterminal? ? itspec.it.cpp_reduced : CPPAnonymousId::new))
   end
 end
 
 module PMemberPointer
   def cpp
-    CPPMemberPointer::new(cspec.qid.cpp, itspec.nonterminal? ? itspec.it.cpp_reduced : CPPAnonymousId::new)
+    CPPMemberPointer::new(cspec.qid.cpp, itspec.nonterminal? ? itspec.it.cpp_reduced : CPPAnonymousId::new, cvspec.nonterminal? && cvspec.cv.to_symbol)
   end
 end
 
@@ -241,13 +241,13 @@ end
 
 module PFuncSpec
   def cpp
-    CPPFunc::new(nil, (fa.nonterminal? && fa.text_value != "void") ? (fa.a.cpp || []) : [], cvspec.nonterminal? && cvspec.cv.to_symbol, refspec.nonterminal? && refspec.ref.text_value)
+    CPPFunc::new(nil, (fa.nonterminal? && fa.text_value != "void") ? (fa.a.cpp || []) : [], cvspec.nonterminal? && cvspec.cv.to_symbol)
   end
 end
 
 module PInnerTypeWithCV
   def cpp
-    CPPCV::wrap(cvspec.nonterminal? && cvspec.cv.to_symbol, it.cpp_reduced)
+    CPPCV::wrap(cvspec.to_symbol, it.cpp_reduced)
   end
 end
 
@@ -293,7 +293,7 @@ module PType
 
   def cpp
     # This is the class/struct/union/enum declaration if there is one
-    d = dct.ct.cpp
+    d = ct.cpp
     if d.is_a?(Array)
       r = d.select { |i| i.is_a?(CPPStruct) || i.is_a?(CPPEnum) }
     elsif d.is_a?(CPPStruct) || d.is_a?(CPPEnum)
@@ -302,7 +302,7 @@ module PType
       r = []
     end
     # Create each declaration
-    ot = CPPCV::wrap(dct.cvspec.nonterminal? && dct.cvspec.cv.to_symbol, dct.ct.cpp_reduced)
+    ot = CPPCV::wrap(cvspec.nonterminal? && cvspec.cv.to_symbol, ct.cpp_reduced)
     if il.nonterminal? 
       r << CPPType::new(ot, il.t1.cpp_reduced, il.i1.nonterminal? ? il.i1.is1.text_value : nil)
       il.tt.elements.each do |t|
@@ -324,7 +324,7 @@ end
 
 module PTypeWoComma
   def cpp
-    ot = CPPCV::wrap(dct.cvspec.nonterminal? && dct.cvspec.cv.to_symbol, dct.ct.cpp_reduced)
+    ot = CPPCV::wrap(cvspec.nonterminal? && cvspec.cv.to_symbol, ct.cpp_reduced)
     if il.nonterminal?
       CPPType::new(ot, il.t.cpp_reduced, il.i.nonterminal? ? il.i.is.text_value : nil)
     else
@@ -335,7 +335,7 @@ end
 
 module PTypeForTemplate
   def cpp
-    ot = CPPCV::wrap(dct.cvspec.nonterminal? && dct.cvspec.cv.to_symbol, dct.ct.cpp_reduced)
+    ot = CPPCV::wrap(cvspec.nonterminal? && cvspec.cv.to_symbol, ct.cpp_reduced)
     CPPType::new(ot, il.nonterminal? ? il.t.cpp_reduced : CPPAnonymousId::new, nil)
   end
 end
@@ -404,14 +404,17 @@ end
 
 module PClassTemplateArg
   def cpp
-    CPPClassTemplateArg::new(t.cpp, dtspec.nonterminal? ? dtspec.cpp : nil)
+    CPPClassTemplateArg::new(id.text_value, dtspec.nonterminal? ? dtspec.cpp : nil)
+  end
+end
+
+module PDirectTemplateArg
+  def cpp
+    CPPDirectTemplateArg::new(t.cpp, initspec.nonterminal? ? initspec.text_value : nil)
   end
 end
 
 module PDeclaration
-  def is_definition
-    blk.text_value =~ /^\{/
-  end
   def cpp
     td = nil
     if template.nonterminal? 
@@ -441,7 +444,7 @@ module PDeclaration
       elsif d.is_a?(CPPEnum)
         CPPEnumDeclaration::new(d, :default)
       else
-        CPPDeclaration::new(d, td, :default, storage_class, virtual, inline, self.is_definition)
+        CPPDeclaration::new(d, td, :default, storage_class, virtual, inline)
       end
     end
   end
@@ -449,7 +452,7 @@ end
 
 module PExternBlock
   def cpp
-    (self.get_cpp || []).collect do |d| 
+    self.get_cpp.collect do |d| 
       if d.is_a?(CPPDeclaration)
         d.storage_class = :extern
       end

@@ -1,7 +1,7 @@
 # encoding: UTF-8
 
 # KLayout Layout Viewer
-# Copyright (C) 2006-2025 Matthias Koefferlein
+# Copyright (C) 2006-2019 Matthias Koefferlein
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -105,15 +105,9 @@ class DBEdge_TestClass < TestBase
     assert_equal( a.intersect?( RBA::DEdge::new( -1, -1, 1, 5 ) ), true )
     assert_equal( a.intersection_point( RBA::DEdge::new( -1, -1, 1, 5 ) ).to_s, "0,2" )
     assert_equal( a.intersection_point( RBA::DEdge::new( -1, 3, 1, 5 ) ) == nil, true )
-    assert_equal( a.cut_point( RBA::DEdge::new( -1, -1, 1, 5 ) ).to_s, "0,2" )
-    assert_equal( a.cut_point( RBA::DEdge::new( -1, 3, -1, 5 ) ).to_s, "-1,2" )
-    assert_equal( a.cut_point( RBA::DEdge::new( -1, 3, 1, 3 ) ) == nil, true )
     assert_equal( a.intersect?( RBA::DEdge::new( -1, 11, 1, 15 ) ), false )
     assert_equal( a.distance( RBA::DPoint::new( 3, 3 ) ), 1.0 )
     assert_equal( a.distance( RBA::DPoint::new( 3, 1 ) ), -1.0 )
-    assert_equal( a.euclidian_distance( RBA::DPoint::new( 3, 3 ) ), 1.0 )
-    assert_equal( a.euclidian_distance( RBA::DPoint::new( 3, 1 ) ), 1.0 )
-    assert_equal( a.euclidian_distance( RBA::DPoint::new( -3, 2 ) ), 1.0 )
     assert_equal( a.distance_abs( RBA::DPoint::new( 3, 3 ) ), 1.0 )
     assert_equal( a.distance_abs( RBA::DPoint::new( 3, 1 ) ), 1.0 )
     assert_equal( a.side_of( RBA::DPoint::new( 3, 3 ) ), 1 )
@@ -227,13 +221,10 @@ class DBEdge_TestClass < TestBase
     assert_equal( a.intersection_point( RBA::Edge::new( RBA::Point::new( -1, -1 ), RBA::Point::new( 1, 5 ) ) ).to_s, "0,2" )
     assert_equal( a.intersection_point( RBA::Edge::new( RBA::Point::new( -1, 3 ), RBA::Point::new( 1, 5 ) ) ) == nil, true )
     assert_equal( a.intersect?( RBA::Edge::new( RBA::Point::new( -1, 11 ), RBA::Point::new( 1, 15 ) ) ), false )
-    assert_equal( a.distance( RBA::Point::new( 3, 3 ) ), 1 )
-    assert_equal( a.distance( RBA::Point::new( 3, 1 ) ), -1 )
-    assert_equal( a.euclidian_distance( RBA::Point::new( 3, 4 ) ), 2 )
-    assert_equal( a.euclidian_distance( RBA::Point::new( 3, 0 ) ), 2 )
-    assert_equal( a.euclidian_distance( RBA::Point::new( -4, 2 ) ), 2 )
-    assert_equal( a.distance_abs( RBA::Point::new( 3, 3 ) ), 1 )
-    assert_equal( a.distance_abs( RBA::Point::new( 3, 1 ) ), 1 )
+    assert_equal( a.distance( RBA::Point::new( 3, 3 ) ), 1.0 )
+    assert_equal( a.distance( RBA::Point::new( 3, 1 ) ), -1.0 )
+    assert_equal( a.distance_abs( RBA::Point::new( 3, 3 ) ), 1.0 )
+    assert_equal( a.distance_abs( RBA::Point::new( 3, 1 ) ), 1.0 )
     assert_equal( a.side_of( RBA::Point::new( 3, 3 ) ), 1 )
     assert_equal( a.side_of( RBA::Point::new( 3, 1 ) ), -1 )
     
@@ -330,76 +321,6 @@ class DBEdge_TestClass < TestBase
     assert_equal(e.clipped_line(RBA::DBox::new(1000, 0, 1100, 3000)).to_s, "(1000,2000;1100,2200)")
     assert_equal(e.clipped_line(RBA::DBox::new(1001, 0, 1100, 3000)).to_s, "(1001,2002;1100,2200)")
     assert_equal(e.clipped_line(RBA::DBox::new(-100, -100, 200, 2000)).to_s, "(-50,-100;200,400)")
-
-  end
-
-  def test_edgeWithProperties
-
-    s = RBA::EdgeWithProperties::new
-    assert_equal(s.to_s, "(0,0;0,0) props={}")
-
-    s = RBA::EdgeWithProperties::new(RBA::Edge::new(0, 0, 100, 200), { 1 => "one" })
-    assert_equal(s.to_s, "(0,0;100,200) props={1=>one}")
-
-    pid = RBA::Layout::properties_id({ 1 => "one" })
-    s = RBA::EdgeWithProperties::new(RBA::Edge::new(0, 0, 100, 200), pid)
-    assert_equal(s.to_s, "(0,0;100,200) props={1=>one}")
-    assert_equal((RBA::CplxTrans::new(0.001) * s).to_s, "(0,0;0.1,0.2) props={1=>one}")
-    assert_equal(s.transformed(RBA::CplxTrans::new(0.001)).to_s, "(0,0;0.1,0.2) props={1=>one}")
-    assert_equal(s.transformed(RBA::ICplxTrans::new(2.5)).to_s, "(0,0;250,500) props={1=>one}")
-    assert_equal(s.transformed(RBA::Trans::R90).to_s, "(0,0;-200,100) props={1=>one}")
-    s2 = s.dup
-    s2.transform(RBA::Trans::R90)
-    assert_equal(s2.to_s, "(0,0;-200,100) props={1=>one}")
-    assert_equal((s * 0.001).to_s, "(0,0;0.1,0.2) props={1=>one}")
-    assert_equal(s.moved(10, 20).to_s, "(10,20;110,220) props={1=>one}")
-    assert_equal(s.moved(RBA::Vector::new(10, 20)).to_s, "(10,20;110,220) props={1=>one}")
-    s2 = s.dup
-    s2.move(10, 20)
-    assert_equal(s2.to_s, "(10,20;110,220) props={1=>one}")
-    s2 = s.dup
-    s2.move(RBA::Vector::new(10, 20))
-    assert_equal(s2.to_s, "(10,20;110,220) props={1=>one}")
-    assert_equal(s.property(1), "one")
-    assert_equal(s.properties, { 1 => "one" })
-    s.set_property(1, "xxx")
-    assert_equal(s.to_s, "(0,0;100,200) props={1=>xxx}")
-    s.delete_property(1)
-    assert_equal(s.to_s, "(0,0;100,200) props={}")
-    assert_equal(s.property(1), nil)
-
-    s = RBA::DEdgeWithProperties::new
-    assert_equal(s.to_s, "(0,0;0,0) props={}")
-
-    s = RBA::DEdgeWithProperties::new(RBA::DEdge::new(0, 0, 100, 200), { 1 => "one" })
-    assert_equal(s.to_s, "(0,0;100,200) props={1=>one}")
-
-    pid = RBA::Layout::properties_id({ 1 => "one" })
-    s = RBA::DEdgeWithProperties::new(RBA::DEdge::new(0, 0, 100, 200), pid)
-    assert_equal(s.to_s, "(0,0;100,200) props={1=>one}")
-    assert_equal((RBA::VCplxTrans::new(2.5) * s).to_s, "(0,0;250,500) props={1=>one}")
-    assert_equal(s.transformed(RBA::DCplxTrans::new(0.001)).to_s, "(0,0;0.1,0.2) props={1=>one}")
-    assert_equal(s.transformed(RBA::VCplxTrans::new(2.5)).to_s, "(0,0;250,500) props={1=>one}")
-    assert_equal(s.transformed(RBA::DTrans::R90).to_s, "(0,0;-200,100) props={1=>one}")
-    s2 = s.dup
-    s2.transform(RBA::DTrans::R90)
-    assert_equal(s2.to_s, "(0,0;-200,100) props={1=>one}")
-    assert_equal((s * 0.001).to_s, "(0,0;0.1,0.2) props={1=>one}")
-    assert_equal(s.moved(10, 20).to_s, "(10,20;110,220) props={1=>one}")
-    assert_equal(s.moved(RBA::DVector::new(10, 20)).to_s, "(10,20;110,220) props={1=>one}")
-    s2 = s.dup
-    s2.move(10, 20)
-    assert_equal(s2.to_s, "(10,20;110,220) props={1=>one}")
-    s2 = s.dup
-    s2.move(RBA::DVector::new(10, 20))
-    assert_equal(s2.to_s, "(10,20;110,220) props={1=>one}")
-    assert_equal(s.property(1), "one")
-    assert_equal(s.properties, { 1 => "one" })
-    s.set_property(1, "xxx")
-    assert_equal(s.to_s, "(0,0;100,200) props={1=>xxx}")
-    s.delete_property(1)
-    assert_equal(s.to_s, "(0,0;100,200) props={}")
-    assert_equal(s.property(1), nil)
 
   end
 

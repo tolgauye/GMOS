@@ -7,25 +7,25 @@
 #   <test-intention>Explicit assignment of ID's</test-intention>
 #   <content>
 #     begin_lib 0.001
-#     begin_cell {XYZ}
-#     end_cell
 #     begin_cell {ABC}
+#     end_cell
+#     begin_cell {XYZ}
 #     end_cell
 #     end_lib
 #   </content>
 # </test>
 
-header
+header 
   real 0 1000.0
   uint 0 ;# offset table is in start record
   for { set i 0 } { $i < 12 } { incr i } { uint 0 }
 
-# ABC gets assigned 1
+# XYZ gets assigned 1 
 record CELLNAME_ID
-  str ABC
+  str ABC 
   uint 1
 
-# XYZ gets assigned 0
+# ABC gets assigned 0 
 record CELLNAME_ID
   str XYZ
   uint 0

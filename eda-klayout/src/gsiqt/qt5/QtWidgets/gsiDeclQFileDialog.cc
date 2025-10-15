@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -86,6 +86,7 @@
 #include <QWindow>
 #include "gsiQt.h"
 #include "gsiQtWidgetsCommon.h"
+#include "gsiDeclQtWidgetsTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -543,21 +544,6 @@ static void _call_f_selectedFiles_c0 (const qt_gsi::GenericMethod * /*decl*/, vo
 {
   __SUPPRESS_UNUSED_WARNING(args);
   ret.write<QStringList > ((QStringList)((QFileDialog *)cls)->selectedFiles ());
-}
-
-
-// QString QFileDialog::selectedMimeTypeFilter()
-
-
-static void _init_f_selectedMimeTypeFilter_c0 (qt_gsi::GenericMethod *decl)
-{
-  decl->set_return<QString > ();
-}
-
-static void _call_f_selectedMimeTypeFilter_c0 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  ret.write<QString > ((QString)((QFileDialog *)cls)->selectedMimeTypeFilter ());
 }
 
 
@@ -1037,26 +1023,6 @@ static void _call_f_setSidebarUrls_2316 (const qt_gsi::GenericMethod * /*decl*/,
 }
 
 
-// void QFileDialog::setSupportedSchemes(const QStringList &schemes)
-
-
-static void _init_f_setSupportedSchemes_2437 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("schemes");
-  decl->add_arg<const QStringList & > (argspec_0);
-  decl->set_return<void > ();
-}
-
-static void _call_f_setSupportedSchemes_2437 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const QStringList &arg1 = gsi::arg_reader<const QStringList & >() (args, heap);
-  __SUPPRESS_UNUSED_WARNING(ret);
-  ((QFileDialog *)cls)->setSupportedSchemes (arg1);
-}
-
-
 // void QFileDialog::setViewMode(QFileDialog::ViewMode mode)
 
 
@@ -1112,21 +1078,6 @@ static void _call_f_sidebarUrls_c0 (const qt_gsi::GenericMethod * /*decl*/, void
 }
 
 
-// QStringList QFileDialog::supportedSchemes()
-
-
-static void _init_f_supportedSchemes_c0 (qt_gsi::GenericMethod *decl)
-{
-  decl->set_return<QStringList > ();
-}
-
-static void _call_f_supportedSchemes_c0 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  ret.write<QStringList > ((QStringList)((QFileDialog *)cls)->supportedSchemes ());
-}
-
-
 // bool QFileDialog::testOption(QFileDialog::Option option)
 
 
@@ -1166,7 +1117,7 @@ static void _call_f_viewMode_c0 (const qt_gsi::GenericMethod * /*decl*/, void *c
 
 static void _init_f_getExistingDirectory_7979 (qt_gsi::GenericStaticMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("parent", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("parent", true, "0");
   decl->add_arg<QWidget * > (argspec_0);
   static gsi::ArgSpecBase argspec_1 ("caption", true, "QString()");
   decl->add_arg<const QString & > (argspec_1);
@@ -1181,7 +1132,7 @@ static void _call_f_getExistingDirectory_7979 (const qt_gsi::GenericStaticMethod
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  QWidget *arg1 = args ? gsi::arg_reader<QWidget * >() (args, heap) : gsi::arg_maker<QWidget * >() (nullptr, heap);
+  QWidget *arg1 = args ? gsi::arg_reader<QWidget * >() (args, heap) : gsi::arg_maker<QWidget * >() (0, heap);
   const QString &arg2 = args ? gsi::arg_reader<const QString & >() (args, heap) : gsi::arg_maker<const QString & >() (QString(), heap);
   const QString &arg3 = args ? gsi::arg_reader<const QString & >() (args, heap) : gsi::arg_maker<const QString & >() (QString(), heap);
   QFlags<QFileDialog::Option> arg4 = args ? gsi::arg_reader<QFlags<QFileDialog::Option> >() (args, heap) : gsi::arg_maker<QFlags<QFileDialog::Option> >() (QFileDialog::ShowDirsOnly, heap);
@@ -1194,7 +1145,7 @@ static void _call_f_getExistingDirectory_7979 (const qt_gsi::GenericStaticMethod
 
 static void _init_f_getExistingDirectoryUrl_9984 (qt_gsi::GenericStaticMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("parent", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("parent", true, "0");
   decl->add_arg<QWidget * > (argspec_0);
   static gsi::ArgSpecBase argspec_1 ("caption", true, "QString()");
   decl->add_arg<const QString & > (argspec_1);
@@ -1211,7 +1162,7 @@ static void _call_f_getExistingDirectoryUrl_9984 (const qt_gsi::GenericStaticMet
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  QWidget *arg1 = args ? gsi::arg_reader<QWidget * >() (args, heap) : gsi::arg_maker<QWidget * >() (nullptr, heap);
+  QWidget *arg1 = args ? gsi::arg_reader<QWidget * >() (args, heap) : gsi::arg_maker<QWidget * >() (0, heap);
   const QString &arg2 = args ? gsi::arg_reader<const QString & >() (args, heap) : gsi::arg_maker<const QString & >() (QString(), heap);
   const QUrl &arg3 = args ? gsi::arg_reader<const QUrl & >() (args, heap) : gsi::arg_maker<const QUrl & >() (QUrl(), heap);
   QFlags<QFileDialog::Option> arg4 = args ? gsi::arg_reader<QFlags<QFileDialog::Option> >() (args, heap) : gsi::arg_maker<QFlags<QFileDialog::Option> >() (QFileDialog::ShowDirsOnly, heap);
@@ -1225,7 +1176,7 @@ static void _call_f_getExistingDirectoryUrl_9984 (const qt_gsi::GenericStaticMet
 
 static void _init_f_getOpenFileName_11122 (qt_gsi::GenericStaticMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("parent", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("parent", true, "0");
   decl->add_arg<QWidget * > (argspec_0);
   static gsi::ArgSpecBase argspec_1 ("caption", true, "QString()");
   decl->add_arg<const QString & > (argspec_1);
@@ -1233,9 +1184,9 @@ static void _init_f_getOpenFileName_11122 (qt_gsi::GenericStaticMethod *decl)
   decl->add_arg<const QString & > (argspec_2);
   static gsi::ArgSpecBase argspec_3 ("filter", true, "QString()");
   decl->add_arg<const QString & > (argspec_3);
-  static gsi::ArgSpecBase argspec_4 ("selectedFilter", true, "nullptr");
+  static gsi::ArgSpecBase argspec_4 ("selectedFilter", true, "0");
   decl->add_arg<QString * > (argspec_4);
-  static gsi::ArgSpecBase argspec_5 ("options", true, "QFileDialog::Options()");
+  static gsi::ArgSpecBase argspec_5 ("options", true, "0");
   decl->add_arg<QFlags<QFileDialog::Option> > (argspec_5);
   decl->set_return<QString > ();
 }
@@ -1244,12 +1195,12 @@ static void _call_f_getOpenFileName_11122 (const qt_gsi::GenericStaticMethod * /
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  QWidget *arg1 = args ? gsi::arg_reader<QWidget * >() (args, heap) : gsi::arg_maker<QWidget * >() (nullptr, heap);
+  QWidget *arg1 = args ? gsi::arg_reader<QWidget * >() (args, heap) : gsi::arg_maker<QWidget * >() (0, heap);
   const QString &arg2 = args ? gsi::arg_reader<const QString & >() (args, heap) : gsi::arg_maker<const QString & >() (QString(), heap);
   const QString &arg3 = args ? gsi::arg_reader<const QString & >() (args, heap) : gsi::arg_maker<const QString & >() (QString(), heap);
   const QString &arg4 = args ? gsi::arg_reader<const QString & >() (args, heap) : gsi::arg_maker<const QString & >() (QString(), heap);
-  QString *arg5 = args ? gsi::arg_reader<QString * >() (args, heap) : gsi::arg_maker<QString * >() (nullptr, heap);
-  QFlags<QFileDialog::Option> arg6 = args ? gsi::arg_reader<QFlags<QFileDialog::Option> >() (args, heap) : gsi::arg_maker<QFlags<QFileDialog::Option> >() (QFileDialog::Options(), heap);
+  QString *arg5 = args ? gsi::arg_reader<QString * >() (args, heap) : gsi::arg_maker<QString * >() (0, heap);
+  QFlags<QFileDialog::Option> arg6 = args ? gsi::arg_reader<QFlags<QFileDialog::Option> >() (args, heap) : gsi::arg_maker<QFlags<QFileDialog::Option> >() (0, heap);
   ret.write<QString > ((QString)QFileDialog::getOpenFileName (arg1, arg2, arg3, arg4, arg5, arg6));
 }
 
@@ -1259,7 +1210,7 @@ static void _call_f_getOpenFileName_11122 (const qt_gsi::GenericStaticMethod * /
 
 static void _init_f_getOpenFileNames_11122 (qt_gsi::GenericStaticMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("parent", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("parent", true, "0");
   decl->add_arg<QWidget * > (argspec_0);
   static gsi::ArgSpecBase argspec_1 ("caption", true, "QString()");
   decl->add_arg<const QString & > (argspec_1);
@@ -1267,9 +1218,9 @@ static void _init_f_getOpenFileNames_11122 (qt_gsi::GenericStaticMethod *decl)
   decl->add_arg<const QString & > (argspec_2);
   static gsi::ArgSpecBase argspec_3 ("filter", true, "QString()");
   decl->add_arg<const QString & > (argspec_3);
-  static gsi::ArgSpecBase argspec_4 ("selectedFilter", true, "nullptr");
+  static gsi::ArgSpecBase argspec_4 ("selectedFilter", true, "0");
   decl->add_arg<QString * > (argspec_4);
-  static gsi::ArgSpecBase argspec_5 ("options", true, "QFileDialog::Options()");
+  static gsi::ArgSpecBase argspec_5 ("options", true, "0");
   decl->add_arg<QFlags<QFileDialog::Option> > (argspec_5);
   decl->set_return<QStringList > ();
 }
@@ -1278,12 +1229,12 @@ static void _call_f_getOpenFileNames_11122 (const qt_gsi::GenericStaticMethod * 
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  QWidget *arg1 = args ? gsi::arg_reader<QWidget * >() (args, heap) : gsi::arg_maker<QWidget * >() (nullptr, heap);
+  QWidget *arg1 = args ? gsi::arg_reader<QWidget * >() (args, heap) : gsi::arg_maker<QWidget * >() (0, heap);
   const QString &arg2 = args ? gsi::arg_reader<const QString & >() (args, heap) : gsi::arg_maker<const QString & >() (QString(), heap);
   const QString &arg3 = args ? gsi::arg_reader<const QString & >() (args, heap) : gsi::arg_maker<const QString & >() (QString(), heap);
   const QString &arg4 = args ? gsi::arg_reader<const QString & >() (args, heap) : gsi::arg_maker<const QString & >() (QString(), heap);
-  QString *arg5 = args ? gsi::arg_reader<QString * >() (args, heap) : gsi::arg_maker<QString * >() (nullptr, heap);
-  QFlags<QFileDialog::Option> arg6 = args ? gsi::arg_reader<QFlags<QFileDialog::Option> >() (args, heap) : gsi::arg_maker<QFlags<QFileDialog::Option> >() (QFileDialog::Options(), heap);
+  QString *arg5 = args ? gsi::arg_reader<QString * >() (args, heap) : gsi::arg_maker<QString * >() (0, heap);
+  QFlags<QFileDialog::Option> arg6 = args ? gsi::arg_reader<QFlags<QFileDialog::Option> >() (args, heap) : gsi::arg_maker<QFlags<QFileDialog::Option> >() (0, heap);
   ret.write<QStringList > ((QStringList)QFileDialog::getOpenFileNames (arg1, arg2, arg3, arg4, arg5, arg6));
 }
 
@@ -1293,7 +1244,7 @@ static void _call_f_getOpenFileNames_11122 (const qt_gsi::GenericStaticMethod * 
 
 static void _init_f_getOpenFileUrl_13127 (qt_gsi::GenericStaticMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("parent", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("parent", true, "0");
   decl->add_arg<QWidget * > (argspec_0);
   static gsi::ArgSpecBase argspec_1 ("caption", true, "QString()");
   decl->add_arg<const QString & > (argspec_1);
@@ -1301,9 +1252,9 @@ static void _init_f_getOpenFileUrl_13127 (qt_gsi::GenericStaticMethod *decl)
   decl->add_arg<const QUrl & > (argspec_2);
   static gsi::ArgSpecBase argspec_3 ("filter", true, "QString()");
   decl->add_arg<const QString & > (argspec_3);
-  static gsi::ArgSpecBase argspec_4 ("selectedFilter", true, "nullptr");
+  static gsi::ArgSpecBase argspec_4 ("selectedFilter", true, "0");
   decl->add_arg<QString * > (argspec_4);
-  static gsi::ArgSpecBase argspec_5 ("options", true, "QFileDialog::Options()");
+  static gsi::ArgSpecBase argspec_5 ("options", true, "0");
   decl->add_arg<QFlags<QFileDialog::Option> > (argspec_5);
   static gsi::ArgSpecBase argspec_6 ("supportedSchemes", true, "QStringList()");
   decl->add_arg<const QStringList & > (argspec_6);
@@ -1314,12 +1265,12 @@ static void _call_f_getOpenFileUrl_13127 (const qt_gsi::GenericStaticMethod * /*
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  QWidget *arg1 = args ? gsi::arg_reader<QWidget * >() (args, heap) : gsi::arg_maker<QWidget * >() (nullptr, heap);
+  QWidget *arg1 = args ? gsi::arg_reader<QWidget * >() (args, heap) : gsi::arg_maker<QWidget * >() (0, heap);
   const QString &arg2 = args ? gsi::arg_reader<const QString & >() (args, heap) : gsi::arg_maker<const QString & >() (QString(), heap);
   const QUrl &arg3 = args ? gsi::arg_reader<const QUrl & >() (args, heap) : gsi::arg_maker<const QUrl & >() (QUrl(), heap);
   const QString &arg4 = args ? gsi::arg_reader<const QString & >() (args, heap) : gsi::arg_maker<const QString & >() (QString(), heap);
-  QString *arg5 = args ? gsi::arg_reader<QString * >() (args, heap) : gsi::arg_maker<QString * >() (nullptr, heap);
-  QFlags<QFileDialog::Option> arg6 = args ? gsi::arg_reader<QFlags<QFileDialog::Option> >() (args, heap) : gsi::arg_maker<QFlags<QFileDialog::Option> >() (QFileDialog::Options(), heap);
+  QString *arg5 = args ? gsi::arg_reader<QString * >() (args, heap) : gsi::arg_maker<QString * >() (0, heap);
+  QFlags<QFileDialog::Option> arg6 = args ? gsi::arg_reader<QFlags<QFileDialog::Option> >() (args, heap) : gsi::arg_maker<QFlags<QFileDialog::Option> >() (0, heap);
   const QStringList &arg7 = args ? gsi::arg_reader<const QStringList & >() (args, heap) : gsi::arg_maker<const QStringList & >() (QStringList(), heap);
   ret.write<QUrl > ((QUrl)QFileDialog::getOpenFileUrl (arg1, arg2, arg3, arg4, arg5, arg6, arg7));
 }
@@ -1330,7 +1281,7 @@ static void _call_f_getOpenFileUrl_13127 (const qt_gsi::GenericStaticMethod * /*
 
 static void _init_f_getOpenFileUrls_13127 (qt_gsi::GenericStaticMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("parent", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("parent", true, "0");
   decl->add_arg<QWidget * > (argspec_0);
   static gsi::ArgSpecBase argspec_1 ("caption", true, "QString()");
   decl->add_arg<const QString & > (argspec_1);
@@ -1338,9 +1289,9 @@ static void _init_f_getOpenFileUrls_13127 (qt_gsi::GenericStaticMethod *decl)
   decl->add_arg<const QUrl & > (argspec_2);
   static gsi::ArgSpecBase argspec_3 ("filter", true, "QString()");
   decl->add_arg<const QString & > (argspec_3);
-  static gsi::ArgSpecBase argspec_4 ("selectedFilter", true, "nullptr");
+  static gsi::ArgSpecBase argspec_4 ("selectedFilter", true, "0");
   decl->add_arg<QString * > (argspec_4);
-  static gsi::ArgSpecBase argspec_5 ("options", true, "QFileDialog::Options()");
+  static gsi::ArgSpecBase argspec_5 ("options", true, "0");
   decl->add_arg<QFlags<QFileDialog::Option> > (argspec_5);
   static gsi::ArgSpecBase argspec_6 ("supportedSchemes", true, "QStringList()");
   decl->add_arg<const QStringList & > (argspec_6);
@@ -1351,12 +1302,12 @@ static void _call_f_getOpenFileUrls_13127 (const qt_gsi::GenericStaticMethod * /
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  QWidget *arg1 = args ? gsi::arg_reader<QWidget * >() (args, heap) : gsi::arg_maker<QWidget * >() (nullptr, heap);
+  QWidget *arg1 = args ? gsi::arg_reader<QWidget * >() (args, heap) : gsi::arg_maker<QWidget * >() (0, heap);
   const QString &arg2 = args ? gsi::arg_reader<const QString & >() (args, heap) : gsi::arg_maker<const QString & >() (QString(), heap);
   const QUrl &arg3 = args ? gsi::arg_reader<const QUrl & >() (args, heap) : gsi::arg_maker<const QUrl & >() (QUrl(), heap);
   const QString &arg4 = args ? gsi::arg_reader<const QString & >() (args, heap) : gsi::arg_maker<const QString & >() (QString(), heap);
-  QString *arg5 = args ? gsi::arg_reader<QString * >() (args, heap) : gsi::arg_maker<QString * >() (nullptr, heap);
-  QFlags<QFileDialog::Option> arg6 = args ? gsi::arg_reader<QFlags<QFileDialog::Option> >() (args, heap) : gsi::arg_maker<QFlags<QFileDialog::Option> >() (QFileDialog::Options(), heap);
+  QString *arg5 = args ? gsi::arg_reader<QString * >() (args, heap) : gsi::arg_maker<QString * >() (0, heap);
+  QFlags<QFileDialog::Option> arg6 = args ? gsi::arg_reader<QFlags<QFileDialog::Option> >() (args, heap) : gsi::arg_maker<QFlags<QFileDialog::Option> >() (0, heap);
   const QStringList &arg7 = args ? gsi::arg_reader<const QStringList & >() (args, heap) : gsi::arg_maker<const QStringList & >() (QStringList(), heap);
   ret.write<QList<QUrl> > ((QList<QUrl>)QFileDialog::getOpenFileUrls (arg1, arg2, arg3, arg4, arg5, arg6, arg7));
 }
@@ -1367,7 +1318,7 @@ static void _call_f_getOpenFileUrls_13127 (const qt_gsi::GenericStaticMethod * /
 
 static void _init_f_getSaveFileName_11122 (qt_gsi::GenericStaticMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("parent", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("parent", true, "0");
   decl->add_arg<QWidget * > (argspec_0);
   static gsi::ArgSpecBase argspec_1 ("caption", true, "QString()");
   decl->add_arg<const QString & > (argspec_1);
@@ -1375,9 +1326,9 @@ static void _init_f_getSaveFileName_11122 (qt_gsi::GenericStaticMethod *decl)
   decl->add_arg<const QString & > (argspec_2);
   static gsi::ArgSpecBase argspec_3 ("filter", true, "QString()");
   decl->add_arg<const QString & > (argspec_3);
-  static gsi::ArgSpecBase argspec_4 ("selectedFilter", true, "nullptr");
+  static gsi::ArgSpecBase argspec_4 ("selectedFilter", true, "0");
   decl->add_arg<QString * > (argspec_4);
-  static gsi::ArgSpecBase argspec_5 ("options", true, "QFileDialog::Options()");
+  static gsi::ArgSpecBase argspec_5 ("options", true, "0");
   decl->add_arg<QFlags<QFileDialog::Option> > (argspec_5);
   decl->set_return<QString > ();
 }
@@ -1386,12 +1337,12 @@ static void _call_f_getSaveFileName_11122 (const qt_gsi::GenericStaticMethod * /
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  QWidget *arg1 = args ? gsi::arg_reader<QWidget * >() (args, heap) : gsi::arg_maker<QWidget * >() (nullptr, heap);
+  QWidget *arg1 = args ? gsi::arg_reader<QWidget * >() (args, heap) : gsi::arg_maker<QWidget * >() (0, heap);
   const QString &arg2 = args ? gsi::arg_reader<const QString & >() (args, heap) : gsi::arg_maker<const QString & >() (QString(), heap);
   const QString &arg3 = args ? gsi::arg_reader<const QString & >() (args, heap) : gsi::arg_maker<const QString & >() (QString(), heap);
   const QString &arg4 = args ? gsi::arg_reader<const QString & >() (args, heap) : gsi::arg_maker<const QString & >() (QString(), heap);
-  QString *arg5 = args ? gsi::arg_reader<QString * >() (args, heap) : gsi::arg_maker<QString * >() (nullptr, heap);
-  QFlags<QFileDialog::Option> arg6 = args ? gsi::arg_reader<QFlags<QFileDialog::Option> >() (args, heap) : gsi::arg_maker<QFlags<QFileDialog::Option> >() (QFileDialog::Options(), heap);
+  QString *arg5 = args ? gsi::arg_reader<QString * >() (args, heap) : gsi::arg_maker<QString * >() (0, heap);
+  QFlags<QFileDialog::Option> arg6 = args ? gsi::arg_reader<QFlags<QFileDialog::Option> >() (args, heap) : gsi::arg_maker<QFlags<QFileDialog::Option> >() (0, heap);
   ret.write<QString > ((QString)QFileDialog::getSaveFileName (arg1, arg2, arg3, arg4, arg5, arg6));
 }
 
@@ -1401,7 +1352,7 @@ static void _call_f_getSaveFileName_11122 (const qt_gsi::GenericStaticMethod * /
 
 static void _init_f_getSaveFileUrl_13127 (qt_gsi::GenericStaticMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("parent", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("parent", true, "0");
   decl->add_arg<QWidget * > (argspec_0);
   static gsi::ArgSpecBase argspec_1 ("caption", true, "QString()");
   decl->add_arg<const QString & > (argspec_1);
@@ -1409,9 +1360,9 @@ static void _init_f_getSaveFileUrl_13127 (qt_gsi::GenericStaticMethod *decl)
   decl->add_arg<const QUrl & > (argspec_2);
   static gsi::ArgSpecBase argspec_3 ("filter", true, "QString()");
   decl->add_arg<const QString & > (argspec_3);
-  static gsi::ArgSpecBase argspec_4 ("selectedFilter", true, "nullptr");
+  static gsi::ArgSpecBase argspec_4 ("selectedFilter", true, "0");
   decl->add_arg<QString * > (argspec_4);
-  static gsi::ArgSpecBase argspec_5 ("options", true, "QFileDialog::Options()");
+  static gsi::ArgSpecBase argspec_5 ("options", true, "0");
   decl->add_arg<QFlags<QFileDialog::Option> > (argspec_5);
   static gsi::ArgSpecBase argspec_6 ("supportedSchemes", true, "QStringList()");
   decl->add_arg<const QStringList & > (argspec_6);
@@ -1422,12 +1373,12 @@ static void _call_f_getSaveFileUrl_13127 (const qt_gsi::GenericStaticMethod * /*
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  QWidget *arg1 = args ? gsi::arg_reader<QWidget * >() (args, heap) : gsi::arg_maker<QWidget * >() (nullptr, heap);
+  QWidget *arg1 = args ? gsi::arg_reader<QWidget * >() (args, heap) : gsi::arg_maker<QWidget * >() (0, heap);
   const QString &arg2 = args ? gsi::arg_reader<const QString & >() (args, heap) : gsi::arg_maker<const QString & >() (QString(), heap);
   const QUrl &arg3 = args ? gsi::arg_reader<const QUrl & >() (args, heap) : gsi::arg_maker<const QUrl & >() (QUrl(), heap);
   const QString &arg4 = args ? gsi::arg_reader<const QString & >() (args, heap) : gsi::arg_maker<const QString & >() (QString(), heap);
-  QString *arg5 = args ? gsi::arg_reader<QString * >() (args, heap) : gsi::arg_maker<QString * >() (nullptr, heap);
-  QFlags<QFileDialog::Option> arg6 = args ? gsi::arg_reader<QFlags<QFileDialog::Option> >() (args, heap) : gsi::arg_maker<QFlags<QFileDialog::Option> >() (QFileDialog::Options(), heap);
+  QString *arg5 = args ? gsi::arg_reader<QString * >() (args, heap) : gsi::arg_maker<QString * >() (0, heap);
+  QFlags<QFileDialog::Option> arg6 = args ? gsi::arg_reader<QFlags<QFileDialog::Option> >() (args, heap) : gsi::arg_maker<QFlags<QFileDialog::Option> >() (0, heap);
   const QStringList &arg7 = args ? gsi::arg_reader<const QStringList & >() (args, heap) : gsi::arg_maker<const QStringList & >() (QStringList(), heap);
   ret.write<QUrl > ((QUrl)QFileDialog::getSaveFileUrl (arg1, arg2, arg3, arg4, arg5, arg6, arg7));
 }
@@ -1440,7 +1391,7 @@ static void _init_f_tr_4013 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("s");
   decl->add_arg<const char * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("c", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("c", true, "__null");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("n", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -1452,7 +1403,7 @@ static void _call_f_tr_4013 (const qt_gsi::GenericStaticMethod * /*decl*/, gsi::
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (__null, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QFileDialog::tr (arg1, arg2, arg3));
 }
@@ -1465,7 +1416,7 @@ static void _init_f_trUtf8_4013 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("s");
   decl->add_arg<const char * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("c", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("c", true, "__null");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("n", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -1477,7 +1428,7 @@ static void _call_f_trUtf8_4013 (const qt_gsi::GenericStaticMethod * /*decl*/, g
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (__null, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QFileDialog::trUtf8 (arg1, arg2, arg3));
 }
@@ -1516,7 +1467,6 @@ static gsi::Methods methods_QFileDialog () {
   methods += new qt_gsi::GenericMethod ("selectNameFilter", "@brief Method void QFileDialog::selectNameFilter(const QString &filter)\n", false, &_init_f_selectNameFilter_2025, &_call_f_selectNameFilter_2025);
   methods += new qt_gsi::GenericMethod ("selectUrl", "@brief Method void QFileDialog::selectUrl(const QUrl &url)\n", false, &_init_f_selectUrl_1701, &_call_f_selectUrl_1701);
   methods += new qt_gsi::GenericMethod ("selectedFiles", "@brief Method QStringList QFileDialog::selectedFiles()\n", true, &_init_f_selectedFiles_c0, &_call_f_selectedFiles_c0);
-  methods += new qt_gsi::GenericMethod ("selectedMimeTypeFilter", "@brief Method QString QFileDialog::selectedMimeTypeFilter()\n", true, &_init_f_selectedMimeTypeFilter_c0, &_call_f_selectedMimeTypeFilter_c0);
   methods += new qt_gsi::GenericMethod ("selectedNameFilter", "@brief Method QString QFileDialog::selectedNameFilter()\n", true, &_init_f_selectedNameFilter_c0, &_call_f_selectedNameFilter_c0);
   methods += new qt_gsi::GenericMethod ("selectedUrls", "@brief Method QList<QUrl> QFileDialog::selectedUrls()\n", true, &_init_f_selectedUrls_c0, &_call_f_selectedUrls_c0);
   methods += new qt_gsi::GenericMethod ("setAcceptMode|acceptMode=", "@brief Method void QFileDialog::setAcceptMode(QFileDialog::AcceptMode mode)\n", false, &_init_f_setAcceptMode_2590, &_call_f_setAcceptMode_2590);
@@ -1541,11 +1491,9 @@ static gsi::Methods methods_QFileDialog () {
   methods += new qt_gsi::GenericMethod ("setReadOnly|readOnly=", "@brief Method void QFileDialog::setReadOnly(bool enabled)\n", false, &_init_f_setReadOnly_864, &_call_f_setReadOnly_864);
   methods += new qt_gsi::GenericMethod ("setResolveSymlinks|resolveSymlinks=", "@brief Method void QFileDialog::setResolveSymlinks(bool enabled)\n", false, &_init_f_setResolveSymlinks_864, &_call_f_setResolveSymlinks_864);
   methods += new qt_gsi::GenericMethod ("setSidebarUrls|sidebarUrls=", "@brief Method void QFileDialog::setSidebarUrls(const QList<QUrl> &urls)\n", false, &_init_f_setSidebarUrls_2316, &_call_f_setSidebarUrls_2316);
-  methods += new qt_gsi::GenericMethod ("setSupportedSchemes|supportedSchemes=", "@brief Method void QFileDialog::setSupportedSchemes(const QStringList &schemes)\n", false, &_init_f_setSupportedSchemes_2437, &_call_f_setSupportedSchemes_2437);
   methods += new qt_gsi::GenericMethod ("setViewMode|viewMode=", "@brief Method void QFileDialog::setViewMode(QFileDialog::ViewMode mode)\n", false, &_init_f_setViewMode_2409, &_call_f_setViewMode_2409);
   methods += new qt_gsi::GenericMethod ("setVisible|visible=", "@brief Method void QFileDialog::setVisible(bool visible)\nThis is a reimplementation of QDialog::setVisible", false, &_init_f_setVisible_864, &_call_f_setVisible_864);
   methods += new qt_gsi::GenericMethod (":sidebarUrls", "@brief Method QList<QUrl> QFileDialog::sidebarUrls()\n", true, &_init_f_sidebarUrls_c0, &_call_f_sidebarUrls_c0);
-  methods += new qt_gsi::GenericMethod (":supportedSchemes", "@brief Method QStringList QFileDialog::supportedSchemes()\n", true, &_init_f_supportedSchemes_c0, &_call_f_supportedSchemes_c0);
   methods += new qt_gsi::GenericMethod ("testOption", "@brief Method bool QFileDialog::testOption(QFileDialog::Option option)\n", true, &_init_f_testOption_c2242, &_call_f_testOption_c2242);
   methods += new qt_gsi::GenericMethod (":viewMode", "@brief Method QFileDialog::ViewMode QFileDialog::viewMode()\n", true, &_init_f_viewMode_c0, &_call_f_viewMode_c0);
   methods += gsi::qt_signal ("accepted()", "accepted", "@brief Signal declaration for QFileDialog::accepted()\nYou can bind a procedure to this signal.");
@@ -1559,7 +1507,6 @@ static gsi::Methods methods_QFileDialog () {
   methods += gsi::qt_signal<const QStringList & > ("filesSelected(const QStringList &)", "filesSelected", gsi::arg("files"), "@brief Signal declaration for QFileDialog::filesSelected(const QStringList &files)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<const QString & > ("filterSelected(const QString &)", "filterSelected", gsi::arg("filter"), "@brief Signal declaration for QFileDialog::filterSelected(const QString &filter)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<int > ("finished(int)", "finished", gsi::arg("result"), "@brief Signal declaration for QFileDialog::finished(int result)\nYou can bind a procedure to this signal.");
-  methods += gsi::qt_signal<const QString & > ("objectNameChanged(const QString &)", "objectNameChanged", gsi::arg("objectName"), "@brief Signal declaration for QFileDialog::objectNameChanged(const QString &objectName)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal ("rejected()", "rejected", "@brief Signal declaration for QFileDialog::rejected()\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<const QUrl & > ("urlSelected(const QUrl &)", "urlSelected", gsi::arg("url"), "@brief Signal declaration for QFileDialog::urlSelected(const QUrl &url)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<const QList<QUrl> & > ("urlsSelected(const QList<QUrl> &)", "urlsSelected", gsi::arg("urls"), "@brief Signal declaration for QFileDialog::urlsSelected(const QList<QUrl> &urls)\nYou can bind a procedure to this signal.");
@@ -1823,13 +1770,6 @@ public:
     }
   }
 
-  //  [emitter impl] void QFileDialog::objectNameChanged(const QString &objectName)
-  void emitter_QFileDialog_objectNameChanged_4567(const QString &objectName)
-  {
-    __SUPPRESS_UNUSED_WARNING (objectName);
-    throw tl::Exception ("Can't emit private signal 'void QFileDialog::objectNameChanged(const QString &objectName)'");
-  }
-
   //  [adaptor impl] void QFileDialog::open()
   void cbs_open_0_0()
   {
@@ -1956,18 +1896,18 @@ public:
     }
   }
 
-  //  [adaptor impl] void QFileDialog::actionEvent(QActionEvent *event)
-  void cbs_actionEvent_1823_0(QActionEvent *event)
+  //  [adaptor impl] void QFileDialog::actionEvent(QActionEvent *)
+  void cbs_actionEvent_1823_0(QActionEvent *arg1)
   {
-    QFileDialog::actionEvent(event);
+    QFileDialog::actionEvent(arg1);
   }
 
-  virtual void actionEvent(QActionEvent *event)
+  virtual void actionEvent(QActionEvent *arg1)
   {
     if (cb_actionEvent_1823_0.can_issue()) {
-      cb_actionEvent_1823_0.issue<QFileDialog_Adaptor, QActionEvent *>(&QFileDialog_Adaptor::cbs_actionEvent_1823_0, event);
+      cb_actionEvent_1823_0.issue<QFileDialog_Adaptor, QActionEvent *>(&QFileDialog_Adaptor::cbs_actionEvent_1823_0, arg1);
     } else {
-      QFileDialog::actionEvent(event);
+      QFileDialog::actionEvent(arg1);
     }
   }
 
@@ -1986,18 +1926,18 @@ public:
     }
   }
 
-  //  [adaptor impl] void QFileDialog::childEvent(QChildEvent *event)
-  void cbs_childEvent_1701_0(QChildEvent *event)
+  //  [adaptor impl] void QFileDialog::childEvent(QChildEvent *)
+  void cbs_childEvent_1701_0(QChildEvent *arg1)
   {
-    QFileDialog::childEvent(event);
+    QFileDialog::childEvent(arg1);
   }
 
-  virtual void childEvent(QChildEvent *event)
+  virtual void childEvent(QChildEvent *arg1)
   {
     if (cb_childEvent_1701_0.can_issue()) {
-      cb_childEvent_1701_0.issue<QFileDialog_Adaptor, QChildEvent *>(&QFileDialog_Adaptor::cbs_childEvent_1701_0, event);
+      cb_childEvent_1701_0.issue<QFileDialog_Adaptor, QChildEvent *>(&QFileDialog_Adaptor::cbs_childEvent_1701_0, arg1);
     } else {
-      QFileDialog::childEvent(event);
+      QFileDialog::childEvent(arg1);
     }
   }
 
@@ -2031,18 +1971,18 @@ public:
     }
   }
 
-  //  [adaptor impl] void QFileDialog::customEvent(QEvent *event)
-  void cbs_customEvent_1217_0(QEvent *event)
+  //  [adaptor impl] void QFileDialog::customEvent(QEvent *)
+  void cbs_customEvent_1217_0(QEvent *arg1)
   {
-    QFileDialog::customEvent(event);
+    QFileDialog::customEvent(arg1);
   }
 
-  virtual void customEvent(QEvent *event)
+  virtual void customEvent(QEvent *arg1)
   {
     if (cb_customEvent_1217_0.can_issue()) {
-      cb_customEvent_1217_0.issue<QFileDialog_Adaptor, QEvent *>(&QFileDialog_Adaptor::cbs_customEvent_1217_0, event);
+      cb_customEvent_1217_0.issue<QFileDialog_Adaptor, QEvent *>(&QFileDialog_Adaptor::cbs_customEvent_1217_0, arg1);
     } else {
-      QFileDialog::customEvent(event);
+      QFileDialog::customEvent(arg1);
     }
   }
 
@@ -2076,93 +2016,93 @@ public:
     }
   }
 
-  //  [adaptor impl] void QFileDialog::dragEnterEvent(QDragEnterEvent *event)
-  void cbs_dragEnterEvent_2109_0(QDragEnterEvent *event)
+  //  [adaptor impl] void QFileDialog::dragEnterEvent(QDragEnterEvent *)
+  void cbs_dragEnterEvent_2109_0(QDragEnterEvent *arg1)
   {
-    QFileDialog::dragEnterEvent(event);
+    QFileDialog::dragEnterEvent(arg1);
   }
 
-  virtual void dragEnterEvent(QDragEnterEvent *event)
+  virtual void dragEnterEvent(QDragEnterEvent *arg1)
   {
     if (cb_dragEnterEvent_2109_0.can_issue()) {
-      cb_dragEnterEvent_2109_0.issue<QFileDialog_Adaptor, QDragEnterEvent *>(&QFileDialog_Adaptor::cbs_dragEnterEvent_2109_0, event);
+      cb_dragEnterEvent_2109_0.issue<QFileDialog_Adaptor, QDragEnterEvent *>(&QFileDialog_Adaptor::cbs_dragEnterEvent_2109_0, arg1);
     } else {
-      QFileDialog::dragEnterEvent(event);
+      QFileDialog::dragEnterEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QFileDialog::dragLeaveEvent(QDragLeaveEvent *event)
-  void cbs_dragLeaveEvent_2092_0(QDragLeaveEvent *event)
+  //  [adaptor impl] void QFileDialog::dragLeaveEvent(QDragLeaveEvent *)
+  void cbs_dragLeaveEvent_2092_0(QDragLeaveEvent *arg1)
   {
-    QFileDialog::dragLeaveEvent(event);
+    QFileDialog::dragLeaveEvent(arg1);
   }
 
-  virtual void dragLeaveEvent(QDragLeaveEvent *event)
+  virtual void dragLeaveEvent(QDragLeaveEvent *arg1)
   {
     if (cb_dragLeaveEvent_2092_0.can_issue()) {
-      cb_dragLeaveEvent_2092_0.issue<QFileDialog_Adaptor, QDragLeaveEvent *>(&QFileDialog_Adaptor::cbs_dragLeaveEvent_2092_0, event);
+      cb_dragLeaveEvent_2092_0.issue<QFileDialog_Adaptor, QDragLeaveEvent *>(&QFileDialog_Adaptor::cbs_dragLeaveEvent_2092_0, arg1);
     } else {
-      QFileDialog::dragLeaveEvent(event);
+      QFileDialog::dragLeaveEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QFileDialog::dragMoveEvent(QDragMoveEvent *event)
-  void cbs_dragMoveEvent_2006_0(QDragMoveEvent *event)
+  //  [adaptor impl] void QFileDialog::dragMoveEvent(QDragMoveEvent *)
+  void cbs_dragMoveEvent_2006_0(QDragMoveEvent *arg1)
   {
-    QFileDialog::dragMoveEvent(event);
+    QFileDialog::dragMoveEvent(arg1);
   }
 
-  virtual void dragMoveEvent(QDragMoveEvent *event)
+  virtual void dragMoveEvent(QDragMoveEvent *arg1)
   {
     if (cb_dragMoveEvent_2006_0.can_issue()) {
-      cb_dragMoveEvent_2006_0.issue<QFileDialog_Adaptor, QDragMoveEvent *>(&QFileDialog_Adaptor::cbs_dragMoveEvent_2006_0, event);
+      cb_dragMoveEvent_2006_0.issue<QFileDialog_Adaptor, QDragMoveEvent *>(&QFileDialog_Adaptor::cbs_dragMoveEvent_2006_0, arg1);
     } else {
-      QFileDialog::dragMoveEvent(event);
+      QFileDialog::dragMoveEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QFileDialog::dropEvent(QDropEvent *event)
-  void cbs_dropEvent_1622_0(QDropEvent *event)
+  //  [adaptor impl] void QFileDialog::dropEvent(QDropEvent *)
+  void cbs_dropEvent_1622_0(QDropEvent *arg1)
   {
-    QFileDialog::dropEvent(event);
+    QFileDialog::dropEvent(arg1);
   }
 
-  virtual void dropEvent(QDropEvent *event)
+  virtual void dropEvent(QDropEvent *arg1)
   {
     if (cb_dropEvent_1622_0.can_issue()) {
-      cb_dropEvent_1622_0.issue<QFileDialog_Adaptor, QDropEvent *>(&QFileDialog_Adaptor::cbs_dropEvent_1622_0, event);
+      cb_dropEvent_1622_0.issue<QFileDialog_Adaptor, QDropEvent *>(&QFileDialog_Adaptor::cbs_dropEvent_1622_0, arg1);
     } else {
-      QFileDialog::dropEvent(event);
+      QFileDialog::dropEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QFileDialog::enterEvent(QEvent *event)
-  void cbs_enterEvent_1217_0(QEvent *event)
+  //  [adaptor impl] void QFileDialog::enterEvent(QEvent *)
+  void cbs_enterEvent_1217_0(QEvent *arg1)
   {
-    QFileDialog::enterEvent(event);
+    QFileDialog::enterEvent(arg1);
   }
 
-  virtual void enterEvent(QEvent *event)
+  virtual void enterEvent(QEvent *arg1)
   {
     if (cb_enterEvent_1217_0.can_issue()) {
-      cb_enterEvent_1217_0.issue<QFileDialog_Adaptor, QEvent *>(&QFileDialog_Adaptor::cbs_enterEvent_1217_0, event);
+      cb_enterEvent_1217_0.issue<QFileDialog_Adaptor, QEvent *>(&QFileDialog_Adaptor::cbs_enterEvent_1217_0, arg1);
     } else {
-      QFileDialog::enterEvent(event);
+      QFileDialog::enterEvent(arg1);
     }
   }
 
-  //  [adaptor impl] bool QFileDialog::event(QEvent *event)
-  bool cbs_event_1217_0(QEvent *_event)
+  //  [adaptor impl] bool QFileDialog::event(QEvent *)
+  bool cbs_event_1217_0(QEvent *arg1)
   {
-    return QFileDialog::event(_event);
+    return QFileDialog::event(arg1);
   }
 
-  virtual bool event(QEvent *_event)
+  virtual bool event(QEvent *arg1)
   {
     if (cb_event_1217_0.can_issue()) {
-      return cb_event_1217_0.issue<QFileDialog_Adaptor, bool, QEvent *>(&QFileDialog_Adaptor::cbs_event_1217_0, _event);
+      return cb_event_1217_0.issue<QFileDialog_Adaptor, bool, QEvent *>(&QFileDialog_Adaptor::cbs_event_1217_0, arg1);
     } else {
-      return QFileDialog::event(_event);
+      return QFileDialog::event(arg1);
     }
   }
 
@@ -2181,18 +2121,18 @@ public:
     }
   }
 
-  //  [adaptor impl] void QFileDialog::focusInEvent(QFocusEvent *event)
-  void cbs_focusInEvent_1729_0(QFocusEvent *event)
+  //  [adaptor impl] void QFileDialog::focusInEvent(QFocusEvent *)
+  void cbs_focusInEvent_1729_0(QFocusEvent *arg1)
   {
-    QFileDialog::focusInEvent(event);
+    QFileDialog::focusInEvent(arg1);
   }
 
-  virtual void focusInEvent(QFocusEvent *event)
+  virtual void focusInEvent(QFocusEvent *arg1)
   {
     if (cb_focusInEvent_1729_0.can_issue()) {
-      cb_focusInEvent_1729_0.issue<QFileDialog_Adaptor, QFocusEvent *>(&QFileDialog_Adaptor::cbs_focusInEvent_1729_0, event);
+      cb_focusInEvent_1729_0.issue<QFileDialog_Adaptor, QFocusEvent *>(&QFileDialog_Adaptor::cbs_focusInEvent_1729_0, arg1);
     } else {
-      QFileDialog::focusInEvent(event);
+      QFileDialog::focusInEvent(arg1);
     }
   }
 
@@ -2211,33 +2151,33 @@ public:
     }
   }
 
-  //  [adaptor impl] void QFileDialog::focusOutEvent(QFocusEvent *event)
-  void cbs_focusOutEvent_1729_0(QFocusEvent *event)
+  //  [adaptor impl] void QFileDialog::focusOutEvent(QFocusEvent *)
+  void cbs_focusOutEvent_1729_0(QFocusEvent *arg1)
   {
-    QFileDialog::focusOutEvent(event);
+    QFileDialog::focusOutEvent(arg1);
   }
 
-  virtual void focusOutEvent(QFocusEvent *event)
+  virtual void focusOutEvent(QFocusEvent *arg1)
   {
     if (cb_focusOutEvent_1729_0.can_issue()) {
-      cb_focusOutEvent_1729_0.issue<QFileDialog_Adaptor, QFocusEvent *>(&QFileDialog_Adaptor::cbs_focusOutEvent_1729_0, event);
+      cb_focusOutEvent_1729_0.issue<QFileDialog_Adaptor, QFocusEvent *>(&QFileDialog_Adaptor::cbs_focusOutEvent_1729_0, arg1);
     } else {
-      QFileDialog::focusOutEvent(event);
+      QFileDialog::focusOutEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QFileDialog::hideEvent(QHideEvent *event)
-  void cbs_hideEvent_1595_0(QHideEvent *event)
+  //  [adaptor impl] void QFileDialog::hideEvent(QHideEvent *)
+  void cbs_hideEvent_1595_0(QHideEvent *arg1)
   {
-    QFileDialog::hideEvent(event);
+    QFileDialog::hideEvent(arg1);
   }
 
-  virtual void hideEvent(QHideEvent *event)
+  virtual void hideEvent(QHideEvent *arg1)
   {
     if (cb_hideEvent_1595_0.can_issue()) {
-      cb_hideEvent_1595_0.issue<QFileDialog_Adaptor, QHideEvent *>(&QFileDialog_Adaptor::cbs_hideEvent_1595_0, event);
+      cb_hideEvent_1595_0.issue<QFileDialog_Adaptor, QHideEvent *>(&QFileDialog_Adaptor::cbs_hideEvent_1595_0, arg1);
     } else {
-      QFileDialog::hideEvent(event);
+      QFileDialog::hideEvent(arg1);
     }
   }
 
@@ -2286,33 +2226,33 @@ public:
     }
   }
 
-  //  [adaptor impl] void QFileDialog::keyReleaseEvent(QKeyEvent *event)
-  void cbs_keyReleaseEvent_1514_0(QKeyEvent *event)
+  //  [adaptor impl] void QFileDialog::keyReleaseEvent(QKeyEvent *)
+  void cbs_keyReleaseEvent_1514_0(QKeyEvent *arg1)
   {
-    QFileDialog::keyReleaseEvent(event);
+    QFileDialog::keyReleaseEvent(arg1);
   }
 
-  virtual void keyReleaseEvent(QKeyEvent *event)
+  virtual void keyReleaseEvent(QKeyEvent *arg1)
   {
     if (cb_keyReleaseEvent_1514_0.can_issue()) {
-      cb_keyReleaseEvent_1514_0.issue<QFileDialog_Adaptor, QKeyEvent *>(&QFileDialog_Adaptor::cbs_keyReleaseEvent_1514_0, event);
+      cb_keyReleaseEvent_1514_0.issue<QFileDialog_Adaptor, QKeyEvent *>(&QFileDialog_Adaptor::cbs_keyReleaseEvent_1514_0, arg1);
     } else {
-      QFileDialog::keyReleaseEvent(event);
+      QFileDialog::keyReleaseEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QFileDialog::leaveEvent(QEvent *event)
-  void cbs_leaveEvent_1217_0(QEvent *event)
+  //  [adaptor impl] void QFileDialog::leaveEvent(QEvent *)
+  void cbs_leaveEvent_1217_0(QEvent *arg1)
   {
-    QFileDialog::leaveEvent(event);
+    QFileDialog::leaveEvent(arg1);
   }
 
-  virtual void leaveEvent(QEvent *event)
+  virtual void leaveEvent(QEvent *arg1)
   {
     if (cb_leaveEvent_1217_0.can_issue()) {
-      cb_leaveEvent_1217_0.issue<QFileDialog_Adaptor, QEvent *>(&QFileDialog_Adaptor::cbs_leaveEvent_1217_0, event);
+      cb_leaveEvent_1217_0.issue<QFileDialog_Adaptor, QEvent *>(&QFileDialog_Adaptor::cbs_leaveEvent_1217_0, arg1);
     } else {
-      QFileDialog::leaveEvent(event);
+      QFileDialog::leaveEvent(arg1);
     }
   }
 
@@ -2331,78 +2271,78 @@ public:
     }
   }
 
-  //  [adaptor impl] void QFileDialog::mouseDoubleClickEvent(QMouseEvent *event)
-  void cbs_mouseDoubleClickEvent_1738_0(QMouseEvent *event)
+  //  [adaptor impl] void QFileDialog::mouseDoubleClickEvent(QMouseEvent *)
+  void cbs_mouseDoubleClickEvent_1738_0(QMouseEvent *arg1)
   {
-    QFileDialog::mouseDoubleClickEvent(event);
+    QFileDialog::mouseDoubleClickEvent(arg1);
   }
 
-  virtual void mouseDoubleClickEvent(QMouseEvent *event)
+  virtual void mouseDoubleClickEvent(QMouseEvent *arg1)
   {
     if (cb_mouseDoubleClickEvent_1738_0.can_issue()) {
-      cb_mouseDoubleClickEvent_1738_0.issue<QFileDialog_Adaptor, QMouseEvent *>(&QFileDialog_Adaptor::cbs_mouseDoubleClickEvent_1738_0, event);
+      cb_mouseDoubleClickEvent_1738_0.issue<QFileDialog_Adaptor, QMouseEvent *>(&QFileDialog_Adaptor::cbs_mouseDoubleClickEvent_1738_0, arg1);
     } else {
-      QFileDialog::mouseDoubleClickEvent(event);
+      QFileDialog::mouseDoubleClickEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QFileDialog::mouseMoveEvent(QMouseEvent *event)
-  void cbs_mouseMoveEvent_1738_0(QMouseEvent *event)
+  //  [adaptor impl] void QFileDialog::mouseMoveEvent(QMouseEvent *)
+  void cbs_mouseMoveEvent_1738_0(QMouseEvent *arg1)
   {
-    QFileDialog::mouseMoveEvent(event);
+    QFileDialog::mouseMoveEvent(arg1);
   }
 
-  virtual void mouseMoveEvent(QMouseEvent *event)
+  virtual void mouseMoveEvent(QMouseEvent *arg1)
   {
     if (cb_mouseMoveEvent_1738_0.can_issue()) {
-      cb_mouseMoveEvent_1738_0.issue<QFileDialog_Adaptor, QMouseEvent *>(&QFileDialog_Adaptor::cbs_mouseMoveEvent_1738_0, event);
+      cb_mouseMoveEvent_1738_0.issue<QFileDialog_Adaptor, QMouseEvent *>(&QFileDialog_Adaptor::cbs_mouseMoveEvent_1738_0, arg1);
     } else {
-      QFileDialog::mouseMoveEvent(event);
+      QFileDialog::mouseMoveEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QFileDialog::mousePressEvent(QMouseEvent *event)
-  void cbs_mousePressEvent_1738_0(QMouseEvent *event)
+  //  [adaptor impl] void QFileDialog::mousePressEvent(QMouseEvent *)
+  void cbs_mousePressEvent_1738_0(QMouseEvent *arg1)
   {
-    QFileDialog::mousePressEvent(event);
+    QFileDialog::mousePressEvent(arg1);
   }
 
-  virtual void mousePressEvent(QMouseEvent *event)
+  virtual void mousePressEvent(QMouseEvent *arg1)
   {
     if (cb_mousePressEvent_1738_0.can_issue()) {
-      cb_mousePressEvent_1738_0.issue<QFileDialog_Adaptor, QMouseEvent *>(&QFileDialog_Adaptor::cbs_mousePressEvent_1738_0, event);
+      cb_mousePressEvent_1738_0.issue<QFileDialog_Adaptor, QMouseEvent *>(&QFileDialog_Adaptor::cbs_mousePressEvent_1738_0, arg1);
     } else {
-      QFileDialog::mousePressEvent(event);
+      QFileDialog::mousePressEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QFileDialog::mouseReleaseEvent(QMouseEvent *event)
-  void cbs_mouseReleaseEvent_1738_0(QMouseEvent *event)
+  //  [adaptor impl] void QFileDialog::mouseReleaseEvent(QMouseEvent *)
+  void cbs_mouseReleaseEvent_1738_0(QMouseEvent *arg1)
   {
-    QFileDialog::mouseReleaseEvent(event);
+    QFileDialog::mouseReleaseEvent(arg1);
   }
 
-  virtual void mouseReleaseEvent(QMouseEvent *event)
+  virtual void mouseReleaseEvent(QMouseEvent *arg1)
   {
     if (cb_mouseReleaseEvent_1738_0.can_issue()) {
-      cb_mouseReleaseEvent_1738_0.issue<QFileDialog_Adaptor, QMouseEvent *>(&QFileDialog_Adaptor::cbs_mouseReleaseEvent_1738_0, event);
+      cb_mouseReleaseEvent_1738_0.issue<QFileDialog_Adaptor, QMouseEvent *>(&QFileDialog_Adaptor::cbs_mouseReleaseEvent_1738_0, arg1);
     } else {
-      QFileDialog::mouseReleaseEvent(event);
+      QFileDialog::mouseReleaseEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QFileDialog::moveEvent(QMoveEvent *event)
-  void cbs_moveEvent_1624_0(QMoveEvent *event)
+  //  [adaptor impl] void QFileDialog::moveEvent(QMoveEvent *)
+  void cbs_moveEvent_1624_0(QMoveEvent *arg1)
   {
-    QFileDialog::moveEvent(event);
+    QFileDialog::moveEvent(arg1);
   }
 
-  virtual void moveEvent(QMoveEvent *event)
+  virtual void moveEvent(QMoveEvent *arg1)
   {
     if (cb_moveEvent_1624_0.can_issue()) {
-      cb_moveEvent_1624_0.issue<QFileDialog_Adaptor, QMoveEvent *>(&QFileDialog_Adaptor::cbs_moveEvent_1624_0, event);
+      cb_moveEvent_1624_0.issue<QFileDialog_Adaptor, QMoveEvent *>(&QFileDialog_Adaptor::cbs_moveEvent_1624_0, arg1);
     } else {
-      QFileDialog::moveEvent(event);
+      QFileDialog::moveEvent(arg1);
     }
   }
 
@@ -2421,18 +2361,18 @@ public:
     }
   }
 
-  //  [adaptor impl] void QFileDialog::paintEvent(QPaintEvent *event)
-  void cbs_paintEvent_1725_0(QPaintEvent *event)
+  //  [adaptor impl] void QFileDialog::paintEvent(QPaintEvent *)
+  void cbs_paintEvent_1725_0(QPaintEvent *arg1)
   {
-    QFileDialog::paintEvent(event);
+    QFileDialog::paintEvent(arg1);
   }
 
-  virtual void paintEvent(QPaintEvent *event)
+  virtual void paintEvent(QPaintEvent *arg1)
   {
     if (cb_paintEvent_1725_0.can_issue()) {
-      cb_paintEvent_1725_0.issue<QFileDialog_Adaptor, QPaintEvent *>(&QFileDialog_Adaptor::cbs_paintEvent_1725_0, event);
+      cb_paintEvent_1725_0.issue<QFileDialog_Adaptor, QPaintEvent *>(&QFileDialog_Adaptor::cbs_paintEvent_1725_0, arg1);
     } else {
-      QFileDialog::paintEvent(event);
+      QFileDialog::paintEvent(arg1);
     }
   }
 
@@ -2496,48 +2436,48 @@ public:
     }
   }
 
-  //  [adaptor impl] void QFileDialog::tabletEvent(QTabletEvent *event)
-  void cbs_tabletEvent_1821_0(QTabletEvent *event)
+  //  [adaptor impl] void QFileDialog::tabletEvent(QTabletEvent *)
+  void cbs_tabletEvent_1821_0(QTabletEvent *arg1)
   {
-    QFileDialog::tabletEvent(event);
+    QFileDialog::tabletEvent(arg1);
   }
 
-  virtual void tabletEvent(QTabletEvent *event)
+  virtual void tabletEvent(QTabletEvent *arg1)
   {
     if (cb_tabletEvent_1821_0.can_issue()) {
-      cb_tabletEvent_1821_0.issue<QFileDialog_Adaptor, QTabletEvent *>(&QFileDialog_Adaptor::cbs_tabletEvent_1821_0, event);
+      cb_tabletEvent_1821_0.issue<QFileDialog_Adaptor, QTabletEvent *>(&QFileDialog_Adaptor::cbs_tabletEvent_1821_0, arg1);
     } else {
-      QFileDialog::tabletEvent(event);
+      QFileDialog::tabletEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QFileDialog::timerEvent(QTimerEvent *event)
-  void cbs_timerEvent_1730_0(QTimerEvent *event)
+  //  [adaptor impl] void QFileDialog::timerEvent(QTimerEvent *)
+  void cbs_timerEvent_1730_0(QTimerEvent *arg1)
   {
-    QFileDialog::timerEvent(event);
+    QFileDialog::timerEvent(arg1);
   }
 
-  virtual void timerEvent(QTimerEvent *event)
+  virtual void timerEvent(QTimerEvent *arg1)
   {
     if (cb_timerEvent_1730_0.can_issue()) {
-      cb_timerEvent_1730_0.issue<QFileDialog_Adaptor, QTimerEvent *>(&QFileDialog_Adaptor::cbs_timerEvent_1730_0, event);
+      cb_timerEvent_1730_0.issue<QFileDialog_Adaptor, QTimerEvent *>(&QFileDialog_Adaptor::cbs_timerEvent_1730_0, arg1);
     } else {
-      QFileDialog::timerEvent(event);
+      QFileDialog::timerEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QFileDialog::wheelEvent(QWheelEvent *event)
-  void cbs_wheelEvent_1718_0(QWheelEvent *event)
+  //  [adaptor impl] void QFileDialog::wheelEvent(QWheelEvent *)
+  void cbs_wheelEvent_1718_0(QWheelEvent *arg1)
   {
-    QFileDialog::wheelEvent(event);
+    QFileDialog::wheelEvent(arg1);
   }
 
-  virtual void wheelEvent(QWheelEvent *event)
+  virtual void wheelEvent(QWheelEvent *arg1)
   {
     if (cb_wheelEvent_1718_0.can_issue()) {
-      cb_wheelEvent_1718_0.issue<QFileDialog_Adaptor, QWheelEvent *>(&QFileDialog_Adaptor::cbs_wheelEvent_1718_0, event);
+      cb_wheelEvent_1718_0.issue<QFileDialog_Adaptor, QWheelEvent *>(&QFileDialog_Adaptor::cbs_wheelEvent_1718_0, arg1);
     } else {
-      QFileDialog::wheelEvent(event);
+      QFileDialog::wheelEvent(arg1);
     }
   }
 
@@ -2620,7 +2560,7 @@ static void _call_ctor_QFileDialog_Adaptor_3702 (const qt_gsi::GenericStaticMeth
 
 static void _init_ctor_QFileDialog_Adaptor_7066 (qt_gsi::GenericStaticMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("parent", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("parent", true, "0");
   decl->add_arg<QWidget * > (argspec_0);
   static gsi::ArgSpecBase argspec_1 ("caption", true, "QString()");
   decl->add_arg<const QString & > (argspec_1);
@@ -2635,7 +2575,7 @@ static void _call_ctor_QFileDialog_Adaptor_7066 (const qt_gsi::GenericStaticMeth
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  QWidget *arg1 = args ? gsi::arg_reader<QWidget * >() (args, heap) : gsi::arg_maker<QWidget * >() (nullptr, heap);
+  QWidget *arg1 = args ? gsi::arg_reader<QWidget * >() (args, heap) : gsi::arg_maker<QWidget * >() (0, heap);
   const QString &arg2 = args ? gsi::arg_reader<const QString & >() (args, heap) : gsi::arg_maker<const QString & >() (QString(), heap);
   const QString &arg3 = args ? gsi::arg_reader<const QString & >() (args, heap) : gsi::arg_maker<const QString & >() (QString(), heap);
   const QString &arg4 = args ? gsi::arg_reader<const QString & >() (args, heap) : gsi::arg_maker<const QString & >() (QString(), heap);
@@ -2677,11 +2617,11 @@ static void _call_emitter_accepted_0 (const qt_gsi::GenericMethod * /*decl*/, vo
 }
 
 
-// void QFileDialog::actionEvent(QActionEvent *event)
+// void QFileDialog::actionEvent(QActionEvent *)
 
 static void _init_cbs_actionEvent_1823_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QActionEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -2744,11 +2684,11 @@ static void _set_callback_cbs_changeEvent_1217_0 (void *cls, const gsi::Callback
 }
 
 
-// void QFileDialog::childEvent(QChildEvent *event)
+// void QFileDialog::childEvent(QChildEvent *)
 
 static void _init_cbs_childEvent_1701_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QChildEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -2895,11 +2835,11 @@ static void _call_emitter_customContextMenuRequested_1916 (const qt_gsi::Generic
 }
 
 
-// void QFileDialog::customEvent(QEvent *event)
+// void QFileDialog::customEvent(QEvent *)
 
 static void _init_cbs_customEvent_1217_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -2945,7 +2885,7 @@ static void _call_fp_destroy_1620 (const qt_gsi::GenericMethod * /*decl*/, void 
 
 static void _init_emitter_destroyed_1302 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("arg1", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("arg1", true, "0");
   decl->add_arg<QObject * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -2954,7 +2894,7 @@ static void _call_emitter_destroyed_1302 (const qt_gsi::GenericMethod * /*decl*/
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (nullptr, heap);
+  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (0, heap);
   ((QFileDialog_Adaptor *)cls)->emitter_QFileDialog_destroyed_1302 (arg1);
 }
 
@@ -3043,11 +2983,11 @@ static void _set_callback_cbs_done_767_0 (void *cls, const gsi::Callback &cb)
 }
 
 
-// void QFileDialog::dragEnterEvent(QDragEnterEvent *event)
+// void QFileDialog::dragEnterEvent(QDragEnterEvent *)
 
 static void _init_cbs_dragEnterEvent_2109_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QDragEnterEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -3067,11 +3007,11 @@ static void _set_callback_cbs_dragEnterEvent_2109_0 (void *cls, const gsi::Callb
 }
 
 
-// void QFileDialog::dragLeaveEvent(QDragLeaveEvent *event)
+// void QFileDialog::dragLeaveEvent(QDragLeaveEvent *)
 
 static void _init_cbs_dragLeaveEvent_2092_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QDragLeaveEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -3091,11 +3031,11 @@ static void _set_callback_cbs_dragLeaveEvent_2092_0 (void *cls, const gsi::Callb
 }
 
 
-// void QFileDialog::dragMoveEvent(QDragMoveEvent *event)
+// void QFileDialog::dragMoveEvent(QDragMoveEvent *)
 
 static void _init_cbs_dragMoveEvent_2006_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QDragMoveEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -3115,11 +3055,11 @@ static void _set_callback_cbs_dragMoveEvent_2006_0 (void *cls, const gsi::Callba
 }
 
 
-// void QFileDialog::dropEvent(QDropEvent *event)
+// void QFileDialog::dropEvent(QDropEvent *)
 
 static void _init_cbs_dropEvent_1622_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QDropEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -3139,11 +3079,11 @@ static void _set_callback_cbs_dropEvent_1622_0 (void *cls, const gsi::Callback &
 }
 
 
-// void QFileDialog::enterEvent(QEvent *event)
+// void QFileDialog::enterEvent(QEvent *)
 
 static void _init_cbs_enterEvent_1217_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -3163,11 +3103,11 @@ static void _set_callback_cbs_enterEvent_1217_0 (void *cls, const gsi::Callback 
 }
 
 
-// bool QFileDialog::event(QEvent *event)
+// bool QFileDialog::event(QEvent *)
 
 static void _init_cbs_event_1217_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QEvent * > (argspec_0);
   decl->set_return<bool > ();
 }
@@ -3303,11 +3243,11 @@ static void _call_emitter_finished_767 (const qt_gsi::GenericMethod * /*decl*/, 
 }
 
 
-// void QFileDialog::focusInEvent(QFocusEvent *event)
+// void QFileDialog::focusInEvent(QFocusEvent *)
 
 static void _init_cbs_focusInEvent_1729_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QFocusEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -3364,11 +3304,11 @@ static void _set_callback_cbs_focusNextPrevChild_864_0 (void *cls, const gsi::Ca
 }
 
 
-// void QFileDialog::focusOutEvent(QFocusEvent *event)
+// void QFileDialog::focusOutEvent(QFocusEvent *)
 
 static void _init_cbs_focusOutEvent_1729_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QFocusEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -3444,11 +3384,11 @@ static void _set_callback_cbs_heightForWidth_c767_0 (void *cls, const gsi::Callb
 }
 
 
-// void QFileDialog::hideEvent(QHideEvent *event)
+// void QFileDialog::hideEvent(QHideEvent *)
 
 static void _init_cbs_hideEvent_1595_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QHideEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -3581,11 +3521,11 @@ static void _set_callback_cbs_keyPressEvent_1514_0 (void *cls, const gsi::Callba
 }
 
 
-// void QFileDialog::keyReleaseEvent(QKeyEvent *event)
+// void QFileDialog::keyReleaseEvent(QKeyEvent *)
 
 static void _init_cbs_keyReleaseEvent_1514_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QKeyEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -3605,11 +3545,11 @@ static void _set_callback_cbs_keyReleaseEvent_1514_0 (void *cls, const gsi::Call
 }
 
 
-// void QFileDialog::leaveEvent(QEvent *event)
+// void QFileDialog::leaveEvent(QEvent *)
 
 static void _init_cbs_leaveEvent_1217_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -3671,11 +3611,11 @@ static void _set_callback_cbs_minimumSizeHint_c0_0 (void *cls, const gsi::Callba
 }
 
 
-// void QFileDialog::mouseDoubleClickEvent(QMouseEvent *event)
+// void QFileDialog::mouseDoubleClickEvent(QMouseEvent *)
 
 static void _init_cbs_mouseDoubleClickEvent_1738_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QMouseEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -3695,11 +3635,11 @@ static void _set_callback_cbs_mouseDoubleClickEvent_1738_0 (void *cls, const gsi
 }
 
 
-// void QFileDialog::mouseMoveEvent(QMouseEvent *event)
+// void QFileDialog::mouseMoveEvent(QMouseEvent *)
 
 static void _init_cbs_mouseMoveEvent_1738_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QMouseEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -3719,11 +3659,11 @@ static void _set_callback_cbs_mouseMoveEvent_1738_0 (void *cls, const gsi::Callb
 }
 
 
-// void QFileDialog::mousePressEvent(QMouseEvent *event)
+// void QFileDialog::mousePressEvent(QMouseEvent *)
 
 static void _init_cbs_mousePressEvent_1738_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QMouseEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -3743,11 +3683,11 @@ static void _set_callback_cbs_mousePressEvent_1738_0 (void *cls, const gsi::Call
 }
 
 
-// void QFileDialog::mouseReleaseEvent(QMouseEvent *event)
+// void QFileDialog::mouseReleaseEvent(QMouseEvent *)
 
 static void _init_cbs_mouseReleaseEvent_1738_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QMouseEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -3767,11 +3707,11 @@ static void _set_callback_cbs_mouseReleaseEvent_1738_0 (void *cls, const gsi::Ca
 }
 
 
-// void QFileDialog::moveEvent(QMoveEvent *event)
+// void QFileDialog::moveEvent(QMoveEvent *)
 
 static void _init_cbs_moveEvent_1624_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QMoveEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -3820,24 +3760,6 @@ static void _set_callback_cbs_nativeEvent_4678_0 (void *cls, const gsi::Callback
 }
 
 
-// emitter void QFileDialog::objectNameChanged(const QString &objectName)
-
-static void _init_emitter_objectNameChanged_4567 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("objectName");
-  decl->add_arg<const QString & > (argspec_0);
-  decl->set_return<void > ();
-}
-
-static void _call_emitter_objectNameChanged_4567 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs & /*ret*/) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const QString &arg1 = gsi::arg_reader<const QString & >() (args, heap);
-  ((QFileDialog_Adaptor *)cls)->emitter_QFileDialog_objectNameChanged_4567 (arg1);
-}
-
-
 // void QFileDialog::open()
 
 static void _init_cbs_open_0_0 (qt_gsi::GenericMethod *decl)
@@ -3877,11 +3799,11 @@ static void _set_callback_cbs_paintEngine_c0_0 (void *cls, const gsi::Callback &
 }
 
 
-// void QFileDialog::paintEvent(QPaintEvent *event)
+// void QFileDialog::paintEvent(QPaintEvent *)
 
 static void _init_cbs_paintEvent_1725_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QPaintEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -4114,11 +4036,11 @@ static void _set_callback_cbs_sizeHint_c0_0 (void *cls, const gsi::Callback &cb)
 }
 
 
-// void QFileDialog::tabletEvent(QTabletEvent *event)
+// void QFileDialog::tabletEvent(QTabletEvent *)
 
 static void _init_cbs_tabletEvent_1821_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QTabletEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -4138,11 +4060,11 @@ static void _set_callback_cbs_tabletEvent_1821_0 (void *cls, const gsi::Callback
 }
 
 
-// void QFileDialog::timerEvent(QTimerEvent *event)
+// void QFileDialog::timerEvent(QTimerEvent *)
 
 static void _init_cbs_timerEvent_1730_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QTimerEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -4213,11 +4135,11 @@ static void _call_emitter_urlsSelected_2316 (const qt_gsi::GenericMethod * /*dec
 }
 
 
-// void QFileDialog::wheelEvent(QWheelEvent *event)
+// void QFileDialog::wheelEvent(QWheelEvent *)
 
 static void _init_cbs_wheelEvent_1718_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QWheelEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -4300,131 +4222,130 @@ static gsi::Methods methods_QFileDialog_Adaptor () {
   gsi::Methods methods;
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QFileDialog::QFileDialog(QWidget *parent, QFlags<Qt::WindowType> f)\nThis method creates an object of class QFileDialog.", &_init_ctor_QFileDialog_Adaptor_3702, &_call_ctor_QFileDialog_Adaptor_3702);
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QFileDialog::QFileDialog(QWidget *parent, const QString &caption, const QString &directory, const QString &filter)\nThis method creates an object of class QFileDialog.", &_init_ctor_QFileDialog_Adaptor_7066, &_call_ctor_QFileDialog_Adaptor_7066);
-  methods += new qt_gsi::GenericMethod ("*accept", "@brief Virtual method void QFileDialog::accept()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_accept_0_0, &_call_cbs_accept_0_0);
-  methods += new qt_gsi::GenericMethod ("*accept", "@hide", false, &_init_cbs_accept_0_0, &_call_cbs_accept_0_0, &_set_callback_cbs_accept_0_0);
+  methods += new qt_gsi::GenericMethod ("*accept", "@hide", false, &_init_cbs_accept_0_0, &_call_cbs_accept_0_0);
+  methods += new qt_gsi::GenericMethod ("*accept", "@brief Virtual method void QFileDialog::accept()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_accept_0_0, &_call_cbs_accept_0_0, &_set_callback_cbs_accept_0_0);
   methods += new qt_gsi::GenericMethod ("emit_accepted", "@brief Emitter for signal void QFileDialog::accepted()\nCall this method to emit this signal.", false, &_init_emitter_accepted_0, &_call_emitter_accepted_0);
-  methods += new qt_gsi::GenericMethod ("*actionEvent", "@brief Virtual method void QFileDialog::actionEvent(QActionEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_actionEvent_1823_0, &_call_cbs_actionEvent_1823_0);
-  methods += new qt_gsi::GenericMethod ("*actionEvent", "@hide", false, &_init_cbs_actionEvent_1823_0, &_call_cbs_actionEvent_1823_0, &_set_callback_cbs_actionEvent_1823_0);
+  methods += new qt_gsi::GenericMethod ("*actionEvent", "@hide", false, &_init_cbs_actionEvent_1823_0, &_call_cbs_actionEvent_1823_0);
+  methods += new qt_gsi::GenericMethod ("*actionEvent", "@brief Virtual method void QFileDialog::actionEvent(QActionEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_actionEvent_1823_0, &_call_cbs_actionEvent_1823_0, &_set_callback_cbs_actionEvent_1823_0);
   methods += new qt_gsi::GenericMethod ("*adjustPosition", "@brief Method void QFileDialog::adjustPosition(QWidget *)\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_adjustPosition_1315, &_call_fp_adjustPosition_1315);
-  methods += new qt_gsi::GenericMethod ("*changeEvent", "@brief Virtual method void QFileDialog::changeEvent(QEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_changeEvent_1217_0, &_call_cbs_changeEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*changeEvent", "@hide", false, &_init_cbs_changeEvent_1217_0, &_call_cbs_changeEvent_1217_0, &_set_callback_cbs_changeEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*childEvent", "@brief Virtual method void QFileDialog::childEvent(QChildEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0);
-  methods += new qt_gsi::GenericMethod ("*childEvent", "@hide", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0, &_set_callback_cbs_childEvent_1701_0);
-  methods += new qt_gsi::GenericMethod ("*closeEvent", "@brief Virtual method void QFileDialog::closeEvent(QCloseEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_closeEvent_1719_0, &_call_cbs_closeEvent_1719_0);
-  methods += new qt_gsi::GenericMethod ("*closeEvent", "@hide", false, &_init_cbs_closeEvent_1719_0, &_call_cbs_closeEvent_1719_0, &_set_callback_cbs_closeEvent_1719_0);
-  methods += new qt_gsi::GenericMethod ("*contextMenuEvent", "@brief Virtual method void QFileDialog::contextMenuEvent(QContextMenuEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_contextMenuEvent_2363_0, &_call_cbs_contextMenuEvent_2363_0);
-  methods += new qt_gsi::GenericMethod ("*contextMenuEvent", "@hide", false, &_init_cbs_contextMenuEvent_2363_0, &_call_cbs_contextMenuEvent_2363_0, &_set_callback_cbs_contextMenuEvent_2363_0);
-  methods += new qt_gsi::GenericMethod ("*create|qt_create", "@brief Method void QFileDialog::create(WId, bool initializeWindow, bool destroyOldWindow)\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_create_2208, &_call_fp_create_2208);
+  methods += new qt_gsi::GenericMethod ("*changeEvent", "@hide", false, &_init_cbs_changeEvent_1217_0, &_call_cbs_changeEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*changeEvent", "@brief Virtual method void QFileDialog::changeEvent(QEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_changeEvent_1217_0, &_call_cbs_changeEvent_1217_0, &_set_callback_cbs_changeEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*childEvent", "@hide", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0);
+  methods += new qt_gsi::GenericMethod ("*childEvent", "@brief Virtual method void QFileDialog::childEvent(QChildEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0, &_set_callback_cbs_childEvent_1701_0);
+  methods += new qt_gsi::GenericMethod ("*closeEvent", "@hide", false, &_init_cbs_closeEvent_1719_0, &_call_cbs_closeEvent_1719_0);
+  methods += new qt_gsi::GenericMethod ("*closeEvent", "@brief Virtual method void QFileDialog::closeEvent(QCloseEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_closeEvent_1719_0, &_call_cbs_closeEvent_1719_0, &_set_callback_cbs_closeEvent_1719_0);
+  methods += new qt_gsi::GenericMethod ("*contextMenuEvent", "@hide", false, &_init_cbs_contextMenuEvent_2363_0, &_call_cbs_contextMenuEvent_2363_0);
+  methods += new qt_gsi::GenericMethod ("*contextMenuEvent", "@brief Virtual method void QFileDialog::contextMenuEvent(QContextMenuEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_contextMenuEvent_2363_0, &_call_cbs_contextMenuEvent_2363_0, &_set_callback_cbs_contextMenuEvent_2363_0);
+  methods += new qt_gsi::GenericMethod ("*qt_create", "@brief Method void QFileDialog::create(WId, bool initializeWindow, bool destroyOldWindow)\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_create_2208, &_call_fp_create_2208);
   methods += new qt_gsi::GenericMethod ("emit_currentChanged", "@brief Emitter for signal void QFileDialog::currentChanged(const QString &path)\nCall this method to emit this signal.", false, &_init_emitter_currentChanged_2025, &_call_emitter_currentChanged_2025);
   methods += new qt_gsi::GenericMethod ("emit_currentUrlChanged", "@brief Emitter for signal void QFileDialog::currentUrlChanged(const QUrl &url)\nCall this method to emit this signal.", false, &_init_emitter_currentUrlChanged_1701, &_call_emitter_currentUrlChanged_1701);
   methods += new qt_gsi::GenericMethod ("emit_customContextMenuRequested", "@brief Emitter for signal void QFileDialog::customContextMenuRequested(const QPoint &pos)\nCall this method to emit this signal.", false, &_init_emitter_customContextMenuRequested_1916, &_call_emitter_customContextMenuRequested_1916);
-  methods += new qt_gsi::GenericMethod ("*customEvent", "@brief Virtual method void QFileDialog::customEvent(QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*customEvent", "@hide", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0, &_set_callback_cbs_customEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*destroy|qt_destroy", "@brief Method void QFileDialog::destroy(bool destroyWindow, bool destroySubWindows)\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_destroy_1620, &_call_fp_destroy_1620);
+  methods += new qt_gsi::GenericMethod ("*customEvent", "@hide", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*customEvent", "@brief Virtual method void QFileDialog::customEvent(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0, &_set_callback_cbs_customEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*qt_destroy", "@brief Method void QFileDialog::destroy(bool destroyWindow, bool destroySubWindows)\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_destroy_1620, &_call_fp_destroy_1620);
   methods += new qt_gsi::GenericMethod ("emit_destroyed", "@brief Emitter for signal void QFileDialog::destroyed(QObject *)\nCall this method to emit this signal.", false, &_init_emitter_destroyed_1302, &_call_emitter_destroyed_1302);
   methods += new qt_gsi::GenericMethod ("emit_directoryEntered", "@brief Emitter for signal void QFileDialog::directoryEntered(const QString &directory)\nCall this method to emit this signal.", false, &_init_emitter_directoryEntered_2025, &_call_emitter_directoryEntered_2025);
   methods += new qt_gsi::GenericMethod ("emit_directoryUrlEntered", "@brief Emitter for signal void QFileDialog::directoryUrlEntered(const QUrl &directory)\nCall this method to emit this signal.", false, &_init_emitter_directoryUrlEntered_1701, &_call_emitter_directoryUrlEntered_1701);
-  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@brief Virtual method void QFileDialog::disconnectNotify(const QMetaMethod &signal)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0);
-  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@hide", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0, &_set_callback_cbs_disconnectNotify_2394_0);
-  methods += new qt_gsi::GenericMethod ("*done", "@brief Virtual method void QFileDialog::done(int result)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_done_767_0, &_call_cbs_done_767_0);
-  methods += new qt_gsi::GenericMethod ("*done", "@hide", false, &_init_cbs_done_767_0, &_call_cbs_done_767_0, &_set_callback_cbs_done_767_0);
-  methods += new qt_gsi::GenericMethod ("*dragEnterEvent", "@brief Virtual method void QFileDialog::dragEnterEvent(QDragEnterEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_dragEnterEvent_2109_0, &_call_cbs_dragEnterEvent_2109_0);
-  methods += new qt_gsi::GenericMethod ("*dragEnterEvent", "@hide", false, &_init_cbs_dragEnterEvent_2109_0, &_call_cbs_dragEnterEvent_2109_0, &_set_callback_cbs_dragEnterEvent_2109_0);
-  methods += new qt_gsi::GenericMethod ("*dragLeaveEvent", "@brief Virtual method void QFileDialog::dragLeaveEvent(QDragLeaveEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_dragLeaveEvent_2092_0, &_call_cbs_dragLeaveEvent_2092_0);
-  methods += new qt_gsi::GenericMethod ("*dragLeaveEvent", "@hide", false, &_init_cbs_dragLeaveEvent_2092_0, &_call_cbs_dragLeaveEvent_2092_0, &_set_callback_cbs_dragLeaveEvent_2092_0);
-  methods += new qt_gsi::GenericMethod ("*dragMoveEvent", "@brief Virtual method void QFileDialog::dragMoveEvent(QDragMoveEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_dragMoveEvent_2006_0, &_call_cbs_dragMoveEvent_2006_0);
-  methods += new qt_gsi::GenericMethod ("*dragMoveEvent", "@hide", false, &_init_cbs_dragMoveEvent_2006_0, &_call_cbs_dragMoveEvent_2006_0, &_set_callback_cbs_dragMoveEvent_2006_0);
-  methods += new qt_gsi::GenericMethod ("*dropEvent", "@brief Virtual method void QFileDialog::dropEvent(QDropEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_dropEvent_1622_0, &_call_cbs_dropEvent_1622_0);
-  methods += new qt_gsi::GenericMethod ("*dropEvent", "@hide", false, &_init_cbs_dropEvent_1622_0, &_call_cbs_dropEvent_1622_0, &_set_callback_cbs_dropEvent_1622_0);
-  methods += new qt_gsi::GenericMethod ("*enterEvent", "@brief Virtual method void QFileDialog::enterEvent(QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_enterEvent_1217_0, &_call_cbs_enterEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*enterEvent", "@hide", false, &_init_cbs_enterEvent_1217_0, &_call_cbs_enterEvent_1217_0, &_set_callback_cbs_enterEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*event", "@brief Virtual method bool QFileDialog::event(QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0);
-  methods += new qt_gsi::GenericMethod ("*event", "@hide", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0, &_set_callback_cbs_event_1217_0);
-  methods += new qt_gsi::GenericMethod ("*eventFilter", "@brief Virtual method bool QFileDialog::eventFilter(QObject *, QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0);
-  methods += new qt_gsi::GenericMethod ("*eventFilter", "@hide", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0, &_set_callback_cbs_eventFilter_2411_0);
-  methods += new qt_gsi::GenericMethod ("exec", "@brief Virtual method int QFileDialog::exec()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_exec_0_0, &_call_cbs_exec_0_0);
-  methods += new qt_gsi::GenericMethod ("exec", "@hide", false, &_init_cbs_exec_0_0, &_call_cbs_exec_0_0, &_set_callback_cbs_exec_0_0);
+  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@hide", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0);
+  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@brief Virtual method void QFileDialog::disconnectNotify(const QMetaMethod &signal)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0, &_set_callback_cbs_disconnectNotify_2394_0);
+  methods += new qt_gsi::GenericMethod ("*done", "@hide", false, &_init_cbs_done_767_0, &_call_cbs_done_767_0);
+  methods += new qt_gsi::GenericMethod ("*done", "@brief Virtual method void QFileDialog::done(int result)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_done_767_0, &_call_cbs_done_767_0, &_set_callback_cbs_done_767_0);
+  methods += new qt_gsi::GenericMethod ("*dragEnterEvent", "@hide", false, &_init_cbs_dragEnterEvent_2109_0, &_call_cbs_dragEnterEvent_2109_0);
+  methods += new qt_gsi::GenericMethod ("*dragEnterEvent", "@brief Virtual method void QFileDialog::dragEnterEvent(QDragEnterEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_dragEnterEvent_2109_0, &_call_cbs_dragEnterEvent_2109_0, &_set_callback_cbs_dragEnterEvent_2109_0);
+  methods += new qt_gsi::GenericMethod ("*dragLeaveEvent", "@hide", false, &_init_cbs_dragLeaveEvent_2092_0, &_call_cbs_dragLeaveEvent_2092_0);
+  methods += new qt_gsi::GenericMethod ("*dragLeaveEvent", "@brief Virtual method void QFileDialog::dragLeaveEvent(QDragLeaveEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_dragLeaveEvent_2092_0, &_call_cbs_dragLeaveEvent_2092_0, &_set_callback_cbs_dragLeaveEvent_2092_0);
+  methods += new qt_gsi::GenericMethod ("*dragMoveEvent", "@hide", false, &_init_cbs_dragMoveEvent_2006_0, &_call_cbs_dragMoveEvent_2006_0);
+  methods += new qt_gsi::GenericMethod ("*dragMoveEvent", "@brief Virtual method void QFileDialog::dragMoveEvent(QDragMoveEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_dragMoveEvent_2006_0, &_call_cbs_dragMoveEvent_2006_0, &_set_callback_cbs_dragMoveEvent_2006_0);
+  methods += new qt_gsi::GenericMethod ("*dropEvent", "@hide", false, &_init_cbs_dropEvent_1622_0, &_call_cbs_dropEvent_1622_0);
+  methods += new qt_gsi::GenericMethod ("*dropEvent", "@brief Virtual method void QFileDialog::dropEvent(QDropEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_dropEvent_1622_0, &_call_cbs_dropEvent_1622_0, &_set_callback_cbs_dropEvent_1622_0);
+  methods += new qt_gsi::GenericMethod ("*enterEvent", "@hide", false, &_init_cbs_enterEvent_1217_0, &_call_cbs_enterEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*enterEvent", "@brief Virtual method void QFileDialog::enterEvent(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_enterEvent_1217_0, &_call_cbs_enterEvent_1217_0, &_set_callback_cbs_enterEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*event", "@hide", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0);
+  methods += new qt_gsi::GenericMethod ("*event", "@brief Virtual method bool QFileDialog::event(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0, &_set_callback_cbs_event_1217_0);
+  methods += new qt_gsi::GenericMethod ("*eventFilter", "@hide", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0);
+  methods += new qt_gsi::GenericMethod ("*eventFilter", "@brief Virtual method bool QFileDialog::eventFilter(QObject *, QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0, &_set_callback_cbs_eventFilter_2411_0);
+  methods += new qt_gsi::GenericMethod ("exec", "@hide", false, &_init_cbs_exec_0_0, &_call_cbs_exec_0_0);
+  methods += new qt_gsi::GenericMethod ("exec", "@brief Virtual method int QFileDialog::exec()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_exec_0_0, &_call_cbs_exec_0_0, &_set_callback_cbs_exec_0_0);
   methods += new qt_gsi::GenericMethod ("emit_fileSelected", "@brief Emitter for signal void QFileDialog::fileSelected(const QString &file)\nCall this method to emit this signal.", false, &_init_emitter_fileSelected_2025, &_call_emitter_fileSelected_2025);
   methods += new qt_gsi::GenericMethod ("emit_filesSelected", "@brief Emitter for signal void QFileDialog::filesSelected(const QStringList &files)\nCall this method to emit this signal.", false, &_init_emitter_filesSelected_2437, &_call_emitter_filesSelected_2437);
   methods += new qt_gsi::GenericMethod ("emit_filterSelected", "@brief Emitter for signal void QFileDialog::filterSelected(const QString &filter)\nCall this method to emit this signal.", false, &_init_emitter_filterSelected_2025, &_call_emitter_filterSelected_2025);
   methods += new qt_gsi::GenericMethod ("emit_finished", "@brief Emitter for signal void QFileDialog::finished(int result)\nCall this method to emit this signal.", false, &_init_emitter_finished_767, &_call_emitter_finished_767);
-  methods += new qt_gsi::GenericMethod ("*focusInEvent", "@brief Virtual method void QFileDialog::focusInEvent(QFocusEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_focusInEvent_1729_0, &_call_cbs_focusInEvent_1729_0);
-  methods += new qt_gsi::GenericMethod ("*focusInEvent", "@hide", false, &_init_cbs_focusInEvent_1729_0, &_call_cbs_focusInEvent_1729_0, &_set_callback_cbs_focusInEvent_1729_0);
+  methods += new qt_gsi::GenericMethod ("*focusInEvent", "@hide", false, &_init_cbs_focusInEvent_1729_0, &_call_cbs_focusInEvent_1729_0);
+  methods += new qt_gsi::GenericMethod ("*focusInEvent", "@brief Virtual method void QFileDialog::focusInEvent(QFocusEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_focusInEvent_1729_0, &_call_cbs_focusInEvent_1729_0, &_set_callback_cbs_focusInEvent_1729_0);
   methods += new qt_gsi::GenericMethod ("*focusNextChild", "@brief Method bool QFileDialog::focusNextChild()\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_focusNextChild_0, &_call_fp_focusNextChild_0);
-  methods += new qt_gsi::GenericMethod ("*focusNextPrevChild", "@brief Virtual method bool QFileDialog::focusNextPrevChild(bool next)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_focusNextPrevChild_864_0, &_call_cbs_focusNextPrevChild_864_0);
-  methods += new qt_gsi::GenericMethod ("*focusNextPrevChild", "@hide", false, &_init_cbs_focusNextPrevChild_864_0, &_call_cbs_focusNextPrevChild_864_0, &_set_callback_cbs_focusNextPrevChild_864_0);
-  methods += new qt_gsi::GenericMethod ("*focusOutEvent", "@brief Virtual method void QFileDialog::focusOutEvent(QFocusEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_focusOutEvent_1729_0, &_call_cbs_focusOutEvent_1729_0);
-  methods += new qt_gsi::GenericMethod ("*focusOutEvent", "@hide", false, &_init_cbs_focusOutEvent_1729_0, &_call_cbs_focusOutEvent_1729_0, &_set_callback_cbs_focusOutEvent_1729_0);
+  methods += new qt_gsi::GenericMethod ("*focusNextPrevChild", "@hide", false, &_init_cbs_focusNextPrevChild_864_0, &_call_cbs_focusNextPrevChild_864_0);
+  methods += new qt_gsi::GenericMethod ("*focusNextPrevChild", "@brief Virtual method bool QFileDialog::focusNextPrevChild(bool next)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_focusNextPrevChild_864_0, &_call_cbs_focusNextPrevChild_864_0, &_set_callback_cbs_focusNextPrevChild_864_0);
+  methods += new qt_gsi::GenericMethod ("*focusOutEvent", "@hide", false, &_init_cbs_focusOutEvent_1729_0, &_call_cbs_focusOutEvent_1729_0);
+  methods += new qt_gsi::GenericMethod ("*focusOutEvent", "@brief Virtual method void QFileDialog::focusOutEvent(QFocusEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_focusOutEvent_1729_0, &_call_cbs_focusOutEvent_1729_0, &_set_callback_cbs_focusOutEvent_1729_0);
   methods += new qt_gsi::GenericMethod ("*focusPreviousChild", "@brief Method bool QFileDialog::focusPreviousChild()\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_focusPreviousChild_0, &_call_fp_focusPreviousChild_0);
-  methods += new qt_gsi::GenericMethod ("hasHeightForWidth", "@brief Virtual method bool QFileDialog::hasHeightForWidth()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_hasHeightForWidth_c0_0, &_call_cbs_hasHeightForWidth_c0_0);
-  methods += new qt_gsi::GenericMethod ("hasHeightForWidth", "@hide", true, &_init_cbs_hasHeightForWidth_c0_0, &_call_cbs_hasHeightForWidth_c0_0, &_set_callback_cbs_hasHeightForWidth_c0_0);
-  methods += new qt_gsi::GenericMethod ("heightForWidth", "@brief Virtual method int QFileDialog::heightForWidth(int)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_heightForWidth_c767_0, &_call_cbs_heightForWidth_c767_0);
-  methods += new qt_gsi::GenericMethod ("heightForWidth", "@hide", true, &_init_cbs_heightForWidth_c767_0, &_call_cbs_heightForWidth_c767_0, &_set_callback_cbs_heightForWidth_c767_0);
-  methods += new qt_gsi::GenericMethod ("*hideEvent", "@brief Virtual method void QFileDialog::hideEvent(QHideEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_hideEvent_1595_0, &_call_cbs_hideEvent_1595_0);
-  methods += new qt_gsi::GenericMethod ("*hideEvent", "@hide", false, &_init_cbs_hideEvent_1595_0, &_call_cbs_hideEvent_1595_0, &_set_callback_cbs_hideEvent_1595_0);
-  methods += new qt_gsi::GenericMethod ("*initPainter", "@brief Virtual method void QFileDialog::initPainter(QPainter *painter)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_initPainter_c1426_0, &_call_cbs_initPainter_c1426_0);
-  methods += new qt_gsi::GenericMethod ("*initPainter", "@hide", true, &_init_cbs_initPainter_c1426_0, &_call_cbs_initPainter_c1426_0, &_set_callback_cbs_initPainter_c1426_0);
-  methods += new qt_gsi::GenericMethod ("*inputMethodEvent", "@brief Virtual method void QFileDialog::inputMethodEvent(QInputMethodEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_inputMethodEvent_2354_0, &_call_cbs_inputMethodEvent_2354_0);
-  methods += new qt_gsi::GenericMethod ("*inputMethodEvent", "@hide", false, &_init_cbs_inputMethodEvent_2354_0, &_call_cbs_inputMethodEvent_2354_0, &_set_callback_cbs_inputMethodEvent_2354_0);
-  methods += new qt_gsi::GenericMethod ("inputMethodQuery", "@brief Virtual method QVariant QFileDialog::inputMethodQuery(Qt::InputMethodQuery)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_inputMethodQuery_c2420_0, &_call_cbs_inputMethodQuery_c2420_0);
-  methods += new qt_gsi::GenericMethod ("inputMethodQuery", "@hide", true, &_init_cbs_inputMethodQuery_c2420_0, &_call_cbs_inputMethodQuery_c2420_0, &_set_callback_cbs_inputMethodQuery_c2420_0);
+  methods += new qt_gsi::GenericMethod ("hasHeightForWidth", "@hide", true, &_init_cbs_hasHeightForWidth_c0_0, &_call_cbs_hasHeightForWidth_c0_0);
+  methods += new qt_gsi::GenericMethod ("hasHeightForWidth", "@brief Virtual method bool QFileDialog::hasHeightForWidth()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_hasHeightForWidth_c0_0, &_call_cbs_hasHeightForWidth_c0_0, &_set_callback_cbs_hasHeightForWidth_c0_0);
+  methods += new qt_gsi::GenericMethod ("heightForWidth", "@hide", true, &_init_cbs_heightForWidth_c767_0, &_call_cbs_heightForWidth_c767_0);
+  methods += new qt_gsi::GenericMethod ("heightForWidth", "@brief Virtual method int QFileDialog::heightForWidth(int)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_heightForWidth_c767_0, &_call_cbs_heightForWidth_c767_0, &_set_callback_cbs_heightForWidth_c767_0);
+  methods += new qt_gsi::GenericMethod ("*hideEvent", "@hide", false, &_init_cbs_hideEvent_1595_0, &_call_cbs_hideEvent_1595_0);
+  methods += new qt_gsi::GenericMethod ("*hideEvent", "@brief Virtual method void QFileDialog::hideEvent(QHideEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_hideEvent_1595_0, &_call_cbs_hideEvent_1595_0, &_set_callback_cbs_hideEvent_1595_0);
+  methods += new qt_gsi::GenericMethod ("*initPainter", "@hide", true, &_init_cbs_initPainter_c1426_0, &_call_cbs_initPainter_c1426_0);
+  methods += new qt_gsi::GenericMethod ("*initPainter", "@brief Virtual method void QFileDialog::initPainter(QPainter *painter)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_initPainter_c1426_0, &_call_cbs_initPainter_c1426_0, &_set_callback_cbs_initPainter_c1426_0);
+  methods += new qt_gsi::GenericMethod ("*inputMethodEvent", "@hide", false, &_init_cbs_inputMethodEvent_2354_0, &_call_cbs_inputMethodEvent_2354_0);
+  methods += new qt_gsi::GenericMethod ("*inputMethodEvent", "@brief Virtual method void QFileDialog::inputMethodEvent(QInputMethodEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_inputMethodEvent_2354_0, &_call_cbs_inputMethodEvent_2354_0, &_set_callback_cbs_inputMethodEvent_2354_0);
+  methods += new qt_gsi::GenericMethod ("inputMethodQuery", "@hide", true, &_init_cbs_inputMethodQuery_c2420_0, &_call_cbs_inputMethodQuery_c2420_0);
+  methods += new qt_gsi::GenericMethod ("inputMethodQuery", "@brief Virtual method QVariant QFileDialog::inputMethodQuery(Qt::InputMethodQuery)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_inputMethodQuery_c2420_0, &_call_cbs_inputMethodQuery_c2420_0, &_set_callback_cbs_inputMethodQuery_c2420_0);
   methods += new qt_gsi::GenericMethod ("*isSignalConnected", "@brief Method bool QFileDialog::isSignalConnected(const QMetaMethod &signal)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_isSignalConnected_c2394, &_call_fp_isSignalConnected_c2394);
-  methods += new qt_gsi::GenericMethod ("*keyPressEvent", "@brief Virtual method void QFileDialog::keyPressEvent(QKeyEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_keyPressEvent_1514_0, &_call_cbs_keyPressEvent_1514_0);
-  methods += new qt_gsi::GenericMethod ("*keyPressEvent", "@hide", false, &_init_cbs_keyPressEvent_1514_0, &_call_cbs_keyPressEvent_1514_0, &_set_callback_cbs_keyPressEvent_1514_0);
-  methods += new qt_gsi::GenericMethod ("*keyReleaseEvent", "@brief Virtual method void QFileDialog::keyReleaseEvent(QKeyEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_keyReleaseEvent_1514_0, &_call_cbs_keyReleaseEvent_1514_0);
-  methods += new qt_gsi::GenericMethod ("*keyReleaseEvent", "@hide", false, &_init_cbs_keyReleaseEvent_1514_0, &_call_cbs_keyReleaseEvent_1514_0, &_set_callback_cbs_keyReleaseEvent_1514_0);
-  methods += new qt_gsi::GenericMethod ("*leaveEvent", "@brief Virtual method void QFileDialog::leaveEvent(QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_leaveEvent_1217_0, &_call_cbs_leaveEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*leaveEvent", "@hide", false, &_init_cbs_leaveEvent_1217_0, &_call_cbs_leaveEvent_1217_0, &_set_callback_cbs_leaveEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*metric", "@brief Virtual method int QFileDialog::metric(QPaintDevice::PaintDeviceMetric)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_metric_c3445_0, &_call_cbs_metric_c3445_0);
-  methods += new qt_gsi::GenericMethod ("*metric", "@hide", true, &_init_cbs_metric_c3445_0, &_call_cbs_metric_c3445_0, &_set_callback_cbs_metric_c3445_0);
-  methods += new qt_gsi::GenericMethod ("minimumSizeHint", "@brief Virtual method QSize QFileDialog::minimumSizeHint()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_minimumSizeHint_c0_0, &_call_cbs_minimumSizeHint_c0_0);
-  methods += new qt_gsi::GenericMethod ("minimumSizeHint", "@hide", true, &_init_cbs_minimumSizeHint_c0_0, &_call_cbs_minimumSizeHint_c0_0, &_set_callback_cbs_minimumSizeHint_c0_0);
-  methods += new qt_gsi::GenericMethod ("*mouseDoubleClickEvent", "@brief Virtual method void QFileDialog::mouseDoubleClickEvent(QMouseEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_mouseDoubleClickEvent_1738_0, &_call_cbs_mouseDoubleClickEvent_1738_0);
-  methods += new qt_gsi::GenericMethod ("*mouseDoubleClickEvent", "@hide", false, &_init_cbs_mouseDoubleClickEvent_1738_0, &_call_cbs_mouseDoubleClickEvent_1738_0, &_set_callback_cbs_mouseDoubleClickEvent_1738_0);
-  methods += new qt_gsi::GenericMethod ("*mouseMoveEvent", "@brief Virtual method void QFileDialog::mouseMoveEvent(QMouseEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_mouseMoveEvent_1738_0, &_call_cbs_mouseMoveEvent_1738_0);
-  methods += new qt_gsi::GenericMethod ("*mouseMoveEvent", "@hide", false, &_init_cbs_mouseMoveEvent_1738_0, &_call_cbs_mouseMoveEvent_1738_0, &_set_callback_cbs_mouseMoveEvent_1738_0);
-  methods += new qt_gsi::GenericMethod ("*mousePressEvent", "@brief Virtual method void QFileDialog::mousePressEvent(QMouseEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_mousePressEvent_1738_0, &_call_cbs_mousePressEvent_1738_0);
-  methods += new qt_gsi::GenericMethod ("*mousePressEvent", "@hide", false, &_init_cbs_mousePressEvent_1738_0, &_call_cbs_mousePressEvent_1738_0, &_set_callback_cbs_mousePressEvent_1738_0);
-  methods += new qt_gsi::GenericMethod ("*mouseReleaseEvent", "@brief Virtual method void QFileDialog::mouseReleaseEvent(QMouseEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_mouseReleaseEvent_1738_0, &_call_cbs_mouseReleaseEvent_1738_0);
-  methods += new qt_gsi::GenericMethod ("*mouseReleaseEvent", "@hide", false, &_init_cbs_mouseReleaseEvent_1738_0, &_call_cbs_mouseReleaseEvent_1738_0, &_set_callback_cbs_mouseReleaseEvent_1738_0);
-  methods += new qt_gsi::GenericMethod ("*moveEvent", "@brief Virtual method void QFileDialog::moveEvent(QMoveEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_moveEvent_1624_0, &_call_cbs_moveEvent_1624_0);
-  methods += new qt_gsi::GenericMethod ("*moveEvent", "@hide", false, &_init_cbs_moveEvent_1624_0, &_call_cbs_moveEvent_1624_0, &_set_callback_cbs_moveEvent_1624_0);
-  methods += new qt_gsi::GenericMethod ("*nativeEvent", "@brief Virtual method bool QFileDialog::nativeEvent(const QByteArray &eventType, void *message, long int *result)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_nativeEvent_4678_0, &_call_cbs_nativeEvent_4678_0);
-  methods += new qt_gsi::GenericMethod ("*nativeEvent", "@hide", false, &_init_cbs_nativeEvent_4678_0, &_call_cbs_nativeEvent_4678_0, &_set_callback_cbs_nativeEvent_4678_0);
-  methods += new qt_gsi::GenericMethod ("emit_objectNameChanged", "@brief Emitter for signal void QFileDialog::objectNameChanged(const QString &objectName)\nCall this method to emit this signal.", false, &_init_emitter_objectNameChanged_4567, &_call_emitter_objectNameChanged_4567);
-  methods += new qt_gsi::GenericMethod ("open", "@brief Virtual method void QFileDialog::open()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_open_0_0, &_call_cbs_open_0_0);
-  methods += new qt_gsi::GenericMethod ("open", "@hide", false, &_init_cbs_open_0_0, &_call_cbs_open_0_0, &_set_callback_cbs_open_0_0);
-  methods += new qt_gsi::GenericMethod ("paintEngine", "@brief Virtual method QPaintEngine *QFileDialog::paintEngine()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_paintEngine_c0_0, &_call_cbs_paintEngine_c0_0);
-  methods += new qt_gsi::GenericMethod ("paintEngine", "@hide", true, &_init_cbs_paintEngine_c0_0, &_call_cbs_paintEngine_c0_0, &_set_callback_cbs_paintEngine_c0_0);
-  methods += new qt_gsi::GenericMethod ("*paintEvent", "@brief Virtual method void QFileDialog::paintEvent(QPaintEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_paintEvent_1725_0, &_call_cbs_paintEvent_1725_0);
-  methods += new qt_gsi::GenericMethod ("*paintEvent", "@hide", false, &_init_cbs_paintEvent_1725_0, &_call_cbs_paintEvent_1725_0, &_set_callback_cbs_paintEvent_1725_0);
+  methods += new qt_gsi::GenericMethod ("*keyPressEvent", "@hide", false, &_init_cbs_keyPressEvent_1514_0, &_call_cbs_keyPressEvent_1514_0);
+  methods += new qt_gsi::GenericMethod ("*keyPressEvent", "@brief Virtual method void QFileDialog::keyPressEvent(QKeyEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_keyPressEvent_1514_0, &_call_cbs_keyPressEvent_1514_0, &_set_callback_cbs_keyPressEvent_1514_0);
+  methods += new qt_gsi::GenericMethod ("*keyReleaseEvent", "@hide", false, &_init_cbs_keyReleaseEvent_1514_0, &_call_cbs_keyReleaseEvent_1514_0);
+  methods += new qt_gsi::GenericMethod ("*keyReleaseEvent", "@brief Virtual method void QFileDialog::keyReleaseEvent(QKeyEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_keyReleaseEvent_1514_0, &_call_cbs_keyReleaseEvent_1514_0, &_set_callback_cbs_keyReleaseEvent_1514_0);
+  methods += new qt_gsi::GenericMethod ("*leaveEvent", "@hide", false, &_init_cbs_leaveEvent_1217_0, &_call_cbs_leaveEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*leaveEvent", "@brief Virtual method void QFileDialog::leaveEvent(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_leaveEvent_1217_0, &_call_cbs_leaveEvent_1217_0, &_set_callback_cbs_leaveEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*metric", "@hide", true, &_init_cbs_metric_c3445_0, &_call_cbs_metric_c3445_0);
+  methods += new qt_gsi::GenericMethod ("*metric", "@brief Virtual method int QFileDialog::metric(QPaintDevice::PaintDeviceMetric)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_metric_c3445_0, &_call_cbs_metric_c3445_0, &_set_callback_cbs_metric_c3445_0);
+  methods += new qt_gsi::GenericMethod ("minimumSizeHint", "@hide", true, &_init_cbs_minimumSizeHint_c0_0, &_call_cbs_minimumSizeHint_c0_0);
+  methods += new qt_gsi::GenericMethod ("minimumSizeHint", "@brief Virtual method QSize QFileDialog::minimumSizeHint()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_minimumSizeHint_c0_0, &_call_cbs_minimumSizeHint_c0_0, &_set_callback_cbs_minimumSizeHint_c0_0);
+  methods += new qt_gsi::GenericMethod ("*mouseDoubleClickEvent", "@hide", false, &_init_cbs_mouseDoubleClickEvent_1738_0, &_call_cbs_mouseDoubleClickEvent_1738_0);
+  methods += new qt_gsi::GenericMethod ("*mouseDoubleClickEvent", "@brief Virtual method void QFileDialog::mouseDoubleClickEvent(QMouseEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_mouseDoubleClickEvent_1738_0, &_call_cbs_mouseDoubleClickEvent_1738_0, &_set_callback_cbs_mouseDoubleClickEvent_1738_0);
+  methods += new qt_gsi::GenericMethod ("*mouseMoveEvent", "@hide", false, &_init_cbs_mouseMoveEvent_1738_0, &_call_cbs_mouseMoveEvent_1738_0);
+  methods += new qt_gsi::GenericMethod ("*mouseMoveEvent", "@brief Virtual method void QFileDialog::mouseMoveEvent(QMouseEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_mouseMoveEvent_1738_0, &_call_cbs_mouseMoveEvent_1738_0, &_set_callback_cbs_mouseMoveEvent_1738_0);
+  methods += new qt_gsi::GenericMethod ("*mousePressEvent", "@hide", false, &_init_cbs_mousePressEvent_1738_0, &_call_cbs_mousePressEvent_1738_0);
+  methods += new qt_gsi::GenericMethod ("*mousePressEvent", "@brief Virtual method void QFileDialog::mousePressEvent(QMouseEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_mousePressEvent_1738_0, &_call_cbs_mousePressEvent_1738_0, &_set_callback_cbs_mousePressEvent_1738_0);
+  methods += new qt_gsi::GenericMethod ("*mouseReleaseEvent", "@hide", false, &_init_cbs_mouseReleaseEvent_1738_0, &_call_cbs_mouseReleaseEvent_1738_0);
+  methods += new qt_gsi::GenericMethod ("*mouseReleaseEvent", "@brief Virtual method void QFileDialog::mouseReleaseEvent(QMouseEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_mouseReleaseEvent_1738_0, &_call_cbs_mouseReleaseEvent_1738_0, &_set_callback_cbs_mouseReleaseEvent_1738_0);
+  methods += new qt_gsi::GenericMethod ("*moveEvent", "@hide", false, &_init_cbs_moveEvent_1624_0, &_call_cbs_moveEvent_1624_0);
+  methods += new qt_gsi::GenericMethod ("*moveEvent", "@brief Virtual method void QFileDialog::moveEvent(QMoveEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_moveEvent_1624_0, &_call_cbs_moveEvent_1624_0, &_set_callback_cbs_moveEvent_1624_0);
+  methods += new qt_gsi::GenericMethod ("*nativeEvent", "@hide", false, &_init_cbs_nativeEvent_4678_0, &_call_cbs_nativeEvent_4678_0);
+  methods += new qt_gsi::GenericMethod ("*nativeEvent", "@brief Virtual method bool QFileDialog::nativeEvent(const QByteArray &eventType, void *message, long int *result)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_nativeEvent_4678_0, &_call_cbs_nativeEvent_4678_0, &_set_callback_cbs_nativeEvent_4678_0);
+  methods += new qt_gsi::GenericMethod ("open", "@hide", false, &_init_cbs_open_0_0, &_call_cbs_open_0_0);
+  methods += new qt_gsi::GenericMethod ("open", "@brief Virtual method void QFileDialog::open()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_open_0_0, &_call_cbs_open_0_0, &_set_callback_cbs_open_0_0);
+  methods += new qt_gsi::GenericMethod ("paintEngine", "@hide", true, &_init_cbs_paintEngine_c0_0, &_call_cbs_paintEngine_c0_0);
+  methods += new qt_gsi::GenericMethod ("paintEngine", "@brief Virtual method QPaintEngine *QFileDialog::paintEngine()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_paintEngine_c0_0, &_call_cbs_paintEngine_c0_0, &_set_callback_cbs_paintEngine_c0_0);
+  methods += new qt_gsi::GenericMethod ("*paintEvent", "@hide", false, &_init_cbs_paintEvent_1725_0, &_call_cbs_paintEvent_1725_0);
+  methods += new qt_gsi::GenericMethod ("*paintEvent", "@brief Virtual method void QFileDialog::paintEvent(QPaintEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_paintEvent_1725_0, &_call_cbs_paintEvent_1725_0, &_set_callback_cbs_paintEvent_1725_0);
   methods += new qt_gsi::GenericMethod ("*receivers", "@brief Method int QFileDialog::receivers(const char *signal)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_receivers_c1731, &_call_fp_receivers_c1731);
-  methods += new qt_gsi::GenericMethod ("*redirected", "@brief Virtual method QPaintDevice *QFileDialog::redirected(QPoint *offset)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_redirected_c1225_0, &_call_cbs_redirected_c1225_0);
-  methods += new qt_gsi::GenericMethod ("*redirected", "@hide", true, &_init_cbs_redirected_c1225_0, &_call_cbs_redirected_c1225_0, &_set_callback_cbs_redirected_c1225_0);
-  methods += new qt_gsi::GenericMethod ("reject", "@brief Virtual method void QFileDialog::reject()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_reject_0_0, &_call_cbs_reject_0_0);
-  methods += new qt_gsi::GenericMethod ("reject", "@hide", false, &_init_cbs_reject_0_0, &_call_cbs_reject_0_0, &_set_callback_cbs_reject_0_0);
+  methods += new qt_gsi::GenericMethod ("*redirected", "@hide", true, &_init_cbs_redirected_c1225_0, &_call_cbs_redirected_c1225_0);
+  methods += new qt_gsi::GenericMethod ("*redirected", "@brief Virtual method QPaintDevice *QFileDialog::redirected(QPoint *offset)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_redirected_c1225_0, &_call_cbs_redirected_c1225_0, &_set_callback_cbs_redirected_c1225_0);
+  methods += new qt_gsi::GenericMethod ("reject", "@hide", false, &_init_cbs_reject_0_0, &_call_cbs_reject_0_0);
+  methods += new qt_gsi::GenericMethod ("reject", "@brief Virtual method void QFileDialog::reject()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_reject_0_0, &_call_cbs_reject_0_0, &_set_callback_cbs_reject_0_0);
   methods += new qt_gsi::GenericMethod ("emit_rejected", "@brief Emitter for signal void QFileDialog::rejected()\nCall this method to emit this signal.", false, &_init_emitter_rejected_0, &_call_emitter_rejected_0);
-  methods += new qt_gsi::GenericMethod ("*resizeEvent", "@brief Virtual method void QFileDialog::resizeEvent(QResizeEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_resizeEvent_1843_0, &_call_cbs_resizeEvent_1843_0);
-  methods += new qt_gsi::GenericMethod ("*resizeEvent", "@hide", false, &_init_cbs_resizeEvent_1843_0, &_call_cbs_resizeEvent_1843_0, &_set_callback_cbs_resizeEvent_1843_0);
+  methods += new qt_gsi::GenericMethod ("*resizeEvent", "@hide", false, &_init_cbs_resizeEvent_1843_0, &_call_cbs_resizeEvent_1843_0);
+  methods += new qt_gsi::GenericMethod ("*resizeEvent", "@brief Virtual method void QFileDialog::resizeEvent(QResizeEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_resizeEvent_1843_0, &_call_cbs_resizeEvent_1843_0, &_set_callback_cbs_resizeEvent_1843_0);
   methods += new qt_gsi::GenericMethod ("*sender", "@brief Method QObject *QFileDialog::sender()\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_sender_c0, &_call_fp_sender_c0);
   methods += new qt_gsi::GenericMethod ("*senderSignalIndex", "@brief Method int QFileDialog::senderSignalIndex()\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_senderSignalIndex_c0, &_call_fp_senderSignalIndex_c0);
-  methods += new qt_gsi::GenericMethod ("setVisible", "@brief Virtual method void QFileDialog::setVisible(bool visible)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setVisible_864_0, &_call_cbs_setVisible_864_0);
-  methods += new qt_gsi::GenericMethod ("setVisible", "@hide", false, &_init_cbs_setVisible_864_0, &_call_cbs_setVisible_864_0, &_set_callback_cbs_setVisible_864_0);
-  methods += new qt_gsi::GenericMethod ("*sharedPainter", "@brief Virtual method QPainter *QFileDialog::sharedPainter()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_sharedPainter_c0_0, &_call_cbs_sharedPainter_c0_0);
-  methods += new qt_gsi::GenericMethod ("*sharedPainter", "@hide", true, &_init_cbs_sharedPainter_c0_0, &_call_cbs_sharedPainter_c0_0, &_set_callback_cbs_sharedPainter_c0_0);
-  methods += new qt_gsi::GenericMethod ("*showEvent", "@brief Virtual method void QFileDialog::showEvent(QShowEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_showEvent_1634_0, &_call_cbs_showEvent_1634_0);
-  methods += new qt_gsi::GenericMethod ("*showEvent", "@hide", false, &_init_cbs_showEvent_1634_0, &_call_cbs_showEvent_1634_0, &_set_callback_cbs_showEvent_1634_0);
-  methods += new qt_gsi::GenericMethod ("sizeHint", "@brief Virtual method QSize QFileDialog::sizeHint()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_sizeHint_c0_0, &_call_cbs_sizeHint_c0_0);
-  methods += new qt_gsi::GenericMethod ("sizeHint", "@hide", true, &_init_cbs_sizeHint_c0_0, &_call_cbs_sizeHint_c0_0, &_set_callback_cbs_sizeHint_c0_0);
-  methods += new qt_gsi::GenericMethod ("*tabletEvent", "@brief Virtual method void QFileDialog::tabletEvent(QTabletEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_tabletEvent_1821_0, &_call_cbs_tabletEvent_1821_0);
-  methods += new qt_gsi::GenericMethod ("*tabletEvent", "@hide", false, &_init_cbs_tabletEvent_1821_0, &_call_cbs_tabletEvent_1821_0, &_set_callback_cbs_tabletEvent_1821_0);
-  methods += new qt_gsi::GenericMethod ("*timerEvent", "@brief Virtual method void QFileDialog::timerEvent(QTimerEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0);
-  methods += new qt_gsi::GenericMethod ("*timerEvent", "@hide", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0, &_set_callback_cbs_timerEvent_1730_0);
+  methods += new qt_gsi::GenericMethod ("setVisible", "@hide", false, &_init_cbs_setVisible_864_0, &_call_cbs_setVisible_864_0);
+  methods += new qt_gsi::GenericMethod ("setVisible", "@brief Virtual method void QFileDialog::setVisible(bool visible)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setVisible_864_0, &_call_cbs_setVisible_864_0, &_set_callback_cbs_setVisible_864_0);
+  methods += new qt_gsi::GenericMethod ("*sharedPainter", "@hide", true, &_init_cbs_sharedPainter_c0_0, &_call_cbs_sharedPainter_c0_0);
+  methods += new qt_gsi::GenericMethod ("*sharedPainter", "@brief Virtual method QPainter *QFileDialog::sharedPainter()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_sharedPainter_c0_0, &_call_cbs_sharedPainter_c0_0, &_set_callback_cbs_sharedPainter_c0_0);
+  methods += new qt_gsi::GenericMethod ("*showEvent", "@hide", false, &_init_cbs_showEvent_1634_0, &_call_cbs_showEvent_1634_0);
+  methods += new qt_gsi::GenericMethod ("*showEvent", "@brief Virtual method void QFileDialog::showEvent(QShowEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_showEvent_1634_0, &_call_cbs_showEvent_1634_0, &_set_callback_cbs_showEvent_1634_0);
+  methods += new qt_gsi::GenericMethod ("sizeHint", "@hide", true, &_init_cbs_sizeHint_c0_0, &_call_cbs_sizeHint_c0_0);
+  methods += new qt_gsi::GenericMethod ("sizeHint", "@brief Virtual method QSize QFileDialog::sizeHint()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_sizeHint_c0_0, &_call_cbs_sizeHint_c0_0, &_set_callback_cbs_sizeHint_c0_0);
+  methods += new qt_gsi::GenericMethod ("*tabletEvent", "@hide", false, &_init_cbs_tabletEvent_1821_0, &_call_cbs_tabletEvent_1821_0);
+  methods += new qt_gsi::GenericMethod ("*tabletEvent", "@brief Virtual method void QFileDialog::tabletEvent(QTabletEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_tabletEvent_1821_0, &_call_cbs_tabletEvent_1821_0, &_set_callback_cbs_tabletEvent_1821_0);
+  methods += new qt_gsi::GenericMethod ("*timerEvent", "@hide", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0);
+  methods += new qt_gsi::GenericMethod ("*timerEvent", "@brief Virtual method void QFileDialog::timerEvent(QTimerEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0, &_set_callback_cbs_timerEvent_1730_0);
   methods += new qt_gsi::GenericMethod ("*updateMicroFocus", "@brief Method void QFileDialog::updateMicroFocus()\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_updateMicroFocus_0, &_call_fp_updateMicroFocus_0);
   methods += new qt_gsi::GenericMethod ("emit_urlSelected", "@brief Emitter for signal void QFileDialog::urlSelected(const QUrl &url)\nCall this method to emit this signal.", false, &_init_emitter_urlSelected_1701, &_call_emitter_urlSelected_1701);
   methods += new qt_gsi::GenericMethod ("emit_urlsSelected", "@brief Emitter for signal void QFileDialog::urlsSelected(const QList<QUrl> &urls)\nCall this method to emit this signal.", false, &_init_emitter_urlsSelected_2316, &_call_emitter_urlsSelected_2316);
-  methods += new qt_gsi::GenericMethod ("*wheelEvent", "@brief Virtual method void QFileDialog::wheelEvent(QWheelEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_wheelEvent_1718_0, &_call_cbs_wheelEvent_1718_0);
-  methods += new qt_gsi::GenericMethod ("*wheelEvent", "@hide", false, &_init_cbs_wheelEvent_1718_0, &_call_cbs_wheelEvent_1718_0, &_set_callback_cbs_wheelEvent_1718_0);
+  methods += new qt_gsi::GenericMethod ("*wheelEvent", "@hide", false, &_init_cbs_wheelEvent_1718_0, &_call_cbs_wheelEvent_1718_0);
+  methods += new qt_gsi::GenericMethod ("*wheelEvent", "@brief Virtual method void QFileDialog::wheelEvent(QWheelEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_wheelEvent_1718_0, &_call_cbs_wheelEvent_1718_0, &_set_callback_cbs_wheelEvent_1718_0);
   methods += new qt_gsi::GenericMethod ("emit_windowIconChanged", "@brief Emitter for signal void QFileDialog::windowIconChanged(const QIcon &icon)\nCall this method to emit this signal.", false, &_init_emitter_windowIconChanged_1787, &_call_emitter_windowIconChanged_1787);
   methods += new qt_gsi::GenericMethod ("emit_windowIconTextChanged", "@brief Emitter for signal void QFileDialog::windowIconTextChanged(const QString &iconText)\nCall this method to emit this signal.", false, &_init_emitter_windowIconTextChanged_2025, &_call_emitter_windowIconTextChanged_2025);
   methods += new qt_gsi::GenericMethod ("emit_windowTitleChanged", "@brief Emitter for signal void QFileDialog::windowTitleChanged(const QString &title)\nCall this method to emit this signal.", false, &_init_emitter_windowTitleChanged_2025, &_call_emitter_windowTitleChanged_2025);

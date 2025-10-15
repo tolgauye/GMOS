@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -30,8 +30,8 @@ namespace db
 // ---------------------------------------------------------------------------------
 //  RS274XReader implementation
 
-RS274XReader::RS274XReader (int warn_level)
-  : GerberFileReader (warn_level)
+RS274XReader::RS274XReader ()
+  : GerberFileReader ()
 {
   init ();
 }
@@ -66,7 +66,6 @@ RS274XReader::init ()
 {
   //  Initialize reader:
   m_clear = false;
-  m_net_name.clear ();
   m_guess_polarity = true;
   m_neg_polarity = false;
   m_relative = false;
@@ -264,16 +263,6 @@ RS274XReader::do_read ()
           read_pf_parameter (get_block ());
         } else if (param == "AD") {
           read_ad_parameter (get_block ());
-        } else if (param == "TO") {
-
-          std::string net_name;
-          if (read_net_name (get_block (), net_name)) {
-            if (! m_net_name.empty ()) {
-              flush (m_net_name);
-            }
-            m_net_name = net_name;
-          }
-
         } else if (param == "TA" || param == "TD" || param == "TF") {
 
           //  TA, TD and TF paramters are skipped for layout
@@ -524,7 +513,6 @@ RS274XReader::do_read ()
           if (m_polygon_mode) {
 
             //  D02 strokes close the polygon (and restart a new one)
-
             if (m_polygon_points.size () >= 3) {
               db::DPolygon poly;
               poly.assign_hull (m_polygon_points.begin (), m_polygon_points.end ());
@@ -532,7 +520,6 @@ RS274XReader::do_read ()
             }
 
             m_polygon_points.clear ();
-            m_polygon_points.push_back (db::DPoint (x, y));
 
           }
 
@@ -686,10 +673,6 @@ RS274XReader::do_read ()
 
     }
 
-  }
-
-  if (! m_net_name.empty ()) {
-    flush (m_net_name);
   }
 
   if (! graphics_stack_empty ()) {
@@ -976,28 +959,6 @@ void
 RS274XReader::read_pf_parameter (const std::string & /*block*/)
 {
   warn (tl::to_string (tr ("PF parameters are ignored")));
-}
-
-bool
-RS274XReader::read_net_name (const std::string &block, std::string &net_name) const
-{
-  tl::Extractor ex (block.c_str ());
-
-  ex.test (".");
-
-  if (ex.test ("N")) {
-
-    //  only parse net names
-    ex.test (",");
-
-    std::string n = ex.get ();
-    if (! n.empty () && n != "N/C") {
-      net_name = n;
-      return true;
-    }
-  }
-
-  return false;
 }
 
 void

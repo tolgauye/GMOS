@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -25,38 +25,23 @@
 #define HDR_layMouseTracker
 
 #include "layViewObject.h"
-#include "layMarker.h"
-#include "layPlugin.h"
-#include "tlObject.h"
 
 class QMouseEvent;
 
 namespace lay {
 
 class LayoutCanvas;
-class LayoutViewBase;
+class LayoutView;
 
 class MouseTracker
-  : public lay::ViewService, public lay::Plugin
+  : public lay::ViewService
 {
 public: 
-  MouseTracker (lay::LayoutViewBase *view);
-
+  MouseTracker (lay::LayoutView *view);
   virtual bool mouse_move_event (const db::DPoint &p, unsigned int buttons, bool prio);
-  bool leave_event (bool prio);
-  bool configure (const std::string &name, const std::string &value);
-
-  lay::ViewService *view_service_interface ()
-  {
-    return this;
-  }
 
 private:
-  lay::LayoutViewBase *mp_view;
-  tl::shared_collection<lay::DMarker> mp_markers;
-  tl::Color m_cursor_color;
-  int m_cursor_line_style;
-  bool m_cursor_enabled;
+  lay::LayoutView *mp_view;
 };
 
 }

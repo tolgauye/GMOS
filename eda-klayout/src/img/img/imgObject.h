@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@
 */
 
 
+
 #ifndef HDR_imgObject
 #define HDR_imgObject
 
@@ -31,17 +32,13 @@
 #include "dbTrans.h"
 #include "dbMatrix.h"
 #include "dbPolygon.h"
-#include "dbLayerProperties.h"
 #include "tlDataMapping.h"
-#include "tlColor.h"
-#include "tlPixelBuffer.h"
+#include "layViewOp.h"
 
 #include <string>
 #include <vector>
 
-#if defined(HAVE_QT)
-class QImage;
-#endif
+#include <QColor>
 
 namespace img {
   
@@ -55,8 +52,6 @@ class DataHeader;
 struct IMG_PUBLIC DataMapping
 {
 public:
-  typedef std::vector< std::pair<double, std::pair<tl::Color, tl::Color> > > false_color_nodes_type;
-
   /**
    *  @brief The constructor
    */
@@ -78,7 +73,7 @@ public:
    *  Each node is a pair or x-value (normalized to a range of 0..1) and a corresponding color.
    *  The list should have an element with x value of 0.0 and one with an x value of 1.0.
    */
-  false_color_nodes_type false_color_nodes;
+  std::vector< std::pair<double, QColor> > false_color_nodes;
 
   /**
    *  @brief The brightness value
@@ -143,11 +138,6 @@ public:
 };
 
 /**
- *  @brief A helper function to interpolate a color in the color bar at a given x
- */
-tl::Color interpolated_color (const DataMapping::false_color_nodes_type &nodes, double x);
-
-/**
  *  @brief A image object
  * 
  *  This class implements the actual image.
@@ -187,9 +177,8 @@ public:
    *  @param h The height of the image
    *  @param trans The transformation from pixel space to micron space
    *  @param color True to create a color image.
-   *  @param byte_data True to make the image store the data in bytes
    */
-  Object (size_t w, size_t h, const db::DCplxTrans &trans, bool color, bool byte_data);
+  Object (size_t w, size_t h, const db::DCplxTrans &trans, bool color);
 
   /**
    *  @brief Constructor for a monochrome image with the given pixel values
@@ -299,26 +288,6 @@ public:
   Object (const std::string &filename, const db::DCplxTrans &trans);
 
   /**
-   *  @brief Constructor from a PixelBuffer object
-   *
-   *  This constructor creates an image object from a PixelBuffer object.
-   *  The image will originally be put to position 0, 0 (lower left corner) and each pixel
-   *  will have a size of 1. The transformation describes how to transform this image into micron space.
-   */
-  Object (const tl::PixelBuffer &pixel_buffer, const db::DCplxTrans &trans);
-
-#if defined(HAVE_QT)
-  /**
-   *  @brief Constructor from a QImage object
-   *
-   *  This constructor creates an image object from a QImage object.
-   *  The image will originally be put to position 0, 0 (lower left corner) and each pixel
-   *  will have a size of 1. The transformation describes how to transform this image into micron space.
-   */
-  Object (const QImage &image, const db::DCplxTrans &trans);
-#endif
-
-  /**
    *  @brief Constructor for monochrome or color images with zero pixel values
    *
    *  This constructor creates an image object from a data set describing one monochrome channel
@@ -332,9 +301,8 @@ public:
    *  @param h The height of the image
    *  @param matrix The 3d transformation matrix from pixel space to micron space
    *  @param color True to create a color image.
-   *  @param byte_data True to create n image using bytes rather than floats
    */
-  Object (size_t w, size_t h, const db::Matrix3d &matrix, bool color, bool byte_data);
+  Object (size_t w, size_t h, const db::Matrix3d &matrix, bool color);
 
   /**
    *  @brief Constructor for a monochrome image with the given pixel values
@@ -442,26 +410,6 @@ public:
    *  will have a size of 1. The transformation describes how to transform this image into micron space.
    */
   Object (const std::string &filename, const db::Matrix3d &trans);
-
-  /**
-   *  @brief Constructor from a PixelBuffer object
-   *
-   *  This constructor creates an image object from a PixelBuffer object.
-   *  The image will originally be put to position 0, 0 (lower left corner) and each pixel
-   *  will have a size of 1. The transformation describes how to transform this image into micron space.
-   */
-  Object (const tl::PixelBuffer &pixel_buffer, const db::Matrix3d &trans);
-
-#if defined(HAVE_QT)
-  /**
-   *  @brief Constructor from a QImage object
-   *
-   *  This constructor creates an image object from a QImage object.
-   *  The image will originally be put to position 0, 0 (lower left corner) and each pixel
-   *  will have a size of 1. The transformation describes how to transform this image into micron space.
-   */
-  Object (const QImage &image, const db::Matrix3d &trans);
-#endif
 
   /**
    *  @brief Copy constructor
@@ -787,11 +735,6 @@ public:
   void set_data (size_t width, size_t height, const std::vector<double> &red, const std::vector<double> &green, const std::vector<double> &blue);
 
   /**
-   *  @brief Clears the pixel data (sets the values to 0)
-   */
-  void clear ();
-
-  /**
    *  @brief Set the transformation matrix
    *
    *  This transformation matrix converts pixel coordinates (0,0 being the lower left corner and each pixel having the dimension of pixel_width and pixel_height)
@@ -926,33 +869,9 @@ public:
   }
 
   /**
-   *  @brief Sets the layer binding
-   *
-   *  If the image is bound to a layer, it becomes hidden when the layer is hidden
-   *  and visible if the layer is visible too
-   */
-  void set_layer_binding (const db::LayerProperties &lp)
-  {
-    if (m_layer_binding != lp) {
-      m_layer_binding = lp;
-      if (m_updates_enabled) {
-        property_changed ();
-      }
-    }
-  }
-
-  /**
-   *  @brief Gets the layer binding
-   */
-  const db::LayerProperties &layer_binding () const
-  {
-    return m_layer_binding;
-  }
-
-  /**
    *  @brief Get the RGB pixel data sets obtained by applying the LUT's
    */
-  const tl::color_t *pixel_data () const
+  const lay::color_t *pixel_data () const
   {
     validate_pixel_data ();
     return mp_pixel_data;
@@ -1019,11 +938,6 @@ public:
   virtual std::string to_string () const;
 
   /**
-   *  @brief Swap with another image object
-   */
-  void swap (img::Object &other);
-
-  /**
    *  @brief Return the memory used in bytes
    */
   virtual void mem_stat (db::MemStatistics *stat, db::MemStatistics::purpose_t purpose, int cat, bool no_self, void *parent) const;
@@ -1043,10 +957,9 @@ private:
   bool m_min_value_set, m_max_value_set;
   DataMapping m_data_mapping;
   bool m_visible;
-  mutable const tl::color_t *mp_pixel_data;
+  mutable const lay::color_t *mp_pixel_data;
   std::vector <db::DPoint> m_landmarks;
   int m_z_position;
-  db::LayerProperties m_layer_binding;
   bool m_updates_enabled;
 
   void release ();
@@ -1054,10 +967,6 @@ private:
   void validate_pixel_data () const;
   void allocate (bool color);
   void read_file ();
-#if defined(HAVE_QT)
-  void create_from_qimage (const QImage &qimage);
-#endif
-  void create_from_pixel_buffer (const tl::PixelBuffer &img);
 };
 
 }

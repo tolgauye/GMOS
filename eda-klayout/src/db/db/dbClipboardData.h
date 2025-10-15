@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -197,6 +197,8 @@ private:
   std::map <db::cell_index_type, db::cell_index_type> m_cell_index_map;
   db::cell_index_type m_container_cell_index;
   
+  PropertyMapper m_prop_id_map;
+
   db::cell_index_type cell_for_cell (const db::Layout &layout, db::cell_index_type cell_index, bool incomplete);
   std::vector<unsigned int> do_insert (db::Layout &into, const db::ICplxTrans *trans, db::Cell *cell, std::vector<db::cell_index_type> *new_tops, ClipboardDataInsertReceiver *insert_receiver) const;
 

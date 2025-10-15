@@ -14,20 +14,17 @@ LIBS += -L$$DESTDIR/../db_plugins -lnet_tracer
 
 HEADERS = \
   layNetTracerConfig.h \
-  layNetTracerConnectivityEditor.h \
   layNetTracerDialog.h \
-  layNetTracerTechComponentEditor.h
+  layNetTracerIO.h \
 
 SOURCES = \
   layNetTracerConfig.cc \
-  layNetTracerConnectivityEditor.cc \
   layNetTracerDialog.cc \
   layNetTracerPlugin.cc \
-  layNetTracerTechComponentEditor.cc
+  layNetTracerIO.cc \
 
 FORMS = \
   NetTracerConfigPage.ui \
-  NetTracerConnectivityEditor.ui \
   NetTracerDialog.ui \
   NetTracerTechComponentEditor.ui \
 

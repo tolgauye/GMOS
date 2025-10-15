@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -23,7 +23,6 @@
 #include "dbNetlistExtractor.h"
 #include "dbDeepShapeStore.h"
 #include "dbNetlistDeviceExtractor.h"
-#include "dbShapeRepository.h"
 #include "tlGlobPattern.h"
 
 namespace db
@@ -35,24 +34,14 @@ NetlistExtractor::NetlistExtractor ()
   //  .. nothing yet ..
 }
 
-void NetlistExtractor::set_joined_net_names (const std::list<tl::GlobPattern>  &jnn)
+void NetlistExtractor::set_joined_net_names (const std::string &jnn)
 {
   m_joined_net_names = jnn;
 }
 
-void NetlistExtractor::set_joined_net_names (const std::string &cellname, const std::list<tl::GlobPattern> &jnn)
+void NetlistExtractor::set_joined_net_names (const std::string &cellname, const std::string &jnn)
 {
   m_joined_net_names_per_cell.push_back (std::make_pair (cellname, jnn));
-}
-
-void NetlistExtractor::set_joined_nets (const std::list<std::set<std::string> > &jnn)
-{
-  m_joined_nets = jnn;
-}
-
-void NetlistExtractor::set_joined_nets (const std::string &cell_name, const std::list<std::set<std::string> > &jnn)
-{
-  m_joined_nets_per_cell.push_back (std::make_pair (cell_name, jnn));
 }
 
 void NetlistExtractor::set_include_floating_subcircuits (bool f)
@@ -61,101 +50,28 @@ void NetlistExtractor::set_include_floating_subcircuits (bool f)
 }
 
 static void
-build_net_name_equivalence (const db::Layout *layout, const db::Connectivity &conn, db::property_names_id_type net_name_id, const std::list<tl::GlobPattern> &jn_pattern, tl::equivalence_clusters<size_t> &eq)
+build_net_name_equivalence (const db::Layout *layout, db::property_names_id_type net_name_id, const std::string &joined_net_names, tl::equivalence_clusters<unsigned int> &eq)
 {
-  std::map<std::string, std::set<size_t> > prop_by_name;
+  std::map<std::string, std::set<unsigned int> > prop_by_name;
+  tl::GlobPattern jn_pattern (joined_net_names);
 
-  {
-    db::PropertiesRepository::properties_id_set with_name = db::PropertiesRepository::instance ().properties_ids_by_name (net_name_id);
-    for (auto i = with_name.begin (); i != with_name.end (); ++i) {
-      const db::PropertiesSet &props = db::properties (*i);
-      std::string nn = props.value (net_name_id).to_string ();
-      for (std::list<tl::GlobPattern>::const_iterator jp = jn_pattern.begin (); jp != jn_pattern.end (); ++jp) {
-        if (jp->match (nn)) {
-          prop_by_name [nn].insert (db::prop_id_to_attr (*i));
+  for (db::PropertiesRepository::iterator i = layout->properties_repository ().begin (); i != layout->properties_repository ().end (); ++i) {
+    for (db::PropertiesRepository::properties_set::const_iterator p = i->second.begin (); p != i->second.end (); ++p) {
+      if (p->first == net_name_id) {
+        std::string nn = p->second.to_string ();
+        if (jn_pattern.match (nn)) {
+          prop_by_name [nn].insert (i->first);
         }
       }
     }
   }
 
-  //  include pseudo-attributes for global nets to implement "join_with" for global nets
-  for (size_t gid = 0; gid < conn.global_nets (); ++gid) {
-    const std::string &gn = conn.global_net_name (gid);
-    for (std::list<tl::GlobPattern>::const_iterator jp = jn_pattern.begin (); jp != jn_pattern.end (); ++jp) {
-      if (jp->match (gn)) {
-        prop_by_name [gn].insert (db::global_net_id_to_attr (gid));
-      }
-    }
-  }
-
-  const db::repository<db::Text> &text_repository = layout->shape_repository ().repository (db::object_tag<db::Text> ());
-  for (db::repository<db::Text>::iterator t = text_repository.begin (); t != text_repository.end (); ++t) {
-    std::string nn = t->string ();
-    for (std::list<tl::GlobPattern>::const_iterator jp = jn_pattern.begin (); jp != jn_pattern.end (); ++jp) {
-      if (jp->match (nn)) {
-        prop_by_name [nn].insert (db::text_ref_to_attr (t.operator-> ()));
-      }
-    }
-  }
-
-  for (std::map<std::string, std::set<size_t> >::const_iterator pn = prop_by_name.begin (); pn != prop_by_name.end (); ++pn) {
-    std::set<size_t>::const_iterator p = pn->second.begin ();
-    std::set<size_t>::const_iterator p0 = p;
+  for (std::map<std::string, std::set<unsigned int> >::const_iterator pn = prop_by_name.begin (); pn != prop_by_name.end (); ++pn) {
+    std::set<unsigned int>::const_iterator p = pn->second.begin ();
+    std::set<unsigned int>::const_iterator p0 = p;
     while (p != pn->second.end ()) {
       eq.same (*p0, *p);
       ++p;
-    }
-  }
-}
-
-static void
-build_net_name_equivalence_for_explicit_connections (const db::Layout *layout, const db::Connectivity &conn, db::property_names_id_type net_name_id, const std::set<std::string> &nets_to_join, tl::equivalence_clusters<size_t> &eq)
-{
-  std::map<std::string, std::set<size_t> > prop_by_name;
-
-  {
-    db::PropertiesRepository::properties_id_set with_name = db::PropertiesRepository::instance ().properties_ids_by_name (net_name_id);
-    for (auto i = with_name.begin (); i != with_name.end (); ++i) {
-      const db::PropertiesSet &props = db::properties (*i);
-      std::string nn = props.value (net_name_id).to_string ();
-      if (nets_to_join.find (nn) != nets_to_join.end ()) {
-        prop_by_name [nn].insert (db::prop_id_to_attr (*i));
-      }
-    }
-  }
-
-  //  include pseudo-attributes for global nets to implement "join_with" for global nets
-  for (size_t gid = 0; gid < conn.global_nets (); ++gid) {
-    const std::string &gn = conn.global_net_name (gid);
-    if (nets_to_join.find (gn) != nets_to_join.end ()) {
-      prop_by_name [gn].insert (db::global_net_id_to_attr (gid));
-    }
-  }
-
-  const db::repository<db::Text> &text_repository = layout->shape_repository ().repository (db::object_tag<db::Text> ());
-  for (db::repository<db::Text>::iterator t = text_repository.begin (); t != text_repository.end (); ++t) {
-    std::string nn = t->string ();
-    if (nets_to_join.find (nn) != nets_to_join.end ()) {
-      prop_by_name [nn].insert (db::text_ref_to_attr (t.operator-> ()));
-    }
-  }
-
-  //  first inter-name equivalence (this implies implicit connections for all n1 and n2 labels)
-  for (std::map<std::string, std::set<size_t> >::const_iterator pn = prop_by_name.begin (); pn != prop_by_name.end (); ++pn) {
-    std::set<size_t>::const_iterator p = pn->second.begin ();
-    std::set<size_t>::const_iterator p0 = p;
-    while (p != pn->second.end ()) {
-      eq.same (*p0, *p);
-      ++p;
-    }
-  }
-
-  //  second intra-name equivalence
-  for (std::map<std::string, std::set<size_t> >::const_iterator pn1 = prop_by_name.begin (); pn1 != prop_by_name.end (); ++pn1) {
-    std::map<std::string, std::set<size_t> >::const_iterator pn2 = pn1;
-    ++pn2;
-    for ( ; pn2 != prop_by_name.end (); ++pn2) {
-      eq.same (*pn1->second.begin (), *pn2->second.begin ());
     }
   }
 }
@@ -171,48 +87,27 @@ NetlistExtractor::extract_nets (const db::DeepShapeStore &dss, unsigned int layo
   //  this is how the texts are passed for annotating the net names
   m_text_annot_name_id = std::pair<bool, db::property_names_id_type> (false, 0);
   if (! dss.text_property_name ().is_nil ()) {
-    m_text_annot_name_id = db::PropertiesRepository::instance ().get_id_of_name (dss.text_property_name ());
+    m_text_annot_name_id = mp_layout->properties_repository ().get_id_of_name (dss.text_property_name ());
   }
 
-  m_terminal_annot_name_id = db::PropertiesRepository::instance ().get_id_of_name (db::NetlistDeviceExtractor::terminal_id_property_name ());
-  m_device_annot_name_id = db::PropertiesRepository::instance ().get_id_of_name (db::NetlistDeviceExtractor::device_id_property_name ());
-
-  //  build an attribute equivalence map which lists the "attribute IDs" which are identical in terms of net names
-  //  TODO: this feature is not really used as must-connect nets now are handled in the LayoutToNetlist class on netlist level.
-  //  Remove this later.
-
-  std::map<db::cell_index_type, tl::equivalence_clusters<size_t> > net_name_equivalence;
-  if (m_text_annot_name_id.first) {
-
-    if (! m_joined_net_names.empty ()) {
-      build_net_name_equivalence (mp_layout, conn, m_text_annot_name_id.second, m_joined_net_names, net_name_equivalence [hier_clusters_type::top_cell_index]);
-    }
-    for (std::list<std::pair<std::string, std::list<tl::GlobPattern> > >::const_iterator m = m_joined_net_names_per_cell.begin (); m != m_joined_net_names_per_cell.end (); ++m) {
-      std::pair<bool, db::cell_index_type> cp = mp_layout->cell_by_name (m->first.c_str ());
-      if (cp.first) {
-        build_net_name_equivalence (mp_layout, conn, m_text_annot_name_id.second, m->second, net_name_equivalence [cp.second]);
-      }
-    }
-
-    if (! m_joined_nets.empty ()) {
-      for (std::list<std::set<std::string> >::const_iterator n = m_joined_nets.begin (); n != m_joined_nets.end (); ++n) {
-        build_net_name_equivalence_for_explicit_connections (mp_layout, conn, m_text_annot_name_id.second, *n, net_name_equivalence [hier_clusters_type::top_cell_index]);
-      }
-    }
-    for (std::list<std::pair<std::string, std::list<std::set<std::string> > > >::const_iterator m = m_joined_nets_per_cell.begin (); m != m_joined_nets_per_cell.end (); ++m) {
-      std::pair<bool, db::cell_index_type> cp = mp_layout->cell_by_name (m->first.c_str ());
-      if (cp.first) {
-        for (std::list<std::set<std::string> >::const_iterator n = m->second.begin (); n != m->second.end (); ++n) {
-          build_net_name_equivalence_for_explicit_connections (mp_layout, conn, m_text_annot_name_id.second, *n, net_name_equivalence [cp.second]);
-        }
-      }
-    }
-
-  }
+  m_terminal_annot_name_id = mp_layout->properties_repository ().get_id_of_name (db::NetlistDeviceExtractor::terminal_id_property_name ());
+  m_device_annot_name_id = mp_layout->properties_repository ().get_id_of_name (db::NetlistDeviceExtractor::device_id_property_name ());
 
   //  the big part: actually extract the nets
 
-  mp_clusters->build (*mp_layout, *mp_cell, conn, &net_name_equivalence);
+  std::map<db::cell_index_type, tl::equivalence_clusters<unsigned int> > net_name_equivalence;
+  if (m_text_annot_name_id.first) {
+    if (! m_joined_net_names.empty ()) {
+      build_net_name_equivalence (mp_layout, m_text_annot_name_id.second, m_joined_net_names, net_name_equivalence [hier_clusters_type::top_cell_index]);
+    }
+    for (std::list<std::pair<std::string, std::string> >::const_iterator m = m_joined_net_names_per_cell.begin (); m != m_joined_net_names_per_cell.end (); ++m) {
+      std::pair<bool, db::cell_index_type> cp = mp_layout->cell_by_name (m->first.c_str ());
+      if (cp.first) {
+        build_net_name_equivalence (mp_layout, m_text_annot_name_id.second, m->second, net_name_equivalence [cp.second]);
+      }
+    }
+  }
+  mp_clusters->build (*mp_layout, *mp_cell, db::ShapeIterator::Polygons, conn, &net_name_equivalence);
 
   //  reverse lookup for Circuit vs. cell index
   std::map<db::cell_index_type, db::Circuit *> circuits;
@@ -228,8 +123,8 @@ NetlistExtractor::extract_nets (const db::DeepShapeStore &dss, unsigned int layo
 
     const db::Cell &cell = mp_layout->cell (*cid);
 
-    connected_clusters_type &per_cell_clusters = mp_clusters->clusters_per_cell (*cid);
-    if (per_cell_clusters.empty ()) {
+    const connected_clusters_type &clusters = mp_clusters->clusters_per_cell (*cid);
+    if (clusters.empty ()) {
 
       bool any_good = false;
 
@@ -251,7 +146,7 @@ NetlistExtractor::extract_nets (const db::DeepShapeStore &dss, unsigned int layo
     if (dm) {
       //  This is a device abstract cell:
       //  make the terminal to cluster ID connections for the device abstract from the device cells
-      make_device_abstract_connections (dm, per_cell_clusters);
+      make_device_abstract_connections (dm, clusters);
       continue;
     }
 
@@ -284,13 +179,10 @@ NetlistExtractor::extract_nets (const db::DeepShapeStore &dss, unsigned int layo
 
     }
 
-    for (connected_clusters_type::all_iterator c = per_cell_clusters.begin_all (); ! c.at_end (); ++c) {
+    for (connected_clusters_type::all_iterator c = clusters.begin_all (); ! c.at_end (); ++c) {
 
-      const db::local_cluster<db::NetShape> &lc = per_cell_clusters.cluster_by_id (*c);
-      const connected_clusters_type::connections_type &cc = per_cell_clusters.connections_for_cluster (*c);
-      const std::set<size_t> &sc_up = per_cell_clusters.upward_soft_connections (*c);
-      const std::set<size_t> &sc_down = per_cell_clusters.downward_soft_connections (*c);
-      if (cc.empty () && sc_up.empty () && sc_down.empty () && lc.empty ()) {
+      const db::local_cluster<db::PolygonRef> &lc = clusters.cluster_by_id (*c);
+      if (clusters.connections_for_cluster (*c).empty () && lc.empty ()) {
         //  this is an entirely empty cluster so we skip it.
         //  Such clusters are left over when joining clusters.
         continue;
@@ -301,43 +193,26 @@ NetlistExtractor::extract_nets (const db::DeepShapeStore &dss, unsigned int layo
       circuit->add_net (net);
 
       //  make subcircuit connections (also make the subcircuits if required) from the connections of the clusters
-      make_and_connect_subcircuits (circuit, per_cell_clusters, *c, net, subcircuits, circuits, pins_per_cluster_per_cell);
+      make_and_connect_subcircuits (circuit, clusters, *c, net, subcircuits, circuits, pins_per_cluster_per_cell);
 
       //  connect devices
-      connect_devices (circuit, per_cell_clusters, *c, net);
+      connect_devices (circuit, clusters, *c, net);
 
       //  collect labels to net names
       std::set<std::string> net_names;
-      collect_labels (per_cell_clusters, *c, net_names);
+      collect_labels (clusters, *c, net_names);
 
       //  add the global names as second priority
       if (net_names.empty ()) {
-        const db::local_cluster<db::NetShape>::global_nets &gn = lc.get_global_nets ();
-        for (db::local_cluster<db::NetShape>::global_nets::const_iterator g = gn.begin (); g != gn.end (); ++g) {
+        const db::local_cluster<db::PolygonRef>::global_nets &gn = lc.get_global_nets ();
+        for (db::local_cluster<db::PolygonRef>::global_nets::const_iterator g = gn.begin (); g != gn.end (); ++g) {
           net_names.insert (conn.global_net_name (*g));
         }
       }
 
-#if 0
-      //  This code will pull net names from subcircuits into their parents if those nets are dummy connections
-      //  made to satisfy the subcircuit's pin, but not to make a physical connection.
-      //  Don't know whether this is a good idea, so this code is disabled for now.
-
-      if (net_names.empty () && per_cell_clusters.is_dummy (*c) && net->subcircuit_pin_count () == 1) {
-        //  in the case of a dummy connection (partially connected subcircuits) create a
-        //  new name indicating the subcircuit and the subcircuit net name - this makes subcircuit
-        //  net names available (the net is pseudo-root inside in the subcircuit)
-        const db::NetSubcircuitPinRef &sc_pin = *net->begin_subcircuit_pins ();
-        const db::Net *sc_net = sc_pin.subcircuit ()->circuit_ref ()->net_for_pin (sc_pin.pin_id ());
-        if (sc_net && ! sc_net->name ().empty ()) {
-          net_names.insert (sc_pin.subcircuit ()->expanded_name () + ":" + sc_net->name ());
-        }
-      }
-#endif
-
       assign_net_names (net, net_names);
 
-      if (! per_cell_clusters.is_root (*c)) {
+      if (! clusters.is_root (*c)) {
         //  a non-root cluster makes a pin
         size_t pin_id = make_pin (circuit, net);
         c2p.insert (std::make_pair (*c, pin_id));
@@ -364,73 +239,22 @@ NetlistExtractor::assign_net_names (db::Net *net, const std::set<std::string> &n
   net->set_name (nn);
 }
 
-static void
-collect_soft_connected_clusters (size_t from_id, const NetlistExtractor::connected_clusters_type &clusters, std::set<size_t> &ids)
-{
-  if (ids.find (from_id) != ids.end ()) {
-    return;
-  }
-
-  ids.insert (from_id);
-
-  auto upward = clusters.upward_soft_connections (from_id);
-  for (auto i = upward.begin (); i != upward.end (); ++i) {
-    collect_soft_connected_clusters (*i, clusters, ids);
-  }
-
-  auto downward = clusters.downward_soft_connections (from_id);
-  for (auto i = downward.begin (); i != downward.end (); ++i) {
-    collect_soft_connected_clusters (*i, clusters, ids);
-  }
-}
-
 void
-NetlistExtractor::make_device_abstract_connections (db::DeviceAbstract *dm, connected_clusters_type &clusters)
+NetlistExtractor::make_device_abstract_connections (db::DeviceAbstract *dm, const connected_clusters_type &clusters)
 {
   //  make the terminal to cluster ID connections for the device abstract from the device cells
 
   if (m_terminal_annot_name_id.first) {
 
-    for (connected_clusters_type::iterator dc = clusters.begin (); dc != clusters.end (); ++dc) {
+    for (connected_clusters_type::const_iterator dc = clusters.begin (); dc != clusters.end (); ++dc) {
 
-      std::set<size_t> ids;
-      collect_soft_connected_clusters (dc->id (), clusters, ids);
+      for (local_cluster_type::attr_iterator a = dc->begin_attr (); a != dc->end_attr (); ++a) {
 
-      for (auto id = ids.begin (); id != ids.end (); ++id) {
-
-        const local_cluster_type &lc = clusters.cluster_by_id (*id);
-        bool join = false;
-
-        for (local_cluster_type::attr_iterator a = lc.begin_attr (); a != lc.end_attr (); ++a) {
-
-          if (! db::is_prop_id_attr (*a)) {
-            continue;
+        const db::PropertiesRepository::properties_set &ps = mp_layout->properties_repository ().properties (*a);
+        for (db::PropertiesRepository::properties_set::const_iterator j = ps.begin (); j != ps.end (); ++j) {
+          if (j->first == m_terminal_annot_name_id.second) {
+            dm->set_cluster_id_for_terminal (j->second.to<size_t> (), dc->id ());
           }
-
-          db::properties_id_type pi = db::prop_id_from_attr (*a);
-
-          const db::PropertiesSet &ps = db::properties (pi);
-          for (db::PropertiesSet::iterator j = ps.begin (); j != ps.end (); ++j) {
-
-            if (j->first == m_terminal_annot_name_id.second) {
-
-              size_t terminal_id = db::property_value (j->second).to<size_t> ();
-              if (*id != dc->id ()) {
-                tl::warn << tl::sprintf (tl::to_string (tr ("Ignoring soft connection at device terminal %s for device %s")), dm->device_class ()->terminal_definition (terminal_id)->name (), dm->device_class ()->name ());
-                join = true;
-              }
-
-              dm->set_cluster_id_for_terminal (terminal_id, dc->id ());
-
-            }
-
-          }
-
-        }
-
-        if (join) {
-          //  copy the terminal attributes and shapes so we attach the terminal here in the device connection step
-          clusters.join_cluster_with (dc->id (), *id);
         }
 
       }
@@ -458,22 +282,12 @@ void NetlistExtractor::collect_labels (const connected_clusters_type &clusters,
   const local_cluster_type &lc = clusters.cluster_by_id (cid);
   for (local_cluster_type::attr_iterator a = lc.begin_attr (); a != lc.end_attr (); ++a) {
 
-    if (db::is_prop_id_attr (*a)) {
+    const db::PropertiesRepository::properties_set &ps = mp_layout->properties_repository ().properties (*a);
+    for (db::PropertiesRepository::properties_set::const_iterator j = ps.begin (); j != ps.end (); ++j) {
 
-      db::properties_id_type pi = db::prop_id_from_attr (*a);
-
-      const db::PropertiesSet &ps = db::properties (pi);
-      for (db::PropertiesSet::iterator j = ps.begin (); j != ps.end (); ++j) {
-
-        if (m_text_annot_name_id.first && j->first == m_text_annot_name_id.second) {
-          net_names.insert (db::property_value (j->second).to_string ());
-        }
-
+      if (m_text_annot_name_id.first && j->first == m_text_annot_name_id.second) {
+        net_names.insert (j->second.to_string ());
       }
-
-    } else if (db::is_text_ref_attr (*a)) {
-
-      net_names.insert (db::text_from_attr (*a));
 
     }
 
@@ -486,8 +300,8 @@ bool NetlistExtractor::instance_is_device (db::properties_id_type prop_id) const
     return false;
   }
 
-  const db::PropertiesSet &ps = db::properties (prop_id);
-  for (db::PropertiesSet::iterator j = ps.begin (); j != ps.end (); ++j) {
+  const db::PropertiesRepository::properties_set &ps = mp_layout->properties_repository ().properties (prop_id);
+  for (db::PropertiesRepository::properties_set::const_iterator j = ps.begin (); j != ps.end (); ++j) {
     if (j->first == m_device_annot_name_id.second) {
       return true;
     }
@@ -502,10 +316,10 @@ db::Device *NetlistExtractor::device_from_instance (db::properties_id_type prop_
     return 0;
   }
 
-  const db::PropertiesSet &ps = db::properties (prop_id);
-  for (db::PropertiesSet::iterator j = ps.begin (); j != ps.end (); ++j) {
+  const db::PropertiesRepository::properties_set &ps = mp_layout->properties_repository ().properties (prop_id);
+  for (db::PropertiesRepository::properties_set::const_iterator j = ps.begin (); j != ps.end (); ++j) {
     if (j->first == m_device_annot_name_id.second) {
-      return circuit->device_by_id (db::property_value (j->second).to<size_t> ());
+      return circuit->device_by_id (j->second.to<size_t> ());
     }
   }
 
@@ -529,24 +343,18 @@ void NetlistExtractor::connect_devices (db::Circuit *circuit,
       continue;
     }
 
-    const db::local_cluster<db::NetShape> &dc = mp_clusters->clusters_per_cell (inst_cell_index).cluster_by_id (i->id ());
+    const db::local_cluster<db::PolygonRef> &dc = mp_clusters->clusters_per_cell (inst_cell_index).cluster_by_id (i->id ());
 
     //  connect the net to the terminal of the device: take the terminal ID from the properties on the
     //  device cluster
     for (local_cluster_type::attr_iterator a = dc.begin_attr (); a != dc.end_attr (); ++a) {
 
-      if (! db::is_prop_id_attr (*a)) {
-        continue;
-      }
-
-      db::properties_id_type pi = db::prop_id_from_attr (*a);
-
-      const db::PropertiesSet &ps = db::properties (pi);
-      for (db::PropertiesSet::iterator j = ps.begin (); j != ps.end (); ++j) {
+      const db::PropertiesRepository::properties_set &ps = mp_layout->properties_repository ().properties (*a);
+      for (db::PropertiesRepository::properties_set::const_iterator j = ps.begin (); j != ps.end (); ++j) {
 
         if (m_terminal_annot_name_id.first && j->first == m_terminal_annot_name_id.second) {
 
-          size_t tid = db::property_value (j->second).to<size_t> ();
+          size_t tid = j->second.to<size_t> ();
           device->connect_terminal (tid, net);
 
         }

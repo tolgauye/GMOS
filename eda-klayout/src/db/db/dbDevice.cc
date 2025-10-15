@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -23,7 +23,6 @@
 #include "dbDevice.h"
 #include "dbCircuit.h"
 #include "dbDeviceClass.h"
-#include "tlIteratorUtils.h"
 
 namespace db
 {
@@ -40,7 +39,7 @@ Device::Device ()
 Device::~Device ()
 {
   for (std::vector<Net::terminal_iterator>::const_iterator t = m_terminal_refs.begin (); t != m_terminal_refs.end (); ++t) {
-    if (! tl::is_null_iterator (*t) && (*t)->net ()) {
+    if (*t != Net::terminal_iterator () && (*t)->net ()) {
       (*t)->net ()->erase_terminal (*t);
     }
   }
@@ -91,16 +90,6 @@ void Device::set_circuit (Circuit *circuit)
   mp_circuit = circuit;
 }
 
-const Netlist *Device::netlist () const
-{
-  return mp_circuit ? mp_circuit->netlist () : 0;
-}
-
-Netlist *Device::netlist ()
-{
-  return mp_circuit ? mp_circuit->netlist () : 0;
-}
-
 void Device::set_name (const std::string &n)
 {
   m_name = n;
@@ -126,19 +115,8 @@ const Net *Device::net_for_terminal (size_t terminal_id) const
 {
   if (terminal_id < m_terminal_refs.size ()) {
     Net::terminal_iterator p = m_terminal_refs [terminal_id];
-    if (! tl::is_null_iterator (p)) {
+    if (p != Net::terminal_iterator ()) {
       return p->net ();
-    }
-  }
-  return 0;
-}
-
-const NetTerminalRef *Device::terminal_ref_for_terminal (size_t terminal_id) const
-{
-  if (terminal_id < m_terminal_refs.size ()) {
-    Net::terminal_iterator p = m_terminal_refs [terminal_id];
-    if (! tl::is_null_iterator (p)) {
-      return p.operator-> ();
     }
   }
   return 0;
@@ -152,7 +130,7 @@ void Device::connect_terminal (size_t terminal_id, Net *net)
 
   if (terminal_id < m_terminal_refs.size ()) {
     Net::terminal_iterator p = m_terminal_refs [terminal_id];
-    if (! tl::is_null_iterator (p) && p->net ()) {
+    if (p != Net::terminal_iterator () && p->net ()) {
       p->net ()->erase_terminal (p);
     }
     m_terminal_refs [terminal_id] = Net::terminal_iterator ();
@@ -240,7 +218,7 @@ void Device::init_terminal_routes ()
 
   size_t n = device_class ()->terminal_definitions ().size ();
   for (size_t i = 0; i < n; ++i) {
-    m_reconnected_terminals [(unsigned int) i].push_back (DeviceReconnectedTerminal (0, (unsigned int) i));
+    m_reconnected_terminals [i].push_back (DeviceReconnectedTerminal (0, i));
   }
 }
 

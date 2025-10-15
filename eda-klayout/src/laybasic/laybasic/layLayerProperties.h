@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -48,7 +48,7 @@ namespace tl {
 
 namespace lay {
 
-class LayoutViewBase;
+class LayoutView;
 class LayerPropertiesList;
 class LayerPropertiesNode;
 
@@ -102,18 +102,6 @@ public:
   LayerProperties &operator= (const LayerProperties &d);
 
   /**
-   *  @brief Gets the generation number
-   *
-   *  The generation number changes whenever something is changed
-   *  with this layer properties object. "0" is reserved for the
-   *  "uninitialized" state.
-   */
-  size_t gen_id () const
-  {
-    return m_gen_id;
-  }
-
-  /**
    *  @brief Assignment alias for GSI binding
    */
   void assign_lp (const LayerProperties &d)
@@ -137,7 +125,7 @@ public:
   /**
    *  @brief Utility: compute the effective color from a color with brightness correction
    */
-  static tl::color_t brighter (tl::color_t in, int b);
+  static color_t brighter (color_t in, int b);
 
   /**
    *  @brief render the effective frame color 
@@ -145,7 +133,7 @@ public:
    *  The effective frame color is computed from the frame color brightness and the
    *  frame color.
    */
-  tl::color_t eff_frame_color (bool real) const;
+  color_t eff_frame_color (bool real) const;
 
   /**
    *  @brief render the effective fill color
@@ -153,7 +141,7 @@ public:
    *  The effective fill color is computed from the frame color brightness and the
    *  frame color.
    */
-  tl::color_t eff_fill_color (bool real) const;
+  color_t eff_fill_color (bool real) const;
 
   /**
    *  @brief render the effective frame color plus an additional brightness adjustment
@@ -161,7 +149,7 @@ public:
    *  This method returns the effective frame color with an additional brightness adjustment 
    *  applied.
    */
-  tl::color_t eff_frame_color_brighter (bool real, int plus_brightness) const;
+  color_t eff_frame_color_brighter (bool real, int plus_brightness) const;
 
   /**
    *  @brief render the effective frame color plus an additional brightness adjustment
@@ -169,20 +157,19 @@ public:
    *  This method returns the effective fill color with an additional brightness adjustment 
    *  applied.
    */
-  tl::color_t eff_fill_color_brighter (bool real, int plus_brightness) const;
+  color_t eff_fill_color_brighter (bool real, int plus_brightness) const;
 
   /**
    *  @brief Get the frame color
    *
    *  This method may return an invalid color if the color is not set.
    */
-  tl::color_t frame_color (bool real) const
+  color_t frame_color (bool real) const
   {
     if (real) {
       ensure_visual_realized ();
       return m_frame_color_real;
     } else {
-      refresh ();
       return m_frame_color;
     }
   }
@@ -193,9 +180,8 @@ public:
    *  To clear the frame color, pass 0 to this method. Valid colors have the
    *  upper 8 bits set.
    */
-  void set_frame_color_code (tl::color_t c)
+  void set_frame_color_code (color_t c)
   {
-    refresh ();
     if (m_frame_color != c) {
       m_frame_color = c;
       need_realize (nr_visual);
@@ -205,7 +191,7 @@ public:
   /**
    *  @brief Set the frame color to the given value
    */
-  void set_frame_color (tl::color_t c)
+  void set_frame_color (color_t c)
   {
     set_frame_color_code (c | 0xff000000);
   }
@@ -231,13 +217,12 @@ public:
    *
    *  This method may return an invalid color if the color is not set.
    */
-  tl::color_t fill_color (bool real) const
+  color_t fill_color (bool real) const
   {
     if (real) {
       ensure_visual_realized ();
       return m_fill_color_real;
     } else {
-      refresh ();
       return m_fill_color;
     }
   }
@@ -248,9 +233,8 @@ public:
    *  To clear the fill color, pass 0 to this method. Valid colors have the
    *  upper 8 bits set.
    */
-  void set_fill_color_code (tl::color_t c)
+  void set_fill_color_code (color_t c)
   {
-    refresh ();
     if (m_fill_color != c) {
       m_fill_color = c;
       need_realize (nr_visual);
@@ -260,7 +244,7 @@ public:
   /**
    *  @brief Set the fill color to the given value
    */
-  void set_fill_color (tl::color_t c)
+  void set_fill_color (color_t c)
   {
     set_fill_color_code (c | 0xff000000);
   }
@@ -288,7 +272,6 @@ public:
    */
   void set_frame_brightness (int b)
   {
-    refresh ();
     if (m_frame_brightness != b) {
       m_frame_brightness = b;
       need_realize (nr_visual);
@@ -304,7 +287,6 @@ public:
       ensure_visual_realized ();
       return m_frame_brightness_real;
     } else {
-      refresh ();
       return m_frame_brightness;
     }
   }
@@ -316,7 +298,6 @@ public:
    */
   void set_fill_brightness (int b)
   {
-    refresh ();
     if (m_fill_brightness != b) {
       m_fill_brightness = b;
       need_realize (nr_visual);
@@ -334,7 +315,6 @@ public:
       ensure_visual_realized ();
       return m_fill_brightness_real;
     } else {
-      refresh ();
       return m_fill_brightness;
     }
   }
@@ -344,7 +324,6 @@ public:
    */
   void set_dither_pattern (int index)
   {
-    refresh ();
     if (m_dither_pattern != index) {
       m_dither_pattern = index;
       need_realize (nr_visual);
@@ -374,7 +353,6 @@ public:
       ensure_visual_realized ();
       return m_dither_pattern_real;
     } else {
-      refresh ();
       return m_dither_pattern;
     }
   }
@@ -400,7 +378,6 @@ public:
    */
   void set_line_style (int index)
   {
-    refresh ();
     if (m_line_style != index) {
       m_line_style = index;
       need_realize (nr_visual);
@@ -430,7 +407,6 @@ public:
       ensure_visual_realized ();
       return m_line_style_real;
     } else {
-      refresh ();
       return m_line_style;
     }
   }
@@ -456,7 +432,6 @@ public:
    */
   void set_valid (bool v)
   {
-    refresh ();
     if (m_valid != v) {
       m_valid = v;
       need_realize (nr_visual);
@@ -472,7 +447,6 @@ public:
       ensure_visual_realized ();
       return m_valid_real;
     } else {
-      refresh ();
       return m_valid;
     }
   }
@@ -482,7 +456,6 @@ public:
    */
   void set_visible (bool v)
   {
-    refresh ();
     if (m_visible != v) {
       m_visible = v;
       need_realize (nr_visual);
@@ -498,13 +471,12 @@ public:
       ensure_visual_realized ();
       return m_visible_real;
     } else {
-      refresh ();
       return m_visible;
     }
   }
 
   /**
-   *  @brief Returns true, if the layer is showing "something"
+   *  @brief Return true, if the layer is showing "something"
    *
    *  A layer "shows something" if it is visible and it displays some information,
    *  either shapes or cell boxes. Invalid layers, i.e. such that have a layer selection
@@ -551,7 +523,6 @@ public:
    */
   void set_transparent (bool t)
   {
-    refresh ();
     if (m_transparent != t) {
       m_transparent = t;
       need_realize (nr_visual);
@@ -567,7 +538,6 @@ public:
       ensure_visual_realized ();
       return m_transparent_real;
     } else {
-      refresh ();
       return m_transparent;
     }
   }
@@ -577,7 +547,6 @@ public:
    */
   void set_width (int w)
   {
-    refresh ();
     if (m_width != w) {
       m_width = w;
       need_realize (nr_visual);
@@ -593,7 +562,6 @@ public:
       ensure_visual_realized ();
       return m_width_real;
     } else {
-      refresh ();
       return m_width;
     }
   }
@@ -603,7 +571,6 @@ public:
    */
   void set_marked (bool t)
   {
-    refresh ();
     if (m_marked != t) {
       m_marked = t;
       need_realize (nr_visual);
@@ -619,7 +586,6 @@ public:
       ensure_visual_realized ();
       return m_marked_real;
     } else {
-      refresh ();
       return m_marked;
     }
   }
@@ -629,7 +595,6 @@ public:
    */
   void set_animation (int a)
   {
-    refresh ();
     if (m_animation != a) {
       m_animation = a;
       need_realize (nr_visual);
@@ -645,7 +610,6 @@ public:
       ensure_visual_realized ();
       return m_animation_real;
     } else {
-      refresh ();
       return m_animation;
     }
   }
@@ -659,7 +623,6 @@ public:
       ensure_visual_realized ();
       return m_xfill_real;
     } else {
-      refresh ();
       return m_xfill;
     }
   }
@@ -674,7 +637,6 @@ public:
    */
   void set_name (const std::string &n)
   {
-    refresh ();
     if (m_name != n) {
       m_name = n;
       need_realize (nr_meta);
@@ -686,7 +648,6 @@ public:
    */
   const std::string &name () const
   {
-    refresh ();
     return m_name;
   }
   
@@ -700,7 +661,7 @@ public:
    *  If it is set to false, the view's always_show_source attribute with determine whether the source is 
    *  shown.
    */
-  std::string display_string (const lay::LayoutViewBase *view, bool real, bool always_with_source = false) const;
+  std::string display_string (const lay::LayoutView *view, bool real, bool always_with_source = false) const;
   
   /**
    *  @brief The source specification 
@@ -717,7 +678,7 @@ public:
    *
    *  This method may throw an exception if the specification
    *  is not valid. In order to make the layer usable, the properties
-   *  object must be "realized" with respect to a LayoutViewBase object.
+   *  object must be "realized" with respect to a LayoutView object.
    */
   void set_source (const std::string &s);
   
@@ -725,7 +686,7 @@ public:
    *  @brief Load the source specification 
    *
    *  In order to make the layer usable, the properties
-   *  object must be "realized" with respect to a LayoutViewBase object.
+   *  object must be "realized" with respect to a LayoutView object.
    */
   void set_source (const lay::ParsedLayerSource &s);
   
@@ -738,7 +699,6 @@ public:
       ensure_source_realized ();
       return m_source_real;
     } else {
-      refresh ();
       return m_source;
     }
   }
@@ -844,8 +804,8 @@ public:
   /**
    *  @brief Adaptors required for the XML reader
    */
-  tl::color_t frame_color_loc () const        { return frame_color (false);      }
-  tl::color_t fill_color_loc () const         { return fill_color (false);       }
+  color_t frame_color_loc () const            { return frame_color (false);      }
+  color_t fill_color_loc () const             { return fill_color (false);       }
   int frame_brightness_loc () const           { return frame_brightness (false); }
   int fill_brightness_loc () const            { return fill_brightness (false);  }
   int dither_pattern_loc () const             { return dither_pattern (false);   }
@@ -887,7 +847,12 @@ protected:
    *
    *  @param view The view the properties refer to or 0 if there is no view.
    */
-  void do_realize (const LayoutViewBase *view) const;
+  void do_realize (const LayoutView *view) const;
+
+  /** 
+   *  @brief Tell the children that a realize of the visual properties is needed
+   */
+  virtual void need_realize (unsigned int flags, bool force = false);
 
   /** 
    *  @brief Tell, if a realize of the visual properties is needed
@@ -905,38 +870,12 @@ protected:
     return m_realize_needed_source;
   }
 
-  /**
-   *  @brief Marks the properties object as modified
-   *
-   *  This will basically increment the generation count.
-   *  This method is implied when calling "needs_realize".
-   */
-  void touch ();
-
-  /**
-   *  @brief Tells the children that a realize of the visual properties is needed
-   *  This is also the "forward sync" for the LayerPropertiesNodeRef.
-   */
-  virtual void need_realize (unsigned int flags, bool force = false);
-
-  /**
-   *  @brief indicates a change of the collapsed/expanded state
-   */
-  virtual void expanded_state_changed ();
-
-  /**
-   *  @brief Fetches the current status from the original properties for the LayerPropertiesNodeRef implementation
-   */
-  virtual void refresh () const { }
-
 private:
-  //  the generation number
-  size_t m_gen_id;
   //  display styles
-  tl::color_t m_frame_color;
-  mutable tl::color_t m_frame_color_real;
-  tl::color_t m_fill_color;
-  mutable tl::color_t m_fill_color_real;
+  color_t m_frame_color;
+  mutable color_t m_frame_color_real;
+  color_t m_fill_color;
+  mutable color_t m_fill_color_real;
   int m_frame_brightness;
   mutable int m_frame_brightness_real;
   int m_fill_brightness;
@@ -1075,25 +1014,10 @@ public:
   }
 
   /**
-   *  @brief Sets the expanded state of the layer properties tree node
-   */
-  void set_expanded (bool ex);
-
-  /**
-   *  @brief Gets the expanded state of the layer properties node
-   */
-  bool expanded () const
-  {
-    refresh ();
-    return m_expanded;
-  }
-
-  /**
    *  @brief Child layers: begin iterator
    */
   const_iterator begin_children () const
   {
-    refresh ();
     return m_children.begin ();
   }
   
@@ -1102,7 +1026,6 @@ public:
    */
   const_iterator end_children () const
   {
-    refresh ();
     return m_children.end ();
   }
   
@@ -1111,7 +1034,6 @@ public:
    */
   iterator begin_children ()
   {
-    refresh ();
     return m_children.begin ();
   }
   
@@ -1120,7 +1042,6 @@ public:
    */
   iterator end_children () 
   {
-    refresh ();
     return m_children.end ();
   }
 
@@ -1182,30 +1103,21 @@ public:
    *  @return A bbox in micron units
    */
   db::DBox bbox () const;
-
-  /**
-   *  @brief Computes the overall box of this layer
-   *
-   *  This is not a layer specific box, but an all-layer box,
-   *  including transformations (if specified).
-   *  This box is equivalent to the box delivered by
-   *  a cell frame layer.
-   */
-  db::DBox overall_bbox () const;
-
+  
   /**
    *  @brief Attach to a view
    *
    *  This method attaches the properties node and it's children to a view.
    *  This enables the node to realize itself against the view, i.e.
    *  compute the actual property selection set.
+   *  This method is supposed to be 
    */
-  void attach_view (LayoutViewBase *view, unsigned int list_index);
+  void attach_view (LayoutView *view, unsigned int list_index);
 
   /**
    *  @brief Gets the layout view the node lives in
    */
-  LayoutViewBase *view () const;
+  LayoutView *view () const;
 
   /**
    *  @brief Gets the index of the layer properties list that node lives in
@@ -1236,21 +1148,14 @@ public:
   virtual void realize_source () const;
   virtual void realize_visual () const;
 
-  void set_expanded_silent (bool ex)
-  {
-    m_expanded = ex;
-  }
-
 protected: 
   virtual void need_realize (unsigned int flags, bool force);
-  virtual void expanded_state_changed ();
   void set_parent (const LayerPropertiesNode *);
 
 private:
   //  A reference to the view 
-  tl::weak_ptr<lay::LayoutViewBase> mp_view;
+  tl::weak_ptr<lay::LayoutView> mp_view;
   unsigned int m_list_index;
-  bool m_expanded;
   //  the parent node
   tl::weak_ptr<LayerPropertiesNode> mp_parent;
   //  the list of children
@@ -1947,12 +1852,12 @@ public:
    *  "load" automatically attaches the view.
    *  This method has the side effect of recomputing the layer source parameters.
    */
-  void attach_view (LayoutViewBase *view, unsigned int list_index);
+  void attach_view (lay::LayoutView *view, unsigned int list_index);
 
   /**
    *  @brief Gets the layout view this list is attached to
    */
-  lay::LayoutViewBase *view () const;
+  lay::LayoutView *view () const;
 
   /**
    *  @brief Gets the layout list
@@ -1960,7 +1865,7 @@ public:
   unsigned int list_index () const;
 
 private:
-  tl::weak_ptr<lay::LayoutViewBase> mp_view;
+  tl::weak_ptr<lay::LayoutView> mp_view;
   unsigned int m_list_index;
   layer_list m_layer_properties;
   lay::DitherPattern m_dither_pattern;
@@ -1977,10 +1882,6 @@ private:
  *  a node's property will update the properties in the view as well.
  *  Second, changes in the node's hierarchy will be reflected in the
  *  view's layer hierarchy too.
- *
- *  The implementation is based on a synchronized mirror copy of the
- *  original node. This is not quite efficient and cumbersome. In the
- *  future, this may be replaced by a simple reference.
  */
 class LAYBASIC_PUBLIC LayerPropertiesNodeRef
   : public LayerPropertiesNode
@@ -2043,11 +1944,8 @@ public:
 private:
   LayerPropertiesConstIterator m_iter;
   tl::weak_ptr<LayerPropertiesNode> mp_node;
-  size_t m_synched_gen_id;
 
-  virtual void need_realize (unsigned int flags, bool force);
-  virtual void expanded_state_changed ();
-  virtual void refresh () const;
+  void need_realize (unsigned int flags, bool force);
 };
 
 }

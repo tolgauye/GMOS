@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -45,6 +45,7 @@
 #include <QTransform>
 #include "gsiQt.h"
 #include "gsiQtGuiCommon.h"
+#include "gsiDeclQtGuiTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -63,25 +64,6 @@ static void _call_f_clear_0 (const qt_gsi::GenericMethod * /*decl*/, void *cls, 
   __SUPPRESS_UNUSED_WARNING(args);
   __SUPPRESS_UNUSED_WARNING(ret);
   ((QBitmap *)cls)->clear ();
-}
-
-
-// QBitmap &QBitmap::operator=(const QBitmap &other)
-
-
-static void _init_f_operator_eq__1999 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("other");
-  decl->add_arg<const QBitmap & > (argspec_0);
-  decl->set_return<QBitmap & > ();
-}
-
-static void _call_f_operator_eq__1999 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const QBitmap &arg1 = gsi::arg_reader<const QBitmap & >() (args, heap);
-  ret.write<QBitmap & > ((QBitmap &)((QBitmap *)cls)->operator= (arg1));
 }
 
 
@@ -215,7 +197,6 @@ namespace gsi
 static gsi::Methods methods_QBitmap () {
   gsi::Methods methods;
   methods += new qt_gsi::GenericMethod ("clear", "@brief Method void QBitmap::clear()\n", false, &_init_f_clear_0, &_call_f_clear_0);
-  methods += new qt_gsi::GenericMethod ("assign", "@brief Method QBitmap &QBitmap::operator=(const QBitmap &other)\n", false, &_init_f_operator_eq__1999, &_call_f_operator_eq__1999);
   methods += new qt_gsi::GenericMethod ("assign", "@brief Method QBitmap &QBitmap::operator=(const QPixmap &)\n", false, &_init_f_operator_eq__2017, &_call_f_operator_eq__2017);
   methods += new qt_gsi::GenericMethod ("swap", "@brief Method void QBitmap::swap(QBitmap &other)\n", false, &_init_f_swap_1304, &_call_f_swap_1304);
   methods += new qt_gsi::GenericMethod ("transformed", "@brief Method QBitmap QBitmap::transformed(const QMatrix &)\n", true, &_init_f_transformed_c2023, &_call_f_transformed_c2023);
@@ -274,12 +255,6 @@ public:
 
   //  [adaptor ctor] QBitmap::QBitmap(const QString &fileName, const char *format)
   QBitmap_Adaptor(const QString &fileName, const char *format) : QBitmap(fileName, format)
-  {
-    qt_gsi::QtObjectBase::init (this);
-  }
-
-  //  [adaptor ctor] QBitmap::QBitmap(const QBitmap &other)
-  QBitmap_Adaptor(const QBitmap &other) : QBitmap(other)
   {
     qt_gsi::QtObjectBase::init (this);
   }
@@ -450,7 +425,7 @@ static void _init_ctor_QBitmap_Adaptor_3648 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("fileName");
   decl->add_arg<const QString & > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("format", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("format", true, "0");
   decl->add_arg<const char * > (argspec_1);
   decl->set_return_new<QBitmap_Adaptor> ();
 }
@@ -460,26 +435,8 @@ static void _call_ctor_QBitmap_Adaptor_3648 (const qt_gsi::GenericStaticMethod *
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const QString &arg1 = gsi::arg_reader<const QString & >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (0, heap);
   ret.write<QBitmap_Adaptor *> (new QBitmap_Adaptor (arg1, arg2));
-}
-
-
-//  Constructor QBitmap::QBitmap(const QBitmap &other) (adaptor class)
-
-static void _init_ctor_QBitmap_Adaptor_1999 (qt_gsi::GenericStaticMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("other");
-  decl->add_arg<const QBitmap & > (argspec_0);
-  decl->set_return_new<QBitmap_Adaptor> ();
-}
-
-static void _call_ctor_QBitmap_Adaptor_1999 (const qt_gsi::GenericStaticMethod * /*decl*/, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const QBitmap &arg1 = gsi::arg_reader<const QBitmap & >() (args, heap);
-  ret.write<QBitmap_Adaptor *> (new QBitmap_Adaptor (arg1));
 }
 
 
@@ -624,18 +581,17 @@ static gsi::Methods methods_QBitmap_Adaptor () {
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QBitmap::QBitmap(int w, int h)\nThis method creates an object of class QBitmap.", &_init_ctor_QBitmap_Adaptor_1426, &_call_ctor_QBitmap_Adaptor_1426);
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QBitmap::QBitmap(const QSize &)\nThis method creates an object of class QBitmap.", &_init_ctor_QBitmap_Adaptor_1805, &_call_ctor_QBitmap_Adaptor_1805);
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QBitmap::QBitmap(const QString &fileName, const char *format)\nThis method creates an object of class QBitmap.", &_init_ctor_QBitmap_Adaptor_3648, &_call_ctor_QBitmap_Adaptor_3648);
-  methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QBitmap::QBitmap(const QBitmap &other)\nThis method creates an object of class QBitmap.", &_init_ctor_QBitmap_Adaptor_1999, &_call_ctor_QBitmap_Adaptor_1999);
   methods += new qt_gsi::GenericStaticMethod ("*fromImageInPlace", "@brief Method QPixmap QBitmap::fromImageInPlace(QImage &image, QFlags<Qt::ImageConversionFlag> flags)\nThis method is protected and can only be called from inside a derived class.", &_init_fp_fromImageInPlace_4442, &_call_fp_fromImageInPlace_4442);
-  methods += new qt_gsi::GenericMethod ("*initPainter", "@brief Virtual method void QBitmap::initPainter(QPainter *painter)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_initPainter_c1426_0, &_call_cbs_initPainter_c1426_0);
-  methods += new qt_gsi::GenericMethod ("*initPainter", "@hide", true, &_init_cbs_initPainter_c1426_0, &_call_cbs_initPainter_c1426_0, &_set_callback_cbs_initPainter_c1426_0);
-  methods += new qt_gsi::GenericMethod ("*metric", "@brief Virtual method int QBitmap::metric(QPaintDevice::PaintDeviceMetric)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_metric_c3445_0, &_call_cbs_metric_c3445_0);
-  methods += new qt_gsi::GenericMethod ("*metric", "@hide", true, &_init_cbs_metric_c3445_0, &_call_cbs_metric_c3445_0, &_set_callback_cbs_metric_c3445_0);
-  methods += new qt_gsi::GenericMethod ("paintEngine", "@brief Virtual method QPaintEngine *QBitmap::paintEngine()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_paintEngine_c0_0, &_call_cbs_paintEngine_c0_0);
-  methods += new qt_gsi::GenericMethod ("paintEngine", "@hide", true, &_init_cbs_paintEngine_c0_0, &_call_cbs_paintEngine_c0_0, &_set_callback_cbs_paintEngine_c0_0);
-  methods += new qt_gsi::GenericMethod ("*redirected", "@brief Virtual method QPaintDevice *QBitmap::redirected(QPoint *offset)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_redirected_c1225_0, &_call_cbs_redirected_c1225_0);
-  methods += new qt_gsi::GenericMethod ("*redirected", "@hide", true, &_init_cbs_redirected_c1225_0, &_call_cbs_redirected_c1225_0, &_set_callback_cbs_redirected_c1225_0);
-  methods += new qt_gsi::GenericMethod ("*sharedPainter", "@brief Virtual method QPainter *QBitmap::sharedPainter()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_sharedPainter_c0_0, &_call_cbs_sharedPainter_c0_0);
-  methods += new qt_gsi::GenericMethod ("*sharedPainter", "@hide", true, &_init_cbs_sharedPainter_c0_0, &_call_cbs_sharedPainter_c0_0, &_set_callback_cbs_sharedPainter_c0_0);
+  methods += new qt_gsi::GenericMethod ("*initPainter", "@hide", true, &_init_cbs_initPainter_c1426_0, &_call_cbs_initPainter_c1426_0);
+  methods += new qt_gsi::GenericMethod ("*initPainter", "@brief Virtual method void QBitmap::initPainter(QPainter *painter)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_initPainter_c1426_0, &_call_cbs_initPainter_c1426_0, &_set_callback_cbs_initPainter_c1426_0);
+  methods += new qt_gsi::GenericMethod ("*metric", "@hide", true, &_init_cbs_metric_c3445_0, &_call_cbs_metric_c3445_0);
+  methods += new qt_gsi::GenericMethod ("*metric", "@brief Virtual method int QBitmap::metric(QPaintDevice::PaintDeviceMetric)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_metric_c3445_0, &_call_cbs_metric_c3445_0, &_set_callback_cbs_metric_c3445_0);
+  methods += new qt_gsi::GenericMethod ("paintEngine", "@hide", true, &_init_cbs_paintEngine_c0_0, &_call_cbs_paintEngine_c0_0);
+  methods += new qt_gsi::GenericMethod ("paintEngine", "@brief Virtual method QPaintEngine *QBitmap::paintEngine()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_paintEngine_c0_0, &_call_cbs_paintEngine_c0_0, &_set_callback_cbs_paintEngine_c0_0);
+  methods += new qt_gsi::GenericMethod ("*redirected", "@hide", true, &_init_cbs_redirected_c1225_0, &_call_cbs_redirected_c1225_0);
+  methods += new qt_gsi::GenericMethod ("*redirected", "@brief Virtual method QPaintDevice *QBitmap::redirected(QPoint *offset)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_redirected_c1225_0, &_call_cbs_redirected_c1225_0, &_set_callback_cbs_redirected_c1225_0);
+  methods += new qt_gsi::GenericMethod ("*sharedPainter", "@hide", true, &_init_cbs_sharedPainter_c0_0, &_call_cbs_sharedPainter_c0_0);
+  methods += new qt_gsi::GenericMethod ("*sharedPainter", "@brief Virtual method QPainter *QBitmap::sharedPainter()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_sharedPainter_c0_0, &_call_cbs_sharedPainter_c0_0, &_set_callback_cbs_sharedPainter_c0_0);
   return methods;
 }
 

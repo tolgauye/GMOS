@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -36,6 +36,7 @@
 #include <QTimerEvent>
 #include "gsiQt.h"
 #include "gsiQtCoreCommon.h"
+#include "gsiDeclQtCoreTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -174,7 +175,7 @@ static void _init_f_tr_4013 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("s");
   decl->add_arg<const char * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("c", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("c", true, "__null");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("n", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -186,7 +187,7 @@ static void _call_f_tr_4013 (const qt_gsi::GenericStaticMethod * /*decl*/, gsi::
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (__null, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QAnimationDriver::tr (arg1, arg2, arg3));
 }
@@ -199,7 +200,7 @@ static void _init_f_trUtf8_4013 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("s");
   decl->add_arg<const char * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("c", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("c", true, "__null");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("n", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -211,7 +212,7 @@ static void _call_f_trUtf8_4013 (const qt_gsi::GenericStaticMethod * /*decl*/, g
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (__null, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QAnimationDriver::trUtf8 (arg1, arg2, arg3));
 }
@@ -231,7 +232,6 @@ static gsi::Methods methods_QAnimationDriver () {
   methods += new qt_gsi::GenericMethod (":startTime", "@brief Method qint64 QAnimationDriver::startTime()\n", true, &_init_f_startTime_c0, &_call_f_startTime_c0);
   methods += new qt_gsi::GenericMethod ("uninstall", "@brief Method void QAnimationDriver::uninstall()\n", false, &_init_f_uninstall_0, &_call_f_uninstall_0);
   methods += gsi::qt_signal<QObject * > ("destroyed(QObject *)", "destroyed", gsi::arg("arg1"), "@brief Signal declaration for QAnimationDriver::destroyed(QObject *)\nYou can bind a procedure to this signal.");
-  methods += gsi::qt_signal<const QString & > ("objectNameChanged(const QString &)", "objectNameChanged", gsi::arg("objectName"), "@brief Signal declaration for QAnimationDriver::objectNameChanged(const QString &objectName)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal ("started()", "started", "@brief Signal declaration for QAnimationDriver::started()\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal ("stopped()", "stopped", "@brief Signal declaration for QAnimationDriver::stopped()\nYou can bind a procedure to this signal.");
   methods += new qt_gsi::GenericStaticMethod ("tr", "@brief Static method QString QAnimationDriver::tr(const char *s, const char *c, int n)\nThis method is static and can be called without an instance.", &_init_f_tr_4013, &_call_f_tr_4013);
@@ -329,41 +329,34 @@ public:
     }
   }
 
-  //  [adaptor impl] bool QAnimationDriver::event(QEvent *event)
-  bool cbs_event_1217_0(QEvent *_event)
+  //  [adaptor impl] bool QAnimationDriver::event(QEvent *)
+  bool cbs_event_1217_0(QEvent *arg1)
   {
-    return QAnimationDriver::event(_event);
+    return QAnimationDriver::event(arg1);
   }
 
-  virtual bool event(QEvent *_event)
+  virtual bool event(QEvent *arg1)
   {
     if (cb_event_1217_0.can_issue()) {
-      return cb_event_1217_0.issue<QAnimationDriver_Adaptor, bool, QEvent *>(&QAnimationDriver_Adaptor::cbs_event_1217_0, _event);
+      return cb_event_1217_0.issue<QAnimationDriver_Adaptor, bool, QEvent *>(&QAnimationDriver_Adaptor::cbs_event_1217_0, arg1);
     } else {
-      return QAnimationDriver::event(_event);
+      return QAnimationDriver::event(arg1);
     }
   }
 
-  //  [adaptor impl] bool QAnimationDriver::eventFilter(QObject *watched, QEvent *event)
-  bool cbs_eventFilter_2411_0(QObject *watched, QEvent *event)
+  //  [adaptor impl] bool QAnimationDriver::eventFilter(QObject *, QEvent *)
+  bool cbs_eventFilter_2411_0(QObject *arg1, QEvent *arg2)
   {
-    return QAnimationDriver::eventFilter(watched, event);
+    return QAnimationDriver::eventFilter(arg1, arg2);
   }
 
-  virtual bool eventFilter(QObject *watched, QEvent *event)
+  virtual bool eventFilter(QObject *arg1, QEvent *arg2)
   {
     if (cb_eventFilter_2411_0.can_issue()) {
-      return cb_eventFilter_2411_0.issue<QAnimationDriver_Adaptor, bool, QObject *, QEvent *>(&QAnimationDriver_Adaptor::cbs_eventFilter_2411_0, watched, event);
+      return cb_eventFilter_2411_0.issue<QAnimationDriver_Adaptor, bool, QObject *, QEvent *>(&QAnimationDriver_Adaptor::cbs_eventFilter_2411_0, arg1, arg2);
     } else {
-      return QAnimationDriver::eventFilter(watched, event);
+      return QAnimationDriver::eventFilter(arg1, arg2);
     }
-  }
-
-  //  [emitter impl] void QAnimationDriver::objectNameChanged(const QString &objectName)
-  void emitter_QAnimationDriver_objectNameChanged_4567(const QString &objectName)
-  {
-    __SUPPRESS_UNUSED_WARNING (objectName);
-    throw tl::Exception ("Can't emit private signal 'void QAnimationDriver::objectNameChanged(const QString &objectName)'");
   }
 
   //  [emitter impl] void QAnimationDriver::started()
@@ -378,33 +371,33 @@ public:
     emit QAnimationDriver::stopped();
   }
 
-  //  [adaptor impl] void QAnimationDriver::childEvent(QChildEvent *event)
-  void cbs_childEvent_1701_0(QChildEvent *event)
+  //  [adaptor impl] void QAnimationDriver::childEvent(QChildEvent *)
+  void cbs_childEvent_1701_0(QChildEvent *arg1)
   {
-    QAnimationDriver::childEvent(event);
+    QAnimationDriver::childEvent(arg1);
   }
 
-  virtual void childEvent(QChildEvent *event)
+  virtual void childEvent(QChildEvent *arg1)
   {
     if (cb_childEvent_1701_0.can_issue()) {
-      cb_childEvent_1701_0.issue<QAnimationDriver_Adaptor, QChildEvent *>(&QAnimationDriver_Adaptor::cbs_childEvent_1701_0, event);
+      cb_childEvent_1701_0.issue<QAnimationDriver_Adaptor, QChildEvent *>(&QAnimationDriver_Adaptor::cbs_childEvent_1701_0, arg1);
     } else {
-      QAnimationDriver::childEvent(event);
+      QAnimationDriver::childEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QAnimationDriver::customEvent(QEvent *event)
-  void cbs_customEvent_1217_0(QEvent *event)
+  //  [adaptor impl] void QAnimationDriver::customEvent(QEvent *)
+  void cbs_customEvent_1217_0(QEvent *arg1)
   {
-    QAnimationDriver::customEvent(event);
+    QAnimationDriver::customEvent(arg1);
   }
 
-  virtual void customEvent(QEvent *event)
+  virtual void customEvent(QEvent *arg1)
   {
     if (cb_customEvent_1217_0.can_issue()) {
-      cb_customEvent_1217_0.issue<QAnimationDriver_Adaptor, QEvent *>(&QAnimationDriver_Adaptor::cbs_customEvent_1217_0, event);
+      cb_customEvent_1217_0.issue<QAnimationDriver_Adaptor, QEvent *>(&QAnimationDriver_Adaptor::cbs_customEvent_1217_0, arg1);
     } else {
-      QAnimationDriver::customEvent(event);
+      QAnimationDriver::customEvent(arg1);
     }
   }
 
@@ -453,18 +446,18 @@ public:
     }
   }
 
-  //  [adaptor impl] void QAnimationDriver::timerEvent(QTimerEvent *event)
-  void cbs_timerEvent_1730_0(QTimerEvent *event)
+  //  [adaptor impl] void QAnimationDriver::timerEvent(QTimerEvent *)
+  void cbs_timerEvent_1730_0(QTimerEvent *arg1)
   {
-    QAnimationDriver::timerEvent(event);
+    QAnimationDriver::timerEvent(arg1);
   }
 
-  virtual void timerEvent(QTimerEvent *event)
+  virtual void timerEvent(QTimerEvent *arg1)
   {
     if (cb_timerEvent_1730_0.can_issue()) {
-      cb_timerEvent_1730_0.issue<QAnimationDriver_Adaptor, QTimerEvent *>(&QAnimationDriver_Adaptor::cbs_timerEvent_1730_0, event);
+      cb_timerEvent_1730_0.issue<QAnimationDriver_Adaptor, QTimerEvent *>(&QAnimationDriver_Adaptor::cbs_timerEvent_1730_0, arg1);
     } else {
-      QAnimationDriver::timerEvent(event);
+      QAnimationDriver::timerEvent(arg1);
     }
   }
 
@@ -486,7 +479,7 @@ QAnimationDriver_Adaptor::~QAnimationDriver_Adaptor() { }
 
 static void _init_ctor_QAnimationDriver_Adaptor_1302 (qt_gsi::GenericStaticMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("parent", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("parent", true, "0");
   decl->add_arg<QObject * > (argspec_0);
   decl->set_return_new<QAnimationDriver_Adaptor> ();
 }
@@ -495,7 +488,7 @@ static void _call_ctor_QAnimationDriver_Adaptor_1302 (const qt_gsi::GenericStati
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (nullptr, heap);
+  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (0, heap);
   ret.write<QAnimationDriver_Adaptor *> (new QAnimationDriver_Adaptor (arg1));
 }
 
@@ -539,11 +532,11 @@ static void _call_fp_advanceAnimation_986 (const qt_gsi::GenericMethod * /*decl*
 }
 
 
-// void QAnimationDriver::childEvent(QChildEvent *event)
+// void QAnimationDriver::childEvent(QChildEvent *)
 
 static void _init_cbs_childEvent_1701_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QChildEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -563,11 +556,11 @@ static void _set_callback_cbs_childEvent_1701_0 (void *cls, const gsi::Callback 
 }
 
 
-// void QAnimationDriver::customEvent(QEvent *event)
+// void QAnimationDriver::customEvent(QEvent *)
 
 static void _init_cbs_customEvent_1217_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -591,7 +584,7 @@ static void _set_callback_cbs_customEvent_1217_0 (void *cls, const gsi::Callback
 
 static void _init_emitter_destroyed_1302 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("arg1", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("arg1", true, "0");
   decl->add_arg<QObject * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -600,7 +593,7 @@ static void _call_emitter_destroyed_1302 (const qt_gsi::GenericMethod * /*decl*/
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (nullptr, heap);
+  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (0, heap);
   ((QAnimationDriver_Adaptor *)cls)->emitter_QAnimationDriver_destroyed_1302 (arg1);
 }
 
@@ -648,11 +641,11 @@ static void _set_callback_cbs_elapsed_c0_0 (void *cls, const gsi::Callback &cb)
 }
 
 
-// bool QAnimationDriver::event(QEvent *event)
+// bool QAnimationDriver::event(QEvent *)
 
 static void _init_cbs_event_1217_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QEvent * > (argspec_0);
   decl->set_return<bool > ();
 }
@@ -671,13 +664,13 @@ static void _set_callback_cbs_event_1217_0 (void *cls, const gsi::Callback &cb)
 }
 
 
-// bool QAnimationDriver::eventFilter(QObject *watched, QEvent *event)
+// bool QAnimationDriver::eventFilter(QObject *, QEvent *)
 
 static void _init_cbs_eventFilter_2411_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("watched");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QObject * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("event");
+  static gsi::ArgSpecBase argspec_1 ("arg2");
   decl->add_arg<QEvent * > (argspec_1);
   decl->set_return<bool > ();
 }
@@ -712,24 +705,6 @@ static void _call_fp_isSignalConnected_c2394 (const qt_gsi::GenericMethod * /*de
   tl::Heap heap;
   const QMetaMethod &arg1 = gsi::arg_reader<const QMetaMethod & >() (args, heap);
   ret.write<bool > ((bool)((QAnimationDriver_Adaptor *)cls)->fp_QAnimationDriver_isSignalConnected_c2394 (arg1));
-}
-
-
-// emitter void QAnimationDriver::objectNameChanged(const QString &objectName)
-
-static void _init_emitter_objectNameChanged_4567 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("objectName");
-  decl->add_arg<const QString & > (argspec_0);
-  decl->set_return<void > ();
-}
-
-static void _call_emitter_objectNameChanged_4567 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs & /*ret*/) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const QString &arg1 = gsi::arg_reader<const QString & >() (args, heap);
-  ((QAnimationDriver_Adaptor *)cls)->emitter_QAnimationDriver_objectNameChanged_4567 (arg1);
 }
 
 
@@ -847,11 +822,11 @@ static void _call_emitter_stopped_0 (const qt_gsi::GenericMethod * /*decl*/, voi
 }
 
 
-// void QAnimationDriver::timerEvent(QTimerEvent *event)
+// void QAnimationDriver::timerEvent(QTimerEvent *)
 
 static void _init_cbs_timerEvent_1730_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QTimerEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -879,35 +854,34 @@ gsi::Class<QAnimationDriver> &qtdecl_QAnimationDriver ();
 static gsi::Methods methods_QAnimationDriver_Adaptor () {
   gsi::Methods methods;
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QAnimationDriver::QAnimationDriver(QObject *parent)\nThis method creates an object of class QAnimationDriver.", &_init_ctor_QAnimationDriver_Adaptor_1302, &_call_ctor_QAnimationDriver_Adaptor_1302);
-  methods += new qt_gsi::GenericMethod ("advance", "@brief Virtual method void QAnimationDriver::advance()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_advance_0_0, &_call_cbs_advance_0_0);
-  methods += new qt_gsi::GenericMethod ("advance", "@hide", false, &_init_cbs_advance_0_0, &_call_cbs_advance_0_0, &_set_callback_cbs_advance_0_0);
+  methods += new qt_gsi::GenericMethod ("advance", "@hide", false, &_init_cbs_advance_0_0, &_call_cbs_advance_0_0);
+  methods += new qt_gsi::GenericMethod ("advance", "@brief Virtual method void QAnimationDriver::advance()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_advance_0_0, &_call_cbs_advance_0_0, &_set_callback_cbs_advance_0_0);
   methods += new qt_gsi::GenericMethod ("*advanceAnimation", "@brief Method void QAnimationDriver::advanceAnimation(qint64 timeStep)\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_advanceAnimation_986, &_call_fp_advanceAnimation_986);
-  methods += new qt_gsi::GenericMethod ("*childEvent", "@brief Virtual method void QAnimationDriver::childEvent(QChildEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0);
-  methods += new qt_gsi::GenericMethod ("*childEvent", "@hide", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0, &_set_callback_cbs_childEvent_1701_0);
-  methods += new qt_gsi::GenericMethod ("*customEvent", "@brief Virtual method void QAnimationDriver::customEvent(QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*customEvent", "@hide", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0, &_set_callback_cbs_customEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*childEvent", "@hide", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0);
+  methods += new qt_gsi::GenericMethod ("*childEvent", "@brief Virtual method void QAnimationDriver::childEvent(QChildEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0, &_set_callback_cbs_childEvent_1701_0);
+  methods += new qt_gsi::GenericMethod ("*customEvent", "@hide", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*customEvent", "@brief Virtual method void QAnimationDriver::customEvent(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0, &_set_callback_cbs_customEvent_1217_0);
   methods += new qt_gsi::GenericMethod ("emit_destroyed", "@brief Emitter for signal void QAnimationDriver::destroyed(QObject *)\nCall this method to emit this signal.", false, &_init_emitter_destroyed_1302, &_call_emitter_destroyed_1302);
-  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@brief Virtual method void QAnimationDriver::disconnectNotify(const QMetaMethod &signal)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0);
-  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@hide", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0, &_set_callback_cbs_disconnectNotify_2394_0);
-  methods += new qt_gsi::GenericMethod ("elapsed", "@brief Virtual method qint64 QAnimationDriver::elapsed()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_elapsed_c0_0, &_call_cbs_elapsed_c0_0);
-  methods += new qt_gsi::GenericMethod ("elapsed", "@hide", true, &_init_cbs_elapsed_c0_0, &_call_cbs_elapsed_c0_0, &_set_callback_cbs_elapsed_c0_0);
-  methods += new qt_gsi::GenericMethod ("event", "@brief Virtual method bool QAnimationDriver::event(QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0);
-  methods += new qt_gsi::GenericMethod ("event", "@hide", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0, &_set_callback_cbs_event_1217_0);
-  methods += new qt_gsi::GenericMethod ("eventFilter", "@brief Virtual method bool QAnimationDriver::eventFilter(QObject *watched, QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0);
-  methods += new qt_gsi::GenericMethod ("eventFilter", "@hide", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0, &_set_callback_cbs_eventFilter_2411_0);
+  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@hide", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0);
+  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@brief Virtual method void QAnimationDriver::disconnectNotify(const QMetaMethod &signal)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0, &_set_callback_cbs_disconnectNotify_2394_0);
+  methods += new qt_gsi::GenericMethod ("elapsed", "@hide", true, &_init_cbs_elapsed_c0_0, &_call_cbs_elapsed_c0_0);
+  methods += new qt_gsi::GenericMethod ("elapsed", "@brief Virtual method qint64 QAnimationDriver::elapsed()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_elapsed_c0_0, &_call_cbs_elapsed_c0_0, &_set_callback_cbs_elapsed_c0_0);
+  methods += new qt_gsi::GenericMethod ("event", "@hide", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0);
+  methods += new qt_gsi::GenericMethod ("event", "@brief Virtual method bool QAnimationDriver::event(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0, &_set_callback_cbs_event_1217_0);
+  methods += new qt_gsi::GenericMethod ("eventFilter", "@hide", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0);
+  methods += new qt_gsi::GenericMethod ("eventFilter", "@brief Virtual method bool QAnimationDriver::eventFilter(QObject *, QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0, &_set_callback_cbs_eventFilter_2411_0);
   methods += new qt_gsi::GenericMethod ("*isSignalConnected", "@brief Method bool QAnimationDriver::isSignalConnected(const QMetaMethod &signal)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_isSignalConnected_c2394, &_call_fp_isSignalConnected_c2394);
-  methods += new qt_gsi::GenericMethod ("emit_objectNameChanged", "@brief Emitter for signal void QAnimationDriver::objectNameChanged(const QString &objectName)\nCall this method to emit this signal.", false, &_init_emitter_objectNameChanged_4567, &_call_emitter_objectNameChanged_4567);
   methods += new qt_gsi::GenericMethod ("*receivers", "@brief Method int QAnimationDriver::receivers(const char *signal)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_receivers_c1731, &_call_fp_receivers_c1731);
   methods += new qt_gsi::GenericMethod ("*sender", "@brief Method QObject *QAnimationDriver::sender()\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_sender_c0, &_call_fp_sender_c0);
   methods += new qt_gsi::GenericMethod ("*senderSignalIndex", "@brief Method int QAnimationDriver::senderSignalIndex()\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_senderSignalIndex_c0, &_call_fp_senderSignalIndex_c0);
-  methods += new qt_gsi::GenericMethod ("*start", "@brief Virtual method void QAnimationDriver::start()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_start_0_0, &_call_cbs_start_0_0);
-  methods += new qt_gsi::GenericMethod ("*start", "@hide", false, &_init_cbs_start_0_0, &_call_cbs_start_0_0, &_set_callback_cbs_start_0_0);
+  methods += new qt_gsi::GenericMethod ("*start", "@hide", false, &_init_cbs_start_0_0, &_call_cbs_start_0_0);
+  methods += new qt_gsi::GenericMethod ("*start", "@brief Virtual method void QAnimationDriver::start()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_start_0_0, &_call_cbs_start_0_0, &_set_callback_cbs_start_0_0);
   methods += new qt_gsi::GenericMethod ("emit_started", "@brief Emitter for signal void QAnimationDriver::started()\nCall this method to emit this signal.", false, &_init_emitter_started_0, &_call_emitter_started_0);
-  methods += new qt_gsi::GenericMethod ("*stop", "@brief Virtual method void QAnimationDriver::stop()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_stop_0_0, &_call_cbs_stop_0_0);
-  methods += new qt_gsi::GenericMethod ("*stop", "@hide", false, &_init_cbs_stop_0_0, &_call_cbs_stop_0_0, &_set_callback_cbs_stop_0_0);
+  methods += new qt_gsi::GenericMethod ("*stop", "@hide", false, &_init_cbs_stop_0_0, &_call_cbs_stop_0_0);
+  methods += new qt_gsi::GenericMethod ("*stop", "@brief Virtual method void QAnimationDriver::stop()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_stop_0_0, &_call_cbs_stop_0_0, &_set_callback_cbs_stop_0_0);
   methods += new qt_gsi::GenericMethod ("emit_stopped", "@brief Emitter for signal void QAnimationDriver::stopped()\nCall this method to emit this signal.", false, &_init_emitter_stopped_0, &_call_emitter_stopped_0);
-  methods += new qt_gsi::GenericMethod ("*timerEvent", "@brief Virtual method void QAnimationDriver::timerEvent(QTimerEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0);
-  methods += new qt_gsi::GenericMethod ("*timerEvent", "@hide", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0, &_set_callback_cbs_timerEvent_1730_0);
+  methods += new qt_gsi::GenericMethod ("*timerEvent", "@hide", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0);
+  methods += new qt_gsi::GenericMethod ("*timerEvent", "@brief Virtual method void QAnimationDriver::timerEvent(QTimerEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0, &_set_callback_cbs_timerEvent_1730_0);
   return methods;
 }
 

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -29,16 +29,16 @@
 #include "layPlugin.h"
 #include "layViewObject.h"
 #include "layMarker.h"
-#include "layEditorUtils.h"
 #include "dbLayout.h"
 #include "dbShape.h"
 #include "dbClipboard.h"
+#include "edtUtils.h"
 
 #include <set>
 #include <vector>
 
 namespace lay {
-  class Dispatcher;
+  class PluginRoot;
   class FlattenInstOptionsDialog;
 }
 
@@ -48,11 +48,9 @@ class Service;
 class EditorOptionsPages;
 class EditorOptionsPage;
 class RoundCornerOptionsDialog;
-class AreaAndPerimeterDialog;
 class MakeCellOptionsDialog;
 class MakeArrayOptionsDialog;
 class AlignOptionsDialog;
-class DistributeOptionsDialog;
 
 // -------------------------------------------------------------
 
@@ -65,7 +63,7 @@ public:
   /**
    *  @brief The constructor
    */
-  MainService (db::Manager *manager, lay::LayoutViewBase *view, lay::Dispatcher *root);
+  MainService (db::Manager *manager, lay::LayoutView *view, lay::PluginRoot *root);
 
   /**
    *  @brief The destructor
@@ -75,7 +73,7 @@ public:
   /**
    *  @brief Access to the view object
    */
-  lay::LayoutViewBase *view () const
+  lay::LayoutView *view () const
   {
     return mp_view;
   }
@@ -91,14 +89,14 @@ public:
   void cm_descend ();
 
   /**
-   *  @brief Descend to selection and make cell current top
-   */
-  void cm_descend_into ();
-
-  /**
    *  @brief Ascend one level
    */
   void cm_ascend ();
+
+  /**
+   *  @brief Edit object options
+   */
+  void cm_edit_options ();
 
   /**
    *  @brief Change the layer of the shapes in the selection
@@ -109,11 +107,6 @@ public:
    *  @brief Round corners on selection
    */
   void cm_round_corners ();
-
-  /**
-   *  @brief Show area and perimeter of selection
-   */
-  void cm_area_perimeter ();
 
   /**
    *  @brief Convert selection to PCell
@@ -161,11 +154,6 @@ public:
   void cm_align ();
 
   /**
-   *  @brief Distribute the selected shapes and instances
-   */
-  void cm_distribute ();
-
-  /**
    *  @brief Flatten instances
    */
   void cm_flatten_insts ();
@@ -200,30 +188,15 @@ public:
    */
   void cm_tap ();
 
-  /**
-   *  @brief Via operation (up or down)
-   */
-  void cm_via ();
-
-  /**
-   *  @brief Via operation (down)
-   */
-  void cm_via_down ();
-
-  /**
-   *  @brief Via operation (up)
-   */
-  void cm_via_up ();
-
-  /**
+  /** 
    *  @brief "paste" operation
    */
   virtual void paste ();
 
 private:
   //  The layout view that this service is attached to
-  lay::LayoutViewBase *mp_view;
-  lay::Dispatcher *mp_root;
+  lay::LayoutView *mp_view;
+  lay::PluginRoot *mp_root;
   bool m_needs_update;
 
   //  options 
@@ -232,13 +205,6 @@ private:
   int m_align_hmode;
   int m_align_vmode;
   bool m_align_visible_layers;
-  bool m_hdistribute;
-  int m_distribute_hmode;
-  double m_distribute_hpitch, m_distribute_hspace;
-  bool m_vdistribute;
-  int m_distribute_vmode;
-  double m_distribute_vpitch, m_distribute_vspace;
-  bool m_distribute_visible_layers;
   std::string m_make_cell_name;
   int m_origin_mode_x, m_origin_mode_y;
   bool m_origin_visible_layers_for_bbox;
@@ -247,29 +213,19 @@ private:
   double m_router, m_rinner;
   unsigned int m_npoints;
   bool m_undo_before_apply;
-#if defined(HAVE_QT)
   edt::RoundCornerOptionsDialog *mp_round_corners_dialog;
-  edt::AreaAndPerimeterDialog *mp_area_and_perimeter_dialog;
   edt::AlignOptionsDialog *mp_align_options_dialog;
-  edt::DistributeOptionsDialog *mp_distribute_options_dialog;
   lay::FlattenInstOptionsDialog *mp_flatten_inst_options_dialog;
   edt::MakeCellOptionsDialog *mp_make_cell_options_dialog;
   edt::MakeArrayOptionsDialog *mp_make_array_options_dialog;
-#endif
 
-  void via_impl (int dir);
   void boolean_op (int mode);
   void check_no_guiding_shapes ();
-  void descend (bool make_new_top);
-#if defined(HAVE_QT)
   edt::RoundCornerOptionsDialog *round_corners_dialog ();
-  edt::AreaAndPerimeterDialog *area_and_perimeter_dialog ();
   edt::AlignOptionsDialog *align_options_dialog ();
-  edt::DistributeOptionsDialog *distribute_options_dialog ();
   lay::FlattenInstOptionsDialog *flatten_inst_options_dialog ();
   edt::MakeCellOptionsDialog *make_cell_options_dialog ();
   edt::MakeArrayOptionsDialog *make_array_options_dialog ();
-#endif
 };
 
 }

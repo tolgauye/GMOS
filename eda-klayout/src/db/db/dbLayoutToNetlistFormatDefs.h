@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -46,82 +46,55 @@ namespace db
  *  The file follows the declaration-before-use principle
  *  (circuits before subcircuits, nets before use ...)
  *
- *  Main body:
- *    [version|description|unit|top|layer|connect|global|circuit|class|device|message-entry|any]*
+ *  Global statements:
  *
- *  [version]:
  *    version(<number>)             - file format version [short key: V]
- *
- *  [description]:
  *    description(<text>)           - an arbitrary description text [short key: B]
- *
- *  [unit]:
  *    unit(<unit>)                  - specifies the database unit [short key: U]
- *
- *  [top]:
  *    top(<circuit>)                - specifies the name of the top circuit [short key: W]
- *
- *  [layer]:
  *    layer(<name> <source-spec>?)  - define a layer [short key: L]
- *
- *  [connect]:
  *    connect(<layer1> <name> ...)  - connects layer1 with the following layers [short key: C]
- *    softconnect(<upper> <lower> ...)
- *                                  - specifies soft connection between lower and upper layer [short key: CS]
- *
- *  [global]:
  *    global(<layer> <net-name> ...)
- *                                  - connects the shapes of the layer with the given global nets [short key: G]
- *    softglobal(<layer> <net-name> ...)
- *                                  - soft-connects the shapes of the layer with the given global net [shoft key: GS]
- *
- *  [circuit]:
+ *                                  - connects the shapes of the layer with the given global
+ *                                    nets [short key: G]
  *    circuit(<name> [circuit-def]) - circuit (cell) [short key: X]
- *
- *  [class]:
- *    class(<name> <template> <full-specs>? [template-def])  - a device class definition (template: RES,CAP,...) [short key: K]
- *                                    "fill_specs" is an optional value (0 or 1), indicating that all parameters and terminals
- *                                    are listed. For "1", the reader will remove all specs from the template before rebuilding
- *                                    them.
- *
- *  [device]:
- *    device(<name> <class> [device-abstract-terminal|any]*)
+ *    class(<name> <template>)      - a device class definition (template: RES,CAP,...) [short key: K]
+ *    device(<name> <class> [device-abstract-def])
  *                                  - device abstract [short key: D]
  *
  *  [circuit-def]:
- *    [boundary|property|circuit-net|circuit-pin|circuit-device|subcircuit|any]*
  *
- *  [circuit-net]:
- *    net(<id> [name]? [geometries-def])
+ *    [boundary-def]
+ *
+ *    [property-def]*
+ *
+ *    net(<id> [name]? [property-def]* [geometry-def]*)
  *                                  - net geometry [short key: N]
  *                                    A net declaration shall be there also if no geometry
  *                                    is present. The ID is a numerical shortcut for the net.
- *
- *  [circuit-pin]:
  *    pin(<net-id> [name]?)         - outgoing pin connection [short key: P]
  *                                    Statement order specifies pin order.
- *
- *  [circuit-device]:
- *    device(<id> <abstract-or-class> [name|trans|combined-device|terminal-route|param|device-terminal|any]*)
+ *    device(<id> <abstract-or-class> [name]? [combined-device]* [terminal-route]* [device-def])
  *                                  - device with connections [short key: D]
- *
- *  [subcircuit]:
- *    circuit(<id> [name]? [property|trans|subcircuit-pin|any])
+ *    circuit(<id> [name]? [subcircuit-def])
  *                                  - subcircuit with connections [short key: X]
  *
- *  [boundary]:
- *    polygon([coord] ...) |        - defines a polygon [short key: Q]
+ *  [boundary-def]:
+ *
+ *    polygon([coord] ...)          - defines a polygon [short key: Q]
  *                                    "*" for <x> or <y> means take previous
  *    rect([coord] [coord])         - defines a rectangle [short key: R]
  *                                    coordinates are bottom/left and top/right
  *
  *  [combined-device]:
- *    device(<abstract> [trans])
+ *
+ *    device(<abstract> [trans-def])
  *                                  - specifies an additional device component
  *                                    (for combined devices) with abstract <abstract>
  *                                    and offset dx, dy.
  *
  *  [terminal-route]:
+ *
  *    connect(<device-index> <outer-terminal-name> <inner-terminal-name>)
  *                                  - connects the outer terminal with the terminal
  *                                    of the device component with <device-index>:
@@ -129,90 +102,57 @@ namespace db
  *                                    device etc.
  *
  *  [name]:
+ *
  *    name(<name>)                  - specify net name [short key: I]
  *
- *  [geometries-def]:
- *    [property|polygon|rect|text|any]*
+ *  [property-def]:
  *
- *  [property]:
  *    property(<prop-name> <prop-value>)
  *                                  - specifies a property value/key pair [short key: F]
  *                                    prop-name and prop-value are variant specifications
  *                                    in klayout notation: #x is an integer, ##y a floating-point
  *                                    value, a word or quoted literal is a string.
  *
- *  [polygon]:
+ *  [geometry-def]:
+ *
  *    polygon(<layer> [coord] ...)  - defines a polygon [short key: Q]
  *                                    "*" for <x> or <y> means take previous
- *
- *  [rect]:
  *    rect(<layer> [coord] [coord]) - defines a rectangle [short key: R]
  *                                    coordinates are bottom/left and top/right
  *
- *  [text]:
- *    text(<layer> <string> [coord]) - defines a label [short key: J]
+ *  [coord]
  *
- *  [coord]:
  *    <x> <y>                       - absolute coordinates
  *    (<x> <y>)                     - relative coordinates (reference is reset to 0,0
  *                                    for each net or terminal in device abstract)
  *
- *  [template-def]:
- *    [template-param|template-terminal|any]*
+ *  [device-abstract-def]:
  *
- *  [template-param]:
- *    param(<name> <primary> <default-value>)    - defines a template parameter [short key: E]
- *                                    ('primary' is a value: 0 or 1, 'default_value' is a float)
- *
- *  [template-terminal]:
- *    terminal(<name>)              - defines a terminal [short key: T]
- *
- *  [device-abstract-terminal]:
- *    terminal(<terminal-name> [geometries-def])
+ *    terminal(<terminal-name> [geometry-def]*)
  *                                  - specifies the terminal geometry [short key: T]
  *
- *  [param]:
+ *  [device-def]:
+ *
+ *    [property-def]*               - user properties
+ *    [trans-def]                   - location of the device
+ *                                    must be before terminal
  *    param(<name> <value>)         - defines a parameter [short key: E]
- *
- *  [device-terminal]:
  *    terminal(<terminal-name> <net-id>)
- *                                  - specifies connection of the terminal with a net (short key: T)
+ *                                  - specifies connection of the terminal with
+ *                                    a net (short key: T)
  *
- *  [subcircuit-pin]:
+ *  [subcircuit-def]:
+ *
+ *    [property-def]*               - user properties
+ *    [trans-def]                   - location of the subcircuit
  *    pin(<pin-id> <net-id>)        - specifies connection of the pin with a net [short key: P]
  *
- *  [trans]:
+ *  [trans-def]:
+ *
  *    location(<x> <y>)             - location of the instance [short key: Y]
  *    rotation(<angle>)             - rotation angle (in degree, default is 0) [short key: O]
  *    mirror                        - if specified, the instance is mirrored before rotation [short key: M]
  *    scale(<mag>)                  - magnification (default is 1) [short key: S]
- *
- *  [message-entry]:
- *    message([severity] [message|message-geometry|message-cell|message-category|any]*) - message entry [short key: H]
- *
- *  [message]:
- *    description(<name>)           - message text [short key: B]
- *
- *  [message-geometry]:
- *    polygon(<string>)             - message geometry polygon in string-serialized form [short key: Q]
- *
- *  [message-cell]:
- *    cell(<name>)                  - message cell [short key: C]
- *
- *  [message-category]:
- *    cat(<name> <name>?)           - message category with optional description [short key: X]
- *
- *  [severity]:
- *    info |                        - [short key: I]
- *    warning |                     - [short key: W]
- *    error                         - [short key: E]
- *
- *  [any]:
- *    * |
- *    <token> |
- *    <token> ( [any]* ) |
- *    <float> |
- *    <quoted-string>
  */
 
 namespace l2n_std_format
@@ -228,9 +168,7 @@ namespace l2n_std_format
     static std::string layer_key;
     static std::string class_key;
     static std::string connect_key;
-    static std::string softconnect_key;
     static std::string global_key;
-    static std::string softglobal_key;
     static std::string circuit_key;
     static std::string net_key;
     static std::string name_key;
@@ -239,7 +177,6 @@ namespace l2n_std_format
     static std::string subcircuit_key;
     static std::string polygon_key;
     static std::string rect_key;
-    static std::string text_key;
     static std::string terminal_key;
     static std::string abstract_key;
     static std::string param_key;
@@ -248,14 +185,8 @@ namespace l2n_std_format
     static std::string mirror_key;
     static std::string scale_key;
     static std::string pin_key;
-    static std::string message_key;
     static std::string indent1;
     static std::string indent2;
-    static std::string info_severity_key;
-    static std::string warning_severity_key;
-    static std::string error_severity_key;
-    static std::string cell_key;
-    static std::string cat_key;
   };
 
   struct DB_PUBLIC LongKeys
@@ -269,9 +200,7 @@ namespace l2n_std_format
     static std::string layer_key;
     static std::string class_key;
     static std::string connect_key;
-    static std::string softconnect_key;
     static std::string global_key;
-    static std::string softglobal_key;
     static std::string circuit_key;
     static std::string net_key;
     static std::string name_key;
@@ -280,7 +209,6 @@ namespace l2n_std_format
     static std::string subcircuit_key;
     static std::string polygon_key;
     static std::string rect_key;
-    static std::string text_key;
     static std::string terminal_key;
     static std::string abstract_key;
     static std::string param_key;
@@ -289,14 +217,8 @@ namespace l2n_std_format
     static std::string mirror_key;
     static std::string scale_key;
     static std::string pin_key;
-    static std::string message_key;
     static std::string indent1;
     static std::string indent2;
-    static std::string info_severity_key;
-    static std::string warning_severity_key;
-    static std::string error_severity_key;
-    static std::string cell_key;
-    static std::string cat_key;
   };
 
   template <bool Short> struct DB_PUBLIC keys;

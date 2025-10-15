@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -36,6 +36,7 @@
 #include <QTimerEvent>
 #include "gsiQt.h"
 #include "gsiQtCoreCommon.h"
+#include "gsiDeclQtCoreTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -303,21 +304,6 @@ static void _call_f_group_c0 (const qt_gsi::GenericMethod * /*decl*/, void *cls,
 }
 
 
-// bool QSettings::isAtomicSyncRequired()
-
-
-static void _init_f_isAtomicSyncRequired_c0 (qt_gsi::GenericMethod *decl)
-{
-  decl->set_return<bool > ();
-}
-
-static void _call_f_isAtomicSyncRequired_c0 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  ret.write<bool > ((bool)((QSettings *)cls)->isAtomicSyncRequired ());
-}
-
-
 // bool QSettings::isWritable()
 
 
@@ -400,26 +386,6 @@ static void _call_f_setArrayIndex_767 (const qt_gsi::GenericMethod * /*decl*/, v
   int arg1 = gsi::arg_reader<int >() (args, heap);
   __SUPPRESS_UNUSED_WARNING(ret);
   ((QSettings *)cls)->setArrayIndex (arg1);
-}
-
-
-// void QSettings::setAtomicSyncRequired(bool enable)
-
-
-static void _init_f_setAtomicSyncRequired_864 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("enable");
-  decl->add_arg<bool > (argspec_0);
-  decl->set_return<void > ();
-}
-
-static void _call_f_setAtomicSyncRequired_864 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  bool arg1 = gsi::arg_reader<bool >() (args, heap);
-  __SUPPRESS_UNUSED_WARNING(ret);
-  ((QSettings *)cls)->setAtomicSyncRequired (arg1);
 }
 
 
@@ -627,7 +593,7 @@ static void _init_f_tr_4013 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("s");
   decl->add_arg<const char * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("c", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("c", true, "__null");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("n", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -639,7 +605,7 @@ static void _call_f_tr_4013 (const qt_gsi::GenericStaticMethod * /*decl*/, gsi::
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (__null, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QSettings::tr (arg1, arg2, arg3));
 }
@@ -652,7 +618,7 @@ static void _init_f_trUtf8_4013 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("s");
   decl->add_arg<const char * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("c", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("c", true, "__null");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("n", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -664,7 +630,7 @@ static void _call_f_trUtf8_4013 (const qt_gsi::GenericStaticMethod * /*decl*/, g
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (__null, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QSettings::trUtf8 (arg1, arg2, arg3));
 }
@@ -691,20 +657,17 @@ static gsi::Methods methods_QSettings () {
   methods += new qt_gsi::GenericMethod ("fileName", "@brief Method QString QSettings::fileName()\n", true, &_init_f_fileName_c0, &_call_f_fileName_c0);
   methods += new qt_gsi::GenericMethod ("format", "@brief Method QSettings::Format QSettings::format()\n", true, &_init_f_format_c0, &_call_f_format_c0);
   methods += new qt_gsi::GenericMethod ("group", "@brief Method QString QSettings::group()\n", true, &_init_f_group_c0, &_call_f_group_c0);
-  methods += new qt_gsi::GenericMethod ("isAtomicSyncRequired?|:atomicSyncRequired", "@brief Method bool QSettings::isAtomicSyncRequired()\n", true, &_init_f_isAtomicSyncRequired_c0, &_call_f_isAtomicSyncRequired_c0);
   methods += new qt_gsi::GenericMethod ("isWritable?", "@brief Method bool QSettings::isWritable()\n", true, &_init_f_isWritable_c0, &_call_f_isWritable_c0);
   methods += new qt_gsi::GenericMethod ("organizationName", "@brief Method QString QSettings::organizationName()\n", true, &_init_f_organizationName_c0, &_call_f_organizationName_c0);
   methods += new qt_gsi::GenericMethod ("remove", "@brief Method void QSettings::remove(const QString &key)\n", false, &_init_f_remove_2025, &_call_f_remove_2025);
   methods += new qt_gsi::GenericMethod ("scope", "@brief Method QSettings::Scope QSettings::scope()\n", true, &_init_f_scope_c0, &_call_f_scope_c0);
   methods += new qt_gsi::GenericMethod ("setArrayIndex", "@brief Method void QSettings::setArrayIndex(int i)\n", false, &_init_f_setArrayIndex_767, &_call_f_setArrayIndex_767);
-  methods += new qt_gsi::GenericMethod ("setAtomicSyncRequired|atomicSyncRequired=", "@brief Method void QSettings::setAtomicSyncRequired(bool enable)\n", false, &_init_f_setAtomicSyncRequired_864, &_call_f_setAtomicSyncRequired_864);
   methods += new qt_gsi::GenericMethod ("setFallbacksEnabled|fallbacksEnabled=", "@brief Method void QSettings::setFallbacksEnabled(bool b)\n", false, &_init_f_setFallbacksEnabled_864, &_call_f_setFallbacksEnabled_864);
   methods += new qt_gsi::GenericMethod ("setValue", "@brief Method void QSettings::setValue(const QString &key, const QVariant &value)\n", false, &_init_f_setValue_4036, &_call_f_setValue_4036);
   methods += new qt_gsi::GenericMethod ("status", "@brief Method QSettings::Status QSettings::status()\n", true, &_init_f_status_c0, &_call_f_status_c0);
   methods += new qt_gsi::GenericMethod ("sync", "@brief Method void QSettings::sync()\n", false, &_init_f_sync_0, &_call_f_sync_0);
   methods += new qt_gsi::GenericMethod ("value", "@brief Method QVariant QSettings::value(const QString &key, const QVariant &defaultValue)\n", true, &_init_f_value_c4036, &_call_f_value_c4036);
   methods += gsi::qt_signal<QObject * > ("destroyed(QObject *)", "destroyed", gsi::arg("arg1"), "@brief Signal declaration for QSettings::destroyed(QObject *)\nYou can bind a procedure to this signal.");
-  methods += gsi::qt_signal<const QString & > ("objectNameChanged(const QString &)", "objectNameChanged", gsi::arg("objectName"), "@brief Signal declaration for QSettings::objectNameChanged(const QString &objectName)\nYou can bind a procedure to this signal.");
   methods += new qt_gsi::GenericStaticMethod (":defaultFormat", "@brief Static method QSettings::Format QSettings::defaultFormat()\nThis method is static and can be called without an instance.", &_init_f_defaultFormat_0, &_call_f_defaultFormat_0);
   methods += new qt_gsi::GenericStaticMethod ("setDefaultFormat|defaultFormat=", "@brief Static method void QSettings::setDefaultFormat(QSettings::Format format)\nThis method is static and can be called without an instance.", &_init_f_setDefaultFormat_2099, &_call_f_setDefaultFormat_2099);
   methods += new qt_gsi::GenericStaticMethod ("setPath", "@brief Static method void QSettings::setPath(QSettings::Format format, QSettings::Scope scope, const QString &path)\nThis method is static and can be called without an instance.", &_init_f_setPath_5896, &_call_f_setPath_5896);
@@ -836,55 +799,48 @@ public:
     emit QSettings::destroyed(arg1);
   }
 
-  //  [adaptor impl] bool QSettings::eventFilter(QObject *watched, QEvent *event)
-  bool cbs_eventFilter_2411_0(QObject *watched, QEvent *event)
+  //  [adaptor impl] bool QSettings::eventFilter(QObject *, QEvent *)
+  bool cbs_eventFilter_2411_0(QObject *arg1, QEvent *arg2)
   {
-    return QSettings::eventFilter(watched, event);
+    return QSettings::eventFilter(arg1, arg2);
   }
 
-  virtual bool eventFilter(QObject *watched, QEvent *event)
+  virtual bool eventFilter(QObject *arg1, QEvent *arg2)
   {
     if (cb_eventFilter_2411_0.can_issue()) {
-      return cb_eventFilter_2411_0.issue<QSettings_Adaptor, bool, QObject *, QEvent *>(&QSettings_Adaptor::cbs_eventFilter_2411_0, watched, event);
+      return cb_eventFilter_2411_0.issue<QSettings_Adaptor, bool, QObject *, QEvent *>(&QSettings_Adaptor::cbs_eventFilter_2411_0, arg1, arg2);
     } else {
-      return QSettings::eventFilter(watched, event);
+      return QSettings::eventFilter(arg1, arg2);
     }
   }
 
-  //  [emitter impl] void QSettings::objectNameChanged(const QString &objectName)
-  void emitter_QSettings_objectNameChanged_4567(const QString &objectName)
+  //  [adaptor impl] void QSettings::childEvent(QChildEvent *)
+  void cbs_childEvent_1701_0(QChildEvent *arg1)
   {
-    __SUPPRESS_UNUSED_WARNING (objectName);
-    throw tl::Exception ("Can't emit private signal 'void QSettings::objectNameChanged(const QString &objectName)'");
+    QSettings::childEvent(arg1);
   }
 
-  //  [adaptor impl] void QSettings::childEvent(QChildEvent *event)
-  void cbs_childEvent_1701_0(QChildEvent *event)
-  {
-    QSettings::childEvent(event);
-  }
-
-  virtual void childEvent(QChildEvent *event)
+  virtual void childEvent(QChildEvent *arg1)
   {
     if (cb_childEvent_1701_0.can_issue()) {
-      cb_childEvent_1701_0.issue<QSettings_Adaptor, QChildEvent *>(&QSettings_Adaptor::cbs_childEvent_1701_0, event);
+      cb_childEvent_1701_0.issue<QSettings_Adaptor, QChildEvent *>(&QSettings_Adaptor::cbs_childEvent_1701_0, arg1);
     } else {
-      QSettings::childEvent(event);
+      QSettings::childEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QSettings::customEvent(QEvent *event)
-  void cbs_customEvent_1217_0(QEvent *event)
+  //  [adaptor impl] void QSettings::customEvent(QEvent *)
+  void cbs_customEvent_1217_0(QEvent *arg1)
   {
-    QSettings::customEvent(event);
+    QSettings::customEvent(arg1);
   }
 
-  virtual void customEvent(QEvent *event)
+  virtual void customEvent(QEvent *arg1)
   {
     if (cb_customEvent_1217_0.can_issue()) {
-      cb_customEvent_1217_0.issue<QSettings_Adaptor, QEvent *>(&QSettings_Adaptor::cbs_customEvent_1217_0, event);
+      cb_customEvent_1217_0.issue<QSettings_Adaptor, QEvent *>(&QSettings_Adaptor::cbs_customEvent_1217_0, arg1);
     } else {
-      QSettings::customEvent(event);
+      QSettings::customEvent(arg1);
     }
   }
 
@@ -918,18 +874,18 @@ public:
     }
   }
 
-  //  [adaptor impl] void QSettings::timerEvent(QTimerEvent *event)
-  void cbs_timerEvent_1730_0(QTimerEvent *event)
+  //  [adaptor impl] void QSettings::timerEvent(QTimerEvent *)
+  void cbs_timerEvent_1730_0(QTimerEvent *arg1)
   {
-    QSettings::timerEvent(event);
+    QSettings::timerEvent(arg1);
   }
 
-  virtual void timerEvent(QTimerEvent *event)
+  virtual void timerEvent(QTimerEvent *arg1)
   {
     if (cb_timerEvent_1730_0.can_issue()) {
-      cb_timerEvent_1730_0.issue<QSettings_Adaptor, QTimerEvent *>(&QSettings_Adaptor::cbs_timerEvent_1730_0, event);
+      cb_timerEvent_1730_0.issue<QSettings_Adaptor, QTimerEvent *>(&QSettings_Adaptor::cbs_timerEvent_1730_0, arg1);
     } else {
-      QSettings::timerEvent(event);
+      QSettings::timerEvent(arg1);
     }
   }
 
@@ -951,7 +907,7 @@ static void _init_ctor_QSettings_Adaptor_5136 (qt_gsi::GenericStaticMethod *decl
   decl->add_arg<const QString & > (argspec_0);
   static gsi::ArgSpecBase argspec_1 ("application", true, "QString()");
   decl->add_arg<const QString & > (argspec_1);
-  static gsi::ArgSpecBase argspec_2 ("parent", true, "nullptr");
+  static gsi::ArgSpecBase argspec_2 ("parent", true, "0");
   decl->add_arg<QObject * > (argspec_2);
   decl->set_return_new<QSettings_Adaptor> ();
 }
@@ -962,7 +918,7 @@ static void _call_ctor_QSettings_Adaptor_5136 (const qt_gsi::GenericStaticMethod
   tl::Heap heap;
   const QString &arg1 = gsi::arg_reader<const QString & >() (args, heap);
   const QString &arg2 = args ? gsi::arg_reader<const QString & >() (args, heap) : gsi::arg_maker<const QString & >() (QString(), heap);
-  QObject *arg3 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (nullptr, heap);
+  QObject *arg3 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (0, heap);
   ret.write<QSettings_Adaptor *> (new QSettings_Adaptor (arg1, arg2, arg3));
 }
 
@@ -977,7 +933,7 @@ static void _init_ctor_QSettings_Adaptor_7016 (qt_gsi::GenericStaticMethod *decl
   decl->add_arg<const QString & > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("application", true, "QString()");
   decl->add_arg<const QString & > (argspec_2);
-  static gsi::ArgSpecBase argspec_3 ("parent", true, "nullptr");
+  static gsi::ArgSpecBase argspec_3 ("parent", true, "0");
   decl->add_arg<QObject * > (argspec_3);
   decl->set_return_new<QSettings_Adaptor> ();
 }
@@ -989,7 +945,7 @@ static void _call_ctor_QSettings_Adaptor_7016 (const qt_gsi::GenericStaticMethod
   const qt_gsi::Converter<QSettings::Scope>::target_type & arg1 = gsi::arg_reader<const qt_gsi::Converter<QSettings::Scope>::target_type & >() (args, heap);
   const QString &arg2 = gsi::arg_reader<const QString & >() (args, heap);
   const QString &arg3 = args ? gsi::arg_reader<const QString & >() (args, heap) : gsi::arg_maker<const QString & >() (QString(), heap);
-  QObject *arg4 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (nullptr, heap);
+  QObject *arg4 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (0, heap);
   ret.write<QSettings_Adaptor *> (new QSettings_Adaptor (qt_gsi::QtToCppAdaptor<QSettings::Scope>(arg1).cref(), arg2, arg3, arg4));
 }
 
@@ -1006,7 +962,7 @@ static void _init_ctor_QSettings_Adaptor_9007 (qt_gsi::GenericStaticMethod *decl
   decl->add_arg<const QString & > (argspec_2);
   static gsi::ArgSpecBase argspec_3 ("application", true, "QString()");
   decl->add_arg<const QString & > (argspec_3);
-  static gsi::ArgSpecBase argspec_4 ("parent", true, "nullptr");
+  static gsi::ArgSpecBase argspec_4 ("parent", true, "0");
   decl->add_arg<QObject * > (argspec_4);
   decl->set_return_new<QSettings_Adaptor> ();
 }
@@ -1019,7 +975,7 @@ static void _call_ctor_QSettings_Adaptor_9007 (const qt_gsi::GenericStaticMethod
   const qt_gsi::Converter<QSettings::Scope>::target_type & arg2 = gsi::arg_reader<const qt_gsi::Converter<QSettings::Scope>::target_type & >() (args, heap);
   const QString &arg3 = gsi::arg_reader<const QString & >() (args, heap);
   const QString &arg4 = args ? gsi::arg_reader<const QString & >() (args, heap) : gsi::arg_maker<const QString & >() (QString(), heap);
-  QObject *arg5 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (nullptr, heap);
+  QObject *arg5 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (0, heap);
   ret.write<QSettings_Adaptor *> (new QSettings_Adaptor (qt_gsi::QtToCppAdaptor<QSettings::Format>(arg1).cref(), qt_gsi::QtToCppAdaptor<QSettings::Scope>(arg2).cref(), arg3, arg4, arg5));
 }
 
@@ -1032,7 +988,7 @@ static void _init_ctor_QSettings_Adaptor_5210 (qt_gsi::GenericStaticMethod *decl
   decl->add_arg<const QString & > (argspec_0);
   static gsi::ArgSpecBase argspec_1 ("format");
   decl->add_arg<const qt_gsi::Converter<QSettings::Format>::target_type & > (argspec_1);
-  static gsi::ArgSpecBase argspec_2 ("parent", true, "nullptr");
+  static gsi::ArgSpecBase argspec_2 ("parent", true, "0");
   decl->add_arg<QObject * > (argspec_2);
   decl->set_return_new<QSettings_Adaptor> ();
 }
@@ -1043,7 +999,7 @@ static void _call_ctor_QSettings_Adaptor_5210 (const qt_gsi::GenericStaticMethod
   tl::Heap heap;
   const QString &arg1 = gsi::arg_reader<const QString & >() (args, heap);
   const qt_gsi::Converter<QSettings::Format>::target_type & arg2 = gsi::arg_reader<const qt_gsi::Converter<QSettings::Format>::target_type & >() (args, heap);
-  QObject *arg3 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (nullptr, heap);
+  QObject *arg3 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (0, heap);
   ret.write<QSettings_Adaptor *> (new QSettings_Adaptor (arg1, qt_gsi::QtToCppAdaptor<QSettings::Format>(arg2).cref(), arg3));
 }
 
@@ -1052,7 +1008,7 @@ static void _call_ctor_QSettings_Adaptor_5210 (const qt_gsi::GenericStaticMethod
 
 static void _init_ctor_QSettings_Adaptor_1302 (qt_gsi::GenericStaticMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("parent", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("parent", true, "0");
   decl->add_arg<QObject * > (argspec_0);
   decl->set_return_new<QSettings_Adaptor> ();
 }
@@ -1061,16 +1017,16 @@ static void _call_ctor_QSettings_Adaptor_1302 (const qt_gsi::GenericStaticMethod
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (nullptr, heap);
+  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (0, heap);
   ret.write<QSettings_Adaptor *> (new QSettings_Adaptor (arg1));
 }
 
 
-// void QSettings::childEvent(QChildEvent *event)
+// void QSettings::childEvent(QChildEvent *)
 
 static void _init_cbs_childEvent_1701_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QChildEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1090,11 +1046,11 @@ static void _set_callback_cbs_childEvent_1701_0 (void *cls, const gsi::Callback 
 }
 
 
-// void QSettings::customEvent(QEvent *event)
+// void QSettings::customEvent(QEvent *)
 
 static void _init_cbs_customEvent_1217_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1118,7 +1074,7 @@ static void _set_callback_cbs_customEvent_1217_0 (void *cls, const gsi::Callback
 
 static void _init_emitter_destroyed_1302 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("arg1", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("arg1", true, "0");
   decl->add_arg<QObject * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1127,7 +1083,7 @@ static void _call_emitter_destroyed_1302 (const qt_gsi::GenericMethod * /*decl*/
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (nullptr, heap);
+  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (0, heap);
   ((QSettings_Adaptor *)cls)->emitter_QSettings_destroyed_1302 (arg1);
 }
 
@@ -1179,13 +1135,13 @@ static void _set_callback_cbs_event_1217_0 (void *cls, const gsi::Callback &cb)
 }
 
 
-// bool QSettings::eventFilter(QObject *watched, QEvent *event)
+// bool QSettings::eventFilter(QObject *, QEvent *)
 
 static void _init_cbs_eventFilter_2411_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("watched");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QObject * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("event");
+  static gsi::ArgSpecBase argspec_1 ("arg2");
   decl->add_arg<QEvent * > (argspec_1);
   decl->set_return<bool > ();
 }
@@ -1220,24 +1176,6 @@ static void _call_fp_isSignalConnected_c2394 (const qt_gsi::GenericMethod * /*de
   tl::Heap heap;
   const QMetaMethod &arg1 = gsi::arg_reader<const QMetaMethod & >() (args, heap);
   ret.write<bool > ((bool)((QSettings_Adaptor *)cls)->fp_QSettings_isSignalConnected_c2394 (arg1));
-}
-
-
-// emitter void QSettings::objectNameChanged(const QString &objectName)
-
-static void _init_emitter_objectNameChanged_4567 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("objectName");
-  decl->add_arg<const QString & > (argspec_0);
-  decl->set_return<void > ();
-}
-
-static void _call_emitter_objectNameChanged_4567 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs & /*ret*/) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const QString &arg1 = gsi::arg_reader<const QString & >() (args, heap);
-  ((QSettings_Adaptor *)cls)->emitter_QSettings_objectNameChanged_4567 (arg1);
 }
 
 
@@ -1287,11 +1225,11 @@ static void _call_fp_senderSignalIndex_c0 (const qt_gsi::GenericMethod * /*decl*
 }
 
 
-// void QSettings::timerEvent(QTimerEvent *event)
+// void QSettings::timerEvent(QTimerEvent *)
 
 static void _init_cbs_timerEvent_1730_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QTimerEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1323,24 +1261,23 @@ static gsi::Methods methods_QSettings_Adaptor () {
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QSettings::QSettings(QSettings::Format format, QSettings::Scope scope, const QString &organization, const QString &application, QObject *parent)\nThis method creates an object of class QSettings.", &_init_ctor_QSettings_Adaptor_9007, &_call_ctor_QSettings_Adaptor_9007);
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QSettings::QSettings(const QString &fileName, QSettings::Format format, QObject *parent)\nThis method creates an object of class QSettings.", &_init_ctor_QSettings_Adaptor_5210, &_call_ctor_QSettings_Adaptor_5210);
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QSettings::QSettings(QObject *parent)\nThis method creates an object of class QSettings.", &_init_ctor_QSettings_Adaptor_1302, &_call_ctor_QSettings_Adaptor_1302);
-  methods += new qt_gsi::GenericMethod ("*childEvent", "@brief Virtual method void QSettings::childEvent(QChildEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0);
-  methods += new qt_gsi::GenericMethod ("*childEvent", "@hide", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0, &_set_callback_cbs_childEvent_1701_0);
-  methods += new qt_gsi::GenericMethod ("*customEvent", "@brief Virtual method void QSettings::customEvent(QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*customEvent", "@hide", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0, &_set_callback_cbs_customEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*childEvent", "@hide", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0);
+  methods += new qt_gsi::GenericMethod ("*childEvent", "@brief Virtual method void QSettings::childEvent(QChildEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0, &_set_callback_cbs_childEvent_1701_0);
+  methods += new qt_gsi::GenericMethod ("*customEvent", "@hide", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*customEvent", "@brief Virtual method void QSettings::customEvent(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0, &_set_callback_cbs_customEvent_1217_0);
   methods += new qt_gsi::GenericMethod ("emit_destroyed", "@brief Emitter for signal void QSettings::destroyed(QObject *)\nCall this method to emit this signal.", false, &_init_emitter_destroyed_1302, &_call_emitter_destroyed_1302);
-  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@brief Virtual method void QSettings::disconnectNotify(const QMetaMethod &signal)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0);
-  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@hide", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0, &_set_callback_cbs_disconnectNotify_2394_0);
-  methods += new qt_gsi::GenericMethod ("*event", "@brief Virtual method bool QSettings::event(QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0);
-  methods += new qt_gsi::GenericMethod ("*event", "@hide", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0, &_set_callback_cbs_event_1217_0);
-  methods += new qt_gsi::GenericMethod ("eventFilter", "@brief Virtual method bool QSettings::eventFilter(QObject *watched, QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0);
-  methods += new qt_gsi::GenericMethod ("eventFilter", "@hide", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0, &_set_callback_cbs_eventFilter_2411_0);
+  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@hide", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0);
+  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@brief Virtual method void QSettings::disconnectNotify(const QMetaMethod &signal)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0, &_set_callback_cbs_disconnectNotify_2394_0);
+  methods += new qt_gsi::GenericMethod ("*event", "@hide", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0);
+  methods += new qt_gsi::GenericMethod ("*event", "@brief Virtual method bool QSettings::event(QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0, &_set_callback_cbs_event_1217_0);
+  methods += new qt_gsi::GenericMethod ("eventFilter", "@hide", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0);
+  methods += new qt_gsi::GenericMethod ("eventFilter", "@brief Virtual method bool QSettings::eventFilter(QObject *, QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0, &_set_callback_cbs_eventFilter_2411_0);
   methods += new qt_gsi::GenericMethod ("*isSignalConnected", "@brief Method bool QSettings::isSignalConnected(const QMetaMethod &signal)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_isSignalConnected_c2394, &_call_fp_isSignalConnected_c2394);
-  methods += new qt_gsi::GenericMethod ("emit_objectNameChanged", "@brief Emitter for signal void QSettings::objectNameChanged(const QString &objectName)\nCall this method to emit this signal.", false, &_init_emitter_objectNameChanged_4567, &_call_emitter_objectNameChanged_4567);
   methods += new qt_gsi::GenericMethod ("*receivers", "@brief Method int QSettings::receivers(const char *signal)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_receivers_c1731, &_call_fp_receivers_c1731);
   methods += new qt_gsi::GenericMethod ("*sender", "@brief Method QObject *QSettings::sender()\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_sender_c0, &_call_fp_sender_c0);
   methods += new qt_gsi::GenericMethod ("*senderSignalIndex", "@brief Method int QSettings::senderSignalIndex()\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_senderSignalIndex_c0, &_call_fp_senderSignalIndex_c0);
-  methods += new qt_gsi::GenericMethod ("*timerEvent", "@brief Virtual method void QSettings::timerEvent(QTimerEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0);
-  methods += new qt_gsi::GenericMethod ("*timerEvent", "@hide", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0, &_set_callback_cbs_timerEvent_1730_0);
+  methods += new qt_gsi::GenericMethod ("*timerEvent", "@hide", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0);
+  methods += new qt_gsi::GenericMethod ("*timerEvent", "@brief Virtual method void QSettings::timerEvent(QTimerEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0, &_set_callback_cbs_timerEvent_1730_0);
   return methods;
 }
 

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -28,7 +28,6 @@
 #include "dbCommon.h"
 
 #include "dbTypes.h"
-#include "dbObjectTag.h"
 #include "tlString.h"
 #include "tlTypeTraits.h"
 #include "tlVector.h"
@@ -38,16 +37,13 @@
 namespace db {
 
 template <class C> class vector;
-template <class C, class R = C> struct box;
-template <class C> class generic_repository;
-class ArrayRepository;
 
 /**
  *  @brief A point class
  */
 
 template <class C>
-class DB_PUBLIC point
+class DB_PUBLIC_TEMPLATE point
 {
 public:
   typedef C coord_type;
@@ -55,9 +51,6 @@ public:
   typedef db::vector<C> vector_type;
   typedef typename coord_traits::distance_type distance_type; 
   typedef typename coord_traits::area_type area_type; 
-  typedef db::object_tag< point<C> > tag;
-  typedef db::box<C> box_type;
-  typedef db::point<C> point_type;
 
   /** 
    *  @brief Default constructor
@@ -91,18 +84,6 @@ public:
   point (const point<C> &d) : m_x (d.x ()), m_y (d.y ()) { }
 
   /**
-   *  @brief Assignment
-   *
-   *  @param d The source from which to take the data
-   */
-  point &operator= (const point<C> &d) 
-  {
-    m_x = d.x ();
-    m_y = d.y ();
-    return *this;
-  }
-
-  /**
    *  @brief The copy constructor that also converts
    *
    *  The copy constructor allows one to convert between different
@@ -114,95 +95,29 @@ public:
   explicit point (const point<D> &d) : m_x (coord_traits::rounded (d.x ())), m_y (coord_traits::rounded (d.y ())) { }
 
   /**
-   *  @brief Assignment which also converts
-   *
-   *  This assignment operator will convert the coordinate types if possible
-   *
-   *  @param d The source from which to take the data
-   */
-  template <class D>
-  point &operator= (const point<C> &d) 
-  {
-    m_x = coord_traits::rounded (d.x ());
-    m_y = coord_traits::rounded (d.y ());
-    return *this;
-  }
-
-  /**
    *  @brief Add to operation
    */
-  point<C> &operator+= (const vector<C> &v)
-  {
-    m_x += v.x ();
-    m_y += v.y ();
-    return *this;
-  }
-
-  /**
-   *  @brief Move (equivalent to +=)
-   *  This alias is needed for compatibility with other shapes
-   */
-  point<C> &move (const vector<C> &v)
-  {
-    m_x += v.x ();
-    m_y += v.y ();
-    return *this;
-  }
+  point<C> &operator+= (const vector<C> &v);
 
   /**
    *  @brief method version of operator+ (mainly for automation purposes)
    */
-  point<C> add (const vector<C> &v) const
-  {
-    point<C> r (*this);
-    r += v;
-    return r;
-  }
-
-  /**
-   *  @brief Returns the scaled point
-   */
-  point<db::DCoord> scaled (double s) const
-  {
-    return point<db::DCoord> (m_x * s, m_y * s);
-  }
-
-  /**
-   *  @brief Moved point (equivalent to add)
-   *  This alias is needed for compatibility with other shapes
-   */
-  point<C> moved (const vector<C> &v) const
-  {
-    point<C> r (*this);
-    r += v;
-    return r;
-  }
+  point<C> add (const vector<C> &v) const;
 
   /**
    *  @brief Subtract from operation
    */
-  point<C> &operator-= (const vector<C> &v)
-  {
-    m_x -= v.x ();
-    m_y -= v.y ();
-    return *this;
-  }
+  point<C> &operator-= (const vector<C> &v);
   
   /**
    *  @brief method version of operator- (mainly for automation purposes)
    */
-  point<C> subtract (const vector<C> &v) const
-  {
-    return *this - v;
-  }
+  point<C> subtract (const vector<C> &v) const;
 
   /**
    *  @brief method version of operator- (mainly for automation purposes)
    */
-  vector<C> subtract (const point<C> &p) const
-  {
-    return *this - p;
-  }
+  vector<C> subtract (const point<C> &p) const;
 
   /**
    *  @brief "less" comparison operator
@@ -210,26 +125,17 @@ public:
    *  This operator is provided to establish a sorting
    *  order
    */
-  bool operator< (const point<C> &p) const
-  {
-    return m_y < p.m_y || (m_y == p.m_y && m_x < p.m_x);
-  }
+  bool operator< (const point<C> &p) const;
 
   /**
    *  @brief Equality test operator
    */
-  bool operator== (const point<C> &p) const
-  {
-    return m_x == p.m_x && m_y == p.m_y;
-  }
+  bool operator== (const point<C> &p) const;
 
   /**
    *  @brief Inequality test operator
    */
-  bool operator!= (const point<C> &p) const
-  {
-    return !operator== (p);
-  }
+  bool operator!= (const point<C> &p) const;
 
   /**
    *  @brief Const transform
@@ -241,10 +147,7 @@ public:
    *  @return The transformed point
    */
   template <class Tr>
-  point<typename Tr::target_coord_type> transformed (const Tr &t) const
-  {
-    return t (*this);
-  }
+  point<typename Tr::target_coord_type> transformed (const Tr &t) const;
 
   /**
    *  @brief In-place transformation
@@ -256,181 +159,111 @@ public:
    *  @return The transformed point
    */
   template <class Tr>
-  point &transform (const Tr &t)
-  {
-    *this = t (*this);
-    return *this;
-  }
+  point &transform (const Tr &t);
 
   /**
    *  @brief Accessor to the x coordinate
    */
-  C x () const
-  {
-    return m_x;
-  }
+  C x () const;
 
   /**
    *  @brief Accessor to the y coordinate
    */
-  C y () const
-  {
-    return m_y;
-  }
+  C y () const;
 
   /**
    *  @brief Write accessor to the x coordinate
    */
-  void set_x (C _x)
-  {
-    m_x = _x;
-  }
+  void set_x (C _x);
 
   /**
    *  @brief Write accessor to the y coordinate
    */
-  void set_y (C _y)
-  {
-    m_y = _y;
-  }
+  void set_y (C _y);
 
   /**
    *  @brief Scaling self by some factor
    *
-   *  Scaling involves rounding which in our case is simply handled
+   *  Scaline involves rounding which in our case is simply handled
    *  with the coord_traits scheme.
    */
-  point<C> &operator*= (double s)
-  {
-    m_x = coord_traits::rounded (m_x * s);
-    m_y = coord_traits::rounded (m_y * s);
-    return *this;
-  }
+  point<C> &operator*= (double s);
 
   /**
    *  @brief Scaling self by some integer factor
    */
-  point<C> &operator*= (long s)
-  {
-    m_x = coord_traits::rounded (m_x * s);
-    m_y = coord_traits::rounded (m_y * s);
-    return *this;
-  }
+  point<C> &operator*= (long s);
 
   /**
    *  @brief Division by some divisor.
    *
-   *  Scaling involves rounding which in our case is simply handled
+   *  Scaline involves rounding which in our case is simply handled
    *  with the coord_traits scheme.
    */
 
-  point<C> &operator/= (double s)
-  {
-    double mult = 1.0 / static_cast<double>(s);
-    *this *= mult;
-    return *this;
-  }
+  point<C> &operator/= (double s);
 
   /**
    *  @brief Dividing self by some integer divisor
    */
-  point<C> &operator/= (long s)
-  {
-    double mult = 1.0 / static_cast<double>(s);
-    *this *= mult;
-    return *this;
-  }
+  point<C> &operator/= (long s);
 
   /**
    *  @brief The euclidian distance to another point
    *
    *  @param d The other to compute the distance to.
    */
-  distance_type distance (const point<C> &p) const
-  {
-    double ddx (p.x ());
-    double ddy (p.y ());
-    ddx -= double (x ());
-    ddy -= double (y ());
-    return coord_traits::rounded_distance (sqrt (ddx * ddx + ddy * ddy));
-  }
+  distance_type distance (const point<C> &p) const;
 
   /**
    *  @brief The euclidian distance of the point to (0,0)
    */
-  distance_type distance () const
-  {
-    double ddx (x ());
-    double ddy (y ());
-    return coord_traits::rounded_distance (sqrt (ddx * ddx + ddy * ddy));
-  }
+  distance_type distance () const;
 
   /**
    *  @brief The euclidian distance to another point as double value
    *
    *  @param d The other to compute the distance to.
    */
-  double double_distance (const point<C> &p) const
-  {
-    double ddx (p.x ());
-    double ddy (p.y ());
-    ddx -= double (x ());
-    ddy -= double (y ());
-    return sqrt (ddx * ddx + ddy * ddy);
-  }
+  double double_distance (const point<C> &p) const;
 
   /**
    *  @brief The euclidian distance of the point to (0,0) as double value
    */
-  double double_distance () const
-  {
-    double ddx (x ());
-    double ddy (y ());
-    return sqrt (ddx * ddx + ddy * ddy);
-  }
+  double double_distance () const;
 
   /**
    *  @brief The square euclidian distance to another point
    *
    *  @param d The other to compute the distance to.
    */
-  area_type sq_distance (const point<C> &p) const
-  {
-    return coord_traits::sq_length (p.x (), p.y (), x (), y ());
-  }
+  area_type sq_distance (const point<C> &p) const;
 
   /**
    *  @brief The square euclidian distance to point (0,0)
    *
    *  @param d The other to compute the distance to.
    */
-  area_type sq_distance () const
-  {
-    return coord_traits::sq_length (0, 0, x (), y ());
-  }
+  area_type sq_distance () const;
 
   /**
    *  @brief The square of the euclidian distance to another point as double value
    *
    *  @param d The other to compute the distance to.
    */
-  double sq_double_distance (const point<C> &p) const
-  {
-    double ddx (p.x ());
-    double ddy (p.y ());
-    ddx -= double (x ());
-    ddy -= double (y ());
-    return ddx * ddx + ddy * ddy;
-  }
+  double sq_double_distance (const point<C> &p) const;
 
   /**
    *  @brief The square of the euclidian distance of the point to (0,0) as double value
    */
-  double sq_double_distance () const
+  double sq_double_distance () const;
+
+  /**
+   *  @brief Default conversion to string
+   */
+  std::string to_string () const
   {
-    double ddx (x ());
-    double ddy (y ());
-    return ddx * ddx + ddy * ddy;
+    return to_string (0.0);
   }
 
   /**
@@ -440,7 +273,7 @@ public:
    *  micron units. In addition, a micron format is chosen for output of these coordinates.
    */
   std::string
-  to_string (double dbu = 0.0) const
+  to_string (double dbu) const 
   {
     if (dbu == 1.0) {
       return tl::db_to_string (m_x) + "," + tl::db_to_string (m_y);
@@ -454,10 +287,7 @@ public:
   /**
    *  @brief Fuzzy comparison of points
    */
-  bool equal (const point<C> &p) const
-  {
-    return coord_traits::equal (x (), p.x ()) && coord_traits::equal (y (), p.y ());
-  }
+  bool equal (const point<C> &p) const;
 
   /**
    *  @brief Fuzzy comparison of points for inequality
@@ -470,38 +300,136 @@ public:
   /**
    *  @brief Fuzzy "less" comparison of points
    */
-  bool less (const point<C> &p) const
-  {
-    if (! coord_traits::equal (y (), p.y ())) {
-      return y () < p.y ();
-    }
-    if (! coord_traits::equal (x (), p.x ())) {
-      return x () < p.x ();
-    }
-    return false;
-  }
-
-  /**
-   *  @brief The (dummy) translation operator
-   */
-  void translate (const point<C> &d, db::generic_repository<C> &, db::ArrayRepository &)
-  {
-    *this = d;
-  }
-
-  /**
-   *  @brief The (dummy) translation operator
-   */
-  template <class T>
-  void translate (const point<C> &d, const T &t, db::generic_repository<C> &, db::ArrayRepository &)
-  {
-    *this = d;
-    transform (t);
-  }
+  bool less (const point<C> &p) const;
 
 private:
   C m_x, m_y;
 };
+
+template <class C>
+inline point<C> &
+point<C>::operator+= (const vector<C> &v)
+{
+  m_x += v.x ();
+  m_y += v.y ();
+  return *this;
+}
+
+template <class C>
+inline point<C> 
+point<C>::add (const vector<C> &v) const
+{
+  point<C> r (*this);
+  r += v;
+  return r;
+}
+
+template <class C>
+inline point<C> &
+point<C>::operator-= (const vector<C> &v)
+{
+  m_x -= v.x ();
+  m_y -= v.y ();
+  return *this;
+}
+
+template <class C>
+inline point<C> 
+point<C>::subtract (const vector<C> &v) const
+{
+  return *this - v;
+}
+
+template <class C>
+inline vector<C>
+point<C>::subtract (const point<C> &p) const
+{
+  return *this - p;
+}
+
+template <class C>
+inline bool 
+point<C>::operator< (const point<C> &p) const
+{
+  return m_y < p.m_y || (m_y == p.m_y && m_x < p.m_x);
+}
+
+template <class C>
+inline bool 
+point<C>::less (const point<C> &p) const
+{
+  if (! coord_traits::equal (y (), p.y ())) {
+    return y () < p.y ();
+  }
+  if (! coord_traits::equal (x (), p.x ())) {
+    return x () < p.x ();
+  }
+  return false;
+}
+
+template <class C>
+inline bool 
+point<C>::operator== (const point<C> &p) const
+{
+  return m_x == p.m_x && m_y == p.m_y;
+}
+
+template <class C>
+inline bool 
+point<C>::equal (const point<C> &p) const
+{
+  return coord_traits::equal (x (), p.x ()) && coord_traits::equal (y (), p.y ());
+}
+
+template <class C>
+inline bool 
+point<C>::operator!= (const point<C> &p) const
+{
+  return !operator== (p);
+}
+
+template <class C> template <class Tr>
+inline point<typename Tr::target_coord_type> 
+point<C>::transformed (const Tr &t) const
+{
+  return t (*this);
+}
+
+template <class C> template <class Tr>
+inline point<C> &
+point<C>::transform (const Tr &t)
+{
+  *this = t (*this);
+  return *this;
+}
+
+template <class C>
+inline C 
+point<C>::x () const
+{
+  return m_x;
+}
+
+template <class C>
+inline C 
+point<C>::y () const
+{
+  return m_y;
+}
+
+template <class C>
+inline void 
+point<C>::set_x (C _x) 
+{
+  m_x = _x;
+}
+
+template <class C>
+inline void 
+point<C>::set_y (C _y) 
+{
+  m_y = _y;
+}
 
 template <class C>
 inline point<double> 
@@ -544,6 +472,116 @@ operator/ (const db::point<C> &p, Number s)
 {
   double mult = 1.0 / static_cast<double>(s);
   return point<C> (p.x () * mult, p.y () * mult);
+}
+
+template <class C>
+inline point<C> &
+point<C>::operator/= (double s)
+{
+  double mult = 1.0 / static_cast<double>(s);
+  *this *= mult;
+  return *this;
+}
+
+template <class C>
+inline point<C> &
+point<C>::operator/= (long s)
+{
+  double mult = 1.0 / static_cast<double>(s);
+  *this *= mult;
+  return *this;
+}
+
+template <class C>
+inline point<C> &
+point<C>::operator*= (double s) 
+{
+  m_x = coord_traits::rounded (m_x * s);
+  m_y = coord_traits::rounded (m_y * s);
+  return *this;
+}
+
+template <class C>
+inline point<C> &
+point<C>::operator*= (long s) 
+{
+  m_x = coord_traits::rounded (m_x * s);
+  m_y = coord_traits::rounded (m_y * s);
+  return *this;
+}
+
+template <class C>
+inline typename point<C>::distance_type 
+point<C>::distance (const point<C> &p) const
+{
+  double ddx (p.x ());
+  double ddy (p.y ());
+  ddx -= double (x ());
+  ddy -= double (y ());
+  return coord_traits::rounded_distance (sqrt (ddx * ddx + ddy * ddy));
+}
+
+template <class C>
+inline typename point<C>::distance_type 
+point<C>::distance () const
+{
+  double ddx (x ());
+  double ddy (y ());
+  return coord_traits::rounded_distance (sqrt (ddx * ddx + ddy * ddy));
+}
+
+template <class C>
+inline double 
+point<C>::double_distance (const point<C> &p) const
+{
+  double ddx (p.x ());
+  double ddy (p.y ());
+  ddx -= double (x ());
+  ddy -= double (y ());
+  return sqrt (ddx * ddx + ddy * ddy);
+}
+
+template <class C>
+inline double 
+point<C>::double_distance () const
+{
+  double ddx (x ());
+  double ddy (y ());
+  return sqrt (ddx * ddx + ddy * ddy);
+}
+
+template <class C>
+inline typename point<C>::area_type 
+point<C>::sq_distance (const point<C> &p) const
+{
+  return coord_traits::sq_length (p.x (), p.y (), x (), y ());
+}
+
+template <class C>
+inline typename point<C>::area_type 
+point<C>::sq_distance () const
+{
+  return coord_traits::sq_length (0, 0, x (), y ());
+}
+
+template <class C>
+inline double 
+point<C>::sq_double_distance (const point<C> &p) const
+{
+  double ddx (p.x ());
+  double ddy (p.y ());
+  ddx -= double (x ());
+  ddy -= double (y ());
+  return ddx * ddx + ddy * ddy;
+}
+
+template <class C>
+inline double 
+point <C>::sq_double_distance () const
+{
+  double ddx (x ());
+  double ddy (y ());
+  return ddx * ddx + ddy * ddy;
 }
 
 /**
@@ -685,6 +723,16 @@ inline bool equal (const tl::vector<point<C> > &a, const tl::vector<point<C> > &
 
 namespace tl 
 {
+  template <class C>
+  struct type_traits <db::point<C> > : public type_traits<void> 
+  {
+    typedef trivial_relocate_required relocate_requirements;
+    typedef true_tag supports_extractor;
+    typedef true_tag supports_to_string;
+    typedef true_tag has_less_operator;
+    typedef true_tag has_equal_operator;
+  };
+
   template <> DB_PUBLIC void extractor_impl (tl::Extractor &ex, db::Point &p);
   template <> DB_PUBLIC void extractor_impl (tl::Extractor &ex, db::DPoint &p);
 

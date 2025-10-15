@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@
 #include <QAccessibleActionInterface>
 #include "gsiQt.h"
 #include "gsiQtGuiCommon.h"
+#include "gsiDeclQtGuiTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -314,7 +315,7 @@ static void _init_f_tr_4013 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("sourceText");
   decl->add_arg<const char * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("disambiguation", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("disambiguation", true, "0");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("n", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -326,7 +327,7 @@ static void _call_f_tr_4013 (const qt_gsi::GenericStaticMethod * /*decl*/, gsi::
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (0, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QAccessibleActionInterface::tr (arg1, arg2, arg3));
 }
@@ -339,7 +340,7 @@ static void _init_f_trUtf8_4013 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("sourceText");
   decl->add_arg<const char * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("disambiguation", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("disambiguation", true, "0");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("n", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -351,7 +352,7 @@ static void _call_f_trUtf8_4013 (const qt_gsi::GenericStaticMethod * /*decl*/, g
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (0, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QAccessibleActionInterface::trUtf8 (arg1, arg2, arg3));
 }
@@ -625,16 +626,16 @@ gsi::Class<QAccessibleActionInterface> &qtdecl_QAccessibleActionInterface ();
 static gsi::Methods methods_QAccessibleActionInterface_Adaptor () {
   gsi::Methods methods;
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QAccessibleActionInterface::QAccessibleActionInterface()\nThis method creates an object of class QAccessibleActionInterface.", &_init_ctor_QAccessibleActionInterface_Adaptor_0, &_call_ctor_QAccessibleActionInterface_Adaptor_0);
-  methods += new qt_gsi::GenericMethod ("actionNames", "@brief Virtual method QStringList QAccessibleActionInterface::actionNames()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_actionNames_c0_0, &_call_cbs_actionNames_c0_0);
-  methods += new qt_gsi::GenericMethod ("actionNames", "@hide", true, &_init_cbs_actionNames_c0_0, &_call_cbs_actionNames_c0_0, &_set_callback_cbs_actionNames_c0_0);
-  methods += new qt_gsi::GenericMethod ("doAction", "@brief Virtual method void QAccessibleActionInterface::doAction(const QString &actionName)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_doAction_2025_0, &_call_cbs_doAction_2025_0);
-  methods += new qt_gsi::GenericMethod ("doAction", "@hide", false, &_init_cbs_doAction_2025_0, &_call_cbs_doAction_2025_0, &_set_callback_cbs_doAction_2025_0);
-  methods += new qt_gsi::GenericMethod ("keyBindingsForAction", "@brief Virtual method QStringList QAccessibleActionInterface::keyBindingsForAction(const QString &actionName)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_keyBindingsForAction_c2025_0, &_call_cbs_keyBindingsForAction_c2025_0);
-  methods += new qt_gsi::GenericMethod ("keyBindingsForAction", "@hide", true, &_init_cbs_keyBindingsForAction_c2025_0, &_call_cbs_keyBindingsForAction_c2025_0, &_set_callback_cbs_keyBindingsForAction_c2025_0);
-  methods += new qt_gsi::GenericMethod ("localizedActionDescription", "@brief Virtual method QString QAccessibleActionInterface::localizedActionDescription(const QString &name)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_localizedActionDescription_c2025_0, &_call_cbs_localizedActionDescription_c2025_0);
-  methods += new qt_gsi::GenericMethod ("localizedActionDescription", "@hide", true, &_init_cbs_localizedActionDescription_c2025_0, &_call_cbs_localizedActionDescription_c2025_0, &_set_callback_cbs_localizedActionDescription_c2025_0);
-  methods += new qt_gsi::GenericMethod ("localizedActionName", "@brief Virtual method QString QAccessibleActionInterface::localizedActionName(const QString &name)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_localizedActionName_c2025_0, &_call_cbs_localizedActionName_c2025_0);
-  methods += new qt_gsi::GenericMethod ("localizedActionName", "@hide", true, &_init_cbs_localizedActionName_c2025_0, &_call_cbs_localizedActionName_c2025_0, &_set_callback_cbs_localizedActionName_c2025_0);
+  methods += new qt_gsi::GenericMethod ("actionNames", "@hide", true, &_init_cbs_actionNames_c0_0, &_call_cbs_actionNames_c0_0);
+  methods += new qt_gsi::GenericMethod ("actionNames", "@brief Virtual method QStringList QAccessibleActionInterface::actionNames()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_actionNames_c0_0, &_call_cbs_actionNames_c0_0, &_set_callback_cbs_actionNames_c0_0);
+  methods += new qt_gsi::GenericMethod ("doAction", "@hide", false, &_init_cbs_doAction_2025_0, &_call_cbs_doAction_2025_0);
+  methods += new qt_gsi::GenericMethod ("doAction", "@brief Virtual method void QAccessibleActionInterface::doAction(const QString &actionName)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_doAction_2025_0, &_call_cbs_doAction_2025_0, &_set_callback_cbs_doAction_2025_0);
+  methods += new qt_gsi::GenericMethod ("keyBindingsForAction", "@hide", true, &_init_cbs_keyBindingsForAction_c2025_0, &_call_cbs_keyBindingsForAction_c2025_0);
+  methods += new qt_gsi::GenericMethod ("keyBindingsForAction", "@brief Virtual method QStringList QAccessibleActionInterface::keyBindingsForAction(const QString &actionName)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_keyBindingsForAction_c2025_0, &_call_cbs_keyBindingsForAction_c2025_0, &_set_callback_cbs_keyBindingsForAction_c2025_0);
+  methods += new qt_gsi::GenericMethod ("localizedActionDescription", "@hide", true, &_init_cbs_localizedActionDescription_c2025_0, &_call_cbs_localizedActionDescription_c2025_0);
+  methods += new qt_gsi::GenericMethod ("localizedActionDescription", "@brief Virtual method QString QAccessibleActionInterface::localizedActionDescription(const QString &name)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_localizedActionDescription_c2025_0, &_call_cbs_localizedActionDescription_c2025_0, &_set_callback_cbs_localizedActionDescription_c2025_0);
+  methods += new qt_gsi::GenericMethod ("localizedActionName", "@hide", true, &_init_cbs_localizedActionName_c2025_0, &_call_cbs_localizedActionName_c2025_0);
+  methods += new qt_gsi::GenericMethod ("localizedActionName", "@brief Virtual method QString QAccessibleActionInterface::localizedActionName(const QString &name)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_localizedActionName_c2025_0, &_call_cbs_localizedActionName_c2025_0, &_set_callback_cbs_localizedActionName_c2025_0);
   return methods;
 }
 

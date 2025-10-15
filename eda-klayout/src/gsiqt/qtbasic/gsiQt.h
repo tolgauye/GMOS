@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -387,7 +387,6 @@ public:
   static target_type toc (source_type qc) { return target_type (qc); }
 };
 
-#if QT_VERSION < 0x060000
 template <>
 struct Converter<Q_PID>
 {
@@ -397,7 +396,6 @@ public:
   static source_type toq (target_type c) { return source_type (c); }
   static target_type toc (source_type qc) { return target_type (qc); }
 };
-#endif
 
 template <>
 struct Converter<QChar>
@@ -490,20 +488,6 @@ inline void qt_keep (T *obj)
   }
 }
 
-/**
- *  @brief An implementation helper for the "keep arg" feature
- *  This helper will call release on the object, hence returning the
- *  ownership to the script framework.
- */
-template <class T>
-inline void qt_release (T *obj)
-{
-  QtObjectBase *qt_obj = dynamic_cast<QtObjectBase *>(obj);
-  if (qt_obj) {
-    qt_obj->release ();
-  }
-}
-
 template <class T>
 inline void qt_keep (const QList<T *> &list)
 {
@@ -572,14 +556,14 @@ struct pair_decl
   {
     return
       gsi::constructor("new", &pair_default_ctor, "@brief Creates a new pair") +
-      gsi::constructor("new", &pair_ctor, gsi::arg ("first"), gsi::arg ("second"), "@brief Creates a new pair from the given arguments") +
-      gsi::method_ext("first", &pair_first, "@brief Returns the first element of the pair") +
-      gsi::method_ext("first=", &pair_set_first, gsi::arg ("first"), "@brief Sets the first element of the pair") +
-      gsi::method_ext("second", &pair_second, "@brief Returns the second element of the pair") +
-      gsi::method_ext("second=", &pair_set_second, gsi::arg ("second"), "@brief Sets the second element of the pair") +
-      gsi::method_ext("==", &pair_equal, gsi::arg ("other"), "@brief Returns true if self is equal to the other pair")
+      gsi::constructor("new", &pair_ctor, "@brief Creates a new pair from the given arguments\n@args first, second") +
+      gsi::method_ext("first", &pair_first, "@brief Returns the first element of the pair\n") +
+      gsi::method_ext("first=", &pair_set_first, "@brief Sets the first element of the pair\n@args first") +
+      gsi::method_ext("second", &pair_second, "@brief Returns the second element of the pair\n") +
+      gsi::method_ext("second=", &pair_set_second, "@brief Sets the second element of the pair\n@args second") +
+      gsi::method_ext("==", &pair_equal, "@brief Returns true if self is equal to the other pair\n@args other")
       // not available for all types: (TODO: separate pair declaration for those types which do)
-      // gsi::method_ext("<", &pair_less, gsi::arg ("other"), "@brief Returns true if self is less than the other pair")
+      // gsi::method_ext("<", &pair_less, "@brief Returns true if self is less than the other pair\n@args other")
     ;
   }
 };

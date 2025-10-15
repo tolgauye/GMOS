@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -34,7 +34,6 @@ namespace lay
 {
 
 SaltGrains::SaltGrains ()
-  : m_sparse (true)
 {
   //  .. nothing yet ..
 }
@@ -53,12 +52,6 @@ void
 SaltGrains::set_name (const std::string &n)
 {
   m_name = n;
-}
-
-void
-SaltGrains::set_sparse (const bool &f)
-{
-  m_sparse = f;
 }
 
 void
@@ -309,7 +302,6 @@ SaltGrains::consolidate ()
 
 static tl::XMLElementList s_group_struct =
   tl::make_member (&SaltGrains::name, &SaltGrains::set_name, "name") +
-  tl::make_member (&SaltGrains::sparse, &SaltGrains::set_sparse, "sparse") +
   tl::make_member (&SaltGrains::include, "include") +
   tl::make_element (&SaltGrains::begin_collections, &SaltGrains::end_collections, &SaltGrains::add_collection, "group", &s_group_struct) +
   tl::make_element (&SaltGrains::begin_grains, &SaltGrains::end_grains, &SaltGrains::add_grain, "salt-grain", SaltGrain::xml_elements ());
@@ -362,9 +354,6 @@ SaltGrains::include (const std::string &src_in)
 
     lay::SaltGrains g;
     g.load (src);
-    if (g.sparse ()) {
-      m_sparse = true;
-    }
     m_collections.splice (m_collections.end (), g.m_collections);
     m_grains.splice (m_grains.end (), g.m_grains);
 

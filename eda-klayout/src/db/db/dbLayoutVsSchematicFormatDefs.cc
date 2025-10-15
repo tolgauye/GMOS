@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -34,8 +34,6 @@ namespace lvs_std_format
   DB_PUBLIC std::string LongKeys::reference_key ("reference");
   DB_PUBLIC std::string LongKeys::layout_key ("layout");
   DB_PUBLIC std::string LongKeys::xref_key ("xref");
-  DB_PUBLIC std::string LongKeys::log_key ("log");
-  DB_PUBLIC std::string LongKeys::log_entry_key ("entry");
 
   DB_PUBLIC std::string LongKeys::mismatch_key ("mismatch");
   DB_PUBLIC std::string LongKeys::match_key ("match");
@@ -43,13 +41,9 @@ namespace lvs_std_format
   DB_PUBLIC std::string LongKeys::warning_key ("warning");
   DB_PUBLIC std::string LongKeys::skipped_key ("skipped");
 
-  //  H, J, L, M, S, X, Z, 0, 1
-
   DB_PUBLIC std::string ShortKeys::reference_key ("H");
   DB_PUBLIC std::string ShortKeys::layout_key ("J");
   DB_PUBLIC std::string ShortKeys::xref_key ("Z");
-  DB_PUBLIC std::string ShortKeys::log_key ("L");
-  DB_PUBLIC std::string ShortKeys::log_entry_key ("M");
 
   DB_PUBLIC std::string ShortKeys::mismatch_key ("0");
   DB_PUBLIC std::string ShortKeys::match_key ("1");

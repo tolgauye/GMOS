@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -20,7 +20,6 @@
 
 */
 
-#if defined(HAVE_QT)
 
 #ifndef HDR_layStream_h
 #define HDR_layStream_h
@@ -31,8 +30,6 @@
 #include "tlXMLParser.h"
 #include "tlXMLWriter.h"
 #include "dbLoadLayoutOptions.h"
-
-#include <QFrame>
 
 namespace db
 {
@@ -47,7 +44,7 @@ namespace db
 namespace lay
 {
 
-class Dispatcher;
+class PluginRoot;
 class LayoutHandle;
 
 /**
@@ -175,7 +172,7 @@ private:
 };
   
 /**
- *  @brief A specialization of Plugin declaration for stream reader plugins
+ *  @brief A specialisation of Plugin declaration for stream reader plugins
  */
 class LAYBASIC_PUBLIC StreamReaderPluginDeclaration
   : public StreamPluginDeclarationBase
@@ -215,7 +212,7 @@ public:
 };
 
 /**
- *  @brief A specialization of Plugin declaration for stream reader plugins
+ *  @brief A specialisation of Plugin declaration for stream reader plugins
  */
 class LAYBASIC_PUBLIC StreamWriterPluginDeclaration
   : public StreamPluginDeclarationBase
@@ -231,14 +228,6 @@ public:
    *  @brief Gets the plugin for a given format name
    */
   static const StreamWriterPluginDeclaration *plugin_for_format (const std::string &format_name);
-
-  /**
-   *  @brief If the options are shared with another declaration, returns this name of this declaration here
-   */
-  virtual const char *options_alias () const
-  {
-    return 0;
-  }
 
   /**
    *  @brief Create a format specific options page 
@@ -276,4 +265,3 @@ public:
 
 #endif
 
-#endif  //  defined(HAVE_QT)

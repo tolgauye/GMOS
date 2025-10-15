@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -32,7 +32,7 @@ namespace lay
 // -------------------------------------------------------------
 //  RubberBox implementation
 
-RubberBox::RubberBox (lay::ViewObjectUI *widget, unsigned int color, const db::DPoint &p1, const db::DPoint &p2)
+RubberBox::RubberBox (lay::ViewObjectWidget *widget, unsigned int color, const db::DPoint &p1, const db::DPoint &p2)
   : lay::ViewObject (widget, false /*not static*/), 
     m_p1 (p1), m_p2 (p2), m_color (color), m_stipple (0)
 { }

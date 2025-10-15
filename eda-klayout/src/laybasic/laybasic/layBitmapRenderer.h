@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -53,7 +53,7 @@ public:
   /**
    *  @brief The default ctor
    */
-  BitmapRenderer (unsigned int width, unsigned int height, double resolution, double font_resolution);
+  BitmapRenderer (unsigned int width, unsigned int height, double resolution);
 
   /**
    *  @brief Reserve space for n edges 

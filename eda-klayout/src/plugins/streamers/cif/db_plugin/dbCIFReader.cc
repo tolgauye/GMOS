@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -59,22 +59,22 @@ CIFReader::~CIFReader ()
 const LayerMap &
 CIFReader::read (db::Layout &layout, const db::LoadLayoutOptions &options)
 {
-  init (options);
+  prepare_layers ();
 
   const db::CIFReaderOptions &specific_options = options.get_options<db::CIFReaderOptions> ();
   m_wire_mode = specific_options.wire_mode;
   m_dbu = specific_options.dbu;
 
-  set_layer_map (specific_options.layer_map);
+  db::LayerMap lm = specific_options.layer_map;
+  lm.prepare (layout);
+  set_layer_map (lm);
   set_create_layers (specific_options.create_other_layers);
   set_keep_layer_names (specific_options.keep_layer_names);
-
-  prepare_layers (layout);
 
   do_read (layout);
 
   finish_layers (layout);
-  return layer_map_out ();
+  return layer_map ();
 }
 
 const LayerMap &
@@ -86,29 +86,17 @@ CIFReader::read (db::Layout &layout)
 void 
 CIFReader::error (const std::string &msg)
 {
-  throw CIFReaderException (msg, m_stream.line_number (), m_cellname, m_stream.source ());
+  throw CIFReaderException (msg, m_stream.line_number (), m_cellname);
 }
 
 void 
-CIFReader::warn (const std::string &msg, int wl)
+CIFReader::warn (const std::string &msg) 
 {
-  if (warn_level () < wl) {
-    return;
-  }
-
-  if (first_warning ()) {
-    tl::warn << tl::sprintf (tl::to_string (tr ("In file %s:")), m_stream.source ());
-  }
-
-  int ws = compress_warning (msg);
-  if (ws < 0) {
-    tl::warn << msg
-             << tl::to_string (tr (" (line=")) << m_stream.line_number ()
-             << tl::to_string (tr (", cell=")) << m_cellname
-             << ")";
-  } else if (ws == 0) {
-    tl::warn << tl::to_string (tr ("... further warnings of this kind are not shown"));
-  }
+  // TODO: compress
+  tl::warn << msg 
+           << tl::to_string (tr (" (line=")) << m_stream.line_number ()
+           << tl::to_string (tr (", cell=")) << m_cellname
+           << ")";
 }
 
 /**
@@ -172,7 +160,6 @@ CIFReader::get_char ()
     error ("Unexpected end of file");
     return 0;
   } else {
-    m_progress.set (m_stream.line_number ());
     return m_stream.get_char ();
   }
 }
@@ -594,7 +581,7 @@ CIFReader::read_cell (db::Layout &layout, db::Cell &cell, double sf, int level)
 
         if (rx >= 0 && ry == 0) {
 
-          cell.shapes ((unsigned int) layer).insert (db::Box (db::Point (sf * (x - 0.5 * w), sf * (y - 0.5 * h)), db::Point (sf * (x + 0.5 * w), sf * (y + 0.5 * h))));
+          cell.shapes ((unsigned int) layer).insert (db::Box (sf * (x - 0.5 * w), sf * (y - 0.5 * h), sf * (x + 0.5 * w), sf * (y + 0.5 * h)));
 
         } else {
 
@@ -831,12 +818,11 @@ CIFReader::read_cell (db::Layout &layout, db::Cell &cell, double sf, int level)
 void 
 CIFReader::do_read (db::Layout &layout)
 {
-  try {
+  tl::SelfTimer timer (tl::verbosity () >= 21, "File read");
 
-    db::LayoutLocker locker (&layout);
+  try {
   
     double sf = 0.01 / m_dbu;
-    check_dbu (m_dbu);
     layout.dbu (m_dbu);
 
     m_cellname = "{CIF top level}";

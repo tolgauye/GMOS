@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 */
+
 
 #ifndef HDR_laybasicConfig
 #define HDR_laybasicConfig
@@ -43,7 +44,6 @@ static const std::string cfg_grid_grid_color ("grid-grid-color");
 static const std::string cfg_grid_style0 ("grid-style0");
 static const std::string cfg_grid_style1 ("grid-style1");
 static const std::string cfg_grid_style2 ("grid-style2");
-static const std::string cfg_grid_density ("grid-density");
 static const std::string cfg_grid_visible ("grid-visible");
 static const std::string cfg_grid_micron ("grid-micron");
 static const std::string cfg_grid_show_ruler ("grid-show-ruler");
@@ -62,7 +62,6 @@ static const std::string cfg_child_ctx_hollow ("child-context-hollow");
 static const std::string cfg_child_ctx_enabled ("child-context-enabled");
 
 static const std::string cfg_search_range ("search-range");
-static const std::string cfg_search_range_box ("search-range-box");
 
 static const std::string cfg_abstract_mode_enabled ("abstract-mode-enabled");
 static const std::string cfg_abstract_mode_width ("abstract-mode-width");
@@ -73,20 +72,8 @@ static const std::string cfg_sel_vertex_size ("sel-vertex-size");
 static const std::string cfg_sel_halo ("sel-halo");
 static const std::string cfg_sel_dither_pattern ("sel-dither-pattern");
 static const std::string cfg_sel_line_style ("sel-line-style");
-static const std::string cfg_transient_sel_color ("transient-sel-color");
-static const std::string cfg_transient_sel_line_width ("transient-sel-line-width");
-static const std::string cfg_transient_sel_vertex_size ("transient-sel-vertex-size");
-static const std::string cfg_transient_sel_halo ("transient-sel-halo");
-static const std::string cfg_transient_sel_dither_pattern ("transient-sel-dither-pattern");
-static const std::string cfg_transient_sel_line_style ("transient-sel-line-style");
 static const std::string cfg_sel_transient_mode ("sel-transient-mode");
 static const std::string cfg_sel_inside_pcells_mode ("sel-inside-pcells-mode");
-
-static const std::string cfg_tracking_cursor_color ("tracking-cursor-color");
-static const std::string cfg_tracking_cursor_enabled ("tracking-cursor-enabled");
-static const std::string cfg_crosshair_cursor_color ("crosshair-cursor-color");
-static const std::string cfg_crosshair_cursor_line_style ("crosshair-cursor-line-style");
-static const std::string cfg_crosshair_cursor_enabled ("crosshair-cursor-enabled");
 
 static const std::string cfg_markers_visible ("markers-visible");
 
@@ -105,7 +92,6 @@ static const std::string cfg_global_trans ("global-trans");
 static const std::string cfg_no_stipple ("no-stipple");
 static const std::string cfg_stipple_offset ("stipple-offset");
 static const std::string cfg_default_text_size ("default-text-size");
-static const std::string cfg_text_point_mode ("text-point-mode");
 static const std::string cfg_text_font ("text-font");
 static const std::string cfg_full_hier_new_cell ("full-hierarchy-new-cell");
 static const std::string cfg_initial_hier_depth ("initial-hier-depth");
@@ -124,7 +110,6 @@ static const std::string cfg_drop_small_cells_value ("drop-small-cells-value");
 static const std::string cfg_array_border_instances ("draw-array-border-instances");
 static const std::string cfg_default_lyp_file ("default-layer-properties");
 static const std::string cfg_default_add_other_layers ("default-add-other-layers");
-static const std::string cfg_layer_visibility_follows_selection ("layer-visibility-follows-selection");
 static const std::string cfg_layers_always_show_source ("layers-always-show-source");
 static const std::string cfg_layers_always_show_ld ("layers-always-show-ld");
 static const std::string cfg_layers_always_show_layout_index ("layers-always-show-layout-index");
@@ -132,15 +117,12 @@ static const std::string cfg_reader_options_show_always ("reader-options-show-al
 static const std::string cfg_tip_window_hidden ("tip-window-hidden");
 
 static const std::string cfg_bitmap_oversampling ("bitmap-oversampling");
-static const std::string cfg_highres_mode ("highres-mode");
-static const std::string cfg_subres_mode ("subres-mode");
 static const std::string cfg_image_cache_size ("image-cache-size");
 static const std::string cfg_default_font_size ("default-font-size");
 
 static const std::string cfg_hide_empty_layers ("hide-empty-layers");
 static const std::string cfg_test_shapes_in_view ("test-shapes-in-view");
 
-static const std::string cfg_copy_cell_mode ("copy-cell-mode");
 static const std::string cfg_flat_cell_list ("flat-cell-list");
 static const std::string cfg_split_cell_list ("split-cell-list");
 static const std::string cfg_cell_list_sorting ("cell-list-sorting");
@@ -158,8 +140,7 @@ static const std::string cfg_guiding_shape_color ("guiding-shape-color");
 static const std::string cfg_guiding_shape_line_width ("guiding-shape-line-width");
 static const std::string cfg_guiding_shape_vertex_size ("guiding-shape-vertex-size");
 
-static const std::string cfg_properties_dialog_relative_mode ("properties-dialog-relative-mode");
-
 }
 
 #endif
+

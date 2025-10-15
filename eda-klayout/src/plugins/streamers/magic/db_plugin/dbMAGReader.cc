@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -72,11 +72,13 @@ MAGReader::read (db::Layout &layout)
 const LayerMap &
 MAGReader::read (db::Layout &layout, const db::LoadLayoutOptions &options)
 {
-  init (options);
+  prepare_layers ();
 
-  prepare_layers (layout);
-
-  mp_klayout_tech = layout.technology ();
+  mp_klayout_tech = 0;
+  std::string klayout_tech_name = layout.meta_info_value ("technology");
+  if (! klayout_tech_name.empty () && db::Technologies::instance ()->has_technology (klayout_tech_name)) {
+    mp_klayout_tech = db::Technologies::instance ()->technology_by_name (klayout_tech_name);
+  }
 
   const db::MAGReaderOptions &specific_options = options.get_options<db::MAGReaderOptions> ();
   m_lambda = specific_options.lambda;
@@ -85,7 +87,9 @@ MAGReader::read (db::Layout &layout, const db::LoadLayoutOptions &options)
   m_merge = specific_options.merge;
   mp_current_stream = 0;
 
-  set_layer_map (specific_options.layer_map);
+  db::LayerMap lm = specific_options.layer_map;
+  lm.prepare (layout);
+  set_layer_map (lm);
   set_create_layers (specific_options.create_other_layers);
   set_keep_layer_names (specific_options.keep_layer_names);
 
@@ -98,7 +102,6 @@ MAGReader::read (db::Layout &layout, const db::LoadLayoutOptions &options)
     top_cell = layout.add_cell (top_cellname.c_str ());
   }
 
-  check_dbu (m_dbu);
   layout.dbu (m_dbu);
 
   m_cells_to_read.clear ();
@@ -107,10 +110,8 @@ MAGReader::read (db::Layout &layout, const db::LoadLayoutOptions &options)
   m_dbu_trans_inv = db::CplxTrans (m_dbu).inverted ();
   m_tech.clear ();
 
-  prepare_layers (layout);
-
   {
-    tl::SelfTimer timer (tl::verbosity () >= 11, "Reading MAGIC file tree");
+    tl::SelfTimer timer (tl::verbosity () >= 21, "Reading MAGIC file tree");
 
     //  This is the seed
     do_read (layout, top_cell, m_stream);
@@ -128,7 +129,7 @@ MAGReader::read (db::Layout &layout, const db::LoadLayoutOptions &options)
   }
 
   finish_layers (layout);
-  return layer_map_out ();
+  return layer_map ();
 }
 
 void 
@@ -138,25 +139,13 @@ MAGReader::error (const std::string &msg)
 }
 
 void 
-MAGReader::warn (const std::string &msg, int wl)
+MAGReader::warn (const std::string &msg)
 {
-  if (warn_level () < wl) {
-    return;
-  }
-
-  if (first_warning ()) {
-    tl::warn << tl::sprintf (tl::to_string (tr ("In file %s:")), mp_current_stream->source ());
-  }
-
-  int ws = compress_warning (msg);
-  if (ws < 0) {
-    tl::warn << msg
-             << tl::to_string (tr (" (line=")) << mp_current_stream->line_number ()
-             << tl::to_string (tr (", file=")) << mp_current_stream->source ()
-             << ")";
-  } else if (ws == 0) {
-    tl::warn << tl::to_string (tr ("... further warnings of this kind are not shown"));
-  }
+  // TODO: compress
+  tl::warn << msg 
+           << tl::to_string (tr (" (line=")) << mp_current_stream->line_number ()
+           << tl::to_string (tr (", file=")) << mp_current_stream->source ()
+           << ")";
 }
 
 db::cell_index_type
@@ -226,7 +215,7 @@ static bool find_and_normalize_file (const tl::URI &uri, std::string &path)
       //  TODO: this is not quite efficient, but the only thing we can do for now
       tl::URI uri_with_ext = uri;
       uri_with_ext.set_path (uri_with_ext.path () + extensions[e]);
-      std::string us = uri_with_ext.to_abstract_path ();
+      std::string us = uri_with_ext.to_string ();
 
       if (tl::verbosity () >= 30) {
         tl::log << tl::to_string (tr ("Trying layout URI: ")) << us;
@@ -314,7 +303,7 @@ MAGReader::do_read (db::Layout &layout, db::cell_index_type cell_index, tl::Text
 void 
 MAGReader::do_read_part (db::Layout &layout, db::cell_index_type cell_index, tl::TextInputStream &stream)
 {
-  tl::SelfTimer timer (tl::verbosity () >= 31, tl::to_string (tr ("File read: ")) + m_stream.source ());
+  tl::SelfTimer timer (tl::verbosity () >= 31, "File read");
 
   if (tl::verbosity () >= 30) {
     tl::log << "Reading layout file: " << stream.source ();
@@ -325,7 +314,7 @@ MAGReader::do_read_part (db::Layout &layout, db::cell_index_type cell_index, tl:
     error (tl::to_string (tr ("Could not find 'magic' header line - is this a MAGIC file?")));
   }
 
-  layout.add_meta_info ("lambda", db::MetaInfo ("lambda value (tech scaling)", tl::to_string (m_lambda)));
+  layout.add_meta_info (db::MetaInfo ("lambda", "lambda value (tech scaling)", tl::to_string (m_lambda)));
 
   bool valid_layer = false;
   unsigned int current_layer = 0;
@@ -348,11 +337,11 @@ MAGReader::do_read_part (db::Layout &layout, db::cell_index_type cell_index, tl:
       if (&m_stream == &stream) {
 
         //  initial file - store technology
-        layout.add_meta_info ("magic_technology", db::MetaInfo (tl::to_string (tr ("MAGIC technology string")), m_tech));
+        layout.add_meta_info (db::MetaInfo ("magic_technology", tl::to_string (tr ("MAGIC technology string")), m_tech));
 
         //  propose this is the KLayout technology unless a good one is given
         if (! mp_klayout_tech) {
-          layout.add_meta_info ("technology", db::MetaInfo (tl::to_string (tr ("Technology name")), m_tech));
+          layout.add_meta_info (db::MetaInfo ("technology", tl::to_string (tr ("Technology name")), m_tech));
         }
 
       }
@@ -366,7 +355,7 @@ MAGReader::do_read_part (db::Layout &layout, db::cell_index_type cell_index, tl:
 
       if (&m_stream == &stream) {
         //  initial file - store timestamp
-        layout.add_meta_info ("magic_timestamp", db::MetaInfo ("MAGIC main file timestamp", tl::to_string (ts)));
+        layout.add_meta_info (db::MetaInfo ("magic_timestamp", "MAGIC main file timestamp", tl::to_string (ts)));
       }
 
       ex.expect_end ();
@@ -532,9 +521,6 @@ MAGReader::read_rlabel (tl::Extractor &ex, Layout &layout, cell_index_type cell_
   std::string lname;
   ex.read (lname);
 
-  //  skip sticky flag (optional)
-  ex.test ("s");
-
   double l, b, r, t;
   ex.read (l);
   ex.read (b);
@@ -598,7 +584,7 @@ MAGReader::read_cell_instance (tl::Extractor &ex, tl::TextInputStream &stream, L
       lib_path = lp->second;
     }
   } else {
-    //  give precedence to lib_path
+    //  give precendence to lib_path
     filename = tl::filename (filename);
     //  save for next use
     m_use_lib_paths.insert (std::make_pair (filename, lib_path));

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -211,9 +211,9 @@ public:
   /**
    *  @brief A method binding of operator* (mainly for automation purposes)
    */
-  edge<db::DCoord> scaled (double s) const
+  edge<C> scaled (double s) const
   {
-    return edge<db::DCoord> (db::point<db::DCoord> (p1 ()) * s, db::point<db::DCoord> (p2 ()) * s);
+    return edge<C> (point_type (p1 () * s), point_type (p2 () * s));
   }
 
   /**
@@ -587,12 +587,20 @@ public:
   }
 
   /**
+   *  @brief Default conversion to string
+   */
+  std::string to_string () const
+  {
+    return to_string (0.0);
+  }
+
+  /**
    *  @brief Conversion to a string.
    *
    *  If dbu is set, it determines the factor by which the coordinates are multiplied to render
    *  micron units. In addition, a micron format is chosen for output of these coordinates.
    */
-  std::string to_string (double dbu = 0.0) const
+  std::string to_string (double dbu) const
   {
     return "(" + m_p1.to_string (dbu) + ";" + m_p2.to_string (dbu) + ")";
   }
@@ -848,9 +856,6 @@ public:
    *  line through the edge. If the edge is degenerated, the distance
    *  is not defined.
    *
-   *  The distance is through as a distance of the point from the line
-   *  through the edge.
-   *
    *  @param p The point to test.
    *
    *  @return The distance
@@ -861,7 +866,7 @@ public:
     //    d = (a x b) / sqrt (a * a)
     //  where b = p - p1, a = p2 - p1
     if (is_degenerate ()) {
-      //  for safety handle this case - without a reasonable result
+      //  for safty handle this case - without a reasonable result
       return 0;
     } else {
       //  compute the distance as described above 
@@ -869,27 +874,6 @@ public:
       double d = double (axb) / double (length ());
       //  and round
       return coord_traits::rounded (d);
-    }
-  }
-
-  /**
-   *  @brief Gets the distance of the point from the edge.
-   *
-   *  The distance is computed as the minimum distance of the point to any of the edge's
-   *  points.
-   *
-   *  @param p The point whose distance is to be computed
-   *
-   *  @return The distance
-   */
-  distance_type euclidian_distance (const db::point<C> &p)
-  {
-    if (db::sprod_sign (p - p1 (), d ()) < 0) {
-      return p1 ().distance (p);
-    } else if (db::sprod_sign (p - p2 (), d ()) > 0) {
-      return p2 ().distance (p);
-    } else {
-      return std::abs (distance (p));
     }
   }
 
@@ -909,7 +893,7 @@ public:
     //    d = (a x b) / sqrt (a * a)
     //  where b = p - p1, a = p2 - p1
     if (is_degenerate ()) {
-      //  for safety handle this case - without a reasonable result
+      //  for safty handle this case - without a reasonable result
       return 0;
     } else {
       //  compute the side as the sign of the distance as in "distance"
@@ -932,7 +916,7 @@ public:
     //    d = (a x b) / sqrt (a * a)
     //  where b = p - p1, a = p2 - p1
     if (is_degenerate ()) {
-      //  for safety handle this case - without a reasonable result
+      //  for safty handle this case - without a reasonable result
       return 0;
     } else {
       //  compute the distance as described above 
@@ -1204,10 +1188,10 @@ struct edges_intersect
  *  @return The scaled edge
  */ 
 template <class C>
-inline edge<db::DCoord>
+inline edge<double> 
 operator* (const edge<C> &e, double s)
 {
-  return edge<db::DCoord> (e.p1 () * s, e.p2 () * s);
+  return edge<double> (e.p1 () * s, e.p2 () * s);
 }
 
 /**
@@ -1451,7 +1435,7 @@ inline C edge_xmax_at_yinterval (const db::edge<C> &e, C y1, C y2)
 /**
  *  @brief Functor that compares two edges by their left bound for a given interval [y1..y2].
  *
- *  This function is intended for use in scanline scenarios to determine what edges are 
+ *  This function is intended for use in scanline scenarious to determine what edges are 
  *  interacting in a certain y interval.
  */
 template <class C>
@@ -1492,6 +1476,19 @@ public:
 
 namespace tl 
 {
+  /**
+   *  @brief The type traits for the edge type
+   */
+  template <class C>
+  struct type_traits <db::edge<C> > : public type_traits<void> 
+  {
+    typedef trivial_relocate_required relocate_requirements;
+    typedef true_tag supports_extractor;
+    typedef true_tag supports_to_string;
+    typedef true_tag has_less_operator;
+    typedef true_tag has_equal_operator;
+  };
+
   template<> DB_PUBLIC void extractor_impl (tl::Extractor &ex, db::Edge &b);
   template<> DB_PUBLIC void extractor_impl (tl::Extractor &ex, db::DEdge &b);
 

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -32,8 +32,6 @@
 #include <QScrollBar>
 #include <QPainter>
 #include <QHeaderView>
-#include <QTreeView>
-#include <QTreeWidget>
 
 namespace gtf
 {
@@ -54,7 +52,7 @@ static QBrush right_diff_brush_dep (QColor (64, 192, 64), Qt::Dense4Pattern);
  *    "o1" those that only appear in stream 1, "o2" only those that appear in stream 2,
  *    "d" will receive std::pair's of elements that differ between 1 and 2.
  *  Two parameters govern the algorithm:
- *    "max_lookahead": tell how far to look into the future to find "synchronized" parts.
+ *    "max_lookahead": tell how far to look into the future to find "synchronised" parts.
  *    "min_sync": how many elements must be equal (in sequence) to resync.
  */
 template <class I, class O1, class O2, class O3, class O4, class EQ> 
@@ -226,7 +224,7 @@ void
 StripedBar::set_treeview (QTreeView *tv)
 {
   mp_tv = tv;
-  connect (mp_tv->verticalScrollBar () /* Qt4.2 only*/, SIGNAL (valueChanged (int)), this, SLOT (force_update (int)));
+  connect (mp_tv->verticalScrollBar () /*@@@ Qt4.2 only*/, SIGNAL (valueChanged (int)), this, SLOT (force_update (int)));
   connect (mp_tv, SIGNAL (expanded (const QModelIndex &)), this, SLOT (force_update (const QModelIndex &)));
   connect (mp_tv, SIGNAL (collapsed (const QModelIndex &)), this, SLOT (force_update (const QModelIndex &)));
 }
@@ -264,7 +262,7 @@ static std::string
 log_event_to_text (const gtf::LogEventBase *e)
 {
   std::string t = e->name ();
-  /* too much:
+  /* @@@ too much:
   std::vector< std::pair<std::string, std::string> > attrs;
   e->attributes (attrs);
   for (std::vector< std::pair<std::string, std::string> >::const_iterator a = attrs.begin (); a != attrs.end (); ++a) {

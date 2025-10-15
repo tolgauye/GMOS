@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -23,7 +23,6 @@
 
 #include "layNetTracerConfig.h"
 #include "layConverters.h"
-#include "layDispatcher.h"
 
 #include <QColorDialog>
 #include <QPainter>
@@ -42,7 +41,6 @@ extern const std::string cfg_nt_marker_intensity ("nt-marker-intensity");
 extern const std::string cfg_nt_window_mode ("nt-window-mode");
 extern const std::string cfg_nt_window_dim ("nt-window-dim");
 extern const std::string cfg_nt_max_shapes_highlighted ("nt-max-shapes-highlighted");
-extern const std::string cfg_nt_trace_depth ("nt-trace_depth");
 
 // ------------------------------------------------------------
 
@@ -130,7 +128,7 @@ NetTracerConfigPage::color_button_clicked ()
 }
 
 void 
-NetTracerConfigPage::setup (lay::Dispatcher *root)
+NetTracerConfigPage::setup (lay::PluginRoot *root)
 {
   //  window mode
   lay::nt_window_type wmode = lay::NTFitNet;
@@ -239,13 +237,13 @@ NetTracerConfigPage::window_changed (int m)
 }
 
 void 
-NetTracerConfigPage::commit (lay::Dispatcher *root)
+NetTracerConfigPage::commit (lay::PluginRoot *root)
 {
   double dim = 1.0;
-  tl::from_string_ext (tl::to_string (le_window->text ()), dim);
+  tl::from_string (tl::to_string (le_window->text ()), dim);
 
   unsigned int max_shapes_highlighted = 10000;
-  tl::from_string_ext (tl::to_string (le_max_markers->text ()), max_shapes_highlighted);
+  tl::from_string (tl::to_string (le_max_markers->text ()), max_shapes_highlighted);
 
   root->config_set (cfg_nt_window_mode, lay::nt_window_type (cbx_window->currentIndex ()), NetTracerWindowModeConverter ());
   root->config_set (cfg_nt_window_dim, dim);
@@ -262,7 +260,7 @@ NetTracerConfigPage::commit (lay::Dispatcher *root)
   } else {
     try {
       int s;
-      tl::from_string_ext (tl::to_string (lw_le->text ()), s);
+      tl::from_string (tl::to_string (lw_le->text ()), s);
       root->config_set (cfg_nt_marker_line_width, s);
     } catch (...) { }
   }
@@ -272,7 +270,7 @@ NetTracerConfigPage::commit (lay::Dispatcher *root)
   } else {
     try {
       int s;
-      tl::from_string_ext (tl::to_string (vs_le->text ()), s);
+      tl::from_string (tl::to_string (vs_le->text ()), s);
       root->config_set (cfg_nt_marker_vertex_size, s);
     } catch (...) { }
   }

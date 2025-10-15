@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -54,7 +54,7 @@ public:
   virtual std::string format_name () const { return "MAG"; }
   virtual std::string format_desc () const { return "Magic"; }
   virtual std::string format_title () const { return "MAG (Magic layout format)"; }
-  virtual std::string file_format () const { return "Magic files (*.mag *.MAG *.mag.gz *.MAG.gz)"; }
+  virtual std::string file_format () const { return "Magic files (*.MAG *.mag *.mag.gz *.MAG.gz)"; }
 
   virtual bool detect (tl::InputStream &s) const 
   {

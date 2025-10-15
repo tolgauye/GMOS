@@ -1,7 +1,7 @@
 # encoding: UTF-8
 
 # KLayout Layout Viewer
-# Copyright (C) 2006-2025 Matthias Koefferlein
+# Copyright (C) 2006-2019 Matthias Koefferlein
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,12 +20,6 @@
 import pya
 import unittest
 import sys
-
-def astr(a):
-  astr = []
-  for i in a:
-    astr.append(str(i))
-  return "[" + ", ".join(astr) + "]"
 
 class DBPolygonTests(unittest.TestCase):
 
@@ -122,8 +116,6 @@ class DBPolygonTests(unittest.TestCase):
     b.assign_hole(1, [ pya.DPoint( 15, 25 ), pya.DPoint( 25, 25 ), pya.DPoint( 25, 65 ) ])
     self.assertEqual( str(b), "(0,1;1,5;1,1/10,20;20,20;20,60)" )
     b.insert_hole( [ pya.DPoint( 1, 2 ), pya.DPoint( 2, 2 ), pya.DPoint( 2, 6 ) ] )
-    self.assertEqual( str(b), "(0,1;1,5;1,1/10,20;20,20;20,60/1,2;2,2;2,6)" )
-    b.sort_holes()
     self.assertEqual( str(b), "(0,1;1,5;1,1/1,2;2,2;2,6/10,20;20,20;20,60)" )
     b.assign_hole(0, [ pya.DPoint( 15, 25 ), pya.DPoint( 25, 25 ), pya.DPoint( 25, 65 ) ])
     self.assertEqual( str(b), "(0,1;1,5;1,1/15,25;25,25;25,65/10,20;20,20;20,60)" )
@@ -236,8 +228,6 @@ class DBPolygonTests(unittest.TestCase):
     b.assign_hole(1, [ pya.Point( 15, 25 ), pya.Point( 25, 25 ), pya.Point( 25, 65 ) ])
     self.assertEqual( str(b), "(0,1;1,5;1,1/10,20;20,20;20,60)" )
     b.insert_hole( [ pya.Point( 1, 2 ), pya.Point( 2, 2 ), pya.Point( 2, 6 ) ] )
-    self.assertEqual( str(b), "(0,1;1,5;1,1/10,20;20,20;20,60/1,2;2,2;2,6)" )
-    b.sort_holes()
     self.assertEqual( str(b), "(0,1;1,5;1,1/1,2;2,2;2,6/10,20;20,20;20,60)" )
     b.assign_hole(0, [ pya.Point( 15, 25 ), pya.Point( 25, 25 ), pya.Point( 25, 65 ) ])
     self.assertEqual( str(b), "(0,1;1,5;1,1/15,25;25,25;25,65/10,20;20,20;20,60)" )
@@ -293,9 +283,6 @@ class DBPolygonTests(unittest.TestCase):
     p = pya.Polygon( [ pya.Point.new(0, 0), pya.Point.new(10, 50), pya.Point.new(0, 100), pya.Point.new(200, 100), pya.Point.new(200, 0) ])
     self.assertEqual(str(p.smooth(5)), "(0,0;10,50;0,100;200,100;200,0)")
     self.assertEqual(str(p.smooth(15)), "(0,0;0,100;200,100;200,0)")
-    p = pya.Polygon( [ pya.Point.new(0, 0), pya.Point.new(10, 50), pya.Point.new(10, 100), pya.Point.new(200, 100), pya.Point.new(200, 0) ])
-    self.assertEqual(str(p.smooth(15, False)), "(0,0;10,100;200,100;200,0)")
-    self.assertEqual(str(p.smooth(15, True)), "(0,0;10,50;10,100;200,100;200,0)")
 
     # Ellipse constructor
     p = pya.Polygon.ellipse( pya.Box(-10000, -20000, 30000, 40000), 200 )
@@ -503,17 +490,17 @@ class DBPolygonTests(unittest.TestCase):
 
     p = pya.Polygon.from_s("(0,0;0,40;40,40;40,0/10,10;30,10;30,30;10,30)")
 
-    self.assertEqual(astr(p.decompose_convex()), "[(0,10;0,30;10,30;10,10), (0,30;0,40;30,40;30,30), (30,10;30,40;40,40;40,10), (0,0;0,10;40,10;40,0)]")
-    self.assertEqual(astr(p.decompose_convex(pya.Polygon.PO_any)), "[(0,10;0,30;10,30;10,10), (0,30;0,40;30,40;30,30), (30,10;30,40;40,40;40,10), (0,0;0,10;40,10;40,0)]")
-    self.assertEqual(astr(p.decompose_convex(pya.Polygon.PO_horizontal)), "[(0,10;0,30;10,30;10,10), (0,30;0,40;40,40;40,30), (30,10;30,30;40,30;40,10), (0,0;0,10;40,10;40,0)]")
-    self.assertEqual(astr(p.decompose_convex(pya.Polygon.PO_vertical)), "[(10,0;10,10;30,10;30,0), (0,0;0,40;10,40;10,0), (10,30;10,40;30,40;30,30), (30,0;30,40;40,40;40,0)]")
-    self.assertEqual(astr(p.decompose_convex(pya.Polygon.PO_htrapezoids)), "[(0,10;0,30;10,30;10,10), (0,30;0,40;30,40;30,30), (30,10;30,40;40,40;40,10), (0,0;0,10;40,10;40,0)]")
-    self.assertEqual(astr(p.decompose_convex(pya.Polygon.PO_vtrapezoids)), "[(10,0;10,10;30,10;30,0), (0,0;0,30;10,30;10,0), (0,30;0,40;30,40;30,30), (30,0;30,40;40,40;40,0)]")
+    self.assertEqual(str(p.decompose_convex()), "[(0,10;0,30;10,30;10,10), (0,30;0,40;30,40;30,30), (30,10;30,40;40,40;40,10), (0,0;0,10;40,10;40,0)]")
+    self.assertEqual(str(p.decompose_convex(pya.Polygon.PO_any)), "[(0,10;0,30;10,30;10,10), (0,30;0,40;30,40;30,30), (30,10;30,40;40,40;40,10), (0,0;0,10;40,10;40,0)]")
+    self.assertEqual(str(p.decompose_convex(pya.Polygon.PO_horizontal)), "[(0,10;0,30;10,30;10,10), (0,30;0,40;40,40;40,30), (30,10;30,30;40,30;40,10), (0,0;0,10;40,10;40,0)]")
+    self.assertEqual(str(p.decompose_convex(pya.Polygon.PO_vertical)), "[(10,0;10,10;30,10;30,0), (0,0;0,40;10,40;10,0), (10,30;10,40;30,40;30,30), (30,0;30,40;40,40;40,0)]")
+    self.assertEqual(str(p.decompose_convex(pya.Polygon.PO_htrapezoids)), "[(0,10;0,30;10,30;10,10), (0,30;0,40;30,40;30,30), (30,10;30,40;40,40;40,10), (0,0;0,10;40,10;40,0)]")
+    self.assertEqual(str(p.decompose_convex(pya.Polygon.PO_vtrapezoids)), "[(10,0;10,10;30,10;30,0), (0,0;0,30;10,30;10,0), (0,30;0,40;30,40;30,30), (30,0;30,40;40,40;40,0)]")
 
-    self.assertEqual(astr(p.decompose_trapezoids()), "[(0,0;0,10;40,10;40,0), (0,10;0,30;10,30;10,10), (30,10;30,30;40,30;40,10), (0,30;0,40;40,40;40,30)]")
-    self.assertEqual(astr(p.decompose_trapezoids(pya.Polygon.TD_simple)), "[(0,0;0,10;40,10;40,0), (0,10;0,30;10,30;10,10), (30,10;30,30;40,30;40,10), (0,30;0,40;40,40;40,30)]")
-    self.assertEqual(astr(p.decompose_trapezoids(pya.Polygon.TD_htrapezoids)), "[(0,10;0,30;10,30;10,10), (0,30;0,40;30,40;30,30), (30,10;30,40;40,40;40,10), (0,0;0,10;40,10;40,0)]")
-    self.assertEqual(astr(p.decompose_trapezoids(pya.Polygon.TD_vtrapezoids)), "[(10,0;10,10;30,10;30,0), (0,0;0,30;10,30;10,0), (0,30;0,40;30,40;30,30), (30,0;30,40;40,40;40,0)]")
+    self.assertEqual(str(p.decompose_trapezoids()), "[(0,0;0,10;40,10;40,0), (0,10;0,30;10,30;10,10), (30,10;30,30;40,30;40,10), (0,30;0,40;40,40;40,30)]")
+    self.assertEqual(str(p.decompose_trapezoids(pya.Polygon.TD_simple)), "[(0,0;0,10;40,10;40,0), (0,10;0,30;10,30;10,10), (30,10;30,30;40,30;40,10), (0,30;0,40;40,40;40,30)]")
+    self.assertEqual(str(p.decompose_trapezoids(pya.Polygon.TD_htrapezoids)), "[(0,10;0,30;10,30;10,10), (0,30;0,40;30,40;30,30), (30,10;30,40;40,40;40,10), (0,0;0,10;40,10;40,0)]")
+    self.assertEqual(str(p.decompose_trapezoids(pya.Polygon.TD_vtrapezoids)), "[(10,0;10,10;30,10;30,0), (0,0;0,30;10,30;10,0), (0,30;0,40;30,40;30,30), (30,0;30,40;40,40;40,0)]")
 
   # polygon decomposition
   def test_extractRad(self):
@@ -734,27 +721,6 @@ class DBPolygonTests(unittest.TestCase):
     # p1 and pp are the same object
     self.assertEqual(str(p1), "(21,42;21,62;41,62;41,42)")
     self.assertEqual(str(pp), "(21,42;21,62;41,62;41,42)")
-
-  def test_voidMethodsReturnSelf(self):
-
-    hull =  [ pya.Point(0, 0),       pya.Point(6000, 0), 
-              pya.Point(6000, 3000), pya.Point(0, 3000) ]
-    hole1 = [ pya.Point(1000, 1000), pya.Point(2000, 1000), 
-              pya.Point(2000, 2000), pya.Point(1000, 2000) ]
-    hole2 = [ pya.Point(3000, 1000), pya.Point(4000, 1000), 
-              pya.Point(4000, 2000), pya.Point(3000, 2000) ]
-    poly = pya.Polygon(hull).insert_hole(hole1).insert_hole(hole2)
-    self.assertEqual(str(poly), "(0,0;0,3000;6000,3000;6000,0/1000,1000;2000,1000;2000,2000;1000,2000/3000,1000;4000,1000;4000,2000;3000,2000)")
-
-  def test_argumentShortcuts(self):
-
-    # implicit conversion to a Point array:
-    poly = pya.Polygon([ (0,0), (0,1000), (1000,1000) ])
-    self.assertEqual(str(poly), "(0,0;0,1000;1000,1000)")
-
-    # issue 1651 - no binding to Box constructor
-    poly = pya.Polygon([ (0,0), (0,1000), (1000,1000), (1000,0) ])
-    self.assertEqual(str(poly), "(0,0;0,1000;1000,1000;1000,0)")
 
 # run unit tests
 if __name__ == '__main__':

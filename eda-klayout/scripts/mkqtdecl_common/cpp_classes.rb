@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2006-2025 Matthias Koefferlein
+# Copyright (C) 2006-2019 Matthias Koefferlein
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@ class Module
         # TODO: is there a better way to check whether dup can be used?
         # Implement Hash?
         #{args.map { |arg| "a = other.#{arg}\n"+
-                           "if a.is_a?(TrueClass) || a.is_a?(FalseClass) || a.is_a?(NilClass) || a.is_a?(1.class) || a.is_a?(1.0.class) || a.is_a?(Symbol)\n"+
+                           "if a.is_a?(TrueClass) || a.is_a?(FalseClass) || a.is_a?(NilClass) || a.is_a?(Fixnum) || a.is_a?(Float) || a.is_a?(Symbol)\n"+
                            "  @#{arg} = a\n"+
                            "elsif a.is_a?(Array)\n"+
                            "  @#{arg} = a.collect { |aa| aa.dup }\n"+
@@ -87,8 +87,8 @@ end
 # "cv" is a CPPCV object.
 class CPPFunc < CPPOuterType
 
-  attr_accessor :inner, :args, :cv, :ref
-  def_initializer :inner, :args, :cv, :ref
+  attr_accessor :inner, :args, :cv
+  def_initializer :inner, :args, :cv 
 
   def to_s
     a = self.args
@@ -96,13 +96,12 @@ class CPPFunc < CPPOuterType
     if !a.is_a?(Array)
       a = [a]
     end
-    self.inner.to_s + " (" + a.join(", ") + ")" + (self.cv ? " " + self.cv.to_s : "") + (self.ref ? " " + self.ref.to_s : "")
+    self.inner.to_s + " (" + a.join(", ") + ")" + (self.cv ? " " + self.cv.to_s : "") 
   end
 
   def dump(i)
     i + "CPPFunc\n" + i + " inner:\n" + self.inner.dump(i + "  ") + "\n" + 
     i + " cv: " + self.cv.to_s + "\n" + 
-    i + " ref: " + self.ref.to_s + "\n" + 
     i + " args:\n" + (self.args || []).collect { |f| f.dump(i + "  ") }.join("\n")
   end
 
@@ -155,15 +154,16 @@ end
 # part.
 class CPPMemberPointer < CPPOuterType
 
-  attr_accessor :qid, :inner
-  def_initializer :qid, :inner
+  attr_accessor :qid, :inner, :cv
+  def_initializer :qid, :inner, :cv
 
   def to_s
-    self.qid.to_s + "::* " + self.inner.to_s
+    self.qid.to_s + "::* " + self.inner.to_s + (self.cv ? " " + self.cv.to_s : "")
   end
 
   def dump(i)
     i + "CPPMemberPointer\n" + i + " inner:\n" + self.inner.dump(i + "  ") + 
+    i + " cv:\n" + self.cv.dump(i + "  ") + 
     i + " qid: " + self.qid.to_s
   end
 
@@ -469,19 +469,29 @@ class CPPFriendDecl < CPPObject
 end
 
 # @brief A type template argument (with an optional initializer)
-# @attribute type The template argument (a type)
+# @attribute id The name of the argument (a string)
 # @attribute def_type The default type (nil or a CPPType object) 
 class CPPClassTemplateArg < CPPObject
 
-  attr_accessor :type, :def_type
-  def_initializer :type, :def_type
+  attr_accessor :id, :def_type
+  def_initializer :id, :def_type
 
   def to_s
-    if self.def_type
-      self.type.to_s + "=" + self.def_type.to_s
-    else
-      self.type.to_s
-    end
+    self.id + (self.def_type ? ("=" + self.def_type.to_s) : "")
+  end
+
+end
+
+# @brief A value template argument (with an optional initializer)
+# @attribute type A CPPType object describing the type
+# @attribute def_expr The initializer expression (a string) or nil if no initializer is given
+class CPPDirectTemplateArg < CPPObject
+
+  attr_accessor :type, :def_expr
+  def_initializer :type, :def_expr
+
+  def to_s
+    self.type.to_s + (self.def_expr ? ("=" + self.def_expr.to_s) : "")
   end
 
 end
@@ -550,8 +560,8 @@ end
 # @attribute inline Is true for inline declarations
 class CPPDeclaration < CPPObject
 
-  attr_accessor :type, :template_decl, :visibility, :storage_class, :virtual, :inline, :is_definition
-  def_initializer :type, :template_decl, :visibility, :storage_class, :virtual, :inline, :is_definition
+  attr_accessor :type, :template_decl, :visibility, :storage_class, :virtual, :inline
+  def_initializer :type, :template_decl, :visibility, :storage_class, :virtual, :inline
 
   def dump(i)
     l = i
@@ -614,15 +624,15 @@ end
 # @attribute specs the enum members (an array of CPPEnumSpec objects)
 class CPPEnum < CPPObject
 
-  attr_accessor :name, :specs, :is_class
-  def_initializer :name, :specs, :is_class
+  attr_accessor :name, :specs
+  def_initializer :name, :specs
 
   def to_s
     "enum " + (self.name || "")
   end
 
   def dump(i)
-    l = i + self.to_s + (self.is_class ? " class" : "") + " {\n"
+    l = i + self.to_s + " {\n"
     l += (self.specs || []).collect { |s| i + "  " + s.to_s + "\n" }.join("")
     l += i + "}"
   end

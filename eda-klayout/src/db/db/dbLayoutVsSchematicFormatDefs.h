@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -47,85 +47,76 @@ namespace db
  *  The file follows the declaration-before-use principle
  *  (circuits before subcircuits, nets before use ...)
  *
- *  Main body:
+ *  Global statements:
+ *
  *    #%lvsdb-klayout                  - header line identifies format
- *    [version|description|layout-netlist|reference-netlist|xrefs|any]*
- *
- *  [version]:
  *    version(<number>)                - file format version [short key: V]
- *
- *  [description]:
  *    description(<text>)              - an arbitrary description text [short key: B]
+ *    layout([layout])                 - layout part [short key: J]
+ *    reference([reference-def]*)      - reference netlist part [short key: H]
+ *    xref([xref-def]*)                - cross-reference part [short key: Z]
  *
- *  [layout-netlist]:
- *    layout(...)                      - layout netlist part [short key: J]
- *                                       Content is the LayoutToNetlist dump without version and description
+ *  [layout]:
  *
- *  [reference-netlist]:
- *    reference(...)
- *                                     - reference netlist part [short key: H]
- *                                       Content is the Netlist dump (reduced version of LayoutToNetlist)
+ *      ...                            - the LayoutToNetlist dump without version and description
  *
- *  [xrefs]:
- *    xref([xref|log|any]*)            - cross-reference part [short key: Z]
+ *  [reference-def]:
  *
- *  [xref]:
- *    circuit([non] [non] [status|message|log|circuit-xrefs|any]*)
+ *    circuit(<name> [netlist-circuit-def]*)
+ *                                     - circuit [short key: X]
+ *  [netlist-circuit-def]:
+ *
+ *    net(<id> [net-name]?)            - a net declaration [short key: N]
+ *    pin(<name> <net-id>)             - outgoing pin connection [short key: P]
+ *    device(<name> [device-def]*)     - device with connections [short key: D]
+ *    circuit(<name> [subcircuit-def]*)
+ *                                     - subcircuit with connections [short key: X]
+ *
+ *  [net-name]:
+ *
+ *    name(<net-name>)                 - specify net name [short key: I]
+ *
+ *  [device-def]:
+ *
+ *    terminal(<terminal-name> <net-id>)
+ *                                     - specifies connection of the terminal with
+ *                                       a net [short key: T]
+ *
+ *  [subcircuit-def]:
+ *
+ *    pin(<pin-name> <net-id>)         - specifies connection of the pin with a net [short key: P]
+ *
+ *  [xref-def]:
+ *
+ *    circuit([non] [non] [status]? [circuit-xrefs])
  *                                     - circuit pair [short key: X]
  *
+ *  [circuit-xrefs]:
+ *
+ *    xref([pair]*)
+ *
+ *  [pair]
+ *
+ *    pin([ion] [ion] [status]?)       - a pin pair [short key: P]
+ *    device([ion] [ion] [status]?)    - a device pair [short key: D]
+ *    circuit([ion] [ion] [status]?)   - a subcircuit pair [short key: X]
+ *    net([ion] [ion] [status]?)       - a net pair [short key: N]
+ *
  *  [non]
+ *
  *    <name> | ()
  *
- *  [log]:
- *    log([log-entry]*)                - log entries [short key: L]
+ *  [ion]
  *
- *  [log-entry]:
- *    entry([severity] [message|any]*) - log entry [short key: M]
- *
- *  [circuit-xrefs]:
- *    xref([xref-pin|xref-device|xref-circuit|xref-net|any]*)
- *                                     - circuit cross-reference part [short key: Z]
- *
- *  [xref-pin]:
- *    pin([ion] [ion] [status]? [message]? [any]*)
- *                                     - a pin pair [short key: P]
- *
- *  [xref-device]:
- *    device([ion] [ion] [status]? [message]? [any]*)
- *                                     - a device pair [short key: D]
- *
- *  [xref-circuit]:
- *    circuit([ion] [ion] [status]? [message]? [any]*)
- *                                     - a subcircuit pair [short key: X]
- *
- *  [xref-net]:
- *    net([ion] [ion] [status]? [message]? [any]*)
- *                                     - a net pair [short key: N]
- *
- *  [ion]:
  *    <id> | ()
  *
- *  [message]:
- *    description(<name>)              - error description [short key: B]
+ *  [status]
  *
- *  [severity]:
- *    info |                           - [short key: I]
- *    warning |                        - [short key: W]
- *    error                            - [short key: E]
- *
- *  [status]:
  *    mismatch |                       - [short key: 0]
  *    match |                          - [short key: 1]
  *    nomatch |                        - [short key: X]
  *    warning |                        - [short key: W]
  *    skipped                          - [short key: S]
- *
- *  [any]:
- *    * |
- *    <token> |
- *    <token> ( [any]* ) |
- *    <float> |
- *    <quoted-string>
  */
 
 namespace lvs_std_format
@@ -137,8 +128,6 @@ namespace lvs_std_format
     static std::string reference_key;
     static std::string layout_key;
     static std::string xref_key;
-    static std::string log_key;
-    static std::string log_entry_key;
 
     static std::string mismatch_key;
     static std::string match_key;
@@ -154,8 +143,6 @@ namespace lvs_std_format
     static std::string reference_key;
     static std::string layout_key;
     static std::string xref_key;
-    static std::string log_key;
-    static std::string log_entry_key;
 
     static std::string mismatch_key;
     static std::string match_key;

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -41,7 +41,6 @@ namespace lay
 
 class MainWindow;
 class LayoutView;
-class LayoutViewWidget;
 class AbstractMenu;
 class DMarker;
 class NavigatorService;
@@ -85,6 +84,8 @@ public:
   void all_hier_levels (bool f);
   void show_images (bool f);
 
+  static void init_menu (AbstractMenu &menu);
+
 protected:
   virtual void closeEvent (QCloseEvent *event);
   virtual void showEvent (QShowEvent *event);
@@ -99,7 +100,7 @@ private:
   bool m_update_layers_needed;
   bool m_update_needed;
   MainWindow *mp_main_window;  
-  LayoutViewWidget *mp_view;
+  LayoutView *mp_view;  
   QLabel *mp_placeholder_label;  
   QFrame *mp_menu_bar;
   LayoutView *mp_source_view;

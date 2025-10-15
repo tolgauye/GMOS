@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -48,6 +48,19 @@ public:
   virtual ~NetlistReader () { }
 
   virtual void read (tl::InputStream &stream, db::Netlist &netlist) = 0;
+};
+
+}
+
+namespace tl
+{
+
+template <>
+struct type_traits<db::NetlistReader>
+  : public tl::type_traits<void>
+{
+  typedef tl::false_tag has_default_constructor;
+  typedef tl::false_tag has_copy_constructor;
 };
 
 }

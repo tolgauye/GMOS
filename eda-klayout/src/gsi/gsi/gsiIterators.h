@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -225,7 +225,7 @@ private:
 };
 
 /**
- *  @brief The template providing a binding of a "free iterator" (one that provides its own at_end method)
+ *  @brief The template providing a binding of a "free iterator" (one that provides it's own at_end method)
  */
 template <class I>
 class FreeIterAdaptor 

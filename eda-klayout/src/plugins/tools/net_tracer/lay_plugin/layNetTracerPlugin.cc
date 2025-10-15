@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -22,14 +22,12 @@
 
 #include "dbNetTracerIO.h"
 
-#include "layNetTracerTechComponentEditor.h"
+#include "layNetTracerIO.h"
 #include "layNetTracerDialog.h"
 #include "layNetTracerConfig.h"
 
 #include "layConverters.h"
 #include "layCellView.h"
-#include "layLayoutView.h"
-#include "layUtils.h"
 
 #include "gsiDecl.h"
 
@@ -69,21 +67,17 @@ public:
   {
     //  TODO: where should that go?
     lay::PluginDeclaration::get_menu_entries (menu_entries);
-    menu_entries.push_back (lay::separator ("net_trace_group", "tools_menu.end"));
-    menu_entries.push_back (lay::menu_item ("lay::net_trace", "net_trace", "tools_menu.end", tl::to_string (QObject::tr ("Trace Net"))));
-    menu_entries.push_back (lay::submenu ("", "trace_all_nets_menu", "tools_menu.end", tl::to_string (QObject::tr ("Trace All Nets"))));
-    menu_entries.push_back (lay::menu_item ("lay::trace_all_nets", "trace_all_nets", "tools_menu.trace_all_nets_menu.end", tl::to_string (QObject::tr ("Hierarchical"))));
-    menu_entries.push_back (lay::menu_item ("lay::trace_all_nets_flat", "trace_all_nets_flat", "tools_menu.trace_all_nets_menu.end", tl::to_string (QObject::tr ("Flat"))));
-    menu_entries.push_back (lay::menu_item ("lay::edit_layer_stack", "edit_layer_stack", "tools_menu.end", tl::to_string (QObject::tr ("Edit Layer Stack"))));
+    menu_entries.push_back (lay::MenuEntry ("net_trace_group", "tools_menu.end"));
+    menu_entries.push_back (lay::MenuEntry ("lay::net_trace", "net_trace", "tools_menu.end", tl::to_string (QObject::tr ("Trace Net"))));
+    menu_entries.push_back (lay::MenuEntry ("", "trace_all_nets_menu", "tools_menu.end", tl::to_string (QObject::tr ("Trace All Nets")), true));
+    menu_entries.push_back (lay::MenuEntry ("lay::trace_all_nets", "trace_all_nets", "tools_menu.trace_all_nets_menu.end", tl::to_string (QObject::tr ("Hierarchical"))));
+    menu_entries.push_back (lay::MenuEntry ("lay::trace_all_nets_flat", "trace_all_nets_flat", "tools_menu.trace_all_nets_menu.end", tl::to_string (QObject::tr ("Flat"))));
+    menu_entries.push_back (lay::MenuEntry ("lay::edit_layer_stack", "edit_layer_stack", "tools_menu.end", tl::to_string (QObject::tr ("Edit Layer Stack"))));
   }
 
-  virtual lay::Plugin *create_plugin (db::Manager * /*manager*/, lay::Dispatcher *root, lay::LayoutViewBase *view) const
+  virtual lay::Plugin *create_plugin (db::Manager * /*manager*/, lay::PluginRoot *root, lay::LayoutView *view) const
   {
-    if (lay::has_gui ()) {
-      return new NetTracerDialog (root, view);
-    } else {
-      return 0;
-    }
+    return new NetTracerDialog (root, view);
   }
 };
 

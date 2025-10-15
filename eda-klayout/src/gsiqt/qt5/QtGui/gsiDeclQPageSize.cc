@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -34,6 +34,7 @@
 #include <QSizeF>
 #include "gsiQt.h"
 #include "gsiQtGuiCommon.h"
+#include "gsiDeclQtGuiTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -640,12 +641,12 @@ static void _call_f_windowsId_2390 (const qt_gsi::GenericStaticMethod * /*decl*/
 
 //  bool ::operator==(const QPageSize &lhs, const QPageSize &rhs)
 static bool op_QPageSize_operator_eq__eq__4264(const QPageSize *_self, const QPageSize &rhs) {
-  return operator==(*_self, rhs);
+  return ::operator==(*_self, rhs);
 }
 
 //  bool ::operator!=(const QPageSize &lhs, const QPageSize &rhs)
 static bool op_QPageSize_operator_excl__eq__4264(const QPageSize *_self, const QPageSize &rhs) {
-  return operator!=(*_self, rhs);
+  return ::operator!=(*_self, rhs);
 }
 
 

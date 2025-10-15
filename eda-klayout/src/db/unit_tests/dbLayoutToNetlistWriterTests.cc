@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -60,7 +60,8 @@ TEST(1_WriterBasic)
     options.get_options<db::CommonReaderOptions> ().layer_map = lmap;
     options.get_options<db::CommonReaderOptions> ().create_other_layers = false;
 
-    std::string fn (tl::testdata ());
+    std::string fn (tl::testsrc ());
+    fn = tl::combine_path (fn, "testdata");
     fn = tl::combine_path (fn, "algo");
     fn = tl::combine_path (fn, "device_extract_l1.gds");
 
@@ -72,17 +73,17 @@ TEST(1_WriterBasic)
   db::Cell &tc = ly.cell (*ly.begin_top_down ());
   db::LayoutToNetlist l2n (db::RecursiveShapeIterator (ly, tc, std::set<unsigned int> ()));
 
-  std::unique_ptr<db::Region> rnwell (l2n.make_layer (nwell, "nwell"));
-  std::unique_ptr<db::Region> ractive (l2n.make_layer (active, "active"));
-  std::unique_ptr<db::Region> rpoly (l2n.make_polygon_layer (poly, "poly"));
-  std::unique_ptr<db::Texts> rpoly_lbl (l2n.make_text_layer (poly_lbl, "poly_lbl"));
-  std::unique_ptr<db::Region> rdiff_cont (l2n.make_polygon_layer (diff_cont, "diff_cont"));
-  std::unique_ptr<db::Region> rpoly_cont (l2n.make_polygon_layer (poly_cont, "poly_cont"));
-  std::unique_ptr<db::Region> rmetal1 (l2n.make_polygon_layer (metal1, "metal1"));
-  std::unique_ptr<db::Texts> rmetal1_lbl (l2n.make_text_layer (metal1_lbl, "metal1_lbl"));
-  std::unique_ptr<db::Region> rvia1 (l2n.make_polygon_layer (via1, "via1"));
-  std::unique_ptr<db::Region> rmetal2 (l2n.make_polygon_layer (metal2, "metal2"));
-  std::unique_ptr<db::Texts> rmetal2_lbl (l2n.make_text_layer (metal2_lbl, "metal2_lbl"));
+  std::auto_ptr<db::Region> rnwell (l2n.make_layer (nwell, "nwell"));
+  std::auto_ptr<db::Region> ractive (l2n.make_layer (active, "active"));
+  std::auto_ptr<db::Region> rpoly (l2n.make_polygon_layer (poly, "poly"));
+  std::auto_ptr<db::Region> rpoly_lbl (l2n.make_text_layer (poly_lbl, "poly_lbl"));
+  std::auto_ptr<db::Region> rdiff_cont (l2n.make_polygon_layer (diff_cont, "diff_cont"));
+  std::auto_ptr<db::Region> rpoly_cont (l2n.make_polygon_layer (poly_cont, "poly_cont"));
+  std::auto_ptr<db::Region> rmetal1 (l2n.make_polygon_layer (metal1, "metal1"));
+  std::auto_ptr<db::Region> rmetal1_lbl (l2n.make_text_layer (metal1_lbl, "metal1_lbl"));
+  std::auto_ptr<db::Region> rvia1 (l2n.make_polygon_layer (via1, "via1"));
+  std::auto_ptr<db::Region> rmetal2 (l2n.make_polygon_layer (metal2, "metal2"));
+  std::auto_ptr<db::Region> rmetal2_lbl (l2n.make_text_layer (metal2_lbl, "metal2_lbl"));
 
   //  derived regions
 
@@ -173,7 +174,7 @@ TEST(1_WriterBasic)
     writer.write (&l2n);
   }
 
-  std::string au_path = tl::combine_path (tl::combine_path (tl::testdata (), "algo"), "l2n_writer_au.txt");
+  std::string au_path = tl::combine_path (tl::combine_path (tl::combine_path (tl::testsrc (), "testdata"), "algo"), "l2n_writer_au.txt");
 
   compare_text_files (path, au_path);
 
@@ -184,7 +185,7 @@ TEST(1_WriterBasic)
     writer.write (&l2n);
   }
 
-  au_path = tl::combine_path (tl::combine_path (tl::testdata (), "algo"), "l2n_writer_au_s.txt");
+  au_path = tl::combine_path (tl::combine_path (tl::combine_path (tl::testsrc (), "testdata"), "algo"), "l2n_writer_au_s.txt");
 
   compare_text_files (path, au_path);
 
@@ -197,19 +198,20 @@ TEST(1_WriterBasic)
 
     db::CellMapping cm = l2n.cell_mapping_into (ly2, top2, true /*with device cells*/);
 
-    std::map<unsigned int, unsigned int> lmap;
-    lmap [ly2.insert_layer (db::LayerProperties (10, 0))] = l2n.layer_of (rpsd);
-    lmap [ly2.insert_layer (db::LayerProperties (11, 0))] = l2n.layer_of (rnsd);
-    lmap [ly2.insert_layer (db::LayerProperties (3, 0)) ] = l2n.layer_of (*rpoly);
-    lmap [ly2.insert_layer (db::LayerProperties (4, 0)) ] = l2n.layer_of (*rdiff_cont);
-    lmap [ly2.insert_layer (db::LayerProperties (5, 0)) ] = l2n.layer_of (*rpoly_cont);
-    lmap [ly2.insert_layer (db::LayerProperties (6, 0)) ] = l2n.layer_of (*rmetal1);
-    lmap [ly2.insert_layer (db::LayerProperties (7, 0)) ] = l2n.layer_of (*rvia1);
-    lmap [ly2.insert_layer (db::LayerProperties (8, 0)) ] = l2n.layer_of (*rmetal2);
+    std::map<unsigned int, const db::Region *> lmap;
+    lmap [ly2.insert_layer (db::LayerProperties (10, 0))] = &rpsd;
+    lmap [ly2.insert_layer (db::LayerProperties (11, 0))] = &rnsd;
+    lmap [ly2.insert_layer (db::LayerProperties (3, 0)) ] = rpoly.get ();
+    lmap [ly2.insert_layer (db::LayerProperties (4, 0)) ] = rdiff_cont.get ();
+    lmap [ly2.insert_layer (db::LayerProperties (5, 0)) ] = rpoly_cont.get ();
+    lmap [ly2.insert_layer (db::LayerProperties (6, 0)) ] = rmetal1.get ();
+    lmap [ly2.insert_layer (db::LayerProperties (7, 0)) ] = rvia1.get ();
+    lmap [ly2.insert_layer (db::LayerProperties (8, 0)) ] = rmetal2.get ();
 
-    l2n.build_all_nets (cm, ly2, lmap, "NET_", db::NPM_NoProperties, tl::Variant (), db::BNH_Disconnected, 0, "DEVICE_");
+    l2n.build_all_nets (cm, ly2, lmap, "NET_", tl::Variant (), db::LayoutToNetlist::BNH_Disconnected, 0, "DEVICE_");
 
-    std::string au = tl::testdata ();
+    std::string au = tl::testsrc ();
+    au = tl::combine_path (au, "testdata");
     au = tl::combine_path (au, "algo");
     au = tl::combine_path (au, "l2n_writer_au.gds");
 
@@ -239,7 +241,7 @@ TEST(1_WriterBasic)
     writer.write (&l2n);
   }
 
-  au_path = tl::combine_path (tl::combine_path (tl::testdata (), "algo"), "l2n_writer_au_p.txt");
+  au_path = tl::combine_path (tl::combine_path (tl::combine_path (tl::testsrc (), "testdata"), "algo"), "l2n_writer_au_p.txt");
 
   compare_text_files (path, au_path);
 }
@@ -268,7 +270,8 @@ TEST(2_WriterWithGlobalNets)
     options.get_options<db::CommonReaderOptions> ().layer_map = lmap;
     options.get_options<db::CommonReaderOptions> ().create_other_layers = false;
 
-    std::string fn (tl::testdata ());
+    std::string fn (tl::testsrc ());
+    fn = tl::combine_path (fn, "testdata");
     fn = tl::combine_path (fn, "algo");
     fn = tl::combine_path (fn, "device_extract_l3.gds");
 
@@ -280,20 +283,20 @@ TEST(2_WriterWithGlobalNets)
   db::Cell &tc = ly.cell (*ly.begin_top_down ());
   db::LayoutToNetlist l2n (db::RecursiveShapeIterator (ly, tc, std::set<unsigned int> ()));
 
-  std::unique_ptr<db::Region> rbulk (l2n.make_layer (ly.insert_layer (), "rbulk"));
-  std::unique_ptr<db::Region> rnwell (l2n.make_layer (nwell, "nwell"));
-  std::unique_ptr<db::Region> ractive (l2n.make_layer (active, "active"));
-  std::unique_ptr<db::Region> rpplus (l2n.make_layer (pplus, "pplus"));
-  std::unique_ptr<db::Region> rnplus (l2n.make_layer (nplus, "nplus"));
-  std::unique_ptr<db::Region> rpoly (l2n.make_polygon_layer (poly, "poly"));
-  std::unique_ptr<db::Region> rpoly_lbl (l2n.make_layer (poly_lbl, "poly_lbl"));
-  std::unique_ptr<db::Region> rdiff_cont (l2n.make_polygon_layer (diff_cont, "diff_cont"));
-  std::unique_ptr<db::Region> rpoly_cont (l2n.make_polygon_layer (poly_cont, "poly_cont"));
-  std::unique_ptr<db::Region> rmetal1 (l2n.make_polygon_layer (metal1, "metal1"));
-  std::unique_ptr<db::Region> rmetal1_lbl (l2n.make_layer (metal1_lbl, "metal1_lbl"));
-  std::unique_ptr<db::Region> rvia1 (l2n.make_polygon_layer (via1, "via1"));
-  std::unique_ptr<db::Region> rmetal2 (l2n.make_polygon_layer (metal2, "metal2"));
-  std::unique_ptr<db::Region> rmetal2_lbl (l2n.make_layer (metal2_lbl, "metal2_lbl"));
+  std::auto_ptr<db::Region> rbulk (l2n.make_layer (ly.insert_layer (), "rbulk"));
+  std::auto_ptr<db::Region> rnwell (l2n.make_layer (nwell, "nwell"));
+  std::auto_ptr<db::Region> ractive (l2n.make_layer (active, "active"));
+  std::auto_ptr<db::Region> rpplus (l2n.make_layer (pplus, "pplus"));
+  std::auto_ptr<db::Region> rnplus (l2n.make_layer (nplus, "nplus"));
+  std::auto_ptr<db::Region> rpoly (l2n.make_polygon_layer (poly, "poly"));
+  std::auto_ptr<db::Region> rpoly_lbl (l2n.make_text_layer (poly_lbl, "poly_lbl"));
+  std::auto_ptr<db::Region> rdiff_cont (l2n.make_polygon_layer (diff_cont, "diff_cont"));
+  std::auto_ptr<db::Region> rpoly_cont (l2n.make_polygon_layer (poly_cont, "poly_cont"));
+  std::auto_ptr<db::Region> rmetal1 (l2n.make_polygon_layer (metal1, "metal1"));
+  std::auto_ptr<db::Region> rmetal1_lbl (l2n.make_text_layer (metal1_lbl, "metal1_lbl"));
+  std::auto_ptr<db::Region> rvia1 (l2n.make_polygon_layer (via1, "via1"));
+  std::auto_ptr<db::Region> rmetal2 (l2n.make_polygon_layer (metal2, "metal2"));
+  std::auto_ptr<db::Region> rmetal2_lbl (l2n.make_text_layer (metal2_lbl, "metal2_lbl"));
 
   //  derived regions
 
@@ -402,7 +405,7 @@ TEST(2_WriterWithGlobalNets)
     writer.write (&l2n);
   }
 
-  std::string au_path = tl::combine_path (tl::combine_path (tl::testdata (), "algo"), "l2n_writer_au_2b.txt");
+  std::string au_path = tl::combine_path (tl::combine_path (tl::combine_path (tl::testsrc (), "testdata"), "algo"), "l2n_writer_au_2b.txt");
 
   compare_text_files (path, au_path);
 
@@ -413,7 +416,7 @@ TEST(2_WriterWithGlobalNets)
     writer.write (&l2n);
   }
 
-  au_path = tl::combine_path (tl::combine_path (tl::testdata (), "algo"), "l2n_writer_au_2s.txt");
+  au_path = tl::combine_path (tl::combine_path (tl::combine_path (tl::testsrc (), "testdata"), "algo"), "l2n_writer_au_2s.txt");
 
   compare_text_files (path, au_path);
 
@@ -426,61 +429,27 @@ TEST(2_WriterWithGlobalNets)
 
     db::CellMapping cm = l2n.cell_mapping_into (ly2, top2, true /*with device cells*/);
 
-    std::map<unsigned int, unsigned int> lmap;
-    lmap [ly2.insert_layer (db::LayerProperties (10, 0))] = l2n.layer_of (rpsd);
-    lmap [ly2.insert_layer (db::LayerProperties (11, 0))] = l2n.layer_of (rnsd);
-    lmap [ly2.insert_layer (db::LayerProperties (12, 0))] = l2n.layer_of (*rbulk);
-    lmap [ly2.insert_layer (db::LayerProperties (13, 0))] = l2n.layer_of (rptie);
-    lmap [ly2.insert_layer (db::LayerProperties (14, 0))] = l2n.layer_of (rntie);
-    lmap [ly2.insert_layer (db::LayerProperties (1, 0)) ] = l2n.layer_of (*rnwell);
-    lmap [ly2.insert_layer (db::LayerProperties (3, 0)) ] = l2n.layer_of (*rpoly);
-    lmap [ly2.insert_layer (db::LayerProperties (4, 0)) ] = l2n.layer_of (*rdiff_cont);
-    lmap [ly2.insert_layer (db::LayerProperties (5, 0)) ] = l2n.layer_of (*rpoly_cont);
-    lmap [ly2.insert_layer (db::LayerProperties (6, 0)) ] = l2n.layer_of (*rmetal1);
-    lmap [ly2.insert_layer (db::LayerProperties (7, 0)) ] = l2n.layer_of (*rvia1);
-    lmap [ly2.insert_layer (db::LayerProperties (8, 0)) ] = l2n.layer_of (*rmetal2);
+    std::map<unsigned int, const db::Region *> lmap;
+    lmap [ly2.insert_layer (db::LayerProperties (10, 0))] = &rpsd;
+    lmap [ly2.insert_layer (db::LayerProperties (11, 0))] = &rnsd;
+    lmap [ly2.insert_layer (db::LayerProperties (12, 0))] = rbulk.get ();
+    lmap [ly2.insert_layer (db::LayerProperties (13, 0))] = &rptie;
+    lmap [ly2.insert_layer (db::LayerProperties (14, 0))] = &rntie;
+    lmap [ly2.insert_layer (db::LayerProperties (1, 0)) ] = rnwell.get ();
+    lmap [ly2.insert_layer (db::LayerProperties (3, 0)) ] = rpoly.get ();
+    lmap [ly2.insert_layer (db::LayerProperties (4, 0)) ] = rdiff_cont.get ();
+    lmap [ly2.insert_layer (db::LayerProperties (5, 0)) ] = rpoly_cont.get ();
+    lmap [ly2.insert_layer (db::LayerProperties (6, 0)) ] = rmetal1.get ();
+    lmap [ly2.insert_layer (db::LayerProperties (7, 0)) ] = rvia1.get ();
+    lmap [ly2.insert_layer (db::LayerProperties (8, 0)) ] = rmetal2.get ();
 
-    l2n.build_all_nets (cm, ly2, lmap, "NET_", db::NPM_NoProperties, tl::Variant (), db::BNH_SubcircuitCells, "CIRCUIT_", "DEVICE_");
+    l2n.build_all_nets (cm, ly2, lmap, "NET_", tl::Variant (), db::LayoutToNetlist::BNH_SubcircuitCells, "CIRCUIT_", "DEVICE_");
 
-    std::string au = tl::testdata ();
+    std::string au = tl::testsrc ();
+    au = tl::combine_path (au, "testdata");
     au = tl::combine_path (au, "algo");
     au = tl::combine_path (au, "l2n_writer_au_2.gds");
 
     db::compare_layouts (_this, ly2, au);
   }
-}
-
-TEST(3_Messages)
-{
-  db::Layout ly;
-  db::Cell &tc = ly.cell (ly.add_cell ("TOP"));
-  db::LayoutToNetlist l2n (db::RecursiveShapeIterator (ly, tc, std::set<unsigned int> ()));
-
-  l2n.extract_netlist ();
-
-  l2n.log_entry (db::LogEntryData (db::Info, "info"));
-  l2n.log_entry (db::LogEntryData (db::Warning, "warning"));
-  l2n.log_entry (db::LogEntryData (db::Error, "error"));
-
-  std::string path = tmp_file ("tmp_l2nwriter_3.txt");
-  {
-    tl::OutputStream stream (path);
-    db::LayoutToNetlistStandardWriter writer (stream, false);
-    writer.write (&l2n);
-  }
-
-  std::string au_path = tl::combine_path (tl::combine_path (tl::testdata (), "algo"), "l2n_writer_au_3.txt");
-
-  compare_text_files (path, au_path);
-
-  path = tmp_file ("tmp_l2nwriter_3s.txt");
-  {
-    tl::OutputStream stream (path);
-    db::LayoutToNetlistStandardWriter writer (stream, true);
-    writer.write (&l2n);
-  }
-
-  au_path = tl::combine_path (tl::combine_path (tl::testdata (), "algo"), "l2n_writer_au_3s.txt");
-
-  compare_text_files (path, au_path);
 }

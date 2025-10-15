@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -115,7 +115,7 @@ public:
   {
     T *t = dynamic_cast<T *> (object);
     if (t) {
-      void *argv[] = { _CALLARGPTRS };
+      void *(argv[]) = { _CALLARGPTRS };
       (t->*m_m) (_COUNT, &(argv[0]));
     }
   }
@@ -145,7 +145,7 @@ public:
   {
     T *t = dynamic_cast<T *> (object);
     if (t) {
-      void *argv[] = { _CALLARGPTRS };
+      void *(argv[]) = { _CALLARGPTRS };
       (t->*m_m) (m_d, _COUNT, &(argv[0]));
     }
   }
@@ -175,26 +175,8 @@ public:
   typedef typename receivers::iterator receivers_iterator;
 #endif
 
-  event<_TMPLARGLISTP> ()
-    : mp_destroyed_sentinel (0)
-  {
-    //  .. nothing yet ..
-  }
-
-  ~event<_TMPLARGLISTP> ()
-  {
-    if (mp_destroyed_sentinel) {
-      *mp_destroyed_sentinel = true;
-    }
-    mp_destroyed_sentinel = 0;
-  }
-
   void operator() (_CALLARGLIST)
   {
-    bool was_destroyed = false;
-    bool *org_sentinel = mp_destroyed_sentinel;
-    mp_destroyed_sentinel = &was_destroyed;
-
     //  Issue the events. Because inside the call, other receivers might be added, we make a copy
     //  first. This way added events won't be called now.
     receivers tmp_receivers = m_receivers;
@@ -202,10 +184,6 @@ public:
       if (r->first.get ()) {
         try {
           r->second->call (_JOIN(r->first.get (), _CALLARGS));
-          if (was_destroyed) {
-            //  during the call something deleted us. Stop immediately.
-            return;
-          }
         } catch (tl::Exception &ex) {
           handle_event_exception (ex);
         } catch (std::exception &ex) {
@@ -215,8 +193,6 @@ public:
         }
       }
     }
-
-    mp_destroyed_sentinel = org_sentinel;
 
     //  Clean up expired entries afterwards (the call may have expired them)
     receivers_iterator w = m_receivers.begin ();
@@ -363,7 +339,6 @@ public:
   }
 
 private:
-  bool *mp_destroyed_sentinel;
   receivers m_receivers;
 };
 

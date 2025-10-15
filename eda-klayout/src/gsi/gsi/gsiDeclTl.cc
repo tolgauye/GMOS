@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -77,24 +77,40 @@ public:
   }
 };
 
+}
+
+namespace tl {
+  template <> struct type_traits<gsi::Logger> : public type_traits<void> {
+    typedef tl::false_tag has_copy_constructor;
+    typedef tl::false_tag has_default_constructor;
+  };
+}
+
+namespace gsi
+{
+
 Class<Logger> decl_Logger ("tl", "Logger",
-  gsi::method ("info", &Logger::info, gsi::arg ("msg"),
+  gsi::method ("info", &Logger::info, 
     "@brief Writes the given string to the info channel\n"
+    "@args msg\n"
     "\n"
     "The info channel is printed as neutral messages unconditionally.\n"
   ) +
-  gsi::method ("error", &Logger::error, gsi::arg ("msg"),
+  gsi::method ("error", &Logger::error, 
     "@brief Writes the given string to the error channel\n"
+    "@args msg\n"
     "\n"
     "The error channel is formatted as an error (i.e. red in the logger window) and output unconditionally.\n"
   ) +
-  gsi::method ("warn", &Logger::warn, gsi::arg ("msg"),
+  gsi::method ("warn", &Logger::warn, 
     "@brief Writes the given string to the warning channel\n"
+    "@args msg\n"
     "\n"
     "The warning channel is formatted as a warning (i.e. blue in the logger window) and output unconditionally.\n"
   ) +
-  gsi::method ("log", &Logger::log, gsi::arg ("msg"),
+  gsi::method ("log", &Logger::log, 
     "@brief Writes the given string to the log channel\n"
+    "@args msg\n"
     "\n"
     "Log messages are printed as neutral messages and are output only if the verbosity is above 0.\n"
   ) +
@@ -105,14 +121,12 @@ Class<Logger> decl_Logger ("tl", "Logger",
     "Level 0 is silent, levels 10, 20, 30 etc. denote levels with increasing verbosity. "
     "11, 21, 31 .. are sublevels which also enable timing logs in addition to messages."
   ) +
-  gsi::method ("verbosity=|set_verbosity", &Logger::set_verbosity, gsi::arg ("v"),
+  gsi::method ("verbosity=", &Logger::set_verbosity, 
     "@brief Sets the verbosity level for the application\n"
+    "@args v\n"
     "\n"
     "See \\verbosity for a definition of the verbosity levels. Please note that this method "
     "changes the verbosity level for the whole application.\n"
-    "\n"
-    "The 'set_verbosity' alias has been introduced in version 0.29.11 as class attributes "
-    "are not always available in Python."
   ),
   "@brief A logger\n"
   "\n"
@@ -144,15 +158,6 @@ static std::string timer_to_s (const tl::Timer *timer)
 }
 
 Class<tl::Timer> decl_Timer ("tl", "Timer",
-  gsi::method ("memory_size", &tl::Timer::memory_size,
-    "@brief Gets the current memory usage of the process in Bytes\n"
-    "\n"
-    "The returned value is the resident memory size on Linux and MacOS and "
-    "the working set size on Windows.\n"
-    "\n"
-    "This method has been introduced in version 0.27. The value has been changed "
-    "to be resident size (instead of virtual size) on Linux in version 0.30."    
-  ) +
   gsi::method ("user", &tl::Timer::sec_user, 
     "@brief Returns the elapsed CPU time in user mode from start to stop in seconds\n"
   ) +
@@ -196,18 +201,39 @@ Class<tl::Timer> decl_Timer ("tl", "Timer",
 // ----------------------------------------------------------------
 //  Progress reporter objects
 
+namespace tl {
+
+  template <> struct type_traits<tl::Progress> : public type_traits<void> {
+    typedef tl::false_tag has_copy_constructor;
+    typedef tl::false_tag has_default_constructor;
+  };
+
+  template <> struct type_traits<tl::RelativeProgress> : public type_traits<void> {
+    typedef tl::false_tag has_copy_constructor;
+    typedef tl::false_tag has_default_constructor;
+  };
+
+  template <> struct type_traits<tl::AbsoluteProgress> : public type_traits<void> {
+    typedef tl::false_tag has_copy_constructor;
+    typedef tl::false_tag has_default_constructor;
+  };
+
+}
+
 namespace gsi 
 {
   
 Class<tl::Progress> decl_Progress ("tl", "Progress",
-  gsi::method ("desc=", &tl::Progress::set_desc, gsi::arg ("desc"),
+  gsi::method ("desc=", &tl::Progress::set_desc, 
     "@brief Sets the description text of the progress object\n"
+    "@args desc\n"
   ) +
   gsi::method ("desc", &tl::Progress::desc, 
     "@brief Gets the description text of the progress object\n"
   ) +
-  gsi::method ("title=", &tl::Progress::set_desc, gsi::arg ("title"),
+  gsi::method ("title=", &tl::Progress::set_desc, 
     "@brief Sets the title text of the progress object\n"
+    "@args title\n"
     "\n"
     "Initially the title is equal to the description.\n"
   ),
@@ -221,27 +247,6 @@ Class<tl::Progress> decl_Progress ("tl", "Progress",
   "Actual implementations of the progress reporter class are \\RelativeProgress and \\AbsoluteProgress.\n"
   "\n"
   "This class has been introduced in version 0.23.\n"
-);
-
-static tl::AbstractProgress *abstract_progress (const std::string &desc)
-{
-  return new tl::AbstractProgress (desc);
-}
-
-Class<tl::AbstractProgress> decl_AbstractProgress (decl_Progress, "tl", "AbstractProgress",
-  gsi::constructor ("new", &abstract_progress, gsi::arg ("desc"),
-    "@brief Creates an abstract progress reporter with the given description\n"
-  ),
-  "@brief The abstract progress reporter\n"
-  "\n"
-  "The abstract progress reporter acts as a 'bracket' for a sequence of operations which are connected "
-  "logically. For example, a DRC script consists of multiple operations. An abstract progress reportert "
-  "is instantiated during the run time of the DRC script. This way, the application leaves the UI open while "
-  "the DRC executes and log messages can be collected.\n"
-  "\n"
-  "The abstract progress does not have a value.\n"
-  "\n"
-  "This class has been introduced in version 0.27.\n"
 );
 
 static tl::RelativeProgress *rel_progress_2 (const std::string &desc, size_t max)
@@ -265,14 +270,16 @@ static void rel_progress_set_2 (tl::RelativeProgress *progress, size_t value, bo
 }
 
 Class<tl::RelativeProgress> decl_RelativeProgress (decl_Progress, "tl", "RelativeProgress",
-  gsi::constructor ("new", &rel_progress_2, gsi::arg ("desc"), gsi::arg ("max_value"),
+  gsi::constructor ("new", &rel_progress_2,
     "@brief Creates a relative progress reporter with the given description and maximum value\n"
+    "@args desc, max_value\n"
     "\n"
     "The reported progress will be 0 to 100% for values between 0 and the maximum value.\n"
     "The values are always integers. Double values cannot be used property.\n"
   ) + 
-  gsi::constructor ("new", &rel_progress_3, gsi::arg ("desc"), gsi::arg ("max_value"), gsi::arg ("yield_interval"),
+  gsi::constructor ("new", &rel_progress_3,
     "@brief Creates a relative progress reporter with the given description and maximum value\n"
+    "@args desc, max_value, yield_interval\n"
     "\n"
     "The reported progress will be 0 to 100% for values between 0 and the maximum value.\n"
     "The values are always integers. Double values cannot be used property.\n"
@@ -280,17 +287,20 @@ Class<tl::RelativeProgress> decl_RelativeProgress (decl_Progress, "tl", "Relativ
     "The yield interval specifies, how often the event loop will be triggered. When the yield interval is 10 for example, "
     "the event loop will be executed every tenth call of \\inc or \\set.\n"
   ) + 
-  gsi::method ("format=", &tl::RelativeProgress::set_format, gsi::arg ("format"),
+  gsi::method ("format=", &tl::RelativeProgress::set_format, 
     "@brief sets the output format (sprintf notation) for the progress text\n"
+    "@args format\n"
   ) +
   gsi::method ("inc", &tl::RelativeProgress::operator++, 
     "@brief Increments the progress value\n"
   ) +
-  gsi::method_ext ("value=", &rel_progress_set_1, gsi::arg ("value"),
+  gsi::method_ext ("value=", &rel_progress_set_1,
     "@brief Sets the progress value\n"
+    "@args value\n"
   ) + 
-  gsi::method_ext ("set", &rel_progress_set_2, gsi::arg ("value"), gsi::arg ("force_yield"),
+  gsi::method_ext ("set", &rel_progress_set_2,
     "@brief Sets the progress value\n"
+    "@args value, force_yield\n"
     "\n"
     "This method is equivalent to \\value=, but it allows forcing the event loop to be triggered.\n"
     "If \"force_yield\" is true, the event loop will be triggered always, irregardless of the yield interval specified in the constructor.\n"
@@ -342,20 +352,24 @@ static void abs_progress_set_2 (tl::AbsoluteProgress *progress, size_t value, bo
 }
 
 Class<tl::AbsoluteProgress> decl_AbsoluteProgress (decl_Progress, "tl", "AbsoluteProgress",
-  gsi::constructor ("new", &abs_progress_1, gsi::arg ("desc"),
+  gsi::constructor ("new", &abs_progress_1,
     "@brief Creates an absolute progress reporter with the given description\n"
+    "@args desc, max_value\n"
   ) + 
-  gsi::constructor ("new", &abs_progress_2, gsi::arg ("desc"), gsi::arg ("yield_interval"),
+  gsi::constructor ("new", &abs_progress_2,
     "@brief Creates an absolute progress reporter with the given description\n"
+    "@args desc, max_value, yield_interval\n"
     "\n"
     "The yield interval specifies, how often the event loop will be triggered. When the yield interval is 10 for example, "
     "the event loop will be executed every tenth call of \\inc or \\set.\n"
   ) + 
-  gsi::method ("format=", &tl::AbsoluteProgress::set_format, gsi::arg ("format"),
+  gsi::method ("format=", &tl::AbsoluteProgress::set_format, 
     "@brief sets the output format (sprintf notation) for the progress text\n"
+    "@args format\n"
   ) +
-  gsi::method ("unit=", &tl::AbsoluteProgress::set_unit, gsi::arg ("unit"),
+  gsi::method ("unit=", &tl::AbsoluteProgress::set_unit, 
     "@brief Sets the unit\n"
+    "@args unit\n"
     "\n"
     "Specifies the count value corresponding to 1 percent on the "
     "progress bar. By default, the current value divided by the unit "
@@ -363,8 +377,9 @@ Class<tl::AbsoluteProgress> decl_AbsoluteProgress (decl_Progress, "tl", "Absolut
     "Another attribute is provided (\\format_unit=) to specify "
     "a separate unit for that purpose.\n"
   ) + 
-  gsi::method ("format_unit=", &tl::AbsoluteProgress::set_format_unit, gsi::arg ("unit"),
+  gsi::method ("format_unit=", &tl::AbsoluteProgress::set_format_unit, 
     "@brief Sets the format unit\n"
+    "@args unit\n"
     "\n"
     "This is the unit used for formatted output.\n"
     "The current count is divided by the format unit to render\n"
@@ -373,11 +388,13 @@ Class<tl::AbsoluteProgress> decl_AbsoluteProgress (decl_Progress, "tl", "Absolut
   gsi::method ("inc", &tl::AbsoluteProgress::operator++, 
     "@brief Increments the progress value\n"
   ) +
-  gsi::method_ext ("value=", &abs_progress_set_1, gsi::arg ("value"),
+  gsi::method_ext ("value=", &abs_progress_set_1,
     "@brief Sets the progress value\n"
+    "@args value\n"
   ) + 
-  gsi::method_ext ("set", &abs_progress_set_2, gsi::arg ("value"), gsi::arg ("force_yield"),
+  gsi::method_ext ("set", &abs_progress_set_2,
     "@brief Sets the progress value\n"
+    "@args value, force_yield\n"
     "\n"
     "This method is equivalent to \\value=, but it allows forcing the event loop to be triggered.\n"
     "If \"force_yield\" is true, the event loop will be triggered always, irregardless of the yield interval specified in the constructor.\n"
@@ -441,7 +458,7 @@ public:
   {
     mp_expr.reset (0);
 
-    std::unique_ptr<tl::Expression> ex (new tl::Expression ());
+    std::auto_ptr<tl::Expression> ex (new tl::Expression ());
     tl::Eval::parse (*ex, e);
     mp_expr.reset (ex.release ());
   }
@@ -456,10 +473,8 @@ public:
   }
 
 private:
-  std::unique_ptr<tl::Expression> mp_expr;
+  std::auto_ptr<tl::Expression> mp_expr;
 };
-
-}
 
 static tl::Variant eval_expr (const std::string &e)
 {
@@ -470,19 +485,30 @@ static tl::Variant eval_expr (const std::string &e)
 
 static ExpressionWrapper *new_expr1 (const std::string &e)
 {
-  std::unique_ptr<ExpressionWrapper> expr (new ExpressionWrapper ());
+  std::auto_ptr<ExpressionWrapper> expr (new ExpressionWrapper ());
   expr->parse (e);
   return expr.release ();
 }
 
 static ExpressionWrapper *new_expr2 (const std::string &e, const std::map<std::string, tl::Variant> &variables)
 {
-  std::unique_ptr<ExpressionWrapper> expr (new ExpressionWrapper ());
+  std::auto_ptr<ExpressionWrapper> expr (new ExpressionWrapper ());
   for (std::map<std::string, tl::Variant>::const_iterator v = variables.begin (); v != variables.end (); ++v) {
     expr->set_var (v->first, v->second);
   }
   expr->parse (e);
   return expr.release ();
+}
+
+}
+
+namespace tl {
+
+  template <> struct type_traits<ExpressionWrapper> : public type_traits<void> {
+    typedef tl::false_tag has_copy_constructor;
+    typedef tl::true_tag has_default_constructor;
+  };
+
 }
 
 namespace gsi
@@ -615,62 +641,6 @@ Class<tl::GlobPattern> decl_GlobPattern ("tl", "GlobPattern",
   "This class has been introduced in version 0.26."
 );
 
-class Executable_Impl
-  : public tl::Executable, public gsi::ObjectBase
-{
-public:
-  Executable_Impl ()
-    : tl::Executable ()
-  {
-    //  makes the object owned by the C++ side (registrar). This way we don't need to keep a
-    //  singleton instance.
-    keep ();
-  }
-
-  virtual tl::Variant execute ()
-  {
-    if (execute_cb.can_issue ()) {
-      return execute_cb.issue<tl::Executable, tl::Variant> (&tl::Executable::execute);
-    } else {
-      return tl::Variant ();
-    }
-  }
-
-  virtual void cleanup ()
-  {
-    if (cleanup_cb.can_issue ()) {
-      cleanup_cb.issue<tl::Executable> (&tl::Executable::cleanup);
-    }
-  }
-
-  gsi::Callback execute_cb;
-  gsi::Callback cleanup_cb;
-};
-
-Class<tl::Executable> decl_Executable ("tl", "ExecutableBase",
-  gsi::Methods (),
-  "@hide\n@alias Executable"
-);
-
-Class<Executable_Impl> decl_Executable_Impl (decl_Executable, "tl", "Executable",
-  gsi::callback ("execute", &Executable_Impl::execute, &Executable_Impl::execute_cb,
-    "@brief Reimplement this method to provide the functionality of the executable.\n"
-    "This method is supposed to execute the operation with the given parameters and return the desired output."
-  ) +
-  gsi::callback ("cleanup", &Executable_Impl::cleanup, &Executable_Impl::cleanup_cb,
-    "@brief Reimplement this method to provide post-mortem cleanup functionality.\n"
-    "This method is always called after execute terminated."
-  ),
-  "@brief A generic executable object\n"
-  "This object is a delegate for implementing the actual function of some generic executable function. "
-  "In addition to the plain execution, if offers a post-mortem cleanup callback which is always executed, even "
-  "if execute's implementation is cancelled in the debugger.\n"
-  "\n"
-  "Parameters are kept as a generic key/value map.\n"
-  "\n"
-  "This class has been introduced in version 0.27."
-);
-
 class Recipe_Impl
   : public tl::Recipe, public gsi::ObjectBase
 {
@@ -683,31 +653,31 @@ public:
     keep ();
   }
 
-  virtual tl::Executable *executable (const std::map<std::string, tl::Variant> &params) const
+  virtual tl::Variant execute (const std::map<std::string, tl::Variant> &params) const
   {
-    if (executable_cb.can_issue ()) {
-      return executable_cb.issue<tl::Recipe, tl::Executable *, const std::map<std::string, tl::Variant> &> (&tl::Recipe::executable, params);
+    if (execute_cb.can_issue ()) {
+      return execute_cb.issue<tl::Recipe, tl::Variant, const std::map<std::string, tl::Variant> &> (&tl::Recipe::execute, params);
     } else {
-      return 0;
+      return tl::Variant ();
     }
   }
 
-  gsi::Callback executable_cb;
+  gsi::Callback execute_cb;
 };
+
+}
+
+namespace tl
+{
+  template <> struct type_traits<gsi::Recipe_Impl> : public type_traits<tl::Recipe> { };
+}
+
+namespace gsi
+{
 
 static Recipe_Impl *make_recipe (const std::string &name, const std::string &description)
 {
   return new Recipe_Impl (name, description);
-}
-
-static tl::Variant make_impl (const std::string &generator, const std::map<std::string, tl::Variant> &add_params)
-{
-  return Recipe_Impl::make (generator, add_params);
-}
-
-std::string generator_impl (Recipe_Impl *recipe, const std::map<std::string, tl::Variant> &params)
-{
-  return recipe->generator (params);
 }
 
 Class<Recipe_Impl> decl_Recipe_Impl ("tl", "Recipe",
@@ -720,25 +690,22 @@ Class<Recipe_Impl> decl_Recipe_Impl ("tl", "Recipe",
   gsi::method ("description", &Recipe_Impl::description,
     "@brief Gets the description of the recipe."
   ) +
-  gsi::method ("make", &make_impl, gsi::arg ("generator"), gsi::arg ("add_params", std::map<std::string, tl::Variant> (), "{}"),
+  gsi::method ("make", &Recipe_Impl::make, gsi::arg ("generator"), gsi::arg ("add_params", std::map<std::string, tl::Variant> (), "{}"),
     "@brief Executes the recipe given by the generator string.\n"
     "The generator string is the one delivered with \\generator.\n"
     "Additional parameters can be passed in \"add_params\". They have lower priority than the parameters "
     "kept inside the generator string."
   ) +
-  gsi::method_ext ("generator", &generator_impl, gsi::arg ("params"),
+  gsi::method ("generator", &Recipe_Impl::generator, gsi::arg ("params"),
     "@brief Delivers the generator string from the given parameters.\n"
     "The generator string can be used with \\make to re-run the recipe."
   ) +
-  gsi::callback ("executable", &Recipe_Impl::executable, &Recipe_Impl::executable_cb, gsi::arg ("params"),
-    "@brief Reimplement this method to provide an executable object for the actual implementation.\n"
-    "The reasoning behind this architecture is to supply a cleanup callback. This is useful when the "
-    "actual function is executed as a script and the script terminates in the debugger. The cleanup callback "
-    "allows implementing any kind of post-mortem action despite being cancelled in the debugger.\n"
-    "\n"
-    "This method has been introduced in version 0.27 and replaces 'execute'."
+  gsi::callback ("execute", &Recipe_Impl::execute, &Recipe_Impl::execute_cb, gsi::arg ("params"),
+    "@brief Reimplement this method to provide the functionality of the recipe.\n"
+    "This method is supposed to re-run the recipe with the given parameters and deliver the "
+    "the intended output object."
   ),
-  "@brief A facility for providing reproducible recipes\n"
+  "@brief A facility for providing reproducable recipes\n"
   "The idea of this facility is to provide a service by which an object\n"
   "can be reproduced in a parametrized way. The intended use case is a \n"
   "DRC report for example, where the DRC script is the generator.\n"

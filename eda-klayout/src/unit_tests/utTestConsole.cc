@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -75,8 +75,6 @@ protected:
     //  .. nothing yet ..
   }
 
-  virtual void yield () { }
-
 private:
   int m_verbosity;
 };
@@ -110,8 +108,6 @@ protected:
   {
     TestConsole::instance ()->begin_warn ();
   }
-
-  virtual void yield () { }
 };
 
 class ErrorChannel : public tl::Channel
@@ -143,8 +139,6 @@ protected:
   {
     TestConsole::instance ()->begin_error ();
   }
-
-  virtual void yield () { }
 };
 
 class CtrlChannel : public tl::Channel
@@ -186,8 +180,6 @@ protected:
     }
   }
 
-  virtual void yield () { }
-
 private:
   bool m_with_xml;
 };
@@ -201,29 +193,14 @@ const char *ANSI_GREEN = "\033[32m";
 const char *ANSI_RESET = "\033[0m";
 
 TestConsole::TestConsole (FILE *file)
-  : m_file (file), m_col (0), m_max_col (400), m_columns (50), m_rows (0), m_file_is_tty (false)
+  : m_file (file), m_col (0), m_max_col (250), m_columns (50), m_rows (0), m_file_is_tty (false)
 {
   ms_instance = this;
 
-  prepare_file ();
-  redirect ();
-}
-
-TestConsole::~TestConsole ()
-{
-  restore ();
-
-  if (ms_instance == this) {
-    ms_instance = 0;
-  }
-}
-
-void TestConsole::prepare_file ()
-{
 #if defined(_MSC_VER)
   m_file_is_tty = false;
 #else
-  m_file_is_tty = isatty (fileno (m_file));
+  m_file_is_tty = isatty (fileno (file));
 #endif
 
 #if !defined(_WIN32)
@@ -234,15 +211,16 @@ void TestConsole::prepare_file ()
     m_rows = std::max (0, (int) ws.ws_row);
   }
 #endif
+
+  redirect ();
 }
 
-void
-TestConsole::send_to (FILE *file)
+TestConsole::~TestConsole ()
 {
-  if (file != m_file) {
-    flush ();
-    m_file = file;
-    prepare_file ();
+  restore ();
+
+  if (ms_instance == this) {
+    ms_instance = 0;
   }
 }
 

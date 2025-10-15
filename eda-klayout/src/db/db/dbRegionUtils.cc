@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -22,459 +22,420 @@
 
 
 #include "dbRegionUtils.h"
-#include "dbRegionCheckUtils.h"
-#include "dbPolygonTools.h"
-#include "dbEdgeBoolean.h"
 #include "tlSelect.h"
 
 namespace db
 {
 
 // -------------------------------------------------------------------------------------
-//  RegionPerimeterFilter implementation
+//  Edge2EdgeCheckBase implementation
 
-RegionPerimeterFilter::RegionPerimeterFilter (perimeter_type pmin, perimeter_type pmax, bool inverse)
-  : m_pmin (pmin), m_pmax (pmax), m_inverse (inverse)
+Edge2EdgeCheckBase::Edge2EdgeCheckBase (const EdgeRelationFilter &check, bool different_polygons, bool requires_different_layers)
+  : mp_check (&check), m_requires_different_layers (requires_different_layers), m_different_polygons (different_polygons),
+    m_pass (0)
+{
+  m_distance = check.distance ();
+}
+
+bool
+Edge2EdgeCheckBase::prepare_next_pass ()
+{
+  ++m_pass;
+
+  if (m_pass == 1) {
+
+    if (! m_ep.empty ()) {
+      m_ep_discarded.resize (m_ep.size (), false);
+      return true;
+    }
+
+  } else if (m_pass == 2) {
+
+    std::vector<bool>::const_iterator d = m_ep_discarded.begin ();
+    std::vector<db::EdgePair>::const_iterator ep = m_ep.begin ();
+    while (ep != m_ep.end ()) {
+      tl_assert (d != m_ep_discarded.end ());
+      if (! *d) {
+        put (*ep);
+      }
+      ++d;
+      ++ep;
+    }
+
+  }
+
+  return false;
+}
+
+static inline bool shields (const db::EdgePair &ep, const db::Edge &q)
+{
+  db::Edge pe1 (ep.first ().p1 (), ep.second ().p2 ());
+  db::Edge pe2 (ep.second ().p1 (), ep.first ().p2 ());
+
+  std::pair<bool, db::Point> ip1 = pe1.intersect_point (q);
+  std::pair<bool, db::Point> ip2 = pe2.intersect_point (q);
+
+  if (ip1.first && ip2.first) {
+    return ip1.second != ip2.second || (ip1.second != q.p1 () && ip2.second != q.p2 ());
+  } else {
+    return false;
+  }
+}
+
+void
+Edge2EdgeCheckBase::add (const db::Edge *o1, size_t p1, const db::Edge *o2, size_t p2)
+{
+  if (m_pass == 0) {
+
+    //  Overlap or inside checks require input from different layers
+    if ((! m_different_polygons || p1 != p2) && (! m_requires_different_layers || ((p1 ^ p2) & 1) != 0)) {
+
+      //  ensure that the first check argument is of layer 1 and the second of
+      //  layer 2 (unless both are of the same layer)
+      int l1 = int (p1 & size_t (1));
+      int l2 = int (p2 & size_t (1));
+
+      db::EdgePair ep;
+      if (mp_check->check (l1 <= l2 ? *o1 : *o2, l1 <= l2 ? *o2 : *o1, &ep)) {
+
+        //  found a violation: store inside the local buffer for now. In the second
+        //  pass we will eliminate those which are shielded completely.
+        size_t n = m_ep.size ();
+        m_ep.push_back (ep);
+        m_e2ep.insert (std::make_pair (std::make_pair (*o1, p1), n));
+        m_e2ep.insert (std::make_pair (std::make_pair (*o2, p2), n));
+
+      }
+
+    }
+
+  } else {
+
+    //  a simple (complete) shielding implementation which is based on the
+    //  assumption that shielding is relevant as soon as a foreign edge cuts through
+    //  both of the edge pair's connecting edges.
+
+    //  TODO: this implementation does not take into account the nature of the
+    //  EdgePair - because of "whole_edge" it may not reflect the part actually
+    //  violating the distance.
+
+    std::vector<size_t> n1, n2;
+
+    for (unsigned int p = 0; p < 2; ++p) {
+
+      std::pair<db::Edge, size_t> k (*o1, p1);
+      for (std::multimap<std::pair<db::Edge, size_t>, size_t>::const_iterator i = m_e2ep.find (k); i != m_e2ep.end () && i->first == k; ++i) {
+        n1.push_back (i->second);
+      }
+
+      std::sort (n1.begin (), n1.end ());
+
+      std::swap (o1, o2);
+      std::swap (p1, p2);
+      n1.swap (n2);
+
+    }
+
+    for (unsigned int p = 0; p < 2; ++p) {
+
+      std::vector<size_t> nn;
+      std::set_difference (n1.begin (), n1.end (), n2.begin (), n2.end (), std::back_inserter (nn));
+
+      for (std::vector<size_t>::const_iterator i = nn.begin (); i != nn.end (); ++i) {
+        if (! m_ep_discarded [*i]) {
+          db::EdgePair ep = m_ep [*i].normalized ();
+          if (shields (ep, *o2)) {
+            m_ep_discarded [*i] = true;
+          }
+        }
+      }
+
+      std::swap (o1, o2);
+      std::swap (p1, p2);
+      n1.swap (n2);
+
+    }
+
+  }
+
+}
+
+/**
+ *  @brief Gets a value indicating whether the check requires different layers
+ */
+bool
+Edge2EdgeCheckBase::requires_different_layers () const
+{
+  return m_requires_different_layers;
+}
+
+/**
+ *  @brief Sets a value indicating whether the check requires different layers
+ */
+void
+Edge2EdgeCheckBase::set_requires_different_layers (bool f)
+{
+  m_requires_different_layers = f;
+}
+
+/**
+ *  @brief Gets a value indicating whether the check requires different layers
+ */
+bool
+Edge2EdgeCheckBase::different_polygons () const
+{
+  return m_different_polygons;
+}
+
+/**
+ *  @brief Sets a value indicating whether the check requires different layers
+ */
+void
+Edge2EdgeCheckBase::set_different_polygons (bool f)
+{
+  m_different_polygons = f;
+}
+
+/**
+ *  @brief Gets the distance value
+ */
+EdgeRelationFilter::distance_type
+Edge2EdgeCheckBase::distance () const
+{
+  return m_distance;
+}
+
+// -------------------------------------------------------------------------------------
+//  Poly2PolyCheckBase implementation
+
+Poly2PolyCheckBase::Poly2PolyCheckBase (Edge2EdgeCheckBase &output)
+  : mp_output (& output)
 {
   //  .. nothing yet ..
 }
 
-bool RegionPerimeterFilter::check (perimeter_type p) const
+void
+Poly2PolyCheckBase::finish (const db::Polygon *o, size_t p)
 {
-  if (! m_inverse) {
-    return p >= m_pmin && p < m_pmax;
-  } else {
-    return ! (p >= m_pmin && p < m_pmax);
+  enter (*o, p);
+}
+
+void
+Poly2PolyCheckBase::enter (const db::Polygon &o, size_t p)
+{
+  if (! mp_output->requires_different_layers () && ! mp_output->different_polygons ()) {
+
+    //  finally we check the polygons vs. itself for checks involving intra-polygon interactions
+
+    m_scanner.clear ();
+    m_scanner.reserve (o.vertices ());
+
+    m_edges.clear ();
+    m_edges.reserve (o.vertices ());
+
+    for (db::Polygon::polygon_edge_iterator e = o.begin_edge (); ! e.at_end (); ++e) {
+      m_edges.push_back (*e);
+      m_scanner.insert (& m_edges.back (), p);
+    }
+
+    tl_assert (m_edges.size () == o.vertices ());
+
+    m_scanner.process (*mp_output, mp_output->distance (), db::box_convert<db::Edge> ());
+
   }
 }
 
-bool RegionPerimeterFilter::selected (const db::Polygon &poly, db::properties_id_type) const
+void
+Poly2PolyCheckBase::add (const db::Polygon *o1, size_t p1, const db::Polygon *o2, size_t p2)
 {
-  return check (poly.perimeter ());
+  enter (*o1, p1, *o2, p2);
 }
 
-bool RegionPerimeterFilter::selected (const db::PolygonRef &poly, db::properties_id_type) const
+void
+Poly2PolyCheckBase::enter (const db::Polygon &o1, size_t p1, const db::Polygon &o2, size_t p2)
 {
-  return check (poly.perimeter ());
-}
+  if ((! mp_output->different_polygons () || p1 != p2) && (! mp_output->requires_different_layers () || ((p1 ^ p2) & 1) != 0)) {
 
-bool RegionPerimeterFilter::selected_set (const std::unordered_set<db::PolygonWithProperties> &poly) const
-{
-  perimeter_type ps = 0;
-  for (std::unordered_set<db::PolygonWithProperties>::const_iterator p = poly.begin (); p != poly.end (); ++p) {
-    ps += p->perimeter ();
+    m_scanner.clear ();
+    m_scanner.reserve (o1.vertices () + o2.vertices ());
+
+    m_edges.clear ();
+    m_edges.reserve (o1.vertices () + o2.vertices ());
+
+    for (db::Polygon::polygon_edge_iterator e = o1.begin_edge (); ! e.at_end (); ++e) {
+      m_edges.push_back (*e);
+      m_scanner.insert (& m_edges.back (), p1);
+    }
+
+    for (db::Polygon::polygon_edge_iterator e = o2.begin_edge (); ! e.at_end (); ++e) {
+      m_edges.push_back (*e);
+      m_scanner.insert (& m_edges.back (), p2);
+    }
+
+    tl_assert (m_edges.size () == o1.vertices () + o2.vertices ());
+
+    //  temporarily disable intra-polygon check in that step .. we do that later in finish()
+    //  if required (#650).
+    bool no_intra = mp_output->different_polygons ();
+    mp_output->set_different_polygons (true);
+
+    m_scanner.process (*mp_output, mp_output->distance (), db::box_convert<db::Edge> ());
+
+    mp_output->set_different_polygons (no_intra);
+
   }
-  return check (ps);
-}
-
-bool RegionPerimeterFilter::selected_set (const std::unordered_set<PolygonRefWithProperties> &poly) const
-{
-  perimeter_type ps = 0;
-  for (std::unordered_set<db::PolygonRefWithProperties>::const_iterator p = poly.begin (); p != poly.end (); ++p) {
-    ps += p->perimeter ();
-  }
-  return check (ps);
-}
-
-const TransformationReducer *RegionPerimeterFilter::vars () const
-{
-  return &m_vars;
 }
 
 // -------------------------------------------------------------------------------------
-//  RegionAreaFilter implementation
+//  RegionToEdgeInteractionFilterBase implementation
 
-RegionAreaFilter::RegionAreaFilter (area_type amin, area_type amax, bool inverse)
-  : m_amin (amin), m_amax (amax), m_inverse (inverse)
-{
-  //  .. nothing yet ..
-}
-
-bool RegionAreaFilter::check (area_type a) const
-{
-  if (! m_inverse) {
-    return a >= m_amin && a < m_amax;
-  } else {
-    return ! (a >= m_amin && a < m_amax);
-  }
-}
-
-bool RegionAreaFilter::selected (const db::Polygon &poly, db::properties_id_type) const
-{
-  return check (poly.area ());
-}
-
-bool RegionAreaFilter::selected (const db::PolygonRef &poly, properties_id_type) const
-{
-  return check (poly.area ());
-}
-
-bool RegionAreaFilter::selected_set (const std::unordered_set<db::PolygonWithProperties> &poly) const
-{
-  area_type as = 0;
-  for (std::unordered_set<db::PolygonWithProperties>::const_iterator p = poly.begin (); p != poly.end (); ++p) {
-    as += p->area ();
-  }
-  return check (as);
-}
-
-bool RegionAreaFilter::selected_set (const std::unordered_set<db::PolygonRefWithProperties> &poly) const
-{
-  area_type as = 0;
-  for (std::unordered_set<db::PolygonRefWithProperties>::const_iterator p = poly.begin (); p != poly.end (); ++p) {
-    as += p->area ();
-  }
-  return check (as);
-}
-
-const TransformationReducer *
-RegionAreaFilter::vars () const
-{
-  return &m_vars;
-}
-
-// -------------------------------------------------------------------------------------
-//  RectilinearFilter implementation
-
-RectilinearFilter::RectilinearFilter (bool inverse)
+template <class OutputType>
+region_to_edge_interaction_filter_base<OutputType>::region_to_edge_interaction_filter_base (bool inverse)
   : m_inverse (inverse)
 {
   //  .. nothing yet ..
 }
 
-bool
-RectilinearFilter::selected (const db::Polygon &poly, db::properties_id_type) const
+template <class OutputType>
+void
+region_to_edge_interaction_filter_base<OutputType>::preset (const OutputType *s)
 {
-  return poly.is_rectilinear () != m_inverse;
+  m_seen.insert (s);
 }
 
-bool
-RectilinearFilter::selected (const db::PolygonRef &poly, db::properties_id_type) const
+template <class OutputType>
+void
+region_to_edge_interaction_filter_base<OutputType>::add (const db::Polygon *p, size_t, const db::Edge *e, size_t)
 {
-  return poly.is_rectilinear () != m_inverse;
-}
+  const OutputType *o = 0;
+  tl::select (o, p, e);
 
-const TransformationReducer *
-RectilinearFilter::vars () const
-{
-  return 0;
-}
+  if ((m_seen.find (o) == m_seen.end ()) != m_inverse) {
 
-// -------------------------------------------------------------------------------------
-//  HoleCountFilter implementation
-
-HoleCountFilter::HoleCountFilter (size_t min_count, size_t max_count, bool inverse)
-  : m_min_count (min_count), m_max_count (max_count), m_inverse (inverse)
-{
-  //  .. nothing yet ..
-}
-
-bool
-HoleCountFilter::selected (const db::Polygon &poly, db::properties_id_type) const
-{
-  bool ok = poly.holes () < m_max_count && poly.holes () >= m_min_count;
-  return ok != m_inverse;
-}
-
-bool
-HoleCountFilter::selected (const db::PolygonRef &poly, properties_id_type) const
-{
-  bool ok = poly.obj ().holes () < m_max_count && poly.obj ().holes () >= m_min_count;
-  return ok != m_inverse;
-}
-
-const TransformationReducer *HoleCountFilter::vars () const
-{
-  return 0;
-}
-
-// -------------------------------------------------------------------------------------
-//  RectilinearFilter implementation
-
-RectangleFilter::RectangleFilter (bool is_square, bool inverse)
-  : m_is_square (is_square), m_inverse (inverse)
-{
-  //  .. nothing yet ..
-}
-
-bool
-RectangleFilter::selected (const db::Polygon &poly, properties_id_type) const
-{
-  bool ok = poly.is_box ();
-  if (ok && m_is_square) {
-    db::Box box = poly.box ();
-    ok = box.width () == box.height ();
-  }
-  return ok != m_inverse;
-}
-
-bool
-RectangleFilter::selected (const db::PolygonRef &poly, properties_id_type) const
-{
-  bool ok = poly.is_box ();
-  if (ok && m_is_square) {
-    db::Box box = poly.box ();
-    ok = box.width () == box.height ();
-  }
-  return ok != m_inverse;
-}
-
-const TransformationReducer *RectangleFilter::vars () const
-{
-  return 0;
-}
-
-// -------------------------------------------------------------------------------------
-//  RectilinearFilter implementation
-
-RegionBBoxFilter::RegionBBoxFilter (value_type vmin, value_type vmax, bool inverse, parameter_type parameter)
-  : m_vmin (vmin), m_vmax (vmax), m_inverse (inverse), m_parameter (parameter)
-{
-  //  .. nothing yet ..
-}
-
-bool
-RegionBBoxFilter::check (const db::Box &box) const
-{
-  value_type v = 0;
-  if (m_parameter == BoxWidth) {
-    v = box.width ();
-  } else if (m_parameter == BoxHeight) {
-    v = box.height ();
-  } else if (m_parameter == BoxMinDim) {
-    v = std::min (box.width (), box.height ());
-  } else if (m_parameter == BoxMaxDim) {
-    v = std::max (box.width (), box.height ());
-  } else if (m_parameter == BoxAverageDim) {
-    v = (box.width () + box.height ()) / 2;
-  }
-  if (! m_inverse) {
-    return v >= m_vmin && v < m_vmax;
-  } else {
-    return ! (v >= m_vmin && v < m_vmax);
-  }
-}
-
-bool
-RegionBBoxFilter::selected (const db::Polygon &poly, properties_id_type) const
-{
-  return check (poly.box ());
-}
-
-bool
-RegionBBoxFilter::selected (const db::PolygonRef &poly, properties_id_type) const
-{
-  return check (poly.box ());
-}
-
-const TransformationReducer *
-RegionBBoxFilter::vars () const
-{
-  if (m_parameter != BoxWidth && m_parameter != BoxHeight) {
-    return &m_isotropic_vars;
-  } else {
-    return &m_anisotropic_vars;
-  }
-}
-
-// -------------------------------------------------------------------------------------
-//  RectilinearFilter implementation
-
-RegionRatioFilter::RegionRatioFilter (double vmin, bool min_included, double vmax, bool max_included, bool inverse, parameter_type parameter)
-  : m_vmin (vmin), m_vmax (vmax), m_vmin_included (min_included), m_vmax_included (max_included), m_inverse (inverse), m_parameter (parameter)
-{
-  //  .. nothing yet ..
-}
-
-template <class P>
-static double compute_ratio_parameter (const P &poly, RegionRatioFilter::parameter_type parameter)
-{
-  double v = 0.0;
-
-  if (parameter == RegionRatioFilter::AreaRatio) {
-
-    v = poly.area_ratio ();
-
-  } else if (parameter == RegionRatioFilter::AspectRatio) {
-
-    db::Box box = poly.box ();
-    double f = std::max (box.height (), box.width ());
-    double d = std::min (box.height (), box.width ());
-    if (d < 1) {
-      return false;
+    //  A polygon and an edge interact if the edge is either inside completely
+    //  of at least one edge of the polygon intersects with the edge
+    bool interacts = false;
+    if (p->box ().contains (e->p1 ()) && db::inside_poly (p->begin_edge (), e->p1 ()) >= 0) {
+      interacts = true;
+    } else {
+      for (db::Polygon::polygon_edge_iterator pe = p->begin_edge (); ! pe.at_end () && ! interacts; ++pe) {
+        if ((*pe).intersect (*e)) {
+          interacts = true;
+        }
+      }
     }
 
-    v = f / d;
-
-  } else if (parameter == RegionRatioFilter::RelativeHeight) {
-
-    db::Box box = poly.box ();
-    double f = box.height ();
-    double d = box.width ();
-    if (d < 1) {
-      return false;
+    if (interacts) {
+      if (m_inverse) {
+        m_seen.erase (o);
+      } else {
+        m_seen.insert (o);
+        put (*o);
+      }
     }
 
-    v = f / d;
-
-  }
-
-  return v;
-}
-
-bool RegionRatioFilter::selected (const db::Polygon &poly, properties_id_type) const
-{
-  double v = compute_ratio_parameter (poly, m_parameter);
-
-  bool ok = (v - (m_vmin_included ? -db::epsilon : db::epsilon) > m_vmin  && v - (m_vmax_included ? db::epsilon : -db::epsilon) < m_vmax);
-  return ok != m_inverse;
-}
-
-bool RegionRatioFilter::selected (const db::PolygonRef &poly, properties_id_type) const
-{
-  double v = compute_ratio_parameter (poly, m_parameter);
-
-  bool ok = (v - (m_vmin_included ? -db::epsilon : db::epsilon) > m_vmin  && v - (m_vmax_included ? db::epsilon : -db::epsilon) < m_vmax);
-  return ok != m_inverse;
-}
-
-const TransformationReducer *RegionRatioFilter::vars () const
-{
-  if (m_parameter != RelativeHeight) {
-    return &m_isotropic_vars;
-  } else {
-    return &m_anisotropic_vars;
   }
 }
+
+template <class OutputType>
+void
+region_to_edge_interaction_filter_base<OutputType>::fill_output ()
+{
+  for (typename std::set<const OutputType *>::const_iterator s = m_seen.begin (); s != m_seen.end (); ++s) {
+    put (**s);
+  }
+}
+
+//  explicit instantiations
+template class region_to_edge_interaction_filter_base<db::Polygon>;
+template class region_to_edge_interaction_filter_base<db::Edge>;
 
 // -------------------------------------------------------------------------------------
-//  SinglePolygonCheck implementation
+//  Polygon snapping
 
-SinglePolygonCheck::SinglePolygonCheck (db::edge_relation_type rel, db::Coord d, const RegionCheckOptions &options)
-  : m_relation (rel), m_d (d), m_options (options)
-{ }
-
-void
-SinglePolygonCheck::process (const db::PolygonWithProperties &polygon, std::vector<db::EdgePairWithProperties> &res) const
+db::Polygon
+snapped_polygon (const db::Polygon &poly, db::Coord gx, db::Coord gy, std::vector<db::Point> &heap)
 {
-  std::unordered_set<db::EdgePair> result;
+  db::Polygon pnew;
 
-  EdgeRelationFilter check (m_relation, m_d, m_options);
+  for (size_t i = 0; i < poly.holes () + 1; ++i) {
 
-  edge2edge_check_negative_or_positive <std::unordered_set<db::EdgePair> > edge_check (check, result, m_options.negative, false /*=same polygons*/, false /*=same layers*/, m_options.shielded, true /*=symmetric*/);
-  poly2poly_check<db::Polygon> poly_check (edge_check);
+    heap.clear ();
 
-  do {
-    poly_check.single (polygon, 0);
-  } while (edge_check.prepare_next_pass ());
+    db::Polygon::polygon_contour_iterator b, e;
 
-  for (auto ep = result.begin (); ep != result.end (); ++ep) {
-    res.push_back (db::EdgePairWithProperties (*ep, pc_skip (m_options.prop_constraint) ? 0 : polygon.properties_id ()));
+    if (i == 0) {
+      b = poly.begin_hull ();
+      e = poly.end_hull ();
+    } else {
+      b = poly.begin_hole ((unsigned int)  (i - 1));
+      e = poly.end_hole ((unsigned int)  (i - 1));
+    }
+
+    for (db::Polygon::polygon_contour_iterator pt = b; pt != e; ++pt) {
+      heap.push_back (db::Point (snap_to_grid ((*pt).x (), gx), snap_to_grid ((*pt).y (), gy)));
+    }
+
+    if (i == 0) {
+      pnew.assign_hull (heap.begin (), heap.end ());
+    } else {
+      pnew.insert_hole (heap.begin (), heap.end ());
+    }
+
   }
+
+  return pnew;
 }
 
-// -------------------------------------------------------------------------------------------------------------
-//  Strange polygon processor
-
-namespace {
-
-/**
- *  @brief A helper class to implement the strange polygon detector
- */
-struct StrangePolygonInsideFunc
+db::Polygon
+scaled_and_snapped_polygon (const db::Polygon &poly, db::Coord gx, db::Coord mx, db::Coord dx, db::Coord ox, db::Coord gy, db::Coord my, db::Coord dy, db::Coord oy, std::vector<db::Point> &heap)
 {
-  inline bool operator() (int wc) const
-  {
-    return wc < 0 || wc > 1;
+  db::Polygon pnew;
+
+  int64_t dgx = int64_t (gx) * int64_t (dx);
+  int64_t dgy = int64_t (gy) * int64_t (dy);
+
+  for (size_t i = 0; i < poly.holes () + 1; ++i) {
+
+    heap.clear ();
+
+    db::Polygon::polygon_contour_iterator b, e;
+
+    if (i == 0) {
+      b = poly.begin_hull ();
+      e = poly.end_hull ();
+    } else {
+      b = poly.begin_hole ((unsigned int)  (i - 1));
+      e = poly.end_hole ((unsigned int)  (i - 1));
+    }
+
+    for (db::Polygon::polygon_contour_iterator pt = b; pt != e; ++pt) {
+      int64_t x = snap_to_grid (int64_t ((*pt).x ()) * mx + int64_t (ox), dgx) / int64_t (dx);
+      int64_t y = snap_to_grid (int64_t ((*pt).y ()) * my + int64_t (oy), dgy) / int64_t (dy);
+      heap.push_back (db::Point (db::Coord (x), db::Coord (y)));
+    }
+
+    if (i == 0) {
+      pnew.assign_hull (heap.begin (), heap.end ());
+    } else {
+      pnew.insert_hole (heap.begin (), heap.end ());
+    }
+
   }
-};
 
+  return pnew;
 }
 
-StrangePolygonCheckProcessor::StrangePolygonCheckProcessor () { }
-
-StrangePolygonCheckProcessor::~StrangePolygonCheckProcessor () { }
-
-void
-StrangePolygonCheckProcessor::process (const db::PolygonWithProperties &poly, std::vector<db::PolygonWithProperties> &res) const
+db::Vector
+scaled_and_snapped_vector (const db::Vector &v, db::Coord gx, db::Coord mx, db::Coord dx, db::Coord ox, db::Coord gy, db::Coord my, db::Coord dy, db::Coord oy)
 {
-  EdgeProcessor ep;
-  ep.insert (poly);
+  int64_t dgx = int64_t (gx) * int64_t (dx);
+  int64_t dgy = int64_t (gy) * int64_t (dy);
 
-  StrangePolygonInsideFunc inside;
-  db::GenericMerge<StrangePolygonInsideFunc> op (inside);
-  db::PolygonContainerWithProperties pc (res, poly.properties_id (), false);
-  db::PolygonGenerator pg (pc, false, false);
-  ep.process (pg, op);
-}
+  int64_t x = snap_to_grid (int64_t (v.x ()) * mx + int64_t (ox), dgx) / int64_t (dx);
+  int64_t y = snap_to_grid (int64_t (v.y ()) * my + int64_t (oy), dgy) / int64_t (dy);
 
-// -------------------------------------------------------------------------------------------------------------
-//  Smoothing processor
-
-SmoothingProcessor::SmoothingProcessor (db::Coord d, bool keep_hv) : m_d (d), m_keep_hv (keep_hv) { }
-
-SmoothingProcessor::~SmoothingProcessor () { }
-
-void
-SmoothingProcessor::process (const db::PolygonWithProperties &poly, std::vector<db::PolygonWithProperties> &res) const
-{
-  res.push_back (db::PolygonWithProperties (db::smooth (poly, m_d, m_keep_hv), poly.properties_id ()));
-}
-
-// -------------------------------------------------------------------------------------------------------------
-//  Rounded corners processor
-
-RoundedCornersProcessor::RoundedCornersProcessor (double rinner, double router, unsigned int n)
-  : m_rinner (rinner), m_router (router), m_n (n)
-{ }
-
-RoundedCornersProcessor::~RoundedCornersProcessor ()
-{ }
-
-void
-RoundedCornersProcessor::process (const db::PolygonWithProperties &poly, std::vector<db::PolygonWithProperties> &res) const
-{
-  res.push_back (db::PolygonWithProperties (db::compute_rounded (poly, m_rinner, m_router, m_n), poly.properties_id ()));
-}
-
-// -------------------------------------------------------------------------------------------------------------
-//  Holes decomposition processor
-
-HolesExtractionProcessor::HolesExtractionProcessor ()
-{
-}
-
-HolesExtractionProcessor::~HolesExtractionProcessor ()
-{
-}
-
-void
-HolesExtractionProcessor::process (const db::PolygonWithProperties &poly, std::vector<db::PolygonWithProperties> &res) const
-{
-  for (size_t i = 0; i < poly.holes (); ++i) {
-    res.push_back (db::PolygonWithProperties ());
-    res.back ().properties_id (poly.properties_id ());
-    res.back ().assign_hull (poly.begin_hole ((unsigned int) i), poly.end_hole ((unsigned int) i));
-  }
-}
-
-// -------------------------------------------------------------------------------------------------------------
-//  Hull decomposition processor
-
-HullExtractionProcessor::HullExtractionProcessor ()
-{
-}
-
-HullExtractionProcessor::~HullExtractionProcessor ()
-{
-}
-
-void
-HullExtractionProcessor::process (const db::PolygonWithProperties &poly, std::vector<db::PolygonWithProperties> &res) const
-{
-  res.push_back (db::PolygonWithProperties ());
-  res.back ().properties_id (poly.properties_id ());
-  res.back ().assign_hull (poly.begin_hull (), poly.end_hull ());
+  return db::Vector (db::Coord (x), db::Coord (y));
 }
 
 }

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -25,7 +25,6 @@
 
 #include "dbCommon.h"
 #include "dbNetlistObject.h"
-#include "dbMemStatistics.h"
 
 #include <string>
 
@@ -82,18 +81,6 @@ public:
     m_name = name;
   }
 
-  /**
-   *  @brief Generate memory statistics
-   */
-  void mem_stat (MemStatistics *stat, MemStatistics::purpose_t purpose, int cat, bool no_self = false, void *parent = 0) const
-  {
-    if (! no_self) {
-      stat->add (typeid (*this), (void *) this, sizeof (*this), sizeof (*this), parent, purpose, cat);
-    }
-
-    db::mem_stat (stat, purpose, cat, m_name, true, (void *) this);
-  }
-
 private:
   friend class Circuit;
 
@@ -105,14 +92,6 @@ private:
     m_id = id;
   }
 };
-
-/**
- *  @brief Memory statistics for Pin
- */
-inline void mem_stat (MemStatistics *stat, MemStatistics::purpose_t purpose, int cat, const Pin &x, bool no_self, void *parent)
-{
-  x.mem_stat (stat, purpose, cat, no_self, parent);
-}
 
 }
 

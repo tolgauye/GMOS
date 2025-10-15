@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -27,12 +27,15 @@
 #include "dbNetTracer.h"
 #include "dbLayerProperties.h"
 #include "dbTechnology.h"
-#include "tlColor.h"
+
+#if defined(HAVE_QT)
+#  include <QColor>
+#endif
 
 namespace db
 {
 
-class NetTracerConnectivity;
+class NetTracerTechnologyComponent;
 
 DB_PLUGIN_PUBLIC std::string net_tracer_component_name ();
 
@@ -57,7 +60,7 @@ public:
     return m_expression;
   }
 
-  NetTracerLayerExpression *get (const db::Layout &layout, const NetTracerConnectivity &tech) const;
+  NetTracerLayerExpression *get (const db::Layout &layout, const NetTracerTechnologyComponent &tech) const;
 
 private:
   std::string m_expression;
@@ -70,8 +73,8 @@ private:
   static NetTracerLayerExpressionInfo parse_mult (tl::Extractor &ex);
   static NetTracerLayerExpressionInfo parse_atomic (tl::Extractor &ex);
 
-  NetTracerLayerExpression *get (const db::Layout &layout, const NetTracerConnectivity &tech, const std::set<std::string> &used_symbols) const;
-  NetTracerLayerExpression *get_expr (const db::LayerProperties &lp, const db::Layout &layout, const NetTracerConnectivity &tech, const std::set<std::string> &used_symbols) const;
+  NetTracerLayerExpression *get (const db::Layout &layout, const NetTracerTechnologyComponent &tech, const std::set<std::string> &used_symbols) const;
+  NetTracerLayerExpression *get_expr (const db::LayerProperties &lp, const db::Layout &layout, const NetTracerTechnologyComponent &tech, const std::set<std::string> &used_symbols) const;
 };
 
 class DB_PLUGIN_PUBLIC NetTracerConnectionInfo
@@ -81,7 +84,7 @@ public:
   NetTracerConnectionInfo (const NetTracerLayerExpressionInfo &la, const NetTracerLayerExpressionInfo &lb);
   NetTracerConnectionInfo (const NetTracerLayerExpressionInfo &la, const NetTracerLayerExpressionInfo &via, const NetTracerLayerExpressionInfo &lb);
 
-  NetTracerConnection get (const db::Layout &layout, const NetTracerConnectivity &tech, NetTracerData &data) const;
+  NetTracerConnection get (const db::Layout &layout, const NetTracerTechnologyComponent &tech, NetTracerData &data) const;
 
   std::string to_string () const;
   void parse (tl::Extractor &ex);
@@ -193,10 +196,11 @@ public:
     return m_net_shapes.size ();
   }
 
+#if defined(HAVE_QT)
   /**
    *  @brief Gets the color in which the net is drawn
    */
-  const tl::Color &color () const
+  QColor color () const
   {
     return m_color;
   }
@@ -204,10 +208,11 @@ public:
   /**
    *  @brief Sets the color in which the net is drawn
    */
-  void set_color (const tl::Color &c)
+  void set_color (QColor c)
   {
     m_color = c;
   }
+#endif
 
   /**
    *  @brief Get a name for the net
@@ -350,14 +355,17 @@ private:
   db::Shapes m_shapes;
   std::map <unsigned int, std::pair <db::LayerProperties, db::LayerProperties> > m_layers;
   std::map <unsigned int, std::string> m_cell_names;
-  tl::Color m_color;
+#if defined(HAVE_QT)
+  QColor m_color;
+#endif
   db::DBox m_start_search_box, m_stop_search_box;
   bool m_trace_path;
 
   void define_layer (unsigned int l, const db::LayerProperties &lp, const db::LayerProperties &lp_representative);
 };
 
-class DB_PLUGIN_PUBLIC NetTracerConnectivity
+class DB_PLUGIN_PUBLIC NetTracerTechnologyComponent
+  : public db::TechnologyComponent
 {
 public:
   typedef std::vector<NetTracerConnectionInfo>::const_iterator const_iterator;
@@ -365,39 +373,8 @@ public:
   typedef std::vector<NetTracerSymbolInfo>::const_iterator const_symbol_iterator;
   typedef std::vector<NetTracerSymbolInfo>::iterator symbol_iterator;
 
-  NetTracerConnectivity ();
-  NetTracerConnectivity (const NetTracerConnectivity &d);
-  NetTracerConnectivity &operator= (const NetTracerConnectivity &d);
-
-  bool is_fallback_default () const
-  {
-    return m_is_fallback_default;
-  }
-
-  void set_fallback_default (bool f)
-  {
-    m_is_fallback_default = f;
-  }
-
-  const std::string &name () const
-  {
-    return m_name;
-  }
-
-  void set_name (const std::string &n)
-  {
-    m_name = n;
-  }
-
-  const std::string &description () const
-  {
-    return m_description;
-  }
-
-  void set_description (const std::string &d)
-  {
-    m_description = d;
-  }
+  NetTracerTechnologyComponent ();
+  NetTracerTechnologyComponent (const NetTracerTechnologyComponent &d);
 
   const_iterator begin () const
   {
@@ -445,16 +422,6 @@ public:
     m_symbols.clear ();
   }
 
-  void clear_connections ()
-  {
-    m_connections.clear ();
-  }
-
-  void clear_symbols ()
-  {
-    m_symbols.clear ();
-  }
-
   void erase (iterator p)
   {
     m_connections.erase (p);
@@ -497,74 +464,14 @@ public:
 
   NetTracerData get_tracer_data (const db::Layout &layout) const;
 
-private:
-  std::vector<NetTracerConnectionInfo> m_connections;
-  std::vector<NetTracerSymbolInfo> m_symbols;
-  std::string m_name, m_description;
-  bool m_is_fallback_default;
-};
-
-class DB_PLUGIN_PUBLIC NetTracerTechnologyComponent
-  : public db::TechnologyComponent
-{
-public:
-  typedef std::vector<NetTracerConnectivity>::const_iterator const_iterator;
-  typedef std::vector<NetTracerConnectivity>::iterator iterator;
-
-  NetTracerTechnologyComponent ();
-
-  size_t size () const
-  {
-    return m_connectivity.size ();
-  }
-
-  void push_back (const db::NetTracerConnectivity &c)
-  {
-    m_connectivity.push_back (c);
-  }
-
-  void clear ()
-  {
-    m_connectivity.clear ();
-  }
-
-  void erase (iterator i)
-  {
-    m_connectivity.erase (i);
-  }
-
-  void insert (iterator i, const db::NetTracerConnectivity &c)
-  {
-    m_connectivity.insert (i, c);
-  }
-
-  const_iterator begin () const
-  {
-    return m_connectivity.begin ();
-  }
-
-  const_iterator end () const
-  {
-    return m_connectivity.end ();
-  }
-
-  iterator begin ()
-  {
-    return m_connectivity.begin ();
-  }
-
-  iterator end ()
-  {
-    return m_connectivity.end ();
-  }
-
-  db::NetTracerTechnologyComponent *clone () const
+  db::TechnologyComponent *clone () const
   {
     return new NetTracerTechnologyComponent (*this);
   }
 
 private:
-  std::vector<NetTracerConnectivity> m_connectivity;
+  std::vector<NetTracerConnectionInfo> m_connections;
+  std::vector<NetTracerSymbolInfo> m_symbols;
 };
 
 }

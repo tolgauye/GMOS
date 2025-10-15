@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -31,6 +31,7 @@
 #include <QMetaObject>
 #include "gsiQt.h"
 #include "gsiQtCoreCommon.h"
+#include "gsiDeclQtCoreTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -317,12 +318,12 @@ static void _call_f_typeName_c0 (const qt_gsi::GenericMethod * /*decl*/, void *c
 
 //  bool ::operator==(const QMetaMethod &m1, const QMetaMethod &m2)
 static bool op_QMetaMethod_operator_eq__eq__4680(const QMetaMethod *_self, const QMetaMethod &m2) {
-  return operator==(*_self, m2);
+  return ::operator==(*_self, m2);
 }
 
 //  bool ::operator!=(const QMetaMethod &m1, const QMetaMethod &m2)
 static bool op_QMetaMethod_operator_excl__eq__4680(const QMetaMethod *_self, const QMetaMethod &m2) {
-  return operator!=(*_self, m2);
+  return ::operator!=(*_self, m2);
 }
 
 

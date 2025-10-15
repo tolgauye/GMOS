@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -35,7 +35,6 @@ static void fail (const char *file, int line)
 static PythonInterpreter *sp_pya_interpreter = 0;
 
 PythonInterpreter::PythonInterpreter ()
-  : gsi::Interpreter (0, "pya")
 {
   tl_assert (! sp_pya_interpreter);
   sp_pya_interpreter = this;
@@ -53,7 +52,7 @@ PythonInterpreter *PythonInterpreter::instance ()
 }
 
 void 
-PythonInterpreter::add_path (const std::string &, bool prepend)
+PythonInterpreter::add_path (const std::string &)
 {
   // .. nothing ..
 }
@@ -119,7 +118,7 @@ PythonInterpreter::inspector (int)
 }
 
 void
-PythonInterpreter::define_variable (const std::string &, const tl::Variant &)
+PythonInterpreter::define_variable (const std::string &, const std::string &)
 {
   // .. nothing ..
 }

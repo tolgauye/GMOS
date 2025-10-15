@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -67,129 +67,50 @@ inline bool value_of (true_tag) { return true; }
  */
 inline bool value_of (false_tag) { return false; }
 
-//  SFINAE boolean types
-typedef char __yes_type [1];
-typedef char __no_type [2];
-
 /**
- *  @brief Detects whether a class has a "to_variant" method with a matching signature
+ *  @brief A tag class which defines a object to require complex relocation.
  */
-template <typename T> static __yes_type &__test_to_variant_func (decltype (&T::to_variant));
-template <typename> static __no_type &__test_to_variant_func (...);
-
-template <typename T>
-struct has_to_variant
-{
-  static constexpr bool value = sizeof (__test_to_variant_func<T> (nullptr)) == sizeof (__yes_type);
-};
+struct complex_relocate_required { };
 
 /**
- *  @brief Detects whether a class has a "to_string" method with a matching signature
+ *  @brief A tag class which defines a object to allow trivial relocation.
  */
-template <typename T> static __yes_type &__test_to_string_func (decltype (&T::to_string));
-template <typename> static __no_type &__test_to_string_func (...);
-
-template <typename T>
-struct has_to_string
-{
-  static constexpr bool value = sizeof (__test_to_string_func<T> (nullptr)) == sizeof (__yes_type);
-};
+struct trivial_relocate_required { };
 
 /**
- *  @brief Detects whether a class has a "to_int" method with a matching signature
- */
-template <typename T> static __yes_type &__test_to_int_func (decltype (&T::to_int));
-template <typename> static __no_type &__test_to_int_func (...);
-
-template <typename T>
-struct has_to_int
-{
-  static constexpr bool value = sizeof (__test_to_int_func<T> (nullptr)) == sizeof (__yes_type);
-};
-
-/**
- *  @brief Detects whether a class has a "to_double" method with a matching signature
- */
-template <typename T> static __yes_type &__test_to_double_func (decltype (&T::to_double));
-template <typename> static __no_type &__test_to_double_func (...);
-
-template <typename T>
-struct has_to_double
-{
-  static constexpr bool value = sizeof (__test_to_double_func<T> (nullptr)) == sizeof (__yes_type);
-};
-
-/**
- *  @brief Detects whether a class has an equal operator
- */
-template <typename T> static __yes_type &__test_equal_func (decltype (&T::operator==));
-template <typename> static __no_type &__test_equal_func (...);
-
-template <typename T>
-struct has_equal_operator
-{
-  static constexpr bool value = sizeof (__test_equal_func<T> (nullptr)) == sizeof (__yes_type);
-};
-
-/**
- *  @brief Detects whether a class has a less operator
- */
-template <typename T> static __yes_type &__test_less_func (decltype (&T::operator<));
-template <typename> static __no_type &__test_less_func (...);
-
-template <typename T>
-struct has_less_operator
-{
-  static constexpr bool value = sizeof (__test_less_func<T> (nullptr)) == sizeof (__yes_type);
-};
-
-/**
- *  @brief Detects whether a class has a "swap" method with a matching signature
- */
-template <typename T> static __yes_type &__test_swap_func (decltype (&T::swap));
-template <typename> static __no_type &__test_swap_func (...);
-
-template <typename T>
-struct has_swap
-{
-  static constexpr bool value = sizeof (__test_swap_func<T> (nullptr)) == sizeof (__yes_type);
-};
-
-
-/**
- *  @brief Delivers the return type for a method
+ *  @brief The type traits struct that defines some requirements for the given type T
  *
- *  class Foo {
- *    int func(const std::string &s);
- *  };
+ *  Specifically the following typedefs must be provided:
  *
- *  typedef typename tl::result_of_method<decltype (& Foo::func)>::type return_type;  // int
+ *  "relocate_requirements" specifies how the object needs to be relocated. 
+ *  This typdef can be complex_relocate_required or trivial_relocate_required. 
+ *  Complex relocation is implemented by a copy construction and destruction of the 
+ *  source object. Trivial relocation is implemented by a memcpy.
+ *  The default is complex relocation.
+ *
+ *  "has_copy_constructor" specifies if a class has a copy constructor.
+ *  This typedef can be true_tag or false_tag. The default is "true_tag".
+ *
+ *  "has_default_constructor" specifies if a class has a default constructor.
+ *  This typedef can be true_tag or false_tag. The default is "true_tag".
+ *
+ *  "has_efficient_swap" specifies that it is beneficial to use std::swap
+ *  on those objects because it is implemented very efficiently. The default is "false_tag".
+ *
+ *  TODO: further requirements shall go here.
  */
-template <class R>
-struct result_of_method;
-
-template <class R, class Obj, class A1>
-struct result_of_method<R (Obj::*) (A1) const>
+template <class T>
+struct type_traits
 {
-  typedef R type;
-};
-
-template <class R, class Obj, class A1, class A2>
-struct result_of_method<R (Obj::*) (A1, A2) const>
-{
-  typedef R type;
-};
-
-template <class R, class Obj, class A1, class A2, class A3>
-struct result_of_method<R (Obj::*) (A1, A2, A3) const>
-{
-  typedef R type;
-};
-
-template <class R, class Obj, class A1, class A2, class A3, class A4>
-struct result_of_method<R (Obj::*) (A1, A2, A3, A4) const>
-{
-  typedef R type;
+  typedef complex_relocate_required relocate_requirements;
+  typedef true_tag has_copy_constructor;
+  typedef true_tag has_default_constructor;
+  typedef true_tag has_public_destructor;
+  typedef false_tag has_efficient_swap;
+  typedef false_tag supports_extractor;
+  typedef false_tag supports_to_string;
+  typedef false_tag has_less_operator;
+  typedef false_tag has_equal_operator;
 };
 
 }

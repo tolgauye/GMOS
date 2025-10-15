@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -36,7 +36,7 @@ namespace db
 /**
  *  @brief A common definition for the boolean operations available on edges
  */
-enum EdgeBoolOp { EdgeOr, EdgeNot, EdgeXor, EdgeAnd, EdgeIntersections, EdgeAndNot /*not always supported*/ };
+enum EdgeBoolOp { EdgeOr, EdgeNot, EdgeXor, EdgeAnd, EdgeIntersections };
 
 struct OrJoinOp
 {
@@ -86,14 +86,8 @@ struct EdgeBooleanCluster
 {
   typedef db::Edge::coord_type coord_type;
 
-  EdgeBooleanCluster (OutputContainer *output, std::set<db::Point> *dots, EdgeBoolOp op)
-    : mp_output (output), mp_output2 (0), mp_dots (dots), mp_dots2 (0), m_op (op)
-  {
-    //  .. nothing yet ..
-  }
-
-  EdgeBooleanCluster (OutputContainer *output, OutputContainer *output2, std::set<db::Point> *dots, std::set<db::Point> *dots2, EdgeBoolOp op)
-    : mp_output (output), mp_output2 (output2), mp_dots (dots), mp_dots2 (dots2), m_op (op)
+  EdgeBooleanCluster (OutputContainer *output, EdgeBoolOp op)
+    : mp_output (output), m_op (op)
   {
     //  .. nothing yet ..
   }
@@ -105,56 +99,23 @@ struct EdgeBooleanCluster
     //  shortcut for single edge
     if (begin () + 1 == end ()) {
       if (begin ()->second == 0) {
-        if (m_op == EdgeAndNot) {
-          if (begin ()->first->is_degenerate ()) {
-            if (mp_dots) {
-              mp_dots2->insert (begin ()->first->p1 ());
-            }
-          } else if (mp_output2) {
-            mp_output2->insert (*(begin ()->first));
-          }
-        } else if (m_op != EdgeAnd) {
-          if (begin ()->first->is_degenerate ()) {
-            if (mp_dots) {
-              mp_dots->insert (begin ()->first->p1 ());
-            }
-          } else if (mp_output) {
-            mp_output->insert (*(begin ()->first));
-          }
+        if (m_op != EdgeAnd) {
+          mp_output->insert (*(begin ()->first));
         }
       } else {
-        if (m_op != EdgeAnd && m_op != EdgeNot && m_op != EdgeAndNot) {
-          if (begin ()->first->is_degenerate ()) {
-            if (mp_dots) {
-              mp_dots->insert (begin ()->first->p1 ());
-            }
-          } else if (mp_output) {
-            mp_output->insert (*(begin ()->first));
-          }
+        if (m_op != EdgeAnd && m_op != EdgeNot) {
+          mp_output->insert (*(begin ()->first));
         }
       }
       return;
     }
 
-    //  search first non-degenerate, longest
-
-    iterator main = end ();
-    for (iterator i = begin (); i != end (); ++i) {
-      if (! i->first->is_degenerate () && (main == end () || main->first->length () < i->first->length ())) {
-        main = i;
-      }
-    }
-
-    if (main == end ()) {
-      return;
-    }
-
-    db::Edge r = *main->first;
+    db::Edge r = *begin ()->first;
     double l1 = 0.0, l2 = r.double_length ();
     double n = 1.0 / l2;
     db::Point p1 = r.p1 (), p2 = r.p2 ();
 
-    for (iterator o = begin (); o != end (); ++o) {
+    for (iterator o = begin () + 1; o != end (); ++o) {
       double ll1 = db::sprod (db::Vector (o->first->p1 () - r.p1 ()), r.d ()) * n;
       double ll2 = db::sprod (db::Vector (o->first->p2 () - r.p1 ()), r.d ()) * n;
       if (ll1 < l1) {
@@ -213,34 +174,19 @@ struct EdgeBooleanCluster
     if (b.begin () == b.end ()) {
 
       //  optimize for empty b
-      OutputContainer *oc = 0;
-      if (m_op == EdgeAndNot) {
-        oc = mp_output;
-      } else if (m_op != EdgeAnd) {
-        oc = mp_output;
-      }
-
-      if (oc) {
+      if (m_op != EdgeAnd) {
         for (tl::interval_map<db::Coord, int>::const_iterator ib = b.begin (); ib != b.end (); ++ib) {
           if (ib->second > 0) {
-            oc->insert (db::Edge (p1 + db::Vector (d * (ib->first.first * n)), p1 + db::Vector (d * (ib->first.second * n))));
+            mp_output->insert (db::Edge (p1 + db::Vector (d * (ib->first.first * n)), p1 + db::Vector (d * (ib->first.second * n))));
           } else if (ib->second < 0) {
-            oc->insert (db::Edge (p1 + db::Vector (d * (ib->first.second * n)), p1 + db::Vector (d * (ib->first.first * n))));
+            mp_output->insert (db::Edge (p1 + db::Vector (d * (ib->first.second * n)), p1 + db::Vector (d * (ib->first.first * n))));
           }
         }
       }
 
     } else {
 
-      tl::interval_map<db::Coord, int> q2;
-
-      if (m_op == EdgeAnd || m_op == EdgeAndNot) {
-        if (m_op == EdgeAndNot) {
-          q2 = q;
-          for (tl::interval_map<db::Coord, int>::const_iterator ib = b.begin (); ib != b.end (); ++ib) {
-            q2.add (ib->first.first, ib->first.second, ib->second, not_jop);
-          }
-        }
+      if (m_op == EdgeAnd) {
         for (tl::interval_map<db::Coord, int>::const_iterator ib = b.begin (); ib != b.end (); ++ib) {
           q.add (ib->first.first, ib->first.second, ib->second, and_jop);
         }
@@ -262,21 +208,12 @@ struct EdgeBooleanCluster
         }
       }
 
-      for (tl::interval_map<db::Coord, int>::const_iterator iq = q2.begin (); iq != q2.end (); ++iq) {
-        if (iq->second > 0) {
-          mp_output2->insert (db::Edge (p1 + db::Vector (d * (iq->first.first * n)), p1 + db::Vector (d * (iq->first.second * n))));
-        } else if (iq->second < 0) {
-          mp_output2->insert (db::Edge (p1 + db::Vector (d * (iq->first.second * n)), p1 + db::Vector (d * (iq->first.first * n))));
-        }
-      }
-
     }
 
   }
 
 private:
-  OutputContainer *mp_output, *mp_output2;
-  std::set<db::Point> *mp_dots, *mp_dots2;
+  OutputContainer *mp_output;
   db::EdgeBoolOp m_op;
 };
 
@@ -284,9 +221,16 @@ template <class OutputContainer>
 struct EdgeBooleanClusterCollector
   : public db::cluster_collector<db::Edge, size_t, EdgeBooleanCluster<OutputContainer> >
 {
-  EdgeBooleanClusterCollector (OutputContainer *output, EdgeBoolOp op, OutputContainer *output2 = 0)
-    : db::cluster_collector<db::Edge, size_t, EdgeBooleanCluster<OutputContainer> > (EdgeBooleanCluster<OutputContainer> (output, output2, &m_dots, &m_dots2, op == EdgeIntersections ? EdgeAnd : op), op != EdgeAnd && op != EdgeIntersections /*report single*/),
-      mp_output (output), mp_output2 (output2), m_op (op)
+  EdgeBooleanClusterCollector (OutputContainer *output, EdgeBoolOp op)
+    : db::cluster_collector<db::Edge, size_t, EdgeBooleanCluster<OutputContainer> > (EdgeBooleanCluster<OutputContainer> (output, op == EdgeIntersections ? EdgeAnd : op), op != EdgeAnd && op != EdgeIntersections /*report single*/),
+      mp_output (output), mp_intersections (op == EdgeIntersections ? output : 0)
+  {
+    //  .. nothing yet ..
+  }
+
+  EdgeBooleanClusterCollector (OutputContainer *output, OutputContainer *intersections, EdgeBoolOp op)
+    : db::cluster_collector<db::Edge, size_t, EdgeBooleanCluster<OutputContainer> > (EdgeBooleanCluster<OutputContainer> (output, op), op != EdgeAnd /*report single*/),
+      mp_output (output), mp_intersections (intersections)
   {
     //  .. nothing yet ..
   }
@@ -306,78 +250,11 @@ struct EdgeBooleanClusterCollector
 
       db::cluster_collector<db::Edge, size_t, EdgeBooleanCluster<OutputContainer> >::add (o1, p1, o2, p2);
 
-    } else {
+    } else if (mp_intersections && p1 != p2) {
 
-      //  dots vs. edge or dot is handled here, no need to copy dots
-      if (o1->is_degenerate ()) {
-        this->ignore_single (o1);
-      }
-      if (o2->is_degenerate ()) {
-        this->ignore_single (o2);
-      }
-
-      if (m_op == EdgeIntersections) {
-
-        if (p1 != p2) {
-          std::pair<bool, db::Point> ip = o1->intersect_point (*o2);
-          if (ip.first) {
-            m_dots.insert (ip.second);
-          }
-        }
-
-      } else if (m_op == EdgeAndNot) {
-
-        //  handle case of dot vs. edge or dot
-        if (p1 != p2 && (o1->is_degenerate () || o2->is_degenerate ())) {
-          std::pair<bool, db::Point> ip = o1->intersect_point (*o2);
-          if (ip.first) {
-            m_dots.insert (ip.second);
-          }
-          if (o1->is_degenerate () && ! ip.first) {
-            m_dots2.insert (o1->p1 ());
-          }
-        }
-
-      } else if (m_op == EdgeAnd) {
-
-        //  handle case of dot vs. edge or dot
-        if (p1 != p2 && (o1->is_degenerate () || o2->is_degenerate ())) {
-          std::pair<bool, db::Point> ip = o1->intersect_point (*o2);
-          if (ip.first) {
-            m_dots.insert (ip.second);
-          }
-        }
-
-      } else if (m_op == EdgeNot) {
-
-        //  handle case of dot vs. edge or dot
-        if (p1 != p2 && o1->is_degenerate ()) {
-          std::pair<bool, db::Point> ip = o1->intersect_point (*o2);
-          if (! ip.first) {
-            m_dots.insert (o1->p1 ());
-          }
-        }
-
-      } else if (m_op == EdgeOr) {
-
-        //  forward dots
-        if (o1->is_degenerate ()) {
-          m_dots.insert (o1->p1 ());
-        }
-        if (o2->is_degenerate ()) {
-          m_dots.insert (o2->p1 ());
-        }
-
-      } else if (m_op == EdgeXor) {
-
-        //  handle case of dot vs. edge or dot
-        if (p1 != p2 && o1->is_degenerate () && o2->is_degenerate ()) {
-          if (o1->p1 () != o2->p1 ()) {
-            m_dots.insert (o1->p1 ());
-            m_dots.insert (o2->p1 ());
-          }
-        }
-
+      std::pair<bool, db::Point> ip = o1->intersect_point (*o2);
+      if (ip.first) {
+        m_intersections.insert (ip.second);
       }
 
     }
@@ -432,44 +309,35 @@ struct EdgeBooleanClusterCollector
   };
 
   /**
-   *  @brief Finalizes the implementation for "sections"
+   *  @brief Finalizes the implementation for "EdgeIntersections"
    *  This method pushes those points which don't interact with the edges to the output container
    *  as degenerate edges. It needs to be called after the pass has been made.
    */
   void finalize (bool)
   {
-    add_orphan_dots (m_dots, mp_output);
-    if (mp_output2) {
-      add_orphan_dots (m_dots2, mp_output2);
-    }
-  }
-
-private:
-  OutputContainer *mp_output, *mp_output2;
-  EdgeBoolOp m_op;
-  std::set<db::Point> m_dots, m_dots2;
-
-  static void add_orphan_dots (const std::set<db::Point> &dots, OutputContainer *output)
-  {
-    if (dots.empty ()) {
+    if (m_intersections.empty ()) {
       return;
     }
 
-    db::box_scanner2<db::Edge, size_t, db::Point, size_t> dots_to_edge_scanner;
-    for (typename OutputContainer::const_iterator e = output->begin (); e != output->end (); ++e) {
-      dots_to_edge_scanner.insert1 (e.operator-> (), 0);
+    db::box_scanner2<db::Edge, size_t, db::Point, size_t> intersections_to_edge_scanner;
+    for (typename OutputContainer::const_iterator e = mp_output->begin (); e != mp_output->end (); ++e) {
+      intersections_to_edge_scanner.insert1 (e.operator-> (), 0);
     }
-    for (std::set<db::Point>::const_iterator p = dots.begin (); p != dots.end (); ++p) {
-      dots_to_edge_scanner.insert2 (p.operator-> (), 0);
+    for (std::set<db::Point>::const_iterator p = m_intersections.begin (); p != m_intersections.end (); ++p) {
+      intersections_to_edge_scanner.insert2 (p.operator-> (), 0);
     }
 
     std::set<db::Point> points_to_remove;
     RemovePointsOnEdges rpoe (points_to_remove);
-    dots_to_edge_scanner.process (rpoe, 1, db::box_convert<db::Edge> (), db::box_convert<db::Point> ());
+    intersections_to_edge_scanner.process (rpoe, 1, db::box_convert<db::Edge> (), db::box_convert<db::Point> ());
 
-    std::set_difference (dots.begin (), dots.end (), points_to_remove.begin (), points_to_remove.end (), PointInserter (output));
-
+    std::set_difference (m_intersections.begin (), m_intersections.end (), points_to_remove.begin (), points_to_remove.end (), PointInserter (mp_intersections));
   }
+
+private:
+  OutputContainer *mp_output;
+  OutputContainer *mp_intersections;
+  std::set<db::Point> m_intersections;
 };
 
 /**
@@ -509,14 +377,8 @@ public:
 
   typedef Iterator const_iterator;
 
-  ShapesToOutputContainerAdaptor ()
-    : mp_shapes (0), m_prop_id (0)
-  {
-    //  .. nothing yet ..
-  }
-
-  ShapesToOutputContainerAdaptor (db::Shapes &shapes, db::properties_id_type prop_id = 0)
-    : mp_shapes (&shapes), m_prop_id (prop_id)
+  ShapesToOutputContainerAdaptor (db::Shapes &shapes)
+    : mp_shapes (&shapes)
   {
     //  .. nothing yet ..
   }
@@ -533,16 +395,11 @@ public:
 
   void insert (const db::Edge &edge)
   {
-    if (m_prop_id != 0) {
-      mp_shapes->insert (db::EdgeWithProperties (edge, m_prop_id));
-    } else {
-      mp_shapes->insert (edge);
-    }
+    mp_shapes->insert (edge);
   }
 
 private:
   db::Shapes *mp_shapes;
-  db::properties_id_type m_prop_id;
 };
 
 /**
@@ -551,19 +408,13 @@ private:
 struct DB_PUBLIC EdgeBooleanClusterCollectorToShapes
   : EdgeBooleanClusterCollector<ShapesToOutputContainerAdaptor>
 {
-  EdgeBooleanClusterCollectorToShapes (db::Shapes *output, EdgeBoolOp op, db::properties_id_type prop_id = 0)
-    : EdgeBooleanClusterCollector<ShapesToOutputContainerAdaptor> (&m_adaptor, op), m_adaptor (*output, prop_id)
-  {
-  }
-
-  EdgeBooleanClusterCollectorToShapes (db::Shapes *output, EdgeBoolOp op, db::Shapes *output2, db::properties_id_type prop_id = 0)
-    : EdgeBooleanClusterCollector<ShapesToOutputContainerAdaptor> (&m_adaptor, op, &m_adaptor2), m_adaptor (*output, prop_id), m_adaptor2 (*output2, prop_id)
+  EdgeBooleanClusterCollectorToShapes (db::Shapes *output, EdgeBoolOp op)
+    : EdgeBooleanClusterCollector<ShapesToOutputContainerAdaptor> (&m_adaptor, op), m_adaptor (*output)
   {
   }
 
 private:
   ShapesToOutputContainerAdaptor m_adaptor;
-  ShapesToOutputContainerAdaptor m_adaptor2;
 };
 
 }

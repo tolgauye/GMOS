@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -35,6 +35,7 @@
 #include <QSize>
 #include "gsiQt.h"
 #include "gsiQtGuiCommon.h"
+#include "gsiDeclQtGuiTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -172,21 +173,6 @@ static void _call_f_iconName_c0 (const qt_gsi::GenericMethod * /*decl*/, void *c
 }
 
 
-// bool QIconEngine::isNull()
-
-
-static void _init_f_isNull_c0 (qt_gsi::GenericMethod *decl)
-{
-  decl->set_return<bool > ();
-}
-
-static void _call_f_isNull_c0 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  ret.write<bool > ((bool)((QIconEngine *)cls)->isNull ());
-}
-
-
 // QString QIconEngine::key()
 
 
@@ -275,34 +261,6 @@ static void _call_f_read_1697 (const qt_gsi::GenericMethod * /*decl*/, void *cls
 }
 
 
-// QPixmap QIconEngine::scaledPixmap(const QSize &size, QIcon::Mode mode, QIcon::State state, double scale)
-
-
-static void _init_f_scaledPixmap_5506 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("size");
-  decl->add_arg<const QSize & > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("mode");
-  decl->add_arg<const qt_gsi::Converter<QIcon::Mode>::target_type & > (argspec_1);
-  static gsi::ArgSpecBase argspec_2 ("state");
-  decl->add_arg<const qt_gsi::Converter<QIcon::State>::target_type & > (argspec_2);
-  static gsi::ArgSpecBase argspec_3 ("scale");
-  decl->add_arg<double > (argspec_3);
-  decl->set_return<QPixmap > ();
-}
-
-static void _call_f_scaledPixmap_5506 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const QSize &arg1 = gsi::arg_reader<const QSize & >() (args, heap);
-  const qt_gsi::Converter<QIcon::Mode>::target_type & arg2 = gsi::arg_reader<const qt_gsi::Converter<QIcon::Mode>::target_type & >() (args, heap);
-  const qt_gsi::Converter<QIcon::State>::target_type & arg3 = gsi::arg_reader<const qt_gsi::Converter<QIcon::State>::target_type & >() (args, heap);
-  double arg4 = gsi::arg_reader<double >() (args, heap);
-  ret.write<QPixmap > ((QPixmap)((QIconEngine *)cls)->scaledPixmap (arg1, qt_gsi::QtToCppAdaptor<QIcon::Mode>(arg2).cref(), qt_gsi::QtToCppAdaptor<QIcon::State>(arg3).cref(), arg4));
-}
-
-
 // void QIconEngine::virtual_hook(int id, void *data)
 
 
@@ -356,12 +314,10 @@ static gsi::Methods methods_QIconEngine () {
   methods += new qt_gsi::GenericMethod ("availableSizes", "@brief Method QList<QSize> QIconEngine::availableSizes(QIcon::Mode mode, QIcon::State state)\n", true, &_init_f_availableSizes_c2846, &_call_f_availableSizes_c2846);
   methods += new qt_gsi::GenericMethod ("clone", "@brief Method QIconEngine *QIconEngine::clone()\n", true, &_init_f_clone_c0, &_call_f_clone_c0);
   methods += new qt_gsi::GenericMethod ("iconName", "@brief Method QString QIconEngine::iconName()\n", true, &_init_f_iconName_c0, &_call_f_iconName_c0);
-  methods += new qt_gsi::GenericMethod ("isNull?", "@brief Method bool QIconEngine::isNull()\n", true, &_init_f_isNull_c0, &_call_f_isNull_c0);
   methods += new qt_gsi::GenericMethod ("key", "@brief Method QString QIconEngine::key()\n", true, &_init_f_key_c0, &_call_f_key_c0);
   methods += new qt_gsi::GenericMethod ("paint", "@brief Method void QIconEngine::paint(QPainter *painter, const QRect &rect, QIcon::Mode mode, QIcon::State state)\n", false, &_init_f_paint_5848, &_call_f_paint_5848);
   methods += new qt_gsi::GenericMethod ("pixmap", "@brief Method QPixmap QIconEngine::pixmap(const QSize &size, QIcon::Mode mode, QIcon::State state)\n", false, &_init_f_pixmap_4543, &_call_f_pixmap_4543);
   methods += new qt_gsi::GenericMethod ("read", "@brief Method bool QIconEngine::read(QDataStream &in)\n", false, &_init_f_read_1697, &_call_f_read_1697);
-  methods += new qt_gsi::GenericMethod ("scaledPixmap", "@brief Method QPixmap QIconEngine::scaledPixmap(const QSize &size, QIcon::Mode mode, QIcon::State state, double scale)\n", false, &_init_f_scaledPixmap_5506, &_call_f_scaledPixmap_5506);
   methods += new qt_gsi::GenericMethod ("virtual_hook", "@brief Method void QIconEngine::virtual_hook(int id, void *data)\n", false, &_init_f_virtual_hook_1715, &_call_f_virtual_hook_1715);
   methods += new qt_gsi::GenericMethod ("write", "@brief Method bool QIconEngine::write(QDataStream &out)\n", true, &_init_f_write_c1697, &_call_f_write_c1697);
   return methods;
@@ -384,12 +340,6 @@ public:
 
   //  [adaptor ctor] QIconEngine::QIconEngine()
   QIconEngine_Adaptor() : QIconEngine()
-  {
-    qt_gsi::QtObjectBase::init (this);
-  }
-
-  //  [adaptor ctor] QIconEngine::QIconEngine(const QIconEngine &other)
-  QIconEngine_Adaptor(const QIconEngine &other) : QIconEngine(other)
   {
     qt_gsi::QtObjectBase::init (this);
   }
@@ -605,24 +555,6 @@ static void _call_ctor_QIconEngine_Adaptor_0 (const qt_gsi::GenericStaticMethod 
 {
   __SUPPRESS_UNUSED_WARNING(args);
   ret.write<QIconEngine_Adaptor *> (new QIconEngine_Adaptor ());
-}
-
-
-//  Constructor QIconEngine::QIconEngine(const QIconEngine &other) (adaptor class)
-
-static void _init_ctor_QIconEngine_Adaptor_2385 (qt_gsi::GenericStaticMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("other");
-  decl->add_arg<const QIconEngine & > (argspec_0);
-  decl->set_return_new<QIconEngine_Adaptor> ();
-}
-
-static void _call_ctor_QIconEngine_Adaptor_2385 (const qt_gsi::GenericStaticMethod * /*decl*/, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const QIconEngine &arg1 = gsi::arg_reader<const QIconEngine & >() (args, heap);
-  ret.write<QIconEngine_Adaptor *> (new QIconEngine_Adaptor (arg1));
 }
 
 
@@ -944,31 +876,30 @@ gsi::Class<QIconEngine> &qtdecl_QIconEngine ();
 static gsi::Methods methods_QIconEngine_Adaptor () {
   gsi::Methods methods;
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QIconEngine::QIconEngine()\nThis method creates an object of class QIconEngine.", &_init_ctor_QIconEngine_Adaptor_0, &_call_ctor_QIconEngine_Adaptor_0);
-  methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QIconEngine::QIconEngine(const QIconEngine &other)\nThis method creates an object of class QIconEngine.", &_init_ctor_QIconEngine_Adaptor_2385, &_call_ctor_QIconEngine_Adaptor_2385);
-  methods += new qt_gsi::GenericMethod ("actualSize", "@brief Virtual method QSize QIconEngine::actualSize(const QSize &size, QIcon::Mode mode, QIcon::State state)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_actualSize_4543_0, &_call_cbs_actualSize_4543_0);
-  methods += new qt_gsi::GenericMethod ("actualSize", "@hide", false, &_init_cbs_actualSize_4543_0, &_call_cbs_actualSize_4543_0, &_set_callback_cbs_actualSize_4543_0);
-  methods += new qt_gsi::GenericMethod ("addFile", "@brief Virtual method void QIconEngine::addFile(const QString &fileName, const QSize &size, QIcon::Mode mode, QIcon::State state)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_addFile_6460_0, &_call_cbs_addFile_6460_0);
-  methods += new qt_gsi::GenericMethod ("addFile", "@hide", false, &_init_cbs_addFile_6460_0, &_call_cbs_addFile_6460_0, &_set_callback_cbs_addFile_6460_0);
-  methods += new qt_gsi::GenericMethod ("addPixmap", "@brief Virtual method void QIconEngine::addPixmap(const QPixmap &pixmap, QIcon::Mode mode, QIcon::State state)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_addPixmap_4755_0, &_call_cbs_addPixmap_4755_0);
-  methods += new qt_gsi::GenericMethod ("addPixmap", "@hide", false, &_init_cbs_addPixmap_4755_0, &_call_cbs_addPixmap_4755_0, &_set_callback_cbs_addPixmap_4755_0);
-  methods += new qt_gsi::GenericMethod ("availableSizes", "@brief Virtual method QList<QSize> QIconEngine::availableSizes(QIcon::Mode mode, QIcon::State state)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_availableSizes_c2846_2, &_call_cbs_availableSizes_c2846_2);
-  methods += new qt_gsi::GenericMethod ("availableSizes", "@hide", true, &_init_cbs_availableSizes_c2846_2, &_call_cbs_availableSizes_c2846_2, &_set_callback_cbs_availableSizes_c2846_2);
-  methods += new qt_gsi::GenericMethod ("clone", "@brief Virtual method QIconEngine *QIconEngine::clone()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_clone_c0_0, &_call_cbs_clone_c0_0);
-  methods += new qt_gsi::GenericMethod ("clone", "@hide", true, &_init_cbs_clone_c0_0, &_call_cbs_clone_c0_0, &_set_callback_cbs_clone_c0_0);
-  methods += new qt_gsi::GenericMethod ("iconName", "@brief Virtual method QString QIconEngine::iconName()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_iconName_c0_0, &_call_cbs_iconName_c0_0);
-  methods += new qt_gsi::GenericMethod ("iconName", "@hide", true, &_init_cbs_iconName_c0_0, &_call_cbs_iconName_c0_0, &_set_callback_cbs_iconName_c0_0);
-  methods += new qt_gsi::GenericMethod ("key", "@brief Virtual method QString QIconEngine::key()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_key_c0_0, &_call_cbs_key_c0_0);
-  methods += new qt_gsi::GenericMethod ("key", "@hide", true, &_init_cbs_key_c0_0, &_call_cbs_key_c0_0, &_set_callback_cbs_key_c0_0);
-  methods += new qt_gsi::GenericMethod ("paint", "@brief Virtual method void QIconEngine::paint(QPainter *painter, const QRect &rect, QIcon::Mode mode, QIcon::State state)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_paint_5848_0, &_call_cbs_paint_5848_0);
-  methods += new qt_gsi::GenericMethod ("paint", "@hide", false, &_init_cbs_paint_5848_0, &_call_cbs_paint_5848_0, &_set_callback_cbs_paint_5848_0);
-  methods += new qt_gsi::GenericMethod ("pixmap", "@brief Virtual method QPixmap QIconEngine::pixmap(const QSize &size, QIcon::Mode mode, QIcon::State state)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_pixmap_4543_0, &_call_cbs_pixmap_4543_0);
-  methods += new qt_gsi::GenericMethod ("pixmap", "@hide", false, &_init_cbs_pixmap_4543_0, &_call_cbs_pixmap_4543_0, &_set_callback_cbs_pixmap_4543_0);
-  methods += new qt_gsi::GenericMethod ("read", "@brief Virtual method bool QIconEngine::read(QDataStream &in)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_read_1697_0, &_call_cbs_read_1697_0);
-  methods += new qt_gsi::GenericMethod ("read", "@hide", false, &_init_cbs_read_1697_0, &_call_cbs_read_1697_0, &_set_callback_cbs_read_1697_0);
-  methods += new qt_gsi::GenericMethod ("virtual_hook", "@brief Virtual method void QIconEngine::virtual_hook(int id, void *data)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_virtual_hook_1715_0, &_call_cbs_virtual_hook_1715_0);
-  methods += new qt_gsi::GenericMethod ("virtual_hook", "@hide", false, &_init_cbs_virtual_hook_1715_0, &_call_cbs_virtual_hook_1715_0, &_set_callback_cbs_virtual_hook_1715_0);
-  methods += new qt_gsi::GenericMethod ("write", "@brief Virtual method bool QIconEngine::write(QDataStream &out)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_write_c1697_0, &_call_cbs_write_c1697_0);
-  methods += new qt_gsi::GenericMethod ("write", "@hide", true, &_init_cbs_write_c1697_0, &_call_cbs_write_c1697_0, &_set_callback_cbs_write_c1697_0);
+  methods += new qt_gsi::GenericMethod ("actualSize", "@hide", false, &_init_cbs_actualSize_4543_0, &_call_cbs_actualSize_4543_0);
+  methods += new qt_gsi::GenericMethod ("actualSize", "@brief Virtual method QSize QIconEngine::actualSize(const QSize &size, QIcon::Mode mode, QIcon::State state)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_actualSize_4543_0, &_call_cbs_actualSize_4543_0, &_set_callback_cbs_actualSize_4543_0);
+  methods += new qt_gsi::GenericMethod ("addFile", "@hide", false, &_init_cbs_addFile_6460_0, &_call_cbs_addFile_6460_0);
+  methods += new qt_gsi::GenericMethod ("addFile", "@brief Virtual method void QIconEngine::addFile(const QString &fileName, const QSize &size, QIcon::Mode mode, QIcon::State state)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_addFile_6460_0, &_call_cbs_addFile_6460_0, &_set_callback_cbs_addFile_6460_0);
+  methods += new qt_gsi::GenericMethod ("addPixmap", "@hide", false, &_init_cbs_addPixmap_4755_0, &_call_cbs_addPixmap_4755_0);
+  methods += new qt_gsi::GenericMethod ("addPixmap", "@brief Virtual method void QIconEngine::addPixmap(const QPixmap &pixmap, QIcon::Mode mode, QIcon::State state)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_addPixmap_4755_0, &_call_cbs_addPixmap_4755_0, &_set_callback_cbs_addPixmap_4755_0);
+  methods += new qt_gsi::GenericMethod ("availableSizes", "@hide", true, &_init_cbs_availableSizes_c2846_2, &_call_cbs_availableSizes_c2846_2);
+  methods += new qt_gsi::GenericMethod ("availableSizes", "@brief Virtual method QList<QSize> QIconEngine::availableSizes(QIcon::Mode mode, QIcon::State state)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_availableSizes_c2846_2, &_call_cbs_availableSizes_c2846_2, &_set_callback_cbs_availableSizes_c2846_2);
+  methods += new qt_gsi::GenericMethod ("clone", "@hide", true, &_init_cbs_clone_c0_0, &_call_cbs_clone_c0_0);
+  methods += new qt_gsi::GenericMethod ("clone", "@brief Virtual method QIconEngine *QIconEngine::clone()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_clone_c0_0, &_call_cbs_clone_c0_0, &_set_callback_cbs_clone_c0_0);
+  methods += new qt_gsi::GenericMethod ("iconName", "@hide", true, &_init_cbs_iconName_c0_0, &_call_cbs_iconName_c0_0);
+  methods += new qt_gsi::GenericMethod ("iconName", "@brief Virtual method QString QIconEngine::iconName()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_iconName_c0_0, &_call_cbs_iconName_c0_0, &_set_callback_cbs_iconName_c0_0);
+  methods += new qt_gsi::GenericMethod ("key", "@hide", true, &_init_cbs_key_c0_0, &_call_cbs_key_c0_0);
+  methods += new qt_gsi::GenericMethod ("key", "@brief Virtual method QString QIconEngine::key()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_key_c0_0, &_call_cbs_key_c0_0, &_set_callback_cbs_key_c0_0);
+  methods += new qt_gsi::GenericMethod ("paint", "@hide", false, &_init_cbs_paint_5848_0, &_call_cbs_paint_5848_0);
+  methods += new qt_gsi::GenericMethod ("paint", "@brief Virtual method void QIconEngine::paint(QPainter *painter, const QRect &rect, QIcon::Mode mode, QIcon::State state)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_paint_5848_0, &_call_cbs_paint_5848_0, &_set_callback_cbs_paint_5848_0);
+  methods += new qt_gsi::GenericMethod ("pixmap", "@hide", false, &_init_cbs_pixmap_4543_0, &_call_cbs_pixmap_4543_0);
+  methods += new qt_gsi::GenericMethod ("pixmap", "@brief Virtual method QPixmap QIconEngine::pixmap(const QSize &size, QIcon::Mode mode, QIcon::State state)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_pixmap_4543_0, &_call_cbs_pixmap_4543_0, &_set_callback_cbs_pixmap_4543_0);
+  methods += new qt_gsi::GenericMethod ("read", "@hide", false, &_init_cbs_read_1697_0, &_call_cbs_read_1697_0);
+  methods += new qt_gsi::GenericMethod ("read", "@brief Virtual method bool QIconEngine::read(QDataStream &in)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_read_1697_0, &_call_cbs_read_1697_0, &_set_callback_cbs_read_1697_0);
+  methods += new qt_gsi::GenericMethod ("virtual_hook", "@hide", false, &_init_cbs_virtual_hook_1715_0, &_call_cbs_virtual_hook_1715_0);
+  methods += new qt_gsi::GenericMethod ("virtual_hook", "@brief Virtual method void QIconEngine::virtual_hook(int id, void *data)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_virtual_hook_1715_0, &_call_cbs_virtual_hook_1715_0, &_set_callback_cbs_virtual_hook_1715_0);
+  methods += new qt_gsi::GenericMethod ("write", "@hide", true, &_init_cbs_write_c1697_0, &_call_cbs_write_c1697_0);
+  methods += new qt_gsi::GenericMethod ("write", "@brief Virtual method bool QIconEngine::write(QDataStream &out)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_write_c1697_0, &_call_cbs_write_c1697_0, &_set_callback_cbs_write_c1697_0);
   return methods;
 }
 

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -26,32 +26,65 @@
 
 #include "dbCommon.h"
 
-#include "dbMutableEdges.h"
+#include "dbAsIfFlatEdges.h"
 #include "dbShapes.h"
 #include "dbShapes2.h"
-#include "dbGenericShapeIterator.h"
-#include "tlCopyOnWrite.h"
 
 namespace db {
 
 /**
- *  @brief An iterator delegate for the flat edge set
+ *  @brief An iterator delegate for the flat region
  */
-typedef generic_shapes_iterator_delegate<db::Edge> FlatEdgesIterator;
+class DB_PUBLIC FlatEdgesIterator
+  : public EdgesIteratorDelegate
+{
+public:
+  typedef db::layer<db::Edge, db::unstable_layer_tag> edge_layer_type;
+  typedef edge_layer_type::iterator iterator_type;
+
+  FlatEdgesIterator (iterator_type from, iterator_type to)
+    : m_from (from), m_to (to)
+  {
+    //  .. nothing yet ..
+  }
+
+  virtual bool at_end () const
+  {
+    return m_from == m_to;
+  }
+
+  virtual void increment ()
+  {
+    ++m_from;
+  }
+
+  virtual const value_type *get () const
+  {
+    return m_from.operator-> ();
+  }
+
+  virtual EdgesIteratorDelegate *clone () const
+  {
+    return new FlatEdgesIterator (*this);
+  }
+
+private:
+  friend class Edges;
+
+  iterator_type m_from, m_to;
+};
 
 /**
  *  @brief A flat, edge-set delegate
  */
 class DB_PUBLIC FlatEdges
-  : public MutableEdges
+  : public AsIfFlatEdges
 {
 public:
   typedef db::Edge value_type;
 
   typedef db::layer<db::Edge, db::unstable_layer_tag> edge_layer_type;
   typedef edge_layer_type::iterator edge_iterator_type;
-  typedef db::layer<db::EdgeWithProperties, db::unstable_layer_tag> edge_layer_wp_type;
-  typedef edge_layer_wp_type::iterator edge_iterator_wp_type;
 
   FlatEdges ();
   FlatEdges (const db::Shapes &edges, bool is_merged);
@@ -67,7 +100,6 @@ public:
   }
 
   void reserve (size_t);
-  void flatten () { }
 
   virtual EdgesIteratorDelegate *begin () const;
   virtual EdgesIteratorDelegate *begin_merged () const;
@@ -76,8 +108,7 @@ public:
   virtual std::pair<db::RecursiveShapeIterator, db::ICplxTrans> begin_merged_iter () const;
 
   virtual bool empty () const;
-  virtual size_t count () const;
-  virtual size_t hier_count () const;
+  virtual size_t size () const;
   virtual bool is_merged () const;
 
   virtual void insert_into (Layout *layout, db::cell_index_type into_cell, unsigned int into_layer) const;
@@ -89,37 +120,67 @@ public:
   virtual EdgesDelegate *add (const Edges &other) const;
 
   virtual const db::Edge *nth (size_t n) const;
-  virtual db::properties_id_type nth_prop_id (size_t n) const;
   virtual bool has_valid_edges () const;
   virtual bool has_valid_merged_edges () const;
 
   virtual const db::RecursiveShapeIterator *iter () const;
-  virtual void apply_property_translator (const db::PropertiesTranslator &pt);
 
-  void do_insert (const db::Edge &edge, properties_id_type prop_id);
+  void insert (const db::Box &box);
+  void insert (const db::Path &path);
+  void insert (const db::SimplePolygon &polygon);
+  void insert (const db::Polygon &polygon);
+  void insert (const db::Edge &edge);
+  void insert (const db::Shape &shape);
 
-  void do_transform (const db::Trans &t)
+  template <class T>
+  void insert (const db::Shape &shape, const T &trans)
   {
-    transform_generic (t);
+    if (shape.is_polygon () || shape.is_path () || shape.is_box ()) {
+
+      db::Polygon poly;
+      shape.polygon (poly);
+      poly.transform (trans);
+      insert (poly);
+
+    } else if (shape.is_edge ()) {
+
+      db::Edge edge;
+      shape.edge (edge);
+      edge.transform (trans);
+      insert (edge);
+
+    }
   }
 
-  void do_transform (const db::ICplxTrans &t)
+  template <class Iter>
+  void insert (const Iter &b, const Iter &e)
   {
-    transform_generic (t);
+    reserve (size () + (e - b));
+    for (Iter i = b; i != e; ++i) {
+      insert (*i);
+    }
   }
 
-  void do_transform (const db::IMatrix2d &t)
+  template <class Iter>
+  void insert_seq (const Iter &seq)
   {
-    transform_generic (t);
+    for (Iter i = seq; ! i.at_end (); ++i) {
+      insert (*i);
+    }
   }
 
-  void do_transform (const db::IMatrix3d &t)
+  template <class Trans>
+  void transform (const Trans &trans)
   {
-    transform_generic (t);
+    if (! trans.is_unity ()) {
+      for (edge_iterator_type p = m_edges.template get_layer<db::Edge, db::unstable_layer_tag> ().begin (); p != m_edges.get_layer<db::Edge, db::unstable_layer_tag> ().end (); ++p) {
+        m_edges.get_layer<db::Edge, db::unstable_layer_tag> ().replace (p, p->transformed (trans));
+      }
+      invalidate_cache ();
+    }
   }
 
-  db::Shapes &raw_edges () { return *mp_edges; }
-  const db::Shapes &raw_edges () const { return *mp_edges; }
+  db::Shapes &raw_edges () { return m_edges; }
 
 protected:
   virtual void merged_semantics_changed ();
@@ -133,27 +194,12 @@ private:
   FlatEdges &operator= (const FlatEdges &other);
 
   bool m_is_merged;
-  mutable tl::copy_on_write_ptr<db::Shapes> mp_edges;
-  mutable tl::copy_on_write_ptr<db::Shapes> mp_merged_edges;
+  mutable db::Shapes m_edges;
+  mutable db::Shapes m_merged_edges;
   mutable bool m_merged_edges_valid;
 
   void init ();
   void ensure_merged_edges_valid () const;
-
-  template <class Trans>
-  void transform_generic (const Trans &trans)
-  {
-    if (! trans.is_unity ()) {
-      db::Shapes &e = *mp_edges;
-      for (edge_iterator_type p = e.template get_layer<db::Edge, db::unstable_layer_tag> ().begin (); p != e.get_layer<db::Edge, db::unstable_layer_tag> ().end (); ++p) {
-        e.get_layer<db::Edge, db::unstable_layer_tag> ().replace (p, p->transformed (trans));
-      }
-      for (edge_iterator_wp_type p = e.template get_layer<db::EdgeWithProperties, db::unstable_layer_tag> ().begin (); p != e.get_layer<db::EdgeWithProperties, db::unstable_layer_tag> ().end (); ++p) {
-        e.get_layer<db::EdgeWithProperties, db::unstable_layer_tag> ().replace (p, p->transformed (trans));
-      }
-      invalidate_cache ();
-    }
-  }
 };
 
 }

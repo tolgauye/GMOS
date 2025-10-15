@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -28,7 +28,6 @@
 #include "tlThreads.h"
 
 #include <list>
-#include <set>
 
 namespace tl
 {
@@ -90,19 +89,32 @@ public:
    *  Enabling is cumulative: multiple enable(true) calls must be matched to
    *  the same number of enable(false) calls.
    */
-  static void enable (bool en);
+  static void enable (bool en)
+  {
+    if (instance ()) {
+      instance ()->do_enable (en);
+    }
+  }
 
   /**
    *  @brief Execute all queued methods
    *
    *  This method can be called to force execution of all queued methods.
    */
-  static void execute ();
+  static void execute ()
+  {
+    if (instance ()) {
+      instance ()->do_execute ();
+    }
+  }
 
   /**
    *  @brief Gets a value indicating whether the scheduler is disabled
    */
-  bool is_disabled () const;
+  bool is_disabled () const
+  {
+    return m_disabled;
+  }
 
 protected:
   /**
@@ -113,9 +125,8 @@ protected:
 
   /**
    *  @brief Executes the pending methods
-   *  Returns true if more calls are required because handlers have issued more calls
    */
-  bool do_execute ();
+  void do_execute ();
 
   /**
    *  @brief Constructor
@@ -130,8 +141,7 @@ protected:
 private:
   int m_disabled;
   bool m_scheduled;
-  std::list<DeferredMethodBase *> m_methods, m_executing;
-  std::set<DeferredMethodBase *> m_unqueued;
+  std::list<DeferredMethodBase *> m_methods;
   tl::Mutex m_lock;
 
   void do_enable (bool en);
@@ -253,6 +263,8 @@ public:
    */
   void execute ()
   {
+    //  cancel execution which might be pending
+    cancel ();
     (mp_t->*m_method) ();
   }
 

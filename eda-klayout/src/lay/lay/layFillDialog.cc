@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -31,10 +31,9 @@
 #include "antService.h"
 #include "tlException.h"
 #include "tlString.h"
-#include "tlExceptions.h"
 #include "layMainWindow.h"
+#include "tlExceptions.h"
 #include "layCellSelectionForm.h"
-#include "layUtils.h"
 #include "edtService.h"
 
 namespace lay
@@ -60,17 +59,13 @@ public:
   virtual void get_menu_entries (std::vector<lay::MenuEntry> &menu_entries) const
   {
     lay::PluginDeclaration::get_menu_entries (menu_entries);
-    menu_entries.push_back (lay::menu_item ("fill_tool::show", "fill_tool:edit_mode", "edit_menu.utils_menu.end", tl::to_string (QObject::tr ("Fill Tool"))));
+    menu_entries.push_back (lay::MenuEntry ("fill_tool::show", "fill_tool:edit_mode", "edit_menu.utils_menu.end", tl::to_string (QObject::tr ("Fill Tool"))));
   }
  
-  virtual lay::Plugin *create_plugin (db::Manager *, lay::Dispatcher *, lay::LayoutViewBase *view) const
-  {
-    if (lay::has_gui ()) {
-      return new FillDialog (lay::MainWindow::instance (), view);
-    } else {
-      return 0;
-    }
-  }
+   virtual lay::Plugin *create_plugin (db::Manager *, lay::PluginRoot *root, lay::LayoutView *view) const
+   {
+     return new FillDialog (root, view);
+   }
 };
 
 static tl::RegisteredClass<lay::PluginDeclaration> config_decl (new FillDialogPluginDeclaration (), 20000, "FillDialogPlugin");
@@ -78,17 +73,15 @@ static tl::RegisteredClass<lay::PluginDeclaration> config_decl (new FillDialogPl
 
 // ------------------------------------------------------------
 
-FillDialog::FillDialog (QWidget *parent, LayoutViewBase *view)
-  : QDialog (parent),
-    lay::Plugin (view),
+FillDialog::FillDialog (lay::PluginRoot *main, lay::LayoutView *view)
+  : QDialog (view),
+    lay::Plugin (main),
     Ui::FillDialog (),
     mp_view (view)
 {
   setObjectName (QString::fromUtf8 ("fill_dialog"));
 
   Ui::FillDialog::setupUi (this);
-
-  fc_boundary_layer->set_no_layer_available (true);
 
   fill_area_stack->setCurrentIndex (0);
   connect (fill_area_cbx, SIGNAL (currentIndexChanged (int)), this, SLOT (fill_area_changed (int)));
@@ -102,12 +95,10 @@ FillDialog::menu_activated (const std::string &symbol)
 {
   if (symbol == "fill_tool::show") {
 
-    int cv_index = mp_view->active_cellview_index ();
-
-    lay::CellView cv = mp_view->cellview (cv_index);
+    lay::CellView cv = mp_view->cellview (mp_view->active_cellview_index ());
     if (cv.is_valid ()) {
-      cb_layer->set_view (mp_view, cv_index);
-      fc_boundary_layer->set_view (mp_view, cv_index);
+      cb_layer->set_layout (&cv->layout ());
+      fc_boundary_layer->set_layout (&cv->layout ());
       show ();
     }
 
@@ -141,193 +132,76 @@ FillDialog::choose_fc_2nd ()
   }
 }
 
-void
-FillDialog::generate_fill (const FillParameters &fp)
+static void 
+collect_fill_regions (const db::Layout &layout, 
+                      db::cell_index_type cell_index, 
+                      unsigned int layer, 
+                      const db::CplxTrans &trans, 
+                      std::vector <db::Polygon> &regions)
 {
+  const db::Cell &cell = layout.cell (cell_index);
+  if (! cell.bbox (layer).empty ()) {
+
+    //  any shapes to consider ..
+    for (db::ShapeIterator sh = cell.shapes (layer).begin (db::ShapeIterator::Polygons | db::ShapeIterator::Paths | db::ShapeIterator::Boxes); ! sh.at_end (); ++sh) {
+      regions.push_back (db::Polygon ());
+      sh->polygon (regions.back ());
+    }
+
+    for (db::Cell::const_iterator inst = cell.begin (); ! inst.at_end (); ++inst) {
+      for (db::CellInstArray::iterator a = inst->cell_inst ().begin (); ! a.at_end (); ++a) {
+        collect_fill_regions (layout, inst->cell_index (), layer, trans * inst->cell_inst ().complex_trans (*a), regions);
+      }
+    }
+
+  }
+}
+
+void 
+collect_fill_regions (const db::Layout &layout, 
+                    db::cell_index_type cell_index, 
+                    unsigned int layer, 
+                    std::vector <db::Polygon> &regions)
+{
+  collect_fill_regions (layout, cell_index, layer, db::CplxTrans (), regions);
+}
+
+void 
+FillDialog::ok_pressed ()
+{
+BEGIN_PROTECTED
+
   if (tl::verbosity () >= 10) {
     tl::info << "Running fill";
   }
 
   lay::CellView cv = mp_view->cellview (mp_view->active_cellview_index ());
-  db::Layout &ly = cv->layout ();
 
   std::vector <unsigned int> exclude_layers;
-
-  if (fp.exclude_all_layers) {
-    //  all layers
-    for (db::Layout::layer_iterator l = ly.begin_layers (); l != ly.end_layers (); ++l) {
-      exclude_layers.push_back ((*l).first);
-    }
-  } else {
-    //  some layers
-    for (std::vector<db::LayerProperties>::const_iterator l = fp.exclude_layers.begin (); l != fp.exclude_layers.end (); ++l) {
-      exclude_layers.push_back (ly.get_layer (*l));
-    }
-  }
-
-  bool enhanced_fill = enhanced_cb->isChecked ();
-
-  db::Coord exclude_x = db::coord_traits<db::Coord>::rounded (fp.exclude_distance.x () / ly.dbu ());
-  db::Coord exclude_y = db::coord_traits<db::Coord>::rounded (fp.exclude_distance.y () / ly.dbu ());
-
-  db::Coord distance_x = db::coord_traits<db::Coord>::rounded (fp.border_distance.x () / ly.dbu ());
-  db::Coord distance_y = db::coord_traits<db::Coord>::rounded (fp.border_distance.y () / ly.dbu ());
-
-  db::Vector fill_margin = db::CplxTrans (ly.dbu ()).inverted () * fp.fill_cell_margin;
-  db::Vector fill_margin2 = db::CplxTrans (ly.dbu ()).inverted () * fp.fill_cell_margin2;
-
-  std::pair<bool, db::cell_index_type> fc = cv->layout ().cell_by_name (fp.fill_cell_name.c_str ());
-  if (! fc.first) {
-    throw tl::Exception (tl::to_string (QObject::tr ("Fill cell not found: ")) + fp.fill_cell_name);
-  }
-
-  const db::Cell *fill_cell = &ly.cell (fc.second);
-
-  const db::Cell *fill_cell2 = 0;
-  if (! fp.fill_cell_name2.empty ()) {
-    std::pair<bool, db::cell_index_type> fc2 = cv->layout ().cell_by_name (fp.fill_cell_name2.c_str ());
-    if (! fc2.first) {
-      throw tl::Exception (tl::to_string (QObject::tr ("Secondary fill cell not found: ")) + fp.fill_cell_name2);
-    }
-    fill_cell2 = &ly.cell (fc2.second);
-  }
-
-  db::Vector row_step = db::CplxTrans (ly.dbu ()).inverted () * fp.row_step;
-  db::Vector column_step = db::CplxTrans (ly.dbu ()).inverted () * fp.column_step;
-  db::Box fc_bbox = db::CplxTrans (ly.dbu ()).inverted () * fp.fc_bbox;
-
-  db::Vector row_step2 = db::CplxTrans (ly.dbu ()).inverted () * fp.row_step2;
-  db::Vector column_step2 = db::CplxTrans (ly.dbu ()).inverted () * fp.column_step2;
-  db::Box fc_bbox2 = db::CplxTrans (ly.dbu ()).inverted () * fp.fc_bbox2;
-
-
-  if (tl::verbosity () >= 20) {
-    tl::info << "Collecting fill regions";
-  }
-
-  db::Region fill_region;
-  if (fp.fill_region_mode == FillParameters::Region) {
-    fill_region = fp.fill_region;
-  } else if (fp.fill_region_mode == FillParameters::WholeCell) {
-    fill_region.insert (cv->layout ().cell (cv.cell_index ()).bbox ());
-  } else if (fp.fill_region_mode == FillParameters::Layer) {
-    unsigned int layer_index = cv->layout ().get_layer (fp.fill_region_layer);
-    fill_region = db::Region (db::RecursiveShapeIterator (cv->layout (), *cv.cell (), layer_index));
-  }
-
-  fill_region.enable_progress (tl::to_string (tr ("Computing fill region")));
-
-  if (! fill_region.empty ()) {
-
-    db::EdgeProcessor ep;
-
-    if (tl::verbosity () >= 20) {
-      tl::info << "Preprocessing fill regions";
-    }
-
-    //  preprocess fill regions
-    if (distance_x != 0 || distance_y != 0) {
-      fill_region.size (-distance_x, -distance_y);
-    } else {
-      fill_region.merge ();
-    }
-
-    db::Box fr_bbox = fill_region.bbox ();
-
-    if (tl::verbosity () >= 20) {
-      tl::info << "Collecting exclude areas";
-    }
-
-    //  collect sized shapes from the exclude layers
-    db::Region es;
-    es.enable_progress (tl::to_string (tr ("Preparing exclude layers")));
-    for (std::vector <unsigned int>::const_iterator l = exclude_layers.begin (); l != exclude_layers.end (); ++l) {
-
-      db::Region exclude (db::RecursiveShapeIterator (cv->layout (), *cv.cell (), *l));
-      exclude.enable_progress (tl::to_string (tr ("Preparing exclude layer: ")) + cv->layout ().get_properties (*l).to_string ());
-
-      if (exclude_x != 0 || exclude_y != 0) {
-        exclude.size (exclude_x, exclude_y);
-      } else {
-        exclude.merge ();
-      }
-
-      es += exclude;
-
-    }
-
-    if (tl::verbosity () >= 20) {
-      tl::info << "Computing effective fill region";
-    }
-
-    //  Perform the NOT operation to create the fill region
-    fill_region -= es;
-
-    db::Region new_fill_area;
-
-    int step = 0;
-
-    do {
-
-      ++step;
-
-      if (tl::verbosity () >= 20) {
-        tl::info << "Major iteration (primary/secondary fill cell)";
-      }
-
-      if (! enhanced_fill) {
-        db::fill_region (cv.cell (), fill_region, fill_cell->cell_index (), fc_bbox, row_step, column_step, fr_bbox.p1 (), false, fill_cell2 ? &fill_region : 0, fill_margin, fill_cell2 ? &fill_region : 0);
-      } else {
-        db::fill_region_repeat (cv.cell (), fill_region, fill_cell->cell_index (), fc_bbox, row_step, column_step, fill_margin, fill_cell2 ? &fill_region : 0);
-      }
-
-      fill_cell = fill_cell2;
-      row_step = row_step2;
-      column_step = column_step2;
-      fc_bbox = fc_bbox2;
-      fill_margin = fill_margin2;
-
-      fill_cell2 = 0;
-
-    } while (fill_cell != 0 && ! fill_region.empty ());
-
-  }
-
-  if (tl::verbosity () >= 20) {
-    tl::info << "Fill done";
-  }
-}
-
-FillParameters
-FillDialog::get_fill_parameters ()
-{
-  FillParameters fp;
-
-  lay::CellView cv = mp_view->cellview (mp_view->active_cellview_index ());
-
-  fp.exclude_all_layers = false;
-
+  
   if (layer_spec_cbx->currentIndex () == 0) {
 
-    fp.exclude_all_layers = true;
+    //  all layers
+    for (db::Layout::layer_iterator l = cv->layout ().begin_layers (); l != cv->layout ().end_layers (); ++l) {
+      exclude_layers.push_back ((*l).first);
+    }
 
   } else if (layer_spec_cbx->currentIndex () == 1) {
 
     //  visible layers
     for (lay::LayerPropertiesConstIterator l = mp_view->begin_layers (); ! l.at_end (); ++l) {
-      if (! l->has_children () && l->visible (true) && cv->layout ().is_valid_layer (l->layer_index ())) {
-        fp.exclude_layers.push_back (cv->layout ().get_properties (l->layer_index ()));
+      if (! l->has_children () && l->visible (true)) {
+        exclude_layers.push_back (l->layer_index ());
       }
     }
 
   } else if (layer_spec_cbx->currentIndex () == 2) {
 
-    //  get selected layers
+    //  selected layers
     std::vector<lay::LayerPropertiesConstIterator> s = mp_view->selected_layers ();
-
     for (std::vector<lay::LayerPropertiesConstIterator>::const_iterator l = s.begin (); l != s.end (); ++l) {
-      if (! (*l)->has_children () && cv->layout ().is_valid_layer ((*l)->layer_index ())) {
-        fp.exclude_layers.push_back (cv->layout ().get_properties ((*l)->layer_index ()));
+      if (! (*l)->has_children ()) {
+        exclude_layers.push_back ((*l)->layer_index ());
       }
     }
 
@@ -345,81 +219,10 @@ FillDialog::get_fill_parameters ()
     }
   }
 
-  fp.exclude_distance = db::DVector (x, y);
+  db::Coord exclude_x = db::coord_traits<db::Coord>::rounded (x / cv->layout ().dbu ());
+  db::Coord exclude_y = db::coord_traits<db::Coord>::rounded (y / cv->layout ().dbu ());
 
-  //  get the fill regions
-
-  if (fill_area_cbx->currentIndex () == 3) {
-
-    fp.fill_region_mode = FillParameters::Region;
-
-    //  explicit fill box
-
-    if (le_x1->text ().isEmpty () || le_x2->text ().isEmpty () ||
-        le_y1->text ().isEmpty () || le_y2->text ().isEmpty ()) {
-      throw tl::Exception (tl::to_string (QObject::tr ("All four coordinates of the fill box must be given")));
-    }
-
-    double x1 = 0.0, y1 = 0.0;
-    double x2 = 0.0, y2 = 0.0;
-    tl::from_string_ext (tl::to_string (le_x1->text ()), x1);
-    tl::from_string_ext (tl::to_string (le_x2->text ()), x2);
-    tl::from_string_ext (tl::to_string (le_y1->text ()), y1);
-    tl::from_string_ext (tl::to_string (le_y2->text ()), y2);
-
-    fp.fill_region.insert (db::Box (db::DBox (db::DPoint (x1, y1), db::DPoint (x2, y2)) * (1.0 / cv->layout ().dbu ())));
-
-  } else if (fill_area_cbx->currentIndex () == 4) {
-
-    fp.fill_region_mode = FillParameters::Region;
-
-    //  ruler
-
-    ant::Service *ant_service = mp_view->get_plugin <ant::Service> ();
-    if (ant_service) {
-      ant::AnnotationIterator ant = ant_service->begin_annotations ();
-      while (! ant.at_end ()) {
-        fp.fill_region.insert (db::Box (db::DBox (ant->p1 (), ant->p2 ()) * (1.0 / cv->layout ().dbu ())));
-        ++ant;
-      }
-    }
-
-  } else if (fill_area_cbx->currentIndex () == 1) {
-
-    fp.fill_region_mode = FillParameters::Layer;
-
-    //  specified layer
-
-    int sel_layer = cb_layer->current_layer ();
-    if (sel_layer < 0 || ! cv->layout ().is_valid_layer (sel_layer)) {
-      throw tl::Exception (tl::to_string (QObject::tr ("No valid layer selected to get fill regions from")));
-    }
-
-    fp.fill_region_layer = cv->layout ().get_properties (sel_layer);
-
-  } else if (fill_area_cbx->currentIndex () == 0) {
-
-    fp.fill_region_mode = FillParameters::WholeCell;
-
-  } else if (fill_area_cbx->currentIndex () == 2) {
-
-    fp.fill_region_mode = FillParameters::Region;
-
-    //  selection
-    std::vector<edt::Service *> edt_services = mp_view->get_plugins <edt::Service> ();
-    for (std::vector<edt::Service *>::const_iterator s = edt_services.begin (); s != edt_services.end (); ++s) {
-      for (edt::EditableSelectionIterator sel = (*s)->begin_selection (); ! sel.at_end (); ++sel) {
-        if (! sel->is_cell_inst () && (sel->shape ().is_polygon () || sel->shape ().is_path () || sel->shape ().is_box ())) {
-          db::Polygon poly;
-          sel->shape ().polygon (poly);
-          fp.fill_region.insert (poly);
-        }
-      }
-    }
-
-  }
-
-  //  read distance to border
+  //  read distance to border 
   x = 0.0, y = 0.0;
   s = tl::to_string (distance_le->text ());
   ex = tl::Extractor (s.c_str ());
@@ -431,9 +234,11 @@ FillDialog::get_fill_parameters ()
     }
   }
 
-  fp.border_distance = db::DVector (x, y);
+  db::Coord distance_x = db::coord_traits<db::Coord>::rounded (x / cv->layout ().dbu ());
+  db::Coord distance_y = db::coord_traits<db::Coord>::rounded (y / cv->layout ().dbu ());
 
   //  read fill cell margin
+  db::Vector fill_margin (exclude_x, exclude_y);
   x = 0.0, y = 0.0;
   s = tl::to_string (fill_margin_le->text ());
   ex = tl::Extractor (s.c_str ());
@@ -443,11 +248,11 @@ FillDialog::get_fill_parameters ()
     } else {
       y = x;
     }
+    fill_margin = db::Vector (db::coord_traits<db::Coord>::rounded (x / cv->layout ().dbu ()), db::coord_traits<db::Coord>::rounded (y / cv->layout ().dbu ()));
   }
 
-  fp.fill_cell_margin = db::DVector (x, y);
-
   //  read fill cell 2 margin
+  db::Vector fill2_margin (exclude_x, exclude_y);
   x = 0.0, y = 0.0;
   s = tl::to_string (fill2_margin_le->text ());
   ex = tl::Extractor (s.c_str ());
@@ -457,117 +262,262 @@ FillDialog::get_fill_parameters ()
     } else {
       y = x;
     }
+    fill2_margin = db::Vector (db::coord_traits<db::Coord>::rounded (x / cv->layout ().dbu ()), db::coord_traits<db::Coord>::rounded (y / cv->layout ().dbu ()));
   }
 
-  fp.fill_cell_margin2 = db::DVector (x, y);
-
-  fp.fill_cell_name = tl::to_string (fill_cell_le->text ());
-
   //  get the fill cell
-  std::pair<bool, db::cell_index_type> fc = cv->layout ().cell_by_name (fp.fill_cell_name.c_str ());
+  std::pair<bool, db::cell_index_type> fc = cv->layout ().cell_by_name (tl::to_string (fill_cell_le->text ()).c_str ());
   if (! fc.first) {
     throw tl::Exception (tl::to_string (QObject::tr ("Fill cell not found: ")) + tl::to_string (fill_cell_le->text ()));
   }
 
-  const db::Cell *fill_cell = &cv->layout ().cell (fc.second);
+  const db::Cell *fill_cell = &cv->layout ().cell (fc.second); 
 
   int fc_bbox_layer = fc_boundary_layer->current_layer ();
-  if (fc_bbox_layer >= 0 && ! cv->layout ().is_valid_layer (fc_bbox_layer)) {
+  if (fc_bbox_layer < 0 || ! cv->layout ().is_valid_layer (fc_bbox_layer)) {
     throw tl::Exception (tl::to_string (QObject::tr ("No valid layer selected to get fill cell's bounding box from")));
   }
 
-  fp.enhanced_fill = enhanced_cb->isChecked ();
-
-  db::DBox fc_bbox = db::CplxTrans (cv->layout ().dbu ()) * (fc_bbox_layer < 0 ? fill_cell->bbox () : fill_cell->bbox (fc_bbox_layer));
+  db::Box fc_bbox = fill_cell->bbox (fc_bbox_layer);
   if (fc_bbox.empty ()) {
-    if (fc_bbox_layer >= 0) {
-      throw tl::Exception (tl::to_string (QObject::tr ("No valid layer selected to get fill cell's bounding box from - layer is empty for the fill cell")));
-    } else {
-      throw tl::Exception (tl::to_string (QObject::tr ("Fill cell is empty")));
-    }
+    throw tl::Exception (tl::to_string (QObject::tr ("No valid layer selected to get fill cell's bounding box from - layer is empty for the fill cell")));
   }
 
-  s = tl::to_string (row_le->text ());
-  ex = tl::Extractor (s.c_str ());
-  if (ex.try_read (x) && ex.test (",") && ex.try_read (y)) {
-    fp.row_step = db::DVector (x, y);
-  } else {
-    fp.row_step = db::DVector (fc_bbox.width (), 0.0);
-  }
+  bool enhanced_fill = enhanced_cb->isChecked ();
 
-  s = tl::to_string (column_le->text ());
-  ex = tl::Extractor (s.c_str ());
-  if (ex.try_read (x) && ex.test (",") && ex.try_read (y)) {
-    fp.column_step = db::DVector (x, y);
-  } else {
-    fp.column_step = db::DVector (0.0, fc_bbox.height ());
-  }
-
-  fp.fc_bbox = fc_bbox;
-
+  const db::Cell *fill_cell2 = 0;
+  db::Box fc_bbox2;
+  
   if (second_order_fill_cb->isChecked ()) {
 
-    db::DBox fc_bbox2;
-
-    fp.fill_cell_name2 = tl::to_string (fill_cell_2nd_le->text ());
-
-    std::pair<bool, db::cell_index_type> fc = cv->layout ().cell_by_name (fp.fill_cell_name2.c_str ());
+    std::pair<bool, db::cell_index_type> fc = cv->layout ().cell_by_name (tl::to_string (fill_cell_2nd_le->text ()).c_str ());
     if (! fc.first) {
       throw tl::Exception (tl::to_string (QObject::tr ("Second order fill cell not found: ")) + tl::to_string (fill_cell_2nd_le->text ()));
     }
 
-    const db::Cell *fill_cell2 = &cv->layout ().cell (fc.second);
+    fill_cell2 = &cv->layout ().cell (fc.second); 
 
-    fc_bbox2 = db::CplxTrans (cv->layout ().dbu ()) * (fc_bbox_layer < 0 ? fill_cell2->bbox () : fill_cell2->bbox (fc_bbox_layer));
+    fc_bbox2 = fill_cell2->bbox (fc_bbox_layer);
     if (fc_bbox2.empty ()) {
       throw tl::Exception (tl::to_string (QObject::tr ("Second order fill cell is empty for the given boundary layer")));
     }
 
-    s = tl::to_string (row_2nd_le->text ());
-    ex = tl::Extractor (s.c_str ());
-    if (ex.try_read (x) && ex.test (",") && ex.try_read (y)) {
-      fp.row_step2 = db::DVector (x, y);
-    } else {
-      fp.row_step2 = db::DVector (fc_bbox2.width (), 0.0);
+  }
+
+  if (tl::verbosity () >= 20) {
+    tl::info << "Collecting fill regions";
+  }
+
+  //  get the fill regions
+  std::vector <db::Polygon> fill_regions;
+
+  if (fill_area_cbx->currentIndex () == 3) {
+
+    //  explicit fill box
+
+    if (le_x1->text ().isEmpty () || le_x2->text ().isEmpty () ||
+        le_y1->text ().isEmpty () || le_y2->text ().isEmpty ()) {
+      throw tl::Exception (tl::to_string (QObject::tr ("All four coordinates of the fill box must be given")));
     }
 
-    s = tl::to_string (column_2nd_le->text ());
-    ex = tl::Extractor (s.c_str ());
-    if (ex.try_read (x) && ex.test (",") && ex.try_read (y)) {
-      fp.column_step2 = db::DVector (x, y);
-    } else {
-      fp.column_step2 = db::DVector (0.0, fc_bbox2.height ());
+    double x1 = 0.0, y1 = 0.0;
+    double x2 = 0.0, y2 = 0.0;
+    tl::from_string (tl::to_string (le_x1->text ()), x1);
+    tl::from_string (tl::to_string (le_x2->text ()), x2);
+    tl::from_string (tl::to_string (le_y1->text ()), y1);
+    tl::from_string (tl::to_string (le_y2->text ()), y2);
+
+    fill_regions.push_back (db::Polygon (db::Box (db::DBox (db::DPoint (x1, y1), db::DPoint (x2, y2)) * (1.0 / cv->layout ().dbu ()))));
+
+  } else if (fill_area_cbx->currentIndex () == 4) {
+
+    //  ruler
+
+    ant::Service *ant_service = mp_view->get_plugin <ant::Service> ();
+    if (ant_service) {
+      ant::AnnotationIterator ant = ant_service->begin_annotations ();
+      while (! ant.at_end ()) {
+        fill_regions.push_back (db::Polygon (db::Box (db::DBox (ant->p1 (), ant->p2 ()) * (1.0 / cv->layout ().dbu ()))));
+        ++ant;
+      }
     }
 
-    fp.fc_bbox2 = fc_bbox2;
+  } else if (fill_area_cbx->currentIndex () == 1) {
+
+    //  specified layer
+
+    int sel_layer = cb_layer->current_layer ();
+    if (sel_layer < 0 || ! cv->layout ().is_valid_layer (sel_layer)) {
+      throw tl::Exception (tl::to_string (QObject::tr ("No valid layer selected to get fill regions from")));
+    }
+
+    collect_fill_regions (cv->layout (), cv.cell_index (), (unsigned int) sel_layer, fill_regions);
+
+  } else if (fill_area_cbx->currentIndex () == 0) {
+
+    //  whole cell
+    fill_regions.push_back (db::Polygon (cv.cell ()->bbox ()));
+
+  } else if (fill_area_cbx->currentIndex () == 2) {
+
+    //  selection
+    std::vector<edt::Service *> edt_services = mp_view->get_plugins <edt::Service> ();
+    for (std::vector<edt::Service *>::const_iterator s = edt_services.begin (); s != edt_services.end (); ++s) {
+      for (edt::Service::objects::const_iterator sel = (*s)->selection ().begin (); sel != (*s)->selection ().end (); ++sel) {
+        if (! sel->is_cell_inst () && (sel->shape ().is_polygon () || sel->shape ().is_path () || sel->shape ().is_box ())) {
+          fill_regions.push_back (db::Polygon ());
+          sel->shape ().polygon (fill_regions.back ());
+        }
+      }
+    }
 
   }
 
-  return fp;
-}
+  mp_view->manager ()->transaction (tl::to_string (QObject::tr ("Fill")));
 
-void 
-FillDialog::ok_pressed ()
-{
-BEGIN_PROTECTED
+  if (! fill_regions.empty ()) {
 
-  FillParameters fp = get_fill_parameters ();
+    db::EdgeProcessor ep;
+    
+    if (tl::verbosity () >= 20) {
+      tl::info << "Preprocessing fill regions";
+    }
 
-  if (mp_view->manager ()) {
-    mp_view->manager ()->transaction (tl::to_string (QObject::tr ("Fill")));
+    //  TODO: progress
+    
+    //  preprocess fill regions
+    if (distance_x != 0 || distance_y != 0) {
+
+      std::vector <db::Polygon> fp;
+      ep.enable_progress (tl::to_string (QObject::tr ("Preparing fill regions")));
+      ep.size (fill_regions, -distance_x, -distance_y, fp, 2 /*mode*/, false /*=don't resolve holes*/);
+      ep.disable_progress ();
+
+      fill_regions.swap (fp);
+
+    }
+
+    std::sort (fill_regions.begin (), fill_regions.end ());
+    fill_regions.erase (std::unique (fill_regions.begin (), fill_regions.end ()), fill_regions.end ());
+
+    //  determine the fill region's bbox for selectively getting the exclude shapes
+    db::Box fr_bbox;
+    for (std::vector <db::Polygon>::const_iterator fr = fill_regions.begin (); fr != fill_regions.end (); ++fr) {
+      fr_bbox += fr->box ();
+    }
+
+    if (tl::verbosity () >= 20) {
+      tl::info << "Collecting exclude areas";
+    }
+
+    //  collect sized shapes from the exclude layers
+    std::vector <db::Polygon> es;
+    for (std::vector <unsigned int>::const_iterator l = exclude_layers.begin (); l != exclude_layers.end (); ++l) {
+
+      std::vector <db::Polygon> shapes;
+
+      size_t n = 0;
+      for (db::RecursiveShapeIterator si (cv->layout (), *cv.cell (), *l); ! si.at_end (); ++si) {
+        if (si->is_polygon () || si->is_path () || si->is_box ()) {
+          ++n;
+        }
+      }
+
+      shapes.reserve (n);
+
+      for (db::RecursiveShapeIterator si (cv->layout (), *cv.cell (), *l); ! si.at_end (); ++si) {
+        if (si->is_polygon () || si->is_path () || si->is_box ()) {
+          shapes.push_back (db::Polygon ());
+          si->polygon (shapes.back ());
+          shapes.back ().transform (si.trans ());
+        }
+      }
+
+      ep.enable_progress (tl::to_string (QObject::tr ("Preparing exclude regions")));
+      ep.size (shapes, exclude_x, exclude_y, es, 2 /*mode*/, false /*=don't resolve holes*/);
+      ep.disable_progress ();
+
+    }
+
+    if (tl::verbosity () >= 20) {
+      tl::info << "Computing effective fill region";
+    }
+
+    //  Perform the NOT operation to create the fill region
+    std::vector <db::Polygon> fill_area;
+    ep.enable_progress (tl::to_string (QObject::tr ("Computing fill region")));
+    ep.boolean (fill_regions, es, fill_area, db::BooleanOp::ANotB, false /*=don't resolve holes*/);
+    ep.disable_progress ();
+
+    std::vector <db::Polygon> new_fill_area;
+
+    int step = 0;
+
+    do {
+
+      ++step;
+
+      if (tl::verbosity () >= 20) {
+        tl::info << "Major iteration (primary/secondary fill cell)";
+      }
+
+      std::vector <db::Polygon> non_filled_area;
+
+      int iteration = 0;
+
+      do {
+
+        ++iteration;
+
+        if (tl::verbosity () >= 20 && enhanced_fill) {
+          tl::info << "Minor iteration (enhanced fill)";
+        }
+
+        tl::RelativeProgress progress (tl::sprintf (tl::to_string (QObject::tr ("Fill iteration %d (%s fill step)")), iteration, step == 1 ? tl::to_string (QObject::tr ("primary")) : tl::to_string (QObject::tr ("secondary"))), fill_area.size (), 10);
+
+        new_fill_area.clear ();
+
+        for (std::vector <db::Polygon>::const_iterator fp0 = fill_area.begin (); fp0 != fill_area.end (); ++fp0) {
+
+          if (tl::verbosity () >= 30) {
+            tl::info << "Compute fill for one region :" << fp0->to_string ();
+          }
+
+          bool any_fill = fill_region (cv.cell (), *fp0, fill_cell->cell_index (), fc_bbox, fr_bbox.p1 (), enhanced_fill, (enhanced_fill || fill_cell2) ? &new_fill_area : 0, fill_margin);
+          if (! any_fill) {
+            non_filled_area.push_back (*fp0);
+          }
+
+          ++progress;
+
+        }
+
+        fill_area.swap (new_fill_area);
+
+      } while (enhanced_fill && ! fill_area.empty ());
+
+      if (fill_area.empty ()) {
+        fill_area.swap (non_filled_area);
+      } else if (fill_cell2) {
+        fill_area.insert (fill_area.end (), non_filled_area.begin (), non_filled_area.end ());
+      }
+
+      fill_cell = fill_cell2;
+      fc_bbox = fc_bbox2;
+      fill_margin = fill2_margin;
+
+      fill_cell2 = 0;
+      fc_bbox2 = db::Box ();
+
+    } while (fill_cell != 0 && ! fill_area.empty ());
+
   }
 
-  try {
-    generate_fill (fp);
-    if (mp_view->manager ()) {
-      mp_view->manager ()->commit ();
-    }
-  } catch (...) {
-    if (mp_view->manager ()) {
-      mp_view->manager ()->cancel ();
-    }
-    throw;
+  if (tl::verbosity () >= 20) {
+    tl::info << "Fill done";
   }
+
+  mp_view->manager ()->commit ();
 
   //  close this dialog
   QDialog::accept ();

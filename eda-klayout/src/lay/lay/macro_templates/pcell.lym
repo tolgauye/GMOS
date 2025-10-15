@@ -46,7 +46,7 @@ module PCellLibModule
     end
     
     def coerce_parameters_impl
-      # TODO: use x to access parameter x and set_x to modify its value
+      # TODO: use x to access parameter x and set_x to modify it's value 
     end
     
     def produce_impl
@@ -70,13 +70,6 @@ module PCellLibModule
     # def transformation_from_shape_impl
     #   TODO: return a RBA::Trans object for the initial transformation of
     #   the instance
-    # end
-    #
-    # optional:
-    # def wants_lazy_evaluation
-    #   TODO: return "true" here if the PCell takes a long time to compute.
-    #   In lazy mode, the user has to acknowledge parameter changes before 
-    #   they are executed.
     # end
     
   end

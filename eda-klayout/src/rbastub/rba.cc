@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -34,7 +34,6 @@ static void fail (const char *file, int line)
 static RubyInterpreter *sp_rba_interpreter = 0;
 
 RubyInterpreter::RubyInterpreter ()
-  : gsi::Interpreter (0, "rba")
 {
   tl_assert (! sp_rba_interpreter);
   sp_rba_interpreter = this;
@@ -63,7 +62,7 @@ RubyInterpreter::remove_package_location (const std::string &)
 }
 
 void
-RubyInterpreter::add_path (const std::string &, bool)
+RubyInterpreter::add_path (const std::string &)
 {
   // .. nothing ..
 }
@@ -111,7 +110,7 @@ RubyInterpreter::eval_string_and_print (const char *, const char *file, int line
 }
 
 void
-RubyInterpreter::define_variable (const std::string &, const tl::Variant &)
+RubyInterpreter::define_variable (const std::string &, const std::string &)
 {
   // .. nothing ..
 }

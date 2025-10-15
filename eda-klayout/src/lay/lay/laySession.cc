@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -66,7 +66,7 @@ Session::fetch (const lay::MainWindow &mw)
     if (lh) {
       m_layouts.push_back (SessionLayoutDescriptor ());
       m_layouts.back ().name = *l;
-      m_layouts.back ().file_path = tl::InputStream::absolute_file_path (lh->filename ());
+      m_layouts.back ().file_path = tl::InputStream::absolute_path (lh->filename ());
       m_layouts.back ().load_options = lh->load_options ();
       m_layouts.back ().save_options = lh->save_options ();
       m_layouts.back ().save_options_valid = lh->save_options_valid ();
@@ -89,7 +89,7 @@ Session::fetch (const lay::MainWindow &mw)
 
       const rdb::Database *rdb = view->get_rdb (j);
       if (rdb && ! rdb->filename ().empty ()) {
-        view_desc.rdb_filenames.push_back (tl::InputStream::absolute_file_path (rdb->filename ()));
+        view_desc.rdb_filenames.push_back (tl::InputStream::absolute_path (rdb->filename ()));
       }
 
     }
@@ -98,7 +98,7 @@ Session::fetch (const lay::MainWindow &mw)
 
       const db::LayoutToNetlist *l2ndb = view->get_l2ndb (j);
       if (l2ndb && ! l2ndb->filename ().empty ()) {
-        view_desc.l2ndb_filenames.push_back (tl::InputStream::absolute_file_path (l2ndb->filename ()));
+        view_desc.l2ndb_filenames.push_back (tl::InputStream::absolute_path (l2ndb->filename ()));
       }
 
     }
@@ -145,7 +145,7 @@ Session::make_absolute (const std::string &fp) const
 {
   tl::URI fp_uri (fp);
   if (! m_base_dir.empty () && ! tl::is_absolute (fp_uri.path ())) {
-    return tl::URI (m_base_dir).resolved (fp_uri).to_abstract_path ();
+    return tl::URI (m_base_dir).resolved (fp_uri).to_string ();
   } else {
     return fp;
   }
@@ -237,7 +237,7 @@ Session::restore (lay::MainWindow &mw)
 
     for (unsigned int j = 0; j < vd.rdb_filenames.size (); ++j) {
 
-      std::unique_ptr<rdb::Database> rdb (new rdb::Database ());
+      std::auto_ptr<rdb::Database> rdb (new rdb::Database ());
 
       try {
         rdb->load (make_absolute (vd.rdb_filenames[j]));
@@ -265,11 +265,7 @@ Session::restore (lay::MainWindow &mw)
     as.reserve (vd.annotation_shapes.annotation_shapes.size ());
     for (std::vector<SessionAnnotationDescriptor>::const_iterator ad = vd.annotation_shapes.annotation_shapes.begin (); ad != vd.annotation_shapes.annotation_shapes.end (); ++ad) {
       db::DUserObjectBase *obj = db::DUserObjectFactory::create (ad->class_name.c_str (), ad->value_string.c_str (), ! m_base_dir.empty () ? m_base_dir.c_str () : 0);
-      if (obj) {
-        as.insert (db::DUserObject (obj));
-      } else {
-        tl::warn << tl::to_string (tr ("Unable to restore session user object with unknown class: ")) << ad->class_name;
-      }
+      as.insert (db::DUserObject (obj));
     }
 
     view->update_content ();

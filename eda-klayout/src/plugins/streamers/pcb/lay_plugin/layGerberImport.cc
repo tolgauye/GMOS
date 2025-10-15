@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -63,11 +63,11 @@ public:
   virtual void get_menu_entries (std::vector<lay::MenuEntry> &menu_entries) const
   {
     lay::PluginDeclaration::get_menu_entries (menu_entries);
-    menu_entries.push_back (lay::submenu ("db::import_gerber", "import_gerber_menu:edit", "file_menu.import_menu.end", tl::to_string (QObject::tr ("Gerber PCB"))));
-    menu_entries.push_back (lay::menu_item ("db::import_gerber_new", "import_gerber_new:edit", "file_menu.import_menu.import_gerber_menu.end", tl::to_string (QObject::tr ("New Project"))));
-    menu_entries.push_back (lay::menu_item ("db::import_gerber_new_free", "import_gerber_new_free:edit", "file_menu.import_menu.import_gerber_menu.end", tl::to_string (QObject::tr ("New Project - Free Layer Mapping"))));
-    menu_entries.push_back (lay::menu_item ("db::import_gerber_open", "import_gerber_open:edit", "file_menu.import_menu.import_gerber_menu.end", tl::to_string (QObject::tr ("Open Project"))));
-    menu_entries.push_back (lay::menu_item ("db::import_gerber_recent", "import_gerber_recent:edit", "file_menu.import_menu.import_gerber_menu.end", tl::to_string (QObject::tr ("Recent Project"))));
+    menu_entries.push_back (lay::MenuEntry ("db::import_gerber", "import_gerber_menu:edit", "file_menu.import_menu.end", tl::to_string (QObject::tr ("Gerber PCB")), true));
+    menu_entries.push_back (lay::MenuEntry ("db::import_gerber_new", "import_gerber_new:edit", "file_menu.import_menu.import_gerber_menu.end", tl::to_string (QObject::tr ("New Project"))));
+    menu_entries.push_back (lay::MenuEntry ("db::import_gerber_new_free", "import_gerber_new_free:edit", "file_menu.import_menu.import_gerber_menu.end", tl::to_string (QObject::tr ("New Project - Free Layer Mapping"))));
+    menu_entries.push_back (lay::MenuEntry ("db::import_gerber_open", "import_gerber_open:edit", "file_menu.import_menu.import_gerber_menu.end", tl::to_string (QObject::tr ("Open Project"))));
+    menu_entries.push_back (lay::MenuEntry ("db::import_gerber_recent", "import_gerber_recent:edit", "file_menu.import_menu.import_gerber_menu.end", tl::to_string (QObject::tr ("Recent Project"))));
   }
 
   virtual bool configure (const std::string &name, const std::string &value)
@@ -112,7 +112,7 @@ public:
       } else if (symbol == "db::import_gerber_open") {
 
         //  Get the name of the file to open
-        lay::FileDialog open_dialog (QApplication::activeWindow (), tl::to_string (QObject::tr ("Open Gerber Import Project File")), tl::to_string (QObject::tr ("PCB project file (*.pcb);;All files (*)")));
+        lay::FileDialog open_dialog (QApplication::activeWindow (), tl::to_string (QObject::tr ("Gerber Import Project File")), tl::to_string (QObject::tr ("PCB project file (*.pcb);;All files (*)")));
         std::string fn = data.current_file;
         if (! open_dialog.get_open (fn)) {
           return true;
@@ -125,7 +125,7 @@ public:
 
       }
 
-      lay::Dispatcher *config_root = lay::Dispatcher::instance ();
+      lay::PluginRoot *config_root = lay::PluginRoot::instance ();
 
       GerberImportDialog dialog (QApplication::activeWindow (), &data);
       db::GerberImporter importer;

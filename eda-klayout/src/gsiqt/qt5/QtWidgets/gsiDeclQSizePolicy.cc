@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@
 #include <QSizePolicy>
 #include "gsiQt.h"
 #include "gsiQtWidgetsCommon.h"
+#include "gsiDeclQtWidgetsTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -394,21 +395,6 @@ static void _call_f_transpose_0 (const qt_gsi::GenericMethod * /*decl*/, void *c
 }
 
 
-// QSizePolicy QSizePolicy::transposed()
-
-
-static void _init_f_transposed_c0 (qt_gsi::GenericMethod *decl)
-{
-  decl->set_return<QSizePolicy > ();
-}
-
-static void _call_f_transposed_c0 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  ret.write<QSizePolicy > ((QSizePolicy)((QSizePolicy *)cls)->transposed ());
-}
-
-
 // QSizePolicy::Policy QSizePolicy::verticalPolicy()
 
 
@@ -465,7 +451,6 @@ static gsi::Methods methods_QSizePolicy () {
   methods += new qt_gsi::GenericMethod ("setVerticalStretch|verticalStretch=", "@brief Method void QSizePolicy::setVerticalStretch(int stretchFactor)\n", false, &_init_f_setVerticalStretch_767, &_call_f_setVerticalStretch_767);
   methods += new qt_gsi::GenericMethod ("setWidthForHeight|widthForHeight=", "@brief Method void QSizePolicy::setWidthForHeight(bool b)\n", false, &_init_f_setWidthForHeight_864, &_call_f_setWidthForHeight_864);
   methods += new qt_gsi::GenericMethod ("transpose", "@brief Method void QSizePolicy::transpose()\n", false, &_init_f_transpose_0, &_call_f_transpose_0);
-  methods += new qt_gsi::GenericMethod ("transposed", "@brief Method QSizePolicy QSizePolicy::transposed()\n", true, &_init_f_transposed_c0, &_call_f_transposed_c0);
   methods += new qt_gsi::GenericMethod (":verticalPolicy", "@brief Method QSizePolicy::Policy QSizePolicy::verticalPolicy()\n", true, &_init_f_verticalPolicy_c0, &_call_f_verticalPolicy_c0);
   methods += new qt_gsi::GenericMethod (":verticalStretch", "@brief Method int QSizePolicy::verticalStretch()\n", true, &_init_f_verticalStretch_c0, &_call_f_verticalStretch_c0);
   return methods;

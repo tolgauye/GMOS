@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -31,6 +31,7 @@
 #include <QObject>
 #include "gsiQt.h"
 #include "gsiQtCoreCommon.h"
+#include "gsiDeclQtCoreTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -59,7 +60,7 @@
       virtual bool can_upcast (const void *) const { return false; }
 
       //  Does not bind to a particular type
-      virtual bool binds () const { return false; }
+      virtual bool is_of_type (const std::type_info & /*ti*/) const { return false; }
       virtual const std::type_info &type () const { return typeid (DummyQObject); }
     };
   }

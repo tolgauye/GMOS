@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@ namespace db
 //  Netlist class implementation
 
 Netlist::Netlist (NetlistManipulationCallbacks *callbacks)
-  : m_case_sensitive (true), mp_callbacks (callbacks),
+  : mp_callbacks (callbacks),
     m_valid_topology (false), m_lock_count (0),
     m_circuit_by_name (this, &Netlist::begin_circuits, &Netlist::end_circuits),
     m_circuit_by_cell_index (this, &Netlist::begin_circuits, &Netlist::end_circuits),
@@ -44,8 +44,7 @@ Netlist::Netlist (NetlistManipulationCallbacks *callbacks)
 }
 
 Netlist::Netlist (const Netlist &other)
-  : gsi::ObjectBase (other), tl::Object (other),
-    m_valid_topology (false), m_lock_count (0),
+  : gsi::ObjectBase (other), tl::Object (other), m_valid_topology (false), m_lock_count (0),
     m_circuit_by_name (this, &Netlist::begin_circuits, &Netlist::end_circuits),
     m_circuit_by_cell_index (this, &Netlist::begin_circuits, &Netlist::end_circuits),
     m_device_abstract_by_name (this, &Netlist::begin_device_abstracts, &Netlist::end_device_abstracts),
@@ -69,8 +68,6 @@ Netlist &Netlist::operator= (const Netlist &other)
   if (this != &other) {
 
     clear ();
-
-    set_case_sensitive (other.is_case_sensitive ());
 
     std::map<const DeviceClass *, DeviceClass *> dct;
     for (const_device_class_iterator dc = other.begin_device_classes (); dc != other.end_device_classes (); ++dc) {
@@ -101,38 +98,6 @@ Netlist &Netlist::operator= (const Netlist &other)
 
   }
   return *this;
-}
-
-void Netlist::mem_stat (MemStatistics *stat, MemStatistics::purpose_t purpose, int cat, bool no_self, void *parent) const
-{
-  if (! no_self) {
-    stat->add (typeid (*this), (void *) this, sizeof (*this), sizeof (*this), parent, purpose, cat);
-  }
-
-  db::mem_stat (stat, purpose, cat, m_circuits, true, (void *) this);
-  db::mem_stat (stat, purpose, cat, m_device_classes, true, (void *) this);
-  db::mem_stat (stat, purpose, cat, m_device_abstracts, true, (void *) this);
-  db::mem_stat (stat, purpose, cat, m_top_down_circuits, true, (void *) this);
-  db::mem_stat (stat, purpose, cat, m_child_circuits, true, (void *) this);
-  db::mem_stat (stat, purpose, cat, m_parent_circuits, true, (void *) this);
-  db::mem_stat (stat, purpose, cat, m_circuit_by_name, true, (void *) this);
-  db::mem_stat (stat, purpose, cat, m_circuit_by_cell_index, true, (void *) this);
-  db::mem_stat (stat, purpose, cat, m_device_abstract_by_name, true, (void *) this);
-  db::mem_stat (stat, purpose, cat, m_device_abstract_by_cell_index, true, (void *) this);
-}
-
-void Netlist::set_case_sensitive (bool f)
-{
-  m_case_sensitive = f;
-}
-
-std::string Netlist::normalize_name (bool case_sensitive, const std::string &n)
-{
-  if (case_sensitive) {
-    return n;
-  } else {
-    return tl::to_upper_case (n);
-  }
 }
 
 void Netlist::circuits_changed ()
@@ -300,10 +265,6 @@ void Netlist::unlock ()
 
 const tl::vector<Circuit *> &Netlist::child_circuits (Circuit *circuit)
 {
-  if (circuit->netlist () != this) {
-    throw tl::Exception (tl::to_string (tr ("Circuit not within given netlist")));
-  }
-
   if (! m_valid_topology) {
     validate_topology ();
   }
@@ -314,10 +275,6 @@ const tl::vector<Circuit *> &Netlist::child_circuits (Circuit *circuit)
 
 const tl::vector<Circuit *> &Netlist::parent_circuits (Circuit *circuit)
 {
-  if (circuit->netlist () != this) {
-    throw tl::Exception (tl::to_string (tr ("Circuit not within given netlist")));
-  }
-
   if (! m_valid_topology) {
     validate_topology ();
   }
@@ -366,47 +323,6 @@ size_t Netlist::top_circuit_count () const
   return m_top_circuits;
 }
 
-Circuit *Netlist::top_circuit ()
-{
-  size_t ntop = top_circuit_count ();
-  if (ntop == 0) {
-    return 0;
-  } else if (ntop > 1) {
-    throw tl::Exception (tl::to_string (tr ("Netlist contains more than a single top circuit")));
-  } else {
-    return begin_top_down ().operator-> ();
-  }
-}
-
-const Circuit *Netlist::top_circuit () const
-{
-  return const_cast<Netlist *> (this)->top_circuit ();
-}
-
-std::vector<Circuit *> Netlist::top_circuits ()
-{
-  size_t ntop = top_circuit_count ();
-  std::vector<Circuit *> result;
-  result.reserve (ntop);
-  for (auto c = begin_top_down (); ntop > 0 && c != end_top_down (); ++c) {
-    result.push_back (c.operator-> ());
-    --ntop;
-  }
-  return result;
-}
-
-std::vector<const Circuit *> Netlist::top_circuits () const
-{
-  size_t ntop = top_circuit_count ();
-  std::vector<const Circuit *> result;
-  result.reserve (ntop);
-  for (auto c = begin_top_down (); ntop > 0 && c != end_top_down (); ++c) {
-    result.push_back (c.operator-> ());
-    --ntop;
-  }
-  return result;
-}
-
 Netlist::bottom_up_circuit_iterator Netlist::begin_bottom_up ()
 {
   if (! m_valid_topology) {
@@ -448,39 +364,18 @@ void Netlist::clear ()
 
 void Netlist::add_circuit (Circuit *circuit)
 {
-  if (! circuit) {
-    return;
-  }
-  if (circuit->netlist ()) {
-    throw tl::Exception (tl::to_string (tr ("Circuit already contained in a netlist")));
-  }
-
   m_circuits.push_back (circuit);
   circuit->set_netlist (this);
 }
 
 void Netlist::remove_circuit (Circuit *circuit)
 {
-  if (! circuit) {
-    return;
-  }
-  if (circuit->netlist () != this) {
-    throw tl::Exception (tl::to_string (tr ("Circuit not within given netlist")));
-  }
-
   circuit->set_netlist (0);
   m_circuits.erase (circuit);
 }
 
 void Netlist::purge_circuit (Circuit *circuit)
 {
-  if (! circuit) {
-    return;
-  }
-  if (circuit->netlist () != this) {
-    throw tl::Exception (tl::to_string (tr ("Circuit not within given netlist")));
-  }
-
   circuit->blank ();
   remove_circuit (circuit);
 }
@@ -511,12 +406,7 @@ void Netlist::flatten_circuits (const std::vector<Circuit *> &circuits)
 
 void Netlist::flatten_circuit (Circuit *circuit)
 {
-  if (! circuit) {
-    return;
-  }
-  if (circuit->netlist () != this) {
-    throw tl::Exception (tl::to_string (tr ("Circuit not within given netlist")));
-  }
+  tl_assert (circuit != 0);
 
   std::vector<db::SubCircuit *> refs;
   for (db::Circuit::refs_iterator sc = circuit->begin_refs (); sc != circuit->end_refs (); ++sc) {
@@ -532,8 +422,6 @@ void Netlist::flatten_circuit (Circuit *circuit)
 
 void Netlist::flatten ()
 {
-  db::NetlistLocker locker (this);
-
   std::set<db::Circuit *> top_circuits;
   size_t ntop = top_circuit_count ();
   for (db::Netlist::top_down_circuit_iterator tc = begin_top_down (); tc != end_top_down () && ntop > 0; ++tc) {
@@ -550,10 +438,8 @@ void Netlist::flatten ()
 
 DeviceClass *Netlist::device_class_by_name (const std::string &name)
 {
-  std::string nn = m_case_sensitive ? name : normalize_name (name);
-
   for (device_class_iterator d = begin_device_classes (); d != end_device_classes (); ++d) {
-    if (d->name () == nn) {
+    if (d->name () == name) {
       return d.operator-> ();
     }
   }
@@ -562,52 +448,24 @@ DeviceClass *Netlist::device_class_by_name (const std::string &name)
 
 void Netlist::add_device_class (DeviceClass *device_class)
 {
-  if (! device_class) {
-    return;
-  }
-  if (device_class->netlist ()) {
-    throw tl::Exception (tl::to_string (tr ("Device class already contained in a netlist")));
-  }
-
   m_device_classes.push_back (device_class);
   device_class->set_netlist (this);
 }
 
 void Netlist::remove_device_class (DeviceClass *device_class)
 {
-  if (! device_class) {
-    return;
-  }
-  if (device_class->netlist () != this) {
-    throw tl::Exception (tl::to_string (tr ("Device class not within given netlist")));
-  }
-
   device_class->set_netlist (0);
   m_device_classes.erase (device_class);
 }
 
 void Netlist::add_device_abstract (DeviceAbstract *device_abstract)
 {
-  if (! device_abstract) {
-    return;
-  }
-  if (device_abstract->netlist ()) {
-    throw tl::Exception (tl::to_string (tr ("Device abstract already contained in a netlist")));
-  }
-
   m_device_abstracts.push_back (device_abstract);
   device_abstract->set_netlist (this);
 }
 
 void Netlist::remove_device_abstract (DeviceAbstract *device_abstract)
 {
-  if (! device_abstract) {
-    return;
-  }
-  if (device_abstract->netlist () != this) {
-    throw tl::Exception (tl::to_string (tr ("Device abstract not within given netlist")));
-  }
-
   device_abstract->set_netlist (0);
   m_device_abstracts.erase (device_abstract);
 }
@@ -616,13 +474,6 @@ void Netlist::purge_nets ()
 {
   for (bottom_up_circuit_iterator c = begin_bottom_up (); c != end_bottom_up (); ++c) {
     c->purge_nets ();
-  }
-}
-
-void Netlist::purge_devices ()
-{
-  for (bottom_up_circuit_iterator c = begin_bottom_up (); c != end_bottom_up (); ++c) {
-    c->purge_devices ();
   }
 }
 
@@ -691,8 +542,6 @@ void Netlist::simplify ()
 {
   make_top_level_pins ();
   purge ();
-
-  //  combine devices are purge nets that are created in that step
   combine_devices ();
   purge_nets ();
 }

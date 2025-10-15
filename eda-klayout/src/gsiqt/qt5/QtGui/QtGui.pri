@@ -71,7 +71,6 @@ SOURCES += \
   $$PWD/gsiDeclQIconDragEvent.cc \
   $$PWD/gsiDeclQIconEngine.cc \
   $$PWD/gsiDeclQIconEngine_AvailableSizesArgument.cc \
-  $$PWD/gsiDeclQIconEngine_ScaledPixmapArgument.cc \
   $$PWD/gsiDeclQIconEnginePlugin.cc \
   $$PWD/gsiDeclQImage.cc \
   $$PWD/gsiDeclQImageIOHandler.cc \
@@ -117,7 +116,6 @@ SOURCES += \
   $$PWD/gsiDeclQPixmap.cc \
   $$PWD/gsiDeclQPixmapCache.cc \
   $$PWD/gsiDeclQPlatformSurfaceEvent.cc \
-  $$PWD/gsiDeclQPointingDeviceUniqueId.cc \
   $$PWD/gsiDeclQPolygon.cc \
   $$PWD/gsiDeclQPolygonF.cc \
   $$PWD/gsiDeclQQuaternion.cc \
@@ -128,7 +126,6 @@ SOURCES += \
   $$PWD/gsiDeclQRegion.cc \
   $$PWD/gsiDeclQRegularExpressionValidator.cc \
   $$PWD/gsiDeclQResizeEvent.cc \
-  $$PWD/gsiDeclQRgba64.cc \
   $$PWD/gsiDeclQScreen.cc \
   $$PWD/gsiDeclQScreenOrientationChangeEvent.cc \
   $$PWD/gsiDeclQScrollEvent.cc \

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -42,7 +42,7 @@ namespace db
  *
  *  This implementation will create new layers if required.
  */
-class DB_PUBLIC DirectLayerMapping
+class DirectLayerMapping
   : public ImportLayerMapping 
 {
 public:
@@ -66,6 +66,52 @@ private:
 };
 
 /**
+ *  @brief A property mapper based on a dynamic property id generation
+ *
+ *  This class can be used as property mapper for certain "insert" flavors of
+ *  the Instance and Shapes class. 
+ */
+class DB_PUBLIC PropertyMapper
+{
+public:
+  /**
+   *  @brief Instantiate a property mapper for mapping of property ids from the source to the target layout
+   *
+   *  @param source The source layout
+   *  @param target The target layout
+   */
+  PropertyMapper (db::Layout &target, const db::Layout &source);
+  
+  /**
+   *  @brief Instantiate a property mapper for mapping of property ids from the source to the target layout
+   *
+   *  This version does not specify a certain source or target layout. These must be set with the
+   *  set_source or set_target methods.
+   */
+  PropertyMapper ();
+
+  /**
+   *  @brief Specify the source layout
+   */
+  void set_source (const db::Layout &source);
+  
+  /**
+   *  @brief Specify the target layout
+   */
+  void set_target (db::Layout &target);
+  
+  /**
+   *  @brief The actual mapping function
+   */
+  db::Layout::properties_id_type operator() (db::Layout::properties_id_type source_id);
+
+private:
+  db::Layout *mp_target;
+  const db::Layout *mp_source;
+  std::map <db::Layout::properties_id_type, db::Layout::properties_id_type> m_prop_id_map;
+};
+
+/**
  *  @brief A constant describing "drop cell" mapping
  *
  *  If used as the target cell index, this constant means "drop the cell".
@@ -85,7 +131,7 @@ const db::cell_index_type DropCell = std::numeric_limits<db::cell_index_type>::m
  *  in the cell mapping, a new cell is created. If non-null, final_cell_mapping will hold of list of target layout cells
  *  vs. source layout cells.
  *  Instances are only copied for cells which are created new. 
- *  The layer mapping table identifies target layers for source layout layers.
+ *  The layer mapping table indentifies target layers for source layout layers.
  */
 void DB_PUBLIC 
 merge_layouts (db::Layout &target, const db::Layout &source, const db::ICplxTrans &trans,
@@ -106,7 +152,7 @@ class DB_PUBLIC ShapesTransformer
 public:
   ShapesTransformer () { }
   virtual ~ShapesTransformer () { }
-  virtual void insert_transformed (db::Shapes &into, const db::Shapes &from, const db::ICplxTrans &trans) const = 0;
+  virtual void insert_transformed (db::Shapes &into, const db::Shapes &from, const db::ICplxTrans &trans, db::PropertyMapper &pm) const = 0;
 };
 
 /**
@@ -184,33 +230,6 @@ private:
  *  specified grid. Scaling happens by the rational factor m / d.
  */
 DB_PUBLIC void scale_and_snap (db::Layout &layout, db::Cell &cell, db::Coord g, db::Coord m, db::Coord d);
-
-/**
- *  @brief Breaks polygons according to max_vertex_count and max_area_ratio
- *
- *  This method will investigate all polygons on the given layer and cell and split them in case they
- *  have more than the specified vertices and an bounding-box area to polygon area ratio larget
- *  than the specified max_area_ratio. This serves optimization for algorithms needing a good
- *  bounding box approximation.
- *
- *  Setting max_vertex_count or max_area_ratio to 0 disables the respective check.
- */
-DB_PUBLIC void break_polygons (db::Layout &layout, db::cell_index_type cell_index, unsigned int layer, size_t max_vertex_count, double max_area_ratio);
-
-/**
- *  @brief Like "break_polygons" before, but applies it to all cells.
- */
-DB_PUBLIC void break_polygons (db::Layout &layout, unsigned int layer, size_t max_vertex_count, double max_area_ratio);
-
-/**
- *  @brief Like "break_polygons" before, but applies it to all cells and all layers.
- */
-DB_PUBLIC void break_polygons (db::Layout &layout, size_t max_vertex_count, double max_area_ratio);
-
-/**
- *  @brief Like "break_polygons" before, but applies it to the given Shapes container.
- */
-DB_PUBLIC void break_polygons (db::Shapes &shapes, size_t max_vertex_count, double max_area_ratio);
 
 }  // namespace db
 

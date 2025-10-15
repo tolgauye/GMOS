@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -63,26 +63,6 @@ public:
 
 private:
   VALUE m_exc;
-};
-
-/**
- *  @brief A class responsible for forwarding exceptions raised from "break", "return" and other flow control functions
- */
-class RubyContinueException
-  : public tl::CancelException
-{
-public:
-  RubyContinueException (int state)
-    : tl::CancelException (), m_state (state)
-  { }
-
-  int state () const
-  {
-    return m_state;
-  }
-
-private:
-  int m_state;
 };
 
 /**
@@ -231,7 +211,7 @@ private:
 /**
  *  @brief Registers a Ruby class for a gsi class
  */
-void register_class (VALUE ruby_cls, const gsi::ClassBase *gsi_cls, bool as_static);
+void register_class (VALUE ruby_cls, const gsi::ClassBase *gsi_cls);
 
 /**
  *  @brief Find the class declaration from the Ruby object
@@ -239,19 +219,14 @@ void register_class (VALUE ruby_cls, const gsi::ClassBase *gsi_cls, bool as_stat
 const gsi::ClassBase *find_cclass (VALUE k);
 
 /**
- *  @brief Find the class declaration from the Ruby object
- */
-const gsi::ClassBase *find_cclass_maybe_null (VALUE k);
-
-/**
  *  @brief Finds the Ruby class for a gsi class
  */
-VALUE ruby_cls (const gsi::ClassBase *cls, bool as_static);
+VALUE ruby_cls (const gsi::ClassBase *cls);
 
 /**
  *  @brief Gets a value indicating whether a Ruby class is registered for a GSI class
  */
-bool is_registered (const gsi::ClassBase *gsi_cls, bool as_static);
+bool is_registered (const gsi::ClassBase *gsi_cls);
 
 /**
  *  @brief Locks the Ruby object against destruction by the GC
@@ -270,31 +245,6 @@ void gc_lock_object (VALUE value);
  *  faster.
  */
 void gc_unlock_object (VALUE value);
-
-/**
- *  @brief A Locker for the object based on the RIIA pattern
- */
-class GCLocker
-{
-public:
-  GCLocker (VALUE value)
-    : m_value (value)
-  {
-    gc_lock_object (m_value);
-  }
-
-  ~GCLocker ()
-  {
-    gc_unlock_object (m_value);
-  }
-
-private:
-  GCLocker ();
-  GCLocker (const GCLocker &other);
-  GCLocker &operator= (const GCLocker &other);
-
-  VALUE m_value;
-};
 
 /**
  *  @brief Makes the locked object vault required for gc_lock_object and gc_unlock_object

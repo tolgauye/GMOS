@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -27,7 +27,6 @@
 #include "dbCommon.h"
 
 #include "dbEdgePairsDelegate.h"
-#include "dbEdgePairsUtils.h"
 
 namespace db {
 
@@ -39,11 +38,9 @@ class DB_PUBLIC AsIfFlatEdgePairs
 {
 public:
   AsIfFlatEdgePairs ();
-  AsIfFlatEdgePairs (const AsIfFlatEdgePairs &other);
   virtual ~AsIfFlatEdgePairs ();
 
-  virtual size_t count () const;
-  virtual size_t hier_count () const;
+  virtual size_t size () const;
   virtual std::string to_string (size_t) const;
   virtual Box bbox () const;
 
@@ -53,32 +50,6 @@ public:
   }
 
   virtual EdgePairsDelegate *filtered (const EdgePairFilterBase &) const;
-  virtual std::pair<EdgePairsDelegate *, EdgePairsDelegate *> filtered_pair (const EdgePairFilterBase &filter) const;
-
-  virtual EdgePairsDelegate *process_in_place (const EdgePairProcessorBase &proc)
-  {
-    return processed (proc);
-  }
-
-  virtual EdgePairsDelegate *processed (const EdgePairProcessorBase &proc) const;
-  virtual RegionDelegate *processed_to_polygons (const EdgePairToPolygonProcessorBase &proc) const;
-  virtual EdgesDelegate *processed_to_edges (const EdgePairToEdgeProcessorBase &proc) const;
-
-  virtual RegionDelegate *pull_interacting (const Region &) const;
-  virtual EdgesDelegate *pull_interacting (const Edges &) const;
-  virtual EdgePairsDelegate *selected_interacting (const Region &other, size_t min_count, size_t max_count) const;
-  virtual EdgePairsDelegate *selected_not_interacting (const Region &other, size_t min_count, size_t max_count) const;
-  virtual EdgePairsDelegate *selected_interacting (const Edges &other, size_t min_count, size_t max_count) const;
-  virtual EdgePairsDelegate *selected_not_interacting (const Edges &other, size_t min_count, size_t max_count) const;
-  virtual std::pair<EdgePairsDelegate *, EdgePairsDelegate *> selected_interacting_pair (const Region &other, size_t min_count, size_t max_count) const;
-  virtual std::pair<EdgePairsDelegate *, EdgePairsDelegate *> selected_interacting_pair (const Edges &other, size_t min_count, size_t max_count) const;
-
-  virtual EdgePairsDelegate *selected_outside (const Region &other) const;
-  virtual EdgePairsDelegate *selected_not_outside (const Region &other) const;
-  virtual std::pair<EdgePairsDelegate *, EdgePairsDelegate *> selected_outside_pair (const Region &other) const;
-  virtual EdgePairsDelegate *selected_inside (const Region &other) const;
-  virtual EdgePairsDelegate *selected_not_inside (const Region &other) const;
-  virtual std::pair<EdgePairsDelegate *, EdgePairsDelegate *> selected_inside_pair (const Region &other) const;
 
   virtual EdgePairsDelegate *add_in_place (const EdgePairs &other)
   {
@@ -103,16 +74,8 @@ public:
 protected:
   void update_bbox (const db::Box &box);
   void invalidate_bbox ();
-  virtual EdgesDelegate *pull_generic (const Edges &other) const;
-  virtual RegionDelegate *pull_generic (const Region &other) const;
-  virtual EdgePairsDelegate *selected_interacting_generic (const Edges &other, bool inverse, size_t min_count, size_t max_count) const;
-  virtual std::pair<EdgePairsDelegate *, EdgePairsDelegate *> selected_interacting_pair_generic (const Edges &other, size_t min_count, size_t max_count) const;
-  virtual EdgePairsDelegate *selected_interacting_generic (const Region &other, EdgePairInteractionMode mode, bool inverse, size_t min_count, size_t max_count) const;
-  virtual std::pair<EdgePairsDelegate *, EdgePairsDelegate *> selected_interacting_pair_generic (const Region &other, EdgePairInteractionMode mode, size_t min_count, size_t max_count) const;
 
 private:
-  friend class DeepEdgePairs;
-
   AsIfFlatEdgePairs &operator= (const AsIfFlatEdgePairs &other);
 
   mutable bool m_bbox_valid;

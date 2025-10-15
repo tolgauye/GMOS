@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -50,31 +50,6 @@ public:
   void operator() (const T &t)
   {
     mp_shapes->insert (t.transformed (m_trans));
-  }
-
-  template <class P>
-  void insert_polygon (const P &p)
-  {
-    if (p.is_box () && ! m_trans.is_complex ()) {
-      mp_shapes->insert (p.box ().transformed (m_trans));
-    } else {
-      if (mp_shapes->cell () && mp_shapes->cell ()->layout ()) {
-        db::polygon_ref<P, db::Disp> pr (p.transformed (m_trans), mp_shapes->cell ()->layout ()->shape_repository ());
-        mp_shapes->insert (pr);
-      } else {
-        mp_shapes->insert (p.transformed (m_trans));
-      }
-    }
-  }
-
-  void operator() (const db::Polygon &p)
-  {
-    insert_polygon (p);
-  }
-
-  void operator() (const db::SimplePolygon &p)
-  {
-    insert_polygon (p);
   }
 
   void operator() (const db::EdgePair &ep)
@@ -189,34 +164,6 @@ private:
   const db::ICplxTrans m_trans;
 };
 
-/**
- *  @brief A helper class for the generic implementation of the text collection insert functionality
- */
-class TextsInserter
-{
-public:
-  TextsInserter (db::Texts *texts, const db::ICplxTrans &trans)
-    : mp_texts (texts), m_trans (trans)
-  {
-    //  .. nothing yet ..
-  }
-
-  template <class T>
-  void operator() (const T &)
-  {
-    //  .. discard anything except Texts ..
-  }
-
-  void operator() (const db::Text &t)
-  {
-    mp_texts->insert (t.transformed (m_trans));
-  }
-
-private:
-  db::Texts *mp_texts;
-  const db::ICplxTrans m_trans;
-};
-
 class TileLayoutOutputReceiver
   : public db::TileOutputReceiver
 {
@@ -324,26 +271,6 @@ private:
   db::EdgePairs *mp_edge_pairs;
 };
 
-class TileTextsOutputReceiver
-  : public db::TileOutputReceiver
-{
-public:
-  TileTextsOutputReceiver (db::Texts *texts)
-    : mp_texts (texts)
-  {
-    //  .. nothing yet ..
-  }
-
-  void put (size_t /*ix*/, size_t /*iy*/, const db::Box &tile, size_t /*id*/, const tl::Variant &obj, double /*dbu*/, const db::ICplxTrans &trans, bool clip)
-  {
-    TextsInserter inserter (mp_texts, trans);
-    insert_var (inserter, obj, tile, clip);
-  }
-
-private:
-  db::Texts *mp_texts;
-};
-
 class TilingProcessorJob
   : public tl::JobBase
 {
@@ -352,13 +279,10 @@ public:
     : tl::JobBase (nworkers),
       mp_proc (proc),
       m_has_tiles (has_tiles),
-      m_progress_count (0),
-      m_progress (std::string ())
+      m_progress (0)
   {
     //  .. nothing yet ..
   }
-
-  void start (const std::string &job_description);
 
   bool has_tiles () const
   {
@@ -368,18 +292,18 @@ public:
   void next_progress () 
   {
     tl::MutexLocker locker (&m_mutex);
-    ++m_progress_count;
+    ++m_progress;
   }
 
-  void update_progress ()
+  void update_progress (tl::RelativeProgress &progress) 
   {
     unsigned int p;
     {
       tl::MutexLocker locker (&m_mutex);
-      p = m_progress_count;
+      p = m_progress;
     }
 
-    m_progress.set (p, true /*force yield*/);
+    progress.set (p, true /*force yield*/);
   }
 
   TilingProcessor *processor () const
@@ -389,14 +313,11 @@ public:
 
   virtual tl::Worker *create_worker ();
 
-  virtual void after_sync_task (tl::Task *task);
-
 private:
   TilingProcessor *mp_proc;
   bool m_has_tiles;
-  unsigned int m_progress_count;
+  unsigned int m_progress;
   tl::Mutex m_mutex;
-  tl::RelativeProgress m_progress;
 };
 
 class TilingProcessorTask
@@ -474,7 +395,6 @@ private:
   TilingProcessorJob *mp_job;
 
   void do_perform (const TilingProcessorTask *task);
-  void make_input_var (const TilingProcessor::InputSpec &is, const db::RecursiveShapeIterator *iter, tl::Eval &eval, double sf);
 };
 
 class TilingProcessorReceiverFunction
@@ -487,7 +407,7 @@ public:
     //  .. nothing yet ..
   }
 
-  void execute (const tl::ExpressionParserContext & /*context*/, tl::Variant &out, const std::vector<tl::Variant> &args, const std::map<std::string, tl::Variant> * /*kwargs*/) const
+  void execute (const tl::ExpressionParserContext & /*context*/, tl::Variant &out, const std::vector<tl::Variant> &args) const
   {
     out = mp_proc->receiver (args);
   }
@@ -506,7 +426,7 @@ public:
     //  .. nothing yet ..
   }
 
-  void execute (const tl::ExpressionParserContext & /*context*/, tl::Variant & /*out*/, const std::vector<tl::Variant> &args, const std::map<std::string, tl::Variant> * /*kwargs*/) const
+  void execute (const tl::ExpressionParserContext & /*context*/, tl::Variant & /*out*/, const std::vector<tl::Variant> &args) const 
   {
     mp_proc->put (m_ix, m_iy, m_tile_box, args);
   }
@@ -526,29 +446,11 @@ public:
     //  .. nothing yet ..
   }
 
-  void execute (const tl::ExpressionParserContext & /*context*/, tl::Variant & /*out*/, const std::vector<tl::Variant> & /*args*/, const std::map<std::string, tl::Variant> * /*kwargs*/) const
+  void execute (const tl::ExpressionParserContext & /*context*/, tl::Variant & /*out*/, const std::vector<tl::Variant> & /*args*/) const 
   {
     // TODO: ... implement ..
   }
 };
-
-void
-TilingProcessorWorker::make_input_var (const TilingProcessor::InputSpec &is, const db::RecursiveShapeIterator *iter, tl::Eval &eval, double sf)
-{
-  if (! iter) {
-    iter = &is.iter;
-  }
-
-  if (is.type == TilingProcessor::TypeRegion) {
-    eval.set_var (is.name, tl::Variant (db::Region (*iter, db::ICplxTrans (sf) * is.trans, is.merged_semantics)));
-  } else if (is.type == TilingProcessor::TypeEdges) {
-    eval.set_var (is.name, tl::Variant (db::Edges (*iter, db::ICplxTrans (sf) * is.trans, is.merged_semantics)));
-  } else if (is.type == TilingProcessor::TypeEdgePairs) {
-    eval.set_var (is.name, tl::Variant (db::EdgePairs (*iter, db::ICplxTrans (sf) * is.trans)));
-  } else if (is.type == TilingProcessor::TypeTexts) {
-    eval.set_var (is.name, tl::Variant (db::Texts (*iter, db::ICplxTrans (sf) * is.trans)));
-  }
-}
 
 void
 TilingProcessorWorker::do_perform (const TilingProcessorTask *tile_task)
@@ -590,7 +492,11 @@ TilingProcessorWorker::do_perform (const TilingProcessorTask *tile_task)
 
     if (! mp_job->has_tiles ()) { 
 
-      make_input_var (*i, 0, eval, sf);
+      if (i->region) {
+        eval.set_var (i->name, tl::Variant (db::Region (i->iter, db::ICplxTrans (sf) * i->trans, i->merged_semantics)));
+      } else {
+        eval.set_var (i->name, tl::Variant (db::Edges (i->iter, db::ICplxTrans (sf) * i->trans, i->merged_semantics)));
+      }
 
     } else {
 
@@ -603,7 +509,11 @@ TilingProcessorWorker::do_perform (const TilingProcessorTask *tile_task)
         iter.confine_region (region_dbu);
       }
 
-      make_input_var (*i, &iter, eval, sf);
+      if (i->region) {
+        eval.set_var (i->name, tl::Variant (db::Region (iter, db::ICplxTrans (sf) * i->trans, i->merged_semantics)));
+      } else {
+        eval.set_var (i->name, tl::Variant (db::Edges (iter, db::ICplxTrans (sf) * i->trans, i->merged_semantics)));
+      }
 
     }
 
@@ -632,27 +542,8 @@ TilingProcessorJob::create_worker ()
   return new TilingProcessorWorker (this);
 }
 
-void
-TilingProcessorJob::after_sync_task (tl::Task * /*task*/)
-{
-  //  This needs to be done here as there is no external loop to do this
-  update_progress ();
-}
-
-void
-TilingProcessorJob::start (const std::string &job_description)
-{
-  m_progress = tl::RelativeProgress (job_description, tasks (), 1);
-  //  prevents child progress objects from showing
-  m_progress.set_final (true);
-
-  tl::JobBase::start ();
-}
-
 // ----------------------------------------------------------------------------------
 //  The tiling processor implementation
-
-tl::Mutex TilingProcessor::s_output_lock;
 
 TilingProcessor::TilingProcessor ()
   : m_tile_width (0.0), m_tile_height (0.0),
@@ -668,7 +559,7 @@ TilingProcessor::TilingProcessor ()
 }
 
 void 
-TilingProcessor::input (const std::string &name, const db::RecursiveShapeIterator &iter, const db::ICplxTrans &trans, Type type, bool merged_semantics)
+TilingProcessor::input (const std::string &name, const db::RecursiveShapeIterator &iter, const db::ICplxTrans &trans, bool as_region, bool merged_semantics)
 {
   if (m_inputs.empty () && iter.layout ()) {
     m_dbu = iter.layout ()->dbu ();
@@ -677,7 +568,7 @@ TilingProcessor::input (const std::string &name, const db::RecursiveShapeIterato
   m_inputs.back ().name = name;
   m_inputs.back ().iter = iter;
   m_inputs.back ().trans = trans;
-  m_inputs.back ().type = type;
+  m_inputs.back ().region = as_region;
   m_inputs.back ().merged_semantics = merged_semantics;
 }
 
@@ -808,17 +699,7 @@ TilingProcessor::output (const std::string &name, db::EdgePairs &edge_pairs)
   m_outputs.back ().receiver = new TileEdgePairsOutputReceiver (&edge_pairs);
 }
 
-void
-TilingProcessor::output (const std::string &name, db::Texts &texts)
-{
-  m_top_eval.set_var (name, m_outputs.size ());
-  m_outputs.push_back (OutputSpec ());
-  m_outputs.back ().name = name;
-  m_outputs.back ().id = 0;
-  m_outputs.back ().receiver = new TileTextsOutputReceiver (&texts);
-}
-
-void
+void 
 TilingProcessor::output (const std::string &name, db::Edges &edges)
 {
   m_top_eval.set_var (name, m_outputs.size ());
@@ -831,7 +712,7 @@ TilingProcessor::output (const std::string &name, db::Edges &edges)
 tl::Variant
 TilingProcessor::receiver (const std::vector<tl::Variant> &args)
 {
-  tl::MutexLocker locker (&s_output_lock);
+  tl::MutexLocker locker (&m_output_mutex);
 
   if (args.size () != 1) {
     throw tl::Exception (tl::to_string (tr ("_rec function requires one argument: the handle of the output channel")));
@@ -853,7 +734,7 @@ TilingProcessor::receiver (const std::vector<tl::Variant> &args)
 void 
 TilingProcessor::put (size_t ix, size_t iy, const db::Box &tile, const std::vector<tl::Variant> &args)
 {
-  tl::MutexLocker locker (&s_output_lock);
+  tl::MutexLocker locker (&m_output_mutex);
 
   if (args.size () < 2 || args.size () > 3) {
     throw tl::Exception (tl::to_string (tr ("_output function requires two or three arguments: handle and object and a clip flag (optional)")));
@@ -876,7 +757,7 @@ TilingProcessor::execute (const std::string &desc)
 
   if (tot_box.empty ()) {
     for (std::vector<InputSpec>::const_iterator i = m_inputs.begin (); i != m_inputs.end (); ++i) {
-      if (! i->iter.at_end_no_lock ()) {
+      if (! i->iter.at_end ()) {
         if (scale_to_dbu ()) {
           double dbu_value = i->iter.layout () ? i->iter.layout ()->dbu () : dbu ();
           tot_box += i->iter.bbox ().transformed (db::CplxTrans (dbu_value) * db::CplxTrans (i->trans));
@@ -980,6 +861,11 @@ TilingProcessor::execute (const std::string &desc)
 
   }
 
+  //  TODO: there should be a general scheme of how thread-specific progress is merged
+  //  into a global one ..
+  size_t todo_count = ntiles_w * ntiles_h * m_scripts.size ();
+  tl::RelativeProgress progress (desc, todo_count, 1);
+
   try {
 
     try {
@@ -991,10 +877,10 @@ TilingProcessor::execute (const std::string &desc)
         }
       }
 
-      job.start (desc);
+      job.start ();
       while (job.is_running ()) {
         //  This may throw an exception, if the cancel button has been pressed.
-        job.update_progress ();
+        job.update_progress (progress);
         job.wait (100);
       }
 

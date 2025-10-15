@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -25,7 +25,6 @@
 #define HDR_layMacroEditorSetupPage
 
 #include "layPlugin.h"
-#include "layPluginConfigPage.h"
 #include "ui_MacroEditorSetupPage.h"
 
 namespace lay
@@ -45,8 +44,8 @@ public:
   MacroEditorSetupPage (QWidget *parent);
   ~MacroEditorSetupPage ();
 
-  virtual void setup (Dispatcher *root);
-  virtual void commit (Dispatcher *root);
+  virtual void setup (PluginRoot *root);
+  virtual void commit (PluginRoot *root);
 
 protected slots:
   void current_attribute_changed (QListWidgetItem *current, QListWidgetItem *previous);

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -22,8 +22,19 @@
 
 
 #include "gsiDecl.h"
-#include "layLayerProperties.h"
-#include "layLayoutViewBase.h"
+#include "layLayoutView.h"
+
+namespace tl
+{
+  //  NOTE: we don't want references to be passed around and be default-constructed.
+  //  References are only meant as return values for the layer properties iterator and
+  //  be short-living. Hence we disable copying (which will also disable the default
+  //  "assign" implementation) and default construction.
+  template <> struct type_traits<lay::LayerPropertiesNodeRef> : public type_traits<void> {
+    typedef tl::false_tag has_copy_constructor;
+    typedef tl::false_tag has_default_constructor;
+  };
+}
 
 namespace gsi
 {
@@ -299,22 +310,22 @@ static void clear_lower_hier_level (lay::LayerProperties *n)
   n->set_source (s);
 }
 
-static tl::color_t get_eff_frame_color_1 (const lay::LayerProperties *n)
+static lay::color_t get_eff_frame_color_1 (const lay::LayerProperties *n)
 {
   return n->eff_frame_color (true);
 }
 
-static tl::color_t get_eff_fill_color_1 (const lay::LayerProperties *n)
+static lay::color_t get_eff_fill_color_1 (const lay::LayerProperties *n)
 {
   return n->eff_fill_color (true);
 }
 
-static tl::color_t get_frame_color_1 (const lay::LayerProperties *n)
+static lay::color_t get_frame_color_1 (const lay::LayerProperties *n)
 {
   return n->frame_color (true);
 }
 
-static tl::color_t get_fill_color_1 (const lay::LayerProperties *n)
+static lay::color_t get_fill_color_1 (const lay::LayerProperties *n)
 {
   return n->fill_color (true);
 }
@@ -410,13 +421,15 @@ static std::string source_string_1 (const lay::LayerProperties *n)
 }
 
 Class<lay::LayerProperties> decl_LayerProperties ("lay", "LayerProperties",
-  method ("==", &lay::LayerProperties::operator==, gsi::arg ("other"),
+  method ("==", &lay::LayerProperties::operator==, 
     "@brief Equality \n"
+    "@args other\n"
     "\n"
     "@param other The other object to compare against"
   ) +
-  method ("!=", &lay::LayerProperties::operator!=, gsi::arg ("other"),
+  method ("!=", &lay::LayerProperties::operator!=, 
     "@brief Inequality \n"
+    "@args other\n"
     "\n"
     "@param other The other object to compare against"
   ) +
@@ -430,8 +443,9 @@ Class<lay::LayerProperties> decl_LayerProperties ("lay", "LayerProperties",
     "\n"
     "This method has been introduced in version 0.22.\n"
   ) +
-  method ("eff_frame_color", &lay::LayerProperties::eff_frame_color, gsi::arg ("real"),
+  method ("eff_frame_color", &lay::LayerProperties::eff_frame_color, 
     "@brief Gets the effective frame color \n"
+    "@args real\n"
     "\n"
     "The effective frame color is computed from the frame color brightness and the\n"
     "frame color.\n"
@@ -445,8 +459,9 @@ Class<lay::LayerProperties> decl_LayerProperties ("lay", "LayerProperties",
     "\n"
     "This method has been introduced in version 0.22."
   ) +
-  method ("eff_fill_color", &lay::LayerProperties::eff_fill_color, gsi::arg ("real"),
+  method ("eff_fill_color", &lay::LayerProperties::eff_fill_color, 
     "@brief Gets the effective fill color\n"
+    "@args real\n"
     "\n"
     "The effective fill color is computed from the frame color brightness and the\n"
     "frame color.\n"
@@ -460,8 +475,9 @@ Class<lay::LayerProperties> decl_LayerProperties ("lay", "LayerProperties",
     "\n"
     "This method has been introduced in version 0.22."
   ) +
-  method ("frame_color", &lay::LayerProperties::frame_color, gsi::arg ("real"),
+  method ("frame_color", &lay::LayerProperties::frame_color, 
     "@brief Gets the frame color\n"
+    "@args real\n"
     "\n"
     "This method may return an invalid color if the color is not set.\n"
     "\n"
@@ -474,8 +490,9 @@ Class<lay::LayerProperties> decl_LayerProperties ("lay", "LayerProperties",
     "\n"
     "This method has been introduced in version 0.22."
   ) +
-  method ("frame_color=", &lay::LayerProperties::set_frame_color, gsi::arg ("color"),
+  method ("frame_color=", &lay::LayerProperties::set_frame_color, 
     "@brief Sets the frame color to the given value\n"
+    "@args color\n"
     "\n"
     "The color is a 32bit value encoding the blue value in the lower 8 bits, "
     "the green value in the next 8 bits and the red value in the 8 bits above that."
@@ -483,8 +500,9 @@ Class<lay::LayerProperties> decl_LayerProperties ("lay", "LayerProperties",
   method ("clear_frame_color", &lay::LayerProperties::clear_frame_color, 
     "@brief Resets the frame color \n"
   ) +
-  method ("has_frame_color?", &lay::LayerProperties::has_frame_color, gsi::arg ("real"),
+  method ("has_frame_color?", &lay::LayerProperties::has_frame_color, 
     "@brief True, if the frame color is set\n"
+    "@args real\n"
   ) +
   method_ext ("has_frame_color?", &get_has_frame_color_1, 
     "@brief True, if the frame color is set\n"
@@ -493,8 +511,9 @@ Class<lay::LayerProperties> decl_LayerProperties ("lay", "LayerProperties",
     "\n"
     "This method has been introduced in version 0.22."
   ) +
-  method ("fill_color", &lay::LayerProperties::fill_color, gsi::arg ("real"),
+  method ("fill_color", &lay::LayerProperties::fill_color, 
     "@brief Gets the fill color\n"
+    "@args real\n"
     "\n"
     "This method may return an invalid color if the color is not set.\n"
     "\n"
@@ -507,8 +526,9 @@ Class<lay::LayerProperties> decl_LayerProperties ("lay", "LayerProperties",
     "\n"
     "This method has been introduced in version 0.22."
   ) +
-  method ("fill_color=", &lay::LayerProperties::set_fill_color, gsi::arg ("color"),
+  method ("fill_color=", &lay::LayerProperties::set_fill_color, 
     "@brief Sets the fill color to the given value\n"
+    "@args color\n"
     "\n"
     "The color is a 32bit value encoding the blue value in the lower 8 bits, "
     "the green value in the next 8 bits and the red value in the 8 bits above that."
@@ -516,8 +536,9 @@ Class<lay::LayerProperties> decl_LayerProperties ("lay", "LayerProperties",
   method ("clear_fill_color", &lay::LayerProperties::clear_fill_color, 
     "@brief Resets the fill color\n"
   ) +
-  method ("has_fill_color?", &lay::LayerProperties::has_fill_color, gsi::arg ("real"),
+  method ("has_fill_color?", &lay::LayerProperties::has_fill_color, 
     "@brief True, if the fill color is set\n"
+    "@args real\n"
   ) +
   method_ext ("has_fill_color?", &get_has_fill_color_1, 
     "@brief True, if the fill color is set\n"
@@ -526,14 +547,16 @@ Class<lay::LayerProperties> decl_LayerProperties ("lay", "LayerProperties",
     "\n"
     "This method has been introduced in version 0.22."
   ) +
-  method ("frame_brightness=", &lay::LayerProperties::set_frame_brightness, gsi::arg ("brightness"),
+  method ("frame_brightness=", &lay::LayerProperties::set_frame_brightness, 
     "@brief Sets the frame brightness\n"
+    "@args brightness\n"
     "\n"
     "For neutral brightness set this value to 0. For darker colors set it to a negative "
     "value (down to -255), for brighter colors to a positive value (up to 255)\n"
   ) +
-  method ("frame_brightness", &lay::LayerProperties::frame_brightness, gsi::arg ("real"),
+  method ("frame_brightness", &lay::LayerProperties::frame_brightness, 
     "@brief Gets the frame brightness value\n"
+    "@args real\n"
     "\n"
     "If the brightness is not set, this method may return an invalid value\n"
     "\n"
@@ -546,14 +569,16 @@ Class<lay::LayerProperties> decl_LayerProperties ("lay", "LayerProperties",
     "\n"
     "This method has been introduced in version 0.22."
   ) +
-  method ("fill_brightness=", &lay::LayerProperties::set_fill_brightness, gsi::arg ("brightness"),
+  method ("fill_brightness=", &lay::LayerProperties::set_fill_brightness, 
     "@brief Sets the fill brightness\n"
+    "@args brightness\n"
     "\n"
     "For neutral brightness set this value to 0. For darker colors set it to a negative "
     "value (down to -255), for brighter colors to a positive value (up to 255)\n"
   ) +
-  method ("fill_brightness", &lay::LayerProperties::fill_brightness, gsi::arg ("real"),
+  method ("fill_brightness", &lay::LayerProperties::fill_brightness, 
     "@brief Gets the fill brightness value\n"
+    "@args real\n"
     "\n"
     "If the brightness is not set, this method may return an invalid value\n"
     "\n"
@@ -566,16 +591,18 @@ Class<lay::LayerProperties> decl_LayerProperties ("lay", "LayerProperties",
     "\n"
     "This method has been introduced in version 0.22."
   ) +
-  method ("dither_pattern=", &lay::LayerProperties::set_dither_pattern, gsi::arg ("index"),
+  method ("dither_pattern=", &lay::LayerProperties::set_dither_pattern, 
     "@brief Sets the dither pattern index\n"
+    "@args index"
     "\n"
     "The dither pattern index must be one of the valid indices.\n"
     "The first indices are reserved for built-in pattern, the following ones are custom pattern.\n"
     "Index 0 is always solid filled and 1 is always the hollow filled pattern.\n"
     "For custom pattern see \\LayoutView#add_stipple.\n"
   ) +
-  method ("eff_dither_pattern", &lay::LayerProperties::eff_dither_pattern, gsi::arg ("real"),
+  method ("eff_dither_pattern", &lay::LayerProperties::eff_dither_pattern, 
     "@brief Gets the effective dither pattern index\n"
+    "@args real\n"
     "\n"
     "The effective dither pattern index is always a valid index, even if no dither pattern "
     "is set."
@@ -589,8 +616,9 @@ Class<lay::LayerProperties> decl_LayerProperties ("lay", "LayerProperties",
     "\n"
     "This method has been introduced in version 0.22."
   ) +
-  method ("dither_pattern", &lay::LayerProperties::dither_pattern, gsi::arg ("real"),
+  method ("dither_pattern", &lay::LayerProperties::dither_pattern, 
     "@brief Gets the dither pattern index\n"
+    "@args real\n"
     "\n"
     "This method may deliver an invalid dither pattern index if it is not set.\n"
     "\n"
@@ -606,8 +634,9 @@ Class<lay::LayerProperties> decl_LayerProperties ("lay", "LayerProperties",
   method ("clear_dither_pattern", &lay::LayerProperties::clear_dither_pattern, 
     "@brief Clears the dither pattern\n"
   ) +
-  method ("has_dither_pattern?", &lay::LayerProperties::has_dither_pattern, gsi::arg ("real"),
+  method ("has_dither_pattern?", &lay::LayerProperties::has_dither_pattern, 
     "@brief True, if the dither pattern is set\n"
+    "@args real\n"
   ) +
   method_ext ("has_dither_pattern?", &get_has_dither_pattern_1, 
     "@brief True, if the dither pattern is set\n"
@@ -676,11 +705,13 @@ Class<lay::LayerProperties> decl_LayerProperties ("lay", "LayerProperties",
     "\n"
     "This method has been introduced in version 0.25."
   ) +
-  method ("valid=", &lay::LayerProperties::set_valid, gsi::arg ("valid"),
+  method ("valid=", &lay::LayerProperties::set_valid,
     "@brief Sets the validity state\n"
+    "@args valid"
   ) +
-  method ("valid?", &lay::LayerProperties::valid, gsi::arg ("real"),
+  method ("valid?", &lay::LayerProperties::valid, 
     "@brief Gets the validity state\n"
+    "@args real\n"
   ) +
   method_ext ("valid?", &get_valid_1, 
     "@brief Gets the validity state\n"
@@ -689,11 +720,13 @@ Class<lay::LayerProperties> decl_LayerProperties ("lay", "LayerProperties",
     "\n"
     "This method has been introduced in version 0.23."
   ) +
-  method ("visible=", &lay::LayerProperties::set_visible, gsi::arg ("visible"),
+  method ("visible=", &lay::LayerProperties::set_visible, 
     "@brief Sets the visibility state\n"
+    "@args visible"
   ) +
-  method ("visible?", &lay::LayerProperties::visible, gsi::arg ("real"),
+  method ("visible?", &lay::LayerProperties::visible, 
     "@brief Gets the visibility state\n"
+    "@args real\n"
   ) +
   method_ext ("visible?", &get_visible_1, 
     "@brief Gets the visibility state\n"
@@ -702,11 +735,13 @@ Class<lay::LayerProperties> decl_LayerProperties ("lay", "LayerProperties",
     "\n"
     "This method has been introduced in version 0.22."
   ) +
-  method ("transparent=", &lay::LayerProperties::set_transparent, gsi::arg ("transparent"),
+  method ("transparent=", &lay::LayerProperties::set_transparent, 
     "@brief Sets the transparency state\n"
+    "@args transparent"
   ) +
-  method ("transparent?", &lay::LayerProperties::transparent, gsi::arg ("real"),
+  method ("transparent?", &lay::LayerProperties::transparent, 
     "@brief Gets the transparency state\n"
+    "@args real\n"
   ) +
   method_ext ("transparent?", &get_transparent_1, 
     "@brief Gets the transparency state\n"
@@ -715,11 +750,13 @@ Class<lay::LayerProperties> decl_LayerProperties ("lay", "LayerProperties",
     "\n"
     "This method has been introduced in version 0.22."
   ) +
-  method ("width=", &lay::LayerProperties::set_width, gsi::arg ("width"),
+  method ("width=", &lay::LayerProperties::set_width, 
     "@brief Sets the line width to the given width\n"
+    "@args width"
   ) +
-  method ("width", &lay::LayerProperties::width, gsi::arg ("real"),
+  method ("width", &lay::LayerProperties::width, 
     "@brief Gets the line width\n"
+    "@args real\n"
   ) +
   method_ext ("width", &get_width_1, 
     "@brief Gets the line width\n"
@@ -728,11 +765,13 @@ Class<lay::LayerProperties> decl_LayerProperties ("lay", "LayerProperties",
     "\n"
     "This method has been introduced in version 0.22."
   ) +
-  method ("marked=", &lay::LayerProperties::set_marked, gsi::arg ("marked"),
+  method ("marked=", &lay::LayerProperties::set_marked, 
     "@brief Sets the marked state\n"
+    "@args marked"
   ) +
-  method ("marked?", &lay::LayerProperties::marked, gsi::arg ("real"),
+  method ("marked?", &lay::LayerProperties::marked,
     "@brief Gets the marked state\n"
+    "@args real\n"
   ) +
   method_ext ("marked?", &get_marked_1,
     "@brief Gets the marked state\n"
@@ -741,13 +780,15 @@ Class<lay::LayerProperties> decl_LayerProperties ("lay", "LayerProperties",
     "\n"
     "This method has been introduced in version 0.22."
   ) +
-  method ("xfill=", &lay::LayerProperties::set_xfill, gsi::arg ("xfill"),
+  method ("xfill=", &lay::LayerProperties::set_xfill,
     "@brief Sets a value indicating whether shapes are drawn with a cross\n"
+    "@args xfill\n"
     "\n"
     "This attribute has been introduced in version 0.25.\n"
   ) +
-  method ("xfill?", &lay::LayerProperties::xfill, gsi::arg ("real"),
+  method ("xfill?", &lay::LayerProperties::xfill,
     "@brief Gets a value indicating whether shapes are drawn with a cross\n"
+    "@args real\n"
     "\n"
     "This attribute has been introduced in version 0.25.\n"
   ) +
@@ -758,13 +799,15 @@ Class<lay::LayerProperties> decl_LayerProperties ("lay", "LayerProperties",
     "\n"
     "This attribute has been introduced in version 0.25.\n"
   ) +
-  method ("animation=", &lay::LayerProperties::set_animation, gsi::arg ("animation"),
+  method ("animation=", &lay::LayerProperties::set_animation, 
     "@brief Sets the animation state\n"
+    "@args animation\n"
     "\n"
     "See the description of the \\animation method for details about the animation state"
   ) +
-  method ("animation", &lay::LayerProperties::animation, gsi::arg ("real"),
+  method ("animation", &lay::LayerProperties::animation, 
     "@brief Gets the animation state\n"
+    "@args real\n"
     "\n"
     "The animation state is an integer either being 0 (static), 1 (scrolling), 2 (blinking) "
     "or 3 (inversely blinking)"
@@ -776,14 +819,16 @@ Class<lay::LayerProperties> decl_LayerProperties ("lay", "LayerProperties",
     "\n"
     "This method has been introduced in version 0.22."
   ) +
-  method ("name=", &lay::LayerProperties::set_name, gsi::arg ("name"),
+  method ("name=", &lay::LayerProperties::set_name, 
     "@brief Sets the name to the given string\n"
+    "@args name\n"
   ) +
   method ("name", &lay::LayerProperties::name, 
     "@brief Gets the name\n"
   ) +
-  method_ext ("trans", &get_trans, gsi::arg ("real"),
+  method_ext ("trans", &get_trans, 
     "@brief Gets the transformations that the layer is transformed with\n"
+    "@args real\n"
     "\n"
     "The transformations returned by this accessor is the one used for displaying this layer. "
     "The layout is transformed with each of these transformations before it is drawn.\n\n"
@@ -796,13 +841,15 @@ Class<lay::LayerProperties> decl_LayerProperties ("lay", "LayerProperties",
     "\n"
     "This method has been introduced in version 0.22."
   ) +
-  method_ext ("trans=", &set_trans, gsi::arg ("trans_vector"),
+  method_ext ("trans=", &set_trans, 
     "@brief Sets the transformations that the layer is transformed with\n"
+    "@args trans_vector\n"
     "\n"
     "See \\trans for a description of the transformations."
   ) +
-  method_ext ("source_cellview", &get_cellview, gsi::arg ("real"),
+  method_ext ("source_cellview", &get_cellview, 
     "@brief Gets the cellview index that this layer refers to\n"
+    "@args real\n"
     "\n"
     "If \"real\" is true, the effective value is returned."
   ) +
@@ -813,20 +860,22 @@ Class<lay::LayerProperties> decl_LayerProperties ("lay", "LayerProperties",
     "\n"
     "This method has been introduced in version 0.22."
   ) +
-  method_ext ("source_cellview=", &set_cellview, gsi::arg ("cellview_index"),
+  method_ext ("source_cellview=", &set_cellview, 
     "@brief Sets the cellview index that this layer refers to\n"
+    "@args cellview_index\n"
     "\n"
     "See \\cellview for a description of the transformations."
   ) +
-  method_ext ("source_layer_index", &get_layer_index, gsi::arg ("real"),
+  method_ext ("source_layer_index", &get_layer_index, 
     "@brief Gets the layer index that the shapes are taken from\n"
+    "@args real\n"
     "\n"
     "If the layer index is positive, the shapes drawn are taken from this layer rather than "
     "searched for by layer and datatype. This property is stronger than the layer/datatype or "
     "name specification.\n\n"
-    "A different method is \\layer_index which indicates the ID of the layer actually used. "
-    "While \"source_layer_index\" is one of several ways to address the layer drawn, \"layer_index\" is the ID (index) "
-    "of the layer matching the source specification and is >= 0 if such a layer is found.\n\n"
+    "The similar method \\layer_index "
+    "returns the actual layer index used, not the given one. The latter may be negative indicating "
+    "that layer/datatype or name specifications are used.\n\n"
     "If \"real\" is true, the effective value is returned."
   ) +
   method_ext ("source_layer_index", &get_layer_index_1, 
@@ -836,13 +885,15 @@ Class<lay::LayerProperties> decl_LayerProperties ("lay", "LayerProperties",
     "\n"
     "This method has been introduced in version 0.22."
   ) +
-  method_ext ("source_layer_index=", &set_layer_index, gsi::arg ("index"),
+  method_ext ("source_layer_index=", &set_layer_index, 
     "@brief Sets the layer index specification that the shapes are taken from\n"
+    "@args index\n"
     "\n"
     "See \\source_layer_index for a description of this property."
   ) +
-  method_ext ("source_layer", &get_layer, gsi::arg ("real"),
+  method_ext ("source_layer", &get_layer, 
     "@brief Gets the stream layer that the shapes are taken from\n"
+    "@args real\n"
     "\n"
     "If the layer is positive, the actual layer is looked up by this stream layer. If a name or "
     "layer index is specified, the stream layer is not used.\n\n"
@@ -855,13 +906,15 @@ Class<lay::LayerProperties> decl_LayerProperties ("lay", "LayerProperties",
     "\n"
     "This method has been introduced in version 0.22."
   ) +
-  method_ext ("source_layer=", &set_layer, gsi::arg ("layer"),
+  method_ext ("source_layer=", &set_layer, 
     "@brief Sets the stream layer that the shapes are taken from\n"
+    "@args layer\n"
     "\n"
     "See \\source_layer for a description of this property"
   ) +
-  method_ext ("source_datatype", &get_datatype, gsi::arg ("real"),
+  method_ext ("source_datatype", &get_datatype, 
     "@brief Gets the stream datatype that the shapes are taken from\n"
+    "@args real\n"
     "\n"
     "If the datatype is positive, the actual layer is looked up by this stream datatype. If a name or "
     "layer index is specified, the stream datatype is not used.\n\n"
@@ -874,16 +927,18 @@ Class<lay::LayerProperties> decl_LayerProperties ("lay", "LayerProperties",
     "\n"
     "This method has been introduced in version 0.22."
   ) +
-  method_ext ("source_datatype=", &set_datatype, gsi::arg ("datatype"),
+  method_ext ("source_datatype=", &set_datatype, 
     "@brief Sets the stream datatype that the shapes are taken from\n"
+    "@args datatype\n"
     "\n"
     "See \\datatype for a description of this property"
   ) +
   method_ext ("clear_source_name", &clear_name, 
     "@brief Removes any stream layer name specification from this layer\n"
   ) +
-  method_ext ("source_name", &get_name, gsi::arg ("real"),
+  method_ext ("source_name", &get_name, 
     "@brief Gets the stream name that the shapes are taken from\n"
+    "@args real\n"
     "\n"
     "If the name is non-empty, the actual layer is looked up by this stream layer name. If a "
     "layer index (see \\layer_index) is specified, the stream datatype is not used.\n"
@@ -897,8 +952,9 @@ Class<lay::LayerProperties> decl_LayerProperties ("lay", "LayerProperties",
     "\n"
     "This method has been introduced in version 0.22."
   ) +
-  method_ext ("has_source_name?", &has_name, gsi::arg ("real"),
+  method_ext ("has_source_name?", &has_name, 
     "@brief Gets a value indicating whether a stream layer name is specified for this layer\n"
+    "@args real\n"
     "\n"
     "If \"real\" is true, the effective value is returned."
   ) +
@@ -909,13 +965,15 @@ Class<lay::LayerProperties> decl_LayerProperties ("lay", "LayerProperties",
     "\n"
     "This method has been introduced in version 0.22."
   ) +
-  method_ext ("source_name=", &set_name, gsi::arg ("name"),
+  method_ext ("source_name=", &set_name, 
     "@brief Sets the stream layer name that the shapes are taken from\n"
+    "@args name\n"
     "\n"
     "See \\name for a description of this property"
   ) +
-  method_ext ("upper_hier_level", &get_upper_hier_level, gsi::arg ("real"),
+  method_ext ("upper_hier_level", &get_upper_hier_level, 
     "@brief Gets the upper hierarchy level shown\n"
+    "@args real\n"
     "\n"
     "This is the hierarchy level at which the drawing starts. "
     "This property is only meaningful, if \\has_upper_hier_level is true. "
@@ -930,8 +988,9 @@ Class<lay::LayerProperties> decl_LayerProperties ("lay", "LayerProperties",
     "\n"
     "This method has been introduced in version 0.22."
   ) +
-  method_ext ("upper_hier_level_relative?|#upper_hier_level_relative", &get_upper_hier_level_relative, gsi::arg ("real"),
+  method_ext ("upper_hier_level_relative?|#upper_hier_level_relative", &get_upper_hier_level_relative,
     "@brief Gets a value indicating whether if the upper hierarchy level is relative.\n"
+    "@args real\n"
     "\n"
     "See \\upper_hier_level for a description of this property.\n"
     "\n"
@@ -944,8 +1003,9 @@ Class<lay::LayerProperties> decl_LayerProperties ("lay", "LayerProperties",
     "\n"
     "This method has been introduced in version 0.22."
   ) +
-  method_ext ("upper_hier_level_mode", &get_upper_hier_level_mode, gsi::arg ("real"),
+  method_ext ("upper_hier_level_mode", &get_upper_hier_level_mode, 
     "@brief Gets the mode for the upper hierarchy level.\n"
+    "@args real\n"
     "@param real If true, the computed value is returned, otherwise the local node value\n"
     "\n"
     "The mode value can be 0 (value is given by \\upper_hier_level), 1 for \"minimum value\" and 2 for \"maximum value\".\n"
@@ -959,30 +1019,34 @@ Class<lay::LayerProperties> decl_LayerProperties ("lay", "LayerProperties",
     "\n"
     "This method has been introduced in version 0.22."
   ) +
-  method_ext ("upper_hier_level=", &set_upper_hier_level1, gsi::arg ("level"),
+  method_ext ("upper_hier_level=", &set_upper_hier_level1, 
     "@brief Sets a upper hierarchy level\n"
+    "@args level\n"
     "\n"
     "If this method is called, the upper hierarchy level is enabled. "
     "See \\upper_hier_level for a description of this property.\n"
   ) +
-  method_ext ("set_upper_hier_level", &set_upper_hier_level2, gsi::arg ("level"), gsi::arg ("relative"),
+  method_ext ("set_upper_hier_level", &set_upper_hier_level2, 
     "@brief Sets the upper hierarchy level and if it is relative to the context cell\n"
+    "@args level,relative\n"
     "\n"
     "If this method is called, the upper hierarchy level is enabled. "
     "See \\upper_hier_level for a description of this property.\n"
     "\n"
     "This method has been introduced in version 0.19.\n"
   ) +
-  method_ext ("set_upper_hier_level", &set_upper_hier_level3, gsi::arg ("level"), gsi::arg ("relative"), gsi::arg ("mode"),
+  method_ext ("set_upper_hier_level", &set_upper_hier_level3, 
     "@brief Sets the upper hierarchy level, if it is relative to the context cell and the mode\n"
+    "@args level,relative,mode\n"
     "\n"
     "If this method is called, the upper hierarchy level is enabled. "
     "See \\upper_hier_level for a description of this property.\n"
     "\n"
     "This method has been introduced in version 0.20.\n"
   ) +
-  method_ext ("has_upper_hier_level?", &get_has_upper_hier_level, gsi::arg ("real"),
+  method_ext ("has_upper_hier_level?", &get_has_upper_hier_level, 
     "@brief Gets a value indicating whether an upper hierarchy level is explicitly specified\n"
+    "@args real\n"
     "\n"
     "If \"real\" is true, the effective value is returned."
   ) +
@@ -998,8 +1062,9 @@ Class<lay::LayerProperties> decl_LayerProperties ("lay", "LayerProperties",
     "\n"
     "See \\has_upper_hier_level for a description of this property"
   ) +
-  method_ext ("lower_hier_level", &get_lower_hier_level, gsi::arg ("real"),
+  method_ext ("lower_hier_level", &get_lower_hier_level, 
     "@brief Gets the lower hierarchy level shown\n"
+    "@args real\n"
     "\n"
     "This is the hierarchy level at which the drawing starts. "
     "This property is only meaningful, if \\has_lower_hier_level is true. "
@@ -1014,8 +1079,9 @@ Class<lay::LayerProperties> decl_LayerProperties ("lay", "LayerProperties",
     "\n"
     "This method has been introduced in version 0.22."
   ) +
-  method_ext ("lower_hier_level_relative?|#lower_hier_level_relative", &get_lower_hier_level_relative, gsi::arg ("real"),
+  method_ext ("lower_hier_level_relative?|#lower_hier_level_relative", &get_lower_hier_level_relative,
     "@brief Gets a value indicating whether the lower hierarchy level is relative.\n"
+    "@args real\n"
     "\n"
     "See \\lower_hier_level for a description of this property.\n"
     "\n"
@@ -1028,7 +1094,7 @@ Class<lay::LayerProperties> decl_LayerProperties ("lay", "LayerProperties",
     "\n"
     "This method has been introduced in version 0.22."
   ) +
-  method_ext ("lower_hier_level_mode", &get_lower_hier_level_mode, gsi::arg ("real"),
+  method_ext ("lower_hier_level_mode", &get_lower_hier_level_mode, 
     "@brief Gets the mode for the lower hierarchy level.\n"
     "@param real If true, the computed value is returned, otherwise the local node value\n"
     "\n"
@@ -1036,37 +1102,41 @@ Class<lay::LayerProperties> decl_LayerProperties ("lay", "LayerProperties",
     "\n"
     "This method has been introduced in version 0.20.\n"
   ) +
-  method_ext ("lower_hier_level_mode", &get_lower_hier_level_mode_1,
+  method_ext ("lower_hier_level_mode", &get_lower_hier_level_mode_1, 
     "@brief Gets the mode for the lower hierarchy level.\n"
     "\n"
     "This method is a convenience method for \"lower_hier_level_mode(true)\"\n"
     "\n"
     "This method has been introduced in version 0.22."
   ) +
-  method_ext ("lower_hier_level=", &set_lower_hier_level1, gsi::arg ("level"),
+  method_ext ("lower_hier_level=", &set_lower_hier_level1, 
     "@brief Sets the lower hierarchy level\n"
+    "@args level\n"
     "\n"
     "If this method is called, the lower hierarchy level is enabled. "
     "See \\lower_hier_level for a description of this property.\n"
   ) +
-  method_ext ("set_lower_hier_level", &set_lower_hier_level2, gsi::arg ("level"), gsi::arg ("relative"),
+  method_ext ("set_lower_hier_level", &set_lower_hier_level2, 
     "@brief Sets the lower hierarchy level and if it is relative to the context cell\n"
+    "@args level,relative\n"
     "\n"
     "If this method is called, the lower hierarchy level is enabled. "
     "See \\lower_hier_level for a description of this property.\n"
     "\n"
     "This method has been introduced in version 0.19.\n"
   ) +
-  method_ext ("set_lower_hier_level", &set_lower_hier_level3, gsi::arg ("level"), gsi::arg ("relative"), gsi::arg ("mode"),
+  method_ext ("set_lower_hier_level", &set_lower_hier_level3, 
     "@brief Sets the lower hierarchy level, whether it is relative to the context cell and the mode\n"
+    "@args level,relative,mode\n"
     "\n"
     "If this method is called, the lower hierarchy level is enabled. "
     "See \\lower_hier_level for a description of this property.\n"
     "\n"
     "This method has been introduced in version 0.20.\n"
   ) +
-  method_ext ("has_lower_hier_level?", &get_has_lower_hier_level, gsi::arg ("real"),
+  method_ext ("has_lower_hier_level?", &get_has_lower_hier_level, 
     "@brief Gets a value indicating whether a lower hierarchy level is explicitly specified\n"
+    "@args real\n"
     "\n"
     "If \"real\" is true, the effective value is returned."
   ) +
@@ -1082,8 +1152,9 @@ Class<lay::LayerProperties> decl_LayerProperties ("lay", "LayerProperties",
     "\n"
     "See \\has_lower_hier_level for a description of this property"
   ) +
-  method ("source", &lay::LayerProperties::source_string, gsi::arg ("real"),
+  method ("source", &lay::LayerProperties::source_string, 
     "@brief Gets the source specification \n"
+    "@args real\n"
     "\n"
     "This method delivers the source specification as a string\n"
     "\n"
@@ -1096,8 +1167,9 @@ Class<lay::LayerProperties> decl_LayerProperties ("lay", "LayerProperties",
     "\n"
     "This method has been introduced in version 0.22."
   ) +
-  method ("source=", (void (lay::LayerProperties::*) (const std::string &s)) &lay::LayerProperties::set_source, gsi::arg ("s"),
+  method ("source=", (void (lay::LayerProperties::*) (const std::string &s)) &lay::LayerProperties::set_source, 
     "@brief Loads the source specification from a string\n"
+    "@args s\n"
     "\n"
     "Sets the source specification to the given string. The source specification may contain "
     "the cellview index, the source layer (given by layer/datatype or layer name), transformation, "
@@ -1168,13 +1240,15 @@ static void clear_children (lay::LayerPropertiesNode *node)
 Class<lay::LayerPropertiesNode> decl_LayerPropertiesNode (
   decl_LayerProperties, 
   "lay", "LayerPropertiesNode",
-  method ("==", &lay::LayerPropertiesNode::operator==, gsi::arg ("other"),
+  method ("==", &lay::LayerPropertiesNode::operator==, 
     "@brief Equality \n"
+    "@args other\n"
     "\n"
     "@param other The other object to compare against"
   ) +
-  method ("!=", &lay::LayerPropertiesNode::operator!=, gsi::arg ("other"),
+  method ("!=", &lay::LayerPropertiesNode::operator!=, 
     "@brief Inequality \n"
+    "@args other\n"
     "\n"
     "@param other The other object to compare against"
   ) +
@@ -1189,16 +1263,6 @@ Class<lay::LayerPropertiesNode> decl_LayerPropertiesNode (
     "Unlike the name suggests, this node will still contain a hierarchy of nodes below if the original "
     "node did so."
   ) +
-  method ("is_expanded?", &lay::LayerPropertiesNode::expanded,
-    "@brief Gets a value indicating whether the layer tree node is expanded.\n"
-    "This predicate has been introduced in version 0.28.6."
-  ) +
-  method ("expanded=", &lay::LayerPropertiesNode::set_expanded, gsi::arg ("ex"),
-    "@brief Set a value indicating whether the layer tree node is expanded.\n"
-    "Setting this value to 'true' will expand (open) the tree node. Setting it to 'false' will collapse the node.\n"
-    "\n"
-    "This predicate has been introduced in version 0.28.6."
-  ) +
   method_ext ("add_child", &add_child0,
     "@brief Add a child entry\n"
     "@return A reference to the node created\n"
@@ -1207,8 +1271,9 @@ Class<lay::LayerPropertiesNode> decl_LayerPropertiesNode (
     "\n"
     "The parameterless version of this method was introduced in version 0.25."
   ) +
-  method_ext ("add_child", &add_child, gsi::arg ("child"),
+  method_ext ("add_child", &add_child,
     "@brief Add a child entry\n"
+    "@args child\n"
     "@return A reference to the node created\n"
     "This method allows building a layer properties tree by adding children to node objects. "
     "It returns a reference to the node object created.\n"
@@ -1232,6 +1297,11 @@ Class<lay::LayerPropertiesNode> decl_LayerPropertiesNode (
     "\n"
     "@return A bbox in micron units\n"
   ) +
+  method ("view", &lay::LayerPropertiesNode::view,
+    "@brief Gets the view this node lives in\n"
+    "\n"
+    "This reference can be nil if the node is a orphan node that lives outside a view."
+  ) +
   method ("list_index", &lay::LayerPropertiesNode::list_index,
     "@brief Gets the index of the layer properties list that the node lives in\n"
   ) +
@@ -1241,7 +1311,7 @@ Class<lay::LayerPropertiesNode> decl_LayerPropertiesNode (
     "Each layer properties node object has a unique ID that is created \n"
     "when a new LayerPropertiesNode object is instantiated. The ID is\n"
     "copied when the object is copied. The ID can be used to identify the\n"
-    "object irregardless of its content.\n"
+    "object irregardless of it's content.\n"
   ),
   "@brief A layer properties node structure\n"
   "\n"
@@ -1325,21 +1395,24 @@ static lay::LayerPropertiesNodeRef current (const lay::LayerPropertiesConstItera
 
 Class<lay::LayerPropertiesConstIterator> decl_LayerPropertiesIterator (
   "lay", "LayerPropertiesIterator",
-  method ("!=", &lay::LayerPropertiesConstIterator::operator!=, gsi::arg ("other"),
+  method ("!=", &lay::LayerPropertiesConstIterator::operator!=, 
     "@brief Inequality\n"
+    "@args other\n"
     "\n"
     "@param other The other object to compare against"
   ) +
-  method ("==", &lay::LayerPropertiesConstIterator::operator==, gsi::arg ("other"),
+  method ("==", &lay::LayerPropertiesConstIterator::operator==, 
     "@brief Equality\n"
+    "@args other\n"
     "\n"
     "@param other The other object to compare against"
     "\n"
     "Returns true, if self and other point to the same layer properties node. Caution: this does "
     "not imply that both layer properties nodes sit in the same tab. Just their position in the tree is compared."
   ) +
-  method ("<", &lay::LayerPropertiesConstIterator::operator<, gsi::arg ("other"),
+  method ("<", &lay::LayerPropertiesConstIterator::operator<, 
     "@brief Comparison\n"
+    "@args other\n"
     "\n"
     "@param other The other object to compare against\n"
     "\n"
@@ -1375,15 +1448,17 @@ Class<lay::LayerPropertiesConstIterator> decl_LayerPropertiesIterator (
     "If the current element does not have a parent, the iterator will\n"
     "become a null iterator.\n"
   ) +
-  method ("next_sibling", &lay::LayerPropertiesConstIterator::next_sibling, gsi::arg ("n"),
+  method ("next_sibling", &lay::LayerPropertiesConstIterator::next_sibling, 
     "@brief Move to the next sibling by a given distance\n"
     "\n"
+    "@args n\n"
     "\n"
     "The iterator is moved to the nth next sibling of the current element. Use negative distances to move backward.\n"
   ) +
-  method ("to_sibling", &lay::LayerPropertiesConstIterator::to_sibling, gsi::arg ("n"),
+  method ("to_sibling", &lay::LayerPropertiesConstIterator::to_sibling, 
     "@brief Move to the sibling with the given index\n"
     "\n"
+    "@args n\n"
     "\n"
     "The iterator is moved to the nth sibling by selecting the nth child in the current node's parent.\n"
   ) +
@@ -1441,7 +1516,7 @@ Class<lay::LayerPropertiesConstIterator> decl_LayerPropertiesIterator (
     "@brief Returns the index of the child within the parent\n"
     "\n"
     "This method returns the index of that the properties node the iterator points to in the list\n"
-    "of children of its parent. If the element does not have a parent, the \n"
+    "of children of it's parent. If the element does not have a parent, the \n"
     "index of the element in the global list is returned.\n"
   ),  
   "@brief Layer properties iterator\n"
@@ -1458,3 +1533,4 @@ Class<lay::LayerPropertiesConstIterator> decl_LayerPropertiesIterator (
 
 
 }
+

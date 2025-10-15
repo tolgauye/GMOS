@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -31,6 +31,7 @@
 #include <QXmlNamePool>
 #include "gsiQt.h"
 #include "gsiQtXmlPatternsCommon.h"
+#include "gsiDeclQtXmlPatternsTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -76,25 +77,6 @@ static void _call_ctor_QXmlName_7550 (const qt_gsi::GenericStaticMethod * /*decl
   const QString &arg3 = args ? gsi::arg_reader<const QString & >() (args, heap) : gsi::arg_maker<const QString & >() (QString(), heap);
   const QString &arg4 = args ? gsi::arg_reader<const QString & >() (args, heap) : gsi::arg_maker<const QString & >() (QString(), heap);
   ret.write<QXmlName *> (new QXmlName (arg1, arg2, arg3, arg4));
-}
-
-
-//  Constructor QXmlName::QXmlName(const QXmlName &other)
-
-
-static void _init_ctor_QXmlName_2084 (qt_gsi::GenericStaticMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("other");
-  decl->add_arg<const QXmlName & > (argspec_0);
-  decl->set_return_new<QXmlName> ();
-}
-
-static void _call_ctor_QXmlName_2084 (const qt_gsi::GenericStaticMethod * /*decl*/, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const QXmlName &arg1 = gsi::arg_reader<const QXmlName & >() (args, heap);
-  ret.write<QXmlName *> (new QXmlName (arg1));
 }
 
 
@@ -257,7 +239,6 @@ static gsi::Methods methods_QXmlName () {
   gsi::Methods methods;
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QXmlName::QXmlName()\nThis method creates an object of class QXmlName.", &_init_ctor_QXmlName_0, &_call_ctor_QXmlName_0);
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QXmlName::QXmlName(QXmlNamePool &namePool, const QString &localName, const QString &namespaceURI, const QString &prefix)\nThis method creates an object of class QXmlName.", &_init_ctor_QXmlName_7550, &_call_ctor_QXmlName_7550);
-  methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QXmlName::QXmlName(const QXmlName &other)\nThis method creates an object of class QXmlName.", &_init_ctor_QXmlName_2084, &_call_ctor_QXmlName_2084);
   methods += new qt_gsi::GenericMethod ("isNull?", "@brief Method bool QXmlName::isNull()\n", true, &_init_f_isNull_c0, &_call_f_isNull_c0);
   methods += new qt_gsi::GenericMethod ("namespaceUri", "@brief Method QString QXmlName::namespaceUri(const QXmlNamePool &query)\n", true, &_init_f_namespaceUri_c2494, &_call_f_namespaceUri_c2494);
   methods += new qt_gsi::GenericMethod ("!=", "@brief Method bool QXmlName::operator!=(const QXmlName &other)\n", true, &_init_f_operator_excl__eq__c2084, &_call_f_operator_excl__eq__c2084);

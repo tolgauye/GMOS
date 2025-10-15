@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -44,8 +44,8 @@ static void run_test (tl::TestBase *_this, const char *dir)
   db::Layout layout;
 
   {
-    std::string fn (tl::testdata_private ());
-    fn += "/pcb/";
+    std::string fn (tl::testsrc_private ());
+    fn += "/testdata/pcb/";
     fn += dir;
     fn += "/import.pcb";
     tl::InputStream stream (fn);
@@ -53,7 +53,7 @@ static void run_test (tl::TestBase *_this, const char *dir)
     reader.read (layout, options);
   }
 
-  db::compare_layouts (_this, layout, tl::testdata_private () + "/pcb/" + dir + "/au.oas.gz", db::WriteOAS, 1);
+  db::compare_layouts (_this, layout, tl::testsrc_private () + "/testdata/pcb/" + dir + "/au.oas.gz", db::WriteOAS, 1);
 }
 
 TEST(0_Metadata)
@@ -62,8 +62,8 @@ TEST(0_Metadata)
 
   std::string fn;
 
-  fn = tl::testdata_private ();
-  fn += "/pcb/metadata/1.gbr";
+  fn = tl::testsrc_private ();
+  fn += "/testdata/pcb/metadata/1.gbr";
   data = db::GerberImporter::scan (fn);
 
   EXPECT_EQ (data.creation_date, "2017-09-07T21:37;00+01:00");
@@ -74,8 +74,8 @@ TEST(0_Metadata)
   EXPECT_EQ (data.to_cu, 0);
   EXPECT_EQ (data.cu_layer_number, 1);
 
-  fn = tl::testdata_private ();
-  fn += "/pcb/metadata/2.gbr";
+  fn = tl::testsrc_private ();
+  fn += "/testdata/pcb/metadata/2.gbr";
   data = db::GerberImporter::scan (fn);
 
   EXPECT_EQ (data.creation_date, "2017-09-07T21:37;00+01:00");
@@ -86,8 +86,8 @@ TEST(0_Metadata)
   EXPECT_EQ (data.to_cu, 0);
   EXPECT_EQ (data.cu_layer_number, 4);
 
-  fn = tl::testdata_private ();
-  fn += "/pcb/metadata/3.gbr";
+  fn = tl::testsrc_private ();
+  fn += "/testdata/pcb/metadata/3.gbr";
   data = db::GerberImporter::scan (fn);
 
   EXPECT_EQ (data.creation_date, "2017-09-07T21:37;00+01:00");
@@ -98,8 +98,8 @@ TEST(0_Metadata)
   EXPECT_EQ (data.to_cu, 0);
   EXPECT_EQ (data.cu_layer_number, 2);
 
-  fn = tl::testdata_private ();
-  fn += "/pcb/metadata/10.gbr";
+  fn = tl::testsrc_private ();
+  fn += "/testdata/pcb/metadata/10.gbr";
   data = db::GerberImporter::scan (fn);
 
   EXPECT_EQ (data.creation_date, "2017-09-07T21:37;00+01:00");
@@ -110,8 +110,8 @@ TEST(0_Metadata)
   EXPECT_EQ (data.to_cu, 0);
   EXPECT_EQ (data.cu_layer_number, 0);
 
-  fn = tl::testdata_private ();
-  fn += "/pcb/metadata/11.gbr";
+  fn = tl::testsrc_private ();
+  fn += "/testdata/pcb/metadata/11.gbr";
   data = db::GerberImporter::scan (fn);
 
   EXPECT_EQ (data.creation_date, "2017-09-07T21:37;00+01:00");
@@ -122,8 +122,8 @@ TEST(0_Metadata)
   EXPECT_EQ (data.to_cu, 0);
   EXPECT_EQ (data.cu_layer_number, 0);
 
-  fn = tl::testdata_private ();
-  fn += "/pcb/metadata/12.gbr";
+  fn = tl::testsrc_private ();
+  fn += "/testdata/pcb/metadata/12.gbr";
   data = db::GerberImporter::scan (fn);
 
   EXPECT_EQ (data.creation_date, "2017-09-07T21:37;00+01:00");
@@ -134,8 +134,8 @@ TEST(0_Metadata)
   EXPECT_EQ (data.to_cu, 4);
   EXPECT_EQ (data.cu_layer_number, 0);
 
-  fn = tl::testdata_private ();
-  fn += "/pcb/metadata/13.gbr";
+  fn = tl::testsrc_private ();
+  fn += "/testdata/pcb/metadata/13.gbr";
   data = db::GerberImporter::scan (fn);
 
   EXPECT_EQ (data.creation_date, "2017-09-07T21:37;00+01:00");
@@ -146,8 +146,8 @@ TEST(0_Metadata)
   EXPECT_EQ (data.to_cu, 4);
   EXPECT_EQ (data.cu_layer_number, 0);
 
-  fn = tl::testdata_private ();
-  fn += "/pcb/metadata/20.drl";
+  fn = tl::testsrc_private ();
+  fn += "/testdata/pcb/metadata/20.drl";
   data = db::GerberImporter::scan (fn);
 
   EXPECT_EQ (data.creation_date, "");
@@ -295,11 +295,6 @@ TEST(26)
 {
   test_is_long_runner ();
   run_test (_this, "pos-neg");
-}
-
-TEST(27)
-{
-  run_test (_this, "polygon-mode");
 }
 
 TEST(X2_1)

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -82,21 +82,18 @@ MAGWriter::write (db::Layout &layout, tl::OutputStream &stream, const db::SaveLa
 
   double lambda = m_options.lambda;
   if (lambda <= 0.0) {
-    const tl::Variant &lv = layout.meta_info ("lambda").value;
-    if (lv.is_nil ()) {
+    const std::string &lv = layout.meta_info_value ("lambda");
+    if (lv.empty ()) {
       throw tl::Exception (tl::to_string (tr ("No lambda value configured for MAG writer and no 'lambda' metadata present in layout.")));
-    } else if (lv.is_a_string ()) {
-      tl::from_string (lv.to_string (), lambda);
-    } else if (lv.can_convert_to_double ()) {
-      lambda = lv.to_double ();
     }
+    tl::from_string (lv, lambda);
   }
 
   m_sf = layout.dbu () / lambda;
 
   //  As a favor, write a dummy top level file before closing the stream. If the file name corresponds to a real cell,
   //  this file is overwritten by the true cell.
-  write_dummy_top (cell_set, layout, stream);
+  write_dummmy_top (cell_set, layout, stream);
   stream.close ();
 
   for (std::set<db::cell_index_type>::const_iterator c = cell_set.begin (); c != cell_set.end (); ++c) {
@@ -118,14 +115,14 @@ MAGWriter::filename_for_cell (db::cell_index_type ci, db::Layout &layout)
 }
 
 void
-MAGWriter::write_dummy_top (const std::set<db::cell_index_type> &cell_set, const db::Layout &layout, tl::OutputStream &os)
+MAGWriter::write_dummmy_top (const std::set<db::cell_index_type> &cell_set, const db::Layout &layout, tl::OutputStream &os)
 {
   os.set_as_text (true);
   os << "magic\n";
 
   std::string tech = m_options.tech;
   if (tech.empty ()) {
-    tech = layout.technology_name ();
+    tech = layout.meta_info_value ("technology");
   }
   if (! tech.empty ()) {
     os << "tech " << make_string (tl::to_lower_case (tech)) << "\n";
@@ -180,7 +177,7 @@ MAGWriter::do_write_cell (db::cell_index_type ci, const std::vector <std::pair <
 
   std::string tech = m_options.tech;
   if (tech.empty ()) {
-    tech = layout.technology_name ();
+    tech = layout.meta_info_value ("technology");
   }
   if (! tech.empty ()) {
     os << "tech " << make_string (tl::to_lower_case (tech)) << "\n";
@@ -340,7 +337,7 @@ MAGWriter::write_single_instance (db::cell_index_type ci, db::ICplxTrans trans, 
     throw tl::Exception (tl::to_string (tr ("Cannot write magnified instance to MAG files: ")) + trans.to_string () + tl::to_string (tr (" of cell ")) + layout.cell_name (ci));
   }
 
-  int id = int (m_cell_id [ci] += 1);
+  int id = (m_cell_id [ci] += 1);
   std::string cn = layout.cell_name (ci);
   os << "use " << make_string (cn) << " " << make_string (cn + "_" + tl::to_string (id)) << "\n";
 
@@ -410,7 +407,7 @@ MAGWriter::scaled (const db::Vector &v) const
 {
   db::Vector res (db::DVector (v) * m_sf);
   if (! db::DVector (res).equal (db::DVector (v) * m_sf)) {
-    tl::warn << tl::sprintf (tl::to_string (tr ("Vector rounding occurred at %s in cell %s - not a multiple of lambda (%.12g)")), v.to_string (), m_cellname, m_options.lambda);
+    tl::warn << tl::sprintf (tl::to_string (tr ("Vector rounding occured at %s in cell %s - not a multiple of lambda (%.12g)")), v.to_string (), m_cellname, m_options.lambda);
   }
   return res;
 }
@@ -420,7 +417,7 @@ MAGWriter::scaled (const db::Point &p) const
 {
   db::Point res (db::DPoint (p) * m_sf);
   if (! db::DPoint (res).equal (db::DPoint (p) * m_sf)) {
-    tl::warn << tl::sprintf (tl::to_string (tr ("Coordinate rounding occurred at %s in cell %s - not a multiple of lambda (%.12g)")), p.to_string (), m_cellname, m_options.lambda);
+    tl::warn << tl::sprintf (tl::to_string (tr ("Coordinate rounding occured at %s in cell %s - not a multiple of lambda (%.12g)")), p.to_string (), m_cellname, m_options.lambda);
   }
   return res;
 }

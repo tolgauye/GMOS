@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -28,7 +28,6 @@
 #include "layPlugin.h"
 #include "layMainWindow.h"
 #include "layFileDialog.h"
-#include "dbTechnology.h"
 #include "tlLog.h"
 #include "tlTimer.h"
 #include "tlXMLParser.h"
@@ -70,8 +69,8 @@ public:
   virtual void get_menu_entries (std::vector<lay::MenuEntry> &menu_entries) const
   {
     lay::PluginDeclaration::get_menu_entries (menu_entries);
-    menu_entries.push_back (lay::menu_item ("db::import_lef", "import_lef:edit", "file_menu.import_menu.end", tl::to_string (QObject::tr ("LEF"))));
-    menu_entries.push_back (lay::menu_item ("db::import_def", "import_def:edit", "file_menu.import_menu.end", tl::to_string (QObject::tr ("DEF/LEF"))));
+    menu_entries.push_back (lay::MenuEntry ("db::import_lef", "import_lef:edit", "file_menu.import_menu.end", tl::to_string (QObject::tr ("LEF"))));
+    menu_entries.push_back (lay::MenuEntry ("db::import_def", "import_def:edit", "file_menu.import_menu.end", tl::to_string (QObject::tr ("DEF/LEF"))));
   }
 
   virtual bool configure (const std::string &name, const std::string &value)
@@ -116,7 +115,7 @@ public:
         lay::MainWindow::instance ()->cancel ();
 
         //  store configuration
-        lay::Dispatcher *config_root = lay::Dispatcher::instance ();
+        lay::PluginRoot *config_root = lay::PluginRoot::instance ();
         if (import_lef) {
           config_root->config_set (cfg_lef_import_spec, data.to_string ());
         } else {
@@ -124,7 +123,7 @@ public:
         }
         config_root->config_end ();
 
-        std::unique_ptr<db::Layout> layout (new db::Layout ());
+        std::auto_ptr<db::Layout> layout (new db::Layout ());
 
         tl::InputStream stream (data.file);
 
@@ -132,22 +131,69 @@ public:
         if (! db::Technologies::instance ()->has_technology (tech_name)) {
           tech_name.clear (); // use default technology
         }
-
-        db::LoadLayoutOptions options;
         const db::Technology *tech = db::Technologies::instance ()->technology_by_name (tech_name);
+        db::LEFDEFReaderOptions options;
         if (tech) {
-          options = tech->load_layout_options ();
+          const db::LEFDEFReaderOptions *tech_options = dynamic_cast<const db::LEFDEFReaderOptions *>(tech->load_layout_options ().get_options ("LEFDEF"));
+          if (tech_options) {
+            options = *tech_options;
+          }
         }
 
-        db::LEFDEFReader reader (stream);
+        db::LEFDEFLayerDelegate layers (&options);
+        layers.prepare (*layout);
+        layout->dbu (options.dbu ());
 
-        //  Add the LEF files specified explicitly
-        db::LEFDEFReaderOptions *lefdef_options = dynamic_cast<db::LEFDEFReaderOptions *> (options.get_options (reader.format ()));
-        auto lef_files = lefdef_options->lef_files ();
-        lef_files.insert (lef_files.end (), data.lef_files.begin (), data.lef_files.end ());
-        lefdef_options->set_lef_files (lef_files);
+        if (import_lef) {
 
-        reader.read_lefdef (*layout, options, import_lef);
+          tl::SelfTimer timer (tl::verbosity () >= 11, tl::to_string (QObject::tr ("Reading LEF file")));
+
+          db::LEFImporter importer;
+
+          for (std::vector<std::string>::const_iterator l = options.begin_lef_files (); l != options.end_lef_files (); ++l) {
+            tl::InputStream lef_stream (*l);
+            tl::log << tl::to_string (QObject::tr ("Reading")) << " " << *l;
+            importer.read (lef_stream, *layout, layers);
+          }
+
+          tl::log << tl::to_string (QObject::tr ("Reading")) << " " << data.file;
+          importer.read (stream, *layout, layers);
+
+        } else {
+
+          tl::SelfTimer timer (tl::verbosity () >= 11, tl::to_string (QObject::tr ("Reading DEF file")));
+
+          db::DEFImporter importer;
+
+          QFileInfo def_fi (tl::to_qstring (data.file));
+
+          std::vector<std::string> lef_files;
+          lef_files.insert (lef_files.end (), options.begin_lef_files (), options.end_lef_files ());
+          lef_files.insert (lef_files.end (), data.lef_files.begin (), data.lef_files.end ());
+
+          for (std::vector<std::string>::const_iterator l = lef_files.begin (); l != lef_files.end (); ++l) {
+
+            QFileInfo fi (tl::to_qstring (*l));
+            if (fi.isAbsolute ()) {
+              tl::InputStream lef_stream (*l);
+              tl::log << tl::to_string (QObject::tr ("Reading")) << " " << *l;
+              importer.read_lef (lef_stream, *layout, layers);
+            } else {
+              std::string ex_l = tl::to_string (def_fi.absoluteDir ().absoluteFilePath (tl::to_qstring (*l)));
+              tl::InputStream lef_stream (ex_l);
+              tl::log << tl::to_string (QObject::tr ("Reading")) << " " << *l;
+              importer.read_lef (lef_stream, *layout, layers);
+            }
+
+          }
+
+          tl::log << tl::to_string (QObject::tr ("Reading")) << " " << data.file;
+
+          importer.read (stream, *layout, layers);
+
+        }
+
+        layers.finish (*layout);
 
         lay::LayoutView *view = lay::LayoutView::current ();
         if (! view || data.mode == 1) {

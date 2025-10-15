@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -23,8 +23,6 @@
 #ifndef HDR_laySaltGrainDetailsTextWidget
 #define HDR_laySaltGrainDetailsTextWidget
 
-#include "laySaltGrain.h"
-
 #include <QTextBrowser>
 #include <memory>
 
@@ -34,7 +32,7 @@ namespace lay
 class SaltGrain;
 
 /**
- *  @brief A specialization of QTextBrowser that displays the details of the salt grain
+ *  @brief A specialisation of QTextBrowser that displays the details of the salt grain
  */
 class SaltGrainDetailsTextWidget
   : public QTextBrowser
@@ -55,17 +53,13 @@ public:
 protected:
   virtual QVariant loadResource (int type, const QUrl &url);
 
-public slots:
-  void show_detailed_view (bool f);
-
 private slots:
   void open_link (const QUrl &url);
 
 private:
-  std::unique_ptr<lay::SaltGrain> mp_grain;
+  std::auto_ptr<lay::SaltGrain> mp_grain;
 
   QString details_text ();
-  bool m_detailed_view;
 };
 
 }

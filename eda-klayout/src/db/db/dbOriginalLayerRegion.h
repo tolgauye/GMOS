@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -58,16 +58,12 @@ public:
   virtual bool empty () const;
 
   virtual bool is_merged () const;
-  virtual size_t count () const;
-  virtual size_t hier_count () const;
 
   virtual const db::Polygon *nth (size_t n) const;
-  virtual db::properties_id_type nth_prop_id (size_t) const;
   virtual bool has_valid_polygons () const;
   virtual bool has_valid_merged_polygons () const;
 
   virtual const db::RecursiveShapeIterator *iter () const;
-  virtual void apply_property_translator (const db::PropertiesTranslator &pt);
 
   virtual bool equals (const Region &other) const;
   virtual bool less (const Region &other) const;
@@ -76,7 +72,6 @@ public:
 
 protected:
   virtual void merged_semantics_changed ();
-  virtual void join_properties_on_merge_changed ();
   virtual void min_coherence_changed ();
 
 private:

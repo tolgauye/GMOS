@@ -11,16 +11,13 @@ SOURCES = \
   pyaConvert.cc \
   pyaHelpers.cc \
   pyaInspector.cc \
-  pyaInternal.cc \
-  pyaCallables.cc \
   pyaMarshal.cc \
   pyaObject.cc \
   pyaRefs.cc \
   pyaUtils.cc \
   pyaModule.cc \
   pyaSignalHandler.cc \
-  pyaStatusChangedListener.cc \
-  gsiDeclPya.cc
+  pyaStatusChangedListener.cc
 
 HEADERS += \
   pya.h \
@@ -28,8 +25,6 @@ HEADERS += \
   pyaConvert.h \
   pyaHelpers.h \
   pyaInspector.h \
-  pyaInternal.h \
-  pyaCallables.h \
   pyaMarshal.h \
   pyaObject.h \
   pyaRefs.h \
@@ -38,7 +33,7 @@ HEADERS += \
   pyaSignalHandler.h \
   pyaStatusChangedListener.h
 
-INCLUDEPATH += "$$PYTHONINCLUDE" $$VERSION_INC $$TL_INC $$GSI_INC
+INCLUDEPATH += "$$PYTHONINCLUDE" $$TL_INC $$GSI_INC
 DEPENDPATH += "$$PYTHONINCLUDE" $$TL_INC $$GSI_INC
 LIBS += "$$PYTHONLIBFILE" -L$$DESTDIR -lklayout_tl -lklayout_gsi
 

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -35,17 +35,33 @@
 
 class QGraphicsSvgItem;
 
+namespace tl { template <> struct type_traits<QGraphicsSvgItem> : public type_traits<void> {
+  typedef tl::false_tag has_copy_constructor;
+}; }
+
 namespace gsi { GSI_QTSVG_PUBLIC gsi::Class<QGraphicsSvgItem> &qtdecl_QGraphicsSvgItem (); }
 
 class QSvgGenerator;
+
+namespace tl { template <> struct type_traits<QSvgGenerator> : public type_traits<void> {
+  typedef tl::false_tag has_copy_constructor;
+}; }
 
 namespace gsi { GSI_QTSVG_PUBLIC gsi::Class<QSvgGenerator> &qtdecl_QSvgGenerator (); }
 
 class QSvgRenderer;
 
+namespace tl { template <> struct type_traits<QSvgRenderer> : public type_traits<void> {
+  typedef tl::false_tag has_copy_constructor;
+}; }
+
 namespace gsi { GSI_QTSVG_PUBLIC gsi::Class<QSvgRenderer> &qtdecl_QSvgRenderer (); }
 
 class QSvgWidget;
+
+namespace tl { template <> struct type_traits<QSvgWidget> : public type_traits<void> {
+  typedef tl::false_tag has_copy_constructor;
+}; }
 
 namespace gsi { GSI_QTSVG_PUBLIC gsi::Class<QSvgWidget> &qtdecl_QSvgWidget (); }
 

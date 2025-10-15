@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -45,14 +45,14 @@ long python2c_func<long>::operator() (PyObject *rval)
 #if PY_MAJOR_VERSION < 3
   if (PyInt_Check (rval)) {
     return PyInt_AsLong (rval);
-  } else
+  } else 
 #endif
   if (PyLong_Check (rval)) {
     return PyLong_AsLong (rval);
   } else if (PyFloat_Check (rval)) {
     return (long) (PyFloat_AsDouble (rval));
   } else {
-    throw tl::TypeError (tl::to_string (tr ("Value cannot be converted to an integer")));
+    throw tl::Exception (tl::to_string (tr ("Argument cannot be converted to an integer")));
   }
 }
 
@@ -68,14 +68,14 @@ char python2c_func<char>::operator() (PyObject *rval)
 #if PY_MAJOR_VERSION < 3
   if (PyInt_Check (rval)) {
     return char (PyInt_AsLong (rval));
-  } else
+  } else 
 #endif
   if (PyLong_Check (rval)) {
     return char (PyLong_AsLong (rval));
   } else if (PyFloat_Check (rval)) {
     return char (PyFloat_AsDouble (rval));
   } else {
-    throw tl::TypeError (tl::to_string (tr ("Value cannot be converted to a character")));
+    throw tl::Exception (tl::to_string (tr ("Argument cannot be converted to a character")));
   }
 }
 
@@ -85,14 +85,14 @@ unsigned long python2c_func<unsigned long>::operator() (PyObject *rval)
 #if PY_MAJOR_VERSION < 3
   if (PyInt_Check (rval)) {
     return PyInt_AsUnsignedLongMask (rval);
-  } else
+  } else 
 #endif
   if (PyLong_Check (rval)) {
     return PyLong_AsUnsignedLongMask (rval);
   } else if (PyFloat_Check (rval)) {
     return (unsigned long) (PyFloat_AsDouble (rval));
   } else {
-    throw tl::TypeError (tl::to_string (tr ("Value cannot be converted to an integer")));
+    throw tl::Exception (tl::to_string (tr ("Argument cannot be converted to an integer")));
   }
 }
 
@@ -102,14 +102,14 @@ long long python2c_func<long long>::operator() (PyObject *rval)
 #if PY_MAJOR_VERSION < 3
   if (PyInt_Check (rval)) {
     return PyInt_AsLong (rval);
-  } else
+  } else 
 #endif
   if (PyLong_Check (rval)) {
     return PyLong_AsLongLong (rval);
   } else if (PyFloat_Check (rval)) {
     return (long long) (PyFloat_AsDouble (rval));
   } else {
-    throw tl::TypeError (tl::to_string (tr ("Value cannot be converted to an integer")));
+    throw tl::Exception (tl::to_string (tr ("Argument cannot be converted to an integer")));
   }
 }
 
@@ -119,14 +119,14 @@ unsigned long long python2c_func<unsigned long long>::operator() (PyObject *rval
 #if PY_MAJOR_VERSION < 3
   if (PyInt_Check (rval)) {
     return PyInt_AsUnsignedLongMask (rval);
-  } else
+  } else 
 #endif
   if (PyLong_Check (rval)) {
     return PyLong_AsUnsignedLongLongMask (rval);
   } else if (PyFloat_Check (rval)) {
     return (unsigned long long) (PyFloat_AsDouble (rval));
   } else {
-    throw tl::TypeError (tl::to_string (tr ("Value cannot be converted to an integer")));
+    throw tl::Exception (tl::to_string (tr ("Argument cannot be converted to an integer")));
   }
 }
 
@@ -134,18 +134,18 @@ unsigned long long python2c_func<unsigned long long>::operator() (PyObject *rval
 template <>
 __int128 python2c_func<__int128>::operator() (PyObject *rval)
 {
-  // TODO: this is pretty simplistic
+  // TOOD: this is pretty simplistic
 #if PY_MAJOR_VERSION < 3
   if (PyInt_Check (rval)) {
     return PyInt_AsLong (rval);
-  } else
+  } else 
 #endif
   if (PyLong_Check (rval)) {
     return PyLong_AsLongLong (rval);
   } else if (PyFloat_Check (rval)) {
     return PyFloat_AsDouble (rval);
   } else {
-    throw tl::TypeError (tl::to_string (tr ("Value cannot be converted to an integer")));
+    throw tl::Exception (tl::to_string (tr ("Argument cannot be converted to an integer")));
   }
 }
 #endif
@@ -156,14 +156,14 @@ double python2c_func<double>::operator() (PyObject *rval)
 #if PY_MAJOR_VERSION < 3
   if (PyInt_Check (rval)) {
     return PyInt_AsLong (rval);
-  } else
+  } else 
 #endif
   if (PyLong_Check (rval)) {
     return PyLong_AsLongLong (rval);
   } else if (PyFloat_Check (rval)) {
     return PyFloat_AsDouble (rval);
   } else {
-    throw tl::TypeError (tl::to_string (tr ("Value cannot be converted to a floating-point value")));
+    throw tl::Exception (tl::to_string (tr ("Argument cannot be converted to a floating-point value")));
   }
 }
 
@@ -173,11 +173,11 @@ std::string python2c_func<std::string>::operator() (PyObject *rval)
 #if PY_MAJOR_VERSION < 3
   if (PyString_Check (rval)) {
     return std::string (PyString_AsString (rval), PyString_Size (rval));
-  } else
+  } else 
 #else
   if (PyBytes_Check (rval)) {
     return std::string (PyBytes_AsString (rval), PyBytes_Size (rval));
-  } else
+  } else 
 #endif
   if (PyUnicode_Check (rval)) {
     PythonRef ba (PyUnicode_AsUTF8String (rval));
@@ -188,43 +188,7 @@ std::string python2c_func<std::string>::operator() (PyObject *rval)
   } else if (PyByteArray_Check (rval)) {
     return std::string (PyByteArray_AsString (rval), PyByteArray_Size (rval));
   } else {
-    throw tl::TypeError (tl::to_string (tr ("Value cannot be converted to a string")));
-  }
-}
-
-template <>
-std::vector<char> python2c_func<std::vector<char> >::operator() (PyObject *rval)
-{
-#if PY_MAJOR_VERSION < 3
-  if (PyString_Check (rval)) {
-    const char *cp = PyString_AsString (rval);
-    return std::vector<char> (cp, cp + PyString_Size (rval));
-  } else
-#else
-  if (PyBytes_Check (rval)) {
-    char *cp = 0;
-    Py_ssize_t sz = 0;
-    PyBytes_AsStringAndSize (rval, &cp, &sz);
-    tl_assert (cp != 0);
-    return std::vector<char> (cp, cp + sz);
-  } else
-#endif
-  if (PyUnicode_Check (rval)) {
-    PythonRef ba (PyUnicode_AsUTF8String (rval));
-    if (! ba) {
-      check_error ();
-    }
-    char *cp = 0;
-    Py_ssize_t sz = 0;
-    PyBytes_AsStringAndSize (ba.get (), &cp, &sz);
-    tl_assert (cp != 0);
-    return std::vector<char> (cp, cp + sz);
-  } else if (PyByteArray_Check (rval)) {
-    char *cp = PyByteArray_AsString (rval);
-    Py_ssize_t sz = PyByteArray_Size (rval);
-    return std::vector<char> (cp, cp + sz);
-  } else {
-    throw tl::TypeError (tl::to_string (tr ("Value cannot be converted to a byte array")));
+    throw tl::Exception (tl::to_string (tr ("Argument cannot be converted to a string")));
   }
 }
 
@@ -235,11 +199,11 @@ QByteArray python2c_func<QByteArray>::operator() (PyObject *rval)
 #if PY_MAJOR_VERSION < 3
   if (PyString_Check (rval)) {
     return QByteArray (PyString_AsString (rval), PyString_Size (rval));
-  } else
+  } else 
 #else
   if (PyBytes_Check (rval)) {
     return QByteArray (PyBytes_AsString (rval), PyBytes_Size (rval));
-  } else
+  } else 
 #endif
   if (PyUnicode_Check (rval)) {
     PythonRef ba (PyUnicode_AsUTF8String (rval));
@@ -250,7 +214,7 @@ QByteArray python2c_func<QByteArray>::operator() (PyObject *rval)
   } else if (PyByteArray_Check (rval)) {
     return QByteArray (PyByteArray_AsString (rval), PyByteArray_Size (rval));
   } else {
-    throw tl::TypeError (tl::to_string (tr ("Value cannot be converted to a byte array")));
+    throw tl::Exception (tl::to_string (tr ("Argument cannot be converted to a byte array")));
   }
 }
 
@@ -282,12 +246,10 @@ tl::Variant python2c_func<tl::Variant>::operator() (PyObject *rval)
     return tl::Variant (python2c<std::string> (rval));
 #else
   } else if (PyBytes_Check (rval)) {
-    return tl::Variant (python2c<std::vector<char> > (rval));
-#endif
-  } else if (PyUnicode_Check (rval)) {
     return tl::Variant (python2c<std::string> (rval));
-  } else if (PyByteArray_Check (rval)) {
-    return tl::Variant (python2c<std::vector<char> > (rval));
+#endif
+  } else if (PyUnicode_Check (rval) || PyByteArray_Check (rval)) {
+    return tl::Variant (python2c<std::string> (rval));
   } else if (PyList_Check (rval)) {
 
     size_t len = PyList_Size (rval);
@@ -325,13 +287,13 @@ tl::Variant python2c_func<tl::Variant>::operator() (PyObject *rval)
     return r;
 
   } else {
-
+    
     const gsi::ClassBase *cls = PythonModule::cls_for_type (Py_TYPE (rval));
     if (cls) {
 
       PYAObjectBase *p = PYAObjectBase::from_pyobject (rval);
 
-      //  employ the tl::Variant binding capabilities of the Expression binding to derive the
+      //  employ the tl::Variant binding capabilities of the Expression binding to derive the 
       //  variant value.
 
       void *obj = p->obj ();
@@ -393,7 +355,7 @@ object_to_python (void *obj, PYAObjectBase *self, const gsi::ArgType &atype)
  *  @brief Correct constness if a reference is const and a non-const reference is required
  *  HINT: this is a workaround for the fact that unlike C++, Python does not have const or non-const
  *  references. Since a reference is identical with the object it points to, there are only const or non-const
- *  objects. We deliver const objects first, but if a non-const version is requested, the
+ *  objects. We deliver const objects first, but if a non-const version is requestes, the
  *  object turns into a non-const one. This may be confusing but provides a certain level
  *  of "constness", at least until there is another non-const reference for that object.
  */
@@ -440,12 +402,12 @@ object_to_python (void *obj, PYAObjectBase *self, const gsi::ClassBase *cls, boo
       obj = clsact->create_from_adapted (obj);
     }
 
-    //  we will own the new object
+    //  we wil own the new object
     pass_obj = true;
 
   }
 
-  if (! pass_obj && prefer_copy && ! clsact->adapted_type_info () && ! clsact->is_managed () && clsact->can_copy () && clsact->can_default_create ()) {
+  if (! pass_obj && prefer_copy && ! clsact->adapted_type_info () && ! clsact->is_managed () && clsact->can_copy ()) {
 
     //  We copy objects passed by const reference if they are not managed
     //  (derived from gsi::ObjectBase, in that case, client_data is not 0).
@@ -455,9 +417,7 @@ object_to_python (void *obj, PYAObjectBase *self, const gsi::ClassBase *cls, boo
     //  of the exposed property. Hence copying is safer.
 
     PyTypeObject *type = PythonModule::type_for_cls (clsact);
-    if (!type) {
-      throw tl::Exception (tl::sprintf (tl::to_string (tr ("Requested type %s.%s is not bound to a Python class (did you load the '%s' module?)")), clsact->module (), clsact->name (), clsact->module ()));
-    }
+    tl_assert (type != NULL);
 
     //  create a instance and copy the value
     PyObject *new_pyobject = type->tp_alloc (type, 0);
@@ -479,16 +439,13 @@ object_to_python (void *obj, PYAObjectBase *self, const gsi::ClassBase *cls, boo
   } else {
 
     PyTypeObject *type = PythonModule::type_for_cls (clsact);
-    if (!type) {
-      throw tl::Exception (tl::sprintf (tl::to_string (tr ("Requested type %s.%s is not bound to a Python class (did you load the '%s' module?)")), clsact->module (), clsact->name (), clsact->module ()));
-    }
+    tl_assert (type != NULL);
 
     //  create a instance and copy the value
     PyObject *new_pyobject = type->tp_alloc (type, 0);
     PYAObjectBase *new_object = PYAObjectBase::from_pyobject_unsafe (new_pyobject);
     new (new_object) PYAObjectBase (clsact, new_pyobject);
     new_object->set (obj, pass_obj, is_const, can_destroy);
-
     return new_pyobject;
 
   }
@@ -502,9 +459,7 @@ PyObject *c2python_func<const tl::Variant &>::operator() (const tl::Variant &c)
   } else if (c.is_bool ()) {
     return c2python (c.to_bool ());
   } else if (c.is_a_string ()) {
-    return c2python (c.to_stdstring ());
-  } else if (c.is_a_bytearray ()) {
-    return c2python (c.to_bytearray ());
+    return c2python (c.to_string ());
   } else if (c.is_long ()) {
     return c2python (c.to_long ());
   } else if (c.is_ulong ()) {
@@ -520,7 +475,7 @@ PyObject *c2python_func<const tl::Variant &>::operator() (const tl::Variant &c)
       PyDict_SetItem (ret, c2python (i->first), c2python (i->second));
     }
     return ret;
-
+    
   } else if (c.is_list ()) {
 
     PyObject *ret = PyList_New (c.get_list ().size ());
@@ -534,13 +489,8 @@ PyObject *c2python_func<const tl::Variant &>::operator() (const tl::Variant &c)
 
     const gsi::ClassBase *cls = c.gsi_cls ();
     if (cls) {
-      if (! c.user_is_ref () && cls->is_managed ()) {
-        void *obj = c.user_unshare ();
-        return object_to_python (obj, 0, c.user_cls ()->gsi_cls (), true, c.user_is_const (), false, false);
-      } else {
-        void *obj = const_cast<void *> (c.to_user ());
-        return object_to_python (obj, 0, c.user_cls ()->gsi_cls (), false, false, true, false);
-      }
+      void *obj = const_cast<void *> (c.to_user ());
+      return object_to_python (obj, 0, c.user_cls ()->gsi_cls (), false, false, true, false);
     } else {
       //  not a known type -> return nil
       Py_RETURN_NONE;
@@ -566,16 +516,6 @@ PyObject *c2python_func<const std::string &>::operator() (const std::string &c)
 }
 
 template <>
-PyObject *c2python_func<const std::vector<char> &>::operator() (const std::vector<char> &c)
-{
-#if PY_MAJOR_VERSION < 3
-  return PyByteArray_FromStringAndSize (&c.front (), Py_ssize_t (c.size ()));
-#else
-  return PyBytes_FromStringAndSize (&c.front (), Py_ssize_t (c.size ()));
-#endif
-}
-
-template <>
 PyObject *c2python_func<const char *>::operator() (const char *p)
 {
   const char *s = p;
@@ -586,7 +526,7 @@ PyObject *c2python_func<const char *>::operator() (const char *p)
 #if PY_MAJOR_VERSION < 3
   return PyString_FromString (s);
 #else
-  PyObject *ret = PyUnicode_DecodeUTF8 (s, strlen (s), NULL);
+  PyObject *ret = PyUnicode_DecodeUTF8 (p, strlen (p), NULL);
   if (ret == NULL) {
     check_error ();
   }
@@ -602,9 +542,9 @@ PyObject *c2python_func<const QByteArray &>::operator() (const QByteArray &qba)
     Py_RETURN_NONE;
   } else {
 #if PY_MAJOR_VERSION < 3
-    return PyByteArray_FromStringAndSize (qba.constData (), Py_ssize_t (qba.size ()));
+    return PyString_FromStringAndSize (qba.constData (), Py_ssize_t (qba.size ()));
 #else
-    return PyBytes_FromStringAndSize (qba.constData (), Py_ssize_t (qba.size ()));
+    return PyByteArray_FromStringAndSize (qba.constData (), Py_ssize_t (qba.size ()));
 #endif
   }
 }
@@ -617,7 +557,7 @@ PyObject *c2python_func<const QString &>::operator() (const QString &qs)
   if (qs.isNull ()) {
     Py_RETURN_NONE;
   } else {
-    //  TODO: can be done more efficiently
+    //  TODO: can be done more efficently
     std::string c (tl::to_string (qs));
     return c2python (c);
   }
@@ -625,3 +565,4 @@ PyObject *c2python_func<const QString &>::operator() (const QString &qs)
 #endif
 
 }
+

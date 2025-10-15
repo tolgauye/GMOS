@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@
 #include <QSslEllipticCurve>
 #include "gsiQt.h"
 #include "gsiQtNetworkCommon.h"
+#include "gsiDeclQtNetworkTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -150,12 +151,12 @@ static void _call_f_fromShortName_2025 (const qt_gsi::GenericStaticMethod * /*de
 
 //  bool ::operator==(QSslEllipticCurve lhs, QSslEllipticCurve rhs)
 static bool op_QSslEllipticCurve_operator_eq__eq__4216(QSslEllipticCurve *_self, QSslEllipticCurve rhs) {
-  return operator==(*_self, rhs);
+  return ::operator==(*_self, rhs);
 }
 
 //  bool ::operator!=(QSslEllipticCurve lhs, QSslEllipticCurve rhs)
 static bool op_QSslEllipticCurve_operator_excl__eq__4216(QSslEllipticCurve *_self, QSslEllipticCurve rhs) {
-  return operator!=(*_self, rhs);
+  return ::operator!=(*_self, rhs);
 }
 
 

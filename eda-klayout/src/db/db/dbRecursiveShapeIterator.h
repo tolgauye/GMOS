@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -29,7 +29,6 @@
 #include "dbLayout.h"
 #include "dbInstElement.h"
 #include "tlAssert.h"
-#include "tlObject.h"
 
 #include <map>
 #include <set>
@@ -51,7 +50,6 @@ class RecursiveShapeReceiver;
  *  shape classes and shape properties. 
  */
 class DB_PUBLIC RecursiveShapeIterator
-  : public gsi::ObjectBase
 {
 public:
   typedef db::Layout layout_type;
@@ -123,13 +121,12 @@ public:
    *  @param layer The layer from which to deliver the shapes
    *  @param region The region from which to select the shapes
    *  @param overlapping Specify overlapping mode
-   *  @param for_merged_input Optimize for merged input - drop shapes that are completely covered by others
    *
    *  By default the iterator operates in touching mode - i.e. shapes that touch the given region
    *  are returned. By specifying the "overlapping" flag with a true value, the iterator delivers shapes that
    *  overlap the given region by at least one database unit.
    */
-  RecursiveShapeIterator (const layout_type &layout, const cell_type &cell, unsigned int layer, const box_type &region, bool overlapping = false, bool for_merged_input = false);
+  RecursiveShapeIterator (const layout_type &layout, const cell_type &cell, unsigned int layer, const box_type &region, bool overlapping = false);
 
   /**
    *  @brief Standard constructor
@@ -139,26 +136,24 @@ public:
    *  @param layer The layer from which to deliver the shapes
    *  @param region The complex region from which to select the shapes
    *  @param overlapping Specify overlapping mode
-   *  @param for_merged_input Optimize for merged input - drop shapes that are completely covered by others
    *
    *  By default the iterator operates in touching mode - i.e. shapes that touch the given region
    *  are returned. By specifying the "overlapping" flag with a true value, the iterator delivers shapes that
    *  overlap the given region by at least one database unit. It allows specification of a complex
    *  search region.
    */
-  RecursiveShapeIterator (const layout_type &layout, const cell_type &cell, unsigned int layer, const region_type &region, bool overlapping = false, bool for_merged_input = false);
+  RecursiveShapeIterator (const layout_type &layout, const cell_type &cell, unsigned int layer, const region_type &region, bool overlapping = false);
 
   /**
    *  @brief Standard constructor for "world" iteration
    *
-   *  This iterator delivers all shapes recursively. The same effect can be achieved by using a "world" region.
+   *  This iterator delivers all shapes recursively. The same effect can be acchieved by using a "world" region.
    *
    *  @param layout The layout from which to get the cell hierarchy
    *  @param cell The starting cell
    *  @param layer The layer from which to deliver the shapes
-   *  @param for_merged_input Optimize for merged input - drop shapes that are completely covered by others
    */
-  RecursiveShapeIterator (const layout_type &layout, const cell_type &cell, unsigned int layer, bool for_merged_input = false);
+  RecursiveShapeIterator (const layout_type &layout, const cell_type &cell, unsigned int layer);
 
   /**
    *  @brief Standard constructor with a layer selection
@@ -168,13 +163,12 @@ public:
    *  @param layers The layers from which to deliver the shapes
    *  @param region The region from which to select the shapes
    *  @param overlapping Specify overlapping mode
-   *  @param for_merged_input Optimize for merged input - drop shapes that are completely covered by others
    *
    *  By default the iterator operates in touching mode - i.e. shapes that touch the given region
    *  are returned. By specifying the "overlapping" flag with a true value, the iterator delivers shapes that
    *  overlap the given region by at least one database unit.
    */
-  RecursiveShapeIterator (const layout_type &layout, const cell_type &cell, const std::vector<unsigned int> &layers, const box_type &region, bool overlapping = false, bool for_merged_input = false);
+  RecursiveShapeIterator (const layout_type &layout, const cell_type &cell, const std::vector<unsigned int> &layers, const box_type &region, bool overlapping = false);
 
   /**
    *  @brief Standard constructor with a layer selection
@@ -184,14 +178,13 @@ public:
    *  @param layers The layers from which to deliver the shapes
    *  @param region The complex region from which to select the shapes
    *  @param overlapping Specify overlapping mode
-   *  @param for_merged_input Optimize for merged input - drop shapes that are completely covered by others
    *
    *  By default the iterator operates in touching mode - i.e. shapes that touch the given region
    *  are returned. By specifying the "overlapping" flag with a true value, the iterator delivers shapes that
    *  overlap the given region by at least one database unit. It allows specification of a complex
    *  search region.
    */
-  RecursiveShapeIterator (const layout_type &layout, const cell_type &cell, const std::vector<unsigned int> &layers, const region_type &region, bool overlapping = false, bool for_merged_input = false);
+  RecursiveShapeIterator (const layout_type &layout, const cell_type &cell, const std::vector<unsigned int> &layers, const region_type &region, bool overlapping = false);
 
   /**
    *  @brief Standard constructor with a layer selection
@@ -201,13 +194,12 @@ public:
    *  @param layers The layers from which to deliver the shapes
    *  @param region The region from which to select the shapes
    *  @param overlapping Specify overlapping mode
-   *  @param for_merged_input Optimize for merged input - drop shapes that are completely covered by others
    *
    *  By default the iterator operates in touching mode - i.e. shapes that touch the given region
    *  are returned. By specifying the "overlapping" flag with a true value, the iterator delivers shapes that
    *  overlap the given region by at least one database unit.
    */
-  RecursiveShapeIterator (const layout_type &layout, const cell_type &cell, const std::set<unsigned int> &layers, const box_type &region, bool overlapping = false, bool for_merged_input = false);
+  RecursiveShapeIterator (const layout_type &layout, const cell_type &cell, const std::set<unsigned int> &layers, const box_type &region, bool overlapping = false);
 
   /**
    *  @brief Standard constructor with a layer selection
@@ -217,38 +209,35 @@ public:
    *  @param layers The layers from which to deliver the shapes
    *  @param region The complex region from which to select the shapes
    *  @param overlapping Specify overlapping mode
-   *  @param for_merged_input Optimize for merged input - drop shapes that are completely covered by others
    *
    *  By default the iterator operates in touching mode - i.e. shapes that touch the given region
    *  are returned. By specifying the "overlapping" flag with a true value, the iterator delivers shapes that
    *  overlap the given region by at least one database unit. It allows specification of a complex
    *  search region.
    */
-  RecursiveShapeIterator (const layout_type &layout, const cell_type &cell, const std::set<unsigned int> &layers, const region_type &region, bool overlapping = false, bool for_merged_input = false);
+  RecursiveShapeIterator (const layout_type &layout, const cell_type &cell, const std::set<unsigned int> &layers, const region_type &region, bool overlapping = false);
 
   /**
    *  @brief Standard constructor for "world" iteration with a layer set
    *
-   *  This iterator delivers all shapes recursively. The same effect can be achieved by using a "world" region.
+   *  This iterator delivers all shapes recursively. The same effect can be acchieved by using a "world" region.
    *
    *  @param layout The layout from which to get the cell hierarchy
    *  @param cell The starting cell
    *  @param layers The layers from which to deliver the shapes
-   *  @param for_merged_input Optimize for merged input - drop shapes that are completely covered by others
    */
-  RecursiveShapeIterator (const layout_type &layout, const cell_type &cell, const std::vector<unsigned int> &layers, bool for_merged_input = false);
+  RecursiveShapeIterator (const layout_type &layout, const cell_type &cell, const std::vector<unsigned int> &layers);
 
   /**
    *  @brief Standard constructor for "world" iteration with a layer set
    *
-   *  This iterator delivers all shapes recursively. The same effect can be achieved by using a "world" region.
+   *  This iterator delivers all shapes recursively. The same effect can be acchieved by using a "world" region.
    *
    *  @param layout The layout from which to get the cell hierarchy
    *  @param cell The starting cell
    *  @param layers The layers from which to deliver the shapes
-   *  @param for_merged_input Optimize for merged input - drop shapes that are completely covered by others
    */
-  RecursiveShapeIterator (const layout_type &layout, const cell_type &cell, const std::set<unsigned int> &layers, bool for_merged_input = false);
+  RecursiveShapeIterator (const layout_type &layout, const cell_type &cell, const std::set<unsigned int> &layers);
 
   /**
    *  @brief Destructor
@@ -265,7 +254,7 @@ public:
   { 
     if (m_max_depth != depth) {
       m_max_depth = depth; 
-      reset ();
+      m_needs_reinit = true;
     }
   }
 
@@ -288,7 +277,7 @@ public:
   {
     if (m_min_depth != depth) {
       m_min_depth = depth;
-      reset ();
+      m_needs_reinit = true;
     }
   }
 
@@ -317,7 +306,7 @@ public:
    */
   const layout_type *layout () const
   {
-    return mp_layout.get ();
+    return mp_layout;
   }
 
   /**
@@ -328,41 +317,6 @@ public:
   const cell_type *top_cell () const
   {
     return mp_top_cell;
-  }
-
-  /**
-   *  @brief Gets the installed property translator
-   *
-   *  The property translator is not automatically applied, but available to consumers
-   *  of shapes to perform property translation.
-   */
-  const db::PropertiesTranslator &property_translator () const
-  {
-    return m_property_translator;
-  }
-
-  /**
-   *  @brief Applies a PropertyTranslator
-   *
-   *  The property translator is available for receivers of the recursive shape
-   *  iterator items. This method will apply an additional property translator
-   *  atop of existing ones.
-   */
-  void apply_property_translator (const db::PropertiesTranslator &pt)
-  {
-    m_property_translator = pt * m_property_translator;
-  }
-
-  /**
-   *  @brief Sets a PropertyTranslator
-   *
-   *  The property translator is available for receivers of the recursive shape
-   *  iterator items. This method will apply an additional property translator
-   *  atop of existing ones.
-   */
-  void set_property_translator (const db::PropertiesTranslator &pt)
-  {
-    m_property_translator = pt;
   }
 
   /**
@@ -433,57 +387,17 @@ public:
   {
     if (m_overlapping != f) {
       m_overlapping = f;
-      reset ();
+      m_needs_reinit = true;
     }
   }
-
-  /**
-   *  @brief Gets a flag indicating whether optimizing for merged input
-   */
-  bool for_merged_input () const
-  {
-    return m_for_merged_input;
-  }
-
-  /**
-   *  @brief Sets a flag indicating whether optimizing for merged input
-   */
-  void set_for_merged_input (bool f)
-  {
-    if (m_for_merged_input != f) {
-      m_for_merged_input = f;
-      reset ();
-    }
-  }
-
-  /**
-   *  @brief Sets a global transformation
-   *
-   *  The global transformation will be applied to all shapes delivered by biasing the "trans" attribute
-   */
-  void set_global_trans (const cplx_trans_type &tr);
-
-  /**
-   *  @brief Gets the global transformation
-   */
-  cplx_trans_type global_trans () const
-  {
-    return m_global_trans;
-  }
-
-  /**
-   *  @brief Gets the transformation which is to be applied always in push mode
-   *
-   *  The reasoning behind this method is that in push mode and with the presence of a global transformation we need to
-   *  somehow reflect the fact that the top-level is transformed. Instead of transforming every shape and instance we use
-   *  this attribute. It is unity for all cells below top level and equal to the global transformation for the top cell.
-   */
-  const cplx_trans_type &always_apply () const;
 
   /**
    *  @brief Reset the iterator
    */
-  void reset ();
+  void reset () 
+  {
+    m_needs_reinit = true;
+  }
 
   /**
    *  @brief Select cells 
@@ -556,7 +470,7 @@ public:
   { 
     if (m_shape_flags != flags) {
       m_shape_flags = flags; 
-      reset ();
+      m_needs_reinit = true;
     }
   }
 
@@ -593,7 +507,7 @@ public:
   { 
     if (mp_shape_prop_sel != prop_sel) {
       mp_shape_prop_sel = prop_sel; 
-      reset ();
+      m_needs_reinit = true;
     }
   }
 
@@ -607,18 +521,16 @@ public:
   { 
     if (m_shape_inv_prop_sel != inv) {
       m_shape_inv_prop_sel = inv; 
-      reset ();
+      m_needs_reinit = true;
     }
   }
 
   /**
-   *  @brief Gets the layer of the current shape
+   *  @brief Get the layer of the current shape
    */
   unsigned int layer () const
   {
-    if (m_has_layers) {
-      validate (0);
-    }
+    validate (0);
     return m_layer;
   }
 
@@ -626,7 +538,7 @@ public:
    *  @brief Gets the layers from which the shapes are taken from
    *
    *  The returned layers are useful only if \multiple_layers is
-   *  true. Otherwise use \layer to get the iterated layer.
+   *  true.
    */
   const std::vector<unsigned int> &layers () const
   {
@@ -710,31 +622,6 @@ public:
   bool at_end () const;
 
   /**
-   *  @brief End of iterator predicate
-   *
-   *  Returns true, if the iterator is at the end of the sequence
-   *
-   *  This version does not lock the layout and can be used after initialization
-   *  to detect empty sequences.
-   */
-  bool at_end_no_lock () const;
-
-  /**
-   *  @brief Gets the translated property ID
-   *
-   *  This version employs the property translator to deliver the real property ID.
-   */
-  db::properties_id_type prop_id () const
-  {
-    if (m_property_translator.is_null ()) {
-      return 0;
-    } else {
-      validate (0);
-      return m_property_translator (m_shape->prop_id ());
-    }
-  }
-
-  /**
    *  @brief Gets the current cell's index
    */
   db::cell_index_type cell_index () const
@@ -750,16 +637,6 @@ public:
     validate (0);
     size_t c = reinterpret_cast<size_t> (mp_cell);
     return reinterpret_cast<const cell_type *> (c - (c & size_t (3)));
-  }
-
-  /**
-   *  @brief Gets the current cell's bounding box
-   *
-   *  The returned box is limited to the selected layer if applicable.
-   */
-  box_type cell_bbox (db::cell_index_type cell_index) const
-  {
-    return m_box_convert (db::CellInst (cell_index));
   }
 
   /**
@@ -827,19 +704,6 @@ public:
    */
   void push (RecursiveShapeReceiver *receiver);
 
-  /**
-   *  @brief Returns a value indicating whether the current cell is inactive (disabled)
-   */
-  bool is_inactive () const
-  {
-    return (reinterpret_cast<size_t> (mp_cell) & size_t (1)) != 0;
-  }
-
-  /**
-   *  @brief Returns a value indicating whether a new child cell of the current cell will be inactive
-   */
-  bool is_child_inactive (db::cell_index_type new_child) const;
-
 private:
   std::vector<unsigned int> m_layers;
   bool m_has_layers;
@@ -848,27 +712,23 @@ private:
   unsigned int m_shape_flags;
   const shape_iterator::property_selector *mp_shape_prop_sel;
   bool m_shape_inv_prop_sel;
-  bool m_overlapping, m_for_merged_input;
+  bool m_overlapping;
   std::set<db::cell_index_type> m_start, m_stop;
-  cplx_trans_type m_global_trans;
-  db::PropertiesTranslator m_property_translator;
 
-  tl::weak_ptr<layout_type> mp_layout;
+  const layout_type *mp_layout;
   const cell_type *mp_top_cell;
   const shapes_type *mp_shapes;
 
   box_type m_region;
-  std::unique_ptr<region_type> mp_complex_region;
+  std::auto_ptr<region_type> mp_complex_region;
   db::box_convert<db::CellInst> m_box_convert;
 
-  mutable db::LayoutLocker m_locker;
   mutable inst_iterator m_inst;
   mutable inst_array_iterator m_inst_array;
   mutable std::map<db::cell_index_type, bool> m_empty_cells_cache;
   mutable unsigned int m_layer;
   mutable const cell_type *mp_cell;
   mutable size_t m_current_layer;
-  mutable bool m_skip_shapes, m_skip_shapes_member;
   mutable shape_iterator m_shape;
   mutable cplx_trans_type m_trans;
   mutable std::vector<cplx_trans_type> m_trans_stack;
@@ -877,7 +737,6 @@ private:
   mutable std::vector<const cell_type *> m_cells;
   mutable std::vector<box_tree_type> m_local_complex_region_stack;
   mutable std::vector<box_type> m_local_region_stack;
-  mutable std::vector<bool> m_skip_shapes_stack, m_skip_shapes_member_stack;
   mutable bool m_needs_reinit;
   mutable size_t m_inst_quad_id;
   mutable std::vector<size_t> m_inst_quad_id_stack;
@@ -897,12 +756,14 @@ private:
   void new_cell (RecursiveShapeReceiver *receiver) const;
   void new_layer () const;
   void up (RecursiveShapeReceiver *receiver) const;
-  bool down (RecursiveShapeReceiver *receiver) const;
-  void pop () const;
+  void down (RecursiveShapeReceiver *receiver) const;
 
-  bool instance_is_covered (const box_type &inst_bx, unsigned int layer) const;
-  bool skip_shapes () const;
   bool is_outside_complex_region (const db::Box &box) const;
+
+  bool is_inactive () const
+  {
+    return (reinterpret_cast<size_t> (mp_cell) & size_t (1)) != 0;
+  }
 
   void set_inactive (bool a) const 
   {
@@ -954,11 +815,6 @@ public:
    *  @brief Destructor
    */
   virtual ~RecursiveShapeReceiver () { }
-
-  /**
-   *  @brief Returns true, if the receivers wants the full hierarchy and not just non-empty cells
-   */
-  virtual bool wants_all_cells () const { return false; }
 
   /**
    *  @brief Called once when the iterator begins pushing
@@ -1016,11 +872,8 @@ public:
    *   - NI_all: iterate all members through "new_inst_member"
    *   - NI_single: iterate a single member (the first one)
    *   - NI_skip: skips the whole array (not a single instance is iterated)
-   *
-   *  The "skip_shapes" parameter indicates that the instance is visited with the
-   *  purpose of skipping all shapes. This is used to implement the "for_merged" optimization.
    */
-  virtual new_inst_mode new_inst (const RecursiveShapeIterator * /*iter*/, const db::CellInstArray & /*inst*/, const db::ICplxTrans & /*always_apply*/, const db::Box & /*region*/, const box_tree_type * /*complex_region*/, bool /*all*/, bool /*skip_shapes*/) { return NI_all; }
+  virtual new_inst_mode new_inst (const RecursiveShapeIterator * /*iter*/, const db::CellInstArray & /*inst*/, const db::Box & /*region*/, const box_tree_type * /*complex_region*/, bool /*all*/) { return NI_all; }
 
   /**
    *  @brief Enters a new array member of the instance
@@ -1032,18 +885,15 @@ public:
    *  "all" is true, if an instance array is iterated in "all" mode (see new_inst).
    *
    *  If this method returns false, this array instance (but not the whole array) is skipped and the cell is not entered.
-   *
-   *  The "skip_shapes" parameter indicates that the instance member is visited with the
-   *  purpose of skipping all shapes. This is used to implement the "for_merged" optimization.
    */
-  virtual bool new_inst_member (const RecursiveShapeIterator * /*iter*/, const db::CellInstArray & /*inst*/, const db::ICplxTrans & /*always_apply*/, const db::ICplxTrans & /*trans*/, const db::Box & /*region*/, const box_tree_type * /*complex_region*/, bool /*all*/, bool /*skip_shapes*/) { return true; }
+  virtual bool new_inst_member (const RecursiveShapeIterator * /*iter*/, const db::CellInstArray & /*inst*/, const db::ICplxTrans & /*trans*/, const db::Box & /*region*/, const box_tree_type * /*complex_region*/, bool /*all*/) { return true; }
 
   /**
    *  @brief Delivers a shape
    *
    *  @param trans The transformation which maps the shape to the top cell.
    */
-  virtual void shape (const RecursiveShapeIterator * /*iter*/, const db::Shape & /*shape*/, const db::ICplxTrans & /*always_apply*/, const db::ICplxTrans & /*trans*/, const db::Box & /*region*/, const box_tree_type * /*complex_region*/) { }
+  virtual void shape (const RecursiveShapeIterator * /*iter*/, const db::Shape & /*shape*/, const db::ICplxTrans & /*trans*/, const db::Box & /*region*/, const box_tree_type * /*complex_region*/) { }
 };
 
 }  // namespace db

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -24,31 +24,30 @@
 #ifndef HDR_layLayoutCanvas
 #define HDR_layLayoutCanvas
 
-#include "laybasicCommon.h"
+#include <vector>
+#include <map>
+#include <set>
+#include <utility>
+
+#include <QMutex>
+
 #include "dbTrans.h"
 #include "dbBox.h"
 #include "layViewport.h"
 #include "layViewOp.h"
 #include "layViewObject.h"
 #include "layBitmap.h"
-#include "tlColor.h"
 #include "layDrawing.h"
 #include "layDitherPattern.h"
 #include "layLineStyles.h"
 #include "layRedrawThreadCanvas.h"
 #include "layRedrawLayerInfo.h"
 #include "tlDeferredExecution.h"
-#include "tlThreads.h"
-
-#include <vector>
-#include <map>
-#include <set>
-#include <utility>
 
 namespace lay
 {
 
-class LayoutViewBase;
+class LayoutView;
 class RedrawThread;
 
 /**
@@ -133,26 +132,19 @@ private:
  *  and to manage the auxiliary objects like rulers etc.
  */
 
-class LAYBASIC_PUBLIC LayoutCanvas
-  : public lay::ViewObjectUI,
+class LayoutCanvas 
+  : public lay::ViewObjectWidget,
     public lay::BitmapViewObjectCanvas,
     public lay::BitmapRedrawThreadCanvas,
     public lay::Drawings
 {
+Q_OBJECT
+
 public:
-  LayoutCanvas (lay::LayoutViewBase *view);
+  LayoutCanvas (QWidget *parent, lay::LayoutView *view, const char *name = "canvas");
   ~LayoutCanvas ();
 
-#if defined(HAVE_QT)
-  /**
-   *  @brief Initializes the widgets
-   *
-   *  This method needs to be called after the constructor to establish the drawing widget.
-   */
-  virtual void init_ui (QWidget *parent);
-#endif
-
-  void set_colors (tl::Color background, tl::Color foreground, tl::Color active);
+  void set_colors (QColor background, QColor foreground, QColor active);
 
   /**
    *  @brief Set the view ops for the layers
@@ -173,12 +165,13 @@ public:
     return m_view_ops; 
   }
 
-  tl::PixelBuffer screenshot ();
-  tl::PixelBuffer image (unsigned int width, unsigned int height);
-  tl::PixelBuffer image_with_options (unsigned int width, unsigned int height, int linewidth, int oversampling, double resolution, double font_resolution, tl::Color background, tl::Color foreground, tl::Color active_color, const db::DBox &target_box);
-  tl::BitmapBuffer image_with_options_mono (unsigned int width, unsigned int height, int linewidth, tl::Color background, tl::Color foreground, tl::Color active, const db::DBox &target_box);
+  QImage screenshot ();
+  QImage image (unsigned int width, unsigned int height);
+  QImage image_with_options (unsigned int width, unsigned int height, int linewidth, int oversampling, double resolution, QColor background, QColor foreground, QColor active_color, const db::DBox &target_box, bool monochrome);
 
   void update_image ();
+
+  virtual void paintEvent (QPaintEvent *);
 
   /**
    *  @brief Specifies the global transformation which is always applied first
@@ -257,45 +250,6 @@ public:
   void set_oversampling (unsigned int os);
 
   /**
-   *  @brief Gets the oversampling factor
-   */
-  unsigned int oversampling () const
-  {
-    return m_oversampling;
-  }
-
-  /**
-   *  @brief Set high resolution mode (utilize full DPI on high-DPI displays)
-   */
-  void set_highres_mode (bool hrm);
-
-  /**
-   *  @brief Gets the high resolution mode flag
-   */
-  bool highres_mode () const
-  {
-    return m_hrm;
-  }
-
-  /**
-   *  @brief Set sub resolution mode (sub-pixel resolution in oversampling mode)
-   */
-  void set_subres_mode (bool srm);
-
-  /**
-   *  @brief Gets the sub resolution mode flag
-   */
-  bool subres_mode () const
-  {
-    return m_srm;
-  }
-
-  /**
-   *  @brief Gets the default device pixel ratio for this canvas
-   */
-  double dpr () const;
-
-  /**
    *  @brief Sets the depth of the image cache
    */
   void set_image_cache_size (size_t len);
@@ -334,53 +288,35 @@ public:
   }
 
   /**
-   *  @brief Reimplementation of ViewObjectCanvas interface
-   */
-  double resolution () const;
-
-  /**
-   *  @brief Reimplementation of ViewObjectCanvas interface
-   */
-  double font_resolution () const;
-
-  /**
-   *  @brief Gets the gamma value
-   */
-  double gamma () const
-  {
-    return m_gamma;
-  }
-
-  /**
    *  @brief Reimplementation of ViewObjectCanvas: Background color 
    */
-  tl::Color background_color () const
+  QColor background_color () const
   { 
-    return tl::Color (m_background);
+    return QColor (m_background); 
   }
 
   /**
    *  @brief Reimplementation of ViewObjectCanvas: Foreground color 
    */
-  tl::Color foreground_color () const
+  QColor foreground_color () const
   { 
-    return tl::Color (m_foreground);
+    return QColor (m_foreground); 
   }
 
   /**
    *  @brief Reimplementation of ViewObjectCanvas: Active color 
    */
-  tl::Color active_color () const
+  QColor active_color () const
   { 
-    return tl::Color (m_active);
+    return QColor (m_active); 
   }
 
   /**
    *  @brief Reimplementation of ViewObjectCanvas: background image
    */
-  tl::PixelBuffer *bg_image ()
+  QImage &bg_image ()
   {
-    return mp_image;
+    return *mp_image;
   }
 
   /** 
@@ -402,50 +338,42 @@ public:
   }
 
   /**
-   *  @brief Gets (and resets) a flag indicating that drawing has finished
-   */
-  bool drawing_finished ();
-
-  /**
    *  @brief An event indicating that the viewport was changed.
    *  If the viewport (the rectangle that is shown) changes, this event is fired.
    */
   tl::Event viewport_changed_event;
 
-  //  key events
-  tl::Event left_arrow_key_pressed;
-  tl::Event up_arrow_key_pressed;
-  tl::Event right_arrow_key_pressed;
-  tl::Event down_arrow_key_pressed;
-  tl::Event left_arrow_key_pressed_with_shift;
-  tl::Event up_arrow_key_pressed_with_shift;
-  tl::Event right_arrow_key_pressed_with_shift;
-  tl::Event down_arrow_key_pressed_with_shift;
+signals:
+  void left_arrow_key_pressed ();
+  void up_arrow_key_pressed ();
+  void right_arrow_key_pressed ();
+  void down_arrow_key_pressed ();
+  void left_arrow_key_pressed_with_shift ();
+  void up_arrow_key_pressed_with_shift ();
+  void right_arrow_key_pressed_with_shift ();
+  void down_arrow_key_pressed_with_shift ();
 
 private:
-  lay::LayoutViewBase *mp_view;
-  tl::PixelBuffer *mp_image;
-  tl::PixelBuffer *mp_image_bg;
-  tl::PixelBuffer *mp_image_fg;
+  lay::LayoutView *mp_view;
+  QImage *mp_image;
+  QImage *mp_image_bg;
+  QPixmap *mp_pixmap;
   db::DBox m_precious_box;
   lay::Viewport m_viewport, m_viewport_l;
-  tl::color_t m_background;
-  tl::color_t m_foreground;
-  tl::color_t m_active;
+  lay::color_t m_background;
+  lay::color_t m_foreground;
+  lay::color_t m_active;
   std::vector <lay::ViewOp> m_view_ops;
   lay::DitherPattern m_dither_pattern;
   lay::LineStyles m_line_styles;
-  std::map<unsigned int, std::vector <lay::ViewOp> > m_scaled_view_ops;
   unsigned int m_oversampling;
-  bool m_hrm;
-  bool m_srm;
+  unsigned int m_dpr;
   double m_gamma;
 
   bool m_need_redraw;
   bool m_redraw_clearing;
   bool m_redraw_force_update;
   bool m_update_image;
-  bool m_drawing_finished;
   std::vector<int> m_need_redraw_layer;
   std::vector<lay::RedrawLayerInfo> m_layers;
 
@@ -456,14 +384,11 @@ private:
   std::vector<ImageCacheEntry> m_image_cache;
   size_t m_image_cache_size;
 
-  tl::Mutex m_mutex;
+  QMutex m_mutex;
 
+  virtual void resizeEvent (QResizeEvent *);
+  virtual bool event (QEvent *e);
   virtual void key_event (unsigned int key, unsigned int buttons);
-  virtual void resize_event (unsigned int width, unsigned int height);
-#if defined(HAVE_QT)
-  virtual void gtf_probe ();
-  virtual void paint_event ();
-#endif
 
   //  implementation of the lay::Drawings interface
   void update_drawings ();
@@ -476,7 +401,6 @@ private:
   void do_redraw_all (bool force_redraw = true);
 
   void prepare_drawing ();
-  const std::vector<ViewOp> &scaled_view_ops (unsigned int lw);
 };
 
 } //  namespace lay

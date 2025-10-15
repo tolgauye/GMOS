@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -25,7 +25,6 @@
 
 #include "tlException.h"
 #include "tlScriptError.h"
-#include "tlString.h"
 #include "gsiInspector.h"
 
 #include <cstdio>
@@ -52,7 +51,7 @@ public:
   }
 
 private:
-  std::unique_ptr<gsi::Inspector> mp_inspector;
+  std::auto_ptr<gsi::Inspector> mp_inspector;
 };
 
 }
@@ -72,17 +71,21 @@ pretty_print (const tl::Variant &v)
 
   } else if (v.is_double ()) {
 
-    return tl::to_qstring (tl::sprintf ("%.12g", v.to_double ()));
+    QString res;
+    res.sprintf ("%.12g", v.to_double ());
+    return res;
 
   } else if (v.is_char ()) {
 
-    std::string details = tl::sprintf ("#%d (0x%x)", v.to_int (), v.to_uint ());
-    return tl::to_qstring (std::string ("'") + v.to_string () + "' " + details);
+    QString details;
+    details.sprintf ("#%d (0x%x)", v.to_int (), v.to_uint ());
+    return tl::to_qstring (std::string ("'") + v.to_string () + "' ") + details;
 
   } else if (v.is_ulong () || v.is_long () || v.is_ulonglong () || v.is_longlong ()) {
 
-    std::string details = tl::sprintf (" (0x%llx)", v.to_ulonglong ());
-    return tl::to_qstring (v.to_string () + details);
+    QString details;
+    details.sprintf (" (0x%llx)", v.to_ulonglong ());
+    return tl::to_qstring (v.to_string ()) + details;
 
   } else {
     return tl::to_qstring (v.to_parsable_string ());
@@ -177,7 +180,7 @@ void MacroVariableView::expanded (QTreeWidgetItem *item)
   if (item->childCount () > 0) {
     PlaceholderItem *ph = dynamic_cast<PlaceholderItem *> (item->child (0));
     if (ph) {
-      std::unique_ptr<QTreeWidgetItem> ph_taken (item->takeChild (0));
+      std::auto_ptr<QTreeWidgetItem> ph_taken (item->takeChild (0));
       sync (item, ph->inspector (), true);
     }
   }
@@ -235,7 +238,7 @@ void MacroVariableView::sync_item (QTreeWidgetItem *parent, gsi::Inspector *insp
 
     if (inspector->has_children (index)) {
 
-      std::unique_ptr<gsi::Inspector> ci (inspector->child_inspector (index));
+      std::auto_ptr<gsi::Inspector> ci (inspector->child_inspector (index));
       update_value (item, inspector_description (ci.get ()), false);
       if (item->isExpanded ()) {
         sync (item, ci.get (), fresh);

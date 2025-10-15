@@ -70,7 +70,6 @@ cp -v $KLAYOUT_BITS/curl/bin/* .
 cp -v $KLAYOUT_BITS/expat/bin/* .
 cp -v $KLAYOUT_BITS/ptw/bin/* .
 cp -v $KLAYOUT_BITS/zlib/bin/* .
-cp -v $KLAYOUT_BITS/png/bin/* .
 # if [ $? -ne 0 ]; then
 #     >&2 echo "ERROR: lib not found. Quitting."
 #     exit 1

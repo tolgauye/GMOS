@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -51,30 +51,6 @@ RegionDelegate *
 EmptyEdgePairs::polygons (db::Coord) const
 {
   return new EmptyRegion ();
-}
-
-RegionDelegate *
-EmptyEdgePairs::processed_to_polygons (const EdgePairToPolygonProcessorBase &) const
-{
-  return new EmptyRegion ();
-}
-
-EdgesDelegate *
-EmptyEdgePairs::processed_to_edges (const EdgePairToEdgeProcessorBase &) const
-{
-  return new EmptyEdges ();
-}
-
-RegionDelegate *
-EmptyEdgePairs::pull_interacting (const Region &) const
-{
-  return new EmptyRegion ();
-}
-
-EdgesDelegate *
-EmptyEdgePairs::pull_interacting (const Edges &) const
-{
-  return new EmptyEdges ();
 }
 
 EdgesDelegate *

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -37,7 +37,7 @@
 namespace lay
 {
 
-class Dispatcher;
+class PluginRoot;
 class ConfigPage;
 
 class SettingsForm
@@ -46,7 +46,7 @@ class SettingsForm
   Q_OBJECT
 
 public:
-  SettingsForm (QWidget *parent, lay::Dispatcher *dispatcher, const char *name);
+  SettingsForm (QWidget *parent, lay::PluginRoot *plugin_root, const char *name);
   
   void setup ();
   void commit ();
@@ -58,7 +58,7 @@ public slots:
   void item_changed (QTreeWidgetItem *, QTreeWidgetItem *);
 
 private:
-  lay::Dispatcher *mp_dispatcher;
+  lay::PluginRoot *mp_plugin_root;
   std::vector <lay::ConfigPage *> m_config_pages;
   bool m_finalize_recursion;
 };

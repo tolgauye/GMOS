@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -228,6 +228,7 @@ protected:
   }
 };
 
+//  TODO: this is the non-threaded dummy implementation
 template <class T>
 class ThreadStorage
   : public ThreadStorageBase
@@ -252,11 +253,7 @@ public:
 
   void setLocalData (const T &data)
   {
-    if (hasLocalData ()) {
-      localData () = data;
-    } else {
-      add (new ThreadStorageHolder<T> (new T (data)));
-    }
+    add (new ThreadStorageHolder<T> (new T (data)));
   }
 };
 

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -37,6 +37,7 @@
 #include <QThread>
 #include "gsiQt.h"
 #include "gsiQtNetworkCommon.h"
+#include "gsiDeclQtNetworkTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -738,7 +739,7 @@ static void _init_f_tr_4013 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("s");
   decl->add_arg<const char * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("c", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("c", true, "__null");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("n", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -750,7 +751,7 @@ static void _call_f_tr_4013 (const qt_gsi::GenericStaticMethod * /*decl*/, gsi::
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (__null, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QAbstractSocket::tr (arg1, arg2, arg3));
 }
@@ -763,7 +764,7 @@ static void _init_f_trUtf8_4013 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("s");
   decl->add_arg<const char * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("c", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("c", true, "__null");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("n", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -775,7 +776,7 @@ static void _call_f_trUtf8_4013 (const qt_gsi::GenericStaticMethod * /*decl*/, g
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (__null, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QAbstractSocket::trUtf8 (arg1, arg2, arg3));
 }
@@ -828,14 +829,11 @@ static gsi::Methods methods_QAbstractSocket () {
   methods += new qt_gsi::GenericMethod ("waitForReadyRead", "@brief Method bool QAbstractSocket::waitForReadyRead(int msecs)\nThis is a reimplementation of QIODevice::waitForReadyRead", false, &_init_f_waitForReadyRead_767, &_call_f_waitForReadyRead_767);
   methods += gsi::qt_signal ("aboutToClose()", "aboutToClose", "@brief Signal declaration for QAbstractSocket::aboutToClose()\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<qint64 > ("bytesWritten(qint64)", "bytesWritten", gsi::arg("bytes"), "@brief Signal declaration for QAbstractSocket::bytesWritten(qint64 bytes)\nYou can bind a procedure to this signal.");
-  methods += gsi::qt_signal<int, qint64 > ("channelBytesWritten(int, qint64)", "channelBytesWritten", gsi::arg("channel"), gsi::arg("bytes"), "@brief Signal declaration for QAbstractSocket::channelBytesWritten(int channel, qint64 bytes)\nYou can bind a procedure to this signal.");
-  methods += gsi::qt_signal<int > ("channelReadyRead(int)", "channelReadyRead", gsi::arg("channel"), "@brief Signal declaration for QAbstractSocket::channelReadyRead(int channel)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal ("connected()", "connected", "@brief Signal declaration for QAbstractSocket::connected()\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<QObject * > ("destroyed(QObject *)", "destroyed", gsi::arg("arg1"), "@brief Signal declaration for QAbstractSocket::destroyed(QObject *)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal ("disconnected()", "disconnected", "@brief Signal declaration for QAbstractSocket::disconnected()\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<const qt_gsi::Converter<QAbstractSocket::SocketError>::target_type & > ("error(QAbstractSocket::SocketError)", "error_sig", gsi::arg("arg1"), "@brief Signal declaration for QAbstractSocket::error(QAbstractSocket::SocketError)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal ("hostFound()", "hostFound", "@brief Signal declaration for QAbstractSocket::hostFound()\nYou can bind a procedure to this signal.");
-  methods += gsi::qt_signal<const QString & > ("objectNameChanged(const QString &)", "objectNameChanged", gsi::arg("objectName"), "@brief Signal declaration for QAbstractSocket::objectNameChanged(const QString &objectName)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<const QNetworkProxy &, QAuthenticator * > ("proxyAuthenticationRequired(const QNetworkProxy &, QAuthenticator *)", "proxyAuthenticationRequired", gsi::arg("proxy"), gsi::arg("authenticator"), "@brief Signal declaration for QAbstractSocket::proxyAuthenticationRequired(const QNetworkProxy &proxy, QAuthenticator *authenticator)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal ("readChannelFinished()", "readChannelFinished", "@brief Signal declaration for QAbstractSocket::readChannelFinished()\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal ("readyRead()", "readyRead", "@brief Signal declaration for QAbstractSocket::readyRead()\nYou can bind a procedure to this signal.");
@@ -974,8 +972,7 @@ static gsi::Enum<QAbstractSocket::SocketOption> decl_QAbstractSocket_SocketOptio
     gsi::enum_const ("MulticastLoopbackOption", QAbstractSocket::MulticastLoopbackOption, "@brief Enum constant QAbstractSocket::MulticastLoopbackOption") +
     gsi::enum_const ("TypeOfServiceOption", QAbstractSocket::TypeOfServiceOption, "@brief Enum constant QAbstractSocket::TypeOfServiceOption") +
     gsi::enum_const ("SendBufferSizeSocketOption", QAbstractSocket::SendBufferSizeSocketOption, "@brief Enum constant QAbstractSocket::SendBufferSizeSocketOption") +
-    gsi::enum_const ("ReceiveBufferSizeSocketOption", QAbstractSocket::ReceiveBufferSizeSocketOption, "@brief Enum constant QAbstractSocket::ReceiveBufferSizeSocketOption") +
-    gsi::enum_const ("PathMtuSocketOption", QAbstractSocket::PathMtuSocketOption, "@brief Enum constant QAbstractSocket::PathMtuSocketOption"),
+    gsi::enum_const ("ReceiveBufferSizeSocketOption", QAbstractSocket::ReceiveBufferSizeSocketOption, "@brief Enum constant QAbstractSocket::ReceiveBufferSizeSocketOption"),
   "@qt\n@brief This class represents the QAbstractSocket::SocketOption enum");
 
 static gsi::QFlagsClass<QAbstractSocket::SocketOption > decl_QAbstractSocket_SocketOption_Enums ("QtNetwork", "QAbstractSocket_QFlags_SocketOption",
@@ -1021,7 +1018,6 @@ namespace qt_gsi
 static gsi::Enum<QAbstractSocket::SocketType> decl_QAbstractSocket_SocketType_Enum ("QtNetwork", "QAbstractSocket_SocketType",
     gsi::enum_const ("TcpSocket", QAbstractSocket::TcpSocket, "@brief Enum constant QAbstractSocket::TcpSocket") +
     gsi::enum_const ("UdpSocket", QAbstractSocket::UdpSocket, "@brief Enum constant QAbstractSocket::UdpSocket") +
-    gsi::enum_const ("SctpSocket", QAbstractSocket::SctpSocket, "@brief Enum constant QAbstractSocket::SctpSocket") +
     gsi::enum_const ("UnknownSocketType", QAbstractSocket::UnknownSocketType, "@brief Enum constant QAbstractSocket::UnknownSocketType"),
   "@qt\n@brief This class represents the QAbstractSocket::SocketType enum");
 

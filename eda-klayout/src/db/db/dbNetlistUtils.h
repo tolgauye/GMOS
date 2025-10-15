@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -24,12 +24,6 @@
 #define _HDR_dbNetlistUtils
 
 #include "dbCommon.h"
-#include "dbTypes.h"
-#include "dbMemStatistics.h"
-
-#include <map>
-#include <string>
-#include <set>
 
 namespace db
 {
@@ -108,22 +102,6 @@ public:
     return m == m_map.end () ? 0 : m->second;
   }
 
-  /**
-   *  @brief Generate memory statistics
-   */
-  void mem_stat (MemStatistics *stat, MemStatistics::purpose_t purpose, int cat, bool no_self = false, void *parent = 0) const
-  {
-    if (! no_self) {
-      stat->add (typeid (*this), (void *) this, sizeof (*this), sizeof (*this), parent, purpose, cat);
-    }
-
-    db::mem_stat (stat, purpose, cat, m_map, true, (void *) this);
-
-    for (typename std::map<attr_type, value_type *>::const_iterator i = m_map.begin (); i != m_map.end (); ++i) {
-      db::mem_stat (stat, purpose, cat, *i->second, false, (void *) this);
-    }
-  }
-
 private:
   T *mp_self;
   I (T::*m_bi) ();
@@ -143,15 +121,6 @@ private:
     m_valid = true;
   }
 };
-
-/**
- *  @brief Memory statistics for object_by_attr
- */
-template <class T, class I, class ATTR>
-inline void mem_stat (MemStatistics *stat, MemStatistics::purpose_t purpose, int cat, const object_by_attr<T, I, ATTR> &x, bool no_self, void *parent)
-{
-  x.mem_stat (stat, purpose, cat, no_self, parent);
-}
 
 }
 

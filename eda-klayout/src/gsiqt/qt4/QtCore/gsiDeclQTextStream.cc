@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -35,6 +35,7 @@
 #include <QSplitter>
 #include "gsiQt.h"
 #include "gsiQtCoreCommon.h"
+#include "gsiDeclQtCoreTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -97,7 +98,7 @@
 
   static qt_gsi::Converter<QChar>::target_type f_QTextStream_read_qchar(QTextStream *s)
   {
-    QChar v = QChar (0);
+    QChar v = 0;
     *s >> v;
     return qt_gsi::Converter<QChar>::toc (v);
   }

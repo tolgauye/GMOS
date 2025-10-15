@@ -1,3 +1,0 @@
-A line
-# %include inc3.txt
-Another line

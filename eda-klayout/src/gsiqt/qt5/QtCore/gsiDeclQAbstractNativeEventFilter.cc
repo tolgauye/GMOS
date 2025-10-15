@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@
 #include <QAbstractNativeEventFilter>
 #include "gsiQt.h"
 #include "gsiQtCoreCommon.h"
+#include "gsiDeclQtCoreTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -164,8 +165,8 @@ gsi::Class<QAbstractNativeEventFilter> &qtdecl_QAbstractNativeEventFilter ();
 static gsi::Methods methods_QAbstractNativeEventFilter_Adaptor () {
   gsi::Methods methods;
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QAbstractNativeEventFilter::QAbstractNativeEventFilter()\nThis method creates an object of class QAbstractNativeEventFilter.", &_init_ctor_QAbstractNativeEventFilter_Adaptor_0, &_call_ctor_QAbstractNativeEventFilter_Adaptor_0);
-  methods += new qt_gsi::GenericMethod ("nativeEventFilter", "@brief Virtual method bool QAbstractNativeEventFilter::nativeEventFilter(const QByteArray &eventType, void *message, long int *result)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_nativeEventFilter_4678_0, &_call_cbs_nativeEventFilter_4678_0);
-  methods += new qt_gsi::GenericMethod ("nativeEventFilter", "@hide", false, &_init_cbs_nativeEventFilter_4678_0, &_call_cbs_nativeEventFilter_4678_0, &_set_callback_cbs_nativeEventFilter_4678_0);
+  methods += new qt_gsi::GenericMethod ("nativeEventFilter", "@hide", false, &_init_cbs_nativeEventFilter_4678_0, &_call_cbs_nativeEventFilter_4678_0);
+  methods += new qt_gsi::GenericMethod ("nativeEventFilter", "@brief Virtual method bool QAbstractNativeEventFilter::nativeEventFilter(const QByteArray &eventType, void *message, long int *result)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_nativeEventFilter_4678_0, &_call_cbs_nativeEventFilter_4678_0, &_set_callback_cbs_nativeEventFilter_4678_0);
   return methods;
 }
 

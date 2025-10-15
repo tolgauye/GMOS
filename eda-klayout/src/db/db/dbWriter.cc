@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -26,8 +26,6 @@
 #include "tlClassRegistry.h"
 #include "tlAssert.h"
 #include "tlStream.h"
-#include "tlTimer.h"
-#include "tlLog.h"
 
 namespace db
 {
@@ -56,13 +54,6 @@ Writer::~Writer ()
 void 
 Writer::write (db::Layout &layout, tl::OutputStream &stream)
 {
-  tl::SelfTimer timer (tl::verbosity () >= 21, tl::to_string (tr ("Writing file: ")) + stream.path ());
-
-  if (layout.under_construction () && layout.update_needed ()) {
-    tl::warn << tl::to_string (tr ("Cannot properly write a layout that is under construction - forcing update."));
-    layout.force_update ();
-  }
-
   tl_assert (mp_writer != 0);
   mp_writer->write (layout, stream, m_options);
 }

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -35,6 +35,7 @@
 #include <QWidget>
 #include "gsiQt.h"
 #include "gsiQtWidgetsCommon.h"
+#include "gsiDeclQtWidgetsTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -150,7 +151,7 @@ static void _init_f_showText_5040 (qt_gsi::GenericStaticMethod *decl)
   decl->add_arg<const QPoint & > (argspec_0);
   static gsi::ArgSpecBase argspec_1 ("text");
   decl->add_arg<const QString & > (argspec_1);
-  static gsi::ArgSpecBase argspec_2 ("w", true, "nullptr");
+  static gsi::ArgSpecBase argspec_2 ("w", true, "0");
   decl->add_arg<QWidget * > (argspec_2);
   decl->set_return<void > ();
 }
@@ -161,7 +162,7 @@ static void _call_f_showText_5040 (const qt_gsi::GenericStaticMethod * /*decl*/,
   tl::Heap heap;
   const QPoint &arg1 = gsi::arg_reader<const QPoint & >() (args, heap);
   const QString &arg2 = gsi::arg_reader<const QString & >() (args, heap);
-  QWidget *arg3 = args ? gsi::arg_reader<QWidget * >() (args, heap) : gsi::arg_maker<QWidget * >() (nullptr, heap);
+  QWidget *arg3 = args ? gsi::arg_reader<QWidget * >() (args, heap) : gsi::arg_maker<QWidget * >() (0, heap);
   __SUPPRESS_UNUSED_WARNING(ret);
   QToolTip::showText (arg1, arg2, arg3);
 }

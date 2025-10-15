@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -446,9 +446,12 @@ public:
   }
 
   /**
-   *  @brief Class implementation: returns true if this class binds to a script class
+   *  @brief Class implementation: check C++ type of object
+   *
+   *  This method returns true, if objects of this class are compatible with 
+   *  the given C++ type.
    */
-  virtual bool binds () const
+  virtual bool is_of_type (const std::type_info & /*ti*/) const 
   {
     tl_assert (false);
     return false;
@@ -547,7 +550,7 @@ public:
    *
    *  This method will be called by the GSI system to provide initialization after 
    *  the static initialization. Some schemes cannot be implementation statically, plus
-   *  the initialization order is undetermined for static initialization.
+   *  the initialization order is indetermined for static initialization.
    *  In that case, this initialization step is useful. It will call the initialize
    *  method on all method declarations.
    */
@@ -628,7 +631,7 @@ private:
   std::string m_name;
   std::string m_module;
   tl::weak_collection<ClassBase> m_child_classes, m_subclasses;
-  mutable std::unique_ptr<PerClassClientSpecificData> mp_data[ClientIndex::MaxClientIndex];
+  mutable std::auto_ptr<PerClassClientSpecificData> mp_data[ClientIndex::MaxClientIndex];
 
   static class_collection *mp_class_collection;
   static class_collection *mp_new_class_collection;

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -31,6 +31,7 @@
 #include <QSize>
 #include "gsiQt.h"
 #include "gsiQtMultimediaCommon.h"
+#include "gsiDeclQtMultimediaTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -347,7 +348,7 @@ static void _call_f_swap_3176 (const qt_gsi::GenericMethod * /*decl*/, void *cls
 
 //  bool ::operator!=(const QCameraViewfinderSettings &lhs, const QCameraViewfinderSettings &rhs)
 static bool op_QCameraViewfinderSettings_operator_excl__eq__7634(const QCameraViewfinderSettings *_self, const QCameraViewfinderSettings &rhs) {
-  return operator!=(*_self, rhs);
+  return ::operator!=(*_self, rhs);
 }
 
 

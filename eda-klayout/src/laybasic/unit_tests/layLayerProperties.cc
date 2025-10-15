@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
 
 
 #include "layLayerProperties.h"
-#include "layLayoutViewBase.h"
+#include "layLayoutView.h"
 #include "tlXMLParser.h"
 #include "tlUnitTest.h"
 #include "dbLayout.h"
@@ -135,7 +135,6 @@ TEST (1)
     "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
     "<layer-properties>\n"
     " <properties>\n"
-    "  <expanded>false</expanded>\n"
     "  <frame-color/>\n"
     "  <fill-color/>\n"
     "  <frame-brightness>0</frame-brightness>\n"
@@ -1304,13 +1303,12 @@ TEST (16)
 {
   lay::LayerPropertiesList list;
 
-  db::Manager mgr (true);
-  lay::LayoutViewBase view (&mgr, is_editable (), 0);
+  db::Manager mgr;
+  lay::LayoutView view (&mgr, is_editable (), 0);
   list.attach_view (&view, 0);
 
   int cv1 = view.create_layout ("", true, false);
   db::Layout &ly1 = view.cellview (cv1)->layout ();
-  EXPECT_EQ (ly1.is_editable (), is_editable ());
   ly1.insert_layer (db::LayerProperties (1, 0));
   ly1.insert_layer (db::LayerProperties (2, 0));
 
@@ -1357,8 +1355,8 @@ TEST (17)
 {
   lay::LayerPropertiesList list;
 
-  db::Manager mgr (true);
-  lay::LayoutViewBase view (&mgr, is_editable (), 0);
+  db::Manager mgr;
+  lay::LayoutView view (&mgr, is_editable (), 0);
   list.attach_view (&view, 0);
 
   int cv1 = view.create_layout ("", true, false);
@@ -1424,8 +1422,8 @@ TEST (18)
 {
   lay::LayerPropertiesList list;
 
-  db::Manager mgr (true);
-  lay::LayoutViewBase view (&mgr, is_editable (), 0);
+  db::Manager mgr;
+  lay::LayoutView view (&mgr, is_editable (), 0);
   list.attach_view (&view, 0);
 
   int cv1 = view.create_layout ("", true, false);
@@ -1492,8 +1490,8 @@ TEST (19)
 {
   lay::LayerPropertiesList list;
 
-  db::Manager mgr (true);
-  lay::LayoutViewBase view (&mgr, is_editable (), 0);
+  db::Manager mgr;
+  lay::LayoutView view (&mgr, is_editable (), 0);
   list.attach_view (&view, 0);
 
   int cv1 = view.create_layout ("", true, false);
@@ -1561,8 +1559,8 @@ TEST (20)
 {
   lay::LayerPropertiesList list;
 
-  db::Manager mgr (true);
-  lay::LayoutViewBase view (&mgr, is_editable (), 0);
+  db::Manager mgr;
+  lay::LayoutView view (&mgr, is_editable (), 0);
   list.attach_view (&view, 0);
 
   int cv1 = view.create_layout ("", true, false);
@@ -1633,8 +1631,8 @@ TEST (21)
 {
   lay::LayerPropertiesList list;
 
-  db::Manager mgr (true);
-  lay::LayoutViewBase view (&mgr, is_editable (), 0);
+  db::Manager mgr;
+  lay::LayoutView view (&mgr, is_editable (), 0);
   list.attach_view (&view, 0);
 
   int cv1 = view.create_layout ("", true, false);

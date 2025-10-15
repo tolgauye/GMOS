@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,6 @@
 
 
 #include "gsiDecl.h"
-#include "gsiDeclDbPropertiesSupport.h"
 #include "dbPoint.h"
 #include "dbBox.h"
 #include "dbHash.h"
@@ -45,29 +44,14 @@ struct box_defs
   static C *from_string (const char *s)
   {
     tl::Extractor ex (s);
-    std::unique_ptr<C> c (new C ());
+    std::auto_ptr<C> c (new C ());
     ex.read (*c.get ());
     return c.release ();
-  }
-
-  static C world ()
-  {
-    return C::world ();
   }
 
   static C *new_v ()
   {
     return new C ();
-  }
-
-  static C *new_sq (coord_type s)
-  {
-    return new C (-s / 2, -s / 2, s / 2, s / 2);
-  }
-
-  static C *new_wh (coord_type w, coord_type h)
-  {
-    return new C (-w / 2, -h / 2, w / 2, h / 2);
   }
 
   static C *new_lbrt (coord_type l, coord_type b, coord_type r, coord_type t)
@@ -97,19 +81,9 @@ struct box_defs
     return box->enlarge (vector_type (x, y));
   }
 
-  static C &enlarge1 (C *box, coord_type s)
-  {
-    return box->enlarge (vector_type (s, s));
-  }
-
   static C enlarged (const C *box, coord_type x, coord_type y)
   {
     return box->enlarged (vector_type (x, y));
-  }
-
-  static C enlarged1 (const C *box, coord_type s)
-  {
-    return box->enlarged (vector_type (s, s));
   }
 
   static C &move (C *box, coord_type x, coord_type y)
@@ -124,12 +98,7 @@ struct box_defs
 
   static size_t hash_value (const C *box)
   {
-    return tl::hfunc (*box);
-  }
-
-  static const C &bbox (const C *box)
-  {
-    return *box;
+    return std::hfunc (*box);
   }
 
   static gsi::Methods methods ()
@@ -142,51 +111,23 @@ struct box_defs
       "box is also an empty box. The width, height, p1 and p2 attributes of an empty box are undefined. "
       "Use \\empty? to get a value indicating whether the box is empty.\n"
     ) +
-    constructor ("new", &new_sq, gsi::arg ("w"),
-      "@brief Creates a square with the given dimensions centered around the origin\n"
-      "\n"
-      "Note that for integer-unit boxes, the dimension has to be an even number to avoid rounding.\n"
-      "\n"
-      "This convenience constructor has been introduced in version 0.28."
-    ) +
-    constructor ("new", &new_wh, gsi::arg ("w"), gsi::arg ("h"),
-      "@brief Creates a rectangle with given width and height, centered around the origin\n"
-      "\n"
-      "Note that for integer-unit boxes, the dimensions have to be an even number to avoid rounding.\n"
-      "\n"
-      "This convenience constructor has been introduced in version 0.28."
-    ) +
-    constructor ("new", &new_lbrt, gsi::arg ("left"), gsi::arg ("bottom"), gsi::arg ("right"), gsi::arg ("top"),
+    constructor ("new", &new_lbrt,
       "@brief Creates a box with four coordinates\n"
       "\n"
+      "@args left, bottom, right, top\n"
       "\n"
       "Four coordinates are given to create a new box. If the coordinates "
       "are not provided in the correct order (i.e. right < left), these are "
       "swapped."
     ) +
-    constructor ("new", &new_pp, gsi::arg ("lower_left"), gsi::arg ("upper_right"),
+    constructor ("new", &new_pp,
       "@brief Creates a box from two points\n"
       "\n"
+      "@args lower_left, upper_right\n"
       "\n"
       "Two points are given to create a new box. If the coordinates "
       "are not provided in the correct order (i.e. right < left), these are "
       "swapped."
-    ) +
-    method ("world", &world,
-      "@brief Gets the 'world' box\n"
-      "The world box is the biggest box that can be represented. So it is basically 'all'. The "
-      "world box behaves neutral on intersections for example. In other operations such as displacement or transformations, "
-      "the world box may render unexpected results because of coordinate overflow.\n"
-      "\n"
-      "The world box can be used\n"
-      "@ul\n"
-      "  @li for comparison ('==', '!=', '<') @/li\n"
-      "  @li in union and intersection ('+' and '&') @/li\n"
-      "  @li in relations (\\contains?, \\overlaps?, \\touches?) @/li\n"
-      "  @li as 'all' argument in region queries @/li\n"
-      "@/ul\n"
-      "\n"
-      "This method has been introduced in version 0.28."
     ) +
     method ("p1", &C::p1,
       "@brief Gets the lower left point of the box\n"
@@ -215,42 +156,44 @@ struct box_defs
     method ("height", &C::height,
       "@brief Gets the height of the box\n"
     ) +
-    method ("left=", &C::set_left, gsi::arg ("c"),
+    method ("left=", &C::set_left,
       "@brief Sets the left coordinate of the box\n"
+      "@args c\n"
     ) +
-    method ("right=", &C::set_right, gsi::arg ("c"),
+    method ("right=", &C::set_right,
       "@brief Sets the right coordinate of the box\n"
+      "@args c\n"
     ) +
-    method ("bottom=", &C::set_bottom, gsi::arg ("c"),
+    method ("bottom=", &C::set_bottom,
       "@brief Sets the bottom coordinate of the box\n"
+      "@args c\n"
     ) +
-    method ("top=", &C::set_top, gsi::arg ("c"),
+    method ("top=", &C::set_top,
       "@brief Sets the top coordinate of the box\n"
+      "@args c\n"
     ) +
-    method ("p1=", &C::set_p1, gsi::arg ("p"),
+    method ("p1=", &C::set_p1,
       "@brief Sets the lower left point of the box\n"
+      "@args p\n"
     ) +
-    method ("p2=", &C::set_p2, gsi::arg ("p"),
+    method ("p2=", &C::set_p2,
       "@brief Sets the upper right point of the box\n"
+      "@args p\n"
     ) +
-    method_ext ("bbox", &bbox,
-      "@brief Returns the bounding box\n"
-      "This method is provided for consistency of the shape API is returns the box itself.\n"
-      "\n"
-      "This method has been introduced in version 0.27."
-    ) +
-    method_ext ("contains?", &box_defs<C>::contains, gsi::arg ("x"), gsi::arg ("y"),
+    method_ext ("contains?", &box_defs<C>::contains,
       "@brief Returns true if the box contains the given point\n"
       "\n"
+      "@args x, y"
       "\n"
       "Tests whether a point (x, y) is inside the box.\n"
       "It also returns true if the point is exactly on the box contour.\n"
       "\n"
       "@return true if the point is inside the box.\n"
     ) +
-    method ("contains?", &C::contains, gsi::arg ("point"),
+    method ("contains?", &C::contains,
       "@brief Returns true if the box contains the given point\n"
       "\n"
+      "@args point"
       "\n"
       "Tests whether a point is inside the box.\n"
       "It also returns true if the point is exactly on the box contour.\n"
@@ -266,22 +209,25 @@ struct box_defs
       "Such a box is neutral when combining it with other boxes and renders empty boxes "
       "if used in box intersections and false in geometrical relationship tests. "
     ) +
-    method ("inside?", &C::inside, gsi::arg ("box"),
+    method ("inside?", &C::inside,
       "@brief Tests if this box is inside the argument box\n"
       "\n"
+      "@args box\n"
       "\n"
       "Returns true, if this box is inside the given box, i.e. the box intersection renders this box"
     ) +
-    method ("touches?", &C::touches, gsi::arg ("box"),
+    method ("touches?", &C::touches,
       "@brief Tests if this box touches the argument box\n"
       "\n"
+      "@args box\n"
       "\n"
       "Two boxes touch if they overlap or their boundaries share at least one common point. "
       "Touching is equivalent to a non-empty intersection ('!(b1 & b2).empty?')."
     ) +
-    method ("overlaps?", &C::overlaps, gsi::arg ("box"),
+    method ("overlaps?", &C::overlaps,
       "@brief Tests if this box overlaps the argument box\n"
       "\n"
+      "@args box\n"
       "\n"
       "Returns true, if the intersection box of this box with the argument box exists and has a non-vanishing area"
     ) +
@@ -300,9 +246,10 @@ struct box_defs
       "\n"
       "This method has been introduced in version 0.23."
     ) + 
-    method_ext ("+", &box_defs<C>::join_with_point, gsi::arg ("point"),
+    method_ext ("+", &box_defs<C>::join_with_point,
       "@brief Joins box with a point\n"
       "\n"
+      "@args point\n"
       "\n"
       "The + operator joins a point with the box. The resulting box will enclose both the original "
       "box and the point.\n"
@@ -311,9 +258,10 @@ struct box_defs
       "\n"
       "@return The box joined with the point\n"
     ) +
-    method ("+", &C::joined, gsi::arg ("box"),
+    method ("+", &C::joined,
       "@brief Joins two boxes\n"
       "\n"
+      "@args box\n"
       "\n"
       "The + operator joins the first box with the one given as \n"
       "the second argument. Joining constructs a box that encloses\n"
@@ -325,24 +273,10 @@ struct box_defs
       "\n"
       "@return The joined box\n"
     ) +
-    method ("-", &C::subtracted, gsi::arg ("box"),
-      "@brief Subtraction of boxes\n"
-      "\n"
-      "\n"
-      "The - operator subtracts the argument box from self.\n"
-      "This will return the bounding box of the are covered by self, but not by argument box. "
-      "Subtracting a box from itself will render an empty box. Subtracting another box from "
-      "self will modify the first box only if the argument box covers one side entirely.\n"
-      "\n"
-      "@param box The box to subtract from this box.\n"
-      "\n"
-      "@return The result box\n"
-      "\n"
-      "This feature has been introduced in version 0.29."
-    ) +
-    method ("&", &C::intersection, gsi::arg ("box"),
+    method ("&", &C::intersection,
       "@brief Returns the intersection of this box with another box\n"
       "\n"
+      "@args box\n"
       "\n"
       "The intersection of two boxes is the largest\n"
       "box common to both boxes. The intersection may be \n"
@@ -355,9 +289,10 @@ struct box_defs
       "\n"
       "@return The intersection box\n"
     ) +
-    method ("*", &C::convolved, gsi::arg ("box"),
+    method ("*", &C::convolved,
       "@brief Returns the convolution product from this box with another box\n"
       "\n"
+      "@args box\n"
       "\n"
       "The * operator convolves the firstbox with the one given as \n"
       "the second argument. The box resulting from \"convolution\" is the\n"
@@ -369,9 +304,10 @@ struct box_defs
       "\n"
       "@return The convolved box\n"
     ) +
-    method ("*", &C::scaled, gsi::arg ("scale_factor"),
+    method ("*", &C::scaled,
       "@brief Returns the scaled box\n"
       "\n"
+      "@args scale_factor\n"
       "\n"
       "The * operator scales the box with the given factor and returns the result.\n"
       "\n"
@@ -381,82 +317,75 @@ struct box_defs
       "\n"
       "@return The scaled box\n"
     ) +
-    method_ext ("move", &box_defs<C>::move, gsi::arg ("dx", 0), gsi::arg ("dy", 0),
+    method_ext ("move", &box_defs<C>::move,
       "@brief Moves the box by a certain distance\n"
+      "\n"
+      "@args dx, dy\n"
       "\n"
       "This is a convenience method which takes two values instead of a Point object.\n"
       "This method has been introduced in version 0.23.\n"
       "\n"
       "@return A reference to this box.\n"
     ) +
-    method_ext ("moved", &box_defs<C>::moved, gsi::arg ("dx", 0), gsi::arg ("dy", 0),
+    method_ext ("moved", &box_defs<C>::moved,
       "@brief Moves the box by a certain distance\n"
+      "\n"
+      "@args dx, dy\n"
       "\n"
       "This is a convenience method which takes two values instead of a Point object.\n"
       "This method has been introduced in version 0.23.\n"
       "\n"
-      "@return The moved box.\n"
+      "@return The enlarged box.\n"
     ) +
-    method ("move", &C::move, gsi::arg ("d"),
+    method ("move", &C::move,
       "@brief Moves the box by a certain distance\n"
       "\n"
+      "@args distance\n"
       "\n"
       "Moves the box by a given offset and returns the moved\n"
       "box. Does not check for coordinate overflows.\n"
       "\n"
-      "@param d The offset to move the box.\n"
+      "@param distance The offset to move the box.\n"
       "\n"
       "@return A reference to this box.\n"
     ) +
-    method ("moved", &C::moved, gsi::arg ("d"),
+    method ("moved", &C::moved,
       "@brief Returns the box moved by a certain distance\n"
       "\n"
+      "@args distance\n"
       "\n"
       "Moves the box by a given offset and returns the moved\n"
       "box. Does not modify this box. Does not check for coordinate\n"
       "overflows.\n"
       "\n"
-      "@param d The offset to move the box.\n"
+      "@param distance The offset to move the box.\n"
       "\n"
       "@return The moved box.\n"
     ) +
-    method_ext ("enlarge", &box_defs<C>::enlarge, gsi::arg ("dx", 0), gsi::arg ("dy", 0),
+    method_ext ("enlarge", &box_defs<C>::enlarge,
       "@brief Enlarges the box by a certain amount.\n"
       "\n"
+      "@args dx, dy\n"
       "\n"
-      "This is a convenience method which takes two values instead of a Vector object.\n"
+      "This is a convenience method which takes two values instead of a Point object.\n"
       "This method has been introduced in version 0.23.\n"
       "\n"
       "@return A reference to this box.\n"
     ) +
-    method_ext ("enlarge", &box_defs<C>::enlarge1, gsi::arg ("d"),
-      "@brief Enlarges the box by a certain amount on all sides.\n"
-      "\n"
-      "This is a convenience method which takes one values instead of two values. It will apply the given enlargement in both directions.\n"
-      "This method has been introduced in version 0.28.\n"
-      "\n"
-      "@return A reference to this box.\n"
-    ) +
-    method_ext ("enlarged", &box_defs<C>::enlarged, gsi::arg ("dx", 0), gsi::arg ("dy", 0),
+    method_ext ("enlarged", &box_defs<C>::enlarged,
       "@brief Enlarges the box by a certain amount.\n"
       "\n"
+      "@args dx, dy\n"
       "\n"
-      "This is a convenience method which takes two values instead of a Vector object.\n"
+      "This is a convenience method which takes two values instead of a Point object.\n"
       "This method has been introduced in version 0.23.\n"
       "\n"
       "@return The enlarged box.\n"
     ) +
-    method_ext ("enlarged", &box_defs<C>::enlarged1, gsi::arg ("d"),
-      "@brief Enlarges the box by a certain amount on all sides.\n"
-      "\n"
-      "This is a convenience method which takes one values instead of two values. It will apply the given enlargement in both directions.\n"
-      "This method has been introduced in version 0.28.\n"
-      "\n"
-      "@return The enlarged box.\n"
-    ) +
-    method ("enlarge", &C::enlarge, gsi::arg ("enlargement"),
+    method ("enlarge", &C::enlarge,
       "@brief Enlarges the box by a certain amount.\n"
       "\n"
+      "@args enlargement\n"
       "\n"
       "Enlarges the box by x and y value specified in the vector\n"
       "passed. Positive values with grow the box, negative ones\n"
@@ -471,9 +400,10 @@ struct box_defs
       "\n"
       "@return A reference to this box.\n"
     ) +
-    method ("enlarged", &C::enlarged, gsi::arg ("enlargement"),
+    method ("enlarged", &C::enlarged,
       "@brief Returns the enlarged box.\n"
       "\n"
+      "@args enlargement\n"
       "\n"
       "Enlarges the box by x and y value specified in the vector\n"
       "passed. Positive values with grow the box, negative ones\n"
@@ -488,30 +418,35 @@ struct box_defs
       "\n"
       "@return The enlarged box.\n"
     ) +
-    method ("transformed", &C::template transformed<simple_trans_type>, gsi::arg ("t"),
+    method ("transformed", &C::template transformed<simple_trans_type>,
       "@brief Returns the box transformed with the given simple transformation\n"
       "\n"
+      "@args t\n"
       "\n"
       "@param t The transformation to apply\n"
       "@return The transformed box\n"
     ) +
-    method ("transformed", &C::template transformed<complex_trans_type>, gsi::arg ("t"),
+    method ("transformed", &C::template transformed<complex_trans_type>,
       "@brief Returns the box transformed with the given complex transformation\n"
       "\n"
+      "@args t\n"
       "\n"
       "@param t The magnifying transformation to apply\n"
       "@return The transformed box (a DBox now)\n"
     ) +
-    method ("<", &C::less, gsi::arg ("box"),
+    method ("<", &C::less,
       "@brief Returns true if this box is 'less' than another box\n"
+      "@args box\n"
       "Returns true, if this box is 'less' with respect to first and second point (in this order)"
     ) +
-    method ("==", &C::equal, gsi::arg ("box"),
+    method ("==", &C::equal,
       "@brief Returns true if this box is equal to the other box\n"
+      "@args box\n"
       "Returns true, if this box and the given box are equal "
     ) +
-    method ("!=", &C::not_equal, gsi::arg ("box"),
+    method ("!=", &C::not_equal,
       "@brief Returns true if this box is not equal to the other box\n"
+      "@args box\n"
       "Returns true, if this box and the given box are not equal "
     ) +
     method_ext ("hash", &hash_value,
@@ -520,19 +455,17 @@ struct box_defs
       "\n"
       "This method has been introduced in version 0.25.\n"
     ) +
-    constructor ("from_s", &from_string, gsi::arg ("s"),
+    constructor ("from_s", &from_string,
       "@brief Creates a box object from a string\n"
+      "@args s\n"
       "Creates the object from a string representation (as returned by \\to_s)\n"
       "\n"
       "This method has been added in version 0.23.\n"
     ) +
-    method ("to_s", &C::to_string, gsi::arg ("dbu", 0.0),
+    method ("to_s", (std::string (C::*) () const) &C::to_string,
       "@brief Returns a string representing this box\n"
       "\n"
-      "This string can be turned into a box again by using \\from_s\n. "
-      "If a DBU is given, the output units will be micrometers.\n"
-      "\n"
-      "The DBU argument has been added in version 0.27.6.\n"
+      "This string can be turned into a box again by using \\from_s\n"
     );
   }
 };
@@ -561,9 +494,10 @@ Class<db::Box> decl_Box ("db", "Box",
     "\n"
     "This method has been introduced in version 0.25."
   ) +
-  method ("transformed", &db::Box::transformed<db::ICplxTrans>, gsi::arg ("t"),
+  method ("transformed", &db::Box::transformed<db::ICplxTrans>,
     "@brief Transforms the box with the given complex transformation\n"
     "\n"
+    "@args t\n"
     "\n"
     "@param t The magnifying transformation to apply\n"
     "@return The transformed box (in this case an integer coordinate box)\n"
@@ -591,33 +525,6 @@ Class<db::Box> decl_Box ("db", "Box",
   "database objects."
 );
 
-static db::BoxWithProperties *new_box_with_properties (const db::Box &box, db::properties_id_type pid)
-{
-  return new db::BoxWithProperties (box, pid);
-}
-
-static db::BoxWithProperties *new_box_with_properties2 (const db::Box &path, const std::map<tl::Variant, tl::Variant> &properties)
-{
-  return new db::BoxWithProperties (path, db::properties_id (db::PropertiesSet (properties.begin (), properties.end ())));
-}
-
-Class<db::BoxWithProperties> decl_BoxWithProperties (decl_Box, "db", "BoxWithProperties",
-  gsi::properties_support_methods<db::BoxWithProperties> () +
-  constructor ("new", &new_box_with_properties, gsi::arg ("box"), gsi::arg ("properties_id", db::properties_id_type (0)),
-    "@brief Creates a new object from a property-less object and a properties ID."
-  ) +
-  constructor ("new", &new_box_with_properties2, gsi::arg ("box"), gsi::arg ("properties"),
-    "@brief Creates a new object from a property-less object and a properties hash."
-  )
-  ,
-  "@brief A Box object with properties attached.\n"
-  "This class represents a combination of a Box object an user properties. User properties are "
-  "stored in form of a properties ID. Convenience methods are provided to manipulate or retrieve "
-  "user properties directly.\n"
-  "\n"
-  "This class has been introduced in version 0.30."
-);
-
 static db::DBox *dbox_from_ibox (const db::Box &b)
 {
   return new db::DBox (b);
@@ -643,9 +550,10 @@ Class<db::DBox> decl_DBox ("db", "DBox",
     "\n"
     "This method has been introduced in version 0.25."
   ) +
-  method ("transformed", &db::DBox::transformed<db::VCplxTrans>, gsi::arg ("t"),
+  method ("transformed", &db::DBox::transformed<db::VCplxTrans>,
     "@brief Transforms the box with the given complex transformation\n"
     "\n"
+    "@args t\n"
     "\n"
     "@param t The magnifying transformation to apply\n"
     "@return The transformed box (in this case an integer coordinate box)\n"
@@ -673,31 +581,5 @@ Class<db::DBox> decl_DBox ("db", "DBox",
   "database objects."
 );
 
-static db::DBoxWithProperties *new_dbox_with_properties (const db::DBox &box, db::properties_id_type pid)
-{
-  return new db::DBoxWithProperties (box, pid);
 }
 
-static db::DBoxWithProperties *new_dbox_with_properties2 (const db::DBox &path, const std::map<tl::Variant, tl::Variant> &properties)
-{
-  return new db::DBoxWithProperties (path, db::properties_id (db::PropertiesSet (properties.begin (), properties.end ())));
-}
-
-Class<db::DBoxWithProperties> decl_DBoxWithProperties (decl_DBox, "db", "DBoxWithProperties",
-  gsi::properties_support_methods<db::DBoxWithProperties> () +
-  constructor ("new", &new_dbox_with_properties, gsi::arg ("box"), gsi::arg ("properties_id", db::properties_id_type (0)),
-    "@brief Creates a new object from a property-less object and a properties ID."
-  ) +
-  constructor ("new", &new_dbox_with_properties2, gsi::arg ("box"), gsi::arg ("properties"),
-    "@brief Creates a new object from a property-less object and a properties hash."
-  )
-  ,
-  "@brief A DBox object with properties attached.\n"
-  "This class represents a combination of a DBox object an user properties. User properties are "
-  "stored in form of a properties ID. Convenience methods are provided to manipulate or retrieve "
-  "user properties directly.\n"
-  "\n"
-  "This class has been introduced in version 0.30."
-);
-
-}

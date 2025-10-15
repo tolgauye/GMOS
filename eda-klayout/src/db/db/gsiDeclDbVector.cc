@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -40,7 +40,7 @@ struct vector_defs
   static C *from_string (const char *s)
   {
     tl::Extractor ex (s);
-    std::unique_ptr<C> c (new C ());
+    std::auto_ptr<C> c (new C ());
     ex.read (*c.get ());
     return c.release ();
   }
@@ -114,7 +114,7 @@ struct vector_defs
 
   static size_t hash_value (const C *v)
   {
-    return tl::hfunc (*v);
+    return std::hfunc (*v);
   }
 
   static db::point<coord_type> add_with_point (const C *v, const db::point<coord_type> &p)
@@ -128,14 +128,16 @@ struct vector_defs
     constructor ("new", &new_v,
       "@brief Default constructor: creates a null vector with coordinates (0,0)"
     ) +
-    constructor ("new", &new_point, gsi::arg ("p"),
+    constructor ("new", &new_point,
       "@brief Default constructor: creates a vector from a point\n"
+      "@args p\n"
       "This constructor is equivalent to computing p-point(0,0).\n"
       "This method has been introduced in version 0.25."
     ) +
-    constructor ("new", &new_xy, gsi::arg ("x"), gsi::arg ("y"),
+    constructor ("new", &new_xy,
       "@brief Constructor for a vector from two coordinate values\n"
       "\n"
+      "@args x, y\n"
     ) +
     method_ext ("to_p", &to_point,
       "@brief Turns the vector into a point\n"
@@ -146,41 +148,48 @@ struct vector_defs
     method_ext ("-@", &negate,
       "@brief Compute the negative of a vector\n"
       "\n"
+      "@args p\n"
       "\n"
       "Returns a new vector with -x,-y.\n"
     ) +
-    method ("+", (C (C::*) (const C &) const) &C::add, gsi::arg ("v"),
+    method ("+", (C (C::*) (const C &) const) &C::add,
       "@brief Adds two vectors\n"
       "\n"
+      "@args v\n"
       "\n"
       "Adds vector v to self by adding the coordinates.\n"
     ) +
-    method_ext ("+", &add_with_point, gsi::arg ("p"),
+    method_ext ("+", &add_with_point,
       "@brief Adds a vector and a point\n"
       "\n"
+      "@args p\n"
       "\n"
       "Returns the point p shifted by the vector.\n"
     ) +
-    method ("-", (C (C::*) (const C &) const) &C::subtract, gsi::arg ("v"),
+    method ("-", (C (C::*) (const C &) const) &C::subtract,
       "@brief Subtract two vectors\n"
       "\n"
+      "@args v\n"
       "\n"
       "Subtract vector v from self by subtracting the coordinates.\n"
     ) +
-    method ("<", &C::less, gsi::arg ("v"),
+    method ("<", &C::less,
       "@brief \"less\" comparison operator\n"
       "\n"
+      "@args v\n"
       "\n"
       "This operator is provided to establish a sorting\n"
       "order\n"
     ) +
-    method ("==", &C::equal, gsi::arg ("v"),
+    method ("==", &C::equal,
       "@brief Equality test operator\n"
       "\n"
+      "@args v\n"
     ) +
-    method ("!=", &C::not_equal, gsi::arg ("v"),
+    method ("!=", &C::not_equal,
       "@brief Inequality test operator\n"
       "\n"
+      "@args v\n"
     ) +
     method_ext ("hash", &hash_value,
       "@brief Computes a hash value\n"
@@ -194,67 +203,71 @@ struct vector_defs
     method ("y", &C::y,
       "@brief Accessor to the y coordinate\n"
     ) +
-    method ("x=", &C::set_x, gsi::arg ("coord"),
+    method ("x=", &C::set_x,
       "@brief Write accessor to the x coordinate\n"
+      "@args coord\n"
     ) +
-    method ("y=", &C::set_y, gsi::arg ("coord"),
+    method ("y=", &C::set_y,
       "@brief Write accessor to the y coordinate\n"
+      "@args coord\n"
     ) +
-    method_ext ("*", &scale, gsi::arg ("f"),
+    method_ext ("*", &scale,
       "@brief Scaling by some factor\n"
       "\n"
+      "@args f\n"
       "\n"
       "Returns the scaled object. All coordinates are multiplied with the given factor and if "
       "necessary rounded."
     ) +
-    method_ext ("*=", &iscale, gsi::arg ("f"),
+    method_ext ("*=", &iscale,
       "@brief Scaling by some factor\n"
       "\n"
+      "@args f\n"
       "\n"
       "Scales object in place. All coordinates are multiplied with the given factor and if "
       "necessary rounded."
     ) +
-    method_ext ("/", &divide, gsi::arg ("d"),
+    method_ext ("/", &divide,
       "@brief Division by some divisor\n"
       "\n"
+      "@args d\n"
       "\n"
       "Returns the scaled object. All coordinates are divided with the given divisor and if "
       "necessary rounded."
     ) +
-    method_ext ("/=", &idiv, gsi::arg ("d"),
+    method_ext ("/=", &idiv,
       "@brief Division by some divisor\n"
       "\n"
+      "@args d\n"
       "\n"
       "Divides the object in place. All coordinates are divided with the given divisor and if "
       "necessary rounded."
     ) +
-    method_ext ("vprod", &vprod, gsi::arg ("v"),
+    method_ext ("vprod", &vprod,
       "@brief Computes the vector product between self and the given vector\n"
       "\n"
+      "@args v\n"
       "\n"
       "The vector product of a and b is defined as: vp = ax*by-ay*bx.\n"
     ) +
-    method_ext ("vprod_sign", &vprod_sign, gsi::arg ("v"),
+    method_ext ("vprod_sign", &vprod_sign,
       "@brief Computes the vector product between self and the given vector and returns a value indicating the sign of the product\n"
       "\n"
+      "@args v\n"
       "\n"
       "@return 1 if the vector product is positive, 0 if it is zero and -1 if it is negative.\n"
     ) +
-    method_ext ("sprod", &sprod, gsi::arg ("v"),
+    method_ext ("sprod", &sprod,
       "@brief Computes the scalar product between self and the given vector\n"
       "\n"
+      "@args v\n"
       "\n"
       "The scalar product of a and b is defined as: vp = ax*bx+ay*by.\n"
     ) +
-    method_ext ("*", &sprod, gsi::arg ("v"),
-      "@brief Computes the scalar product between self and the given vector\n"
-      "\n"
-      "\n"
-      "The scalar product of a and b is defined as: vp = ax*bx+ay*by.\n"
-    ) +
-    method_ext ("sprod_sign", &sprod_sign, gsi::arg ("v"),
+    method_ext ("sprod_sign", &sprod_sign,
       "@brief Computes the scalar product between self and the given vector and returns a value indicating the sign of the product\n"
       "\n"
+      "@args v\n"
       "\n"
       "@return 1 if the scalar product is positive, 0 if it is zero and -1 if it is negative.\n"
     ) +
@@ -266,15 +279,13 @@ struct vector_defs
       "@brief The square length of the vector\n"
       "'sq_abs' is an alias provided for compatibility with the former point type."
     ) +
-    constructor ("from_s", &from_string, gsi::arg ("s"),
+    constructor ("from_s", &from_string,
       "@brief Creates an object from a string\n"
+      "@args s\n"
       "Creates the object from a string representation (as returned by \\to_s)\n"
     ) +
-    method ("to_s", &C::to_string, gsi::arg ("dbu", 0.0),
+    method ("to_s", (std::string (C::*) () const) &C::to_string,
       "@brief String conversion\n"
-      "If a DBU is given, the output units will be micrometers.\n"
-      "\n"
-      "The DBU argument has been added in version 0.27.6.\n"
     );
   }
 
@@ -351,3 +362,4 @@ Class<db::Vector> decl_Vector ("db", "Vector",
 );
 
 }
+

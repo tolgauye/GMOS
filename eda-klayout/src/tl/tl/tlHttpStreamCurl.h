@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -48,7 +48,7 @@ public:
   /**
    *  @brief Open a stream with the given URL
    */
-  InputHttpStreamPrivateData (InputHttpStream *stream, const std::string &url);
+  InputHttpStreamPrivateData (const std::string &url);
 
   /**
    *  @brief Close the file
@@ -103,7 +103,7 @@ public:
 
   /**
    *  @brief Gets the "ready" event
-   *  Connect to this event for the asynchronous interface.
+   *  Connect to this event for the asynchroneous interface.
    *  This event is fired when the request has finished.
    */
   tl::Event &ready ()
@@ -121,7 +121,7 @@ public:
 
   /**
    *  @brief Gets the "data available" event
-   *  Connect to this event for the asynchronous interface.
+   *  Connect to this event for the asynchroneous interface.
    *  This event is fired when data becomes available for read.
    *  It is just fired once.
    */
@@ -135,16 +135,6 @@ public:
    */
   bool data_available ();
 
-  /**
-   *  @brief Sets the timeout in seconds
-   */
-  void set_timeout (double to);
-
-  /**
-   *  @brief Gets the timeout in seconds
-   */
-  double timeout () const;
-
   //  Basic interface
   virtual void reset ();
   virtual void close ();
@@ -153,14 +143,12 @@ public:
   virtual std::string filename () const;
 
 private:
-  std::unique_ptr<CurlConnection> m_connection;
+  std::auto_ptr<CurlConnection> m_connection;
   tl::Event m_ready_event;
   tl::Event m_data_ready_event;
   bool m_sent;
   bool m_ready;
-  std::unique_ptr<tl::AbsoluteProgress> m_progress;
-  double m_timeout;
-  InputHttpStream *mp_stream;
+  std::auto_ptr<tl::AbsoluteProgress> m_progress;
 
   void on_data_available ();
   void on_finished ();

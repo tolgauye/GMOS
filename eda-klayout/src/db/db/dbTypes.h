@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -31,16 +31,6 @@
 #include <algorithm>
 
 namespace db {
-
-/**
- *  @brief A generic constant describing the "fuzzyness" of a double comparison of a value around 1
- */
-const double epsilon = 1e-10;
-
-/**
- *  @brief A generic constant describing the "fuzzyness" of a float comparison of a value around 1
- */
-const double fepsilon = 1e-6;
 
 /**
  *  @brief The standard integer coordinate type
@@ -361,7 +351,7 @@ struct coord_traits
 };
 
 /** 
- *  @brief Coord_traits specialization for 32 bit coordinates 
+ *  @brief Coord_traits specialisation for 32 bit coordinates 
  */
 template <>
 struct coord_traits<int32_t>
@@ -370,7 +360,7 @@ struct coord_traits<int32_t>
 };
 
 /** 
- *  @brief Coord_traits specialization for 16 bit coordinates 
+ *  @brief Coord_traits specialisation for 16 bit coordinates 
  */
 template <>
 struct coord_traits<int16_t>
@@ -380,7 +370,7 @@ struct coord_traits<int16_t>
 
 #if defined(HAVE_64BIT_COORD)
 /** 
- *  @brief Coord_traits specialization for 64 bit coordinates 
+ *  @brief Coord_traits specialisation for 64 bit coordinates 
  */
 template <>
 struct coord_traits<int64_t>
@@ -390,7 +380,7 @@ struct coord_traits<int64_t>
 #endif
 
 /** 
- *  @brief Coord_traits specialization for double coordinates 
+ *  @brief Coord_traits specialisation for double coordinates 
  *
  *  The precision is chosen such that the double coordinate
  *  can represent "micrometers" with a physical resolution limit of 0.01 nm.
@@ -434,7 +424,7 @@ struct coord_traits<double>
   {
     double dx1 = ax - cx, dy1 = ay - cy;
     double dx2 = bx - cx, dy2 = by - cy;
-    double pa = (sqrt (dx1 * dx1 + dy1 * dy1) + sqrt (dx2 * dx2 + dy2 * dy2)) * db::epsilon;
+    double pa = (sqrt (dx1 * dx1 + dy1 * dy1) + sqrt (dx2 * dx2 + dy2 * dy2)) * prec ();
     area_type p1 = dx1 * dx2;
     area_type p2 = -dy1 * dy2;
     if (p1 <= p2 - pa) {
@@ -450,7 +440,7 @@ struct coord_traits<double>
   {
     double dx1 = ax - cx, dy1 = ay - cy;
     double dx2 = bx - cx, dy2 = by - cy;
-    double pa = (sqrt (dx1 * dx1 + dy1 * dy1) + sqrt (dx2 * dx2 + dy2 * dy2)) * db::epsilon;
+    double pa = (sqrt (dx1 * dx1 + dy1 * dy1) + sqrt (dx2 * dx2 + dy2 * dy2)) * prec ();
     area_type p1 = dx1 * dx2;
     area_type p2 = -dy1 * dy2;
     if (p1 <= p2 - pa) {
@@ -473,7 +463,7 @@ struct coord_traits<double>
   {
     double dx1 = ax - cx, dy1 = ay - cy;
     double dx2 = bx - cx, dy2 = by - cy;
-    double pa = (sqrt (dx1 * dx1 + dy1 * dy1) + sqrt (dx2 * dx2 + dy2 * dy2)) * db::epsilon;
+    double pa = (sqrt (dx1 * dx1 + dy1 * dy1) + sqrt (dx2 * dx2 + dy2 * dy2)) * prec ();
     area_type p1 = dx1 * dy2;
     area_type p2 = dy1 * dx2;
     if (p1 <= p2 - pa) {
@@ -489,7 +479,7 @@ struct coord_traits<double>
   {
     double dx1 = ax - cx, dy1 = ay - cy;
     double dx2 = bx - cx, dy2 = by - cy;
-    double pa = (sqrt (dx1 * dx1 + dy1 * dy1) + sqrt (dx2 * dx2 + dy2 * dy2)) * db::epsilon;
+    double pa = (sqrt (dx1 * dx1 + dy1 * dy1) + sqrt (dx2 * dx2 + dy2 * dy2)) * prec ();
     area_type p1 = dx1 * dy2;
     area_type p2 = dy1 * dx2;
     if (p1 <= p2 - pa) {
@@ -548,6 +538,16 @@ struct cast_op
 };
 
 /**
+ *  @brief A generic constant describing the "fuzzyness" of a double comparison of a value around 1
+ */
+const double epsilon = 1e-10;
+
+/**
+ *  @brief A generic constant describing the "fuzzyness" of a float comparison of a value around 1
+ */
+const double fepsilon = 1e-6;
+
+/**
  *  @brief A functor wrapping the epsilon constant in a templatized form
  */
 template <class F>
@@ -557,7 +557,7 @@ struct epsilon_f
 };
 
 /**
- *  @brief And the specialization of epsilon_f for double 
+ *  @brief And the specialisation of epsilon_f for double 
  */
 template <>
 struct epsilon_f<double>
@@ -566,7 +566,7 @@ struct epsilon_f<double>
 };
 
 /**
- *  @brief And the specialization of epsilon_f for float
+ *  @brief And the specialisation of epsilon_f for float
  */
 template <>
 struct epsilon_f<float>
@@ -590,14 +590,9 @@ typedef size_t properties_id_type;
 typedef size_t property_names_id_type;
 
 /**
- *  @brief The type of a properties value id
- */
-typedef size_t property_values_id_type;
-
-/**
  *  @brief The type of the PCell id
  */
-typedef unsigned int pcell_id_type;
+typedef size_t pcell_id_type;
 
 /**
  *  @brief The type of the library id

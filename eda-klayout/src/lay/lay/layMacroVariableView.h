@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -81,7 +81,7 @@ private:
   void sync_item (QTreeWidgetItem *parent, gsi::Inspector *inspector, const QString &key, size_t index, int pos, bool fresh);
   void sync (bool fresh);
 
-  std::unique_ptr<gsi::Inspector> mp_inspector;
+  std::auto_ptr<gsi::Inspector> mp_inspector;
   bool m_show_all;
 };
 

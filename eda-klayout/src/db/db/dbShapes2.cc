@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -487,7 +487,7 @@ struct translate_into_shapes
     mp_shapes->insert (new_shape);
   }
 
-  template <class Sh>
+  template <class Sh, class T>
   void operator() (const db::object_with_properties<Sh> &sh)
   {
     Sh new_shape;
@@ -495,7 +495,7 @@ struct translate_into_shapes
     mp_shapes->insert (db::object_with_properties<Sh> (new_shape, sh.properties_id ()));
   }
 
-  template <class Sh, class PropIdMap>
+  template <class Sh, class T, class PropIdMap>
   void operator() (const db::object_with_properties<Sh> &sh, PropIdMap &pm)
   {
     Sh new_shape;
@@ -680,12 +680,6 @@ inline unsigned int iterator_type_mask (ShapeIterator::edge_pair_type::tag)
 }
 
 /// @brief Internal: ShapeIterator masks per shape type
-inline unsigned int iterator_type_mask (ShapeIterator::point_type::tag)
-{
-  return 1 << ShapeIterator::Point;
-}
-
-/// @brief Internal: ShapeIterator masks per shape type
 inline unsigned int iterator_type_mask (ShapeIterator::path_type::tag)
 {
   return 1 << ShapeIterator::Path;
@@ -755,14 +749,27 @@ inline unsigned int iterator_type_mask (ShapeIterator::user_object_type::tag)
 template <class Sh>
 inline unsigned int iterator_type_mask (db::object_tag< db::object_with_properties<Sh> >)
 {
-  return iterator_type_mask (typename Sh::tag ()) | ShapeIterator::Properties;
+  return iterator_type_mask (typename Sh::tag ());
+}
+
+template <class Sh, class StableTag>
+void 
+layer_class<Sh, StableTag>::clear (Shapes *target, db::Manager *manager)
+{
+  if (manager && manager->transacting ()) {
+    manager->queue (target, new db::layer_op<Sh, StableTag> (false /*not insert*/, m_layer.begin (), m_layer.end ()));
+  }
+  m_layer.clear ();
 }
 
 template <class Sh, class StableTag>
 LayerBase *
-layer_class<Sh, StableTag>::clone () const
+layer_class<Sh, StableTag>::clone (Shapes *target, db::Manager *manager) const 
 {
   layer_class<Sh, StableTag> *r = new layer_class<Sh, StableTag> ();
+  if (manager && manager->transacting ()) {
+    manager->queue (target, new db::layer_op<Sh, StableTag> (true /*insert*/, m_layer.begin (), m_layer.end ()));
+  }
   r->m_layer = m_layer;
   return r;
 }
@@ -825,13 +832,6 @@ layer_class<Sh, StableTag>::transform_into (Shapes *target, const ICplxTrans &tr
   for (typename layer_type::iterator s = m_layer.begin (); s != m_layer.end (); ++s) {
     op (*s, trans, pm);
   }
-}
-
-template <class Sh, class StableTag>
-void
-layer_class<Sh, StableTag>::insert_into (Shapes *target)
-{
-  target->insert (m_layer.begin (), m_layer.end ());
 }
 
 template <class Sh, class StableTag>
@@ -923,8 +923,6 @@ template class layer_class<db::Shape::path_ptr_array_type, db::stable_layer_tag>
 template class layer_class<db::object_with_properties<db::Shape::path_ptr_array_type>, db::stable_layer_tag>;
 template class layer_class<db::Shape::edge_type, db::stable_layer_tag>;
 template class layer_class<db::object_with_properties<db::Shape::edge_type>, db::stable_layer_tag>;
-template class layer_class<db::Shape::point_type, db::stable_layer_tag>;
-template class layer_class<db::object_with_properties<db::Shape::point_type>, db::stable_layer_tag>;
 template class layer_class<db::Shape::edge_pair_type, db::stable_layer_tag>;
 template class layer_class<db::object_with_properties<db::Shape::edge_pair_type>, db::stable_layer_tag>;
 template class layer_class<db::Shape::text_type, db::stable_layer_tag>;
@@ -965,8 +963,6 @@ template class layer_class<db::Shape::edge_type, db::unstable_layer_tag>;
 template class layer_class<db::object_with_properties<db::Shape::edge_type>, db::unstable_layer_tag>;
 template class layer_class<db::Shape::edge_pair_type, db::unstable_layer_tag>;
 template class layer_class<db::object_with_properties<db::Shape::edge_pair_type>, db::unstable_layer_tag>;
-template class layer_class<db::Shape::point_type, db::unstable_layer_tag>;
-template class layer_class<db::object_with_properties<db::Shape::point_type>, db::unstable_layer_tag>;
 template class layer_class<db::Shape::text_type, db::unstable_layer_tag>;
 template class layer_class<db::object_with_properties<db::Shape::text_type>, db::unstable_layer_tag>;
 template class layer_class<db::Shape::text_ref_type, db::unstable_layer_tag>;

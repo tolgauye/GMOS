@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -21,8 +21,8 @@
 */
 
 
-#ifndef _HDR_gsiSerialization
-#define _HDR_gsiSerialization
+#ifndef _HDR_gsiSerialisation
+#define _HDR_gsiSerialisation
 
 #include "gsiTypes.h"
 #include "tlHeap.h"
@@ -84,17 +84,6 @@ struct GSI_PUBLIC ArglistUnderflowException
 };
 
 /**
- *  @brief An exception thrown if there are not enough arguments on the serialization buffer
- */
-struct GSI_PUBLIC ArglistUnderflowExceptionWithType
-  : public tl::Exception
-{
-  ArglistUnderflowExceptionWithType (const ArgSpecBase &as)
-    : tl::Exception (tl::to_string (tr ("Too few arguments - missing '%s'")), as.name ())
-  { }
-};
-
-/**
  *  @brief An exception thrown if a reference is null (nil)
  */
 struct GSI_PUBLIC NilPointerToReference
@@ -102,17 +91,6 @@ struct GSI_PUBLIC NilPointerToReference
 {
   NilPointerToReference ()
     : tl::Exception (tl::to_string (tr ("nil object passed to a reference")))
-  { }
-};
-
-/**
- *  @brief An exception thrown if a reference is null (nil)
- */
-struct GSI_PUBLIC NilPointerToReferenceWithType
-  : public tl::Exception
-{
-  NilPointerToReferenceWithType (const ArgSpecBase &as)
-    : tl::Exception (tl::to_string (tr ("nil object passed to a reference for '%s'")), as.name ())
   { }
 };
 
@@ -230,16 +208,7 @@ public:
   template <class X>
   inline X read (tl::Heap &heap)
   {
-    return this->read_impl<X> (typename type_traits<X>::tag (), heap, 0);
-  }
-
-  /**
-   *  @brief Reads a value from the buffer
-   */
-  template <class X>
-  inline X read (tl::Heap &heap, const ArgSpecBase *as)
-  {
-    return this->read_impl<X> (typename type_traits<X>::tag (), heap, as);
+    return this->read_impl<X> (typename type_traits<X>::tag (), heap);
   }
 
   /**
@@ -259,26 +228,6 @@ private:
   {
     if (! *this) {
       throw ArglistUnderflowException ();
-    }
-  }
-
-  inline void check_data (const ArgSpecBase *as) const
-  {
-    if (! *this) {
-      if (as) {
-        throw ArglistUnderflowExceptionWithType (*as);
-      } else {
-        throw ArglistUnderflowException ();
-      }
-    }
-  }
-
-  inline void throw_nil_for_reference (const ArgSpecBase *as) const
-  {
-    if (as) {
-      throw NilPointerToReferenceWithType (*as);
-    } else {
-      throw NilPointerToReference ();
     }
   }
 
@@ -420,18 +369,18 @@ private:
   //  reader implementations
 
   template <class X>
-  X read_impl (const pod_direct_tag &, tl::Heap &, const ArgSpecBase *as)
+  X read_impl (const pod_direct_tag &, tl::Heap &)
   {
-    check_data (as);
+    check_data ();
     X r = *((X *)mp_read);
     mp_read += item_size<X> ();
     return r;
   }
 
   template <class X>
-  X read_impl (const x_tag &, tl::Heap &, const ArgSpecBase *as)
+  X read_impl (const x_tag &, tl::Heap &)
   {
-    check_data (as);
+    check_data ();
     X *xp = *(X **)mp_read;
     X x = *xp;
     delete xp;
@@ -440,7 +389,7 @@ private:
   }
 
   template <class X>
-  X read_impl (const vptr_tag &, tl::Heap &, const ArgSpecBase *)
+  X read_impl (const vptr_tag &, tl::Heap &)
   {
     void *r = *((void **)mp_read);
     mp_read += item_size<void *> ();
@@ -449,73 +398,73 @@ private:
   }
 
   template <class X>
-  X read_impl (const ref_tag &, tl::Heap &, const ArgSpecBase *as)
+  X read_impl (const ref_tag &, tl::Heap &)
   {
     typedef typename type_traits<X>::value_type value_type;
-    check_data (as);
+    check_data ();
     value_type *r = *((value_type **)mp_read);
     mp_read += item_size<value_type *> ();
     if (! r) {
-      throw_nil_for_reference (as);
+      throw NilPointerToReference ();
     }
     return *r;
   }
 
   template <class X>
-  X read_impl (const pod_cref_tag &, tl::Heap &, const ArgSpecBase *as)
+  X read_impl (const pod_cref_tag &, tl::Heap &)
   {
     //  X is actually an (const X &)
     typedef typename type_traits<X>::value_type value_type;
-    check_data (as);
+    check_data ();
     const value_type *r = ((const value_type *)mp_read);
     mp_read += item_size<value_type> ();
     return *r;
   }
 
   template <class X>
-  X read_impl (const npod_cref_tag &, tl::Heap &, const ArgSpecBase *as)
+  X read_impl (const npod_cref_tag &, tl::Heap &)
   {
     //  X is actually an (const X &)
     typedef typename type_traits<X>::value_type value_type;
-    check_data (as);
+    check_data ();
     const value_type *r = *((const value_type **)mp_read);
     mp_read += item_size<const value_type *> ();
     if (! r) {
-      throw_nil_for_reference (as);
+      throw NilPointerToReference ();
     }
     return *r;
   }
 
   template <class X>
-  X read_impl (const x_cref_tag &, tl::Heap &, const ArgSpecBase *as)
+  X read_impl (const x_cref_tag &, tl::Heap &)
   {
     //  X is actually an (const X &)
     typedef typename type_traits<X>::value_type value_type;
-    check_data (as);
+    check_data ();
     const value_type *r = *((const value_type **)mp_read);
     mp_read += item_size<const value_type *> ();
     if (! r) {
-      throw_nil_for_reference (as);
+      throw NilPointerToReference ();
     }
     return *r;
   }
 
   template <class X>
-  X read_impl (const ptr_tag &, tl::Heap &, const ArgSpecBase *as)
+  X read_impl (const ptr_tag &, tl::Heap &)
   {
     //  X is actually an (X *)
     typedef typename type_traits<X>::value_type value_type;
-    check_data (as);
+    check_data ();
     value_type * const &r = *((value_type **)mp_read);
     mp_read += item_size<value_type *> ();
     return r;
   }
 
   template <class X>
-  X read_impl (const pod_cptr_tag &, tl::Heap &, const ArgSpecBase *as)
+  X read_impl (const pod_cptr_tag &, tl::Heap &)
   {
     //  X is actually an (const X *)
-    check_data (as);
+    check_data ();
     bool h = *(bool *)mp_read;
     mp_read += item_size<bool> ();
     X r = h ? (X)mp_read : (X)0;
@@ -525,36 +474,33 @@ private:
 
   //  see notes on the serialization for this type:
   template <class X>
-  X read_impl (const npod_cptr_tag &, tl::Heap &, const ArgSpecBase *as)
+  X read_impl (const npod_cptr_tag &, tl::Heap &)
   {
     //  X is actually an (const X *)
-    check_data (as);
+    check_data ();
     X r = *((X *)mp_read);
     mp_read += item_size<X> ();
     return r;
   }
 
   template <class X>
-  X read_impl (const x_cptr_tag &, tl::Heap &, const ArgSpecBase *as)
+  X read_impl (const x_cptr_tag &, tl::Heap &)
   {
     //  X is actually an (const X *)
-    check_data (as);
+    check_data ();
     X r = *((X *)mp_read);
     mp_read += item_size<X> ();
     return r;
   }
 
   template <class X>
-  X read_impl (const adaptor_direct_tag &, tl::Heap &heap, const ArgSpecBase *as)
+  X read_impl (const adaptor_direct_tag &, tl::Heap &heap)
   {
-    check_data (as);
+    check_data ();
 
-    AdaptorBase *p = *(AdaptorBase **)mp_read;
+    std::auto_ptr<AdaptorBase> p (*(AdaptorBase **)mp_read);
     mp_read += item_size<AdaptorBase *> ();
-
-    tl_assert (p != 0);
-    //  late-destroy the adaptor since the new X object may still need data from there (e.g. QLatin1String)
-    heap.push (p);
+    tl_assert (p.get () != 0);
 
     X x = X ();
     copy_to<X> (*p, x, heap);
@@ -562,18 +508,15 @@ private:
   }
 
   template <class X>
-  X read_impl (const adaptor_cref_tag &, tl::Heap &heap, const ArgSpecBase *as)
+  X read_impl (const adaptor_cref_tag &, tl::Heap &heap)
   {
     typedef typename tl::get_inner_type<X>::result x_type;
 
-    check_data (as);
+    check_data ();
 
-    AdaptorBase *p = *(AdaptorBase **)mp_read;
+    std::auto_ptr<AdaptorBase> p (*(AdaptorBase **)mp_read);
     mp_read += item_size<AdaptorBase *> ();
-
-    tl_assert (p != 0);
-    //  late-destroy the adaptor since the new X object may still need data from there (e.g. QLatin1String)
-    heap.push (p);
+    tl_assert (p.get () != 0);
 
     x_type *x = new x_type ();
     heap.push (x);
@@ -583,11 +526,11 @@ private:
   }
 
   template <class X>
-  X read_impl (const adaptor_ref_tag &, tl::Heap &heap, const ArgSpecBase *as)
+  X read_impl (const adaptor_ref_tag &, tl::Heap &heap)
   {
     typedef typename tl::get_inner_type<X>::result x_type;
 
-    check_data (as);
+    check_data ();
 
     AdaptorBase *p = *(AdaptorBase **)mp_read;
     mp_read += item_size<AdaptorBase *> ();
@@ -601,36 +544,31 @@ private:
   }
 
   template <class X>
-  X read_impl (const adaptor_cptr_tag &, tl::Heap &heap, const ArgSpecBase *as)
+  X read_impl (const adaptor_cptr_tag &, tl::Heap &heap)
   {
     typedef typename tl::get_inner_type<X>::result x_type;
 
-    check_data (as);
+    check_data ();
 
-    AdaptorBase *p = *(AdaptorBase **) mp_read;
+    std::auto_ptr<AdaptorBase> p (*(AdaptorBase **)mp_read);
     mp_read += item_size<AdaptorBase *> ();
 
     x_type *x = 0;
-    if (p != 0) {
-
-      //  late-destroy the adaptor since the new X object may still need data from there (e.g. QLatin1String)
-      heap.push (p);
-
+    if (p.get () != 0) {
       x = new x_type ();
       heap.push (x);
       copy_to<x_type> (*p, *x, heap);
-
     }
 
     return x;
   }
 
   template <class X>
-  X read_impl (const adaptor_ptr_tag &, tl::Heap &heap, const ArgSpecBase *as)
+  X read_impl (const adaptor_ptr_tag &, tl::Heap &heap)
   {
     typedef typename tl::get_inner_type<X>::result x_type;
 
-    check_data (as);
+    check_data ();
 
     AdaptorBase *p = *(AdaptorBase **)mp_read;
     mp_read += item_size<AdaptorBase *> ();
@@ -759,6 +697,76 @@ class GSI_PUBLIC_TEMPLATE StringAdaptorImpl
 };
 
 #if defined(HAVE_QT)
+
+/**
+ *  @brief Specialization for QByteArray
+ */
+template <>
+class GSI_PUBLIC StringAdaptorImpl<QByteArray>
+  : public StringAdaptor
+{
+public:
+  StringAdaptorImpl (QByteArray *s) 
+    : mp_s (s), m_is_const (false) 
+  { 
+    //  .. nothing yet ..
+  }
+
+  StringAdaptorImpl (const QByteArray *s) 
+    : mp_s (const_cast<QByteArray *> (s)), m_is_const (true) 
+  { 
+    //  .. nothing yet ..
+  }
+
+  StringAdaptorImpl (const QByteArray &s) 
+    : m_is_const (false), m_s (s) 
+  { 
+    mp_s = &m_s; 
+  }
+
+  StringAdaptorImpl () 
+    : m_is_const (false)
+  { 
+    mp_s = &m_s; 
+  }
+
+  virtual ~StringAdaptorImpl () 
+  { 
+    //  .. nothing yet ..
+  }
+
+  virtual size_t size () const 
+  { 
+    return mp_s->size (); 
+  }
+
+  virtual const char *c_str () const
+  {
+    return mp_s->constData (); 
+  }
+
+  virtual void set (const char *c_str, size_t s, tl::Heap &) 
+  {
+    if (! m_is_const) {
+      *mp_s = QByteArray (c_str, int (s));
+    }
+  }
+
+  virtual void copy_to (AdaptorBase *target, tl::Heap &heap) const
+  {
+    StringAdaptorImpl<QByteArray> *s = dynamic_cast<StringAdaptorImpl<QByteArray> *>(target);
+    if (s) {
+      *s->mp_s = *mp_s;
+    } else {
+      StringAdaptor::copy_to (target, heap);
+    }
+  }
+   
+private:
+  QByteArray *mp_s;
+  bool m_is_const;
+  QByteArray m_s;
+};
 
 /**
  *  @brief Specialization for QString
@@ -905,154 +913,6 @@ private:
   QStringRef m_s;
   mutable QByteArray m_s_utf8;
 };
-
-#if QT_VERSION >= 0x60000
-
-/**
- *  @brief Specialization for QString
- */
-template <>
-class GSI_PUBLIC StringAdaptorImpl<QStringView>
-  : public StringAdaptor
-{
-public:
-  StringAdaptorImpl (QStringView *s)
-    : mp_s (s), m_is_const (false)
-  {
-    //  .. nothing yet ..
-  }
-
-  StringAdaptorImpl (const QStringView *s)
-    : mp_s (const_cast<QStringView *> (s)), m_is_const (true)
-  {
-    //  .. nothing yet ..
-  }
-
-  StringAdaptorImpl (const QStringView &s)
-    : m_is_const (false), m_s (s)
-  {
-    mp_s = &m_s;
-  }
-
-  StringAdaptorImpl ()
-    : m_is_const (false)
-  {
-    mp_s = &m_s;
-  }
-
-  virtual ~StringAdaptorImpl ()
-  {
-    //  .. nothing yet ..
-  }
-
-  virtual size_t size () const
-  {
-    return mp_s->toUtf8 ().size ();
-  }
-
-  virtual const char *c_str () const
-  {
-    m_s_utf8 = mp_s->toUtf8 ();
-    return m_s_utf8.constData ();
-  }
-
-  virtual void set (const char *c_str, size_t s, tl::Heap &heap)
-  {
-    if (! m_is_const) {
-      QString *hstr = heap.create<QString> ();
-      *hstr = QString::fromUtf8 (c_str, int (s));
-      *mp_s = QStringView (hstr->constData (), hstr->size ());
-    }
-  }
-
-  virtual void copy_to (AdaptorBase *target, tl::Heap &heap) const
-  {
-    StringAdaptorImpl<QStringView> *s = dynamic_cast<StringAdaptorImpl<QStringView> *>(target);
-    if (s) {
-      QString *hstr = heap.create<QString> ();
-      *hstr = mp_s->toString ();
-      *s->mp_s = QStringView (hstr->constData (), hstr->size ());
-    } else {
-      StringAdaptor::copy_to (target, heap);
-    }
-  }
-
-private:
-  QStringView *mp_s;
-  bool m_is_const;
-  QStringView m_s;
-  mutable QByteArray m_s_utf8;
-};
-
-#endif
-
-#if QT_VERSION >= 0x50000
-
-/**
- *  @brief Specialization for QLatin1String
- */
-template <>
-class GSI_PUBLIC StringAdaptorImpl<QLatin1String>
-  : public StringAdaptor
-{
-public:
-  StringAdaptorImpl (QLatin1String *s)
-    : mp_s (s), m_is_const (false)
-  {
-    //  .. nothing yet ..
-  }
-
-  StringAdaptorImpl (const QLatin1String *s)
-    : mp_s (const_cast<QLatin1String *> (s)), m_is_const (true)
-  {
-    //  .. nothing yet ..
-  }
-
-  StringAdaptorImpl (const QLatin1String &s)
-    : m_is_const (false), m_s (s)
-  {
-    mp_s = &m_s;
-  }
-
-  StringAdaptorImpl ()
-    : m_is_const (false)
-  {
-    mp_s = &m_s;
-  }
-
-  virtual ~StringAdaptorImpl ()
-  {
-    //  .. nothing yet ..
-  }
-
-  virtual size_t size () const
-  {
-    return QString::fromLatin1 (mp_s->data (), mp_s->size ()).toUtf8 ().size ();
-  }
-
-  virtual const char *c_str () const
-  {
-    m_s_utf8 = QString::fromLatin1 (mp_s->data (), mp_s->size ()).toUtf8 ();
-    return m_s_utf8.constData ();
-  }
-
-  virtual void set (const char *c_str, size_t s, tl::Heap &heap)
-  {
-    if (! m_is_const) {
-      QByteArray *latin1_holder = new QByteArray (QString::fromUtf8 (c_str, int (s)).toLatin1 ());
-      heap.push (latin1_holder);
-      *mp_s = QLatin1String (latin1_holder->constData (), latin1_holder->size ());
-    }
-  }
-
-private:
-  QLatin1String *mp_s;
-  bool m_is_const;
-  QLatin1String m_s;
-  mutable QByteArray m_s_utf8;
-};
-
-#endif
 
 #endif
 
@@ -1243,289 +1103,11 @@ public:
 };
 
 // ------------------------------------------------------------
-//  ByteArray adaptor framework
+//  Variant adaptor framework
 
 /**
  *  @brief A generic adaptor for strings
  *  This is the base class for implementing generic access to strings
- */
-class GSI_PUBLIC ByteArrayAdaptor
-  : public AdaptorBase
-{
-public:
-  /**
-   *  @brief Default constructor
-   */
-  ByteArrayAdaptor () { }
-
-  /**
-   *  @brief Destructor
-   */
-  virtual ~ByteArrayAdaptor () { }
-
-  /**
-   *  @brief Returns the size of the string
-   */
-  virtual size_t size () const = 0;
-
-  /**
-   *  @brief Returns a pointer to a UTF8 encoded character array with size size()
-   */
-  virtual const char *c_str () const = 0;
-
-  /**
-   *  @brief Sets the string to the given UTF8 string with length s
-   */
-  virtual void set (const char *c_str, size_t s, tl::Heap &heap) = 0;
-
-  /**
-   *  @brief copy_to implementation
-   */
-  virtual void copy_to (AdaptorBase *target, tl::Heap &heap) const
-  {
-    ByteArrayAdaptor *s = dynamic_cast<ByteArrayAdaptor *>(target);
-    tl_assert (s);
-    s->set (c_str (), size (), heap);
-  }
-};
-
-/**
- *  @brief Generic string adaptor implementation
- */
-template <class X>
-class GSI_PUBLIC_TEMPLATE ByteArrayAdaptorImpl
-  : public ByteArrayAdaptor
-{
-};
-
-#if defined(HAVE_QT)
-
-/**
- *  @brief Specialization for QByteArray
- */
-template <>
-class GSI_PUBLIC ByteArrayAdaptorImpl<QByteArray>
-  : public ByteArrayAdaptor
-{
-public:
-  ByteArrayAdaptorImpl (QByteArray *s)
-    : mp_s (s), m_is_const (false)
-  {
-    //  .. nothing yet ..
-  }
-
-  ByteArrayAdaptorImpl (const QByteArray *s)
-    : mp_s (const_cast<QByteArray *> (s)), m_is_const (true)
-  {
-    //  .. nothing yet ..
-  }
-
-  ByteArrayAdaptorImpl (const QByteArray &s)
-    : m_is_const (false), m_s (s)
-  {
-    mp_s = &m_s;
-  }
-
-  ByteArrayAdaptorImpl ()
-    : m_is_const (false)
-  {
-    mp_s = &m_s;
-  }
-
-  virtual ~ByteArrayAdaptorImpl ()
-  {
-    //  .. nothing yet ..
-  }
-
-  virtual size_t size () const
-  {
-    return mp_s->size ();
-  }
-
-  virtual const char *c_str () const
-  {
-    return mp_s->constData ();
-  }
-
-  virtual void set (const char *c_str, size_t s, tl::Heap &)
-  {
-    if (! m_is_const) {
-      *mp_s = QByteArray (c_str, int (s));
-    }
-  }
-
-  virtual void copy_to (AdaptorBase *target, tl::Heap &heap) const
-  {
-    ByteArrayAdaptorImpl<QByteArray> *s = dynamic_cast<ByteArrayAdaptorImpl<QByteArray> *>(target);
-    if (s) {
-      *s->mp_s = *mp_s;
-    } else {
-      ByteArrayAdaptor::copy_to (target, heap);
-    }
-  }
-
-private:
-  QByteArray *mp_s;
-  bool m_is_const;
-  QByteArray m_s;
-};
-
-#if QT_VERSION > 0x60000
-
-/**
- *  @brief Specialization for QByteArray
- */
-template <>
-class GSI_PUBLIC ByteArrayAdaptorImpl<QByteArrayView>
-  : public ByteArrayAdaptor
-{
-public:
-  ByteArrayAdaptorImpl (QByteArrayView *s)
-    : mp_s (s), m_is_const (false)
-  {
-    //  .. nothing yet ..
-  }
-
-  ByteArrayAdaptorImpl (const QByteArrayView *s)
-    : mp_s (const_cast<QByteArrayView *> (s)), m_is_const (true)
-  {
-    //  .. nothing yet ..
-  }
-
-  ByteArrayAdaptorImpl (const QByteArrayView &s)
-    : m_is_const (false), m_s (s)
-  {
-    mp_s = &m_s;
-  }
-
-  ByteArrayAdaptorImpl ()
-    : m_is_const (false)
-  {
-    mp_s = &m_s;
-  }
-
-  virtual ~ByteArrayAdaptorImpl ()
-  {
-    //  .. nothing yet ..
-  }
-
-  virtual size_t size () const
-  {
-    return mp_s->size ();
-  }
-
-  virtual const char *c_str () const
-  {
-    return mp_s->constData ();
-  }
-
-  virtual void set (const char *c_str, size_t s, tl::Heap &heap)
-  {
-    if (! m_is_const) {
-      QByteArray *str = heap.create<QByteArray> ();
-      *str = QByteArray (c_str, s);
-      *mp_s = QByteArrayView (str->constData (), str->size ());
-    }
-  }
-
-  virtual void copy_to (AdaptorBase *target, tl::Heap &heap) const
-  {
-    ByteArrayAdaptorImpl<QByteArrayView> *s = dynamic_cast<ByteArrayAdaptorImpl<QByteArrayView> *>(target);
-    if (s) {
-      QByteArray *str = heap.create<QByteArray> ();
-      *str = QByteArray (mp_s->constData (), mp_s->size ());
-      *s->mp_s = *str;
-    } else {
-      ByteArrayAdaptor::copy_to (target, heap);
-    }
-  }
-
-private:
-  QByteArrayView *mp_s;
-  bool m_is_const;
-  QByteArrayView m_s;
-};
-
-#endif
-
-#endif
-
-/**
- *  @brief Specialization for std::string
- */
-template <>
-class GSI_PUBLIC ByteArrayAdaptorImpl<std::vector<char> >
-  : public ByteArrayAdaptor
-{
-public:
-  ByteArrayAdaptorImpl (std::vector<char> *s)
-    : mp_s (s), m_is_const (false)
-  {
-    //  .. nothing yet ..
-  }
-
-  ByteArrayAdaptorImpl (const std::vector<char> *s)
-    : mp_s (const_cast<std::vector<char> *> (s)), m_is_const (true)
-  {
-    //  .. nothing yet ..
-  }
-
-  ByteArrayAdaptorImpl (const std::vector<char> &s)
-    : m_is_const (false), m_s (s)
-  {
-    mp_s = &m_s;
-  }
-
-  ByteArrayAdaptorImpl ()
-    : m_is_const (false)
-  {
-    mp_s = &m_s;
-  }
-
-  virtual ~ByteArrayAdaptorImpl ()
-  {
-    //  .. nothing yet ..
-  }
-
-  virtual size_t size () const
-  {
-    return mp_s->size ();
-  }
-
-  virtual const char *c_str () const
-  {
-    return &mp_s->front ();
-  }
-
-  virtual void set (const char *c_str, size_t s, tl::Heap &)
-  {
-    if (! m_is_const) {
-      *mp_s = std::vector<char> (c_str, c_str + s);
-    }
-  }
-
-  virtual void copy_to (AdaptorBase *target, tl::Heap &heap) const
-  {
-    ByteArrayAdaptorImpl<std::vector<char> > *s = dynamic_cast<ByteArrayAdaptorImpl<std::vector<char> > *>(target);
-    if (s) {
-      *s->mp_s = *mp_s;
-    } else {
-      ByteArrayAdaptor::copy_to (target, heap);
-    }
-  }
-
-private:
-  std::vector<char> *mp_s;
-  bool m_is_const;
-  std::vector<char> m_s;
-};
-
-// ------------------------------------------------------------
-//  Variant adaptor framework
-
-/**
- *  @brief A generic adaptor for variants
- *  This is the base class for implementing generic access to variants
  */
 class GSI_PUBLIC VariantAdaptor
   : public AdaptorBase
@@ -1549,21 +1131,21 @@ public:
   /**
    *  @brief Sets the variant's value
    */
-  virtual void set (const tl::Variant &v, tl::Heap & /*heap*/) = 0;
+  virtual void set (const tl::Variant &v) = 0;
 
   /**
    *  @brief Implementation of copy_to
    */
-  virtual void copy_to (AdaptorBase *target, tl::Heap &heap) const
+  virtual void copy_to (AdaptorBase *target, tl::Heap & /*heap*/) const
   {
     VariantAdaptor *v = dynamic_cast<VariantAdaptor *>(target);
     tl_assert (v);
-    v->set (var (), heap);
+    v->set (var ());
   }
 };
 
 /**
- *  @brief Generic variant adaptor implementation
+ *  @brief Generic string adaptor implementation
  */
 template <class X> 
 class GSI_PUBLIC_TEMPLATE VariantAdaptorImpl
@@ -1620,7 +1202,7 @@ public:
     return *mp_v;
   }
 
-  virtual void set (const tl::Variant &v, tl::Heap & /*heap*/)
+  virtual void set (const tl::Variant &v) 
   {
     if (! m_is_const) {
       *mp_v = v.to_qvariant ();
@@ -1642,93 +1224,6 @@ private:
   bool m_is_const;
   QVariant m_v;
 };
-
-#if QT_VERSION >= 0x50000
-
-/**
- *  @brief Specialization for QVariant
- */
-template <typename T>
-class GSI_PUBLIC_TEMPLATE VariantAdaptorImpl<QPointer<T> >
-  : public VariantAdaptor
-{
-public:
-  VariantAdaptorImpl (QPointer<T> *v)
-    : mp_v (v), m_is_const (false)
-  {
-    //  .. nothing yet ..
-  }
-
-  VariantAdaptorImpl (const QPointer<T> *v)
-    : mp_v (const_cast<QPointer<T> *> (v)), m_is_const (true)
-  {
-    //  .. nothing yet ..
-  }
-
-  VariantAdaptorImpl (const QPointer<T> &v)
-    : m_is_const (true), m_v (v)
-  {
-    mp_v = &m_v;
-  }
-
-  VariantAdaptorImpl ()
-    : m_is_const (false)
-  {
-    mp_v = &m_v;
-  }
-
-  virtual ~VariantAdaptorImpl ()
-  {
-    //  .. nothing yet ..
-  }
-
-  virtual tl::Variant var () const
-  {
-    return tl::Variant::make_variant_ref (mp_v->get ());
-  }
-
-  virtual void set (const tl::Variant &v, tl::Heap & /*heap*/)
-  {
-    if (m_is_const) {
-      //  .. can't change
-    } else if (v.is_nil ()) {
-      mp_v->clear ();
-    } else if (v.is_user<T> ()) {
-      if (v.user_is_ref ()) {
-        *mp_v = (T *) v.to_user ();
-      } else {
-        //  basically should not happen as the QPointer cannot hold anything other than a reference
-        //  (a tl::Variant terminology)
-        tl_assert (false);
-      }
-    } else {
-      //  basically should not happen as the QPointer cannot hold anything other than a user object
-      //  (a tl::Variant terminology)
-      tl_assert (false);
-    }
-  }
-
-  virtual void copy_to (AdaptorBase *target, tl::Heap &heap) const
-  {
-    VariantAdaptorImpl<QPointer<T>> *v = dynamic_cast<VariantAdaptorImpl<QPointer<T>> *>(target);
-    if (v) {
-      if (mp_v->isNull ()) {
-        v->mp_v->clear ();
-      } else {
-        *v->mp_v = QPointer<T> (*mp_v);
-      }
-    } else {
-      VariantAdaptor::copy_to (target, heap);
-    }
-  }
-
-private:
-  QPointer<T> *mp_v;
-  bool m_is_const;
-  QPointer<T> m_v;
-};
-
-#endif
 
 #endif
 
@@ -1779,12 +1274,7 @@ public:
     return *mp_v;
   }
 
-  tl::Variant &var_ref_nc ()
-  {
-    return *mp_v;
-  }
-
-  virtual void set (const tl::Variant &v, tl::Heap & /*heap*/)
+  virtual void set (const tl::Variant &v) 
   {
     if (! m_is_const) {
       *mp_v = v;
@@ -1806,85 +1296,6 @@ private:
   bool m_is_const;
   tl::Variant m_v;
 };
-
-#if __cplusplus >= 201703L
-
-/**
- *  @brief Specialization for std::optional
- */
-template <typename T>
-class GSI_PUBLIC_TEMPLATE VariantAdaptorImpl<std::optional<T> >
-  : public VariantAdaptor
-{
-public:
-  VariantAdaptorImpl (std::optional<T> *v)
-    : mp_v (v), m_is_const (false)
-  {
-    //  .. nothing yet ..
-  }
-
-  VariantAdaptorImpl (const std::optional<T> *v)
-    : mp_v (const_cast<std::optional<T> *> (v)), m_is_const (true)
-  {
-    //  .. nothing yet ..
-  }
-
-  VariantAdaptorImpl (const std::optional<T> &v)
-    : m_is_const (true), m_v (v)
-  {
-    mp_v = &m_v;
-  }
-
-  VariantAdaptorImpl ()
-    : m_is_const (false)
-  {
-    mp_v = &m_v;
-  }
-
-  virtual ~VariantAdaptorImpl ()
-  {
-    //  .. nothing yet ..
-  }
-
-  virtual tl::Variant var () const
-  {
-    return *mp_v ? tl::Variant (mp_v->value ()) : tl::Variant ();
-  }
-
-  virtual void set (const tl::Variant &v, tl::Heap & /*heap*/)
-  {
-    if (m_is_const) {
-      //  .. can't change
-    } else if (v.is_nil ()) {
-      mp_v->reset ();
-    } else if (v.is_user<T> ()) {
-      *mp_v = v.to_user<T> ();
-    } else {
-      *mp_v = v.to<T> ();
-    }
-  }
-
-  virtual void copy_to (AdaptorBase *target, tl::Heap &heap) const
-  {
-    VariantAdaptorImpl<std::optional<T>> *v = dynamic_cast<VariantAdaptorImpl<std::optional<T>> *>(target);
-    if (v) {
-      if (*mp_v) {
-        v->mp_v->reset ();
-      } else {
-        *v->mp_v = mp_v->value ();
-      }
-    } else {
-      VariantAdaptor::copy_to (target, heap);
-    }
-  }
-
-private:
-  std::optional<T> *mp_v;
-  bool m_is_const;
-  std::optional<T> m_v;
-};
-
-#endif
 
 // ------------------------------------------------------------
 //  Vector adaptor framework
@@ -1983,7 +1394,7 @@ public:
     gsi::SerialArgs rr (serial_size ());
     tl_assert (v->serial_size () == serial_size ());
 
-    std::unique_ptr<VectorAdaptorIterator> i (create_iterator ());
+    std::auto_ptr<VectorAdaptorIterator> i (create_iterator ());
     while (! i->at_end ()) {
       rr.reset ();
       i->get (rr, heap);
@@ -2047,13 +1458,11 @@ void push_vector (std::set<X> &v, const X &x)
 
 #if defined(HAVE_QT)
 
-#if QT_VERSION < 0x60000
 template <class X>
 void push_vector (QVector<X> &v, const X &x)
 {
   v.push_back (x);
 }
-#endif
 
 inline void push_vector (QStringList &v, const QString &x)
 {
@@ -2258,7 +1667,7 @@ public:
     gsi::SerialArgs rr (serial_size ());
     tl_assert (v->serial_size () == serial_size ());
 
-    std::unique_ptr<MapAdaptorIterator> i (create_iterator ());
+    std::auto_ptr<MapAdaptorIterator> i (create_iterator ());
     while (! i->at_end ()) {
       rr.reset ();
       i->get (rr, heap);
@@ -2501,12 +1910,6 @@ inline AdaptorBase *create_adaptor_by_category(const string_adaptor_tag & /*tag*
 }
 
 template <class X, class V>
-inline AdaptorBase *create_adaptor_by_category(const byte_array_adaptor_tag & /*tag*/, V v)
-{
-  return new ByteArrayAdaptorImpl<X> (v);
-}
-
-template <class X, class V>
 inline AdaptorBase *create_adaptor_by_category(const variant_adaptor_tag & /*tag*/, const V &v)
 {
   return new VariantAdaptorImpl<X> (v);
@@ -2555,7 +1958,7 @@ inline AdaptorBase *adaptor_factory<Tag, X>::get (const X &v)
 template <class X>
 inline void copy_to (AdaptorBase &a, X &x, tl::Heap &heap)
 {
-  std::unique_ptr<AdaptorBase> t (adaptor_factory<typename gsi::type_traits<X &>::tag, X &>::get (x));
+  std::auto_ptr<AdaptorBase> t (adaptor_factory<typename gsi::type_traits<X &>::tag, X &>::get (x));
   a.copy_to (t.get (), heap);
 }
 

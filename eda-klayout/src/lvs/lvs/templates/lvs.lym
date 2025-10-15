@@ -98,16 +98,13 @@ connect_global(ptie, "SUBSTRATE")
 # -------------------------------------------------------------------
 # Netlist and compare
 
-# Netlist extraction
-netlist
-
-# Hierarchy alignment (flatten out unmatched cells, specifically device cells)
-align
-
-# Netlist normalization and device combination
+# Netlist normalization
 netlist.simplify
 
-# Netlist vs. netlist check
+# Hierarchy alignment (flatten out unmatched cells)
+align
+
+# Netlist vs. netlist
 compare
 </text>
 </klayout-macro>

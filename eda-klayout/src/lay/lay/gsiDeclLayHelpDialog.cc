@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -34,6 +34,18 @@
 # define QT_EXTERNAL_BASE(x)
 #endif
 
+namespace tl
+{
+
+//  type traits for HelpDialog
+template <> 
+struct type_traits<lay::HelpDialog> : public type_traits<void> {
+  typedef tl::false_tag has_default_constructor;
+  typedef tl::false_tag has_copy_constructor;
+};
+
+}
+
 namespace gsi
 {
 
@@ -48,13 +60,15 @@ lay::HelpDialog *new_help_dialog_with_parent (QWidget *parent, bool modal)
 }
 
 Class<lay::HelpDialog> decl_HelpDialog (QT_EXTERNAL_BASE (QDialog) "lay", "HelpDialog",
-  method ("new", new_help_dialog, gsi::arg ("modal"),
+  method ("new", new_help_dialog, 
     "@brief Creates a new help dialog\n"
+    "@args modal\n"
     "If the modal flag is true, the dialog will be shown as a modal window.\n"
   ) +
 #if defined(HAVE_QTBINDINGS)
-  method ("new", new_help_dialog_with_parent, gsi::arg ("parent"), gsi::arg ("modal"),
+  method ("new", new_help_dialog_with_parent, 
     "@brief Creates a new help dialog\n"
+    "@args parent, modal\n"
     "If the modal flag is true, the dialog will be shown as a modal window.\n"
   ) +
 #else
@@ -65,12 +79,14 @@ Class<lay::HelpDialog> decl_HelpDialog (QT_EXTERNAL_BASE (QDialog) "lay", "HelpD
     "@brief Executes the dialog (shows it modally)\n"
   ) +
 #endif
-  method ("search", &lay::HelpDialog::search, gsi::arg ("topic"),
+  method ("search", &lay::HelpDialog::search, 
     "@brief Issues a search on the specified topic\n"
+    "@args topic\n"
     "This method will call the search page with the given topic.\n"
   ) +
-  method ("load", &lay::HelpDialog::load, gsi::arg ("url"),
+  method ("load", &lay::HelpDialog::load, 
     "@brief Loads the specified URL\n"
+    "@args url\n"
     "This method will call the page with the given URL.\n"
   ),
 
@@ -84,19 +100,10 @@ Class<lay::HelpDialog> decl_HelpDialog (QT_EXTERNAL_BASE (QDialog) "lay", "HelpD
 
 LAYBASIC_PUBLIC Class<lay::BrowserSource> &laybasicdecl_BrowserSource ();
 
-static lay::HelpSource *plain_help_source ()
-{
-  return new lay::HelpSource (false);
-}
-
 Class<lay::HelpSource> decl_HelpSource (laybasicdecl_BrowserSource (), "lay", "HelpSource",
-  gsi::constructor ("plain", &plain_help_source, "@brief Reserved for internal use") +
-  gsi::method ("scan", static_cast<void (lay::HelpSource::*) ()> (&lay::HelpSource::scan), "@brief Reserved internal use") +
-#if defined(HAVE_QTBINDINGS) && defined(HAVE_QT_XML)
-  gsi::method ("get_dom", &lay::HelpSource::get_dom, gsi::arg ("path"), "@brief Reserved for internal use") +
+#if defined(HAVE_QTBINDINGS)
+  gsi::method ("get_dom", &lay::HelpSource::get_dom, "@brief For internal use") + 
 #endif
-  gsi::method ("set_option", &lay::HelpSource::set_option, gsi::arg ("key"), gsi::arg ("value"), "@brief Reserved for internal use") +
-  gsi::method ("get_option", &lay::HelpSource::get_option, gsi::arg ("key"), "@brief Reserved for internal use") +
   gsi::method ("urls", &lay::HelpSource::urls, "@brief Reserved for internal use") +
   gsi::method ("title_for", &lay::HelpSource::title_for, gsi::arg ("path"), "@brief Reserved internal use") +
   gsi::method ("parent_of", &lay::HelpSource::parent_of, gsi::arg ("path"), "@brief Reserved internal use") +
@@ -112,3 +119,4 @@ Class<lay::HelpSource> decl_HelpSource (laybasicdecl_BrowserSource (), "lay", "H
 );
 
 }
+

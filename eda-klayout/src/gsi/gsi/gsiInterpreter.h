@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -25,7 +25,6 @@
 
 #include "tlScriptError.h"
 #include "tlClassRegistry.h"
-#include "tlVariant.h"
 #include "gsiCommon.h"
 
 namespace gsi
@@ -187,7 +186,7 @@ public:
   /**
    *  @brief Add the given path to the search path ($: in ruby)
    */
-  virtual void add_path (const std::string &path, bool prepend = false) = 0;
+  virtual void add_path (const std::string &path) = 0;
 
   /**
    *  @brief Requires the given module (ruby "require")
@@ -211,7 +210,7 @@ public:
   /**
    *  @brief Ignores the next exception
    *
-   *  This is useful for suppressing re-raised exceptions in the debugger.
+   *  This is useful for suppressing reraised exceptions in the debugger.
    */
   virtual void ignore_next_exception () = 0;
 
@@ -268,7 +267,7 @@ public:
   /**
    *  @brief Defines a global variable with the given name and value 
    */
-  virtual void define_variable (const std::string &name, const tl::Variant &value) = 0;
+  virtual void define_variable (const std::string &name, const std::string &value) = 0;
 
   /**
    *  @brief Installs the given console for output

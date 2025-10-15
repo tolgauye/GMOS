@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -38,6 +38,7 @@
 #include <QTimerEvent>
 #include "gsiQt.h"
 #include "gsiQtMultimediaCommon.h"
+#include "gsiDeclQtMultimediaTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -392,7 +393,7 @@ static void _init_f_tr_4013 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("s");
   decl->add_arg<const char * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("c", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("c", true, "__null");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("n", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -404,7 +405,7 @@ static void _call_f_tr_4013 (const qt_gsi::GenericStaticMethod * /*decl*/, gsi::
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (__null, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QAbstractAudioInput::tr (arg1, arg2, arg3));
 }
@@ -417,7 +418,7 @@ static void _init_f_trUtf8_4013 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("s");
   decl->add_arg<const char * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("c", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("c", true, "__null");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("n", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -429,7 +430,7 @@ static void _call_f_trUtf8_4013 (const qt_gsi::GenericStaticMethod * /*decl*/, g
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (__null, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QAbstractAudioInput::trUtf8 (arg1, arg2, arg3));
 }
@@ -462,10 +463,9 @@ static gsi::Methods methods_QAbstractAudioInput () {
   methods += new qt_gsi::GenericMethod ("suspend", "@brief Method void QAbstractAudioInput::suspend()\n", false, &_init_f_suspend_0, &_call_f_suspend_0);
   methods += new qt_gsi::GenericMethod (":volume", "@brief Method double QAbstractAudioInput::volume()\n", true, &_init_f_volume_c0, &_call_f_volume_c0);
   methods += gsi::qt_signal<QObject * > ("destroyed(QObject *)", "destroyed", gsi::arg("arg1"), "@brief Signal declaration for QAbstractAudioInput::destroyed(QObject *)\nYou can bind a procedure to this signal.");
-  methods += gsi::qt_signal<const qt_gsi::Converter<QAudio::Error>::target_type & > ("errorChanged(QAudio::Error)", "errorChanged", gsi::arg("error"), "@brief Signal declaration for QAbstractAudioInput::errorChanged(QAudio::Error error)\nYou can bind a procedure to this signal.");
+  methods += gsi::qt_signal<const qt_gsi::Converter<QAudio::Error>::target_type & > ("errorChanged(QAudio::Error)", "errorChanged", gsi::arg("arg1"), "@brief Signal declaration for QAbstractAudioInput::errorChanged(QAudio::Error)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal ("notify()", "notify", "@brief Signal declaration for QAbstractAudioInput::notify()\nYou can bind a procedure to this signal.");
-  methods += gsi::qt_signal<const QString & > ("objectNameChanged(const QString &)", "objectNameChanged", gsi::arg("objectName"), "@brief Signal declaration for QAbstractAudioInput::objectNameChanged(const QString &objectName)\nYou can bind a procedure to this signal.");
-  methods += gsi::qt_signal<const qt_gsi::Converter<QAudio::State>::target_type & > ("stateChanged(QAudio::State)", "stateChanged", gsi::arg("state"), "@brief Signal declaration for QAbstractAudioInput::stateChanged(QAudio::State state)\nYou can bind a procedure to this signal.");
+  methods += gsi::qt_signal<const qt_gsi::Converter<QAudio::State>::target_type & > ("stateChanged(QAudio::State)", "stateChanged", gsi::arg("arg1"), "@brief Signal declaration for QAbstractAudioInput::stateChanged(QAudio::State)\nYou can bind a procedure to this signal.");
   methods += new qt_gsi::GenericStaticMethod ("tr", "@brief Static method QString QAbstractAudioInput::tr(const char *s, const char *c, int n)\nThis method is static and can be called without an instance.", &_init_f_tr_4013, &_call_f_tr_4013);
   methods += new qt_gsi::GenericStaticMethod ("trUtf8", "@brief Static method QString QAbstractAudioInput::trUtf8(const char *s, const char *c, int n)\nThis method is static and can be called without an instance.", &_init_f_trUtf8_4013, &_call_f_trUtf8_4013);
   return methods;
@@ -580,39 +580,39 @@ public:
     }
   }
 
-  //  [emitter impl] void QAbstractAudioInput::errorChanged(QAudio::Error error)
-  void emitter_QAbstractAudioInput_errorChanged_1653(QAudio::Error error)
+  //  [emitter impl] void QAbstractAudioInput::errorChanged(QAudio::Error)
+  void emitter_QAbstractAudioInput_errorChanged_1653(QAudio::Error arg1)
   {
-    emit QAbstractAudioInput::errorChanged(error);
+    emit QAbstractAudioInput::errorChanged(arg1);
   }
 
-  //  [adaptor impl] bool QAbstractAudioInput::event(QEvent *event)
-  bool cbs_event_1217_0(QEvent *_event)
+  //  [adaptor impl] bool QAbstractAudioInput::event(QEvent *)
+  bool cbs_event_1217_0(QEvent *arg1)
   {
-    return QAbstractAudioInput::event(_event);
+    return QAbstractAudioInput::event(arg1);
   }
 
-  virtual bool event(QEvent *_event)
+  virtual bool event(QEvent *arg1)
   {
     if (cb_event_1217_0.can_issue()) {
-      return cb_event_1217_0.issue<QAbstractAudioInput_Adaptor, bool, QEvent *>(&QAbstractAudioInput_Adaptor::cbs_event_1217_0, _event);
+      return cb_event_1217_0.issue<QAbstractAudioInput_Adaptor, bool, QEvent *>(&QAbstractAudioInput_Adaptor::cbs_event_1217_0, arg1);
     } else {
-      return QAbstractAudioInput::event(_event);
+      return QAbstractAudioInput::event(arg1);
     }
   }
 
-  //  [adaptor impl] bool QAbstractAudioInput::eventFilter(QObject *watched, QEvent *event)
-  bool cbs_eventFilter_2411_0(QObject *watched, QEvent *event)
+  //  [adaptor impl] bool QAbstractAudioInput::eventFilter(QObject *, QEvent *)
+  bool cbs_eventFilter_2411_0(QObject *arg1, QEvent *arg2)
   {
-    return QAbstractAudioInput::eventFilter(watched, event);
+    return QAbstractAudioInput::eventFilter(arg1, arg2);
   }
 
-  virtual bool eventFilter(QObject *watched, QEvent *event)
+  virtual bool eventFilter(QObject *arg1, QEvent *arg2)
   {
     if (cb_eventFilter_2411_0.can_issue()) {
-      return cb_eventFilter_2411_0.issue<QAbstractAudioInput_Adaptor, bool, QObject *, QEvent *>(&QAbstractAudioInput_Adaptor::cbs_eventFilter_2411_0, watched, event);
+      return cb_eventFilter_2411_0.issue<QAbstractAudioInput_Adaptor, bool, QObject *, QEvent *>(&QAbstractAudioInput_Adaptor::cbs_eventFilter_2411_0, arg1, arg2);
     } else {
-      return QAbstractAudioInput::eventFilter(watched, event);
+      return QAbstractAudioInput::eventFilter(arg1, arg2);
     }
   }
 
@@ -650,13 +650,6 @@ public:
     } else {
       throw qt_gsi::AbstractMethodCalledException("notifyInterval");
     }
-  }
-
-  //  [emitter impl] void QAbstractAudioInput::objectNameChanged(const QString &objectName)
-  void emitter_QAbstractAudioInput_objectNameChanged_4567(const QString &objectName)
-  {
-    __SUPPRESS_UNUSED_WARNING (objectName);
-    throw tl::Exception ("Can't emit private signal 'void QAbstractAudioInput::objectNameChanged(const QString &objectName)'");
   }
 
   //  [adaptor impl] int QAbstractAudioInput::periodSize()
@@ -829,10 +822,10 @@ public:
     }
   }
 
-  //  [emitter impl] void QAbstractAudioInput::stateChanged(QAudio::State state)
-  void emitter_QAbstractAudioInput_stateChanged_1644(QAudio::State state)
+  //  [emitter impl] void QAbstractAudioInput::stateChanged(QAudio::State)
+  void emitter_QAbstractAudioInput_stateChanged_1644(QAudio::State arg1)
   {
-    emit QAbstractAudioInput::stateChanged(state);
+    emit QAbstractAudioInput::stateChanged(arg1);
   }
 
   //  [adaptor impl] void QAbstractAudioInput::stop()
@@ -880,33 +873,33 @@ public:
     }
   }
 
-  //  [adaptor impl] void QAbstractAudioInput::childEvent(QChildEvent *event)
-  void cbs_childEvent_1701_0(QChildEvent *event)
+  //  [adaptor impl] void QAbstractAudioInput::childEvent(QChildEvent *)
+  void cbs_childEvent_1701_0(QChildEvent *arg1)
   {
-    QAbstractAudioInput::childEvent(event);
+    QAbstractAudioInput::childEvent(arg1);
   }
 
-  virtual void childEvent(QChildEvent *event)
+  virtual void childEvent(QChildEvent *arg1)
   {
     if (cb_childEvent_1701_0.can_issue()) {
-      cb_childEvent_1701_0.issue<QAbstractAudioInput_Adaptor, QChildEvent *>(&QAbstractAudioInput_Adaptor::cbs_childEvent_1701_0, event);
+      cb_childEvent_1701_0.issue<QAbstractAudioInput_Adaptor, QChildEvent *>(&QAbstractAudioInput_Adaptor::cbs_childEvent_1701_0, arg1);
     } else {
-      QAbstractAudioInput::childEvent(event);
+      QAbstractAudioInput::childEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QAbstractAudioInput::customEvent(QEvent *event)
-  void cbs_customEvent_1217_0(QEvent *event)
+  //  [adaptor impl] void QAbstractAudioInput::customEvent(QEvent *)
+  void cbs_customEvent_1217_0(QEvent *arg1)
   {
-    QAbstractAudioInput::customEvent(event);
+    QAbstractAudioInput::customEvent(arg1);
   }
 
-  virtual void customEvent(QEvent *event)
+  virtual void customEvent(QEvent *arg1)
   {
     if (cb_customEvent_1217_0.can_issue()) {
-      cb_customEvent_1217_0.issue<QAbstractAudioInput_Adaptor, QEvent *>(&QAbstractAudioInput_Adaptor::cbs_customEvent_1217_0, event);
+      cb_customEvent_1217_0.issue<QAbstractAudioInput_Adaptor, QEvent *>(&QAbstractAudioInput_Adaptor::cbs_customEvent_1217_0, arg1);
     } else {
-      QAbstractAudioInput::customEvent(event);
+      QAbstractAudioInput::customEvent(arg1);
     }
   }
 
@@ -925,18 +918,18 @@ public:
     }
   }
 
-  //  [adaptor impl] void QAbstractAudioInput::timerEvent(QTimerEvent *event)
-  void cbs_timerEvent_1730_0(QTimerEvent *event)
+  //  [adaptor impl] void QAbstractAudioInput::timerEvent(QTimerEvent *)
+  void cbs_timerEvent_1730_0(QTimerEvent *arg1)
   {
-    QAbstractAudioInput::timerEvent(event);
+    QAbstractAudioInput::timerEvent(arg1);
   }
 
-  virtual void timerEvent(QTimerEvent *event)
+  virtual void timerEvent(QTimerEvent *arg1)
   {
     if (cb_timerEvent_1730_0.can_issue()) {
-      cb_timerEvent_1730_0.issue<QAbstractAudioInput_Adaptor, QTimerEvent *>(&QAbstractAudioInput_Adaptor::cbs_timerEvent_1730_0, event);
+      cb_timerEvent_1730_0.issue<QAbstractAudioInput_Adaptor, QTimerEvent *>(&QAbstractAudioInput_Adaptor::cbs_timerEvent_1730_0, arg1);
     } else {
-      QAbstractAudioInput::timerEvent(event);
+      QAbstractAudioInput::timerEvent(arg1);
     }
   }
 
@@ -1022,11 +1015,11 @@ static void _set_callback_cbs_bytesReady_c0_0 (void *cls, const gsi::Callback &c
 }
 
 
-// void QAbstractAudioInput::childEvent(QChildEvent *event)
+// void QAbstractAudioInput::childEvent(QChildEvent *)
 
 static void _init_cbs_childEvent_1701_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QChildEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1046,11 +1039,11 @@ static void _set_callback_cbs_childEvent_1701_0 (void *cls, const gsi::Callback 
 }
 
 
-// void QAbstractAudioInput::customEvent(QEvent *event)
+// void QAbstractAudioInput::customEvent(QEvent *)
 
 static void _init_cbs_customEvent_1217_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1074,7 +1067,7 @@ static void _set_callback_cbs_customEvent_1217_0 (void *cls, const gsi::Callback
 
 static void _init_emitter_destroyed_1302 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("arg1", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("arg1", true, "0");
   decl->add_arg<QObject * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1083,7 +1076,7 @@ static void _call_emitter_destroyed_1302 (const qt_gsi::GenericMethod * /*decl*/
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (nullptr, heap);
+  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (0, heap);
   ((QAbstractAudioInput_Adaptor *)cls)->emitter_QAbstractAudioInput_destroyed_1302 (arg1);
 }
 
@@ -1150,11 +1143,11 @@ static void _set_callback_cbs_error_c0_0 (void *cls, const gsi::Callback &cb)
 }
 
 
-// emitter void QAbstractAudioInput::errorChanged(QAudio::Error error)
+// emitter void QAbstractAudioInput::errorChanged(QAudio::Error)
 
 static void _init_emitter_errorChanged_1653 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("error");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<const qt_gsi::Converter<QAudio::Error>::target_type & > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1168,11 +1161,11 @@ static void _call_emitter_errorChanged_1653 (const qt_gsi::GenericMethod * /*dec
 }
 
 
-// bool QAbstractAudioInput::event(QEvent *event)
+// bool QAbstractAudioInput::event(QEvent *)
 
 static void _init_cbs_event_1217_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QEvent * > (argspec_0);
   decl->set_return<bool > ();
 }
@@ -1191,13 +1184,13 @@ static void _set_callback_cbs_event_1217_0 (void *cls, const gsi::Callback &cb)
 }
 
 
-// bool QAbstractAudioInput::eventFilter(QObject *watched, QEvent *event)
+// bool QAbstractAudioInput::eventFilter(QObject *, QEvent *)
 
 static void _init_cbs_eventFilter_2411_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("watched");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QObject * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("event");
+  static gsi::ArgSpecBase argspec_1 ("arg2");
   decl->add_arg<QEvent * > (argspec_1);
   decl->set_return<bool > ();
 }
@@ -1284,24 +1277,6 @@ static void _call_cbs_notifyInterval_c0_0 (const qt_gsi::GenericMethod * /*decl*
 static void _set_callback_cbs_notifyInterval_c0_0 (void *cls, const gsi::Callback &cb)
 {
   ((QAbstractAudioInput_Adaptor *)cls)->cb_notifyInterval_c0_0 = cb;
-}
-
-
-// emitter void QAbstractAudioInput::objectNameChanged(const QString &objectName)
-
-static void _init_emitter_objectNameChanged_4567 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("objectName");
-  decl->add_arg<const QString & > (argspec_0);
-  decl->set_return<void > ();
-}
-
-static void _call_emitter_objectNameChanged_4567 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs & /*ret*/) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const QString &arg1 = gsi::arg_reader<const QString & >() (args, heap);
-  ((QAbstractAudioInput_Adaptor *)cls)->emitter_QAbstractAudioInput_objectNameChanged_4567 (arg1);
 }
 
 
@@ -1587,11 +1562,11 @@ static void _set_callback_cbs_state_c0_0 (void *cls, const gsi::Callback &cb)
 }
 
 
-// emitter void QAbstractAudioInput::stateChanged(QAudio::State state)
+// emitter void QAbstractAudioInput::stateChanged(QAudio::State)
 
 static void _init_emitter_stateChanged_1644 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("state");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<const qt_gsi::Converter<QAudio::State>::target_type & > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1645,11 +1620,11 @@ static void _set_callback_cbs_suspend_0_0 (void *cls, const gsi::Callback &cb)
 }
 
 
-// void QAbstractAudioInput::timerEvent(QTimerEvent *event)
+// void QAbstractAudioInput::timerEvent(QTimerEvent *)
 
 static void _init_cbs_timerEvent_1730_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QTimerEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1696,67 +1671,66 @@ gsi::Class<QAbstractAudioInput> &qtdecl_QAbstractAudioInput ();
 static gsi::Methods methods_QAbstractAudioInput_Adaptor () {
   gsi::Methods methods;
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QAbstractAudioInput::QAbstractAudioInput()\nThis method creates an object of class QAbstractAudioInput.", &_init_ctor_QAbstractAudioInput_Adaptor_0, &_call_ctor_QAbstractAudioInput_Adaptor_0);
-  methods += new qt_gsi::GenericMethod ("bufferSize", "@brief Virtual method int QAbstractAudioInput::bufferSize()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_bufferSize_c0_0, &_call_cbs_bufferSize_c0_0);
-  methods += new qt_gsi::GenericMethod ("bufferSize", "@hide", true, &_init_cbs_bufferSize_c0_0, &_call_cbs_bufferSize_c0_0, &_set_callback_cbs_bufferSize_c0_0);
-  methods += new qt_gsi::GenericMethod ("bytesReady", "@brief Virtual method int QAbstractAudioInput::bytesReady()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_bytesReady_c0_0, &_call_cbs_bytesReady_c0_0);
-  methods += new qt_gsi::GenericMethod ("bytesReady", "@hide", true, &_init_cbs_bytesReady_c0_0, &_call_cbs_bytesReady_c0_0, &_set_callback_cbs_bytesReady_c0_0);
-  methods += new qt_gsi::GenericMethod ("*childEvent", "@brief Virtual method void QAbstractAudioInput::childEvent(QChildEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0);
-  methods += new qt_gsi::GenericMethod ("*childEvent", "@hide", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0, &_set_callback_cbs_childEvent_1701_0);
-  methods += new qt_gsi::GenericMethod ("*customEvent", "@brief Virtual method void QAbstractAudioInput::customEvent(QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*customEvent", "@hide", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0, &_set_callback_cbs_customEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("bufferSize", "@hide", true, &_init_cbs_bufferSize_c0_0, &_call_cbs_bufferSize_c0_0);
+  methods += new qt_gsi::GenericMethod ("bufferSize", "@brief Virtual method int QAbstractAudioInput::bufferSize()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_bufferSize_c0_0, &_call_cbs_bufferSize_c0_0, &_set_callback_cbs_bufferSize_c0_0);
+  methods += new qt_gsi::GenericMethod ("bytesReady", "@hide", true, &_init_cbs_bytesReady_c0_0, &_call_cbs_bytesReady_c0_0);
+  methods += new qt_gsi::GenericMethod ("bytesReady", "@brief Virtual method int QAbstractAudioInput::bytesReady()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_bytesReady_c0_0, &_call_cbs_bytesReady_c0_0, &_set_callback_cbs_bytesReady_c0_0);
+  methods += new qt_gsi::GenericMethod ("*childEvent", "@hide", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0);
+  methods += new qt_gsi::GenericMethod ("*childEvent", "@brief Virtual method void QAbstractAudioInput::childEvent(QChildEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0, &_set_callback_cbs_childEvent_1701_0);
+  methods += new qt_gsi::GenericMethod ("*customEvent", "@hide", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*customEvent", "@brief Virtual method void QAbstractAudioInput::customEvent(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0, &_set_callback_cbs_customEvent_1217_0);
   methods += new qt_gsi::GenericMethod ("emit_destroyed", "@brief Emitter for signal void QAbstractAudioInput::destroyed(QObject *)\nCall this method to emit this signal.", false, &_init_emitter_destroyed_1302, &_call_emitter_destroyed_1302);
-  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@brief Virtual method void QAbstractAudioInput::disconnectNotify(const QMetaMethod &signal)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0);
-  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@hide", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0, &_set_callback_cbs_disconnectNotify_2394_0);
-  methods += new qt_gsi::GenericMethod ("elapsedUSecs", "@brief Virtual method qint64 QAbstractAudioInput::elapsedUSecs()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_elapsedUSecs_c0_0, &_call_cbs_elapsedUSecs_c0_0);
-  methods += new qt_gsi::GenericMethod ("elapsedUSecs", "@hide", true, &_init_cbs_elapsedUSecs_c0_0, &_call_cbs_elapsedUSecs_c0_0, &_set_callback_cbs_elapsedUSecs_c0_0);
-  methods += new qt_gsi::GenericMethod ("error", "@brief Virtual method QAudio::Error QAbstractAudioInput::error()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_error_c0_0, &_call_cbs_error_c0_0);
-  methods += new qt_gsi::GenericMethod ("error", "@hide", true, &_init_cbs_error_c0_0, &_call_cbs_error_c0_0, &_set_callback_cbs_error_c0_0);
-  methods += new qt_gsi::GenericMethod ("emit_errorChanged", "@brief Emitter for signal void QAbstractAudioInput::errorChanged(QAudio::Error error)\nCall this method to emit this signal.", false, &_init_emitter_errorChanged_1653, &_call_emitter_errorChanged_1653);
-  methods += new qt_gsi::GenericMethod ("event", "@brief Virtual method bool QAbstractAudioInput::event(QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0);
-  methods += new qt_gsi::GenericMethod ("event", "@hide", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0, &_set_callback_cbs_event_1217_0);
-  methods += new qt_gsi::GenericMethod ("eventFilter", "@brief Virtual method bool QAbstractAudioInput::eventFilter(QObject *watched, QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0);
-  methods += new qt_gsi::GenericMethod ("eventFilter", "@hide", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0, &_set_callback_cbs_eventFilter_2411_0);
-  methods += new qt_gsi::GenericMethod ("format", "@brief Virtual method QAudioFormat QAbstractAudioInput::format()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_format_c0_0, &_call_cbs_format_c0_0);
-  methods += new qt_gsi::GenericMethod ("format", "@hide", true, &_init_cbs_format_c0_0, &_call_cbs_format_c0_0, &_set_callback_cbs_format_c0_0);
+  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@hide", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0);
+  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@brief Virtual method void QAbstractAudioInput::disconnectNotify(const QMetaMethod &signal)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0, &_set_callback_cbs_disconnectNotify_2394_0);
+  methods += new qt_gsi::GenericMethod ("elapsedUSecs", "@hide", true, &_init_cbs_elapsedUSecs_c0_0, &_call_cbs_elapsedUSecs_c0_0);
+  methods += new qt_gsi::GenericMethod ("elapsedUSecs", "@brief Virtual method qint64 QAbstractAudioInput::elapsedUSecs()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_elapsedUSecs_c0_0, &_call_cbs_elapsedUSecs_c0_0, &_set_callback_cbs_elapsedUSecs_c0_0);
+  methods += new qt_gsi::GenericMethod ("error", "@hide", true, &_init_cbs_error_c0_0, &_call_cbs_error_c0_0);
+  methods += new qt_gsi::GenericMethod ("error", "@brief Virtual method QAudio::Error QAbstractAudioInput::error()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_error_c0_0, &_call_cbs_error_c0_0, &_set_callback_cbs_error_c0_0);
+  methods += new qt_gsi::GenericMethod ("emit_errorChanged", "@brief Emitter for signal void QAbstractAudioInput::errorChanged(QAudio::Error)\nCall this method to emit this signal.", false, &_init_emitter_errorChanged_1653, &_call_emitter_errorChanged_1653);
+  methods += new qt_gsi::GenericMethod ("event", "@hide", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0);
+  methods += new qt_gsi::GenericMethod ("event", "@brief Virtual method bool QAbstractAudioInput::event(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0, &_set_callback_cbs_event_1217_0);
+  methods += new qt_gsi::GenericMethod ("eventFilter", "@hide", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0);
+  methods += new qt_gsi::GenericMethod ("eventFilter", "@brief Virtual method bool QAbstractAudioInput::eventFilter(QObject *, QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0, &_set_callback_cbs_eventFilter_2411_0);
+  methods += new qt_gsi::GenericMethod ("format", "@hide", true, &_init_cbs_format_c0_0, &_call_cbs_format_c0_0);
+  methods += new qt_gsi::GenericMethod ("format", "@brief Virtual method QAudioFormat QAbstractAudioInput::format()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_format_c0_0, &_call_cbs_format_c0_0, &_set_callback_cbs_format_c0_0);
   methods += new qt_gsi::GenericMethod ("*isSignalConnected", "@brief Method bool QAbstractAudioInput::isSignalConnected(const QMetaMethod &signal)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_isSignalConnected_c2394, &_call_fp_isSignalConnected_c2394);
   methods += new qt_gsi::GenericMethod ("emit_notify", "@brief Emitter for signal void QAbstractAudioInput::notify()\nCall this method to emit this signal.", false, &_init_emitter_notify_0, &_call_emitter_notify_0);
-  methods += new qt_gsi::GenericMethod ("notifyInterval", "@brief Virtual method int QAbstractAudioInput::notifyInterval()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_notifyInterval_c0_0, &_call_cbs_notifyInterval_c0_0);
-  methods += new qt_gsi::GenericMethod ("notifyInterval", "@hide", true, &_init_cbs_notifyInterval_c0_0, &_call_cbs_notifyInterval_c0_0, &_set_callback_cbs_notifyInterval_c0_0);
-  methods += new qt_gsi::GenericMethod ("emit_objectNameChanged", "@brief Emitter for signal void QAbstractAudioInput::objectNameChanged(const QString &objectName)\nCall this method to emit this signal.", false, &_init_emitter_objectNameChanged_4567, &_call_emitter_objectNameChanged_4567);
-  methods += new qt_gsi::GenericMethod ("periodSize", "@brief Virtual method int QAbstractAudioInput::periodSize()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_periodSize_c0_0, &_call_cbs_periodSize_c0_0);
-  methods += new qt_gsi::GenericMethod ("periodSize", "@hide", true, &_init_cbs_periodSize_c0_0, &_call_cbs_periodSize_c0_0, &_set_callback_cbs_periodSize_c0_0);
-  methods += new qt_gsi::GenericMethod ("processedUSecs", "@brief Virtual method qint64 QAbstractAudioInput::processedUSecs()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_processedUSecs_c0_0, &_call_cbs_processedUSecs_c0_0);
-  methods += new qt_gsi::GenericMethod ("processedUSecs", "@hide", true, &_init_cbs_processedUSecs_c0_0, &_call_cbs_processedUSecs_c0_0, &_set_callback_cbs_processedUSecs_c0_0);
+  methods += new qt_gsi::GenericMethod ("notifyInterval", "@hide", true, &_init_cbs_notifyInterval_c0_0, &_call_cbs_notifyInterval_c0_0);
+  methods += new qt_gsi::GenericMethod ("notifyInterval", "@brief Virtual method int QAbstractAudioInput::notifyInterval()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_notifyInterval_c0_0, &_call_cbs_notifyInterval_c0_0, &_set_callback_cbs_notifyInterval_c0_0);
+  methods += new qt_gsi::GenericMethod ("periodSize", "@hide", true, &_init_cbs_periodSize_c0_0, &_call_cbs_periodSize_c0_0);
+  methods += new qt_gsi::GenericMethod ("periodSize", "@brief Virtual method int QAbstractAudioInput::periodSize()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_periodSize_c0_0, &_call_cbs_periodSize_c0_0, &_set_callback_cbs_periodSize_c0_0);
+  methods += new qt_gsi::GenericMethod ("processedUSecs", "@hide", true, &_init_cbs_processedUSecs_c0_0, &_call_cbs_processedUSecs_c0_0);
+  methods += new qt_gsi::GenericMethod ("processedUSecs", "@brief Virtual method qint64 QAbstractAudioInput::processedUSecs()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_processedUSecs_c0_0, &_call_cbs_processedUSecs_c0_0, &_set_callback_cbs_processedUSecs_c0_0);
   methods += new qt_gsi::GenericMethod ("*receivers", "@brief Method int QAbstractAudioInput::receivers(const char *signal)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_receivers_c1731, &_call_fp_receivers_c1731);
-  methods += new qt_gsi::GenericMethod ("reset", "@brief Virtual method void QAbstractAudioInput::reset()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_reset_0_0, &_call_cbs_reset_0_0);
-  methods += new qt_gsi::GenericMethod ("reset", "@hide", false, &_init_cbs_reset_0_0, &_call_cbs_reset_0_0, &_set_callback_cbs_reset_0_0);
-  methods += new qt_gsi::GenericMethod ("resume", "@brief Virtual method void QAbstractAudioInput::resume()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_resume_0_0, &_call_cbs_resume_0_0);
-  methods += new qt_gsi::GenericMethod ("resume", "@hide", false, &_init_cbs_resume_0_0, &_call_cbs_resume_0_0, &_set_callback_cbs_resume_0_0);
+  methods += new qt_gsi::GenericMethod ("reset", "@hide", false, &_init_cbs_reset_0_0, &_call_cbs_reset_0_0);
+  methods += new qt_gsi::GenericMethod ("reset", "@brief Virtual method void QAbstractAudioInput::reset()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_reset_0_0, &_call_cbs_reset_0_0, &_set_callback_cbs_reset_0_0);
+  methods += new qt_gsi::GenericMethod ("resume", "@hide", false, &_init_cbs_resume_0_0, &_call_cbs_resume_0_0);
+  methods += new qt_gsi::GenericMethod ("resume", "@brief Virtual method void QAbstractAudioInput::resume()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_resume_0_0, &_call_cbs_resume_0_0, &_set_callback_cbs_resume_0_0);
   methods += new qt_gsi::GenericMethod ("*sender", "@brief Method QObject *QAbstractAudioInput::sender()\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_sender_c0, &_call_fp_sender_c0);
   methods += new qt_gsi::GenericMethod ("*senderSignalIndex", "@brief Method int QAbstractAudioInput::senderSignalIndex()\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_senderSignalIndex_c0, &_call_fp_senderSignalIndex_c0);
-  methods += new qt_gsi::GenericMethod ("setBufferSize", "@brief Virtual method void QAbstractAudioInput::setBufferSize(int value)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setBufferSize_767_0, &_call_cbs_setBufferSize_767_0);
-  methods += new qt_gsi::GenericMethod ("setBufferSize", "@hide", false, &_init_cbs_setBufferSize_767_0, &_call_cbs_setBufferSize_767_0, &_set_callback_cbs_setBufferSize_767_0);
-  methods += new qt_gsi::GenericMethod ("setFormat", "@brief Virtual method void QAbstractAudioInput::setFormat(const QAudioFormat &fmt)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setFormat_2509_0, &_call_cbs_setFormat_2509_0);
-  methods += new qt_gsi::GenericMethod ("setFormat", "@hide", false, &_init_cbs_setFormat_2509_0, &_call_cbs_setFormat_2509_0, &_set_callback_cbs_setFormat_2509_0);
-  methods += new qt_gsi::GenericMethod ("setNotifyInterval", "@brief Virtual method void QAbstractAudioInput::setNotifyInterval(int milliSeconds)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setNotifyInterval_767_0, &_call_cbs_setNotifyInterval_767_0);
-  methods += new qt_gsi::GenericMethod ("setNotifyInterval", "@hide", false, &_init_cbs_setNotifyInterval_767_0, &_call_cbs_setNotifyInterval_767_0, &_set_callback_cbs_setNotifyInterval_767_0);
-  methods += new qt_gsi::GenericMethod ("setVolume", "@brief Virtual method void QAbstractAudioInput::setVolume(double)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setVolume_1071_0, &_call_cbs_setVolume_1071_0);
-  methods += new qt_gsi::GenericMethod ("setVolume", "@hide", false, &_init_cbs_setVolume_1071_0, &_call_cbs_setVolume_1071_0, &_set_callback_cbs_setVolume_1071_0);
-  methods += new qt_gsi::GenericMethod ("start", "@brief Virtual method void QAbstractAudioInput::start(QIODevice *device)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_start_1447_0, &_call_cbs_start_1447_0);
-  methods += new qt_gsi::GenericMethod ("start", "@hide", false, &_init_cbs_start_1447_0, &_call_cbs_start_1447_0, &_set_callback_cbs_start_1447_0);
-  methods += new qt_gsi::GenericMethod ("start", "@brief Virtual method QIODevice *QAbstractAudioInput::start()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_start_0_0, &_call_cbs_start_0_0);
-  methods += new qt_gsi::GenericMethod ("start", "@hide", false, &_init_cbs_start_0_0, &_call_cbs_start_0_0, &_set_callback_cbs_start_0_0);
-  methods += new qt_gsi::GenericMethod ("state", "@brief Virtual method QAudio::State QAbstractAudioInput::state()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_state_c0_0, &_call_cbs_state_c0_0);
-  methods += new qt_gsi::GenericMethod ("state", "@hide", true, &_init_cbs_state_c0_0, &_call_cbs_state_c0_0, &_set_callback_cbs_state_c0_0);
-  methods += new qt_gsi::GenericMethod ("emit_stateChanged", "@brief Emitter for signal void QAbstractAudioInput::stateChanged(QAudio::State state)\nCall this method to emit this signal.", false, &_init_emitter_stateChanged_1644, &_call_emitter_stateChanged_1644);
-  methods += new qt_gsi::GenericMethod ("stop", "@brief Virtual method void QAbstractAudioInput::stop()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_stop_0_0, &_call_cbs_stop_0_0);
-  methods += new qt_gsi::GenericMethod ("stop", "@hide", false, &_init_cbs_stop_0_0, &_call_cbs_stop_0_0, &_set_callback_cbs_stop_0_0);
-  methods += new qt_gsi::GenericMethod ("suspend", "@brief Virtual method void QAbstractAudioInput::suspend()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_suspend_0_0, &_call_cbs_suspend_0_0);
-  methods += new qt_gsi::GenericMethod ("suspend", "@hide", false, &_init_cbs_suspend_0_0, &_call_cbs_suspend_0_0, &_set_callback_cbs_suspend_0_0);
-  methods += new qt_gsi::GenericMethod ("*timerEvent", "@brief Virtual method void QAbstractAudioInput::timerEvent(QTimerEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0);
-  methods += new qt_gsi::GenericMethod ("*timerEvent", "@hide", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0, &_set_callback_cbs_timerEvent_1730_0);
-  methods += new qt_gsi::GenericMethod ("volume", "@brief Virtual method double QAbstractAudioInput::volume()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_volume_c0_0, &_call_cbs_volume_c0_0);
-  methods += new qt_gsi::GenericMethod ("volume", "@hide", true, &_init_cbs_volume_c0_0, &_call_cbs_volume_c0_0, &_set_callback_cbs_volume_c0_0);
+  methods += new qt_gsi::GenericMethod ("setBufferSize", "@hide", false, &_init_cbs_setBufferSize_767_0, &_call_cbs_setBufferSize_767_0);
+  methods += new qt_gsi::GenericMethod ("setBufferSize", "@brief Virtual method void QAbstractAudioInput::setBufferSize(int value)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setBufferSize_767_0, &_call_cbs_setBufferSize_767_0, &_set_callback_cbs_setBufferSize_767_0);
+  methods += new qt_gsi::GenericMethod ("setFormat", "@hide", false, &_init_cbs_setFormat_2509_0, &_call_cbs_setFormat_2509_0);
+  methods += new qt_gsi::GenericMethod ("setFormat", "@brief Virtual method void QAbstractAudioInput::setFormat(const QAudioFormat &fmt)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setFormat_2509_0, &_call_cbs_setFormat_2509_0, &_set_callback_cbs_setFormat_2509_0);
+  methods += new qt_gsi::GenericMethod ("setNotifyInterval", "@hide", false, &_init_cbs_setNotifyInterval_767_0, &_call_cbs_setNotifyInterval_767_0);
+  methods += new qt_gsi::GenericMethod ("setNotifyInterval", "@brief Virtual method void QAbstractAudioInput::setNotifyInterval(int milliSeconds)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setNotifyInterval_767_0, &_call_cbs_setNotifyInterval_767_0, &_set_callback_cbs_setNotifyInterval_767_0);
+  methods += new qt_gsi::GenericMethod ("setVolume", "@hide", false, &_init_cbs_setVolume_1071_0, &_call_cbs_setVolume_1071_0);
+  methods += new qt_gsi::GenericMethod ("setVolume", "@brief Virtual method void QAbstractAudioInput::setVolume(double)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setVolume_1071_0, &_call_cbs_setVolume_1071_0, &_set_callback_cbs_setVolume_1071_0);
+  methods += new qt_gsi::GenericMethod ("start", "@hide", false, &_init_cbs_start_1447_0, &_call_cbs_start_1447_0);
+  methods += new qt_gsi::GenericMethod ("start", "@brief Virtual method void QAbstractAudioInput::start(QIODevice *device)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_start_1447_0, &_call_cbs_start_1447_0, &_set_callback_cbs_start_1447_0);
+  methods += new qt_gsi::GenericMethod ("start", "@hide", false, &_init_cbs_start_0_0, &_call_cbs_start_0_0);
+  methods += new qt_gsi::GenericMethod ("start", "@brief Virtual method QIODevice *QAbstractAudioInput::start()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_start_0_0, &_call_cbs_start_0_0, &_set_callback_cbs_start_0_0);
+  methods += new qt_gsi::GenericMethod ("state", "@hide", true, &_init_cbs_state_c0_0, &_call_cbs_state_c0_0);
+  methods += new qt_gsi::GenericMethod ("state", "@brief Virtual method QAudio::State QAbstractAudioInput::state()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_state_c0_0, &_call_cbs_state_c0_0, &_set_callback_cbs_state_c0_0);
+  methods += new qt_gsi::GenericMethod ("emit_stateChanged", "@brief Emitter for signal void QAbstractAudioInput::stateChanged(QAudio::State)\nCall this method to emit this signal.", false, &_init_emitter_stateChanged_1644, &_call_emitter_stateChanged_1644);
+  methods += new qt_gsi::GenericMethod ("stop", "@hide", false, &_init_cbs_stop_0_0, &_call_cbs_stop_0_0);
+  methods += new qt_gsi::GenericMethod ("stop", "@brief Virtual method void QAbstractAudioInput::stop()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_stop_0_0, &_call_cbs_stop_0_0, &_set_callback_cbs_stop_0_0);
+  methods += new qt_gsi::GenericMethod ("suspend", "@hide", false, &_init_cbs_suspend_0_0, &_call_cbs_suspend_0_0);
+  methods += new qt_gsi::GenericMethod ("suspend", "@brief Virtual method void QAbstractAudioInput::suspend()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_suspend_0_0, &_call_cbs_suspend_0_0, &_set_callback_cbs_suspend_0_0);
+  methods += new qt_gsi::GenericMethod ("*timerEvent", "@hide", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0);
+  methods += new qt_gsi::GenericMethod ("*timerEvent", "@brief Virtual method void QAbstractAudioInput::timerEvent(QTimerEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0, &_set_callback_cbs_timerEvent_1730_0);
+  methods += new qt_gsi::GenericMethod ("volume", "@hide", true, &_init_cbs_volume_c0_0, &_call_cbs_volume_c0_0);
+  methods += new qt_gsi::GenericMethod ("volume", "@brief Virtual method double QAbstractAudioInput::volume()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_volume_c0_0, &_call_cbs_volume_c0_0, &_set_callback_cbs_volume_c0_0);
   return methods;
 }
 

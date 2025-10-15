@@ -1,7 +1,7 @@
 # encoding: UTF-8
 
 # KLayout Layout Viewer
-# Copyright (C) 2006-2025 Matthias Koefferlein
+# Copyright (C) 2006-2019 Matthias Koefferlein
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -63,11 +63,6 @@ class DBReadersTests(unittest.TestCase):
     self.assertEqual(opt.gds2_allow_multi_xy_records, True)
     opt.gds2_allow_multi_xy_records = False
     self.assertEqual(opt.gds2_allow_multi_xy_records, False)
-
-    opt.gds2_resolve_skew_arrays = True
-    self.assertEqual(opt.gds2_resolve_skew_arrays, True)
-    opt.gds2_resolve_skew_arrays = False
-    self.assertEqual(opt.gds2_resolve_skew_arrays, False)
 
     opt.gds2_allow_big_records = True
     self.assertEqual(opt.gds2_allow_big_records, True)

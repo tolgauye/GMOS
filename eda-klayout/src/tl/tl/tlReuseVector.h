@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -27,7 +27,6 @@
 
 #include <stdlib.h>
 #include <iterator>
-#include <type_traits>
 #include <vector>
 #include <cstring>
 
@@ -37,14 +36,14 @@
 namespace tl
 {
 
-template <class Value, bool trivial_relocate> class reuse_vector;
-template <class Value, bool trivial_relocate> class reuse_vector_const_iterator;
+template <class Value> class reuse_vector;
+template <class Value> class reuse_vector_const_iterator;
 
 /**
  *  @brief The iterator for a reuse_vector
  */
 
-template <class Value, bool trivial_relocate>
+template <class Value>
 class reuse_vector_iterator
 {
 public:
@@ -65,14 +64,14 @@ public:
   /**
    *  @brief The constructor
    */
-  reuse_vector_iterator (reuse_vector<Value, trivial_relocate> *v, size_type n)
+  reuse_vector_iterator (reuse_vector<Value> *v, size_type n)
     : mp_v (v), m_n (n)
   { }
 
   /**
    *  @brief Equality with const iterator
    */
-  bool operator== (const reuse_vector_const_iterator<Value, trivial_relocate> &d) const
+  bool operator== (const reuse_vector_const_iterator<Value> &d) const
   {
     return mp_v == d.mp_v && m_n == d.m_n;
   }
@@ -80,7 +79,7 @@ public:
   /**
    *  @brief Inequality with const iterator
    */
-  bool operator!= (const reuse_vector_const_iterator<Value, trivial_relocate> &d) const
+  bool operator!= (const reuse_vector_const_iterator<Value> &d) const
   {
     return ! operator== (d);
   }
@@ -172,7 +171,7 @@ public:
   /** 
    *  @brief The pointer to the vector that this iterator points into
    */
-  reuse_vector<Value, trivial_relocate> *vector () const
+  reuse_vector<Value> *vector () const
   {
     return mp_v;
   }
@@ -192,9 +191,9 @@ public:
   }
 
 private:
-  template <class, bool> friend class reuse_vector_const_iterator;
+  template <class V> friend class reuse_vector_const_iterator;
 
-  reuse_vector<Value, trivial_relocate> *mp_v;
+  reuse_vector<Value> *mp_v;
   size_type m_n;
 };
 
@@ -203,7 +202,7 @@ private:
  *  @brief The const_iterator for a reuse_vector
  */
 
-template <class Value, bool trivial_relocate>
+template <class Value>
 class reuse_vector_const_iterator
 {
 public:
@@ -224,23 +223,23 @@ public:
   /**
    *  @brief The constructor
    */
-  reuse_vector_const_iterator (const reuse_vector<Value, trivial_relocate> *v, size_type n)
+  reuse_vector_const_iterator (const reuse_vector<Value> *v, size_type n)
     : mp_v (v), m_n (n)
   { }
 
   /**
    *  @brief The conversion of a non-const iterator to a const iterator
    */
-  reuse_vector_const_iterator (const reuse_vector_iterator<Value, trivial_relocate> &d)
+  reuse_vector_const_iterator (const reuse_vector_iterator<Value> &d) 
     : mp_v (d.mp_v), m_n (d.m_n)
   { }
 
   /**
    *  @brief cast to non-const iterator
    */
-  reuse_vector_iterator<Value, trivial_relocate> to_non_const () const
+  reuse_vector_iterator<Value> to_non_const () const
   {
-    return reuse_vector_iterator<Value, trivial_relocate> (const_cast<reuse_vector<Value, trivial_relocate> *> (mp_v), m_n);
+    return reuse_vector_iterator<Value> (const_cast<reuse_vector<Value> *> (mp_v), m_n);
   }
 
   /**
@@ -341,7 +340,7 @@ public:
   /** 
    *  @brief The pointer to the vector that this iterator points into
    */
-  const reuse_vector<Value, trivial_relocate> *vector () const
+  const reuse_vector<Value> *vector () const
   {
     return mp_v;
   }
@@ -361,9 +360,9 @@ public:
   }
 
 private:
-  template <class, bool> friend class reuse_vector_iterator;
+  template <class V> friend class reuse_vector_iterator;
 
-  const reuse_vector<Value, trivial_relocate> *mp_v;
+  const reuse_vector<Value> *mp_v;
   size_type m_n;
 };
 
@@ -492,19 +491,14 @@ private:
  *  One requirement is that sizeof(C) >= sizeof(void *).
  */
 
-#if __GNUC__ >= 5
-template <class Value, bool trivial_relocate = std::is_trivially_copy_constructible<Value>::value>
-#else
-//  no support for extended type traits in gcc 4.x
-template <class Value, bool trivial_relocate = false>
-#endif
+template <class Value>
 class reuse_vector
 {
 public:
   typedef Value value_type;
   typedef size_t size_type;
-  typedef reuse_vector_iterator<value_type, trivial_relocate> iterator;
-  typedef reuse_vector_const_iterator<value_type, trivial_relocate> const_iterator;
+  typedef reuse_vector_iterator<value_type> iterator;
+  typedef reuse_vector_const_iterator<value_type> const_iterator;
 
   /**
    *  @brief Default constructor
@@ -542,19 +536,6 @@ public:
   }
 
   /**
-   *  @brief Move constructor
-   *
-   *  See operator= for a description of the copy operation.
-   */
-  reuse_vector (reuse_vector &&d)
-  {
-    mp_start = d.mp_start; d.mp_start = 0;
-    mp_finish = d.mp_finish; d.mp_finish = 0;
-    mp_capacity = d.mp_capacity; d.mp_capacity = 0;
-    mp_rdata = d.mp_rdata; d.mp_rdata = 0;
-  }
-
-  /**
    *  @brief Destructor
    */
   ~reuse_vector ()
@@ -577,20 +558,6 @@ public:
       for (const_iterator i = d.begin (); i != d.end (); ++i) {
         insert (*i);
       }
-    }
-    return *this;
-  }
-
-  /**
-   *  @brief Assignment (move)
-   */
-  reuse_vector &operator= (reuse_vector &&d)
-  {
-    if (&d != this) {
-      mp_start = d.mp_start; d.mp_start = 0;
-      mp_finish = d.mp_finish; d.mp_finish = 0;
-      mp_capacity = d.mp_capacity; d.mp_capacity = 0;
-      mp_rdata = d.mp_rdata; d.mp_rdata = 0;
     }
     return *this;
   }
@@ -779,7 +746,7 @@ public:
   void insert (const Iter &from, const Iter &to)
   {
     if (! (from == to)) {
-      //  don't reserve if the first element of the sequence comes from ourself.
+      //  don't reservce if the first element of the sequence comes from ourself.
       //  This implies that we try to duplicate our own elements which would invalidate
       //  the source upon reservation.
       if (! (&*from >= mp_start && &*from < mp_finish)) {
@@ -890,16 +857,13 @@ public:
   /**
    *  @brief Reserve space for a given number of elements
    *
-   *  This guarantees that for the next n-size() inserts no reallocation will occur
+   *  This guarantees that for the next n-size() inserts no reallocation will occure
    *  No resizing will happen, if n is less than the current capacity.
    */
   void reserve (size_type n)
   {
-    if (trivial_relocate) {
-      internal_reserve_trivial (n);
-    } else {
-      internal_reserve_complex (n);
-    }
+    typename tl::type_traits<Value>::relocate_requirements relocate_requirements_tag;
+    internal_reserve (n, relocate_requirements_tag);
   }
 
   /**
@@ -946,23 +910,12 @@ public:
     return mp_rdata;
   }
 
-  /**
-   *  @brief Swaps the vector with another one
-   */
-  void swap (reuse_vector &other)
-  {
-    std::swap (mp_start, other.mp_start);
-    std::swap (mp_finish, other.mp_finish);
-    std::swap (mp_capacity, other.mp_capacity);
-    std::swap (mp_rdata, other.mp_rdata);
-  }
-
 private:
   value_type *mp_start, *mp_finish, *mp_capacity;
   ReuseData *mp_rdata;
 
-  template<class, bool> friend class reuse_vector_iterator;
-  template<class, bool> friend class reuse_vector_const_iterator;
+  template<class V> friend class reuse_vector_iterator;
+  template<class V> friend class reuse_vector_const_iterator;
 
   void init ()
   {
@@ -988,7 +941,7 @@ private:
     }
   }
 
-  void internal_reserve_complex (size_type n)
+  void internal_reserve (size_type n, tl::complex_relocate_required)
   {
     if (n > capacity ()) {
 
@@ -1019,7 +972,7 @@ private:
     }
   }
 
-  void internal_reserve_trivial (size_type n)
+  void internal_reserve (size_type n, tl::trivial_relocate_required)
   {
     if (n > capacity ()) {
 

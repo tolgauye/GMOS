@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -26,9 +26,6 @@
 #include "tlStaticObjects.h"
 #include "tlDeferredExecution.h"
 #include "tlObject.h"
-#include "tlTimer.h"
-#include "tlSleep.h"
-#include "tlString.h"
 
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
@@ -39,7 +36,6 @@
 #include <QDateTime>
 #include <QFileInfo>
 #include <QDialog>
-#include <QSslError>
 
 namespace tl
 {
@@ -70,24 +66,8 @@ AuthenticationHandler::authenticationRequired (QNetworkReply *reply, QAuthentica
     //  TODO: how to cancel?
     std::string user, passwd;
     if (sp_credential_provider->user_password (tl::to_string (reply->url ().toString ()), tl::to_string (auth->realm ()), true, ++m_retry, user, passwd)) {
-
-      //  this is freaky: Qt sends password as Latin1 encoded for Basic authentication, but apparently some servers
-      //  expect UTF-8 today. So do them a favor and encode UTF8 into Latin1, so it gets valid UTF8 when turned into Latin1 ...
-      //  We do this for Digest and Basic as they apparently both use Latin 1 encoding. But it's unclear whether all servers
-      //  expect UTF-8 encoding.
-#if QT_VERSION >= 0x040700
-      bool is_basic_or_digest = ! auth->option (QString::fromUtf8 ("realm")).isNull ();
-#else
-      bool is_basic_or_digest = true;
-#endif
-      if (is_basic_or_digest) {
-        auth->setPassword (QString::fromLatin1 (passwd.c_str ()));
-        auth->setUser (QString::fromLatin1 (user.c_str ()));
-      } else {
-        auth->setPassword (tl::to_qstring (passwd));
-        auth->setUser (tl::to_qstring (user));
-      }
-
+      auth->setPassword (tl::to_qstring (passwd));
+      auth->setUser (tl::to_qstring (user));
     }
 
   }
@@ -101,24 +81,8 @@ AuthenticationHandler::proxyAuthenticationRequired (const QNetworkProxy &proxy, 
     //  TODO: how to cancel?
     std::string user, passwd;
     if (sp_credential_provider->user_password (tl::to_string (proxy.hostName ()), tl::to_string (auth->realm ()), true, ++m_proxy_retry, user, passwd)) {
-
-      //  this is freaky: Qt sends password as Latin1 encoded for Basic authentication, but apparently some servers
-      //  expect UTF-8 today. So do them a favor and encode UTF8 into Latin1, so it gets valid UTF8 when turned into Latin1 ...
-      //  We do this for Digest and Basic as they apparently both use Latin 1 encoding. But it's unclear whether all servers
-      //  expect UTF-8 encoding.
-#if QT_VERSION >= 0x040700
-      bool is_basic_or_digest = ! auth->option (QString::fromUtf8 ("realm")).isNull ();
-#else
-      bool is_basic_or_digest = true;
-#endif
-      if (is_basic_or_digest) {
-        auth->setPassword (QString::fromLatin1 (passwd.c_str ()));
-        auth->setUser (QString::fromLatin1 (user.c_str ()));
-      } else {
-        auth->setPassword (tl::to_qstring (passwd));
-        auth->setUser (tl::to_qstring (user));
-      }
-
+      auth->setPassword (tl::to_qstring (passwd));
+      auth->setUser (tl::to_qstring (user));
     }
 
   }
@@ -129,8 +93,7 @@ AuthenticationHandler::proxyAuthenticationRequired (const QNetworkProxy &proxy, 
 
 InputHttpStream::InputHttpStream (const std::string &url)
 {
-  mp_data = new InputHttpStreamPrivateData (this, url);
-  mp_callback = 0;
+  mp_data = new InputHttpStreamPrivateData (url);
 }
 
 InputHttpStream::~InputHttpStream ()
@@ -232,22 +195,7 @@ InputHttpStream::is_available ()
 void
 InputHttpStream::tick ()
 {
-  if (mp_callback) {
-    mp_callback->wait_for_input ();
-  }
   QCoreApplication::processEvents (QEventLoop::ExcludeUserInputEvents);
-}
-
-void
-InputHttpStream::set_timeout (double to)
-{
-  mp_data->set_timeout (to);
-}
-
-double
-InputHttpStream::timeout () const
-{
-  return mp_data->timeout ();
 }
 
 // ---------------------------------------------------------------
@@ -256,8 +204,8 @@ InputHttpStream::timeout () const
 static QNetworkAccessManager *s_network_manager (0);
 static AuthenticationHandler *s_auth_handler (0);
 
-InputHttpStreamPrivateData::InputHttpStreamPrivateData (InputHttpStream *stream, const std::string &url)
-  : m_url (url), mp_reply (0), m_request ("GET"), mp_buffer (0), mp_resend_timer (new QTimer (this)), m_timeout (InputHttpStream::get_default_timeout ()), mp_stream (stream)
+InputHttpStreamPrivateData::InputHttpStreamPrivateData (const std::string &url)
+  : m_url (url), mp_reply (0), m_request ("GET"), mp_buffer (0)
 {
   if (! s_network_manager) {
 
@@ -265,9 +213,6 @@ InputHttpStreamPrivateData::InputHttpStreamPrivateData (InputHttpStream *stream,
     s_auth_handler = new AuthenticationHandler ();
     connect (s_network_manager, SIGNAL (authenticationRequired (QNetworkReply *, QAuthenticator *)), s_auth_handler, SLOT (authenticationRequired (QNetworkReply *, QAuthenticator *)));
     connect (s_network_manager, SIGNAL (proxyAuthenticationRequired (const QNetworkProxy &, QAuthenticator *)), s_auth_handler, SLOT (proxyAuthenticationRequired (const QNetworkProxy &, QAuthenticator *)));
-#if !defined(QT_NO_SSL)
-    connect (s_network_manager, SIGNAL (sslErrors (QNetworkReply *, const QList<QSslError> &)), this, SLOT (sslErrors (QNetworkReply *, const QList<QSslError> &)));
-#endif
 
     tl::StaticObjects::reg (&s_network_manager);
     tl::StaticObjects::reg (&s_auth_handler);
@@ -275,7 +220,6 @@ InputHttpStreamPrivateData::InputHttpStreamPrivateData (InputHttpStream *stream,
   }
 
   connect (s_network_manager, SIGNAL (finished (QNetworkReply *)), this, SLOT (finished (QNetworkReply *)));
-  connect (mp_resend_timer, SIGNAL (timeout ()), this, SLOT (resend ()));
 }
 
 InputHttpStreamPrivateData::~InputHttpStreamPrivateData ()
@@ -284,24 +228,11 @@ InputHttpStreamPrivateData::~InputHttpStreamPrivateData ()
 }
 
 void
-InputHttpStreamPrivateData::set_timeout (double to)
-{
-  m_timeout = to;
-}
-
-double
-InputHttpStreamPrivateData::timeout () const
-{
-  return m_timeout;
-}
-
-void
 InputHttpStreamPrivateData::close ()
 {
   if (mp_active_reply.get ()) {
-    QNetworkReply *reply = mp_active_reply.release ();
-    reply->abort ();
-    reply->deleteLater ();
+    mp_active_reply->abort ();
+    mp_active_reply.release ()->deleteLater ();
   }
   mp_reply = 0;
 }
@@ -331,46 +262,22 @@ InputHttpStreamPrivateData::add_header (const std::string &name, const std::stri
 }
 
 void
-InputHttpStreamPrivateData::resend ()
-{
-  issue_request (QUrl (tl::to_qstring (m_url)));
-}
-
-void
 InputHttpStreamPrivateData::finished (QNetworkReply *reply)
 {
   if (reply != mp_active_reply.get ()) {
     return;
   }
 
-  if (tl::verbosity() >= 40) {
-#if QT_VERSION >= 0x40800
-    const QList<QNetworkReply::RawHeaderPair> &raw_headers = reply->rawHeaderPairs ();
-    for (QList<QNetworkReply::RawHeaderPair>::const_iterator h = raw_headers.begin (); h != raw_headers.end (); ++h) {
-      tl::info << "HTTP response header: " << h->first.constData () << ": " << h->second.constData ();
-    }
-#endif
-  }
-
   QVariant redirect_target = reply->attribute (QNetworkRequest::RedirectionTargetAttribute);
   if (reply->error () == QNetworkReply::NoError && ! redirect_target.isNull ()) {
-
     m_url = tl::to_string (redirect_target.toString ());
     if (tl::verbosity() >= 30) {
       tl::info << "HTTP redirect to: " << m_url;
     }
-
-    close ();
-
-    mp_resend_timer->setSingleShot (true);
-    mp_resend_timer->setInterval (0);
-    mp_resend_timer->start ();
-
+    issue_request (QUrl (redirect_target.toString ()));
   } else {
-
     mp_reply = reply;
     m_ready ();
-
   }
 }
 
@@ -380,11 +287,6 @@ InputHttpStreamPrivateData::issue_request (const QUrl &url)
   delete mp_buffer;
   mp_buffer = 0;
 
-  m_ssl_errors.clear ();
-
-  //  remove old request (important for redirect)
-  close ();
-
   //  reset the retry counters -> this way we can detect authentication failures
   s_auth_handler->reset ();
 
@@ -393,23 +295,10 @@ InputHttpStreamPrivateData::issue_request (const QUrl &url)
     tl::info << "HTTP request URL: " << url.toString ().toUtf8 ().constData ();
   }
   for (std::map<std::string, std::string>::const_iterator h = m_headers.begin (); h != m_headers.end (); ++h) {
-    request.setRawHeader (QByteArray (h->first.c_str ()), QByteArray (h->second.c_str ()));
-  }
-
-#if QT_VERSION >= 0x50600
-#if QT_VERSION >= 0x50900
-  request.setAttribute (QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::ManualRedirectPolicy);
-#else
-  request.setAttribute (QNetworkRequest::FollowRedirectsAttribute, false);
-#endif
-#endif
-
-  if (tl::verbosity() >= 40) {
-    tl::info << "HTTP request: " << m_request.constData ();
-    const QList<QByteArray> &raw_headers = request.rawHeaderList ();
-    for (QList<QByteArray>::const_iterator h = raw_headers.begin (); h != raw_headers.end (); ++h) {
-      tl::info << "HTTP request header: " << h->constData () << ": " << request.rawHeader (*h).constData ();
+    if (tl::verbosity() >= 40) {
+      tl::info << "HTTP request header: " << h->first << ": " << h->second;
     }
+    request.setRawHeader (QByteArray (h->first.c_str ()), QByteArray (h->second.c_str ()));
   }
 
 #if QT_VERSION < 0x40700
@@ -449,32 +338,12 @@ InputHttpStreamPrivateData::read (char *b, size_t n)
     issue_request (QUrl (tl::to_qstring (m_url)));
   }
 
-  const unsigned long tick_ms = 10;
-  double time_waited = 0.0;
-
-  while (mp_reply == 0 && (m_timeout <= 0.0 || time_waited < m_timeout)) {
-
-    mp_stream->tick ();
-
-    //  NOTE: as tick() includes waiting for the password dialog, we must not include
-    //  the time spent there.
-    tl::msleep (tick_ms);
-    time_waited += tick_ms * 1e-3;
-
+  //  TODO: progress, timeout
+  while (mp_reply == 0) {
+    QCoreApplication::processEvents (QEventLoop::ExcludeUserInputEvents);
   }
 
-  if (! mp_reply) {
-
-    //  Reason for this may be HTTPS initialization failure (OpenSSL)
-
-    std::string em = tl::sprintf (tl::to_string (QObject::tr ("Request creation failed (timeout is %.1fs)")), m_timeout);
-    if (tl::verbosity() >= 30) {
-      tl::info << "HTTP request creation failed";
-    }
-
-    throw HttpErrorException (em, 0, m_url);
-
-  } else if (mp_reply->error () != QNetworkReply::NoError) {
+  if (mp_reply->error () != QNetworkReply::NoError) {
 
     //  throw an error
     std::string em = tl::to_string (mp_reply->attribute (QNetworkRequest::HttpReasonPhraseAttribute).toString ());
@@ -505,18 +374,11 @@ InputHttpStreamPrivateData::read (char *b, size_t n)
         break;
       default:
         em = tl::to_string (QObject::tr ("Network API error"));
-        if (! m_ssl_errors.empty ()) {
-          em += tl::to_string (QObject::tr (" (with SSL errors: "));
-          em += m_ssl_errors;
-          em += ")";
-        }
       }
       ec = int (mp_reply->error ());
     }
 
-    QByteArray data = mp_reply->readAll ();
-
-    throw HttpErrorException (em, ec, tl::to_string (mp_reply->url ().toString ()), tl::to_string (data.constData (), (int) data.size ()));
+    throw HttpErrorException (em, ec, m_url);
 
   }
 
@@ -527,22 +389,6 @@ InputHttpStreamPrivateData::read (char *b, size_t n)
   }
   return data.size ();
 }
-
-#if !defined(QT_NO_SSL)
-void
-InputHttpStreamPrivateData::sslErrors (QNetworkReply *, const QList<QSslError> &errors)
-{
-  //  log SSL errors
-  for (QList<QSslError>::const_iterator e = errors.begin (); e != errors.end (); ++e) {
-    if (! m_ssl_errors.empty ()) {
-      m_ssl_errors += ", ";
-    }
-    m_ssl_errors += "\"";
-    m_ssl_errors += tl::to_string (e->errorString ());
-    m_ssl_errors += "\"";
-  }
-}
-#endif
 
 void
 InputHttpStreamPrivateData::reset ()

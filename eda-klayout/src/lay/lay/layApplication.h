@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -25,8 +25,6 @@
 #define HDR_layApplication
 
 #include "layCommon.h"
-#include "layBusy.h"
-#include "tlEvents.h"
 
 #include <QApplication>
 #include <QEventLoop>
@@ -55,19 +53,14 @@ namespace lym
   class MacroCollection;
 }
 
-namespace db
-{
-  class Manager;
-}
-
 namespace lay
 {
 
 class MainWindow;
-class Dispatcher;
+class PluginRootToMainWindow;
+class PluginRoot;
 class ProgressReporter;
 class ProgressBar;
-class LayoutView;
 
 /**
  *  @brief The application base class
@@ -77,7 +70,7 @@ class LayoutView;
  *  and one for the GUI version (derived from QApplication).
  */
 class LAY_PUBLIC ApplicationBase
-  : public gsi::ObjectBase, public tl::Object
+  : public gsi::ObjectBase
 {
 public:
   /**
@@ -108,12 +101,12 @@ public:
   /**
    *  @brief Return the program's version
    */
-  static std::string version ();
+  std::string version () const;
 
   /**
    *  @brief Return the program's usage string
    */
-  static std::string usage ();
+  std::string usage ();
 
   /**
    *  @brief Returns the main window's reference
@@ -189,7 +182,7 @@ public:
   /**
    *  @brief Read the configuration from a file
    *
-   *  This method silently does nothing, if the config file does not
+   *  This method siletly does nothing, if the config file does not
    *  exist. If it does and an error occurred, the error message is printed
    *  on stderr. In both cases, false is returned.
    */
@@ -206,6 +199,16 @@ public:
   std::vector<std::string> get_config_names () const;
 
   /**
+   *  @brief Gets a value indicating whether the give special application flag is set
+   *
+   *  Special application flags are ways to introduce debug or flags for special
+   *  use cases. Such flags have a name and currently are controlled externally by
+   *  an environment variable called "KLAYOUT_x" where x is the name. If that
+   *  variable is set and the value is non-empty, the flag is regarded set.
+   */
+  bool special_app_flag (const std::string &name);
+
+  /**
    *  @brief Return a reference to the Ruby interpreter
    */
   gsi::Interpreter &ruby_interpreter ()
@@ -220,13 +223,6 @@ public:
   {
     return *mp_python_interpreter;
   }
-
-  /**
-   *  @brief Adds a new macro category
-   *
-   *  This method is only effective when called during the autorun_early stage
-   */
-  void add_macro_category (const std::string &name, const std::string &description, const std::vector<std::string> &folders);
 
   /**
    *  @brief Return true, if undo buffering is enabled
@@ -315,11 +311,6 @@ public:
   void init_app ();
 
   /**
-   *  @brief An event indicating that the package collection has changed
-   */
-  tl::Event salt_changed_event;
-
-  /**
    *  @brief Gets the QApplication object
    *  This method will return non-null only if a GUI-enabled application is present.
    */
@@ -330,13 +321,12 @@ protected:
   virtual void shutdown ();
   virtual void prepare_recording (const std::string &gtf_record, bool gtf_record_incremental);
   virtual void start_recording ();
-  virtual lay::Dispatcher *dispatcher () const = 0;
+  virtual lay::PluginRoot *plugin_root () const = 0;
   virtual void finish ();
   virtual void process_events_impl (QEventLoop::ProcessEventsFlags flags, bool silent = false);
 
 private:
   std::vector<std::string> scan_global_modules ();
-  lay::LayoutView *create_view (db::Manager &manager);
 
   enum file_type {
     layout_file,
@@ -352,7 +342,6 @@ private:
   bool m_lyp_map_all_cvs, m_lyp_add_default;
   std::string m_session_file;
   std::string m_run_macro;
-  bool m_run_macro_and_exit;
   std::vector<std::pair<std::string, std::string> > m_custom_macro_paths;
   std::vector<std::string> m_load_macros;
   std::vector <std::string> m_package_inst;
@@ -382,28 +371,19 @@ private:
   //  in order to maintain a valid MainWindow reference for ruby scripts and Ruby's GC all the time.
   gsi::Interpreter *mp_ruby_interpreter;
   gsi::Interpreter *mp_python_interpreter;
-
-  void salt_changed ();
 };
 
 /**
  *  @brief The GUI-enabled application class
  */
 class LAY_PUBLIC GuiApplication
-  : public QApplication, public ApplicationBase, public lay::BusyMode
+  : public QApplication, public ApplicationBase
 {
 public:
   GuiApplication (int &argc, char **argv);
   ~GuiApplication ();
 
   QApplication *qapp_gui () { return this; }
-
-  /**
-   *  @brief Does some pre-initialization
-   *
-   *  Must be called before the GuiApplication object is created
-   */
-  static void initialize ();
 
   /**
    *  @brief Reimplementation of notify from QApplication
@@ -440,28 +420,18 @@ public:
   }
 
   /**
-   *  @brief Enters busy mode (true) or leaves it (false)
-   *
-   *  Use lay::BusySection to declare a section in "busy" mode. In busy mode, some features are disabled to
-   *  prevent recursion in processing of events.
-   */
-  virtual void enter_busy_mode (bool bm);
-
-  /**
-   *  @brief Gets a value indicating whether busy mode is enabled
-   */
-  virtual bool is_busy () const;
-
-  /**
    *  @brief Forces update of the application menu
    *  This function is used for work around a MacOS issue.
    */
   void force_update_app_menu ();
 
   /**
-   *  @brief Handles events
+   *  @brief Handles MacOS file open
+   *  This function is used to process the "Open With" event sent by MacOS.
    */
+#ifdef __APPLE__
   bool event (QEvent *event);
+#endif
 
 protected:
   virtual void setup ();
@@ -471,14 +441,12 @@ protected:
   virtual void start_recording ();
   virtual void process_events_impl (QEventLoop::ProcessEventsFlags flags, bool silent);
 
-  virtual lay::Dispatcher *dispatcher () const;
+  virtual lay::PluginRoot *plugin_root () const;
 
 private:
   MainWindow *mp_mw;
+  PluginRootToMainWindow *mp_plugin_root;
   gtf::Recorder *mp_recorder;
-  int m_in_notify;
-
-  bool do_notify (QObject *receiver, QEvent *e);
 };
 
 /**
@@ -525,18 +493,32 @@ protected:
   virtual void setup ();
   virtual void shutdown ();
 
-  virtual lay::Dispatcher *dispatcher () const
+  virtual lay::PluginRoot *plugin_root () const
   {
-    return mp_dispatcher;
+    return mp_plugin_root;
   }
 
 private:
   lay::ProgressReporter *mp_pr;
   lay::ProgressBar *mp_pb;
-  lay::Dispatcher *mp_dispatcher;
+  lay::PluginRoot *mp_plugin_root;
 };
 
 } // namespace lay
+
+namespace tl {
+
+  template <> struct type_traits<lay::GuiApplication> : public type_traits<void> {
+    typedef tl::false_tag has_copy_constructor;
+    typedef tl::false_tag has_default_constructor;
+  };
+
+  template <> struct type_traits<lay::NonGuiApplication> : public type_traits<void> {
+    typedef tl::false_tag has_copy_constructor;
+    typedef tl::false_tag has_default_constructor;
+  };
+
+}
 
 #endif
 

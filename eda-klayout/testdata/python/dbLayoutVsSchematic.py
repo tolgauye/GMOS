@@ -2,7 +2,7 @@
 # encoding: UTF-8
 
 # KLayout Layout Viewer
-# Copyright (C) 2006-2025 Matthias Koefferlein
+# Copyright (C) 2006-2019 Matthias Koefferlein
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@ import unittest
 import sys
 import os
 
-class DBLayoutVsSchematicTests(unittest.TestCase):
+class DBLayoutToNetlistTests(unittest.TestCase):
 
   def test_1_Basic(self):
 
@@ -98,7 +98,7 @@ class DBLayoutVsSchematicTests(unittest.TestCase):
     lvs.connect(metal2)
     lvs.connect(ptie)
     lvs.connect(ntie)
-
+    
     # inter-layer
     lvs.connect(psd,       diff_cont)
     lvs.connect(nsd,       diff_cont)
@@ -113,7 +113,7 @@ class DBLayoutVsSchematicTests(unittest.TestCase):
     lvs.connect(poly,      poly_lbl)     #  attaches labels
     lvs.connect(metal1,    metal1_lbl)   #  attaches labels
     lvs.connect(metal2,    metal2_lbl)   #  attaches labels
-
+    
     # global
     lvs.connect_global(ptie, "BULK")
     lvs.connect_global(bulk, "BULK")
@@ -144,7 +144,7 @@ class DBLayoutVsSchematicTests(unittest.TestCase):
   def test_3_ReadAndWrite(self):
 
     ut_testsrc = os.getenv("TESTSRC")
-    ut_testtmp = os.getenv("TESTTMP", "")
+    ut_testtmp = os.getenv("TESTTMP")
 
     lvs = pya.LayoutVsSchematic()
 
@@ -177,7 +177,8 @@ class DBLayoutVsSchematicTests(unittest.TestCase):
 
 # run unit tests
 if __name__ == '__main__':
-  suite = unittest.TestLoader().loadTestsFromTestCase(DBLayoutVsSchematicTests)
+  suite = unittest.TestLoader().loadTestsFromTestCase(DBLayoutToNetlistTests)
 
   if not unittest.TextTestRunner(verbosity = 1).run(suite).wasSuccessful():
     sys.exit(1)
+

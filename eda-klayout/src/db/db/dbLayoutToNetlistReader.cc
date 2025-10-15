@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -60,7 +60,7 @@ typedef l2n_std_format::keys<true> skeys;
 typedef l2n_std_format::keys<false> lkeys;
 
 LayoutToNetlistStandardReader::LayoutToNetlistStandardReader (tl::InputStream &stream)
-  : m_stream (stream), m_path (stream.absolute_file_path ()), m_dbu (0.0),
+  : m_stream (stream), m_path (stream.absolute_path ()), m_dbu (0.0),
     m_progress (tl::to_string (tr ("Reading L2N database")), 1000)
 {
   m_progress.set_format (tl::to_string (tr ("%.0fk lines")));
@@ -97,13 +97,6 @@ LayoutToNetlistStandardReader::read_int ()
   return i;
 }
 
-bool
-LayoutToNetlistStandardReader::try_read_int (int &i)
-{
-  i = 0;
-  return m_ex.try_read (i);
-}
-
 db::Coord
 LayoutToNetlistStandardReader::read_coord ()
 {
@@ -132,7 +125,6 @@ LayoutToNetlistStandardReader::skip ()
 {
   while (m_ex.at_end () || *m_ex.skip () == '#') {
     if (m_stream.at_end ()) {
-      m_ex = tl::Extractor ();
       return;
     }
     m_progress.set (m_stream.line_number ());
@@ -141,155 +133,9 @@ LayoutToNetlistStandardReader::skip ()
   }
 }
 
-void LayoutToNetlistStandardReader::skip_element ()
-{
-  std::string s;
-  double f;
-
-  if (m_ex.try_read_word (s)) {
-
-    //  skip bracket elements after token key
-    Brace br (this);
-    while (br) {
-      skip_element ();
-    }
-    br.done ();
-
-  } else if (m_ex.test ("*")) {
-
-    //  asterisk is allowed as element (e.g. inside point)
-
-  } else if (m_ex.try_read_quoted (s)) {
-
-    //  skip string
-
-  } else if (m_ex.try_read (f)) {
-
-    //  skip numeric value
-
-  } else {
-
-    Brace br (this);
-    if (br) {
-
-      //  skip bracket elements without token
-      while (br) {
-        skip_element ();
-      }
-      br.done ();
-
-    } else {
-      throw tl::Exception (tl::to_string (tr ("Unexpected token")));
-    }
-
-  }
-}
-
-bool LayoutToNetlistStandardReader::read_message (std::string &msg)
-{
-  if (test (skeys::description_key) || test (lkeys::description_key)) {
-    Brace br (this);
-    read_word_or_quoted (msg);
-    br.done ();
-    return true;
-  } else {
-    return false;
-  }
-}
-
-bool LayoutToNetlistStandardReader::read_severity (db::Severity &severity)
-{
-  if (test (skeys::info_severity_key) || test (lkeys::info_severity_key)) {
-    severity = db::Info;
-    return true;
-  } else if (test (skeys::warning_severity_key) || test (lkeys::warning_severity_key)) {
-    severity = db::Warning;
-    return true;
-  } else if (test (skeys::error_severity_key) || test (lkeys::error_severity_key)) {
-    severity = db::Error;
-    return true;
-  } else {
-    return false;
-  }
-}
-
-bool LayoutToNetlistStandardReader::read_message_cell (std::string &cell_name)
-{
-  if (test (skeys::cell_key) || test (lkeys::cell_key)) {
-    Brace br (this);
-    read_word_or_quoted (cell_name);
-    br.done ();
-    return true;
-  } else {
-    return false;
-  }
-}
-
-bool LayoutToNetlistStandardReader::read_message_geometry (db::DPolygon &polygon)
-{
-  if (test (skeys::polygon_key) || test (lkeys::polygon_key)) {
-    Brace br (this);
-    std::string s;
-    read_word_or_quoted (s);
-    tl::Extractor ex (s.c_str ());
-    ex.read (polygon);
-    br.done ();
-    return true;
-  } else {
-    return false;
-  }
-}
-
-bool LayoutToNetlistStandardReader::read_message_cat (std::string &category_name, std::string &category_description)
-{
-  if (test (skeys::cat_key) || test (lkeys::cat_key)) {
-    Brace br (this);
-    read_word_or_quoted (category_name);
-    if (br) {
-      read_word_or_quoted (category_description);
-    }
-    br.done ();
-    return true;
-  } else {
-    return false;
-  }
-}
-
-void LayoutToNetlistStandardReader::read_message_entry (db::LogEntryData &data)
-{
-  Severity severity (db::NoSeverity);
-  std::string msg, cell_name, category_name, category_description;
-  db::DPolygon geometry;
-
-  Brace br (this);
-  while (br) {
-    if (read_severity (severity)) {
-      //  continue
-    } else if (read_message (msg)) {
-      //  continue
-    } else if (read_message_cell (cell_name)) {
-      //  continue
-    } else if (read_message_cat (category_name, category_description)) {
-      //  continue
-    } else if (read_message_geometry (geometry)) {
-      //  continue
-    } else {
-      skip_element ();
-    }
-  }
-  br.done ();
-
-  data.set_severity (severity);
-  data.set_message (msg);
-  data.set_cell_name (cell_name);
-  data.set_category_description (category_description);
-  data.set_category_name (category_name);
-  data.set_geometry (geometry);
-}
-
 void LayoutToNetlistStandardReader::do_read (db::LayoutToNetlist *l2n)
 {
-  tl::SelfTimer timer (tl::verbosity () >= 21, tl::to_string (tr ("File read: ")) + m_path);
+  tl::SelfTimer timer (tl::verbosity () >= 21, tl::to_string (tr ("File read")));
 
   try {
     read_netlist (0, l2n);
@@ -307,7 +153,7 @@ static db::Region &layer_by_name (db::LayoutToNetlist *l2n, const std::string &n
   return *l;
 }
 
-void LayoutToNetlistStandardReader::read_netlist (db::Netlist *netlist, db::LayoutToNetlist *l2n, LayoutToNetlistStandardReader::Brace *nested, std::map<const db::Circuit *, ObjectMap> *map_per_circuit)
+void LayoutToNetlistStandardReader::read_netlist (db::Netlist *netlist, db::LayoutToNetlist *l2n, bool nested, std::map<const db::Circuit *, ObjectMap> *map_per_circuit)
 {
   m_dbu = 0.001;
   int version = 0;
@@ -331,9 +177,7 @@ void LayoutToNetlistStandardReader::read_netlist (db::Netlist *netlist, db::Layo
     tl_assert (netlist != 0);
   }
 
-  db::LayoutLocker layout_locker (l2n ? l2n->internal_layout () : 0);
-
-  while (nested ? *nested : ! at_end ()) {
+  while (! at_end ()) {
 
     if (test (skeys::version_key) || test (lkeys::version_key)) {
 
@@ -373,7 +217,7 @@ void LayoutToNetlistStandardReader::read_netlist (db::Netlist *netlist, db::Layo
         read_word_or_quoted (lspec);
       }
 
-      std::unique_ptr<db::Region> region (l2n->make_layer (layer));
+      std::auto_ptr<db::Region> region (l2n->make_layer (layer));
       if (! lspec.empty ()) {
         unsigned int layer_index = l2n->layer_of (*region);
         tl::Extractor ex (lspec.c_str ());
@@ -390,81 +234,20 @@ void LayoutToNetlistStandardReader::read_netlist (db::Netlist *netlist, db::Layo
       std::string class_name, templ_name;
       read_word_or_quoted (class_name);
       read_word_or_quoted (templ_name);
-
-      int full_specs = 0;
-      try_read_int (full_specs);
+      br.done ();
 
       if (netlist->device_class_by_name (class_name) != 0) {
-        throw tl::Exception (tl::to_string (tr ("Duplicate definition of device class: ")) + class_name);
+        throw tl::Exception (tl::to_string (tr ("Device class must be defined before being used in device")));
       }
 
-      db::DeviceClass *dc;
-      if (templ_name.empty ()) {
-        //  generic device class (issue #1696)
-        dc = new db::DeviceClass ();
-      } else {
-        db::DeviceClassTemplateBase *dct = db::DeviceClassTemplateBase::template_by_name (templ_name);
-        if (! dct) {
-          throw tl::Exception (tl::to_string (tr ("Invalid device class template: ")) + templ_name);
-        }
-        dc = dct->create ();
+      db::DeviceClassTemplateBase *dct = db::DeviceClassTemplateBase::template_by_name (templ_name);
+      if (! dct) {
+        throw tl::Exception (tl::to_string (tr ("Invalid device class template: ")) + templ_name);
       }
 
-      //  start with tabula rasa on "full specs"
-      if (full_specs != 0) {
-        dc->clear_equivalent_terminal_ids ();
-        dc->clear_parameter_definitions ();
-        dc->clear_terminal_definitions ();
-      }
-
+      db::DeviceClass *dc = dct->create ();
       dc->set_name (class_name);
       netlist->add_device_class (dc);
-
-      while (br) {
-
-        if (test (skeys::terminal_key) || test (lkeys::terminal_key)) {
-
-          Brace br (this);
-
-          std::string terminal_name;
-          read_word_or_quoted (terminal_name);
-          if (! dc->has_terminal_with_name (terminal_name)) {
-            db::DeviceTerminalDefinition td;
-            td.set_name (terminal_name);
-            dc->add_terminal_definition (td);
-          }
-
-          br.done ();
-
-        } else if (test (skeys::param_key) || test (lkeys::param_key)) {
-
-          Brace br (this);
-
-          std::string param_name;
-          read_word_or_quoted (param_name);
-          int primary = read_int ();
-          int default_value = read_double ();
-          if (! dc->has_parameter_with_name (param_name)) {
-            db::DeviceParameterDefinition pd;
-            pd.set_name (param_name);
-            pd.set_is_primary (primary);
-            pd.set_default_value (default_value);
-            dc->add_parameter_definition (pd);
-          } else {
-            db::DeviceParameterDefinition *pd = dc->parameter_definition_non_const (dc->parameter_id_for_name (param_name));
-            pd->set_default_value (default_value);
-            pd->set_is_primary (primary);
-          }
-
-          br.done ();
-
-        } else {
-          skip_element ();
-        }
-
-      }
-
-      br.done ();
 
     } else if (l2n && (test (skeys::connect_key) || test (lkeys::connect_key))) {
 
@@ -475,18 +258,6 @@ void LayoutToNetlistStandardReader::read_netlist (db::Netlist *netlist, db::Layo
         std::string l2;
         read_word_or_quoted (l2);
         l2n->connect (layer_by_name (l2n, l1), layer_by_name (l2n, l2));
-      }
-      br.done ();
-
-    } else if (l2n && (test (skeys::softconnect_key) || test (lkeys::softconnect_key))) {
-
-      Brace br (this);
-      std::string l1;
-      read_word_or_quoted (l1);
-      while (br) {
-        std::string l2;
-        read_word_or_quoted (l2);
-        l2n->soft_connect (layer_by_name (l2n, l1), layer_by_name (l2n, l2));
       }
       br.done ();
 
@@ -501,25 +272,6 @@ void LayoutToNetlistStandardReader::read_netlist (db::Netlist *netlist, db::Layo
         l2n->connect_global (layer_by_name (l2n, l1), g);
       }
       br.done ();
-
-    } else if (l2n && (test (skeys::softglobal_key) || test (lkeys::softglobal_key))) {
-
-      Brace br (this);
-      std::string l1;
-      read_word_or_quoted (l1);
-      while (br) {
-        std::string g;
-        read_word_or_quoted (g);
-        l2n->soft_connect_global (layer_by_name (l2n, l1), g);
-      }
-      br.done ();
-
-    } else if (l2n && (test (skeys::message_key) || test (lkeys::message_key))) {
-
-      db::LogEntryData data;
-      read_message_entry (data);
-
-      l2n->log_entry (data);
 
     } else if (test (skeys::circuit_key) || test (lkeys::circuit_key)) {
 
@@ -570,7 +322,7 @@ void LayoutToNetlistStandardReader::read_netlist (db::Netlist *netlist, db::Layo
         } else if (at_end ()) {
           throw tl::Exception (tl::to_string (tr ("Unexpected end of file inside circuit definition (rect, polygon, net, pin, device or circuit expected)")));
         } else {
-          skip_element ();
+          throw tl::Exception (tl::to_string (tr ("Invalid keyword inside circuit definition (rect, polygon, net, pin, device or circuit expected)")));
         }
 
       }
@@ -604,10 +356,8 @@ void LayoutToNetlistStandardReader::read_netlist (db::Netlist *netlist, db::Layo
       dm->set_name (name);
       netlist->add_device_abstract (dm);
 
-      if (l2n) {
-        db::cell_index_type ci = l2n->internal_layout ()->add_cell (name.c_str ());
-        dm->set_cell_index (ci);
-      }
+      db::cell_index_type ci = l2n->internal_layout ()->add_cell (name.c_str ());
+      dm->set_cell_index (ci);
 
       std::string cls;
       read_word_or_quoted (cls);
@@ -631,27 +381,25 @@ void LayoutToNetlistStandardReader::read_netlist (db::Netlist *netlist, db::Layo
         } else if (at_end ()) {
           throw tl::Exception (tl::to_string (tr ("Unexpected end of file inside device abstract definition (terminal expected)")));
         } else {
-          skip_element ();
+          throw tl::Exception (tl::to_string (tr ("Invalid keyword inside device abstract definition (terminal expected)")));
         }
 
       }
 
       br.done ();
 
+    } else if (nested) {
+      break;
     } else if (at_end ()) {
-      throw tl::Exception (tl::to_string (tr ("Unexpected end of file inside device abstract definition (terminal expected)")));
+      throw tl::Exception (tl::to_string (tr ("Unexpected end of file")));
     } else {
-      skip_element ();
+      throw tl::Exception (tl::to_string (tr ("Invalid keyword")));
     }
 
   }
 
   if (l2n) {
     l2n->set_netlist_extracted ();
-  }
-
-  if (version > 1) {
-    throw tl::Exception (tl::to_string (tr ("This program version only supports version 1 of the L2N DB format. File version is: ")) + tl::to_string (version));
   }
 }
 
@@ -693,6 +441,50 @@ LayoutToNetlistStandardReader::read_property (db::NetlistObject *obj)
   br.done ();
 }
 
+std::pair<unsigned int, db::PolygonRef>
+LayoutToNetlistStandardReader::read_geometry (db::LayoutToNetlist *l2n)
+{
+  std::string lname;
+
+  if (test (skeys::rect_key) || test (lkeys::rect_key)) {
+
+    Brace br (this);
+
+    read_word_or_quoted (lname);
+    unsigned int lid = l2n->layer_of (layer_by_name (l2n, lname));
+
+    db::Point lb = read_point ();
+    db::Point rt = read_point ();
+    db::Box box (lb, rt);
+
+    br.done ();
+
+    return std::make_pair (lid, db::PolygonRef (db::Polygon (box), l2n->internal_layout ()->shape_repository ()));
+
+  } else if (test (skeys::polygon_key) || test (lkeys::polygon_key)) {
+
+    Brace br (this);
+
+    read_word_or_quoted (lname);
+    unsigned int lid = l2n->layer_of (layer_by_name (l2n, lname));
+
+    std::vector<db::Point> pt;
+    while (br) {
+      pt.push_back (read_point ());
+    }
+    br.done ();
+
+    db::Polygon poly;
+    poly.assign_hull (pt.begin (), pt.end ());
+    return std::make_pair (lid, db::PolygonRef (poly, l2n->internal_layout ()->shape_repository ()));
+
+  } else if (at_end ()) {
+    throw tl::Exception (tl::to_string (tr ("Unexpected end of file (polygon or rect expected)")));
+  } else {
+    throw tl::Exception (tl::to_string (tr ("Invalid keyword (polygon or rect expected)")));
+  }
+}
+
 db::Box
 LayoutToNetlistStandardReader::read_rect ()
 {
@@ -728,78 +520,17 @@ LayoutToNetlistStandardReader::read_polygon ()
 }
 
 void
-LayoutToNetlistStandardReader::read_geometries (db::NetlistObject *obj, Brace &br, db::LayoutToNetlist *l2n, db::local_cluster<db::NetShape> &lc, db::Cell &cell)
+LayoutToNetlistStandardReader::read_geometries (db::NetlistObject *obj, Brace &br, db::LayoutToNetlist *l2n, db::local_cluster<db::PolygonRef> &lc, db::Cell &cell)
 {
   m_ref = db::Point ();
-  std::string lname;
 
   while (br) {
-
     if (test (skeys::property_key) || test (lkeys::property_key)) {
-
       read_property (obj);
-
-    } else if (test (skeys::rect_key) || test (lkeys::rect_key)) {
-
-      Brace br (this);
-
-      read_word_or_quoted (lname);
-      unsigned int lid = l2n->layer_of (layer_by_name (l2n, lname));
-
-      db::Point lb = read_point ();
-      db::Point rt = read_point ();
-      db::Box box (lb, rt);
-
-      br.done ();
-
-      NetShape n (db::PolygonRef (db::Polygon (box), l2n->internal_layout ()->shape_repository ()));
-
-      lc.add (n, lid);
-      n.insert_into (cell.shapes (lid));
-
-    } else if (test (skeys::polygon_key) || test (lkeys::polygon_key)) {
-
-      Brace br (this);
-
-      read_word_or_quoted (lname);
-      unsigned int lid = l2n->layer_of (layer_by_name (l2n, lname));
-
-      std::vector<db::Point> pt;
-      while (br) {
-        pt.push_back (read_point ());
-      }
-      br.done ();
-
-      db::Polygon poly;
-      poly.assign_hull (pt.begin (), pt.end ());
-      NetShape n (db::PolygonRef (poly, l2n->internal_layout ()->shape_repository ()));
-
-      lc.add (n, lid);
-      n.insert_into (cell.shapes (lid));
-
-    } else if (test (skeys::text_key) || test (lkeys::text_key)) {
-
-      Brace br (this);
-
-      read_word_or_quoted (lname);
-      unsigned int lid = l2n->layer_of (layer_by_name (l2n, lname));
-
-      std::string text;
-      read_word_or_quoted (text);
-
-      db::Point pt = read_point ();
-
-      br.done ();
-
-      NetShape n (db::TextRef (db::Text (text, db::Trans (pt - db::Point ())), l2n->internal_layout ()->shape_repository ()));
-
-      lc.add (n, lid);
-      n.insert_into (cell.shapes (lid));
-
-    } else if (at_end ()) {
-      throw tl::Exception (tl::to_string (tr ("Unexpected end of file (polygon, text or rect expected)")));
     } else {
-      skip_element ();
+      std::pair<unsigned int, db::PolygonRef> pr = read_geometry (l2n);
+      lc.add (pr.second, pr.first);
+      cell.shapes (pr.first).insert (pr.second);
     }
   }
 }
@@ -826,8 +557,8 @@ LayoutToNetlistStandardReader::read_net (db::Netlist * /*netlist*/, db::LayoutTo
 
   if (l2n) {
 
-    db::connected_clusters<db::NetShape> &cc = l2n->net_clusters ().clusters_per_cell (circuit->cell_index ());
-    db::local_cluster<db::NetShape> &lc = *cc.insert ();
+    db::connected_clusters<db::PolygonRef> &cc = l2n->net_clusters ().clusters_per_cell (circuit->cell_index ());
+    db::local_cluster<db::PolygonRef> &lc = *cc.insert ();
     net->set_cluster_id (lc.id ());
 
     db::Cell &cell = l2n->internal_layout ()->cell (circuit->cell_index ());
@@ -846,7 +577,6 @@ LayoutToNetlistStandardReader::read_pin (db::Netlist * /*netlist*/, db::LayoutTo
   db::Net *net = 0;
 
   db::Pin pin;
-  int netid = 0;
 
   while (br) {
 
@@ -866,27 +596,23 @@ LayoutToNetlistStandardReader::read_pin (db::Netlist * /*netlist*/, db::LayoutTo
 
       read_property (&pin);
 
-    } else if (try_read_int (netid)) {
+    } else {
 
       if (net) {
         throw tl::Exception (tl::to_string (tr ("Duplicate net ID")));
       }
 
-      net = map.id2net [(unsigned int) netid];
+      unsigned int netid = (unsigned int) read_int ();
+      net = map.id2net [netid];
       if (!net) {
         throw tl::Exception (tl::to_string (tr ("Not a valid net ID: ")) + tl::to_string (netid));
       }
 
-    } else {
-      skip_element ();
     }
 
   }
 
   size_t pin_id = circuit->add_pin (pin).id ();
-  //  NOTE: because we identify pins by their order and not by ID we need to ensure the pin IDs are
-  //  generated sequentially.
-  tl_assert (circuit->pin_count () == pin_id + 1);
   if (net) {
     circuit->connect_pin (pin_id, net);
   }
@@ -938,7 +664,7 @@ LayoutToNetlistStandardReader::read_device (db::Netlist *netlist, db::LayoutToNe
 
   std::pair<db::DeviceAbstract *, const db::DeviceClass *> dm = device_model_by_name (netlist, dmname);
 
-  std::unique_ptr<db::Device> device (new db::Device ());
+  std::auto_ptr<db::Device> device (new db::Device ());
   device->set_device_class (const_cast<db::DeviceClass *> (dm.second));
   device->set_device_abstract (dm.first);
 
@@ -1004,7 +730,7 @@ LayoutToNetlistStandardReader::read_device (db::Netlist *netlist, db::LayoutToNe
       size_t touter_id = terminal_id (dm.second, touter);
       size_t tinner_id = terminal_id (dm.second, tinner);
 
-      device->reconnected_terminals () [(unsigned int) touter_id].push_back (db::DeviceReconnectedTerminal (size_t (device_comp_index), (unsigned int) tinner_id));
+      device->reconnected_terminals () [touter_id].push_back (db::DeviceReconnectedTerminal (size_t (device_comp_index), tinner_id));
 
     } else if (test (skeys::terminal_key) || test (lkeys::terminal_key)) {
 
@@ -1058,7 +784,7 @@ LayoutToNetlistStandardReader::read_device (db::Netlist *netlist, db::LayoutToNe
     } else if (at_end ()) {
       throw tl::Exception (tl::to_string (tr ("Unexpected end of file inside device definition (location, scale, mirror, rotation, param or terminal expected)")));
     } else {
-      skip_element ();
+      throw tl::Exception (tl::to_string (tr ("Invalid keyword inside device definition (location, scale, mirror, rotation, param or terminal expected)")));
     }
 
   }
@@ -1066,7 +792,7 @@ LayoutToNetlistStandardReader::read_device (db::Netlist *netlist, db::LayoutToNe
   br.done ();
 
   if (id > 0) {
-    map.id2device.insert (std::make_pair ((unsigned int) id, device.get ()));
+    map.id2device.insert (std::make_pair (id, device.get ()));
   }
 
   device->set_trans (trans);
@@ -1103,7 +829,7 @@ LayoutToNetlistStandardReader::read_device (db::Netlist *netlist, db::LayoutToNe
 
       if (! device->reconnected_terminals ().empty ()) {
 
-        const std::vector<db::DeviceReconnectedTerminal> *tr = device->reconnected_terminals_for ((unsigned int) tid);
+        const std::vector<db::DeviceReconnectedTerminal> *tr = device->reconnected_terminals_for (tid);
         if (tr) {
 
           for (std::vector<db::DeviceReconnectedTerminal>::const_iterator i = tr->begin (); i != tr->end (); ++i) {
@@ -1191,7 +917,7 @@ LayoutToNetlistStandardReader::read_subcircuit (db::Netlist *netlist, db::Layout
     throw tl::Exception (tl::to_string (tr ("Not a valid device circuit name: ")) + xname);
   }
 
-  std::unique_ptr<db::SubCircuit> subcircuit (new db::SubCircuit (circuit_ref));
+  std::auto_ptr<db::SubCircuit> subcircuit (new db::SubCircuit (circuit_ref));
 
   db::DCplxTrans trans;
 
@@ -1239,7 +965,7 @@ LayoutToNetlistStandardReader::read_subcircuit (db::Netlist *netlist, db::Layout
     } else if (at_end ()) {
       throw tl::Exception (tl::to_string (tr ("Unexpected end of file inside subcircuit definition (location, rotation, mirror, scale or pin expected)")));
     } else {
-      skip_element ();
+      throw tl::Exception (tl::to_string (tr ("Invalid keyword inside subcircuit definition (location, rotation, mirror, scale or pin expected)")));
     }
 
   }
@@ -1247,7 +973,7 @@ LayoutToNetlistStandardReader::read_subcircuit (db::Netlist *netlist, db::Layout
   br.done ();
 
   if (id > 0) {
-    map.id2subcircuit.insert (std::make_pair ((unsigned int) id, subcircuit.get ()));
+    map.id2subcircuit.insert (std::make_pair (id, subcircuit.get ()));
   }
 
   subcircuit->set_name (name);
@@ -1295,8 +1021,8 @@ LayoutToNetlistStandardReader::read_abstract_terminal (db::LayoutToNetlist *l2n,
 
   if (l2n) {
 
-    db::connected_clusters<db::NetShape> &cc = l2n->net_clusters ().clusters_per_cell (dm->cell_index ());
-    db::local_cluster<db::NetShape> &lc = *cc.insert ();
+    db::connected_clusters<db::PolygonRef> &cc = l2n->net_clusters ().clusters_per_cell (dm->cell_index ());
+    db::local_cluster<db::PolygonRef> &lc = *cc.insert ();
     dm->set_cluster_id_for_terminal (tid, lc.id ());
 
     db::Cell &cell = l2n->internal_layout ()->cell (dm->cell_index ());

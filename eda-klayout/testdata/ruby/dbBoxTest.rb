@@ -1,7 +1,7 @@
 # encoding: UTF-8
 
 # KLayout Layout Viewer
-# Copyright (C) 2006-2025 Matthias Koefferlein
+# Copyright (C) 2006-2019 Matthias Koefferlein
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,15 +28,6 @@ class DBBox_TestClass < TestBase
 
   # DBox basics
   def test_1_DBox
-
-    a = RBA::DBox::new( 20 )
-    assert_equal( a.to_s, "(-10,-10;10,10)" )
-
-    a = RBA::DBox::new( 21 )
-    assert_equal( a.to_s, "(-10.5,-10.5;10.5,10.5)" )
-
-    a = RBA::DBox::new( 20, 40 )
-    assert_equal( a.to_s, "(-10,-20;10,20)" )
 
     a = RBA::DBox::new( -10, 21, 11, 17 )
     assert_equal( a.to_s, "(-10,17;11,21)" )
@@ -72,12 +63,6 @@ class DBBox_TestClass < TestBase
 
     a.enlarge( RBA::DPoint::new(1, -1) )
     assert_equal( a.to_s, "(-11,22;12,24)" )
-
-    aa = a.dup
-    a.enlarge( 2.0 )
-    assert_equal( a.to_s, "(-13,20;14,26)" )
-    a.enlarge( -2.0 )
-    assert_equal( aa.enlarged( 2.0 ).to_s, "(-13,20;14,26)" )
 
     aa = a.dup
     a.enlarge( -1, 1 )
@@ -121,13 +106,6 @@ class DBBox_TestClass < TestBase
     a = RBA::DBox.new 
     assert_equal( a.empty?, true )
 
-    a = RBA::DBox::world
-    b = RBA::DBox::new(1, 2, 3, 4)
-    assert_equal( a.empty?, false )
-    assert_equal( a == RBA::DBox::world, true )
-    assert_equal( (a + b) == RBA::DBox::world, true )
-    assert_equal( (a & b) == b, true )
-
   end
 
   # DBox basics
@@ -145,9 +123,6 @@ class DBBox_TestClass < TestBase
 
     assert_equal( a + b, b )
     assert_equal( (b + c).to_s, "(1,-10;22,22)" )
-
-    assert_equal( b - a, b )
-    assert_equal( (b - c).to_s, "(1,-1;17,22)" )
 
     assert_equal( a + RBA::DPoint::new( 1, -5 ), RBA::DBox::new( 1, -5, 1, -5 ) )
     assert_equal( (b + RBA::DPoint::new( 1, -5 )).to_s, "(1,-5;17,22)" )
@@ -251,15 +226,6 @@ class DBBox_TestClass < TestBase
   # Box basics
   def test_1_Box
 
-    a = RBA::Box::new( 20 )
-    assert_equal( a.to_s, "(-10,-10;10,10)" )
-
-    a = RBA::Box::new( 21 )
-    assert_equal( a.to_s, "(-10,-10;10,10)" )
-
-    a = RBA::Box::new( 20, 40 )
-    assert_equal( a.to_s, "(-10,-20;10,20)" )
-
     a = RBA::Box::new( -10, 21, 11, 17 )
     assert_equal( a.to_s, "(-10,17;11,21)" )
     assert_equal( RBA::Box::from_s(a.to_s).to_s, a.to_s )
@@ -271,10 +237,6 @@ class DBBox_TestClass < TestBase
     assert_equal( a.to_s, "(-9,18;12,22)" )
     a = b.moved( 1, -1 )
     assert_equal( a.to_s, "(-9,16;12,20)" )
-    a = b.moved( dy: 1 )
-    assert_equal( a.to_s, "(-10,18;11,22)" )
-    a = b.moved( dx: 1 )
-    assert_equal( a.to_s, "(-9,17;12,21)" )
 
     a = b.dup
     a.move( 1, -1 )
@@ -296,24 +258,13 @@ class DBBox_TestClass < TestBase
     a.move( RBA::Point::new(1, 1) ).move( RBA::Point::new(-2, 2) )
     assert_equal( a.to_s, "(-10,21;11,25)" )
 
-    aa = a.dup
-    a.enlarge( 2 )
-    assert_equal( a.to_s, "(-12,19;13,27)" )
-    a.enlarge( -2 )
-    assert_equal( aa.enlarged( 2 ).to_s, "(-12,19;13,27)" )
-
     a.enlarge( RBA::Point::new(1, -1) )
     assert_equal( a.to_s, "(-11,22;12,24)" )
 
     aa = a.dup
     a.enlarge( -1, 1 )
     assert_equal( a.to_s, "(-10,21;11,25)" )
-    a.enlarge( 1, -1 )
-    a.enlarge( dy: 1 )
-    a.enlarge( dx: -1 )
-    assert_equal( a.to_s, "(-10,21;11,25)" )
     assert_equal( aa.enlarged( -1, 1 ).to_s, "(-10,21;11,25)" )
-    assert_equal( aa.enlarged( :dy => 1, :dx => -1 ).to_s, "(-10,21;11,25)" )
 
     a = a.enlarged( RBA::Point::new(1, -1) )
     assert_equal( a.to_s, "(-11,22;12,24)" )
@@ -351,13 +302,6 @@ class DBBox_TestClass < TestBase
 
     a = RBA::Box.new 
     assert_equal( a.empty?, true )
-
-    a = RBA::Box::world
-    b = RBA::Box::new(1, 2, 3, 4)
-    assert_equal( a.empty?, false )
-    assert_equal( a == RBA::Box::world, true )
-    assert_equal( (a + b) == RBA::Box::world, true )
-    assert_equal( (a & b) == b, true )
 
   end
 
@@ -509,46 +453,6 @@ class DBBox_TestClass < TestBase
     assert_equal(h[b1], "a")
     assert_equal(h[b2], "a")
     assert_equal(h[b3], "b")
-
-  end
-
-  def test_boxWithProperties
-
-    s = RBA::BoxWithProperties::new
-    assert_equal(s.to_s, "() props={}")
-
-    s = RBA::BoxWithProperties::new(RBA::Box::new(0, 0, 100, 200), { 1 => "one" })
-    assert_equal(s.to_s, "(0,0;100,200) props={1=>one}")
-
-    pid = RBA::Layout::properties_id({ 1 => "one" })
-    s = RBA::BoxWithProperties::new(RBA::Box::new(0, 0, 100, 200), pid)
-    assert_equal(s.to_s, "(0,0;100,200) props={1=>one}")
-    assert_equal((RBA::CplxTrans::new(0.001) * s).to_s, "(0,0;0.1,0.2) props={1=>one}")
-    assert_equal(s.property(1), "one")
-    assert_equal(s.properties, { 1 => "one" })
-    s.set_property(1, "xxx")
-    assert_equal(s.to_s, "(0,0;100,200) props={1=>xxx}")
-    s.delete_property(1)
-    assert_equal(s.to_s, "(0,0;100,200) props={}")
-    assert_equal(s.property(1), nil)
-
-    s = RBA::DBoxWithProperties::new
-    assert_equal(s.to_s, "() props={}")
-
-    s = RBA::DBoxWithProperties::new(RBA::DBox::new(0, 0, 100, 200), { 1 => "one" })
-    assert_equal(s.to_s, "(0,0;100,200) props={1=>one}")
-
-    pid = RBA::Layout::properties_id({ 1 => "one" })
-    s = RBA::DBoxWithProperties::new(RBA::DBox::new(0, 0, 100, 200), pid)
-    assert_equal(s.to_s, "(0,0;100,200) props={1=>one}")
-    assert_equal((RBA::VCplxTrans::new(2.5) * s).to_s, "(0,0;250,500) props={1=>one}")
-    assert_equal(s.property(1), "one")
-    assert_equal(s.properties, { 1 => "one" })
-    s.set_property(1, "xxx")
-    assert_equal(s.to_s, "(0,0;100,200) props={1=>xxx}")
-    s.delete_property(1)
-    assert_equal(s.to_s, "(0,0;100,200) props={}")
-    assert_equal(s.property(1), nil)
 
   end
 

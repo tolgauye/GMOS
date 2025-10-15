@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -24,6 +24,8 @@
 #include "layEditable.h"
 #include "dbClipboard.h"
 #include "tlAssert.h"
+
+#include "layPropertiesDialog.h"
 
 #include <algorithm>
 #include <memory>
@@ -54,15 +56,6 @@ Editable::Editable (lay::Editables *editables)
   }
 }
 
-void
-Editable::init (lay::Editables *editables)
-{
-  mp_editables = editables;
-  if (editables) {
-    editables->m_editables.push_back (this);
-  }
-}
-
 Editable::~Editable ()
 {
   //  Reasoning for reset (): on MSVC, virtual functions must not be called inside
@@ -79,8 +72,9 @@ Editable::~Editable ()
 //  Editables implementation
 
 Editables::Editables (db::Manager *manager)
-  : db::Object (manager), m_move_selection (false), m_any_move_operation (false)
+  : db::Object (manager), mp_properties_dialog (0), m_move_selection (false), m_any_move_operation (false)
 {
+  //  .. nothing yet ..
 }
 
 Editables::~Editables ()
@@ -91,9 +85,9 @@ Editables::~Editables ()
 void 
 Editables::del (db::Transaction *transaction)
 {
-  std::unique_ptr<db::Transaction> trans_holder (transaction ? transaction : new db::Transaction (manager (), tl::to_string (tr ("Delete"))));
+  std::auto_ptr<db::Transaction> trans_holder (transaction ? transaction : new db::Transaction (manager (), tl::to_string (QObject::tr ("Delete"))));
 
-  if (has_selection ()) {
+  if (selection_size () > 0) {
 
     try {
 
@@ -102,9 +96,7 @@ Editables::del (db::Transaction *transaction)
       cancel_edits ();
 
       //  this dummy operation will update the screen:
-      if (manager ()) {
-        manager ()->queue (this, new db::Op ());
-      }
+      manager ()->queue (this, new db::Op ());
 
       for (iterator e = begin (); e != end (); ++e) {
         e->del ();
@@ -121,14 +113,12 @@ Editables::del (db::Transaction *transaction)
 void 
 Editables::cut ()
 {
-  if (has_selection ()) {
+  if (selection_size () > 0) {
 
     cancel_edits ();
 
     //  this dummy operation will update the screen:
-    if (manager ()) {
-      manager ()->queue (this, new db::Op ());
-    }
+    manager ()->queue (this, new db::Op ());
 
     db::Clipboard::instance ().clear ();
     for (iterator e = begin (); e != end (); ++e) {
@@ -141,7 +131,7 @@ Editables::cut ()
 void 
 Editables::copy ()
 {
-  if (has_selection ()) {
+  if (selection_size () > 0) {
     db::Clipboard::instance ().clear ();
     for (iterator e = begin (); e != end (); ++e) {
       e->copy ();
@@ -164,33 +154,28 @@ Editables::selection_catch_bbox ()
 {
   db::DBox sel_bbox;
   for (iterator e = begin (); e != end (); ++e) {
-    //  we use a larger distance for the bbox because once there is a box it's
-    //  more likely we want to capture it and it's tedious to capture a single
-    //  text otherwise (issue-994).
-    double l = e->catch_distance () * 3.0;
+    double l = e->catch_distance ();
     sel_bbox += e->selection_bbox ().enlarged (db::DVector (l, l));
   }
   return sel_bbox;
 }
 
 void
-Editables::transform (const db::DCplxTrans &t)
+Editables::transform (const db::DCplxTrans &tr, db::Transaction *transaction)
 {
-  std::unique_ptr<db::Transaction> trans_holder (new db::Transaction (manager (), tl::to_string (tr ("Transform"))));
+  std::auto_ptr<db::Transaction> trans_holder (transaction ? transaction : new db::Transaction (manager (), tl::to_string (QObject::tr ("Transform"))));
 
-  if (has_selection ()) {
+  if (selection_size () > 0) {
 
     try {
 
       trans_holder->open ();
 
       //  this dummy operation will update the screen:
-      if (manager ()) {
-        manager ()->queue (this, new db::Op ());
-      }
+      manager ()->queue (this, new db::Op ());
 
       for (iterator e = begin (); e != end (); ++e) {
-        e->transform (t);
+        e->transform (tr);
       }
 
     } catch (...) {
@@ -209,7 +194,7 @@ Editables::paste ()
     cancel_edits ();
 
     //  this dummy operation will update the screen:
-    if (manager () && manager ()->transacting ()) {
+    if (manager ()->transacting ()) {
       manager ()->queue (this, new db::Op ());
     }
 
@@ -308,32 +293,19 @@ Editables::clear_previous_selection ()
 void 
 Editables::clear_transient_selection ()
 {
-  bool had_transient_selection = false;
   for (iterator e = begin (); e != end (); ++e) {
-    if (e->has_transient_selection ()) {
-      had_transient_selection = true;
-    }
     e->clear_transient_selection ();
   }
 
   //  send a signal to the observers
-  if (had_transient_selection) {
-    signal_transient_selection_changed ();
-  }
+  signal_transient_selection_changed ();
 }
 
 void
 Editables::transient_to_selection ()
 {
-  bool had_transient_selection = false;
-  bool had_selection = false;
+  cancel_edits ();
   for (iterator e = begin (); e != end (); ++e) {
-    if (e->has_selection ()) {
-      had_selection = true;
-    }
-    if (e->has_transient_selection ()) {
-      had_transient_selection = true;
-    }
     e->select (db::DBox (), lay::Editable::Reset);  //  clear selection
     e->clear_previous_selection ();
     e->transient_to_selection ();
@@ -341,41 +313,39 @@ Editables::transient_to_selection ()
   }
 
   //  send a signal to the observers
-  if (had_transient_selection) {
-    signal_transient_selection_changed ();
-  }
-  if (had_selection || had_transient_selection) {
-    signal_selection_changed ();
-  }
+  signal_transient_selection_changed ();
+  signal_selection_changed ();
 }
 
 void 
 Editables::clear_selection ()
 {
   cancel_edits ();
-
-  bool had_transient_selection = false;
-  bool had_selection = false;
-
   for (iterator e = begin (); e != end (); ++e) {
-    if (e->has_selection ()) {
-      had_selection = true;
-    }
-    if (e->has_transient_selection ()) {
-      had_transient_selection = true;
-    }
     e->select (db::DBox (), lay::Editable::Reset);  //  clear selection
     e->clear_transient_selection ();
     e->clear_previous_selection ();
   }
 
   //  send a signal to the observers
-  if (had_transient_selection) {
-    signal_transient_selection_changed ();
+  signal_selection_changed ();
+}
+
+void 
+Editables::select ()
+{
+  cancel_edits ();
+  clear_transient_selection ();
+  clear_previous_selection ();
+
+  for (iterator e = begin (); e != end (); ++e) {
+    if (m_enabled.find (&*e) != m_enabled.end ()) {
+      e->select (db::DBox (), lay::Editable::Replace);  //  select "all"
+    }
   }
-  if (had_selection) {
-    signal_selection_changed ();
-  }
+
+  //  send a signal to the observers
+  signal_selection_changed ();
 }
 
 void 
@@ -474,14 +444,6 @@ Editables::select (const db::DPoint &pt, lay::Editable::SelectionMode mode)
   signal_selection_changed ();
 }
 
-void
-Editables::repeat_selection (Editable::SelectionMode mode)
-{
-  if (m_last_selected_point.is_point ()) {
-    select (m_last_selected_point, mode);
-  }
-}
-
 bool 
 Editables::begin_move (const db::DPoint &p, lay::angle_constraint_type ac)
 {
@@ -504,7 +466,7 @@ Editables::begin_move (const db::DPoint &p, lay::angle_constraint_type ac)
   //  sort the plugins found by the proximity
   std::sort (plugins.begin (), plugins.end (), first_of_pair_cmp_f<double, iterator> ());
 
-  if (has_selection () && selection_catch_bbox ().contains (p)) {
+  if (selection_size () > 0 && selection_catch_bbox ().contains (p)) {
 
     //  if anything is selected and we are within the selection bbox, 
     //  issue a move operation on all editables: first try a Partial mode begin_move
@@ -552,7 +514,7 @@ Editables::begin_move (const db::DPoint &p, lay::angle_constraint_type ac)
     select (p, Editable::Replace);
 
     //  now we assume we have a selection - try to begin_move on this.
-    if (has_selection ()) {
+    if (selection_size () > 0) {
       m_move_selection = true;
       for (iterator e = begin (); e != end (); ++e) {
         e->begin_move (Editable::Selected, p, ac);
@@ -586,16 +548,14 @@ Editables::move_transform (const db::DPoint &p, db::DFTrans t, lay::angle_constr
 void 
 Editables::end_move (const db::DPoint &p, lay::angle_constraint_type ac, db::Transaction *transaction)
 {
-  std::unique_ptr<db::Transaction> trans_holder (transaction ? transaction : new db::Transaction (manager (), tl::to_string (tr ("Move"))));
+  std::auto_ptr<db::Transaction> trans_holder (transaction ? transaction : new db::Transaction (manager (), tl::to_string (QObject::tr ("Move"))));
 
   if (m_any_move_operation) {
 
     trans_holder->open ();
 
     //  this dummy operation will update the screen:
-    if (manager ()) {
-      manager ()->queue (this, new db::Op ());
-    }
+    manager ()->queue (this, new db::Op ());
 
     for (iterator e = begin (); e != end (); ++e) {
       e->end_move (p, ac);
@@ -628,18 +588,7 @@ Editables::selection_size ()
   return c;
 }
 
-bool
-Editables::has_selection ()
-{
-  for (iterator e = begin (); e != end (); ++e) {
-    if (e->has_selection ()) {
-      return true;
-    }
-  }
-  return false;
-}
-
-void
+void 
 Editables::edit_cancel ()
 {
   clear_previous_selection ();
@@ -649,34 +598,26 @@ Editables::edit_cancel ()
 }
 
 void
-Editables::edit_finish ()
-{
-  clear_previous_selection ();
-  for (iterator e = begin (); e != end (); ++e) {
-    e->edit_finish ();
-  }
-}
-
-void
 Editables::cancel_edits ()
 {
+  //  close the property dialog
+  if (mp_properties_dialog) {
+    delete mp_properties_dialog;
+  }
+  mp_properties_dialog = 0;
+
+  //  cancel any edit operations
   for (iterator e = begin (); e != end (); ++e) {
     e->edit_cancel ();
   }
 }
 
 void
-Editables::finish_edits ()
+Editables::show_properties (QWidget *parent)
 {
-  for (iterator e = begin (); e != end (); ++e) {
-    e->edit_finish ();
-  }
-}
-
-void
-Editables::show_properties ()
-{
-  //  The default implementation does nothing
+  cancel_edits ();
+  mp_properties_dialog = new lay::PropertiesDialog (parent, manager (), this);
+  mp_properties_dialog->show ();
 }
 
 }

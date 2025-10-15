@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -25,10 +25,9 @@
 
 #ifdef HAVE_RUBY
 
-#include "gsiSerialisation.h"
-
 #include <ruby.h>
 
+#include "gsiSerialisation.h"
 #include "tlHeap.h"
 
 namespace rba
@@ -41,7 +40,7 @@ class Proxy;
  *
  *  "self" is a reference to the object that the method is called on or 0 if there is no such object.
  */
-VALUE pull_arg (const gsi::ArgType &atype, Proxy *self, gsi::SerialArgs &aserial, tl::Heap &heap);
+VALUE pop_arg (const gsi::ArgType &atype, Proxy *self, gsi::SerialArgs &aserial, tl::Heap &heap);
 
 /**
  *  @brief Pushes an argument on the call or return stack
@@ -62,7 +61,7 @@ void push_arg (const gsi::ArgType &atype, gsi::SerialArgs &aserial, VALUE arg, t
  *  otherwise:
  *      argument must be of the requested type
  */
-bool test_arg (const gsi::ArgType &atype, VALUE arg, bool loose, bool object_substitution);
+bool test_arg (const gsi::ArgType &atype, VALUE arg, bool loose);
 
 }
 

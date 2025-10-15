@@ -1,7 +1,7 @@
 # encoding: UTF-8
 
 # KLayout Layout Viewer
-# Copyright (C) 2006-2025 Matthias Koefferlein
+# Copyright (C) 2006-2019 Matthias Koefferlein
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -38,20 +38,26 @@ class LAYMenuTest_TestClass < TestBase
 
     assert_equal(a.shortcut, "Shift+F1")
     assert_equal(a.effective_shortcut, "Shift+F1")
-    assert_equal(b.shortcut, "")
-    assert_equal(b.effective_shortcut, "")
+    assert_equal(b.shortcut, "Shift+F1")
+    assert_equal(b.effective_shortcut, "Shift+F1")
 
     a.default_shortcut = "X"
 
     assert_equal(a.default_shortcut, "X")
     assert_equal(a.shortcut, "Shift+F1")
     assert_equal(a.effective_shortcut, "Shift+F1")
+    assert_equal(b.default_shortcut, "X")
+    assert_equal(b.shortcut, "Shift+F1")
+    assert_equal(b.effective_shortcut, "Shift+F1")
 
     a.shortcut = ""
 
     assert_equal(a.default_shortcut, "X")
     assert_equal(a.shortcut, "")
     assert_equal(a.effective_shortcut, "X")
+    assert_equal(b.default_shortcut, "X")
+    assert_equal(b.shortcut, "")
+    assert_equal(b.effective_shortcut, "X")
 
     a.shortcut = RBA::Action::NoKeyBound
     assert_equal(a.default_shortcut, "X")
@@ -68,6 +74,9 @@ class LAYMenuTest_TestClass < TestBase
     assert_equal(a.is_hidden?, false)
     assert_equal(a.is_effective_visible?, false)
     assert_equal(a.effective_shortcut, "X")
+    assert_equal(b.is_visible?, false)
+    assert_equal(b.is_hidden?, false)
+    assert_equal(b.is_effective_visible?, false)
 
     a.hidden = false
     a.visible = true
@@ -76,6 +85,9 @@ class LAYMenuTest_TestClass < TestBase
     assert_equal(a.is_hidden?, false)
     assert_equal(a.is_effective_visible?, true)
     assert_equal(a.effective_shortcut, "X")
+    assert_equal(b.is_visible?, true)
+    assert_equal(b.is_hidden?, false)
+    assert_equal(b.is_effective_visible?, true)
 
     a.hidden = true
     a.visible = true
@@ -84,6 +96,9 @@ class LAYMenuTest_TestClass < TestBase
     assert_equal(a.is_hidden?, true)
     assert_equal(a.is_effective_visible?, false)
     assert_equal(a.effective_shortcut, "")
+    assert_equal(b.is_visible?, true)
+    assert_equal(b.is_hidden?, true)
+    assert_equal(b.is_effective_visible?, false)
 
   end
 
@@ -218,7 +233,7 @@ RESULT
     assert_equal( menu.is_separator?( "file_menu.sep" ), true )
 
     assert_equal( menu.action( "file_menu.#0" ).title, "New title" )
-    assert_equal( menu.action( "file_menu.#0" ).shortcut, "Shift+Ctrl+F7" )
+    assert_equal( menu.action( "file_menu.#0" ).shortcut, "Ctrl+Shift+F7" )
     assert_equal( menu.action( "file_menu.#3" ).icon_text, "X" )
     assert_equal( menu.action( "my_menu.new_item" ).is_visible?, true )
     assert_equal( menu.action( "file_menu.#3" ).is_checked?, false )
@@ -227,20 +242,19 @@ RESULT
     $a1.visible = false
     assert_equal( menu.action( "my_menu.new_item" ).is_visible?, false )
     assert_equal( menu.action( "my_menu.new_item" ).is_checked?, false )
-    assert_equal( menu.action( "my_menu.new_item" ).is_enabled?, true )
+    assert_equal( menu.action( "my_menu.new_item" ).is_enabled?, false )
 
     $a1.checked = true
     assert_equal( menu.action( "file_menu.#3" ).is_visible?, false )
     assert_equal( menu.action( "file_menu.#3" ).is_checked?, false )
     assert_equal( menu.action( "file_menu.#3" ).is_checkable?, false )
-    assert_equal( menu.action( "file_menu.#3" ).is_enabled?, true )
+    assert_equal( menu.action( "file_menu.#3" ).is_enabled?, false )
 
-    $a1.checked = false
     $a1.checkable = true;
     assert_equal( menu.action( "my_menu.new_item" ).is_visible?, false )
     assert_equal( menu.action( "my_menu.new_item" ).is_checked?, false )
     assert_equal( menu.action( "my_menu.new_item" ).is_checkable?, true )
-    assert_equal( menu.action( "my_menu.new_item" ).is_enabled?, true )
+    assert_equal( menu.action( "my_menu.new_item" ).is_enabled?, false )
     $a1.checked = true
     assert_equal( menu.action( "file_menu.#0" ).is_checked?, true )
 
@@ -313,10 +327,6 @@ RESULT
 
   def test_3
 
-    if !RBA.constants.member?(:AbstractMenu)
-      return
-    end
-
     map = RBA::AbstractMenu::unpack_key_binding("'path.a':X;'path.b':''")
     assert_equal(map["path.a"], "X")
     assert_equal(map["path.b"], "")
@@ -332,207 +342,6 @@ RESULT
 
     map2 = RBA::AbstractMenu::unpack_menu_items_hidden(RBA::AbstractMenu::pack_menu_items_hidden(map))
     assert_equal(map == map2, true)
-
-  end
-
-  def test_4
-
-    if !RBA.constants.member?(:Action)
-      return
-    end
-
-    action = RBA::Action::new
-    action.title = "title:n1"
-
-    menu = RBA::AbstractMenu::new
-
-    assert_equal(menu.action("s1.n1"), nil)
-    assert_equal(menu.action("s1"), nil)
-
-    menu.insert_menu("end", "s1", "submenu1")
-    menu.insert_menu("end", "s2", "submenu2")
-
-    menu.insert_item("s1.end", "n1", action)
-    menu.insert_item("s2.end", "n1", action)
-
-    assert_equal(menu.action("s1.n1") == action, true)
-    assert_equal(menu.action("s2.n1") == action, true)
-
-    menu._destroy
-
-    # proof of transfer of ownership
-    assert_equal(action._destroyed?, true)
-
-  end
-
-  def test_5
-
-    if !RBA.constants.member?(:Action)
-      return
-    end
-
-    action = RBA::Action::new
-    action.title = "title:n1"
-
-    menu = RBA::AbstractMenu::new
-
-    assert_equal(menu.action("s1.n1"), nil)
-    assert_equal(menu.action("s1"), nil)
-
-    menu.insert_menu("end", "s1", "submenu1")
-    menu.insert_menu("end", "s2", "submenu2")
-
-    menu.insert_item("s1.end", "n1", action)
-    menu.insert_item("s2.end", "n1", action)
-
-    menu.delete_item ("s2");
-
-    assert_equal(menu.action("s1.n1") == action, true)
-    assert_equal(menu.action("s2.n1") == nil, true)
-
-    menu._destroy
-
-    assert_equal(action._destroyed?, true)
-
-  end
-
-  def test_6
-
-    if !RBA.constants.member?(:Application)
-      return
-    end
-
-    app = RBA::Application.instance
-    mw = app.main_window
-
-    assert_equal(mw.get_key_bindings["file_menu.exit"], "Ctrl+Q")
-
-    # key bindings
-
-    mw.set_key_bindings({"file_menu.exit" => "F2"})
-    assert_equal(mw.get_key_bindings["file_menu.exit"], "F2")
-
-    mw.set_key_bindings({"file_menu.exit" => ""})
-    assert_equal(mw.get_key_bindings["file_menu.exit"], "")
-
-    mw.set_key_bindings(mw.get_default_key_bindings)
-    assert_equal(mw.get_key_bindings["file_menu.exit"], "Ctrl+Q")
-
-    mw.set_key_bindings({"file_menu.exit" => ""})
-    assert_equal(mw.get_key_bindings["file_menu.exit"], "")
-
-    # menu items hidden
-
-    assert_equal(mw.get_menu_items_hidden["file_menu.exit"], false)
-
-    mw.set_menu_items_hidden({"file_menu.exit" => true})
-    assert_equal(mw.get_menu_items_hidden["file_menu.exit"], true)
-
-    mw.set_menu_items_hidden(mw.get_default_menu_items_hidden)
-    assert_equal(mw.get_menu_items_hidden["file_menu.exit"], false)
-
-    mw.set_menu_items_hidden({"file_menu.exit" => true})
-    assert_equal(mw.get_menu_items_hidden["file_menu.exit"], true)
-
-    # reset for the next pass
-    mw.set_menu_items_hidden(mw.get_default_menu_items_hidden)
-    mw.set_key_bindings(mw.get_default_key_bindings)
-
-  end
-
-  if RBA.constants.member?(:Action)
-
-    class MyAction < RBA::Action
-      attr_accessor :dyn_visible, :dyn_enabled
-      def initialize
-        self.dyn_visible = true
-        self.dyn_enabled = true
-      end
-      def wants_visible
-        self.dyn_visible
-      end
-      def wants_enabled
-        self.dyn_enabled
-      end
-    end
-
-    def test_7
-
-      a = MyAction::new
-
-      assert_equal(a.is_effective_visible?, true)
-      a.hidden = true
-      assert_equal(a.is_effective_visible?, false)
-      a.hidden = false
-      assert_equal(a.is_effective_visible?, true)
-      a.visible = false
-      assert_equal(a.is_effective_visible?, false)
-      a.visible = true
-      assert_equal(a.is_effective_visible?, true)
-      a.dyn_visible = false
-      assert_equal(a.is_effective_visible?, false)
-      a.dyn_visible = true
-      assert_equal(a.is_effective_visible?, true)
-
-      assert_equal(a.is_effective_enabled?, true)
-      a.enabled = false
-      assert_equal(a.is_effective_enabled?, false)
-      a.enabled = true
-      assert_equal(a.is_effective_enabled?, true)
-      a.dyn_enabled = false
-      assert_equal(a.is_effective_enabled?, false)
-      a.dyn_enabled = true
-      assert_equal(a.is_effective_enabled?, true)
-
-    end
-
-  end
-
-  def test_8
-
-    if !RBA.constants.member?(:Action)
-      return
-    end
-
-    action = RBA::Action::new
-    action.title = "title:n1"
-
-    menu = RBA::AbstractMenu::new
-
-    assert_equal(menu.action("s1.n1"), nil)
-    assert_equal(menu.action("s1"), nil)
-
-    menu.insert_menu("end", "s1", "submenu1")
-    menu.insert_menu("end", "s2", "submenu2")
-
-    menu.insert_item("s1.end", "n1", action)
-    menu.insert_item("s1.end", "n2", action)
-    menu.insert_item("s2.end", "n1", action)
-
-    assert_equal(menu.action("s1.n1") == action, true)
-    assert_equal(menu.action("s1.n2") == action, true)
-    assert_equal(menu.action("s2.n1") == action, true)
-
-    assert_equal(menu.is_valid?("s1.n1"), true)
-    assert_equal(menu.is_valid?("s1.n2"), true)
-    assert_equal(menu.is_valid?("s2.n1"), true)
-
-    menu.clear_menu("s1")
-
-    assert_equal(menu.is_valid?("s1.n1"), false)
-    assert_equal(menu.is_valid?("s1.n2"), false)
-    assert_equal(menu.is_valid?("s2.n1"), true)
-
-    menu.clear_menu("s2")
-
-    assert_equal(menu.is_valid?("s1.n1"), false)
-    assert_equal(menu.is_valid?("s1.n2"), false)
-    assert_equal(menu.is_valid?("s2.n1"), false)
-
-    # proof of transfer of ownership
-    assert_equal(action._destroyed?, true)
-
-    menu._destroy
 
   end
 

@@ -7,7 +7,7 @@ TARGET = pya_tests
 include($$PWD/../../lib_ut.pri)
 
 SOURCES = \
-  pyaTests.cc
+  pya.cc
 
 INCLUDEPATH += $$PYA_INC $$DB_INC $$TL_INC $$GSI_INC
 DEPENDPATH += $$PYA_INC $$DB_INC $$TL_INC $$GSI_INC

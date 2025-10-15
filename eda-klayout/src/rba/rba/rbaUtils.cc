@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -26,7 +26,6 @@
 #include "rba.h"
 #include "rbaUtils.h"
 #include "rbaInternal.h"
-#include "tlInclude.h"
 
 #if HAVE_RUBY_VERSION_CODE >= 20200
 #  include <ruby/debug.h>
@@ -113,37 +112,26 @@ rba_get_backtrace_from_array (VALUE backtrace, std::vector<tl::BacktraceElement>
 }
 
 void
-block_exceptions (bool f)
-{
-  if (RubyInterpreter::instance ()) {
-    RubyInterpreter::instance ()->block_exceptions (f);
-  }
-}
-
-bool
-exceptions_blocked ()
-{
-  return RubyInterpreter::instance () ? RubyInterpreter::instance ()->exceptions_blocked () : false;
-}
-
-void
-rba_check_error (int state)
+rba_check_error ()
 {
   VALUE lasterr = rb_errinfo ();
 
-  //  Ruby employs this pseudo-exception to indicate a "break" or "return" of a loop.
-  //  As this is an opaque condition, we continue Ruby execution later through a "RubyContinueException".
+  //  NOTE: this seems to be required to avoid segfaults on Ruby 2.3.1 after
+  //  a break was encountered.
+  rb_set_errinfo (Qnil);
+
+  //  Ruby employs this pseudo-exception to indicate a "break" of a loop
 #if HAVE_RUBY_VERSION_CODE < 10900
   if (lasterr == Qnil) {
-    throw RubyContinueException (state);
+    throw tl::CancelException ();
   }
 #elif HAVE_RUBY_VERSION_CODE < 20300
   if (TYPE (lasterr) == T_NODE) {
-    throw RubyContinueException (state);
+    throw tl::CancelException ();
   }
 #else
   if (TYPE (lasterr) == T_IMEMO) {
-    throw RubyContinueException (state);
+    throw tl::CancelException ();
   }
 #endif
 
@@ -160,9 +148,14 @@ rba_check_error (int state)
   std::vector <tl::BacktraceElement> bt;
   rba_get_backtrace_from_array (rb_funcall (lasterr, rb_intern ("backtrace"), 0), bt, 0);
 
-  if (RubyInterpreter::instance ()) {
-    const std::string &ds = RubyInterpreter::instance ()->debugger_scope ();
-    bt.erase (bt.begin (), bt.begin () + RubyStackTraceProvider::scope_index (bt, ds));
+  const std::string &ds = RubyInterpreter::instance ()->debugger_scope ();
+  if (! ds.empty ()) {
+    for (size_t i = 0; i < bt.size (); ++i) {
+      if (bt [i].file == ds) {
+        bt.erase (bt.begin (), bt.begin () + i);
+        break;
+      }
+    }
   }
 
   //  parse the backtrace to get the line number
@@ -217,15 +210,6 @@ rba_safe_obj_as_string (VALUE obj)
   } else {
     return rba_safe_func (rb_obj_as_string, obj);
   }
-}
-
-/**
- *  @brief object to string with check
- */
-VALUE
-rba_safe_inspect (VALUE obj)
-{
-  return rba_safe_func (rb_inspect, obj);
 }
 
 /**
@@ -402,7 +386,7 @@ rba_class_new_instance_checked (int argc, VALUE *argv, VALUE klass)
   RUBY_END_EXEC
 
   if (error) {
-    rba_check_error (error);
+    rba_check_error ();
   }
   return ret;
 }
@@ -450,16 +434,12 @@ VALUE rba_funcall2_checked (VALUE obj, ID id, int argc, VALUE *args)
   //  HINT: the ugly (VALUE) cast is required since there is only one form of rb_protect
   rb_protect_init (); // see above
 
-  if (! ruby_native_thread_p ()) {
-    throw tl::Exception (tl::to_string (tr ("Can't execute Ruby callbacks from non-Ruby threads")));
-  }
-
   RUBY_BEGIN_EXEC
     ret = rb_protect (&rb_funcall2_wrap, (VALUE) &p, &error);
   RUBY_END_EXEC
 
   if (error) {
-    rba_check_error (error);
+    rba_check_error ();
   }
   return ret;
 }
@@ -498,7 +478,7 @@ rba_f_eval_checked (int argc, VALUE *argv, VALUE self)
   RUBY_END_EXEC
 
   if (error) {
-    rba_check_error (error);
+    rba_check_error ();
   }
   return ret;
 }
@@ -514,7 +494,7 @@ rba_yield_checked (VALUE value)
   RUBY_END_EXEC
 
   if (error) {
-    rba_check_error (error);
+    rba_check_error ();
   }
 }
 
@@ -531,10 +511,10 @@ VALUE rba_eval_string_in_context (const char *expr, const char *file, int line, 
   rb_set_errinfo (Qnil);
 
   if (file) {
-    ruby_script (file);
+    rb_set_progname (rb_str_new (file, long (strlen (file))));
   } else {
     const char *e = "<immediate>";
-    ruby_script (e);
+    rb_set_progname (rb_str_new (e, long (strlen (e))));
   }
 
   int argc;

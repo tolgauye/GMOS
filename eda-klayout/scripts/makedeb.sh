@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/sh -e
 
 # Run this script with 
 #
@@ -16,30 +16,13 @@ if ! [ -e version.sh ]; then
   exit 1
 fi
 
-buildopts=
-
 # TODO: derive this list automatically?
 case $target in
-
-debian12)
-  depends="python3-dev, libc6-dev, libgcc-s1, libgit2-1.5, libqt6core5compat6, libqt6designer6, libqt6gui6, libqt6multimedia6, libqt6multimediaquick6, libqt6network6, libqt6printsupport6, libqt6sql6, libqt6svg6, libqt6widgets6, libqt6xml6, libruby3.1, libstdc++6, zlib1g" 
-  ;;
 ubuntu16)
-  depends="libqt4-designer (>= 4.8.6), libqt4-xml (>= 4.8.6), libqt4-sql (>= 4.8.6), libqt4-network (>= 4.8.6), libqtcore4 (>= 4.8.6), libqtgui4 (>= 4.8.6), zlib1g (>= 1.2.8), libgit2-24 (>= 0.24.0), libruby2.3 (>= 2.3.1), python3 (>= 3.5.1), libpython3.5 (>= 3.5.1), libstdc++6 (>= 4.6.3), libc6 (>= 2.15)"
-  # No HTTPS support - that is somewhat useless
-  buildopts=-nolibgit2
+  depends="libqt4-designer (>= 4.8.6), libqt4-xml (>= 4.8.6), libqt4-sql (>= 4.8.6), libqt4-network (>= 4.8.6), libqtcore4 (>= 4.8.6), libqtgui4 (>= 4.8.6), zlib1g (>= 1.2.8), libruby2.3 (>= 2.3.1), python3 (>= 3.5.1), libpython3.5 (>= 3.5.1), libstdc++6 (>= 4.6.3), libc6 (>= 2.15)"
   ;;
 ubuntu18)
-  depends="libqt4-designer (>= 4.8.7), libqt4-xml (>= 4.8.7), libqt4-sql (>= 4.8.7), libqt4-network (>= 4.8.7), libqtcore4 (>= 4.8.7), libqtgui4 (>= 4.8.7), zlib1g (>= 1.2.11), libgit2-26 (>= 0.26.0), libruby2.5 (>= 2.5.1), python3 (>= 3.6.5), libpython3.6 (>= 3.6.5), libstdc++6 (>= 8), libc6 (>= 2.27)"
-  ;;
-ubuntu20)
-  depends="libqt5core5a (>= 5.12.8), libqt5designer5 (>= 5.12.8), libqt5gui5 (>= 5.12.8), libqt5multimedia5 (>= 5.12.8), libqt5multimediawidgets5 (>= 5.12.8), libqt5network5 (>= 5.12.8), libqt5opengl5 (>= 5.12.8), libqt5printsupport5 (>= 5.12.8), libqt5sql5 (>= 5.12.8), libqt5svg5 (>= 5.12.8), libqt5widgets5 (>= 5.12.8), libqt5xml5 (>= 5.12.8), libqt5xmlpatterns5 (>= 5.12.8), zlib1g (>= 1.2.11), libgit2-28 (>= 0.28.4), libruby2.7 (>= 2.7.0), python3 (>= 3.8.2), libpython3.8 (>= 3.8.2), libstdc++6 (>=10), libc6 (>= 2.31)" 
-  ;;
-ubuntu22)
-  depends="libqt5core5a (>= 5.15.3), libqt5designer5 (>= 5.15.3), libqt5gui5 (>= 5.15.3), libqt5multimedia5 (>= 5.15.3), libqt5multimediawidgets5 (>= 5.15.3), libqt5network5 (>= 5.15.3), libqt5opengl5 (>= 5.15.3), libqt5printsupport5 (>= 5.15.3), libqt5sql5 (>= 5.15.3), libqt5svg5 (>= 5.15.3), libqt5widgets5 (>= 5.15.3), libqt5xml5 (>= 5.15.3), libqt5xmlpatterns5 (>= 5.15.3), zlib1g (>= 1.2.11), libgit2-1.1 (>= 1.1.0), libruby3.0 (>= 3.0.2), python3 (>= 3.10.4), libpython3.10 (>= 3.10.4), libstdc++6 (>=12), libc6 (>= 2.35)" 
-  ;;
-ubuntu24)
-  depends="libqt5core5t64 (>= 5.15.13), libqt5designer5 (>= 5.15.13), libqt5gui5t64 (>= 5.15.13), libqt5multimedia5 (>= 5.15.13), libqt5multimediawidgets5 (>= 5.15.13), libqt5network5t64 (>= 5.15.13), libqt5opengl5t64 (>= 5.15.13), libqt5printsupport5t64 (>= 5.15.13), libqt5sql5t64 (>= 5.15.13), libqt5svg5 (>= 5.15.13), libqt5widgets5t64 (>= 5.15.13), libqt5xml5t64 (>= 5.15.13), libqt5xmlpatterns5 (>= 5.15.13), zlib1g (>= 1.3), libgit2-1.7 (>= 1.7.2), libruby3.2 (>= 3.2.3), python3 (>= 3.12.3), libpython3.12 (>= 3.12.3), libstdc++6 (>=14), libc6 (>= 2.39)" 
+  depends="libqt4-designer (>= 4.8.7), libqt4-xml (>= 4.8.7), libqt4-sql (>= 4.8.7), libqt4-network (>= 4.8.7), libqtcore4 (>= 4.8.7), libqtgui4 (>= 4.8.7), zlib1g (>= 1.2.11), libruby2.5 (>= 2.5.1), python3 (>= 3.6.5), libpython3.6 (>= 3.6.5), libstdc++6 (>= 8), libc6 (>= 2.27)"
   ;;
 *)
   echo "Unknown target '$target' (given as first argument)"
@@ -49,9 +32,10 @@ esac
 
 . ./version.sh
 
-version="${KLAYOUT_VERSION//-*/}"
+version="$KLAYOUT_VERSION"
 exe_name="klayout"
 bits=64
+
 
 umask 0022
 
@@ -66,15 +50,17 @@ sharedir="usr/share"
 bindir="usr/bin"
 libdir="usr/lib/klayout"
 
+# TODO: is there a better way to produce this path?
+pylibdir="usr/lib/python3/dist-packages/klayout"
+
 # clean bin directory
 rm -rf $bininstdir
 
 # do the actual build
-./build.sh -j$(nproc) \
+./build.sh -j2 \
            -bin $bininstdir \
            -build $builddir \
-           -rpath /$libdir \
-           $buildopts
+           -rpath /$libdir 
 
 if [ "$bits" = "32" ]; then
   arch="i386"
@@ -105,21 +91,26 @@ mkdir -p makedeb-tmp/${sharedir}/applications
 mkdir -p makedeb-tmp/${sharedir}/pixmaps
 mkdir -p makedeb-tmp/${libdir}/db_plugins
 mkdir -p makedeb-tmp/${libdir}/lay_plugins
-mkdir -p makedeb-tmp/${libdir}/pymod
+mkdir -p makedeb-tmp/${pylibdir}
 mkdir -p makedeb-tmp/${bindir}
 
 cp etc/klayout.desktop makedeb-tmp/${sharedir}/applications
 cp etc/logo.png makedeb-tmp/${sharedir}/pixmaps/klayout.png
 cp Changelog makedeb-tmp/${sharedir}/doc/klayout/changelog
-sed "s/%NOW%/$now/;s/%VERSION%/$version/" <Changelog.Debian.templ >makedeb-tmp/${sharedir}/doc/klayout/changelog.Debian
-sed "s/%VERSION%/$version/" <COPYRIGHT >makedeb-tmp/${sharedir}/doc/klayout/copyright
+cp Changelog.Debian makedeb-tmp/${sharedir}/doc/klayout/changelog.Debian
+cp COPYRIGHT makedeb-tmp/${sharedir}/doc/klayout/copyright
 
 cp -pd $bininstdir/strm* makedeb-tmp/${bindir}
 cp -pd $bininstdir/klayout makedeb-tmp/${bindir}
 cp -pd $bininstdir/lib*so* makedeb-tmp/${libdir}
 cp -pd $bininstdir/db_plugins/lib*so* makedeb-tmp/${libdir}/db_plugins
 cp -pd $bininstdir/lay_plugins/lib*so* makedeb-tmp/${libdir}/lay_plugins
-cp -rpd $bininstdir/pymod/* makedeb-tmp/${libdir}/pymod
+cp -pd $bininstdir/pymod/klayout/*so makedeb-tmp/${pylibdir}
+cp -pd $bininstdir/pymod/klayout/*py makedeb-tmp/${pylibdir}
+for d in db tl rdb; do
+  mkdir -p makedeb-tmp/${pylibdir}/$d
+  cp -pd $bininstdir/pymod/klayout/$d/*py makedeb-tmp/${pylibdir}/$d
+done
 
 cd makedeb-tmp
 
@@ -143,9 +134,9 @@ grep -q $version ${sharedir}/doc/klayout/changelog.Debian || (
 echo "Modifying control file .."
 
 strip ${bindir}/*
+strip ${pylibdir}/*.so
 strip ${libdir}/db_plugins/*.so*
 strip ${libdir}/lay_plugins/*.so*
-strip ${libdir}/pymod/klayout/*.so*
 
 size=`du -ck usr | grep total | sed "s/ *total//"`
 

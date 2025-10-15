@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
 
 #include "layZoomBox.h"
 #include "layRubberBox.h"
-#include "layLayoutViewBase.h"
+#include "layLayoutView.h"
 
 namespace lay
 {
@@ -31,8 +31,8 @@ namespace lay
 // -------------------------------------------------------------
 //  ZoomService implementation
 
-ZoomService::ZoomService (lay::LayoutViewBase *view)
-  : lay::ViewService (view->canvas ()), lay::Plugin (view),
+ZoomService::ZoomService (lay::LayoutView *view)
+  : lay::ViewService (view->view_object_widget ()), 
     mp_view (view),
     mp_box (0),
     m_color (0)
@@ -50,11 +50,11 @@ ZoomService::drag_cancel ()
     delete mp_box;
     mp_box = 0;
   }
-  ui ()->ungrab_mouse (this);
+  widget ()->ungrab_mouse (this);
 }
 
 void 
-ZoomService::set_colors (tl::Color /*background*/, tl::Color color)
+ZoomService::set_colors (QColor /*background*/, QColor color)
 {
   m_color = color.rgb ();
   if (mp_box) {
@@ -118,7 +118,7 @@ bool
 ZoomService::mouse_click_event (const db::DPoint &p, unsigned int buttons, bool prio) 
 { 
   if (! prio && (buttons & lay::RightButton) != 0) {
-    db::DBox vp = ui ()->mouse_event_viewport ();
+    db::DBox vp = widget ()->mouse_event_viewport ();
     if (mp_view && vp.contains (p)) {
       db::DVector d = (vp.p2 () - vp.p1 ()) * 0.5;
       mp_view->zoom_box (db::DBox (p - d, p + d));
@@ -132,21 +132,21 @@ ZoomService::mouse_release_event (const db::DPoint & /*p*/, unsigned int /*butto
 { 
   if (prio) {
 
-    ui ()->ungrab_mouse (this);
+    widget ()->ungrab_mouse (this);
 
     if (mp_box) {
 
       delete mp_box;
       mp_box = 0;
 
-      db::DBox vp = ui ()->mouse_event_viewport ();
+      db::DBox vp = widget ()->mouse_event_viewport ();
       db::DVector d = (vp.p2 () - vp.p1 ()) * 0.5;
 
       if (mp_view) {
 
         //  we need to use the original screen coordinate to find the move direction
-        db::DPoint p1s = ui ()->mouse_event_trans ().trans (m_p1);
-        db::DPoint p2s = ui ()->mouse_event_trans ().trans (m_p2);
+        db::DPoint p1s = widget ()->mouse_event_trans ().trans (m_p1);
+        db::DPoint p2s = widget ()->mouse_event_trans ().trans (m_p2);
 
         if (p2s.x () > p1s.x () && p1s.y () < p2s.y ()) {
 
@@ -185,7 +185,7 @@ ZoomService::wheel_event (int delta, bool /*horizontal*/, const db::DPoint &p, u
   //  Only act without the mouse being grabbed.
   if (! prio) {
 
-    db::DBox vp = ui ()->mouse_event_viewport ();
+    db::DBox vp = widget ()->mouse_event_viewport ();
     if (mp_view && vp.contains (p) && vp.width () > 0 && vp.height () > 0) {
 
       enum { horizontal, vertical, zoom } direction = zoom;
@@ -260,12 +260,12 @@ ZoomService::begin_pan (const db::DPoint &pos)
   mp_box = 0;
 
   m_p1 = pos;
-  m_vp = ui ()->mouse_event_viewport ();
+  m_vp = widget ()->mouse_event_viewport ();
 
   //  store one state which we are going to update
   mp_view->zoom_box (m_vp);
 
-  ui ()->grab_mouse (this, true);
+  widget ()->grab_mouse (this, true);
 }
 
 void 
@@ -277,33 +277,10 @@ ZoomService::begin (const db::DPoint &pos)
 
   m_p1 = pos;
   m_p2 = pos;
-  mp_box = new lay::RubberBox (ui (), m_color, pos, pos);
+  mp_box = new lay::RubberBox (widget (), m_color, pos, pos);
 
-  ui ()->grab_mouse (this, true);
+  widget ()->grab_mouse (this, true);
 }
 
-// ----------------------------------------------------------------------------
-
-class ZoomServiceDeclaration
-  : public lay::PluginDeclaration
-{
-public:
-  ZoomServiceDeclaration ()
-  {
-    // .. nothing yet ..
-  }
-
-  virtual lay::Plugin *create_plugin (db::Manager * /*manager*/, lay::Dispatcher * /*dispatcher*/, lay::LayoutViewBase *view) const
-  {
-    return new ZoomService (view);
-  }
-
-  virtual bool enable_catchall_editor_options_pages () const
-  {
-    return false;
-  }
-};
-
-static tl::RegisteredClass<lay::PluginDeclaration> zoom_service_decl (new ZoomServiceDeclaration (), -990, "laybasic::ZoomServicePlugin");
-
 }
+

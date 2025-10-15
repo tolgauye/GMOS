@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -20,13 +20,12 @@
 
 */
 
-#if defined(HAVE_QT)
+
 
 #ifndef HDR_antConfigPage
 #define HDR_antConfigPage
 
 #include "layPlugin.h"
-#include "layPluginConfigPage.h"
 #include "antTemplate.h"
 
 class QListWidgetItem;
@@ -51,8 +50,8 @@ public:
   ConfigPage (QWidget *parent);
   ~ConfigPage ();
 
-  virtual void setup (lay::Dispatcher *root);
-  virtual void commit (lay::Dispatcher *root);
+  virtual void setup (lay::PluginRoot *root);
+  virtual void commit (lay::PluginRoot *root);
 
 private:
   Ui::RulerConfigPage *mp_ui;
@@ -70,8 +69,8 @@ public:
   ConfigPage2 (QWidget *parent);
   ~ConfigPage2 ();
 
-  virtual void setup (lay::Dispatcher *root);
-  virtual void commit (lay::Dispatcher *root);
+  virtual void setup (lay::PluginRoot *root);
+  virtual void commit (lay::PluginRoot *root);
 
 private:
   Ui::RulerConfigPage2 *mp_ui;
@@ -89,8 +88,8 @@ public:
   ConfigPage3 (QWidget *parent);
   ~ConfigPage3 ();
 
-  virtual void setup (lay::Dispatcher *root);
-  virtual void commit (lay::Dispatcher *root);
+  virtual void setup (lay::PluginRoot *root);
+  virtual void commit (lay::PluginRoot *root);
 
 private:
   Ui::RulerConfigPage3 *mp_ui;
@@ -108,8 +107,8 @@ public:
   ConfigPage4 (QWidget *parent);
   ~ConfigPage4 ();
 
-  virtual void setup (lay::Dispatcher *root);
-  virtual void commit (lay::Dispatcher *root);
+  virtual void setup (lay::PluginRoot *root);
+  virtual void commit (lay::PluginRoot *root);
 
 public slots:
   void add_clicked ();
@@ -131,8 +130,6 @@ private:
 };
 
 } // namespace ant
-
-#endif
 
 #endif
 

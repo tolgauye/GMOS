@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -91,8 +91,7 @@ make_rdb_structure (rdb::Database *rdb)
       tl::make_element_with_parent_ref<rdb::Cell, rdb::Cells::const_iterator, rdb::Cells> (&rdb::Cells::begin, &rdb::Cells::end, &rdb::Cells::import_cell, "cell", 
         tl::make_member<std::string, rdb::Cell> (&rdb::Cell::name, &rdb::Cell::set_name, "name") +
         tl::make_member<std::string, rdb::Cell> (&rdb::Cell::variant, &rdb::Cell::set_variant, "variant") +
-        tl::make_member<std::string, rdb::Cell> (&rdb::Cell::layout_name, &rdb::Cell::set_layout_name, "layout-name") +
-        tl::make_element_with_parent_ref<rdb::References, rdb::Cell> (&rdb::Cell::references, &rdb::Cell::import_references, "references",
+        tl::make_element_with_parent_ref<rdb::References, rdb::Cell> (&rdb::Cell::references, &rdb::Cell::import_references, "references", 
           tl::make_element_with_parent_ref<rdb::Reference, rdb::References::const_iterator, rdb::References> (&rdb::References::begin, &rdb::References::end, &rdb::References::insert, "ref", 
             tl::make_member<std::string, rdb::Reference> (&rdb::Reference::parent_cell_qname, &rdb::Reference::set_parent_cell_qname, "parent") + 
             tl::make_member<std::string, rdb::Reference> (&rdb::Reference::trans_str, &rdb::Reference::set_trans_str, "trans") 
@@ -107,8 +106,9 @@ make_rdb_structure (rdb::Database *rdb)
         tl::make_member<std::string, rdb::Item> (&rdb::Item::cell_qname, &rdb::Item::set_cell_qname, "cell") +
         tl::make_member<bool, rdb::Item> (&rdb::Item::visited, &rdb::Item::set_visited, "visited") +
         tl::make_member<size_t, rdb::Item> (&rdb::Item::multiplicity, &rdb::Item::set_multiplicity, "multiplicity") +
-        tl::make_member<std::string, rdb::Item> (&rdb::Item::comment, &rdb::Item::set_comment, "comment") +
+#if defined(HAVE_QT)
         tl::make_member<std::string, rdb::Item> (&rdb::Item::image_str, &rdb::Item::set_image_str, "image") +
+#endif
         tl::make_element<rdb::Values, rdb::Item> (&rdb::Item::values, &rdb::Item::set_values, "values", 
           tl::make_member<rdb::ValueWrapper, rdb::Values::const_iterator, rdb::Values> (&rdb::Values::begin, &rdb::Values::end, &rdb::Values::add, "value", ValueConverter (rdb)) 
         )
@@ -118,25 +118,17 @@ make_rdb_structure (rdb::Database *rdb)
 }
 
 // -------------------------------------------------------------
-//  Implementation of rdb::Database::save and write
+//  Implementation of rdb::Database::save
 //  TODO: move this somewhere else - with generalized functionality
 
 void
 rdb::Database::save (const std::string &fn)
 {
-  write (fn);
-  set_filename (fn);
-}
-
-void
-rdb::Database::write (const std::string &fn)
-{
   tl::OutputStream os (fn, tl::OutputStream::OM_Auto);
-  make_rdb_structure (this).write (os, *this);
+  make_rdb_structure (this).write (os, *this); 
+  set_filename (fn);
 
-  if (tl::verbosity () >= 10) {
-    tl::log << "Saved RDB to " << fn;
-  }
+  tl::log << "Saved RDB to " << fn;
 }
 
 // -------------------------------------------------------------

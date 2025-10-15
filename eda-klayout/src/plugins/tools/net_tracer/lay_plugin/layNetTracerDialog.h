@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -57,7 +57,7 @@ class NetTracerDialog
 Q_OBJECT
 
 public:
-  NetTracerDialog (lay::Dispatcher *root, lay::LayoutViewBase *view);
+  NetTracerDialog (lay::PluginRoot *root, lay::LayoutView *view);
   virtual ~NetTracerDialog ();
 
   virtual bool mouse_move_event (const db::DPoint &p, unsigned int buttons, bool prio);
@@ -92,7 +92,7 @@ private:
   nt_window_type m_window;
   double m_window_dim;
   unsigned int m_max_marker_count;
-  tl::Color m_marker_color;
+  QColor m_marker_color;
   int m_marker_line_width;
   int m_marker_vertex_size;
   int m_marker_halo;
@@ -108,15 +108,6 @@ private:
   lay::FileDialog *mp_export_file_dialog;
   std::string m_export_file_name;
 
-  lay::LayoutViewBase *mp_view;
-
-  void commit ();
-  size_t get_trace_depth ();
-  void attach_events ();
-  void update_list_of_stacks_with_technology (db::Technology *);
-  void update_list_of_stacks_with_cellview (int);
-  void update_list_of_stacks ();
-
   void update_highlights ();
   void adjust_view ();
   void clear_markers ();
@@ -127,13 +118,7 @@ private:
   void release_mouse ();
   db::NetTracerNet *do_trace (const db::DBox &start_search_box, const db::DBox &stop_search_box, bool trace_path);
   bool get_net_tracer_setup (const lay::CellView &cv, db::NetTracerData &data);
-  static bool get_net_tracer_setup_from_tech (const std::string &tech_name, const std::string &stack_name, const db::Layout &layout, db::NetTracerData &data);
   void trace_all_nets (db::LayoutToNetlist *l2ndb, const lay::CellView &cv, bool flat);
-
-  lay::LayoutViewBase *view ()
-  {
-    return mp_view;
-  }
 };
 
 }

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -25,7 +25,6 @@
 #include "tlString.h"
 #include "tlExceptions.h"
 #include "tlHttpStream.h"
-#include "tlEnv.h"
 
 #include <QFileDialog>
 #include <QFileInfo>
@@ -41,14 +40,6 @@
 
 namespace lay
 {
-
-// ----------------------------------------------------------------------------------------------------
-
-static bool download_package_information ()
-{
-  //  $KLAYOUT_ALWAYS_DOWNLOAD_PACKAGE_INFO
-  return tl::app_flag ("always-download-package-info");
-}
 
 // ----------------------------------------------------------------------------------------------------
 
@@ -217,7 +208,7 @@ void
 SaltGrainPropertiesDialog::update_screenshot ()
 {
   if (m_grain.screenshot ().isNull ()) {
-    screenshot_config_button->setIcon (QIcon (":/add_16px.png"));
+    screenshot_config_button->setIcon (QIcon (":/add.png"));
   } else {
     QImage img = m_grain.screenshot ();
     if (img.width () == screenshot_config_button->iconSize ().width ()) {
@@ -589,10 +580,10 @@ SaltGrainPropertiesDialog::accept ()
     if (d->version.empty ()) {
       dependencies_alert->warn () << tr ("No version specified for dependency '%1'").arg (tl::to_qstring (d->name)) << tl::endl
                                   << tr ("Please consider giving a version here. Versions help deciding whether a package needs to be updated.") << tl::endl
-                                  << tr ("If the dependency package has a version itself, the version is automatically set to its current version.");
+                                  << tr ("If the dependency package has a version itself, the version is automatically set to it's current version.");
     }
 
-    if (!d->url.empty () && download_package_information ()) {
+    if (!d->url.empty ()) {
       SaltGrain gdep;
       try {
         gdep = SaltGrain::from_url (d->url);

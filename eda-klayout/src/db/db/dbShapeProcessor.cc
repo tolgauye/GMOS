@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -51,12 +51,6 @@ void
 ShapeProcessor::reserve (size_t n)
 {
   m_processor.reserve (n);
-}
-
-size_t
-ShapeProcessor::count () const
-{
-  return m_processor.count ();
 }
 
 void 

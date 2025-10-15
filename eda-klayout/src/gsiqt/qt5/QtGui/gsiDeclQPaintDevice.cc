@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -33,6 +33,7 @@
 #include <QPoint>
 #include "gsiQt.h"
 #include "gsiQtGuiCommon.h"
+#include "gsiDeclQtGuiTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -80,21 +81,6 @@ static void _call_f_devicePixelRatio_c0 (const qt_gsi::GenericMethod * /*decl*/,
 {
   __SUPPRESS_UNUSED_WARNING(args);
   ret.write<int > ((int)((QPaintDevice *)cls)->devicePixelRatio ());
-}
-
-
-// double QPaintDevice::devicePixelRatioF()
-
-
-static void _init_f_devicePixelRatioF_c0 (qt_gsi::GenericMethod *decl)
-{
-  decl->set_return<double > ();
-}
-
-static void _call_f_devicePixelRatioF_c0 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  ret.write<double > ((double)((QPaintDevice *)cls)->devicePixelRatioF ());
 }
 
 
@@ -248,21 +234,6 @@ static void _call_f_widthMM_c0 (const qt_gsi::GenericMethod * /*decl*/, void *cl
 }
 
 
-// static double QPaintDevice::devicePixelRatioFScale()
-
-
-static void _init_f_devicePixelRatioFScale_0 (qt_gsi::GenericStaticMethod *decl)
-{
-  decl->set_return<double > ();
-}
-
-static void _call_f_devicePixelRatioFScale_0 (const qt_gsi::GenericStaticMethod * /*decl*/, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  ret.write<double > ((double)QPaintDevice::devicePixelRatioFScale ());
-}
-
-
 namespace gsi
 {
 
@@ -271,7 +242,6 @@ static gsi::Methods methods_QPaintDevice () {
   methods += new qt_gsi::GenericMethod ("colorCount", "@brief Method int QPaintDevice::colorCount()\n", true, &_init_f_colorCount_c0, &_call_f_colorCount_c0);
   methods += new qt_gsi::GenericMethod ("depth", "@brief Method int QPaintDevice::depth()\n", true, &_init_f_depth_c0, &_call_f_depth_c0);
   methods += new qt_gsi::GenericMethod ("devicePixelRatio", "@brief Method int QPaintDevice::devicePixelRatio()\n", true, &_init_f_devicePixelRatio_c0, &_call_f_devicePixelRatio_c0);
-  methods += new qt_gsi::GenericMethod ("devicePixelRatioF", "@brief Method double QPaintDevice::devicePixelRatioF()\n", true, &_init_f_devicePixelRatioF_c0, &_call_f_devicePixelRatioF_c0);
   methods += new qt_gsi::GenericMethod ("height", "@brief Method int QPaintDevice::height()\n", true, &_init_f_height_c0, &_call_f_height_c0);
   methods += new qt_gsi::GenericMethod ("heightMM", "@brief Method int QPaintDevice::heightMM()\n", true, &_init_f_heightMM_c0, &_call_f_heightMM_c0);
   methods += new qt_gsi::GenericMethod ("logicalDpiX", "@brief Method int QPaintDevice::logicalDpiX()\n", true, &_init_f_logicalDpiX_c0, &_call_f_logicalDpiX_c0);
@@ -282,7 +252,6 @@ static gsi::Methods methods_QPaintDevice () {
   methods += new qt_gsi::GenericMethod ("physicalDpiY", "@brief Method int QPaintDevice::physicalDpiY()\n", true, &_init_f_physicalDpiY_c0, &_call_f_physicalDpiY_c0);
   methods += new qt_gsi::GenericMethod ("width", "@brief Method int QPaintDevice::width()\n", true, &_init_f_width_c0, &_call_f_width_c0);
   methods += new qt_gsi::GenericMethod ("widthMM", "@brief Method int QPaintDevice::widthMM()\n", true, &_init_f_widthMM_c0, &_call_f_widthMM_c0);
-  methods += new qt_gsi::GenericStaticMethod ("devicePixelRatioFScale", "@brief Static method double QPaintDevice::devicePixelRatioFScale()\nThis method is static and can be called without an instance.", &_init_f_devicePixelRatioFScale_0, &_call_f_devicePixelRatioFScale_0);
   return methods;
 }
 
@@ -521,16 +490,16 @@ gsi::Class<QPaintDevice> &qtdecl_QPaintDevice ();
 static gsi::Methods methods_QPaintDevice_Adaptor () {
   gsi::Methods methods;
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QPaintDevice::QPaintDevice()\nThis method creates an object of class QPaintDevice.", &_init_ctor_QPaintDevice_Adaptor_0, &_call_ctor_QPaintDevice_Adaptor_0);
-  methods += new qt_gsi::GenericMethod ("*initPainter", "@brief Virtual method void QPaintDevice::initPainter(QPainter *painter)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_initPainter_c1426_0, &_call_cbs_initPainter_c1426_0);
-  methods += new qt_gsi::GenericMethod ("*initPainter", "@hide", true, &_init_cbs_initPainter_c1426_0, &_call_cbs_initPainter_c1426_0, &_set_callback_cbs_initPainter_c1426_0);
-  methods += new qt_gsi::GenericMethod ("*metric", "@brief Virtual method int QPaintDevice::metric(QPaintDevice::PaintDeviceMetric metric)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_metric_c3445_0, &_call_cbs_metric_c3445_0);
-  methods += new qt_gsi::GenericMethod ("*metric", "@hide", true, &_init_cbs_metric_c3445_0, &_call_cbs_metric_c3445_0, &_set_callback_cbs_metric_c3445_0);
-  methods += new qt_gsi::GenericMethod ("paintEngine", "@brief Virtual method QPaintEngine *QPaintDevice::paintEngine()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_paintEngine_c0_0, &_call_cbs_paintEngine_c0_0);
-  methods += new qt_gsi::GenericMethod ("paintEngine", "@hide", true, &_init_cbs_paintEngine_c0_0, &_call_cbs_paintEngine_c0_0, &_set_callback_cbs_paintEngine_c0_0);
-  methods += new qt_gsi::GenericMethod ("*redirected", "@brief Virtual method QPaintDevice *QPaintDevice::redirected(QPoint *offset)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_redirected_c1225_0, &_call_cbs_redirected_c1225_0);
-  methods += new qt_gsi::GenericMethod ("*redirected", "@hide", true, &_init_cbs_redirected_c1225_0, &_call_cbs_redirected_c1225_0, &_set_callback_cbs_redirected_c1225_0);
-  methods += new qt_gsi::GenericMethod ("*sharedPainter", "@brief Virtual method QPainter *QPaintDevice::sharedPainter()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_sharedPainter_c0_0, &_call_cbs_sharedPainter_c0_0);
-  methods += new qt_gsi::GenericMethod ("*sharedPainter", "@hide", true, &_init_cbs_sharedPainter_c0_0, &_call_cbs_sharedPainter_c0_0, &_set_callback_cbs_sharedPainter_c0_0);
+  methods += new qt_gsi::GenericMethod ("*initPainter", "@hide", true, &_init_cbs_initPainter_c1426_0, &_call_cbs_initPainter_c1426_0);
+  methods += new qt_gsi::GenericMethod ("*initPainter", "@brief Virtual method void QPaintDevice::initPainter(QPainter *painter)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_initPainter_c1426_0, &_call_cbs_initPainter_c1426_0, &_set_callback_cbs_initPainter_c1426_0);
+  methods += new qt_gsi::GenericMethod ("*metric", "@hide", true, &_init_cbs_metric_c3445_0, &_call_cbs_metric_c3445_0);
+  methods += new qt_gsi::GenericMethod ("*metric", "@brief Virtual method int QPaintDevice::metric(QPaintDevice::PaintDeviceMetric metric)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_metric_c3445_0, &_call_cbs_metric_c3445_0, &_set_callback_cbs_metric_c3445_0);
+  methods += new qt_gsi::GenericMethod ("paintEngine", "@hide", true, &_init_cbs_paintEngine_c0_0, &_call_cbs_paintEngine_c0_0);
+  methods += new qt_gsi::GenericMethod ("paintEngine", "@brief Virtual method QPaintEngine *QPaintDevice::paintEngine()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_paintEngine_c0_0, &_call_cbs_paintEngine_c0_0, &_set_callback_cbs_paintEngine_c0_0);
+  methods += new qt_gsi::GenericMethod ("*redirected", "@hide", true, &_init_cbs_redirected_c1225_0, &_call_cbs_redirected_c1225_0);
+  methods += new qt_gsi::GenericMethod ("*redirected", "@brief Virtual method QPaintDevice *QPaintDevice::redirected(QPoint *offset)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_redirected_c1225_0, &_call_cbs_redirected_c1225_0, &_set_callback_cbs_redirected_c1225_0);
+  methods += new qt_gsi::GenericMethod ("*sharedPainter", "@hide", true, &_init_cbs_sharedPainter_c0_0, &_call_cbs_sharedPainter_c0_0);
+  methods += new qt_gsi::GenericMethod ("*sharedPainter", "@brief Virtual method QPainter *QPaintDevice::sharedPainter()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_sharedPainter_c0_0, &_call_cbs_sharedPainter_c0_0, &_set_callback_cbs_sharedPainter_c0_0);
   return methods;
 }
 
@@ -556,8 +525,7 @@ static gsi::Enum<QPaintDevice::PaintDeviceMetric> decl_QPaintDevice_PaintDeviceM
     gsi::enum_const ("PdmDpiY", QPaintDevice::PdmDpiY, "@brief Enum constant QPaintDevice::PdmDpiY") +
     gsi::enum_const ("PdmPhysicalDpiX", QPaintDevice::PdmPhysicalDpiX, "@brief Enum constant QPaintDevice::PdmPhysicalDpiX") +
     gsi::enum_const ("PdmPhysicalDpiY", QPaintDevice::PdmPhysicalDpiY, "@brief Enum constant QPaintDevice::PdmPhysicalDpiY") +
-    gsi::enum_const ("PdmDevicePixelRatio", QPaintDevice::PdmDevicePixelRatio, "@brief Enum constant QPaintDevice::PdmDevicePixelRatio") +
-    gsi::enum_const ("PdmDevicePixelRatioScaled", QPaintDevice::PdmDevicePixelRatioScaled, "@brief Enum constant QPaintDevice::PdmDevicePixelRatioScaled"),
+    gsi::enum_const ("PdmDevicePixelRatio", QPaintDevice::PdmDevicePixelRatio, "@brief Enum constant QPaintDevice::PdmDevicePixelRatio"),
   "@qt\n@brief This class represents the QPaintDevice::PaintDeviceMetric enum");
 
 static gsi::QFlagsClass<QPaintDevice::PaintDeviceMetric > decl_QPaintDevice_PaintDeviceMetric_Enums ("QtGui", "QPaintDevice_QFlags_PaintDeviceMetric",

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -51,14 +51,11 @@ enum LayoutQueryPropertyType
   LQ_variant,
   LQ_shape,
   LQ_trans,
-  LQ_dtrans,
   LQ_layer,
   LQ_instance,
   LQ_cell,
   LQ_point,
-  LQ_dpoint,
   LQ_box,
-  LQ_dbox,
   LQ_polygon,
   LQ_path,
   LQ_edge,
@@ -90,8 +87,8 @@ public:
   /**
    *  @brief Create the state object for this filter
    *
-   *  This method must be implemented by a filter to provide the state object.
-   *  The state object is basically the selector and acts as a iterator for the property that this
+   *  This method must be implementated by a filter to provide the state object.
+   *  The state object is bascially the selector and acts as a iterator for the property that this
    *  filter represents.
    *  This method is provided for implementation by FilterBracket mainly. 
    *  Custom classes should implement do_create_state.
@@ -142,8 +139,8 @@ protected:
   /**
    *  @brief Create the state object for this filter
    *
-   *  This method must be implemented by a filter to provide the state object.
-   *  The state object is basically the selector and acts as a iterator for the property that this
+   *  This method must be implementated by a filter to provide the state object.
+   *  The state object is bascially the selector and acts as a iterator for the property that this
    *  filter represents.
    *
    *  @param layout The layout that this query refers to.
@@ -173,7 +170,7 @@ private:
 /** 
  *  @brief A filter bracket
  *
- *  A bracket is a bracket around a filter graph. In addition, brackets can specify a multiplicity
+ *  A bracket is a bracket around a filter graph. In addition, brackets can specify a multiplity
  *  (loopmin to loopmax). 
  *  A bracket defines two virtual nodes: the entry and the exit node. 
  *  The entry node is the input of the filter and internally connected to the inputs of the children.
@@ -184,12 +181,12 @@ class DB_PUBLIC FilterBracket :
 {
 public:
   /**
-   *  @brief Constructor (multiplicity 1)
+   *  @brief Constructor (multiplity 1)
    */
   FilterBracket (LayoutQuery *q);
 
   /**
-   *  @brief Constructor (multiplicity loopmin..loopmax)
+   *  @brief Constructor (multiplity loopmin..loopmax)
    */
   FilterBracket (LayoutQuery *q, unsigned int loopmin, unsigned int loopmax);
 
@@ -199,7 +196,7 @@ public:
   ~FilterBracket ();
 
   /**
-   *  @brief Set the min multiplicity explicitly
+   *  @brief Set the min multiplity explicitly
    */
   void set_loopmin (unsigned int v)
   {
@@ -207,7 +204,7 @@ public:
   }
 
   /**
-   *  @brief Set the max multiplicity explicitly
+   *  @brief Set the max multiplity explicitly
    */
   void set_loopmax (unsigned int v)
   {
@@ -536,7 +533,7 @@ public:
    *
    *  The context provides a way to define variables and functions.
    */
-  void execute (db::Layout &layout, db::Cell *cell = 0, tl::Eval *context = 0);
+  void execute (db::Layout &layout, tl::Eval *context = 0);
   
   /**
    *  @brief A dump method (for debugging)
@@ -578,7 +575,7 @@ public:
    *  @param q The query that this iterator walks over
    *  @param layout The layout to which the query is applied
    */
-  LayoutQueryIterator (const LayoutQuery &q, db::Layout *layout, db::Cell *cell = 0, tl::Eval *parent_eval = 0, tl::AbsoluteProgress *progress = 0);
+  LayoutQueryIterator (const LayoutQuery &q, db::Layout *layout, tl::Eval *parent_eval = 0, tl::AbsoluteProgress *progress = 0);
 
   /**
    *  @brief Constructor
@@ -586,7 +583,7 @@ public:
    *  @param q The query that this iterator walks over
    *  @param layout The layout to which the query is applied
    */
-  LayoutQueryIterator (const LayoutQuery &q, const db::Layout *layout, const db::Cell *cell = 0, tl::Eval *parent_eval = 0, tl::AbsoluteProgress *progress = 0);
+  LayoutQueryIterator (const LayoutQuery &q, const db::Layout *layout, tl::Eval *parent_eval = 0, tl::AbsoluteProgress *progress = 0);
 
   /**
    *  @brief Destructor
@@ -601,7 +598,10 @@ public:
   /**
    *  @brief Returns true if the iterator is at the end.
    */
-  bool at_end () const;
+  bool at_end () const
+  {
+    return m_state.empty ();
+  }
 
   /**
    *  @brief Increment the iterator: deliver the next state
@@ -644,7 +644,14 @@ public:
    *  @param v The value of the property
    *  @return True, if the property could be delivered.
    */
-  bool get (const std::string &name, tl::Variant &v);
+  bool get (const std::string &name, tl::Variant &v)
+  {
+    if (m_state.empty () || !m_state.back () || !mp_q->has_property (name)) {
+      return false;
+    } else {
+      return m_state.back ()->get_property (mp_q->property_by_name (name), v);
+    }
+  }
 
   /**
    *  @brief Gets a property for the current state (property is given by ID).
@@ -653,7 +660,14 @@ public:
    *  @param v The value of the property
    *  @return True, if the property could be delivered.
    */
-  bool get (unsigned int id, tl::Variant &v);
+  bool get (unsigned int id, tl::Variant &v)
+  {
+    if (m_state.empty () || !m_state.back ()) {
+      return false;
+    } else {
+      return m_state.back ()->get_property (id, v);
+    }
+  }
 
   /**
    *  @brief Get the eval object which provides access to the properties through expressions
@@ -676,9 +690,7 @@ private:
   tl::Eval m_eval;
   db::LayoutContextHandler m_layout_ctx;
   tl::AbsoluteProgress *mp_progress;
-  bool m_initialized;
 
-  void ensure_initialized ();
   void collect (FilterStateBase *state, std::set<FilterStateBase *> &states);
   void next_up (bool skip);
   bool next_down ();

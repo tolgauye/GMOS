@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
 
 #include "layMacroEditorTree.h"
 #include "layMacroEditorDialog.h"
-#include "lymMacroCollection.h"
+#include "lymMacro.h"
 #include "tlExceptions.h"
 #include "tlInternational.h"
 #include "tlException.h"
@@ -44,37 +44,37 @@ static QIcon tree_icon_for_format (const lym::Macro *m, bool active)
 {
   //  TODO: create a nice icon for the DSL interpreted scripts
   if (m->interpreter () == lym::Macro::Text) {
-    return QIcon (QString::fromUtf8 (":/textdocumenticon_16px.png"));
+    return QIcon (QString::fromUtf8 (":/textdocumenticon.png"));
   } else if (m->interpreter () == lym::Macro::Ruby) {
     if (m->format () == lym::Macro::PlainTextFormat || m->format () == lym::Macro::PlainTextWithHashAnnotationsFormat) {
       if (active) {
-        return QIcon (QString::fromUtf8 (":/rubymacroiconactive_16px.png"));
+        return QIcon (QString::fromUtf8 (":/rubymacroiconactive.png"));
       } else {
-        return QIcon (QString::fromUtf8 (":/rubymacroicon_16px.png"));
+        return QIcon (QString::fromUtf8 (":/rubymacroicon.png"));
       }
     } else {
       if (active) {
-        return QIcon (QString::fromUtf8 (":/generalmacroiconactive_16px.png"));
+        return QIcon (QString::fromUtf8 (":/generalmacroiconactive.png"));
       } else {
-        return QIcon (QString::fromUtf8 (":/generalmacroicon_16px.png"));
+        return QIcon (QString::fromUtf8 (":/generalmacroicon.png"));
       }
     }
   } else if (m->interpreter () == lym::Macro::Python) {
     if (m->format () == lym::Macro::PlainTextFormat || m->format () == lym::Macro::PlainTextWithHashAnnotationsFormat) {
       if (active) {
-        return QIcon (QString::fromUtf8 (":/pythonmacroiconactive_16px.png"));
+        return QIcon (QString::fromUtf8 (":/pythonmacroiconactive.png"));
       } else {
-        return QIcon (QString::fromUtf8 (":/pythonmacroicon_16px.png"));
+        return QIcon (QString::fromUtf8 (":/pythonmacroicon.png"));
       }
     } else {
       if (active) {
-        return QIcon (QString::fromUtf8 (":/generalmacroiconactive_16px.png"));
+        return QIcon (QString::fromUtf8 (":/generalmacroiconactive.png"));
       } else {
-        return QIcon (QString::fromUtf8 (":/generalmacroicon_16px.png"));
+        return QIcon (QString::fromUtf8 (":/generalmacroicon.png"));
       }
     }
   } else {
-    return QIcon (QString::fromUtf8 (":/defaultmacroicon_16px.png"));
+    return QIcon (QString::fromUtf8 (":/defaultmacroicon.png"));
   }
 }
 
@@ -123,9 +123,7 @@ MacroTreeModel::MacroTreeModel (QObject *parent, lay::MacroEditorDialog *dialog,
   : QAbstractItemModel (parent), mp_dialog (dialog), mp_parent (dialog), mp_root (root), m_category (cat)
 {
   connect (root, SIGNAL (macro_changed (lym::Macro *)), this, SLOT (macro_changed ()));
-  connect (root, SIGNAL (macro_about_to_be_deleted (lym::Macro *)), this, SLOT (macro_about_to_be_deleted (lym::Macro *)));
   connect (root, SIGNAL (macro_deleted (lym::Macro *)), this, SLOT (macro_deleted (lym::Macro *)));
-  connect (root, SIGNAL (macro_collection_about_to_be_deleted (lym::MacroCollection *)), this, SLOT (macro_collection_about_to_be_deleted (lym::MacroCollection *)));
   connect (root, SIGNAL (macro_collection_deleted (lym::MacroCollection *)), this, SLOT (macro_collection_deleted (lym::MacroCollection *)));
   connect (root, SIGNAL (macro_collection_changed (lym::MacroCollection *)), this, SLOT (macro_collection_changed ()));
   connect (root, SIGNAL (about_to_change ()), this, SLOT (about_to_change ()));
@@ -135,9 +133,7 @@ MacroTreeModel::MacroTreeModel (QWidget *parent, lym::MacroCollection *root, con
   : QAbstractItemModel (parent), mp_dialog (0), mp_parent (parent), mp_root (root), m_category (cat)
 {
   connect (root, SIGNAL (macro_changed (lym::Macro *)), this, SLOT (macro_changed ()));
-  connect (root, SIGNAL (macro_about_to_be_deleted (lym::Macro *)), this, SLOT (macro_about_to_be_deleted (lym::Macro *)));
   connect (root, SIGNAL (macro_deleted (lym::Macro *)), this, SLOT (macro_deleted (lym::Macro *)));
-  connect (root, SIGNAL (macro_collection_about_to_be_deleted (lym::MacroCollection *)), this, SLOT (macro_collection_about_to_be_deleted (lym::MacroCollection *)));
   connect (root, SIGNAL (macro_collection_deleted (lym::MacroCollection *)), this, SLOT (macro_collection_deleted (lym::MacroCollection *)));
   connect (root, SIGNAL (macro_collection_changed (lym::MacroCollection *)), this, SLOT (macro_collection_changed ()));
   connect (root, SIGNAL (about_to_change ()), this, SLOT (about_to_change ()));
@@ -148,25 +144,9 @@ Qt::DropActions MacroTreeModel::supportedDropActions() const
   return Qt::MoveAction;
 }
 
-void MacroTreeModel::macro_about_to_be_deleted (lym::Macro *macro)
-{
-  QModelIndex index = index_for (macro);
-  if (index.isValid ()) {
-    changePersistentIndex (index, QModelIndex ());
-  }
-}
-
 void MacroTreeModel::macro_deleted (lym::Macro *)
 {
   //  .. nothing yet ..
-}
-
-void MacroTreeModel::macro_collection_about_to_be_deleted (lym::MacroCollection *mc)
-{
-  QModelIndex index = index_for (mc);
-  if (index.isValid ()) {
-    changePersistentIndex (index, QModelIndex ());
-  }
 }
 
 void MacroTreeModel::macro_collection_deleted (lym::MacroCollection *)
@@ -181,10 +161,7 @@ void MacroTreeModel::macro_changed ()
 
 void MacroTreeModel::update_data ()
 {
-  int rc = rowCount (QModelIndex());
-  if (rc > 0) {
-    emit dataChanged (index (0, 0, QModelIndex ()), index (rc - 1, 0, QModelIndex ()));
-  }
+  emit dataChanged (index (0, 0, QModelIndex ()), index (rowCount (QModelIndex()) - 1, 0, QModelIndex ()));
 }
 
 void MacroTreeModel::about_to_change ()
@@ -383,7 +360,7 @@ QVariant MacroTreeModel::data (const QModelIndex &index, int role) const
     if (role == Qt::DisplayRole) {
       return QVariant (tl::to_qstring (mc->display_string ()));
     } else if (role == Qt::DecorationRole) {
-      return QVariant (QIcon (QString::fromUtf8 (":/folder_16px.png")));
+      return QVariant (QIcon (QString::fromUtf8 (":/folder.png")));
     } else if (role == Qt::ToolTipRole) {
       return QVariant (tl::to_qstring (mc->path ()));
     } else if (role == Qt::UserRole) {
@@ -606,7 +583,6 @@ MacroEditorTree::MacroEditorTree (QWidget *parent, const std::string &cat)
   setDragEnabled (true);
   setAcceptDrops (true);
   setDropIndicatorShown (true);
-  setIconSize (QSize (16, 16));
 }
 
 void MacroEditorTree::model_macro_renamed (lym::Macro *macro)

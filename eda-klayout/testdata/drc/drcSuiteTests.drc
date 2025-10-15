@@ -15,10 +15,8 @@ def run_testsuite(dm, ic, tiled = false, hier = false)
   lb = 100
 
   a = polygons(RBA::LayerInfo::new(1, 0))
-  at = labels(1)
   b = polygons(2)
   c = polygons(3)
-  d = polygons(4)
   x = polygons(10)
   y = polygons(11)
   empty = polygons(1000)
@@ -31,13 +29,9 @@ def run_testsuite(dm, ic, tiled = false, hier = false)
   
   message "--- general #{lb}"
   
-  l1 = a & b
+  l1 = a&b
   l1.output(lb, dm)
   expect_eq(l1.is_empty?, false)
-  
-  (an1, an2) = a.andnot(b)
-  an1.output(lb, dm + 1)
-  expect_eq(an1.is_empty?, false)
   
   a.and(b).xor(l1).is_empty? || raise("xor not empty")
   tiled || hier || expect_eq(a.and(b).is_merged?, true)
@@ -45,7 +39,6 @@ def run_testsuite(dm, ic, tiled = false, hier = false)
   a.xor(b).output(RBA::LayerInfo::new(lb + 1, dm))
   a.xor(b).xor(a ^ b).is_empty? || raise("xor not empty")
   a.not(b).output(lb + 2, dm)
-  an2.output(lb + 2, dm + 1)
   a.not(b).xor(a - b).is_empty? || raise("xor not empty")
   a.or(b).output(lb + 3, dm)
   a.or(b).xor(a | b).is_empty? || raise("xor not empty")
@@ -134,10 +127,6 @@ def run_testsuite(dm, ic, tiled = false, hier = false)
   a.enclosing(b, 0.5, whole_edges).second_edges.extended_out(0.01).output(lb + 1, dm)
   a.enclosing(b, 0.5, whole_edges).edges.extended_out(0.01).output(lb + 2, dm)
   
-  b.enclosed(a, 0.5, whole_edges).second_edges.extended_out(0.01).output(lb + 3, dm)
-  b.enclosed(a, 0.5, whole_edges).first_edges.extended_out(0.01).output(lb + 4, dm)
-  b.enclosed(a, 0.5, whole_edges).edges.extended_out(0.01).output(lb + 5, dm)
-  
   lb += 10 #150
   message "--- hulls, holes #{lb}"
   
@@ -152,7 +141,6 @@ def run_testsuite(dm, ic, tiled = false, hier = false)
   b.not_interacting(a).output(lb, dm + 1)
   b.interacting(empty).output(lb, dm + 2)
   b.not_interacting(empty).output(lb, dm + 3)
-
   b.interacting(a).in(b).output(lb + 1, dm)
   (b|a).not_in(b).output(lb + 2, dm)
   x.in(b).output(lb + 3, dm)
@@ -165,90 +153,18 @@ def run_testsuite(dm, ic, tiled = false, hier = false)
   b.not_inside(c).output(lb, dm + 1)
   b.inside(empty).output(lb, dm + 2)
   b.not_inside(empty).output(lb, dm + 3)
-  (p, m) = b.split_inside(c)
-  p.output(lb, dm + 10)
-  m.output(lb, dm + 11)
-
-  b.edges.inside(c).output(lb, dm + 20)
-  b.edges.not_inside(c).output(lb, dm + 21)
-  b.edges.inside(empty).output(lb, dm + 22)
-  b.edges.not_inside(empty).output(lb, dm + 23)
-  (p, m) = b.edges.split_inside(c)
-  p.output(lb, dm + 30)
-  m.output(lb, dm + 31)
-
-  b.edges.inside(c.edges).output(lb, dm + 40)
-  b.edges.not_inside(c.edges).output(lb, dm + 41)
-  b.edges.inside(empty.edges).output(lb, dm + 42)
-  b.edges.not_inside(empty.edges).output(lb, dm + 43)
-  (p, m) = b.edges.split_inside(c.edges)
-  p.output(lb, dm + 50)
-  m.output(lb, dm + 51)
-
-  b.covering(c).output(lb, dm + 100)
-  b.not_covering(c).output(lb, dm + 101)
-  b.covering(empty).output(lb, dm + 102)
-  b.not_covering(empty).output(lb, dm + 103)
-  (p, m) = b.split_covering(c)
-  p.output(lb, dm + 110)
-  m.output(lb, dm + 111)
-
   b.outside(c).output(lb + 1, dm)
   b.not_outside(c).output(lb + 1, dm + 1)
   b.outside(empty).output(lb + 1, dm + 2)
   b.not_outside(empty).output(lb + 1, dm + 3)
-  (p, m) = b.split_outside(c)
-  p.output(lb + 1, dm + 10)
-  m.output(lb + 1, dm + 11)
-
-  b.edges.outside(c).output(lb + 1, dm + 20)
-  b.edges.not_outside(c).output(lb + 1, dm + 21)
-  b.edges.outside(empty).output(lb + 1, dm + 22)
-  b.edges.not_outside(empty).output(lb + 1, dm + 23)
-  (p, m) = b.edges.split_outside(c)
-  p.output(lb + 1, dm + 30)
-  m.output(lb + 1, dm + 31)
-
-  b.edges.outside(c.edges).output(lb + 1, dm + 40)
-  b.edges.not_outside(c.edges).output(lb + 1, dm + 41)
-  b.edges.outside(empty.edges).output(lb + 1, dm + 42)
-  b.edges.not_outside(empty.edges).output(lb + 1, dm + 43)
-  (p, m) = b.edges.split_outside(c.edges)
-  p.output(lb + 1, dm + 50)
-  m.output(lb + 1, dm + 51)
-
   b.overlapping(c).output(lb + 2, dm)
   b.not_overlapping(c).output(lb + 2, dm + 1)
   b.overlapping(empty).output(lb + 2, dm + 2)
   b.not_overlapping(empty).output(lb + 2, dm + 3)
-  (p, m) = b.split_overlapping(c)
-  p.output(lb + 2, dm + 10)
-  m.output(lb + 2, dm + 11)
-
   b.interacting(c).output(lb + 3, dm)
   b.not_interacting(c).output(lb + 3, dm + 1)
   b.interacting(empty).output(lb + 3, dm + 2)
   b.not_interacting(empty).output(lb + 3, dm + 3)
-  (p, m) = b.split_interacting(c)
-  p.output(lb + 3, dm + 10)
-  m.output(lb + 3, dm + 11)
-
-  b.edges.interacting(c).output(lb + 3, dm + 20)
-  b.edges.not_interacting(c).output(lb + 3, dm + 21)
-  b.edges.interacting(empty).output(lb + 3, dm + 22)
-  b.edges.not_interacting(empty).output(lb + 3, dm + 23)
-  (p, m) = b.edges.split_interacting(c)
-  p.output(lb + 3, dm + 30)
-  m.output(lb + 3, dm + 31)
-
-  b.edges.interacting(c.edges).output(lb + 3, dm + 40)
-  b.edges.not_interacting(c.edges).output(lb + 3, dm + 41)
-  b.edges.interacting(empty.edges).output(lb + 3, dm + 42)
-  b.edges.not_interacting(empty.edges).output(lb + 3, dm + 43)
-  (p, m) = b.edges.split_interacting(c.edges)
-  p.output(lb + 3, dm + 50)
-  m.output(lb + 3, dm + 51)
-
   bdup = b.dup
   bdup.select_inside(c)
   bdup.xor(b.inside(c)).output(lb + 4, dm)
@@ -261,31 +177,6 @@ def run_testsuite(dm, ic, tiled = false, hier = false)
   bdup = b.dup
   bdup.select_not_inside(empty)
   bdup.output(lb + 4, dm + 3)
-  bdup = b.dup.edges
-  bdup.select_inside(c)
-  bdup.xor(b.edges.inside(c)).output(lb + 4, dm + 10)
-  bdup = b.dup.edges
-  bdup.select_not_inside(c)
-  bdup.output(lb + 4, dm + 11)
-  bdup = b.dup.edges
-  bdup.select_inside(empty)
-  bdup.output(lb + 4, dm + 12)
-  bdup = b.dup.edges
-  bdup.select_not_inside(empty)
-  bdup.output(lb + 4, dm + 13)
-  bdup = b.dup.edges
-  bdup.select_inside(c.edges)
-  bdup.xor(b.edges.inside(c.edges)).output(lb + 4, dm + 20)
-  bdup = b.dup.edges
-  bdup.select_not_inside(c.edges)
-  bdup.output(lb + 4, dm + 21)
-  bdup = b.dup.edges
-  bdup.select_inside(empty)
-  bdup.output(lb + 4, dm + 22)
-  bdup = b.dup.edges
-  bdup.select_not_inside(empty)
-  bdup.output(lb + 4, dm + 23)
-
   bdup = b.dup
   bdup.select_outside(c)
   bdup.xor(b.outside(c)).output(lb + 5, dm)
@@ -298,31 +189,6 @@ def run_testsuite(dm, ic, tiled = false, hier = false)
   bdup = b.dup
   bdup.select_not_outside(empty)
   bdup.output(lb + 5, dm + 3)
-  bdup = b.dup.edges
-  bdup.select_outside(c)
-  bdup.xor(b.edges.outside(c)).output(lb + 5, dm + 10)
-  bdup = b.dup.edges
-  bdup.select_not_outside(c)
-  bdup.output(lb + 5, dm + 11)
-  bdup = b.dup.edges
-  bdup.select_outside(empty)
-  bdup.output(lb + 5, dm + 12)
-  bdup = b.dup.edges
-  bdup.select_not_outside(empty)
-  bdup.output(lb + 5, dm + 13)
-  bdup = b.dup.edges
-  bdup.select_outside(c.edges)
-  bdup.xor(b.edges.outside(c.edges)).output(lb + 5, dm + 20)
-  bdup = b.dup.edges
-  bdup.select_not_outside(c.edges)
-  bdup.output(lb + 5, dm + 21)
-  bdup = b.dup.edges
-  bdup.select_outside(empty)
-  bdup.output(lb + 5, dm + 22)
-  bdup = b.dup.edges
-  bdup.select_not_outside(empty)
-  bdup.output(lb + 5, dm + 23)
-
   bdup = b.dup
   bdup.select_overlapping(c)
   bdup.xor(b.overlapping(c)).output(lb + 6, dm)
@@ -335,7 +201,6 @@ def run_testsuite(dm, ic, tiled = false, hier = false)
   bdup = b.dup
   bdup.select_not_overlapping(empty)
   bdup.output(lb + 6, dm + 3)
-
   bdup = b.dup
   bdup.select_interacting(c)
   bdup.xor(b.interacting(c)).output(lb + 7, dm)
@@ -348,10 +213,8 @@ def run_testsuite(dm, ic, tiled = false, hier = false)
   bdup = b.dup
   bdup.select_not_interacting(empty)
   bdup.output(lb + 7, dm + 3)
-
   b.inside(empty).output(lb + 8, dm)
   b.not_inside(empty).output(lb + 8, dm + 1)
-
   b.outside(empty).output(lb + 9, dm)
   b.not_outside(empty).output(lb + 9, dm + 1)
   
@@ -428,8 +291,6 @@ def run_testsuite(dm, ic, tiled = false, hier = false)
   else
     a.enclosing(b, 0.5, euclidian, projection_limits(0, 0.4)).polygons.output(lb + 7, dm)
   end
-
-  b.enclosed(a, 0.5, euclidian, projection_limits(nil, 0.4)).polygons.output(lb + 8, dm)
   
   lb += 10 #220
   message "--- enclosing (edges) #{lb}"
@@ -450,21 +311,22 @@ def run_testsuite(dm, ic, tiled = false, hier = false)
     ae.enclosing(be, 0.5, euclidian, projection_limits(0, 0.4)).polygons.output(lb + 7, dm)
   end
   
-  be.enclosed(ae, 0.5, euclidian, whole_edges).polygons.output(lb + 8, dm)
-
   lb += 10 #230
   message "--- isolated #{lb}"
   
-  b.isolated(0.4, shielded).polygons.output(lb, dm)
-  b.isolated(0.4, shielded).polygons.xor(b.iso(0.4, shielded).polygons).is_empty? == true || raise("xor not empty")
-  b.isolated(0.4, shielded, euclidian).polygons.output(lb + 1, dm)
-  b.isolated(0.4, shielded, square).polygons.output(lb + 2, dm)
-  b.isolated(0.4, shielded, projection).polygons.output(lb + 3, dm)
-  b.isolated(0.4, shielded, euclidian, whole_edges).polygons.output(lb + 4, dm)
-  b.isolated(0.4, shielded, euclidian, projection_limits(0.4, nil)).polygons.output(lb + 5, dm)
-  b.isolated(0.4, shielded, euclidian, projection_limits(nil, 0.4)).polygons.output(lb + 6, dm)
-  b.isolated(0.4, shielded, euclidian, projecting < 0.4).polygons.output(lb + 7, dm)
-  b.isolated(0.4, transparent).polygons.output(lb + 8, dm)
+  b.isolated(0.4).polygons.output(lb, dm)
+  b.isolated(0.4).polygons.xor(b.iso(0.4).polygons).is_empty? == true || raise("xor not empty")
+  b.isolated(0.4, euclidian).polygons.output(lb + 1, dm)
+  b.isolated(0.4, square).polygons.output(lb + 2, dm)
+  b.isolated(0.4, projection).polygons.output(lb + 3, dm)
+  b.isolated(0.4, euclidian, whole_edges).polygons.output(lb + 4, dm)
+  b.isolated(0.4, euclidian, projection_limits(0.4, nil)).polygons.output(lb + 5, dm)
+  b.isolated(0.4, euclidian, projection_limits(nil, 0.4)).polygons.output(lb + 6, dm)
+  if has_float_range
+    b.isolated(0.4, euclidian, projection_limits(0..0.4)).polygons.output(lb + 7, dm)
+  else
+    b.isolated(0.4, euclidian, projection_limits(0, 0.4)).polygons.output(lb + 7, dm)
+  end
   
   lb += 10 #240
   message "--- notch #{lb}"
@@ -742,80 +604,6 @@ def run_testsuite(dm, ic, tiled = false, hier = false)
   p.output(lb + 4, dm)
   p = b.edges.intersections(c.edges)
   p.output(lb + 5, dm)
-  (u, v) = c.edges.andnot(b.edges)
-  u.output(lb + 6, dm)
-  v.output(lb + 6, dm + 1)
-  p = b.edges.inside_part(c)
-  p.output(lb + 7, dm)
-  p = b.edges.outside_part(c)
-  p.output(lb + 7, dm + 1)
-  (u, v) = b.edges.inside_outside_part(c)
-  u.output(lb + 7, dm + 2)
-  v.output(lb + 7, dm + 3)
-  
-  lb += 10 #450
-  message "--- texts and filters #{lb}"
-  
-  p = at
-  p.output(lb, dm)
-  p = at.texts
-  p.output(lb + 1, dm)
-  p = at.texts("A*")
-  p.output(lb + 2, dm)
-  p = at.texts(pattern("A*"))
-  p.output(lb + 3, dm)
-  p = at.texts(pattern("A*"), as_dots)
-  p.output(lb + 4, dm)
-  p = at.texts(text("A*"), as_boxes)
-  p.output(lb + 5, dm)
-  p = at.texts_not("A*")
-  p.output(lb + 6, dm)
-  p = at.texts_not(pattern("A*"))
-  p.output(lb + 7, dm)
-  p = at.texts_not(pattern("A*"), as_dots)
-  p.output(lb + 8, dm)
-  p = at.texts_not(text("A*"), as_boxes)
-  p.output(lb + 9, dm)
-  
-  lb += 10 #460
-  message "--- texts and polygon booleans and interactions #{lb}"
-  
-  p = at & d
-  p.output(lb, dm)
-  p = d.interacting(at)
-  p.output(lb + 1, dm)
-  ddup = d.dup
-  ddup.select_interacting(at)
-  ddup.output(lb + 1, dm + 1)
-  p = at.interacting(d)
-  p.output(lb + 2, dm)
-  atdup = at.dup
-  atdup.select_interacting(d)
-  atdup.output(lb + 2, dm + 1)
-  p = d.pull_interacting(at)
-  p.output(lb + 3, dm)
-  p = at.pull_interacting(d)
-  p.output(lb + 4, dm)
-  p = at - d
-  p.output(lb + 5, dm)
-  p = d.not_interacting(at)
-  p.output(lb + 6, dm)
-  ddup = d.dup
-  ddup.select_not_interacting(at)
-  ddup.output(lb + 6, dm + 1)
-  p = at.not_interacting(d)
-  p.output(lb + 7, dm)
-  atdup = at.dup
-  atdup.select_not_interacting(d)
-  atdup.output(lb + 7, dm + 1)
-  p = d.interacting(at)
-  p.output(lb + 8, dm)
-  p = d.not_interacting(at)
-  p.output(lb + 8, dm + 1)
-  p = d.pull_interacting(at)
-  p.output(lb + 9, dm)
-  p = at.pull_interacting(d)
-  p.output(lb + 9, dm + 1)
   
 end
 

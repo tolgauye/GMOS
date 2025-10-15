@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -29,22 +29,177 @@
 #include "dbRecursiveShapeIterator.h"
 #include "dbPolygonGenerators.h"
 #include "dbCellVariants.h"
-#include "dbShapeCollection.h"
-#include "dbGenericShapeIterator.h"
+
+#include "gsiObject.h"
 
 #include <list>
 
 namespace db {
 
 class EdgeFilterBase;
-class MutableRegion;
+class FlatRegion;
 class EmptyRegion;
 class DeepShapeStore;
 class TransformationReducer;
-class CompoundRegionOperationNode;
 
-typedef generic_shape_iterator<db::Polygon> RegionIterator;
-typedef addressable_shape_delivery<db::Polygon> AddressablePolygonDelivery;
+/**
+ *  @brief A region iterator
+ *
+ *  The iterator delivers the polygons of the region
+ */
+class DB_PUBLIC RegionIterator
+{
+public:
+  typedef RegionIteratorDelegate::value_type value_type;
+  typedef const value_type &reference;
+  typedef const value_type *pointer;
+  typedef std::forward_iterator_tag iterator_category;
+  typedef void difference_type;
+
+  /**
+   *  @brief Default constructor
+   */
+  RegionIterator ()
+    : mp_delegate (0)
+  {
+    //  .. nothing yet ..
+  }
+
+  /**
+   *  @brief Constructor from a delegate
+   *  The iterator will take ownership over the delegate
+   */
+  RegionIterator (RegionIteratorDelegate *delegate)
+    : mp_delegate (delegate)
+  {
+    //  .. nothing yet ..
+  }
+
+  /**
+   *  @brief Destructor
+   */
+  ~RegionIterator ()
+  {
+    delete mp_delegate;
+    mp_delegate = 0;
+  }
+
+  /**
+   *  @brief Copy constructor and assignment
+   */
+  RegionIterator (const RegionIterator &other)
+    : mp_delegate (0)
+  {
+    operator= (other);
+  }
+
+  /**
+   *  @brief Assignment
+   */
+  RegionIterator &operator= (const RegionIterator &other)
+  {
+    if (this != &other) {
+      delete mp_delegate;
+      mp_delegate = other.mp_delegate ? other.mp_delegate->clone () : 0;
+    }
+    return *this;
+  }
+
+  /**
+   *  @Returns true, if the iterator is at the end
+   */
+  bool at_end () const
+  {
+    return mp_delegate == 0 || mp_delegate->at_end ();
+  }
+
+  /**
+   *  @brief Increment
+   */
+  RegionIterator &operator++ ()
+  {
+    if (mp_delegate) {
+      mp_delegate->increment ();
+    }
+    return *this;
+  }
+
+  /**
+   *  @brief Access
+   */
+  reference operator* () const
+  {
+    const value_type *value = operator-> ();
+    tl_assert (value != 0);
+    return *value;
+  }
+
+  /**
+   *  @brief Access
+   */
+  pointer operator-> () const
+  {
+    return mp_delegate ? mp_delegate->get () : 0;
+  }
+
+private:
+  RegionIteratorDelegate *mp_delegate;
+};
+
+/**
+ *  @brief A helper class allowing delivery of addressable polygons
+ *
+ *  In some applications (i.e. box scanner), polygons need to be taken
+ *  by address. The region cannot always deliver adressable polygons.
+ *  This class help providing this ability by keeping a temporary copy
+ *  if required.
+ */
+
+class DB_PUBLIC AddressablePolygonDelivery
+{
+public:
+  AddressablePolygonDelivery ()
+    : m_iter (), m_valid (false)
+  {
+    //  .. nothing yet ..
+  }
+
+  AddressablePolygonDelivery (const RegionIterator &iter, bool valid)
+    : m_iter (iter), m_valid (valid)
+  {
+    if (! m_valid && ! m_iter.at_end ()) {
+      m_heap.push_back (*m_iter);
+    }
+  }
+
+  bool at_end () const
+  {
+    return m_iter.at_end ();
+  }
+
+  AddressablePolygonDelivery &operator++ ()
+  {
+    ++m_iter;
+    if (! m_valid && ! m_iter.at_end ()) {
+      m_heap.push_back (*m_iter);
+    }
+    return *this;
+  }
+
+  const db::Polygon *operator-> () const
+  {
+    if (m_valid) {
+      return m_iter.operator-> ();
+    } else {
+      return &m_heap.back ();
+    }
+  }
+
+private:
+  RegionIterator m_iter;
+  bool m_valid;
+  std::list<db::Polygon> m_heap;
+};
 
 /**
  *  @brief A region
@@ -61,7 +216,7 @@ typedef addressable_shape_delivery<db::Polygon> AddressablePolygonDelivery;
  *  Polygons inside the region may contain holes if the region is merged.
  */
 class DB_PUBLIC Region
-  : public db::ShapeCollection
+  : public gsi::ObjectBase
 {
 public:
   typedef db::Coord coord_type;
@@ -114,27 +269,9 @@ public:
   }
 
   /**
-   *  @brief Constructor from a box with properties
-   */
-  explicit Region (const db::BoxWithProperties &s)
-    : mp_delegate (0)
-  {
-    insert (s);
-  }
-
-  /**
    *  @brief Constructor from a polygon
    */
   explicit Region (const db::Polygon &s)
-    : mp_delegate (0)
-  {
-    insert (s);
-  }
-
-  /**
-   *  @brief Constructor from a polygon with properties
-   */
-  explicit Region (const db::PolygonWithProperties &s)
     : mp_delegate (0)
   {
     insert (s);
@@ -150,27 +287,9 @@ public:
   }
 
   /**
-   *  @brief Constructor from a simple polygon with properties
-   */
-  explicit Region (const db::SimplePolygonWithProperties &s)
-    : mp_delegate (0)
-  {
-    insert (s);
-  }
-
-  /**
    *  @brief Constructor from a path
    */
   explicit Region (const db::Path &s)
-    : mp_delegate (0)
-  {
-    insert (s);
-  }
-
-  /**
-   *  @brief Constructor from a path with properties
-   */
-  explicit Region (const db::PathWithProperties &s)
     : mp_delegate (0)
   {
     insert (s);
@@ -199,7 +318,7 @@ public:
    *  Creates a region from a recursive shape iterator. This allows feeding a region
    *  from a hierarchy of cells.
    */
-  explicit Region (const RecursiveShapeIterator &si, bool merged_semantics = true, bool is_merged = false);
+  explicit Region (const RecursiveShapeIterator &si);
 
   /**
    *  @brief Constructor from a RecursiveShapeIterator with a transformation
@@ -208,23 +327,7 @@ public:
    *  from a hierarchy of cells. The transformation is useful to scale to a specific
    *  DBU for example.
    */
-  explicit Region (const RecursiveShapeIterator &si, const db::ICplxTrans &trans, bool merged_semantics = true, bool is_merged = false);
-
-  /**
-   *  @brief Constructor from a Shapes container
-   *
-   *  Creates a region from a shapes container.
-   */
-  explicit Region (const Shapes &si, bool merged_semantics = true, bool is_merged = false);
-
-  /**
-   *  @brief Constructor from a Shapes container with a transformation
-   *
-   *  Creates a region from a recursive shape iterator. This allows feeding a region
-   *  from a hierarchy of cells. The transformation is useful to scale to a specific
-   *  DBU for example.
-   */
-  explicit Region (const Shapes &si, const db::ICplxTrans &trans, bool merged_semantics = true, bool is_merged = false);
+  explicit Region (const RecursiveShapeIterator &si, const db::ICplxTrans &trans, bool merged_semantics = true);
 
   /**
    *  @brief Constructor from a RecursiveShapeIterator providing a deep representation
@@ -249,45 +352,11 @@ public:
   explicit Region (DeepShapeStore &dss);
 
   /**
-   *  @brief Writes the region to a file
-   *
-   *  This method is provided for debugging purposes. A flat image of the
-   *  region is written to a layout file with a single top cell on layer 0/0.
-   */
-  void write (const std::string &fn) const;
-
-  /**
-   *  @brief Implementation of the ShapeCollection interface
-   */
-  ShapeCollectionDelegateBase *get_delegate () const
-  {
-    return mp_delegate;
-  }
-
-  /**
    *  @brief Gets the underlying delegate object
    */
-  const RegionDelegate *delegate () const
+  RegionDelegate *delegate () const
   {
     return mp_delegate;
-  }
-
-  /**
-   *  @brief Gets the underlying delegate object
-   */
-  RegionDelegate *delegate ()
-  {
-    return mp_delegate;
-  }
-
-  /**
-   *  @brief Takes the underlying delegate object
-   */
-  RegionDelegate *take_delegate ()
-  {
-    RegionDelegate *delegate = mp_delegate;
-    mp_delegate = 0;
-    return delegate;
   }
 
   /**
@@ -391,19 +460,11 @@ public:
   }
 
   /**
-   *  @brief Returns the number of (flat) polygons in the region
+   *  @brief Returns the number of polygons in the region
    */
-  size_t count () const
+  size_t size () const
   {
-    return mp_delegate->count ();
-  }
-
-  /**
-   *  @brief Returns the number of (hierarchical) polygons in the region
-   */
-  size_t hier_count () const
-  {
-    return mp_delegate->hier_count ();
+    return mp_delegate->size ();
   }
 
   /**
@@ -467,28 +528,6 @@ public:
   bool merged_semantics () const
   {
     return mp_delegate->merged_semantics ();
-  }
-
-  /**
-   *  @brief Sets a flag indication whether to join properties on merge
-   *
-   *  When this flag is set to true (the default), properties are joined on "merge".
-   *  That is: shapes merging into bigger shapes will have their properties joined.
-   *  With the flag set to false, "merge" will not join properties and return merged
-   *  shapes only if the sub-shapes have the same properties - i.e. properties form
-   *  different classes on merge.
-   */
-  void set_join_properties_on_merge (bool f)
-  {
-    mp_delegate->set_join_properties_on_merge (f);
-  }
-
-  /**
-   *  @brief Gets a flag indication whether to join properties on merge
-   */
-  bool join_properties_on_merge () const
-  {
-    return mp_delegate->join_properties_on_merge ();
   }
 
   /**
@@ -595,18 +634,6 @@ public:
   }
 
   /**
-   *  @brief Returns the filtered polygons and the others
-   *
-   *  This method will return a new region with only those polygons which
-   *  conform to the filter criterion and another for those which don't.
-   */
-  std::pair<Region, Region> split_filter (const PolygonFilterBase &filter) const
-  {
-    std::pair<db::RegionDelegate *, db::RegionDelegate *> p = mp_delegate->filtered_pair (filter);
-    return std::make_pair (Region (p.first), Region (p.second));
-  }
-
-  /**
    *  @brief Processes the (merged) polygons
    *
    *  This method will keep all polygons which the processor returns.
@@ -666,52 +693,31 @@ public:
   }
 
   /**
-   *  @brief Performs a compound operation rendering edge pairs
-   *
-   *  The compound operation needs to feature edge pair output, e.g.
-   *  node.result_type() needs to be EdgePairs.
-   */
-  EdgePairs cop_to_edge_pairs (db::CompoundRegionOperationNode &node, PropertyConstraint prop_constraint = db::IgnoreProperties);
-
-  /**
-   *  @brief Performs a compound operation rendering a region
-   *
-   *  The compound operation needs to feature region output, e.g.
-   *  node.result_type() needs to be Region.
-   */
-  Region cop_to_region (db::CompoundRegionOperationNode &node, PropertyConstraint prop_constraint = db::IgnoreProperties);
-
-  /**
-   *  @brief Performs a compound operation rendering edges
-   *
-   *  The compound operation needs to feature region output, e.g.
-   *  node.result_type() needs to be Edges.
-   */
-  Edges cop_to_edges (db::CompoundRegionOperationNode &node, PropertyConstraint prop_constraint = db::IgnoreProperties);
-
-  /**
-   *  @brief A universal form of the compound operation
-   *
-   *  The returned variant will be of the type requested by the
-   *  compound operation node.
-   */
-  tl::Variant cop (db::CompoundRegionOperationNode &node, PropertyConstraint prop_constraint = db::IgnoreProperties);
-
-  /**
    *  @brief Applies a width check and returns EdgePairs which correspond to violation markers
    *
    *  The width check will create a edge pairs if the width of the area between the
-   *  edges is less than the specified threshold d.
+   *  edges is less than the specified threshold d. Without "whole_edges", the parts of
+   *  the edges are returned which violate the condition. If "whole_edges" is true, the
+   *  result will contain the complete edges participating in the result.
    *
-   *  "options" will specify a variety of options to configure the check.
+   *  The metrics parameter specifies which metrics to use. "Euclidian", "Square" and "Projected"
+   *  metrics are available.
+   *
+   *  ingore_angle allows specification of a maximum angle that connected edges can have to not participate
+   *  in the check. By choosing 90 degree, edges with angles of 90 degree and larger are not checked,
+   *  but acute corners are for example.
+   *
+   *  With min_projection and max_projection it is possible to specify how edges must be related
+   *  to each other. If the length of the projection of either edge on the other is >= min_projection
+   *  or < max_projection, the edges are considered for the check.
    *
    *  The order of the edges in the resulting edge pairs is undefined.
    *
    *  Merged semantics applies.
    */
-  EdgePairs width_check (db::Coord d, const RegionCheckOptions &options = db::RegionCheckOptions ()) const
+  EdgePairs width_check (db::Coord d, bool whole_edges = false, metrics_type metrics = db::Euclidian, double ignore_angle = 90, distance_type min_projection = 0, distance_type max_projection = std::numeric_limits<distance_type>::max ()) const
   {
-    return EdgePairs (mp_delegate->width_check (d, options));
+    return EdgePairs (mp_delegate->width_check (d, whole_edges, metrics, ignore_angle, min_projection, max_projection));
   }
 
   /**
@@ -722,9 +728,9 @@ public:
    *
    *  Merged semantics applies.
    */
-  EdgePairs space_check (db::Coord d, const RegionCheckOptions &options = db::RegionCheckOptions ()) const
+  EdgePairs space_check (db::Coord d, bool whole_edges = false, metrics_type metrics = db::Euclidian, double ignore_angle = 90, distance_type min_projection = 0, distance_type max_projection = std::numeric_limits<distance_type>::max ()) const
   {
-    return EdgePairs (mp_delegate->space_check (d, options));
+    return EdgePairs (mp_delegate->space_check (d, whole_edges, metrics, ignore_angle, min_projection, max_projection));
   }
 
   /**
@@ -735,9 +741,9 @@ public:
    *
    *  Merged semantics applies.
    */
-  EdgePairs isolated_check (db::Coord d, const RegionCheckOptions &options = db::RegionCheckOptions ()) const
+  EdgePairs isolated_check (db::Coord d, bool whole_edges = false, metrics_type metrics = db::Euclidian, double ignore_angle = 90, distance_type min_projection = 0, distance_type max_projection = std::numeric_limits<distance_type>::max ()) const
   {
-    return EdgePairs (mp_delegate->isolated_check (d, options));
+    return EdgePairs (mp_delegate->isolated_check (d, whole_edges, metrics, ignore_angle, min_projection, max_projection));
   }
 
   /**
@@ -748,9 +754,9 @@ public:
    *
    *  Merged semantics applies.
    */
-  EdgePairs notch_check (db::Coord d, const RegionCheckOptions &options = db::RegionCheckOptions ()) const
+  EdgePairs notch_check (db::Coord d, bool whole_edges = false, metrics_type metrics = db::Euclidian, double ignore_angle = 90, distance_type min_projection = 0, distance_type max_projection = std::numeric_limits<distance_type>::max ()) const
   {
-    return EdgePairs (mp_delegate->notch_check (d, options));
+    return EdgePairs (mp_delegate->notch_check (d, whole_edges, metrics, ignore_angle, min_projection, max_projection));
   }
 
   /**
@@ -765,9 +771,9 @@ public:
    *
    *  Merged semantics applies.
    */
-  EdgePairs enclosing_check (const Region &other, db::Coord d, const RegionCheckOptions &options = db::RegionCheckOptions ()) const
+  EdgePairs enclosing_check (const Region &other, db::Coord d, bool whole_edges = false, metrics_type metrics = db::Euclidian, double ignore_angle = 90, distance_type min_projection = 0, distance_type max_projection = std::numeric_limits<distance_type>::max ()) const
   {
-    return EdgePairs (mp_delegate->enclosing_check (other, d, options));
+    return EdgePairs (mp_delegate->enclosing_check (other, d, whole_edges, metrics, ignore_angle, min_projection, max_projection));
   }
 
   /**
@@ -782,9 +788,9 @@ public:
    *
    *  Merged semantics applies.
    */
-  EdgePairs overlap_check (const Region &other, db::Coord d, const RegionCheckOptions &options = db::RegionCheckOptions ()) const
+  EdgePairs overlap_check (const Region &other, db::Coord d, bool whole_edges = false, metrics_type metrics = db::Euclidian, double ignore_angle = 90, distance_type min_projection = 0, distance_type max_projection = std::numeric_limits<distance_type>::max ()) const
   {
-    return EdgePairs (mp_delegate->overlap_check (other, d, options));
+    return EdgePairs (mp_delegate->overlap_check (other, d, whole_edges, metrics, ignore_angle, min_projection, max_projection));
   }
 
   /**
@@ -799,9 +805,9 @@ public:
    *
    *  Merged semantics applies.
    */
-  EdgePairs separation_check (const Region &other, db::Coord d, const RegionCheckOptions &options = db::RegionCheckOptions ()) const
+  EdgePairs separation_check (const Region &other, db::Coord d, bool whole_edges = false, metrics_type metrics = db::Euclidian, double ignore_angle = 90, distance_type min_projection = 0, distance_type max_projection = std::numeric_limits<distance_type>::max ()) const
   {
-    return EdgePairs (mp_delegate->separation_check (other, d, options));
+    return EdgePairs (mp_delegate->separation_check (other, d, whole_edges, metrics, ignore_angle, min_projection, max_projection));
   }
 
   /**
@@ -816,9 +822,9 @@ public:
    *
    *  Merged semantics applies.
    */
-  EdgePairs inside_check (const Region &other, db::Coord d, const RegionCheckOptions &options = db::RegionCheckOptions ()) const
+  EdgePairs inside_check (const Region &other, db::Coord d, bool whole_edges = false, metrics_type metrics = db::Euclidian, double ignore_angle = 90, distance_type min_projection = 0, distance_type max_projection = std::numeric_limits<distance_type>::max ()) const
   {
-    return EdgePairs (mp_delegate->inside_check (other, d, options));
+    return EdgePairs (mp_delegate->inside_check (other, d, whole_edges, metrics, ignore_angle, min_projection, max_projection));
   }
 
   /**
@@ -828,7 +834,7 @@ public:
    */
   Edges edges () const
   {
-    return Edges (mp_delegate->edges (0, 0));
+    return Edges (mp_delegate->edges (0));
   }
 
   /**
@@ -841,34 +847,7 @@ public:
    */
   Edges edges (const EdgeFilterBase &filter) const
   {
-    return mp_delegate->edges (&filter, 0);
-  }
-
-  /**
-   *  @brief Returns an edge set containing all edges of the polygons in this region
-   *
-   *  Merged semantics applies. In merged semantics, only full, outer edges are delivered.
-   *  This version allows specifying a polygon to edge processor with additional features
-   *  like extraction of convex edges only.
-   */
-  Edges edges (const db::PolygonToEdgeProcessorBase &proc) const
-  {
-    return Edges (mp_delegate->edges (0, &proc));
-  }
-
-  /**
-   *  @brief Returns an edge set containing all edges of the polygons in this region
-   *
-   *  This version allows one to specify a filter by which the edges are filtered before they are
-   *  returned.
-   *
-   *  Merged semantics applies. In merged semantics, only full, outer edges are delivered.
-   *  This version allows specifying a polygon to edge processor with additional features
-   *  like extraction of convex edges only.
-   */
-  Edges edges (const EdgeFilterBase &filter, const db::PolygonToEdgeProcessorBase &proc) const
-  {
-    return mp_delegate->edges (&filter, &proc);
+    return mp_delegate->edges (&filter);
   }
 
   /**
@@ -928,7 +907,7 @@ public:
    *  @brief Scales and grid-snaps the region
    *
    *  This method will scale the region by mx/dx in horizontal and by my/dy in vertical
-   *  direction and then snap to gx and gy respectively.
+   *  direction and then snape to gx and gy respectively.
    */
   void scale_and_snap (db::Coord gx, db::Coord mx, db::Coord dx, db::Coord gy, db::Coord my, db::Coord dy);
 
@@ -991,14 +970,12 @@ public:
    *  This method will always execute the merge, even if the region is already merged.
    *
    *  @param min_coherence Set this parameter to true to get minimum polygons (kissing corner problem)
-   *  @param min_wc See the description above
-   *  @param join_properties_on_merge If true, merged shapes carry the joined properties of the constituents. Otherwise, only shapes with same properties get merged.
-   *
+   *  @param min_wrapcount See the description above
    *  @return A reference to this region
    */
-  Region &merge (bool min_coherence, unsigned int min_wc = 0, bool join_properties_on_merge = true)
+  Region &merge (bool min_coherence, unsigned int min_wc = 0)
   {
-    set_delegate (mp_delegate->merged_in_place (min_coherence, min_wc, join_properties_on_merge));
+    set_delegate (mp_delegate->merged_in_place (min_coherence, min_wc));
     return *this;
   }
 
@@ -1007,9 +984,9 @@ public:
    *
    *  This is the out-of-place version of "merge" with options (see there).
    */
-  Region merged (bool min_coherence, unsigned int min_wc = 0, bool join_properties_on_merge = true) const
+  Region merged (bool min_coherence, unsigned int min_wc = 0) const
   {
-    return Region (mp_delegate->merged (min_coherence, min_wc, join_properties_on_merge));
+    return Region (mp_delegate->merged (min_coherence, min_wc));
   }
 
   /**
@@ -1064,72 +1041,11 @@ public:
   Region sized (coord_type dx, coord_type dy, unsigned int mode = 2) const;
 
   /**
-   *  @brief Size the region incrementally
-   *
-   *  This method applies an incremental sizing to the region. Before the sizing is done, the
-   *  region is merged if this is not the case already. Incremental sizing is confined to be inside a certain region.
-   *  Only positive or zero sizing values are supported.
-   *
-   *  @param inside The confinement region
-   *  @param outside If true, "inside" is negative - i.e. sizing is performed outside the "inside" region
-   *  @param d The (isotropic) sizing value
-   *  @param steps The number of steps to take
-   *  @param mode The sizing mode (see EdgeProcessor) for a description of the sizing mode which controls the miter distance.
-   *  @return A reference to self
-   */
-  Region &size_inside (const db::Region &inside, bool outside, coord_type d, int steps, unsigned int mode = 2);
-
-  /**
-   *  @brief Size the region incrementally and anisotropically
-   *
-   *  This method applies an incremental sizing to the region. Before the sizing is done, the
-   *  region is merged if this is not the case already. Incremental sizing is confined to be inside a certain region.
-   *  Only positive or zero sizing values are supported.
-   *
-   *  @param inside The confinement region
-   *  @param outside If true, "inside" is negative - i.e. sizing is performed outside the "inside" region
-   *  @param dx The x sizing value
-   *  @param dy The y sizing value
-   *  @param steps The number of steps to take
-   *  @param mode The sizing mode (see EdgeProcessor) for a description of the sizing mode which controls the miter distance.
-   *  @return A reference to self
-   */
-  Region &size_inside (const db::Region &inside, bool outside, coord_type dx, coord_type dy, int steps, unsigned int mode = 2);
-
-  /**
-   *  @brief Returns the sized region
-   *
-   *  This is an out-of-place version of the size method with isotropic sizing
-   *  "merged polygon" semantics applies if merged_polygon_semantics is true (see set_auto_merge).
-   *
-   *  Merged semantics applies.
-   */
-  Region sized_inside (const db::Region &inside, bool outside, coord_type d, int steps, unsigned int mode = 2) const;
-
-  /**
-   *  @brief Returns the sized region
-   *
-   *  This is an out-of-place version of the size method with anisotropic sizing
-   *  "merged polygon" semantics applies if merged_polygon_semantics is true (see set_auto_merge).
-   *
-   *  Merged semantics applies.
-   */
-  Region sized_inside (const db::Region &inside, bool outside, coord_type dx, coord_type dy, int steps, unsigned int mode = 2) const;
-
-  /**
    *  @brief Boolean AND operator
    */
   Region operator& (const Region &other) const
   {
-    return Region (mp_delegate->and_with (other, db::IgnoreProperties));
-  }
-
-  /**
-   *  @brief Boolean AND operator with options
-   */
-  Region bool_and (const Region &other, PropertyConstraint prop_constraint = db::IgnoreProperties) const
-  {
-    return Region (mp_delegate->and_with (other, prop_constraint));
+    return Region (mp_delegate->and_with (other));
   }
 
   /**
@@ -1140,19 +1056,7 @@ public:
    */
   Region &operator&= (const Region &other)
   {
-    set_delegate (mp_delegate->and_with (other, db::IgnoreProperties));
-    return *this;
-  }
-
-  /**
-   *  @brief In-place boolean AND operator with options
-   *
-   *  This method does not necessarily merge the region. To ensure the region
-   *  is merged, call merge afterwards.
-   */
-  Region &bool_and_with (const Region &other, PropertyConstraint prop_constraint = db::IgnoreProperties)
-  {
-    set_delegate (mp_delegate->and_with (other, prop_constraint));
+    set_delegate (mp_delegate->and_with (other));
     return *this;
   }
 
@@ -1161,15 +1065,7 @@ public:
    */
   Region operator- (const Region &other) const
   {
-    return Region (mp_delegate->not_with (other, db::IgnoreProperties));
-  }
-
-  /**
-   *  @brief Boolean NOT operator with options
-   */
-  Region bool_not (const Region &other, PropertyConstraint prop_constraint = db::IgnoreProperties) const
-  {
-    return Region (mp_delegate->not_with (other, prop_constraint));
+    return Region (mp_delegate->not_with (other));
   }
 
   /**
@@ -1180,19 +1076,7 @@ public:
    */
   Region &operator-= (const Region &other)
   {
-    set_delegate (mp_delegate->not_with (other, db::IgnoreProperties));
-    return *this;
-  }
-
-  /**
-   *  @brief In-place boolean NOT operator with options
-   *
-   *  This method does not necessarily merge the region. To ensure the region
-   *  is merged, call merge afterwards.
-   */
-  Region bool_not_with (const Region &other, PropertyConstraint prop_constraint = db::IgnoreProperties)
-  {
-    set_delegate (mp_delegate->not_with (other, prop_constraint));
+    set_delegate (mp_delegate->not_with (other));
     return *this;
   }
 
@@ -1201,17 +1085,7 @@ public:
    */
   Region operator^ (const Region &other) const
   {
-    return Region (mp_delegate->xor_with (other, db::IgnoreProperties));
-  }
-
-  /**
-   *  @brief Boolean XOR operator with options
-   *
-   *  TODO: property constraints are not implemented properly yet.
-   */
-  Region bool_xor (const Region &other, PropertyConstraint prop_constraint = db::IgnoreProperties) const
-  {
-    return Region (mp_delegate->xor_with (other, prop_constraint));
+    return Region (mp_delegate->xor_with (other));
   }
 
   /**
@@ -1222,21 +1096,7 @@ public:
    */
   Region &operator^= (const Region &other)
   {
-    set_delegate (mp_delegate->xor_with (other, db::IgnoreProperties));
-    return *this;
-  }
-
-  /**
-   *  @brief In-place boolean XOR operator with options
-   *
-   *  This method does not necessarily merge the region. To ensure the region
-   *  is merged, call merge afterwards.
-   *
-   *  TODO: property constraints are not implemented properly yet.
-   */
-  Region &bool_xor_with (const Region &other, PropertyConstraint prop_constraint = db::IgnoreProperties)
-  {
-    set_delegate (mp_delegate->xor_with (other, prop_constraint));
+    set_delegate (mp_delegate->xor_with (other));
     return *this;
   }
 
@@ -1247,19 +1107,7 @@ public:
    */
   Region operator| (const Region &other) const
   {
-    return Region (mp_delegate->or_with (other, db::IgnoreProperties));
-  }
-
-  /**
-   *  @brief Boolean OR operator with options
-   *
-   *  This method merges the polygons of both regions.
-   *
-   *  TODO: property constraints are not implemented properly yet.
-   */
-  Region bool_or (const Region &other, PropertyConstraint prop_constraint = db::IgnoreProperties) const
-  {
-    return Region (mp_delegate->or_with (other, prop_constraint));
+    return Region (mp_delegate->or_with (other));
   }
 
   /**
@@ -1267,18 +1115,7 @@ public:
    */
   Region &operator|= (const Region &other)
   {
-    set_delegate (mp_delegate->or_with (other, db::IgnoreProperties));
-    return *this;
-  }
-
-  /**
-   *  @brief In-place boolean OR operator with options
-   *
-   *  TODO: property constraints are not implemented properly yet.
-   */
-  Region &bool_or_with (const Region &other, PropertyConstraint prop_constraint = db::IgnoreProperties)
-  {
-    set_delegate (mp_delegate->or_with (other, prop_constraint));
+    set_delegate (mp_delegate->or_with (other));
     return *this;
   }
 
@@ -1302,18 +1139,7 @@ public:
   }
 
   /**
-   *  @brief Two-bool ANDNOT operation
-   *
-   *  The first region delivered will be the AND result, the second one the NOT result.
-   */
-  std::pair<Region, Region> andnot (const Region &other, PropertyConstraint prop_constraint = db::IgnoreProperties) const
-  {
-    std::pair<RegionDelegate *, RegionDelegate *> res = mp_delegate->andnot_with (other, prop_constraint);
-    return std::make_pair (Region (res.first), Region (res.second));
-  }
-
-  /**
-   *  @brief Selects all polygons of this region which are completely outside polygons from the other region
+   *  @brief Selects all polygons of this region which are completly outside polygons from the other region
    *
    *  Merged semantics applies.
    */
@@ -1324,7 +1150,7 @@ public:
   }
 
   /**
-   *  @brief Selects all polygons of this region which are not completely outside polygons from the other region
+   *  @brief Selects all polygons of this region which are not completly outside polygons from the other region
    *
    *  Merged semantics applies.
    */
@@ -1335,7 +1161,7 @@ public:
   }
 
   /**
-   *  @brief Returns all polygons of this which are completely outside polygons from the other region
+   *  @brief Returns all polygons of this which are completly outside polygons from the other region
    *
    *  This method is an out-of-place version of select_outside.
    *
@@ -1347,7 +1173,7 @@ public:
   }
 
   /**
-   *  @brief Returns all polygons of this which are not completely outside polygons from the other region
+   *  @brief Returns all polygons of this which are not completly outside polygons from the other region
    *
    *  This method is an out-of-place version of select_not_outside.
    *
@@ -1359,20 +1185,7 @@ public:
   }
 
   /**
-   *  @brief Returns all polygons of this which are completely outside polygons from the other region and the opposite ones at the same time
-   *
-   *  This method is equivalent to calling selected_outside and selected_not_outside, but faster.
-   *
-   *  Merged semantics applies.
-   */
-  std::pair<Region, Region> selected_outside_differential (const Region &other) const
-  {
-    std::pair<db::RegionDelegate *, db::RegionDelegate *> p = mp_delegate->selected_outside_pair (other);
-    return std::pair<Region, Region> (Region (p.first), Region (p.second));
-  }
-
-  /**
-   *  @brief Selects all polygons of this region which are completely inside polygons from the other region
+   *  @brief Selects all polygons of this region which are completly inside polygons from the other region
    *
    *  Merged semantics applies.
    */
@@ -1383,7 +1196,7 @@ public:
   }
 
   /**
-   *  @brief Selects all polygons of this region which are not completely inside polygons from the other region
+   *  @brief Selects all polygons of this region which are not completly inside polygons from the other region
    *
    *  Merged semantics applies.
    */
@@ -1394,7 +1207,7 @@ public:
   }
 
   /**
-   *  @brief Returns all polygons of this which are completely inside polygons from the other region
+   *  @brief Returns all polygons of this which are completly inside polygons from the other region
    *
    *  This method is an out-of-place version of select_inside.
    *
@@ -1406,7 +1219,7 @@ public:
   }
 
   /**
-   *  @brief Returns all polygons of this which are not completely inside polygons from the other region
+   *  @brief Returns all polygons of this which are not completly inside polygons from the other region
    *
    *  This method is an out-of-place version of select_not_inside.
    *
@@ -1418,104 +1231,24 @@ public:
   }
 
   /**
-   *  @brief Returns all polygons of this which are completely inside polygons from the other region and the opposite ones at the same time
-   *
-   *  This method is equivalent to calling selected_inside and selected_not_inside, but faster.
-   *
-   *  Merged semantics applies.
-   */
-  std::pair<Region, Region> selected_inside_differential (const Region &other) const
-  {
-    std::pair<db::RegionDelegate *, db::RegionDelegate *> p = mp_delegate->selected_inside_pair (other);
-    return std::pair<Region, Region> (Region (p.first), Region (p.second));
-  }
-
-  /**
-   *  @brief Returns all polygons of this which are enclosing polygons from the other region
-   *
-   *  Merged semantics applies.
-   */
-  Region &select_enclosing (const Region &other, size_t min_count = 1, size_t max_count = std::numeric_limits<size_t>::max ())
-  {
-    set_delegate (mp_delegate->selected_enclosing (other, min_count, max_count));
-    return *this;
-  }
-
-  /**
-   *  @brief Returns all polygons of this which are not enclosing polygons from the other region
-   *
-   *  Merged semantics applies.
-   */
-  Region &select_not_enclosing (const Region &other, size_t min_count = 1, size_t max_count = std::numeric_limits<size_t>::max ())
-  {
-    set_delegate (mp_delegate->selected_not_enclosing (other, min_count, max_count));
-    return *this;
-  }
-
-  /**
-   *  @brief Returns all polygons of this which are enclosing polygons from the other region
-   *
-   *  This method is an out-of-place version of select_enclosing.
-   *
-   *  Merged semantics applies.
-   */
-  Region selected_enclosing (const Region &other, size_t min_count = 1, size_t max_count = std::numeric_limits<size_t>::max ()) const
-  {
-    return Region (mp_delegate->selected_enclosing (other, min_count, max_count));
-  }
-
-  /**
-   *  @brief Returns all polygons of this which are not enclosing polygons from the other region
-   *
-   *  This method is an out-of-place version of select_not_enclosing.
-   *
-   *  Merged semantics applies.
-   */
-  Region selected_not_enclosing (const Region &other, size_t min_count = 1, size_t max_count = std::numeric_limits<size_t>::max ()) const
-  {
-    return Region (mp_delegate->selected_not_enclosing (other, min_count, max_count));
-  }
-
-  /**
-   *  @brief Returns all polygons of this which are completely enclosing polygons from the other region and the opposite ones at the same time
-   *
-   *  This method is equivalent to calling selected_enclosing and selected_not_enclosing, but faster.
-   *
-   *  Merged semantics applies.
-   */
-  std::pair<Region, Region> selected_enclosing_differential (const Region &other, size_t min_count = 1, size_t max_count = std::numeric_limits<size_t>::max ()) const
-  {
-    std::pair<db::RegionDelegate *, db::RegionDelegate *> p = mp_delegate->selected_enclosing_pair (other, min_count, max_count);
-    return std::pair<Region, Region> (Region (p.first), Region (p.second));
-  }
-
-  /**
    *  @brief Selects all polygons of this region which overlap or touch polygons from the other region
    *
-   *  The argument (if given) specifies and range of interaction counts: polygons will only be selected
-   *  if the number of interacting (different) polygons from the other region is between min_count and
-   *  max_count (inclusive).
-   *
    *  Merged semantics applies.
    */
-  Region &select_interacting (const Region &other, size_t min_count = 1, size_t max_count = std::numeric_limits<size_t>::max ())
+  Region &select_interacting (const Region &other)
   {
-    set_delegate (mp_delegate->selected_interacting (other, min_count, max_count));
+    set_delegate (mp_delegate->selected_interacting (other));
     return *this;
   }
 
   /**
    *  @brief Selects all polygons of this region which do not overlap or touch polygons from the other region
    *
-   *  The argument (if given) specifies and range of interaction counts: polygons will not be selected
-   *  if the number of interacting (different) polygons from the other region is between min_count and
-   *  max_count (inclusive).
-   *
    *  Merged semantics applies.
    */
-  Region &select_not_interacting (const Region &other, size_t min_count = 1, size_t max_count = std::numeric_limits<size_t>::max ())
+  Region &select_not_interacting (const Region &other)
   {
-    set_delegate (mp_delegate->selected_not_interacting (other, min_count, max_count));
+    set_delegate (mp_delegate->selected_not_interacting (other));
     return *this;
   }
 
@@ -1526,9 +1259,9 @@ public:
    *
    *  Merged semantics applies.
    */
-  Region selected_interacting (const Region &other, size_t min_count = 1, size_t max_count = std::numeric_limits<size_t>::max ()) const
+  Region selected_interacting (const Region &other) const
   {
-    return Region (mp_delegate->selected_interacting (other, min_count, max_count));
+    return Region (mp_delegate->selected_interacting (other));
   }
 
   /**
@@ -1538,22 +1271,9 @@ public:
    *
    *  Merged semantics applies.
    */
-  Region selected_not_interacting (const Region &other, size_t min_count = 1, size_t max_count = std::numeric_limits<size_t>::max ()) const
+  Region selected_not_interacting (const Region &other) const
   {
-    return Region (mp_delegate->selected_not_interacting (other, min_count, max_count));
-  }
-
-  /**
-   *  @brief Returns all polygons of this which are interacting with polygons from the other region and the opposite ones at the same time
-   *
-   *  This method is equivalent to calling selected_interacting and selected_not_interacting, but faster.
-   *
-   *  Merged semantics applies.
-   */
-  std::pair<Region, Region> selected_interacting_differential (const Region &other, size_t min_count = 1, size_t max_count = std::numeric_limits<size_t>::max ()) const
-  {
-    std::pair<db::RegionDelegate *, db::RegionDelegate *> p = mp_delegate->selected_interacting_pair (other, min_count, max_count);
-    return std::pair<Region, Region> (Region (p.first), Region (p.second));
+    return Region (mp_delegate->selected_not_interacting (other));
   }
 
   /**
@@ -1561,9 +1281,9 @@ public:
    *
    *  Merged semantics applies to both operators.
    */
-  Region &select_interacting (const Edges &other, size_t min_count = 1, size_t max_count = std::numeric_limits<size_t>::max ())
+  Region &select_interacting (const Edges &other)
   {
-    set_delegate (mp_delegate->selected_interacting (other, min_count, max_count));
+    set_delegate (mp_delegate->selected_interacting (other));
     return *this;
   }
 
@@ -1572,9 +1292,9 @@ public:
    *
    *  Merged semantics applies to both operators.
    */
-  Region &select_not_interacting (const Edges &other, size_t min_count = 1, size_t max_count = std::numeric_limits<size_t>::max ())
+  Region &select_not_interacting (const Edges &other)
   {
-    set_delegate (mp_delegate->selected_not_interacting (other, min_count, max_count));
+    set_delegate (mp_delegate->selected_not_interacting (other));
     return *this;
   }
 
@@ -1585,9 +1305,9 @@ public:
    *
    *  Merged semantics applies to both operators.
    */
-  Region selected_interacting (const Edges &other, size_t min_count = 1, size_t max_count = std::numeric_limits<size_t>::max ()) const
+  Region selected_interacting (const Edges &other) const
   {
-    return Region (mp_delegate->selected_interacting (other, min_count, max_count));
+    return Region (mp_delegate->selected_interacting (other));
   }
 
   /**
@@ -1597,81 +1317,9 @@ public:
    *
    *  Merged semantics applies to both operators.
    */
-  Region selected_not_interacting (const Edges &other, size_t min_count = 1, size_t max_count = std::numeric_limits<size_t>::max ()) const
+  Region selected_not_interacting (const Edges &other) const
   {
-    return Region (mp_delegate->selected_not_interacting (other, min_count, max_count));
-  }
-
-  /**
-   *  @brief Returns all polygons of this which are interacting with edges from the other region and the opposite ones at the same time
-   *
-   *  This method is equivalent to calling selected_interacting and selected_not_interacting, but faster.
-   *
-   *  Merged semantics applies.
-   */
-  std::pair<Region, Region> selected_interacting_differential (const Edges &other, size_t min_count = 1, size_t max_count = std::numeric_limits<size_t>::max ()) const
-  {
-    std::pair<db::RegionDelegate *, db::RegionDelegate *> p = mp_delegate->selected_interacting_pair (other, min_count, max_count);
-    return std::pair<Region, Region> (Region (p.first), Region (p.second));
-  }
-
-  /**
-   *  @brief Selects all polygons of this region which overlap or touch texts from the text collection
-   *
-   *  Merged semantics applies.
-   */
-  Region &select_interacting (const Texts &other, size_t min_count = 1, size_t max_count = std::numeric_limits<size_t>::max ())
-  {
-    set_delegate (mp_delegate->selected_interacting (other, min_count, max_count));
-    return *this;
-  }
-
-  /**
-   *  @brief Selects all polygons of this region which do not overlap or touch texts from the text collection
-   *
-   *  Merged semantics applies.
-   */
-  Region &select_not_interacting (const Texts &other, size_t min_count = 1, size_t max_count = std::numeric_limits<size_t>::max ())
-  {
-    set_delegate (mp_delegate->selected_not_interacting (other, min_count, max_count));
-    return *this;
-  }
-
-  /**
-   *  @brief Returns all polygons of this which overlap or touch texts from the text collection
-   *
-   *  This method is an out-of-place version of select_interacting.
-   *
-   *  Merged semantics applies.
-   */
-  Region selected_interacting (const Texts &other, size_t min_count = 1, size_t max_count = std::numeric_limits<size_t>::max ()) const
-  {
-    return Region (mp_delegate->selected_interacting (other, min_count, max_count));
-  }
-
-  /**
-   *  @brief Returns all polygons of this which do not overlap or touch texts from the text collection
-   *
-   *  This method is an out-of-place version of select_not_interacting.
-   *
-   *  Merged semantics applies.
-   */
-  Region selected_not_interacting (const Texts &other, size_t min_count = 1, size_t max_count = std::numeric_limits<size_t>::max ()) const
-  {
-    return Region (mp_delegate->selected_not_interacting (other, min_count, max_count));
-  }
-
-  /**
-   *  @brief Returns all polygons of this which are interacting with texts from the other region and the opposite ones at the same time
-   *
-   *  This method is equivalent to calling selected_interacting and selected_not_interacting, but faster.
-   *
-   *  Merged semantics applies.
-   */
-  std::pair<Region, Region> selected_interacting_differential (const Texts &other, size_t min_count = 1, size_t max_count = std::numeric_limits<size_t>::max ()) const
-  {
-    std::pair<db::RegionDelegate *, db::RegionDelegate *> p = mp_delegate->selected_interacting_pair (other, min_count, max_count);
-    return std::pair<Region, Region> (Region (p.first), Region (p.second));
+    return Region (mp_delegate->selected_not_interacting (other));
   }
 
   /**
@@ -1679,9 +1327,9 @@ public:
    *
    *  Merged semantics applies.
    */
-  Region &select_overlapping (const Region &other, size_t min_count = 1, size_t max_count = std::numeric_limits<size_t>::max ())
+  Region &select_overlapping (const Region &other)
   {
-    set_delegate (mp_delegate->selected_overlapping (other, min_count, max_count));
+    set_delegate (mp_delegate->selected_overlapping (other));
     return *this;
   }
 
@@ -1690,9 +1338,9 @@ public:
    *
    *  Merged semantics applies.
    */
-  Region &select_not_overlapping (const Region &other, size_t min_count = 1, size_t max_count = std::numeric_limits<size_t>::max ())
+  Region &select_not_overlapping (const Region &other)
   {
-    set_delegate (mp_delegate->selected_not_overlapping (other, min_count, max_count));
+    set_delegate (mp_delegate->selected_not_overlapping (other));
     return *this;
   }
 
@@ -1703,9 +1351,9 @@ public:
    *
    *  Merged semantics applies.
    */
-  Region selected_overlapping (const Region &other, size_t min_count = 1, size_t max_count = std::numeric_limits<size_t>::max ()) const
+  Region selected_overlapping (const Region &other) const
   {
-    return Region (mp_delegate->selected_overlapping (other, min_count, max_count));
+    return Region (mp_delegate->selected_overlapping (other));
   }
 
   /**
@@ -1715,22 +1363,9 @@ public:
    *
    *  Merged semantics applies.
    */
-  Region selected_not_overlapping (const Region &other, size_t min_count = 1, size_t max_count = std::numeric_limits<size_t>::max ()) const
+  Region selected_not_overlapping (const Region &other) const
   {
-    return Region (mp_delegate->selected_not_overlapping (other, min_count, max_count));
-  }
-
-  /**
-   *  @brief Returns all polygons of this which are overlapping polygons from the other region and the opposite ones at the same time
-   *
-   *  This method is equivalent to calling selected_overlapping and selected_not_overlapping, but faster.
-   *
-   *  Merged semantics applies.
-   */
-  std::pair<Region, Region> selected_overlapping_differential (const Region &other, size_t min_count = 1, size_t max_count = std::numeric_limits<size_t>::max ()) const
-  {
-    std::pair<db::RegionDelegate *, db::RegionDelegate *> p = mp_delegate->selected_overlapping_pair (other, min_count, max_count);
-    return std::pair<Region, Region> (Region (p.first), Region (p.second));
+    return Region (mp_delegate->selected_not_overlapping (other));
   }
 
   /**
@@ -1751,16 +1386,6 @@ public:
   Edges pull_interacting (const Edges &other) const
   {
     return Edges (mp_delegate->pull_interacting (other));
-  }
-
-  /**
-   *  @brief Returns all texts of "other" which are interacting (touching or overlapping with) polygons of this region
-   *
-   *  Merged semantics applies.
-   */
-  Texts pull_interacting (const Texts &other) const
-  {
-    return Texts (mp_delegate->pull_interacting (other));
   }
 
   /**
@@ -1819,19 +1444,6 @@ public:
   }
 
   /**
-   *  @brief Returns all polygons which are in the other region plus the ones which are not
-   *
-   *  This method is similar to calling in with inverse = false and true, but more efficient.
-   *
-   *  Merged semantics applies.
-   */
-  std::pair<Region, Region> in_and_out (const Region &other) const
-  {
-    std::pair<db::RegionDelegate *, db::RegionDelegate *> p = mp_delegate->in_and_out (other);
-    return std::pair<Region, Region> (Region (p.first), Region (p.second));
-  }
-
-  /**
    *  @brief Round corners (in-place)
    *
    *  @param rinner The inner radius in DBU units
@@ -1846,16 +1458,16 @@ public:
   Region rounded_corners (double rinner, double router, unsigned int n) const;
 
   /**
-   *  @brief Smooths the region (in-place)
+   *  @brief Smoothes the region (in-place)
    */
-  void smooth (coord_type d, bool keep_hv);
+  void smooth (coord_type d);
 
   /**
    *  @brief Returns the smoothed region
    *
    *  @param d The smoothing accuracy
    */
-  Region smoothed (coord_type d, bool keep_hv) const;
+  Region smoothed (coord_type d) const;
 
   /**
    *  @brief Returns the nth polygon
@@ -1869,22 +1481,15 @@ public:
   }
 
   /**
-   *  @brief Returns the nth polygon's property ID
-   *
-   *  This operation is available only for flat regions - i.e. such for which
-   *  "has_valid_polygons" is true.
-   */
-  db::properties_id_type nth_prop_id (size_t n) const
-  {
-    return mp_delegate->nth_prop_id (n);
-  }
-
-  /**
    *  @brief Forces flattening of the region
    *
    *  This method will turn any region into a flat shape collection.
    */
-  db::Region &flatten ();
+  db::Region &flatten ()
+  {
+    flat_region ();
+    return *this;
+  }
 
   /**
    *  @brief Returns true, if the region has valid polygons stored within itself
@@ -1907,7 +1512,7 @@ public:
    */
   AddressablePolygonDelivery addressable_polygons () const
   {
-    return AddressablePolygonDelivery (begin ());
+    return AddressablePolygonDelivery (begin (), has_valid_polygons ());
   }
 
   /**
@@ -1926,7 +1531,7 @@ public:
    */
   AddressablePolygonDelivery addressable_merged_polygons () const
   {
-    return AddressablePolygonDelivery (begin_merged ());
+    return AddressablePolygonDelivery (begin_merged (), has_valid_merged_polygons ());
   }
 
   /**
@@ -1971,20 +1576,6 @@ public:
   }
 
   /**
-   *  @brief Pulls the net shapes from a LayoutToNetlist database
-   *
-   *  This will pull the net shapes from the LayoutToNetlist database, provided that this
-   *  layer was an input to the netlist extraction.
-   *
-   *  Netlist names will be attached as properties according to prop_mode and net_prop_name.
-   *  A net filter can be provided so that only certain nets are produced.
-   */
-  Region nets (LayoutToNetlist &l2n, NetPropertyMode prop_mode = db::NPM_NoProperties, const tl::Variant &net_prop_name = tl::Variant (0), const std::vector<const db::Net *> *nets = 0) const
-  {
-    return Region (mp_delegate->nets (&l2n, prop_mode, net_prop_name, nets));
-  }
-
-  /**
    *  @brief Delivers texts as dots (degenerated edges)
    *
    *  "pat" is a text selector. If "as_pattern" is true, this pattern will be
@@ -2021,12 +1612,11 @@ public:
 private:
   friend class Edges;
   friend class EdgePairs;
-  friend class Texts;
 
   RegionDelegate *mp_delegate;
 
   void set_delegate (RegionDelegate *delegate, bool keep_attributes = true);
-  db::MutableRegion *mutable_region();
+  FlatRegion *flat_region ();
 };
 
 /**
@@ -2075,10 +1665,20 @@ private:
 
 } // namespace db
 
-namespace tl
+namespace tl 
 {
-  template<> DB_PUBLIC bool test_extractor_impl (tl::Extractor &ex, db::Region &b);
-  template<> DB_PUBLIC void extractor_impl (tl::Extractor &ex, db::Region &b);
+  /**
+   *  @brief The type traits for the region type
+   */
+  template <>
+  struct type_traits <db::Region> : public type_traits<void> 
+  {
+    typedef true_tag supports_extractor;
+    typedef true_tag supports_to_string;
+    typedef true_tag has_less_operator;
+    typedef true_tag has_equal_operator;
+  };
+
 }
 
 #endif

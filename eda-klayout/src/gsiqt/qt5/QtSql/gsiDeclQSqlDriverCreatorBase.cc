@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -31,6 +31,7 @@
 #include <QSqlDriver>
 #include "gsiQt.h"
 #include "gsiQtSqlCommon.h"
+#include "gsiDeclQtSqlTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -142,8 +143,8 @@ gsi::Class<QSqlDriverCreatorBase> &qtdecl_QSqlDriverCreatorBase ();
 static gsi::Methods methods_QSqlDriverCreatorBase_Adaptor () {
   gsi::Methods methods;
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QSqlDriverCreatorBase::QSqlDriverCreatorBase()\nThis method creates an object of class QSqlDriverCreatorBase.", &_init_ctor_QSqlDriverCreatorBase_Adaptor_0, &_call_ctor_QSqlDriverCreatorBase_Adaptor_0);
-  methods += new qt_gsi::GenericMethod ("createObject", "@brief Virtual method QSqlDriver *QSqlDriverCreatorBase::createObject()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_createObject_c0_0, &_call_cbs_createObject_c0_0);
-  methods += new qt_gsi::GenericMethod ("createObject", "@hide", true, &_init_cbs_createObject_c0_0, &_call_cbs_createObject_c0_0, &_set_callback_cbs_createObject_c0_0);
+  methods += new qt_gsi::GenericMethod ("createObject", "@hide", true, &_init_cbs_createObject_c0_0, &_call_cbs_createObject_c0_0);
+  methods += new qt_gsi::GenericMethod ("createObject", "@brief Virtual method QSqlDriver *QSqlDriverCreatorBase::createObject()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_createObject_c0_0, &_call_cbs_createObject_c0_0, &_set_callback_cbs_createObject_c0_0);
   return methods;
 }
 

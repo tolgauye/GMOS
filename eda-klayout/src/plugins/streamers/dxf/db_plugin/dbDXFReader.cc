@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -49,30 +49,6 @@
 
 namespace db
 {
-
-// ---------------------------------------------------------------
-
-#if defined(HAVE_QT)
-
-static int fm_width (const QFontMetrics &fm, const QString &s)
-{
-#if QT_VERSION >= 0x60000
-  return fm.horizontalAdvance (s);
-#else
-  return fm.width (s);
-#endif
-}
-
-static int fm_width (const QFontMetrics &fm, const QChar &s)
-{
-#if QT_VERSION >= 0x60000
-  return fm.horizontalAdvance (s);
-#else
-  return fm.width (s);
-#endif
-}
-
-#endif
 
 // ---------------------------------------------------------------
 //  DXFReader
@@ -316,8 +292,6 @@ DXFReader::determine_polyline_mode ()
 const LayerMap &
 DXFReader::read (db::Layout &layout, const db::LoadLayoutOptions &options)
 {
-  init (options);
-
   const db::DXFReaderOptions &specific_options = options.get_options<db::DXFReaderOptions> ();
 
   m_dbu = specific_options.dbu;
@@ -344,18 +318,19 @@ DXFReader::read (db::Layout &layout, const db::LoadLayoutOptions &options)
   m_stream.reset ();
   m_initial = true;
   m_line_number = 0;
-  set_layer_map (specific_options.layer_map);
+  db::LayerMap lm = specific_options.layer_map;
+  lm.prepare (layout);
+  set_layer_map (lm);
   set_create_layers (specific_options.create_other_layers);
   set_keep_layer_names (specific_options.keep_layer_names);
 
   db::cell_index_type top = layout.add_cell("TOP"); // TODO: make variable ..
 
-  check_dbu (m_dbu);
   layout.dbu (m_dbu);
   do_read (layout, top);
   cleanup (layout, top);
 
-  return layer_map_out ();
+  return layer_map ();
 }
 
 const LayerMap &
@@ -368,66 +343,68 @@ void
 DXFReader::error (const std::string &msg)
 {
   if (m_ascii) {
-    throw DXFReaderException (msg, m_line_number, m_cellname, m_stream.source ());
+    throw DXFReaderException (msg, m_line_number, m_cellname);
   } else {
-    throw DXFReaderException (msg, m_stream.pos (), m_cellname, m_stream.source ());
+    throw DXFReaderException (msg, m_stream.pos (), m_cellname);
   }
 }
 
 void 
-DXFReader::warn (const std::string &msg, int wl)
+DXFReader::warn (const std::string &msg) 
 {
-  if (warn_level () < wl) {
-    return;
+  // TODO: compress
+  if (m_ascii) {
+    tl::warn << msg 
+             << tl::to_string (tr (" (line=")) << m_line_number
+             << tl::to_string (tr (", cell=")) << m_cellname
+             << ")";
+  } else {
+    tl::warn << msg 
+             << tl::to_string (tr (" (position=")) << m_stream.pos ()
+             << tl::to_string (tr (", cell=")) << m_cellname
+             << ")";
   }
+}
 
-  if (first_warning ()) {
-    tl::warn << tl::sprintf (tl::to_string (tr ("In file %s:")), m_stream.source ());
-  }
-
-  int ws = compress_warning (msg);
-  if (ws < 0) {
-    if (m_ascii) {
-      tl::warn << msg
-               << tl::to_string (tr (" (line=")) << m_line_number
-               << tl::to_string (tr (", cell=")) << m_cellname
-               << ")";
-    } else {
-      tl::warn << msg
-               << tl::to_string (tr (" (position=")) << m_stream.pos ()
-               << tl::to_string (tr (", cell=")) << m_cellname
-               << ")";
-    }
-  } else if (ws == 0) {
-    tl::warn << tl::to_string (tr ("... further warnings of this kind are not shown"));
+std::pair <bool, unsigned int>
+DXFReader::open_layer (db::Layout &layout, const std::string &n)
+{
+  if (n == zero_layer_name) {
+    return std::make_pair (true, m_zero_layer);
+  } else {
+    return NamedLayerReader::open_layer (layout, n);
   }
 }
 
 void
 DXFReader::do_read (db::Layout &layout, db::cell_index_type top)
 {
-  prepare_layers (layout);
+  tl::SelfTimer timer (tl::verbosity () >= 21, "File read");
 
   //  create the zero layer - this is not mapped to GDS but can be specified in the layer mapping as
   //  a layer named "0".
+  std::pair<bool, unsigned int> ll = layer_map ().logical (zero_layer_name);
+  if (ll.first) {
 
-  std::pair<bool, unsigned int> li = NamedLayerReader::open_layer (layout, zero_layer_name, true /*keep layer name*/, false /*don't create a new layer*/);
-  if (li.first) {
+    //  create the layer if it is not part of the layout yet.
+    if (! layout.is_valid_layer (ll.second)) {
+      layout.insert_layer (ll.second, layer_map ().mapping (ll.second));
+    }
 
-    //  we got one from the layer mapping
-    m_zero_layer = li.second;
+    m_zero_layer = ll.second;
 
   } else {
 
-    //  or we explicitly create the layer
-    db::LayerProperties lp_zero (0, 0, zero_layer_name);
-    m_zero_layer = layout.insert_layer (lp_zero);
+    //  or explicitly create the layer:
+    m_zero_layer = layer_map ().next_index ();
+    layout.insert_layer (m_zero_layer, db::LayerProperties (0, 0, zero_layer_name));
     map_layer (zero_layer_name, m_zero_layer);
 
   }
 
-  //  Read sections
+  prepare_layers ();
 
+  // Read sections
   int g;
 
   while (true) {
@@ -812,107 +789,70 @@ DXFReader::add_bulge_segment (std::vector<db::DPoint> &points, const db::DPoint 
   points.push_back (p);
 }
 
-/*
-
-Rational B-Splines (NURBS) vs. non-rational B-Splines:
-  https://en.wikipedia.org/wiki/Non-uniform_rational_B-spline
-
-De Boor algorithm for NURBS
-  https://github.com/caadxyz/DeBoorAlgorithmNurbs
-
-*/
-
-static db::DPoint
-b_spline_point (double x, const std::vector<std::pair<db::DPoint, double> > &control_points, int p, const std::vector<double> &t, int &k)
+static double
+b_func (double t, size_t j, int n, const std::vector<double> &knots)
 {
-  double eps = 1e-12 * (fabs (t.back ()) + fabs (t.front ()));
-
-  k = (int) (std::lower_bound (t.begin (), t.end (), x - eps) - t.begin ());
-  --k;
-  if (k < p) {
-    k = p;
-  } else if (k >= (int) control_points.size ()) {
-    k = (int) control_points.size () - 1;
-  }
-
-  std::vector<db::DPoint> d;
-  std::vector<double> dw;
-  d.reserve(p + 1);
-  for (int j = 0; j <= p; ++j) {
-    double w = control_points[j + k - p].second;
-    d.push_back (control_points[j + k - p].first * w);
-    dw.push_back (w);
-  }
-
-  for (int r = 1; r <= p; ++r) {
-    for (int j = p; j >= r; --j) {
-      double alpha = (x - t[j + k - p]) / (t[j + 1 + k - r] - t[j + k - p]);
-      d[j] = d[j] * alpha + (d[j - 1] - d[j - 1] * alpha);
-      dw[j] = dw[j] * alpha + dw[j - 1] * (1.0 - alpha);
+  if (n == 0) {
+    return (knots [j] < t - 1e-6 && knots [j + 1] > t - 1e-6) ? 1.0 : 0.0;
+  } else {
+    double dt1 = knots [j + n] - knots [j];
+    double dt2 = knots [j + n + 1] - knots [j + 1];
+    double f1 = 0.0;
+    if (dt1 > 1e-6) {
+      f1 = (t - knots [j]) / dt1;
     }
+    double f2 = 0.0;
+    if (dt2 > 1e-6) {
+      f2 = (knots [j + n + 1] - t) / dt2;
+    }
+    return f1 * b_func (t, j, n - 1, knots) + f2 * b_func (t, j + 1, n - 1, knots);
   }
-
-  return d[p] * (1.0 / dw[p]);
 }
 
-/**
- *  @brief Inserts new points into a sequence of points to refine the curve
- *
- *  The idea is bisection of the segments until the desired degree of accuracy has been reached.
- *
- *  @param control_points The control points
- *  @param curve_points The list of curve points which is going to be extended
- *  @param current_curve_point The iterator pointing to the current curve point
- *  @param t_start The t (curve parameter) value of the current curve point
- *  @param dt The current t interval
- *  @param degree The degree of the spline
- *  @param knots The knots
- *  @param sin_da The relative accuracy value implied by the circle resolution
- *  @param accu The desired absolute accuracy value
- *
- *  New points are going to be inserted after current_curve_point and current_curve_point + 1 to achieve the
- *  required curvature.
- */
 static void
-spline_interpolate (std::list<db::DPoint> &curve_points,
-                    std::list<db::DPoint>::iterator current_curve_point,
-                    double t_start,
+spline_interpolate (const std::vector<db::DPoint> &points,
+                    std::list<db::DPoint> &new_points,
+                    std::list<db::DPoint>::iterator pb,
+                    double tb,
                     double dt,
-                    const std::vector<std::pair<db::DPoint, double> > &control_points,
-                    int degree,
+                    int n,
                     const std::vector<double> &knots,
                     double sin_da,
                     double accu)
 {
-  std::list<db::DPoint>::iterator pm = current_curve_point;
+  std::list<db::DPoint>::iterator pm = pb;
   ++pm;
   std::list<db::DPoint>::iterator pe = pm;
   ++pe;
 
-  int k1 = 0, k2 = 0;
+  db::DPoint s1, s2;
+  for (size_t j = 0; j < points.size (); ++j) {
+    s1 += db::DVector (points [j] * b_func (tb + 0.5 * dt, j, n, knots));
+  }
 
-  db::DPoint s1 = b_spline_point (t_start + 0.5 * dt, control_points, degree, knots, k1);
-  db::DPoint s2 = b_spline_point (t_start + 1.5 * dt, control_points, degree, knots, k2);
-
-  db::DVector p1 (s1, *current_curve_point);
+  db::DVector p1 (s1, *pb);
   db::DVector p2 (*pm, s1);
   double pl1 = p1.length(), pl2 = p2.length();
 
-  if (k1 != k2) {
+  for (size_t j = 0; j < points.size (); ++j) {
+    s2 += db::DVector (points [j] * b_func (tb + 1.5 * dt, j, n, knots));
+  }
 
-    curve_points.insert (pm, s1);
-    spline_interpolate (curve_points, current_curve_point, t_start, dt * 0.5, control_points, degree, knots, sin_da, accu);
+  db::DVector q1 (s2, *pm);
+  db::DVector q2 (*pe, s2);
+  double ql1 = q1.length(), ql2 = q2.length();
 
-    curve_points.insert (pe, s2);
-    spline_interpolate (curve_points, pm, t_start + dt, dt * 0.5, control_points, degree, knots, sin_da, accu);
+  if (new_points.size () < points.size () - n - 1) {
+
+    new_points.insert (pm, s1);
+    spline_interpolate (points, new_points, pb, tb, dt * 0.5, n, knots, sin_da, accu);
+
+    new_points.insert (pe, s2);
+    spline_interpolate (points, new_points, pm, tb + dt, dt * 0.5, n, knots, sin_da, accu);
 
   } else {
 
-    db::DVector q1 (s2, *pm);
-    db::DVector q2 (*pe, s2);
-    double ql1 = q1.length(), ql2 = q2.length();
-
-    db::DVector p (*pm, *current_curve_point);
+    db::DVector p (*pm, *pb);
     db::DVector q (*pe, *pm);
     double pl = p.length (), ql = q.length ();
 
@@ -930,8 +870,8 @@ spline_interpolate (std::list<db::DPoint> &curve_points,
         //  In addition, the estimated accuracy is not good enough on the first segment: bisect this
         //  segment.
 
-        curve_points.insert (pm, s1);
-        spline_interpolate (curve_points, current_curve_point, t_start, dt * 0.5, control_points, degree, knots, sin_da, accu);
+        new_points.insert (pm, s1);
+        spline_interpolate (points, new_points, pb, tb, dt * 0.5, n, knots, sin_da, accu);
 
       }
 
@@ -940,8 +880,8 @@ spline_interpolate (std::list<db::DPoint> &curve_points,
         //  In addition, the estimated accuracy is not good enough on the first segment: bisect this
         //  segment.
 
-        curve_points.insert (pe, s2);
-        spline_interpolate (curve_points, pm, t_start + dt, dt * 0.5, control_points, degree, knots, sin_da, accu);
+        new_points.insert (pe, s2);
+        spline_interpolate (points, new_points, pm, tb + dt, dt * 0.5, n, knots, sin_da, accu);
 
       }
 
@@ -950,39 +890,51 @@ spline_interpolate (std::list<db::DPoint> &curve_points,
   }
 }
 
-std::list<db::DPoint>
-DXFReader::spline_interpolation (std::vector<std::pair<db::DPoint, double> > &control_points, int degree, const std::vector<double> &knots)
+void
+DXFReader::spline_interpolation (std::vector<db::DPoint> &points, int n, const std::vector<double> &knots, bool save_first)
 {
   //  TODO: this is quite inefficient
-  if (int (knots.size()) != int (control_points.size() + degree + 1)) {
+  if (int (knots.size()) != int (points.size() + n + 1)) {
     warn ("Spline interpolation failed: mismatch between number of knots and points");
-    return std::list<db::DPoint> ();
+    return;
   }
 
-  if (int(knots.size ()) <= degree || control_points.empty () || degree <= 1) {
-    return std::list<db::DPoint> ();
+  if (int(knots.size ()) <= n || points.empty () || n <= 1) {
+    return;
   }
 
-  double t0 = knots [degree];
-  double tn = knots [knots.size () - degree - 1];
+  double t0 = knots [n];
+  double tn = knots [knots.size () - n - 1];
 
   //  we shall have at least min_points points per spline curve
   double sin_da = sin (2.0 * M_PI / m_circle_points);
   double accu = std::max (m_circle_accuracy, m_dbu / m_unit);
 
   std::list<db::DPoint> new_points;
+  new_points.push_back (points.front ());
 
   double dt = 0.5 * (tn - t0);
 
-  for (double t = t0; t < tn + 1e-6; t += dt) {
-    int k = 0;
-    db::DPoint s = b_spline_point (t, control_points, degree, knots, k);
+  for (double t = t0 + dt; t < tn + 1e-6; t += dt) {
+
+    db::DPoint s;
+    for (size_t j = 0; j < points.size (); ++j) {
+      s += db::DVector (points [j] * b_func (t, j, n, knots));
+    }
+
     new_points.push_back (s);
+
   }
 
-  spline_interpolate (new_points, new_points.begin (), t0, dt, control_points, degree, knots, sin_da, accu);
+  spline_interpolate (points, new_points, new_points.begin (), t0, dt, n, knots, sin_da, accu);
 
-  return new_points;
+  points.clear ();
+  if (save_first) {
+    points.insert (points.end (), new_points.begin (), new_points.end ());
+  } else {
+    points.insert (points.end (), ++new_points.begin (), new_points.end ());
+  }
+
 }
 
 void 
@@ -1086,17 +1038,7 @@ DXFReader::deliver_points_to_edges (std::vector<db::DPoint> &points, const std::
 
   if (edge_type == 4) {
 
-    std::vector<std::pair<db::DPoint, double> > control_points;
-    control_points.reserve (points.size ());
-    for (std::vector<db::DPoint>::const_iterator p = points.begin (); p != points.end (); ++p) {
-      control_points.push_back (std::make_pair (*p, 1.0));
-    }
-
-    std::list<db::DPoint> new_points = spline_interpolation (control_points, value94, value40);
-    if (! new_points.empty ()) {
-      points.clear ();
-      points.insert (points.end (), ++new_points.begin (), new_points.end ());
-    }
+    spline_interpolation (points, value94, value40);
 
   } else if (edge_type == 1) {
 
@@ -1322,7 +1264,7 @@ DXFReader::deliver_text (db::Shapes &shapes, const std::string &s, const db::DCp
 
     //  The m_text_scaling divider is the letter width in percent of the height.
     //  92 is the default letter pitch in percent of the text height.
-    int pixel_size_ref = int (floor (0.5 + 100.0 * fm_width (fm, QChar::fromLatin1 ('X')) / (0.92 * m_text_scaling)));
+    int pixel_size_ref = int (floor (0.5 + 100.0 * fm.width (QChar::fromLatin1 ('X')) / (0.92 * m_text_scaling)));
 
     //  split text into lines
     QStringList lines = QString::fromUtf8 (s.c_str ()).split (QString::fromUtf8 ("\n"));
@@ -1345,7 +1287,7 @@ DXFReader::deliver_text (db::Shapes &shapes, const std::string &s, const db::DCp
       lines.clear ();
       for (QStringList::const_iterator l = ll.begin (); l != ll.end (); ++l) {
 
-        if (fm_width (fm, *l) * h / pixel_size_ref > w) {
+        if (fm.width (*l) * h / pixel_size_ref > w) {
 
           //  wrapping required
           QString line;
@@ -1364,7 +1306,7 @@ DXFReader::deliver_text (db::Shapes &shapes, const std::string &s, const db::DCp
               ++i;
             }
 
-            double wc = fm_width (fm, ls) * h / pixel_size_ref;
+            double wc = fm.width (ls) * h / pixel_size_ref;
             if (wl + wc > w) {
               lines.push_back (line);
               line.clear ();
@@ -1394,9 +1336,9 @@ DXFReader::deliver_text (db::Shapes &shapes, const std::string &s, const db::DCp
       double x0 = 0.0;
       if (ha == HAlignLeft || ha == NoHAlign) {
       } else if (ha == HAlignCenter) {
-        x0 -= fm_width (fm, *l) * 0.5 * h / pixel_size_ref;
+        x0 -= fm.width (*l) * 0.5 * h / pixel_size_ref;
       } else {
-        x0 -= fm_width (fm, *l) * h / pixel_size_ref;
+        x0 -= fm.width (*l) * h / pixel_size_ref;
       }
 
       QPainterPath pp;
@@ -1464,6 +1406,7 @@ DXFReader::read_entities (db::Layout &layout, db::Cell &cell, const db::DVector 
       std::string layer;
       int flags = 0;
       double width1 = 0.0, width2 = 0.0;
+      unsigned int got_width = 0;
       double common_width1 = 0.0, common_width2 = 0.0;
       unsigned int common_width_set = 0;
       double ex = 0.0, ey = 0.0, ez = 1.0;
@@ -1474,7 +1417,6 @@ DXFReader::read_entities (db::Layout &layout, db::Cell &cell, const db::DVector 
 
         unsigned int xy_flags = 0;
         double x = 0.0, y = 0.0;
-        unsigned int got_width = 0;
 
         while ((g = read_group_code ()) != 0) {
 
@@ -1503,6 +1445,7 @@ DXFReader::read_entities (db::Layout &layout, db::Cell &cell, const db::DVector 
               if (got_width == 3) {
                 widths.push_back (std::make_pair (seg_start, width1));
                 widths.push_back (std::make_pair (points.size () - 1, width2));
+                got_width = 0;
               }
 
               got_width = 0;
@@ -1573,7 +1516,7 @@ DXFReader::read_entities (db::Layout &layout, db::Cell &cell, const db::DVector 
           const std::string &e = read_string (true);
           if (e == "VERTEX") {
 
-            unsigned int got_width = 0;
+            got_width = 0;
             
             double x = 0.0, y = 0.0;
             double bnew = 0.0;
@@ -1608,6 +1551,7 @@ DXFReader::read_entities (db::Layout &layout, db::Cell &cell, const db::DVector 
             if (got_width == 3) {
               widths.push_back (std::make_pair (seg_start, width1));
               widths.push_back (std::make_pair (points.size () - 1, width2));
+              got_width = 0;
             }
 
           } else if (e == "SEQEND") {
@@ -1744,14 +1688,13 @@ DXFReader::read_entities (db::Layout &layout, db::Cell &cell, const db::DVector 
     } else if (entity_code == "SPLINE") {
 
       std::vector<double> knots;
-      std::vector<std::pair<db::DPoint, double> > control_points;
-      std::vector<double> weights;
+      std::vector<db::DPoint> points;
+      db::DPoint pc;
       double ex = 0.0, ey = 0.0, ez = 1.0;
 
       std::string layer;
       unsigned int xy_flag = 0;
       int degree = 1;
-      int flags = 0;
 
       while ((g = read_group_code ()) != 0) {
         if (g == 8) {
@@ -1759,33 +1702,24 @@ DXFReader::read_entities (db::Layout &layout, db::Cell &cell, const db::DVector 
         } else if (g == 10 || g == 20) {
 
           if (xy_flag == 0) {
-            control_points.push_back (std::make_pair (db::DPoint (), 1.0));
+            points.push_back (db::DPoint ());
           }
 
           if (g == 10) {
-            control_points.back ().first.set_x (read_double ());
+            points.back ().set_x (read_double ());
             xy_flag |= 1;
           } else {
-            control_points.back ().first.set_y (read_double ());
+            points.back ().set_y (read_double ());
             xy_flag |= 2;
           }
           if (xy_flag == 3) {
             xy_flag = 0;
           }
 
-        } else if (g == 70) {
-
-          flags = read_int32 ();
-          if ((flags & 2) != 0) {
-            warn ("Invalid SPLINE flag (code 70): " + tl::to_string (flags) + ". Periodic splines not supported currently.");
-          }
-
         } else if (g == 71) {
           degree = read_int32 ();
         } else if (g == 40) {
           knots.push_back (read_double ());
-        } else if (g == 41) {
-          weights.push_back (read_double ());
         } else if (g == 210) {
           ex = read_double ();
         } else if (g == 220) {
@@ -1797,47 +1731,26 @@ DXFReader::read_entities (db::Layout &layout, db::Cell &cell, const db::DVector 
         }
       }
 
-      for (size_t i = 0; i < weights.size () && i < control_points.size (); ++i) {
-        control_points [i].second = weights [i];
-      }
-
       db::DCplxTrans tt = global_trans (offset, ex, ey, ez);
 
       std::pair <bool, unsigned int> ll = open_layer (layout, layer);
-      if (ll.first && ! control_points.empty ()) {
+      if (ll.first && ! points.empty ()) {
 
-        std::list<db::DPoint> new_points = spline_interpolation (control_points, degree, knots);
+        spline_interpolation (points, degree, knots, true /*save first point*/);
 
         if (m_polyline_mode == 3 || m_polyline_mode == 4) {
 
           //  in "join" mode, add an edge for each segment
           std::vector <db::Edge> &edges = collected_edges.insert (std::make_pair (ll.second, std::vector <db::Edge> ())).first->second;
-          std::list<db::DPoint>::const_iterator i = new_points.begin ();
-          if (i != new_points.end ()) {
-            std::list<db::DPoint>::const_iterator ii = i;
-            ++ii;
-            while (ii != new_points.end ()) {
-              db::Edge edge = safe_from_double (db::DEdge (tt.trans (*i), tt.trans (*ii)));
-              if (! edge.is_degenerate ()) {
-                edges.push_back (edge);
-              }
-              ++i;
-              ++ii;
-            }
+          for (size_t i = 0; i + 1 < points.size (); ++i) {
+            edges.push_back (safe_from_double (db::DEdge (tt.trans (points [i]), tt.trans (points [i + 1]))));
           }
-
-        } else if ((flags & 1) && m_polyline_mode == 2) {
-
-          //  create a polygon for the spline
-          db::DSimplePolygon p;
-          p.assign_hull (new_points.begin (), new_points.end (), tt);
-          cell.shapes (ll.second).insert (safe_from_double (p));
 
         } else {
 
           //  create a path with width 0 for the spline
           db::DPath p;
-          p.assign (new_points.begin (), new_points.end (), tt);
+          p.assign (points.begin (), points.end (), tt);
           p.bgn_ext (0.0);
           p.end_ext (0.0);
           p.width (0);
@@ -2390,6 +2303,7 @@ DXFReader::read_entities (db::Layout &layout, db::Cell &cell, const db::DVector 
 
       //  close previous loop if necessary
       finish_loop (loop_start, iedges.size (), iedges);
+      loop_start = iedges.size ();
 
       //  create the polygons
       std::pair <bool, unsigned int> ll = open_layer (layout, layer);
@@ -2823,7 +2737,7 @@ DXFReader::read_entities (db::Layout &layout, db::Cell &cell, const db::DVector 
       }
 
     } else {
-      warn ("Entity " + entity_code + " not supported - ignored.", 2);
+      warn ("Entity " + entity_code + " not supported - ignored.");
       while ((g = read_group_code()) != 0) {
         skip_value (g);
       }
@@ -3007,7 +2921,7 @@ DXFReader::skip_value (int g)
     read_int32 ();
   } else {
     if (m_ascii) {
-      warn ("Unexpected group code: " + tl::to_string (g), 2);
+      warn ("Unexpected group code: " + tl::to_string (g));
     } else {
       error ("Unexpected group code: " + tl::to_string (g));
     }
@@ -3027,7 +2941,7 @@ DXFReader::read_group_code ()
       tl::Extractor ex (m_line.c_str ()); 
       int x = 0;
       if (! ex.try_read (x) || ! ex.at_end ()) {
-        warn ("Expected an ASCII integer value - line ignored", 2);
+        warn ("Expected an ASCII integer value - line ignored");
       } else {
         return x;
       }
@@ -3090,7 +3004,7 @@ DXFReader::read_int64 ()
     if (! ex.try_read (x) || ! ex.at_end ()) {
       error ("Expected an ASCII numerical value");
     }
-    if (x < double (std::numeric_limits<long long>::min()) || x > double (std::numeric_limits<long long>::max())) {
+    if (x < std::numeric_limits<long long>::min() || x > std::numeric_limits<long long>::max()) {
       error ("Value is out of limits for a 64 bit signed integer");
     }
     return (long long) x;

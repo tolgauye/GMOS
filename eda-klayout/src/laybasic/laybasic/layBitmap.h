@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -19,6 +19,8 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 */
+
+
 
 #ifndef HDR_layBitmap
 #define HDR_layBitmap
@@ -157,9 +159,8 @@ public:
    *  @param w The width of the bitmap 
    *  @param h The height of the bitmap
    *  @param r The resolution of the bitmap
-   *  @param rf The font resolution of the bitmap
    */
-  Bitmap (unsigned int w, unsigned int h, double r, double rf);
+  Bitmap (unsigned int w, unsigned int h, double r);
 
   /**
    *  @brief Copy constructor
@@ -220,11 +221,6 @@ public:
   double resolution () const;
 
   /**
-   *  @brief Get the font resolution of the bitmap (applies to "Default" font)
-   */
-  double font_resolution () const;
-
-  /**
    *  @brief Get the width of the bitmap
    */
   unsigned int width () const;
@@ -249,17 +245,6 @@ public:
    *  @param x2 The end coordinate
    */
   void fill (unsigned int y, unsigned int x1, unsigned int x2);
-
-  /**
-   *  @brief Clears the given part of the scanline
-   *
-   *  Same as fill(), but resets the bits.
-   *
-   *  @param y The scanline
-   *  @param x1 The start coordinate
-   *  @param x2 The end coordinate
-   */
-  void clear (unsigned int y, unsigned int x1, unsigned int x2);
 
   /**
    *  @brief Merges the "from" bitmap into this
@@ -317,7 +302,7 @@ public:
 private:
   unsigned int m_width;
   unsigned int m_height;
-  double m_resolution, m_font_resolution;
+  double m_resolution;
   std::vector<uint32_t *> m_scanlines;
   std::vector<uint32_t *> m_free;
   uint32_t *m_empty_scanline;
@@ -363,12 +348,6 @@ Bitmap::resolution () const
   return m_resolution;
 }  
 
-inline double
-Bitmap::font_resolution () const
-{
-  return m_font_resolution;
-}
-
 inline unsigned int
 Bitmap::width () const
 {
@@ -406,3 +385,4 @@ Bitmap::scanline (unsigned n) const
 } // namespace lay
 
 #endif
+

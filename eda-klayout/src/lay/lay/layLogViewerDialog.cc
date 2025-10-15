@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -22,15 +22,12 @@
 
 
 #include "layLogViewerDialog.h"
-#include "layApplication.h"
 
 #include <QMutex>
 #include <QMutexLocker>
 #include <QTimer>
 #include <QClipboard>
 #include <QFrame>
-#include <QThread>
-#include <QAbstractEventDispatcher>
 
 #include <stdio.h>
 
@@ -41,7 +38,7 @@ namespace lay
 //  LogReceiver implementation
 
 LogReceiver::LogReceiver (LogFile *file, int verbosity, void (LogFile::*method)(const std::string &, bool)) 
-    : mp_file (file), m_method (method), m_verbosity (verbosity)
+    : mp_file (file), m_method (method), m_continued (false), m_verbosity (verbosity)
 { 
   // .. nothing yet ..  
 }
@@ -64,9 +61,7 @@ LogReceiver::puts (const char *s)
       }
 
       if (*s == '\n') {
-        QMutexLocker locker (&m_lock);
-        (mp_file->*m_method) (m_text, true);
-        m_text.clear ();
+        endl ();
         ++s;
       }
 
@@ -80,15 +75,10 @@ LogReceiver::endl ()
 { 
   if (tl::verbosity () >= m_verbosity) {
     QMutexLocker locker (&m_lock);
-    (mp_file->*m_method) (m_text, false);
+    (mp_file->*m_method) (m_text, m_continued);
     m_text.clear ();
+    m_continued = true;
   }
-}
-
-void
-LogReceiver::yield ()
-{
-  mp_file->yield ();
 }
 
 void 
@@ -100,14 +90,16 @@ LogReceiver::end ()
 void 
 LogReceiver::begin () 
 { 
-  //  .. nothing yet ..
+  QMutexLocker locker (&m_lock);
+  m_continued = false;
+  m_text.clear ();
 }
 
 // -----------------------------------------------------------------
 //  LogFile implementation
 
 LogFile::LogFile (size_t max_entries, bool register_global)
-  : m_error_receiver (this, -10, &LogFile::add_error),
+  : m_error_receiver (this, 0, &LogFile::add_error),
     m_warn_receiver (this, 0, &LogFile::add_warn),
     m_log_receiver (this, 10, &LogFile::add_info),
     m_info_receiver (this, 0, &LogFile::add_info),
@@ -120,10 +112,9 @@ LogFile::LogFile (size_t max_entries, bool register_global)
 {
   connect (&m_timer, SIGNAL (timeout ()), this, SLOT (timeout ()));
 
-  m_last_yield = tl::Clock::current ();
-
-  m_timer.setSingleShot (true);
-  m_timer.setInterval (0);
+  m_timer.setSingleShot (false);
+  m_timer.setInterval (100);
+  m_timer.start ();
 
   if (register_global) {
     tl::info.add (&m_info_receiver, false);
@@ -192,9 +183,6 @@ LogFile::timeout ()
   bool attn = false, last_attn = false;
 
   m_lock.lock ();
-
-  m_last_yield = tl::Clock::current ();
-
   if (m_generation_id != m_last_generation_id) {
     attn = m_has_errors || m_has_warnings;
     last_attn = m_last_attn;
@@ -202,7 +190,6 @@ LogFile::timeout ()
     m_last_generation_id = m_generation_id;
     changed = true;
   }
-
   m_lock.unlock ();
 
   if (changed) {
@@ -213,32 +200,10 @@ LogFile::timeout ()
   }
 }
 
-void
-LogFile::set_max_entries (size_t n)
-{
-  QMutexLocker locker (&m_lock);
-
-  m_max_entries = n;
-
-  while (m_messages.size () > m_max_entries) {
-    m_messages.pop_front ();
-  }
-}
-
-size_t
-LogFile::max_entries () const
-{
-  return m_max_entries;
-}
-
 void 
 LogFile::add (LogFileEntry::mode_type mode, const std::string &msg, bool continued)
 {
   QMutexLocker locker (&m_lock);
-
-  if (m_max_entries == 0) {
-    return;
-  }
 
   if (m_messages.size () >= m_max_entries) {
     m_messages.pop_front ();
@@ -253,17 +218,6 @@ LogFile::add (LogFileEntry::mode_type mode, const std::string &msg, bool continu
   m_messages.push_back (LogFileEntry (mode, msg, continued));
 
   ++m_generation_id;
-}
-
-void
-LogFile::yield ()
-{
-  //  will update on next processEvents
-  if (lay::ApplicationBase::instance ()->qapp_gui () && QThread::currentThread () == lay::ApplicationBase::instance ()->qapp_gui ()->thread ()) {
-    if ((tl::Clock::current () - m_last_yield).seconds () > 0.2) {
-      m_timer.start ();
-    }
-  }
 }
 
 int 
@@ -284,13 +238,13 @@ LogFile::data(const QModelIndex &index, int role) const
     if (index.row () < int (m_messages.size ()) && index.row () >= 0) {
       LogFileEntry::mode_type mode = m_messages [index.row ()].mode ();
       if (mode == LogFileEntry::Error) {
-        return QIcon (QString::fromUtf8 (":/error_16px.png"));
+        return QIcon (QString::fromUtf8 (":/error_16.png"));
       } else if (mode == LogFileEntry::Warning) {
-        return QIcon (QString::fromUtf8 (":/warn_16px.png"));
+        return QIcon (QString::fromUtf8 (":/warn_16.png"));
       } else if (mode == LogFileEntry::Info) {
-        return QIcon (QString::fromUtf8 (":/info_16px.png"));
+        return QIcon (QString::fromUtf8 (":/info_16.png"));
       } else {
-        return QIcon (QString::fromUtf8 (":/empty_16px.png"));
+        return QIcon (QString::fromUtf8 (":/empty_16.png"));
       }
     }
 
@@ -347,7 +301,7 @@ LogViewerDialog::LogViewerDialog (QWidget *parent, bool register_global, bool in
     verbosity_cbx->hide ();
     verbosity_label->hide ();
   } else {
-    verbosity_cbx->setCurrentIndex (std::max (-2, std::min (4, tl::verbosity () / 10)) + 2);
+    verbosity_cbx->setCurrentIndex (std::min (4, tl::verbosity () / 10));
     connect (verbosity_cbx, SIGNAL (currentIndexChanged (int)), this, SLOT (verbosity_changed (int)));
   }
 
@@ -371,7 +325,7 @@ LogViewerDialog::LogViewerDialog (QWidget *parent, bool register_global, bool in
 void
 LogViewerDialog::verbosity_changed (int index)
 {
-  tl::verbosity ((index - 2) * 10 + 1);
+  tl::verbosity (index * 10 + 1);
 }
 
 // -----------------------------------------------------------------

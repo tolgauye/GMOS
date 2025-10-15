@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -121,34 +121,24 @@ public:
   /**
    *  @brief Adds a technology to the setup
    *
-   *  @return A reference to the new Technology object
-   *
-   *  If a technology with the given name already exists, it is replaced.
+   *  The container becomes owner of the technology object.
+   *  Replaces a technology with the name of the given technology.
    */
-  db::Technology *add (const Technology &technology)
+  void add (Technology *technology)
   {
-    return add_tech (technology, true /*replace*/);
+    add_tech (technology, true /*replace*/);
   }
 
   /**
    *  @brief Adds a technology with a new name
    *
-   *  @return A reference to the new Technology object
-   *
    *  Like \add, but throws an exception if a technology with this name
-   *  already exists.
+   *  already exists. Takes over ownership over the technology object.
+   *  The technology object is discarded if an exception is thrown.
    */
-  db::Technology *add_new (const Technology &technology)
+  void add_new (Technology *technology)
   {
-    return add_tech (technology, false /*throws exception on same name*/);
-  }
-
-  /**
-   *  @brief Same as add, but no return value (for XML binding)
-   */
-  void add_void (const Technology &technology)
-  {
-    add (technology);
+    add_tech (technology, false /*throws exception on same name*/);
   }
 
   /**
@@ -254,7 +244,7 @@ private:
   bool m_changed;
   bool m_in_update;
 
-  Technology *add_tech(const Technology &technology, bool replace_same);
+  void add_tech (Technology *technology, bool replace_same);
 };
 
 /**
@@ -468,39 +458,6 @@ public:
   }
 
   /**
-   *  @brief Gets the default grids
-   */
-  const std::string &default_grids () const
-  {
-    return m_default_grids;
-  }
-
-  /**
-   *  @brief Gets the default grids, parsed as a list of double values
-   */
-  std::vector<double> default_grid_list () const;
-
-  /**
-   *  @brief Gets the default grid (strong grid), parsed from the list
-   *
-   *  The default grid is the one marked with an exclamation mark in the
-   *  grid list (e.g. "0.01!,0.02,0.05"). If there is not such default
-   *  grid, this method returns zero.
-   */
-  double default_grid () const;
-
-  /**
-   *  @brief Sets the default default grids
-   */
-  void set_default_grids (const std::string &default_grids)
-  {
-    if (default_grids != m_default_grids) {
-      m_default_grids = default_grids;
-      technology_changed ();
-    }
-  }
-
-  /**
    *  @brief Gets the layer properties file path (empty if none is specified)
    */
   const std::string &layer_properties_file () const
@@ -683,7 +640,6 @@ private:
   std::string m_name, m_description, m_group;
   std::string m_grain_name;
   double m_dbu;
-  std::string m_default_grids;
   std::string m_explicit_base_path, m_default_base_path;
   db::LoadLayoutOptions m_load_layout_options;
   db::SaveLayoutOptions m_save_layout_options;
@@ -916,6 +872,17 @@ public:
   }
 };
 
+}
+
+namespace tl
+{
+  /**
+   *  @brief Type traits
+   */
+  template <> struct type_traits <db::TechnologyComponent> : public type_traits<void> {
+    typedef tl::false_tag has_default_constructor;
+    typedef tl::false_tag has_copy_constructor;
+  };
 }
 
 #endif

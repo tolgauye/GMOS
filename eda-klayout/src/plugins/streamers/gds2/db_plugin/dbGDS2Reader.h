@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -48,8 +48,8 @@ class DB_PLUGIN_PUBLIC GDS2ReaderException
   : public ReaderException 
 {
 public:
-  GDS2ReaderException (const std::string &msg, size_t p, size_t n, const std::string &cell, const std::string &source)
-    : ReaderException (tl::sprintf (tl::to_string (tr ("%s (position=%ld, record number=%ld, cell=%s), in file: %s")), msg, p, n, cell, source))
+  GDS2ReaderException (const std::string &msg, size_t p, size_t n, const std::string &cell)
+    : ReaderException (tl::sprintf (tl::to_string (tr ("%s (position=%ld, record number=%ld, cell=%s)")), msg, p, n, cell))
   { }
 };
 
@@ -72,13 +72,42 @@ public:
    */
   ~GDS2Reader ();
 
+  /** 
+   *  @brief The basic read method 
+   *
+   *  This method will read the stream data and translate this to
+   *  insert calls into the layout object. This will not do much
+   *  on the layout object beside inserting the objects.
+   *  It can be given a couple of options specified with the
+   *  LoadLayoutOptions object.
+   *  The returned map will contain all layers, the passed
+   *  ones and the newly created ones.
+   *
+   *  @param layout The layout object to write to
+   *  @param options The generic reader options
+   *  @return The LayerMap object that tells where which layer was loaded
+   */
+  virtual const LayerMap &read (db::Layout &layout, const LoadLayoutOptions &options);
+
+  /** 
+   *  @brief The basic read method (without mapping)
+   *
+   *  This method will read the stream data and translate this to
+   *  insert calls into the layout object. This will not do much
+   *  on the layout object beside inserting the objects.
+   *  This version will read all input layers and return a map
+   *  which tells which GDS2 layer has been read into which logical
+   *  layer.
+   *
+   *  @param layout The layout object to write to
+   *  @return The LayerMap object
+   */
+  virtual const LayerMap &read (db::Layout &layout);
+
   /**
    *  @brief Format
    */
   virtual const char *format () const { return "GDS2"; }
-
-protected:
-  virtual void init (const LoadLayoutOptions &options);
 
 private:
   tl::InputStream &m_stream;
@@ -88,15 +117,15 @@ private:
   unsigned char *mp_rec_buf;
   tl::string m_string_buf;
   short m_stored_rec;
-  bool m_allow_big_records;
+  db::GDS2ReaderOptions m_options;
+  db::CommonReaderOptions m_common_options;
   tl::AbsoluteProgress m_progress;
 
   virtual void error (const std::string &txt);
-  virtual void warn (const std::string &txt, int wl = 1);
+  virtual void warn (const std::string &txt);
 
-  virtual std::string path () const;
   virtual const char *get_string ();
-  virtual void get_string (std::string &s) const;
+  virtual void get_string (tl::string &s) const;
   virtual int get_int ();
   virtual short get_short ();
   virtual unsigned short get_ushort ();
@@ -106,8 +135,6 @@ private:
   virtual void get_time (unsigned int *mod_time, unsigned int *access_time);
   virtual GDS2XY *get_xy_data (unsigned int &length);
   virtual void progress_checkpoint ();
-
-  void record_underflow_error ();
 };
 
 }

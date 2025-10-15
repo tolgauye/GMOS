@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -68,15 +68,13 @@ struct IndexEntry
 std::string escape_xml (const std::string &s);
 
 /**
- *  @brief A specialization of BrowserSource for delivering the generated documentation
+ *  @brief A specialisation of BrowserSource for delivering the generated documentation
  */
-class LAY_PUBLIC HelpSource
+class HelpSource
   : public BrowserSource
 {
 public:
   HelpSource ();
-  HelpSource (bool make_index);
-
   ~HelpSource();
 
   virtual std::string get (const std::string &url);
@@ -84,9 +82,8 @@ public:
   virtual QImage get_image (const std::string &url);
   virtual std::string get_css (const std::string &url);
 
-  virtual void search_completers(const std::string &search_string, std::list<std::string> &completers);
-
   virtual std::string next_topic (const std::string &url);
+
   virtual std::string prev_topic (const std::string &url);
 
   QDomDocument get_dom (const std::string &u);
@@ -154,22 +151,6 @@ public:
    */
   static void create_index_file (const std::string &path);
 
-  /**
-   *  @brief Scans the help providers and produce the index
-   */
-  void scan ();
-
-  /**
-   *  @brief Sets a global options for tailoring the help output
-   */
-  void set_option (const std::string &key, const tl::Variant &value);
-
-  /**
-   *  @brief Sets a global options for tailoring the help output
-   *  A null variant is returned if the option is not present.
-   */
-  const tl::Variant &get_option (const std::string &key) const;
-
 private:
   std::vector<IndexEntry> m_index;
   std::map<std::string, std::string> m_parent_of;
@@ -177,8 +158,8 @@ private:
   std::map<std::string, std::string> m_title_map;
   std::string m_klayout_version;
   int m_kindex;
-  std::map<std::string, tl::Variant> s_global_options;
 
+  HelpSource (bool make_index);
   QDomDocument produce_search (const std::string &index);
   QDomDocument produce_main_index ();
   void produce_index_file (const std::string &path);

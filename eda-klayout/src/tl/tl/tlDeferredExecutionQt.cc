@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -32,8 +32,6 @@ namespace tl
 DeferredMethodSchedulerQt::DeferredMethodSchedulerQt ()
   : QObject (qApp), DeferredMethodScheduler ()
 {
-  m_event_type = QEvent::registerEventType ();
-
   connect (&m_timer, SIGNAL (timeout ()), this, SLOT (timer ()));
 
   m_timer.setInterval (0); // immediately
@@ -53,13 +51,13 @@ DeferredMethodSchedulerQt::~DeferredMethodSchedulerQt ()
 void 
 DeferredMethodSchedulerQt::queue_event ()
 {
-  qApp->postEvent (this, new QEvent (QEvent::Type (m_event_type)));
+  qApp->postEvent (this, new QEvent (QEvent::User));
 }
 
 bool
 DeferredMethodSchedulerQt::event (QEvent *event)
 {
-  if (event->type () == m_event_type) {
+  if (event->type () == QEvent::User) {
     timer ();
     return true;
   } else {

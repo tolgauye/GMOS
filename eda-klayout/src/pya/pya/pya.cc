@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -34,12 +34,14 @@
 #include "gsiDecl.h"
 #include "gsiDeclBasic.h"
 #include "tlLog.h"
-#include "tlEnv.h"
 #include "tlStream.h"
 #include "tlTimer.h"
 #include "tlFileUtils.h"
 #include "tlString.h"
-#include "tlInternational.h"
+
+#if defined(HAVE_QT)
+#  include <QCoreApplication>
+#endif
 
 //  For the installation path
 #ifdef _WIN32
@@ -48,21 +50,6 @@
 
 namespace pya
 {
-
-// --------------------------------------------------------------------------
-//  PythonError implementation
-
-PythonError::PythonError (const char *msg, const char *cls, const std::vector <tl::BacktraceElement> &backtrace)
-  : tl::ScriptError (msg, cls, backtrace)
-{ }
-
-PythonError::PythonError (const char *msg, const char *sourcefile, int line, const char *cls, const std::vector <tl::BacktraceElement> &backtrace)
-  : tl::ScriptError (msg, sourcefile, line, cls, backtrace)
-{ }
-
-PythonError::PythonError (const PythonError &d)
-  : tl::ScriptError (d)
-{ }
 
 // --------------------------------------------------------------------------
 
@@ -103,32 +90,16 @@ public:
   PythonStackTraceProvider (PyFrameObject *frame, const std::string &scope)
     : m_scope (scope)
   {
-    PythonRef frame_object_ref;
     while (frame != NULL) {
 
-#if PY_VERSION_HEX >= 0x030A0000
-      int line = PyFrame_GetLineNumber(frame);
-#else
       int line = frame->f_lineno;
-#endif
       std::string fn;
-#if PY_VERSION_HEX >= 0x030A0000
-      if (test_type<std::string> (PyFrame_GetCode(frame)->co_filename, true)) {
-        fn = normalize_path (python2c<std::string> (PyFrame_GetCode(frame)->co_filename));
-#else
       if (test_type<std::string> (frame->f_code->co_filename, true)) {
         fn = normalize_path (python2c<std::string> (frame->f_code->co_filename));
-#endif
       }
       m_stack_trace.push_back (tl::BacktraceElement (fn, line));
 
-#if PY_VERSION_HEX >= 0x030A0000
-      frame = PyFrame_GetBack(frame);
-      //  PyFrame_GetBack returns a strong reference, hence we need to make sure it is released
-      frame_object_ref = (PyObject *) frame;
-#else
       frame = frame->f_back;
-#endif
 
     }
   }
@@ -140,16 +111,6 @@ public:
 
   virtual size_t scope_index () const
   {
-    static int consider_scope = -1;
-
-    //  disable scoped debugging (e.g. DRC script lines) if $KLAYOUT_PYA_DEBUG_SCOPE is set.
-    if (consider_scope < 0) {
-      consider_scope = tl::app_flag ("pya-debug-scope") ? 0 : 1;
-    }
-    if (! consider_scope) {
-      return 0;
-    }
-
     if (! m_scope.empty ()) {
       for (size_t i = 0; i < m_stack_trace.size (); ++i) {
         if (m_stack_trace [i].file == m_scope) {
@@ -175,6 +136,38 @@ private:
 
 static const char *pya_module_name = "pya";
 
+#if PY_MAJOR_VERSION < 3
+
+static PyObject *
+init_pya_module ()
+{
+  static PyMethodDef module_methods[] = {
+    {NULL}  // Sentinel
+  };
+  return Py_InitModule3 (pya_module_name, module_methods, "KLayout Python API.");
+}
+
+#else
+
+static PyObject *
+init_pya_module ()
+{
+  static struct PyModuleDef moduledef = {
+    PyModuleDef_HEAD_INIT,
+    pya_module_name,        // m_name
+    "KLayout Python API.",  // m_doc
+    -1,                     // m_size
+    NULL,                   // m_methods
+    NULL,                   // m_reload
+    NULL,                   // m_traverse
+    NULL,                   // m_clear
+    NULL,                   // m_free
+  };
+  return PyModule_Create (&moduledef);
+}
+
+#endif
+
 static void reset_interpreter ()
 {
   delete sp_interpreter;
@@ -182,17 +175,16 @@ static void reset_interpreter ()
 }
 
 PythonInterpreter::PythonInterpreter (bool embedded)
-  : gsi::Interpreter (0, "pya"),
-    mp_current_console (0), mp_current_exec_handler (0), m_current_exec_level (0),
+  : mp_current_console (0), mp_current_exec_handler (0), m_current_exec_level (0),
     m_in_trace (false), m_block_exceptions (false), m_ignore_next_exception (false),
-    mp_current_frame (NULL), m_embedded (embedded)
+    mp_current_frame (NULL), mp_py3_app_name (0), m_embedded (embedded)
 {
   //  Don't attempt any additional initialization in the standalone module case
   if (! embedded) {
 
     sp_interpreter = this;
 
-    //  this monitors whether Python shuts down and deletes the interpreter's
+    //  this monitor whether Python shuts down and deletes the interpreter's
     //  instance.
     //  NOTE: this assumes, the interpreter was created with new(!)
     Py_AtExit (&reset_interpreter);
@@ -203,64 +195,26 @@ PythonInterpreter::PythonInterpreter (bool embedded)
 
   tl::SelfTimer timer (tl::verbosity () >= 21, "Initializing Python");
 
-  std::string app_path = tl::get_app_path ();
+  std::string app_path;
+#if defined(HAVE_QT)
+  app_path = tl::to_string (QCoreApplication::applicationFilePath ());
+#endif
 
-  //  If set, use $KLAYOUT_PYTHONPATH to initialize the path.
-  //  Otherwise there may be some conflict between external installations and KLayout.
+#if PY_MAJOR_VERSION >= 3
 
-  bool has_klayout_pythonpath = false;
-
-  //  Python is not easily convinced to use an external path properly.
-  //  So we simply redirect PYTHONPATH
-  std::string pythonpath_name ("PYTHONPATH");
-  std::string klayout_pythonpath_name ("KLAYOUT_PYTHONPATH");
-  if (tl::has_env (pythonpath_name)) {
-    tl::unset_env (pythonpath_name);
-  }
-  if (tl::has_env (klayout_pythonpath_name)) {
-    has_klayout_pythonpath = true;
-    tl::set_env (pythonpath_name, tl::get_env (klayout_pythonpath_name));
-  }
-
-  //  If set, use $KLAYOUT_PYTHONHOME to initialize the path.
-  //  Otherwise there may be some conflict between external installations and KLayout.
-
-  bool has_klayout_pythonhome = false;
-
-  //  Python is not easily convinced to use an external path properly.
-  //  So we simply redirect PYTHONHOME
-  std::string pythonhome_name ("PYTHONHOME");
-  std::string klayout_pythonhome_name ("KLAYOUT_PYTHONHOME");
-  if (tl::has_env (pythonhome_name)) {
-    tl::unset_env (pythonhome_name);
-  }
-  if (tl::has_env (klayout_pythonhome_name)) {
-    has_klayout_pythonhome = true;
-    tl::set_env (pythonhome_name, tl::get_env (klayout_pythonhome_name));
-  }
-
-#if defined(_WIN32) && PY_MAJOR_VERSION >= 3
+  //  if set, use $KLAYOUT_PYTHONPATH to initialize the path
+# if defined(_WIN32)
 
   tl_assert (sizeof (wchar_t) == 2);
 
-  std::string inst_dir;
+  Py_SetPythonHome ((wchar_t *) L"");  //  really ignore $PYTHONHOME + without this, we get dummy error message about lacking path for libraries
 
-  wchar_t buffer[MAX_PATH];
-  int len;
+  const wchar_t *python_path = _wgetenv (L"KLAYOUT_PYTHONPATH");
+  if (python_path) {
 
-  if ((len = GetModuleFileNameW (NULL, buffer, MAX_PATH)) > 0) {
-    inst_dir = tl::absolute_path (tl::to_string (std::wstring (buffer, len)));
-  }
+    Py_SetPath (python_path);
 
-  if (! has_klayout_pythonhome) {
-
-    //  Use our own installation path for PYTHONHOME unless given
-    //  (Our Windows installation comes with its own copy of the libraries)
-    tl::set_env (pythonhome_name, inst_dir);
-
-  }
-
-  if (! has_klayout_pythonpath) {
+  } else {
 
     //  If present, read the paths from a file in INST_PATH/.python-paths.txt.
     //  The content of this file is evaluated as an expression and the result
@@ -270,32 +224,39 @@ PythonInterpreter::PythonInterpreter (bool embedded)
 
       std::string path;
 
-      std::string path_file = tl::combine_path (inst_dir, ".python-paths.txt");
-      if (tl::file_exists (path_file)) {
+      wchar_t buffer[MAX_PATH];
+      int len;
+      if ((len = GetModuleFileNameW (NULL, buffer, MAX_PATH)) > 0) {
 
-        tl::log << tl::to_string (tr ("Reading Python path from ")) << path_file;
+        std::string inst_dir = tl::absolute_path (tl::to_string (std::wstring (buffer, len)));
+        std::string path_file = tl::combine_path (inst_dir, ".python-paths.txt");
+        if (tl::file_exists (path_file)) {
 
-        tl::InputStream path_file_stream (path_file);
-        std::string path_file_text = path_file_stream.read_all ();
+          tl::log << tl::to_string (tr ("Reading Python path from ")) << path_file;
 
-        tl::Eval eval;
-        eval.set_global_var ("inst_path", tl::Variant (inst_dir));
-        tl::Expression ex;
-        eval.parse (ex, path_file_text.c_str ());
-        tl::Variant v = ex.execute ();
+          tl::InputStream path_file_stream (path_file);
+          std::string path_file_text = path_file_stream.read_all ();
 
-        if (v.is_list ()) {
-          for (tl::Variant::iterator i = v.begin (); i != v.end (); ++i) {
-            if (! path.empty ()) {
-              path += ";";
+          tl::Eval eval;
+          eval.set_global_var ("inst_path", tl::Variant (inst_dir));
+          tl::Expression ex;
+          eval.parse (ex, path_file_text.c_str ());
+          tl::Variant v = ex.execute ();
+
+          if (v.is_list ()) {
+            for (tl::Variant::iterator i = v.begin (); i != v.end (); ++i) {
+              if (! path.empty ()) {
+                path += ";";
+              }
+              path += i->to_string ();
             }
-            path += i->to_string ();
           }
+
         }
 
-        tl::set_env (pythonpath_name, path);
-
       }
+
+      Py_SetPath (tl::to_wstring (path).c_str ());
 
     } catch (tl::Exception &ex) {
       tl::error << tl::to_string (tr ("Evaluation of Python path expression failed")) << ": " << ex.msg ();
@@ -304,6 +265,18 @@ PythonInterpreter::PythonInterpreter (bool embedded)
     }
 
   }
+
+# else
+
+  const char *python_path = getenv ("KLAYOUT_PYTHONPATH");
+  if (python_path) {
+
+    std::wstring path = tl::to_wstring (tl::to_string_from_local (python_path));
+    Py_SetPath (path.c_str ());
+
+  }
+
+# endif
 
 #endif
 
@@ -322,77 +295,75 @@ PythonInterpreter::PythonInterpreter (bool embedded)
   PySys_SetArgv (1, argv);
 #endif
 
+  PyObject *module = init_pya_module ();
+  if (module == NULL) {
+    check_error ();
+    return;
+  }
+
+  PyImport_ImportModule (pya_module_name);
+
 #else
 
   //  Python 3 requires a unicode string for the application name
+  PyObject *an = c2python (app_path);
+  tl_assert (an != NULL);
+  mp_py3_app_name = PyUnicode_AsWideCharString (an, NULL);
+  tl_assert (mp_py3_app_name != NULL);
+  Py_DECREF (an);
+  Py_SetProgramName (mp_py3_app_name);
 
-  mp_py3_app_name = tl::to_wstring (app_path);
-  Py_SetProgramName (const_cast<wchar_t *> (mp_py3_app_name.c_str ()));
-
+  PyImport_AppendInittab (pya_module_name, &init_pya_module);
   Py_InitializeEx (0 /*don't set signals*/);
 
   //  Set dummy argv[]
   //  TODO: more?
-  wchar_t *argv[1] = { const_cast<wchar_t *> (mp_py3_app_name.c_str()) };
+  wchar_t *argv[1] = { mp_py3_app_name };
   PySys_SetArgvEx (1, argv, 0);
+
+  //  Import the module
+  PyObject *module = PyImport_ImportModule (pya_module_name);
+  if (module == NULL) {
+    check_error ();
+    return;
+  }
 
 #endif
 
-  sp_interpreter = this;
-
-  //  Add a reference to the "pymod" directory close to our own library.
-  //  We can put build-in modules there.
-  std::string module_path = tl::get_module_path ((void *) &reset_interpreter);
-  if (! module_path.empty ()) {
-    add_path (tl::combine_path (tl::absolute_path (module_path), "pymod"), true /*prepend*/);
-  } else {
-    tl::warn << tl::to_string (tr ("Unable to find built-in Python module library path"));
-  }
-
   //  Build two objects that provide a way to redirect stdout, stderr
-  //  and instantiate them two times for stdout and stderr.
-  PYAChannelObject::make_class ();
+  //  and instatiate them two times for stdout and stderr.
+  PYAChannelObject::make_class (module);
   m_stdout_channel = PythonRef (PYAChannelObject::create (gsi::Console::OS_stdout));
   m_stdout = PythonPtr (m_stdout_channel.get ());
   m_stderr_channel = PythonRef (PYAChannelObject::create (gsi::Console::OS_stderr));
   m_stderr = PythonPtr (m_stderr_channel.get ());
+
+  sp_interpreter = this;
+
+  m_pya_module.reset (new pya::PythonModule ());
+  m_pya_module->init (pya_module_name, module);
+  m_pya_module->make_classes ();
 }
 
 PythonInterpreter::~PythonInterpreter ()
 {
-  for (auto m = m_modules.begin (); m != m_modules.end (); ++m) {
-    (*m)->cleanup ();
-  }
-
-  PYAObjectBase::clear_callbacks_cache (m_embedded);
-
   m_stdout_channel = PythonRef ();
   m_stderr_channel = PythonRef ();
   m_stdout = PythonPtr ();
   m_stderr = PythonPtr ();
 
-  sp_interpreter = 0;
-
   if (m_embedded) {
+
     Py_Finalize ();
-  }
 
-  for (auto m = m_modules.begin (); m != m_modules.end (); ++m) {
-    delete *m;
-  }
-  m_modules.clear ();
-}
-
-void
-PythonInterpreter::register_module (pya::PythonModule *module)
-{
-  for (auto m = m_modules.begin (); m != m_modules.end (); ++m) {
-    if (*m == module) {
-      return; //  already registered
+    if (mp_py3_app_name) {
+      PyMem_Free (mp_py3_app_name);
+      mp_py3_app_name = 0;
     }
+
   }
 
-  m_modules.push_back (module);
+  sp_interpreter = 0;
 }
 
 char *
@@ -403,15 +374,11 @@ PythonInterpreter::make_string (const std::string &s)
 }
 
 void
-PythonInterpreter::add_path (const std::string &p, bool prepend)
+PythonInterpreter::add_path (const std::string &p)
 {
   PyObject *path = PySys_GetObject ((char *) "path");
   if (path != NULL && PyList_Check (path)) {
-    if (prepend) {
-      PyList_Insert (path, 0, c2python (p));
-    } else {
-      PyList_Append (path, c2python (p));
-    }
+    PyList_Append (path, c2python (p));
   }
 }
 
@@ -434,7 +401,7 @@ PythonInterpreter::remove_package_location (const std::string & /*package_path*/
 void
 PythonInterpreter::require (const std::string & /*filename*/)
 {
-  //  TODO: is there a way to implement that?
+  //  TOOD: is there a way to implement that?
   throw tl::Exception (tl::to_string (tr ("'require' not implemented for Python interpreter")));
 }
 
@@ -476,11 +443,7 @@ PythonInterpreter::get_context (int context, PythonRef &globals, PythonRef &loca
 
   PyFrameObject *f = mp_current_frame;
   while (f && context > 0) {
-#if PY_VERSION_HEX >= 0x030B0000
-    f = PyFrame_GetBack(f);
-#else
     f = f->f_back;
-#endif
     --context;
   }
 
@@ -490,13 +453,8 @@ PythonInterpreter::get_context (int context, PythonRef &globals, PythonRef &loca
     //  (see PyFrame_GetLocals implementation)
     PyFrame_FastToLocals (f);
 
-#if PY_VERSION_HEX >= 0x030B0000
-    globals = PythonRef (PyObject_GetAttrString((PyObject*)f, "f_globals"));
-    locals = PythonRef (PyObject_GetAttrString((PyObject*)f, "f_locals"), false);
-#else
     globals = PythonRef (f->f_globals, false);
     locals = PythonRef (f->f_locals, false);
-#endif
 
   } else {
 
@@ -614,7 +572,7 @@ PythonInterpreter::inspector (int context)
 }
 
 void
-PythonInterpreter::define_variable (const std::string &name, const tl::Variant &value)
+PythonInterpreter::define_variable (const std::string &name, const std::string &value)
 {
   PythonPtr main_module (PyImport_AddModule ("__main__"));
   PythonPtr dict (PyModule_GetDict (main_module.get ()));
@@ -633,11 +591,7 @@ PythonInterpreter::available () const
 void
 PythonInterpreter::initialize ()
 {
-  //  Import the pya module
-  PyObject *pya_module = PyImport_ImportModule (pya_module_name);
-  if (pya_module == NULL) {
-    check_error ();
-  }
+  // .. no implementation required ..
 }
 
 size_t
@@ -679,13 +633,8 @@ PythonInterpreter::trace_func (PyFrameObject *frame, int event, PyObject *arg)
       //  see below for a description of m_block_exceptions
       m_block_exceptions = false;
 
-#if PY_VERSION_HEX >= 0x030B0000
-      int line = PyFrame_GetLineNumber(frame);
-      size_t file_id = prepare_trace (PyFrame_GetCode(frame)->co_filename);
-#else
       int line = frame->f_lineno;
       size_t file_id = prepare_trace (frame->f_code->co_filename);
-#endif
 
       PythonStackTraceProvider st_provider (frame, m_debugger_scope);
       mp_current_exec_handler->trace (this, file_id, line, &st_provider);
@@ -707,11 +656,7 @@ PythonInterpreter::trace_func (PyFrameObject *frame, int event, PyObject *arg)
         exc_value = PythonPtr (PyTuple_GetItem (arg, 1));
       }
 
-#if PY_VERSION_HEX >= 0x03050000
-      if (exc_type && exc_type.get () != PyExc_StopIteration && exc_type.get () != PyExc_GeneratorExit && exc_type.get () != PyExc_StopAsyncIteration) {
-#else
-      if (exc_type && exc_type.get () != PyExc_StopIteration && exc_type.get () != PyExc_GeneratorExit) {
-#endif
+      if (exc_type && exc_type.get () != PyExc_StopIteration) {
 
         //  If the next exception shall be ignored, do so
         if (m_ignore_next_exception) {
@@ -720,13 +665,8 @@ PythonInterpreter::trace_func (PyFrameObject *frame, int event, PyObject *arg)
 
         } else {
 
-#if PY_VERSION_HEX >= 0x030B0000
-          int line = PyFrame_GetLineNumber(frame);
-          size_t file_id = prepare_trace (PyFrame_GetCode(frame)->co_filename);
-#else
           int line = frame->f_lineno;
           size_t file_id = prepare_trace (frame->f_code->co_filename);
-#endif
 
           std::string emsg = "<unknown>";
           if (exc_value) {
@@ -899,12 +839,10 @@ gsi::Console *PythonInterpreter::current_console () const
 
 void PythonInterpreter::begin_execution ()
 {
+  m_file_id_map.clear ();
   m_block_exceptions = false;
-  if (m_current_exec_level++ == 0) {
-    m_file_id_map.clear ();
-    if (mp_current_exec_handler) {
-      mp_current_exec_handler->start_exec (this);
-    }
+  if (m_current_exec_level++ == 0 && mp_current_exec_handler) {
+    mp_current_exec_handler->start_exec (this);
   }
 }
 

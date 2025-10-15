@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -28,10 +28,10 @@
 */
 
 #include <QResource>
-#include <QDateTime>
 #include <QLocale>
 #include "gsiQt.h"
 #include "gsiQtCoreCommon.h"
+#include "gsiDeclQtCoreTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -131,21 +131,6 @@ static void _call_f_isValid_c0 (const qt_gsi::GenericMethod * /*decl*/, void *cl
 {
   __SUPPRESS_UNUSED_WARNING(args);
   ret.write<bool > ((bool)((QResource *)cls)->isValid ());
-}
-
-
-// QDateTime QResource::lastModified()
-
-
-static void _init_f_lastModified_c0 (qt_gsi::GenericMethod *decl)
-{
-  decl->set_return<QDateTime > ();
-}
-
-static void _call_f_lastModified_c0 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  ret.write<QDateTime > ((QDateTime)((QResource *)cls)->lastModified ());
 }
 
 
@@ -354,7 +339,6 @@ static gsi::Methods methods_QResource () {
   methods += new qt_gsi::GenericMethod (":fileName", "@brief Method QString QResource::fileName()\n", true, &_init_f_fileName_c0, &_call_f_fileName_c0);
   methods += new qt_gsi::GenericMethod ("isCompressed?", "@brief Method bool QResource::isCompressed()\n", true, &_init_f_isCompressed_c0, &_call_f_isCompressed_c0);
   methods += new qt_gsi::GenericMethod ("isValid?", "@brief Method bool QResource::isValid()\n", true, &_init_f_isValid_c0, &_call_f_isValid_c0);
-  methods += new qt_gsi::GenericMethod ("lastModified", "@brief Method QDateTime QResource::lastModified()\n", true, &_init_f_lastModified_c0, &_call_f_lastModified_c0);
   methods += new qt_gsi::GenericMethod (":locale", "@brief Method QLocale QResource::locale()\n", true, &_init_f_locale_c0, &_call_f_locale_c0);
   methods += new qt_gsi::GenericMethod ("setFileName|fileName=", "@brief Method void QResource::setFileName(const QString &file)\n", false, &_init_f_setFileName_2025, &_call_f_setFileName_2025);
   methods += new qt_gsi::GenericMethod ("setLocale|locale=", "@brief Method void QResource::setLocale(const QLocale &locale)\n", false, &_init_f_setLocale_1986, &_call_f_setLocale_1986);

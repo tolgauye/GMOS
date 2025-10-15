@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -49,67 +49,29 @@ db::Edge::distance_type edge_projection (const db::Edge &a, const db::Edge &b)
 }
 
 /**
- *  @brief Gets a flag indicating whether zero distance is included in the checks
- */
-static bool include_zero_flag (zero_distance_mode zd_mode, const db::Edge &a, const db::Edge &b)
-{
-  if (zd_mode == AlwaysIncludeZeroDistance) {
-
-    return true;
-
-  } else if (zd_mode == NeverIncludeZeroDistance) {
-
-    return false;
-
-  } else {
-
-    int s1 = a.side_of (b.p1 ());
-    int s2 = a.side_of (b.p2 ());
-
-    if (s1 == 0 && s2 == 0) {
-      if (zd_mode == IncludeZeroDistanceWhenTouching || zd_mode == IncludeZeroDistanceWhenCollinearAndTouching) {
-        return a.intersect (b);
-      } else if (zd_mode == IncludeZeroDistanceWhenOverlapping) {
-        return a.coincident (b);
-      }
-    } else if ((s1 == 0 || s2 == 0) && a.p1 () != b.p2 () && a.p2 () != b.p1 ()) {
-      if (zd_mode == IncludeZeroDistanceWhenTouching) {
-        return a.intersect (b);
-      }
-    }
-
-    return false;
-
-  }
-}
-
-/**
  *  @brief Returns the part of the "other" edge which is on the inside side of e and within distance d
  *
  *  This function applies Euclidian metrics.
  *  If no such part is found, this function returns false.
- *
- *  The input edges are normalized to "width" orientation.
  */
-bool euclidian_near_part_of_edge (zero_distance_mode zd_mode, db::coord_traits<db::Coord>::distance_type d, const db::Edge &e, const db::Edge &other, db::Edge *output)
+bool euclidian_near_part_of_edge (bool include_zero, db::Coord d, const db::Edge &e, const db::Edge &other, db::Edge *output)
 {
-  db::Edge g (other);
+  //  Handle the case of point-like basic edge: cannot determine
+  //  orientation
 
-  //  s1 = side of g.p1 wrt e
-  //  s2 = side of g.p2 wrt e
-  int s1, s2;
   if (e.is_degenerate ()) {
-    if (g.contains (e.p1 ())) {
-      s1 = s2 = 0;
-    } else {
-      s1 = s2 = -1;
-    }
-  } else {
-    s1 = e.side_of (g.p1 ());
-    s2 = e.side_of (g.p2 ());
+    return false;
   }
 
-  bool include_zero = include_zero_flag (zd_mode, e, g);
+  db::Edge g (other);
+  int s1 = e.side_of (g.p1 ());
+  int s2 = e.side_of (g.p2 ());
+
+  //  "kissing corner" issue: force include zero if the edges are collinear and overlap.
+  if (! include_zero && s1 == 0 && s2 == 0 && e.intersect (g)) {
+    include_zero = true;
+  }
+
   int thr = include_zero ? 0 : -1;
 
   //  keep only part of other which is on the "inside" side of e
@@ -121,49 +83,33 @@ bool euclidian_near_part_of_edge (zero_distance_mode zd_mode, db::coord_traits<d
     g = db::Edge (g.cut_point (e).second, g.p2 ());
   }
 
-  //  Handle the case of point vs. edge/point
+  //  Handle the case of point vs. edge
 
   if (g.is_degenerate ()) {
 
-    if (e.is_degenerate ()) {
+    db::Point o = g.p1 ();
 
-      //  point vs. point
-      if (e.p1 ().distance (g.p1 ()) < double (d)) {
+    if (e.side_of (o) >= 0) {
+      return false;
+    }
+
+    double a = e.double_sq_length ();
+    double b = db::sprod (db::Vector (e.p1 () - o), e.d ());
+    double c = e.p1 ().sq_double_distance (o) - d * d;
+
+    double s = b * b - a * c;
+    if (s >= 0) {
+      double l1 = std::max (0.0, (-b - sqrt (s)) / a);
+      double l2 = std::min (1.0, (-b + sqrt (s)) / a);
+      if (l1 <= l2) {
         if (output) {
           *output = g;
         }
         return true;
       }
-
-      return false;
-
-    } else {
-
-      db::Point o = g.p1 ();
-
-      if (e.side_of (o) > thr) {
-        return false;
-      }
-
-      double a = e.double_sq_length ();
-      double b = db::sprod (db::Vector (e.p1 () - o), e.d ()) / a;
-      double c = (e.p1 ().sq_double_distance (o) - double (d) * double (d)) / a;
-
-      double s = b * b - c;
-      if (s >= -db::epsilon) {
-        double l1 = std::max (0.0, (-b - sqrt (s)));
-        double l2 = std::min (1.0, (-b + sqrt (s)));
-        if (l1 <= l2) {
-          if (output) {
-            *output = g;
-          }
-          return true;
-        }
-      }
-
-      return false;
-
     }
+
+    return false;
 
   }
 
@@ -172,13 +118,10 @@ bool euclidian_near_part_of_edge (zero_distance_mode zd_mode, db::coord_traits<d
   double l1 = std::numeric_limits<double>::max (), l2 = -std::numeric_limits<double>::max ();
 
   //  handle the parallel case
-  //  NOTE: a point is "parallel" to an edge.
   if (e.parallel (g)) {
-
-    if (std::abs (double (e.distance (g.p1 ()))) >= double (d)) {
+    if (std::abs (e.distance (g.p1 ())) >= d) {
       return false;
     }
-
   } else {
 
     double ef = 1.0 / e.double_length ();
@@ -224,13 +167,13 @@ bool euclidian_near_part_of_edge (zero_distance_mode zd_mode, db::coord_traits<d
     db::Point o = i ? e.p2 () : e.p1 ();
 
     double a = g.double_sq_length ();
-    double b = db::sprod (db::Vector (g.p1 () - o), g.d ()) / a;
-    double c = (g.p1 ().sq_double_distance (o) - double (d) * double (d)) / a;
+    double b = db::sprod (db::Vector (g.p1 () - o), g.d ());
+    double c = g.p1 ().sq_double_distance (o) - double (d) * double (d);
 
-    double s = b * b - c;
-    if (s >= -db::epsilon) {
-      l1 = std::min (l1, -b - sqrt (s));
-      l2 = std::max (l2, -b + sqrt (s));
+    double s = b * b - a * c;
+    if (s >= 0) {
+      l1 = std::min (l1, (-b - sqrt (s)) / a);
+      l2 = std::max (l2, (-b + sqrt (s)) / a);
     }
 
   }
@@ -238,7 +181,7 @@ bool euclidian_near_part_of_edge (zero_distance_mode zd_mode, db::coord_traits<d
   l1 = std::max (0.0, l1);
   l2 = std::min (1.0, l2);
 
-  if (l1 > l2 - db::epsilon) {
+  if (l1 >= l2) {
     return false;
   } else {
     if (output) {
@@ -251,30 +194,27 @@ bool euclidian_near_part_of_edge (zero_distance_mode zd_mode, db::coord_traits<d
 /**
  *  @brief Returns the part of the "other" edge which is on the inside side of e and within distance d
  *
- *  This function applies Projection or Square metrics.
+ *  This function applies Square metrics.
  *  If no such part is found, this function returns false.
- *
- *  The input edges are normalized to "width" orientation.
  */
-static bool var_near_part_of_edge (zero_distance_mode zd_mode, db::coord_traits<db::Coord>::distance_type d, db::coord_traits<db::Coord>::distance_type dd, const db::Edge &e, const db::Edge &other, db::Edge *output)
+static bool var_near_part_of_edge (bool include_zero, db::Coord d, db::Coord dd, const db::Edge &e, const db::Edge &other, db::Edge *output)
 {
-  db::Edge g (other);
+  //  Handle the case of point-like basic edge: cannot determine
+  //  orientation
 
-  //  s1 = side of g.p1 wrt e
-  //  s2 = side of g.p2 wrt e
-  int s1, s2;
   if (e.is_degenerate ()) {
-    if (g.contains (e.p1 ())) {
-      s1 = s2 = 0;
-    } else {
-      s1 = s2 = -1;
-    }
-  } else {
-    s1 = e.side_of (g.p1 ());
-    s2 = e.side_of (g.p2 ());
+    return false;
   }
 
-  bool include_zero = include_zero_flag (zd_mode, e, g);
+  db::Edge g (other);
+  int s1 = e.side_of (g.p1 ());
+  int s2 = e.side_of (g.p2 ());
+
+  //  "kissing corner" issue: force include zero if the edges are collinear and overlap
+  if (! include_zero && s1 == 0 && s2 == 0 && e.intersect (g)) {
+    include_zero = true;
+  }
+
   int thr = include_zero ? 0 : -1;
 
   //  keep only part of other which is on the "inside" side of e
@@ -289,54 +229,35 @@ static bool var_near_part_of_edge (zero_distance_mode zd_mode, db::coord_traits<
   //  Handle the case of point vs. edge
 
   if (g.is_degenerate ()) {
-
-    if (! e.is_degenerate ()) {
-      if (e.side_of (g.p1 ()) > thr) {
-        return false;
-      }
-      if (db::sprod (db::Vector (g.p1 () - e.p1 ()), e.d ()) < -(dd * e.double_length ())) {
-        return false;
-      }
-      if (db::sprod (db::Vector (e.p2 () - g.p1 ()), e.d ()) < -(dd * e.double_length ())) {
-        return false;
-      }
-      if (double (e.distance (g.p1 ())) <= -double (d)) {
-        return false;
-      }
-    } else {
-      //  point to point
-      if (e.p1 ().distance (g.p1 ()) >= double (d)) {
-        return false;
-      }
+    db::Coord gd = e.distance (g.p1 ());
+    if (gd <= -d || gd >= 0) {
+      return false;
     }
-
+    if (db::sprod (db::Vector (g.p1 () - e.p1 ()), e.d ()) < -dd * e.double_length ()) {
+      return false;
+    }
+    if (db::sprod (db::Vector (e.p2 () - g.p1 ()), e.d ()) < -dd * e.double_length ()) {
+      return false;
+    }
     if (output) {
       *output = g;
     }
     return true;
-
   }
 
   //  Determine body interactions (projected mode)
 
-  double l1 = std::numeric_limits<double>::lowest (), l2 = std::numeric_limits<double>::max ();
+  double l1 = std::numeric_limits<double>::min (), l2 = std::numeric_limits<double>::max ();
 
-  db::DVector ep, en;
-  double ef = 0.0;
-  if (! e.is_degenerate ()) {
-    ef = 1.0 / e.double_length ();
-    ep = db::DVector (ef * e.dx (), ef * e.dy ());
-    en = db::DVector (ef * e.dy (), -ef * e.dx ());
-  }
+  double ef = 1.0 / e.double_length ();
+  db::DVector ep = db::DVector (ef * e.dx (), ef * e.dy ());
+  db::DVector en = db::DVector (ef * e.dy (), -ef * e.dx ());
 
   //  handle the parallel case
-  //  NOTE: a point is "parallel" to an edge
   if (e.parallel (g)) {
-
-    if (std::abs (double (e.distance (g.p1 ()))) >= double (d)) {
+    if (std::abs (e.distance (g.p1 ())) >= d) {
       return false;
     }
-
   } else {
 
     db::DPoint e1d = db::DPoint (e.p1 ()) + en * double (d);
@@ -353,26 +274,11 @@ static bool var_near_part_of_edge (zero_distance_mode zd_mode, db::coord_traits<
 
   }
 
-  bool allow_zero_projection = false;
-
   if (db::sprod_sign (e, g) == 0) {
-
-    if (! g.is_degenerate ()) {
-
-      if (db::sprod (db::Vector (g.p1 () - e.p1 ()), e.d ()) < -(dd * e.double_length ()) ||
-          db::sprod (db::Vector (e.p2 () - g.p1 ()), e.d ()) < -(dd * e.double_length ())) {
-        return false;
-      }
-
-      double l = db::sprod (db::DVector (e.p1 () - g.p1 ()), db::DVector (g.d ())) / g.double_sq_length ();
-      double dl = double (dd) / g.double_length ();
-      l1 = l - dl;
-      l2 = l + dl;
-
-      allow_zero_projection = true;
-
+    if (db::sprod (db::Vector (g.p1 () - e.p1 ()), e.d ()) < -dd * e.double_length () || 
+        db::sprod (db::Vector (e.p2 () - g.p1 ()), e.d ()) < -dd * e.double_length ()) {
+      return false;
     }
-
   } else {
 
     double det = db::vprod (db::DVector (g.d ()), en);
@@ -392,7 +298,7 @@ static bool var_near_part_of_edge (zero_distance_mode zd_mode, db::coord_traits<
   l1 = std::max (0.0, l1);
   l2 = std::min (1.0, l2);
 
-  if (allow_zero_projection ? l1 > l2 + db::epsilon : l1 > l2 - db::epsilon) {
+  if (l1 >= l2) {
     return false;
   } else {
     if (output) {
@@ -408,9 +314,9 @@ static bool var_near_part_of_edge (zero_distance_mode zd_mode, db::coord_traits<
  *  This function applies Projected metrics.
  *  If no such part is found, this function returns false.
  */
-bool projected_near_part_of_edge (zero_distance_mode zd_mode, db::coord_traits<db::Coord>::distance_type d, const db::Edge &e, const db::Edge &other, db::Edge *output)
+bool projected_near_part_of_edge (bool include_zero, db::Coord d, const db::Edge &e, const db::Edge &other, db::Edge *output)
 {
-  return var_near_part_of_edge (zd_mode, d, 0, e, other, output);
+  return var_near_part_of_edge (include_zero, d, 0, e, other, output);
 }
 
 /**
@@ -419,24 +325,18 @@ bool projected_near_part_of_edge (zero_distance_mode zd_mode, db::coord_traits<d
  *  This function applies Square metrics.
  *  If no such part is found, this function returns false.
  */
-bool square_near_part_of_edge (zero_distance_mode zd_mode, db::coord_traits<db::Coord>::distance_type d, const db::Edge &e, const db::Edge &other, db::Edge *output)
+bool square_near_part_of_edge (bool include_zero, db::Coord d, const db::Edge &e, const db::Edge &other, db::Edge *output)
 {
-  return var_near_part_of_edge (zd_mode, d, d, e, other, output);
+  return var_near_part_of_edge (include_zero, d, d, e, other, output);
 }
 
 // ---------------------------------------------------------------------------------
 //  Implementation of EdgeRelationFilter
 
-EdgeRelationFilter::EdgeRelationFilter (edge_relation_type r, distance_type d, metrics_type metrics, double ignore_angle, distance_type min_projection, distance_type max_projection, zero_distance_mode zd_mode)
-  : m_whole_edges (false), m_zero_distance_mode (zd_mode), m_r (r), m_d (d), m_metrics (metrics), m_ignore_angle (0), m_min_projection (min_projection), m_max_projection (max_projection)
+EdgeRelationFilter::EdgeRelationFilter (edge_relation_type r, distance_type d, metrics_type metrics, double ignore_angle, distance_type min_projection, distance_type max_projection)
+  : m_whole_edges (false), m_include_zero (true), m_r (r), m_d (d), m_metrics (metrics), m_ignore_angle (0), m_min_projection (min_projection), m_max_projection (max_projection)
 {
   set_ignore_angle (ignore_angle);
-}
-
-EdgeRelationFilter::EdgeRelationFilter (edge_relation_type r, distance_type d, const EdgesCheckOptions &options)
-  : m_whole_edges (options.whole_edges), m_zero_distance_mode (options.zd_mode), m_r (r), m_d (d), m_metrics (options.metrics), m_ignore_angle (0), m_min_projection (options.min_projection), m_max_projection (options.max_projection)
-{
-  set_ignore_angle (options.ignore_angle);
 }
 
 void
@@ -472,14 +372,7 @@ EdgeRelationFilter::check (const db::Edge &a, const db::Edge &b, db::EdgePair *o
 
   //  Check whether the edges have an angle less than the ignore_angle parameter
 
-  if (a.is_degenerate () || b.is_degenerate ()) {
-    //  accept dots as "always good", expect if they are identical and the zero distance mode does not include this case
-    if (a == b && (m_zero_distance_mode == NeverIncludeZeroDistance ||
-                   m_zero_distance_mode == IncludeZeroDistanceWhenCollinearAndTouching ||
-                   m_zero_distance_mode == IncludeZeroDistanceWhenOverlapping)) {
-      return false;
-    }
-  } else if (m_ignore_angle == 90.0) {
+  if (m_ignore_angle == 90.0) {
     if (db::sprod_sign (aa, b) >= 0) {
       return false;
     }
@@ -506,14 +399,14 @@ EdgeRelationFilter::check (const db::Edge &a, const db::Edge &b, db::EdgePair *o
   bool in1, in2;
 
   if (m_metrics == Euclidian) {
-    in2 = euclidian_near_part_of_edge (m_zero_distance_mode, m_d, an, bn, ! m_whole_edges && output ? &output->second () : 0);
-    in1 = euclidian_near_part_of_edge (m_zero_distance_mode, m_d, bn, an, ! m_whole_edges && output ? &output->first () : 0);
+    in2 = euclidian_near_part_of_edge (m_include_zero, m_d, an, bn, ! m_whole_edges && output ? &output->second () : 0);
+    in1 = euclidian_near_part_of_edge (m_include_zero, m_d, bn, an, ! m_whole_edges && output ? &output->first () : 0);
   } else if (m_metrics == Square) {
-    in2 = square_near_part_of_edge (m_zero_distance_mode, m_d, an, bn, ! m_whole_edges && output ? &output->second () : 0);
-    in1 = square_near_part_of_edge (m_zero_distance_mode, m_d, bn, an, ! m_whole_edges && output ? &output->first () : 0);
+    in2 = square_near_part_of_edge (m_include_zero, m_d, an, bn, ! m_whole_edges && output ? &output->second () : 0);
+    in1 = square_near_part_of_edge (m_include_zero, m_d, bn, an, ! m_whole_edges && output ? &output->first () : 0);
   } else {
-    in2 = projected_near_part_of_edge (m_zero_distance_mode, m_d, an, bn, ! m_whole_edges && output ? &output->second () : 0);
-    in1 = projected_near_part_of_edge (m_zero_distance_mode, m_d, bn, an, ! m_whole_edges && output ? &output->first () : 0);
+    in2 = projected_near_part_of_edge (m_include_zero, m_d, an, bn, ! m_whole_edges && output ? &output->second () : 0);
+    in1 = projected_near_part_of_edge (m_include_zero, m_d, bn, an, ! m_whole_edges && output ? &output->first () : 0);
   }
 
   if (in1 && in2) {

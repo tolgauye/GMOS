@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -29,8 +29,6 @@
 namespace pya
 {
 
-
-
 /**
  *  Some helper macros that translate C++ exceptions into Python errors
  */
@@ -45,10 +43,6 @@ namespace pya
     } catch (std::exception &ex) { \
       std::string msg = std::string(ex.what ()) + tl::to_string (tr (" in ")) + (where); \
       PyErr_SetString (PyExc_RuntimeError, msg.c_str ()); \
-    } catch (tl::TypeError &ex) { \
-      std::string msg; \
-      msg = ex.msg () + tl::to_string (tr (" in ")) + (where); \
-      PyErr_SetString (PyExc_TypeError, msg.c_str ()); \
     } catch (tl::Exception &ex) { \
       std::string msg; \
       msg = ex.msg () + tl::to_string (tr (" in ")) + (where); \
@@ -79,3 +73,4 @@ void check_error ();
 }
 
 #endif
+

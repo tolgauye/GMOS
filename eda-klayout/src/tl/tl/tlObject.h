@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -44,7 +44,7 @@ class WeakOrSharedPtr;
  *  formation. tl::Object is a neutral and empty class. It only provides
  *  the infrastructure for the shared pointer management.
  *
- *  The shared and weak pointer infrastructure contains of
+ *  The shared and weak pointer infracstructure contains of
  *
  *  1.) A shared pointer class (tl::shared_ptr<T>). All shared pointers
  *      share ownership of the contained object. When the last shared
@@ -196,12 +196,6 @@ public:
    *  object will no longer receive events.
    */
   void detach_from_all_events ();
-
-  /**
-   *  @brief Unshares the object
-   *  This will turn a shared reference into a weak one.
-   */
-  void unshare ();
 
   /**
    *  @brief Indicates that this object is an event
@@ -407,9 +401,6 @@ public:
   {
     //  .. nothing yet ..
   }
-
-private:
-  using weak_or_shared_ptr<T, false>::unshare;
 };
 
 /**
@@ -438,9 +429,6 @@ public:
   {
     //  .. nothing yet ..
   }
-
-private:
-  using weak_or_shared_ptr<T, true>::unshare;
 };
 
 }

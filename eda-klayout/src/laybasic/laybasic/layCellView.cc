@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -22,10 +22,8 @@
 
 
 #include "layCellView.h"
-#include "layLayoutViewBase.h"
-#if defined(HAVE_QT)
-#  include "layStream.h"
-#endif
+#include "layLayoutView.h"
+#include "layStream.h"
 #include "dbLayout.h"
 #include "dbWriter.h"
 #include "dbReader.h"
@@ -61,12 +59,7 @@ LayoutHandle::LayoutHandle (db::Layout *layout, const std::string &filename)
     m_dirty (false),
     m_save_options_valid (false)
 {
-  layout->technology_changed_event.add (this, &LayoutHandle::on_technology_changed);
-
-  //  layouts in the managed layouts space participate in spare proxy cleanup
-  layout->do_cleanup (true);
-
-  add_file_to_watcher (m_filename);
+  file_watcher ().add_file (m_filename);
 
   if (! m_filename.empty ()) {
     rename (filename_for_caption (m_filename));
@@ -109,29 +102,7 @@ LayoutHandle::~LayoutHandle ()
     ms_dict.erase (m_name);
   }
 
-  remove_file_from_watcher (filename ());
-}
-
-void
-LayoutHandle::remove_file_from_watcher (const std::string &path)
-{
-#if defined(HAVE_QT)
-  file_watcher ().remove_file (path);
-#endif
-}
-
-void
-LayoutHandle::add_file_to_watcher (const std::string &path)
-{
-#if defined(HAVE_QT)
-  file_watcher ().add_file (path);
-#endif
-}
-
-void
-LayoutHandle::on_technology_changed ()
-{
-  technology_changed_event ();
+  file_watcher ().remove_file (filename ());
 }
 
 void 
@@ -194,9 +165,9 @@ LayoutHandle::layout () const
 void
 LayoutHandle::set_filename (const std::string &fn) 
 {
-  remove_file_from_watcher (m_filename);
+  file_watcher ().remove_file (m_filename);
   m_filename = fn;
-  add_file_to_watcher (m_filename);
+  file_watcher ().add_file (m_filename);
 }
 
 const std::string &
@@ -232,20 +203,13 @@ LayoutHandle::remove_ref ()
   }
 }
 
-const std::string &
-LayoutHandle::tech_name () const
-{
-  static std::string s_empty;
-  return mp_layout ? mp_layout->technology_name () : s_empty;
-}
-
 const db::Technology *
 LayoutHandle::technology () const
 {
-  return mp_layout ? mp_layout->technology () : 0;
+  return db::Technologies::instance ()->technology_by_name (m_tech_name);
 }
 
-void
+void 
 LayoutHandle::apply_technology (const std::string &tn)
 {
   set_tech_name (tn);
@@ -256,8 +220,16 @@ LayoutHandle::apply_technology (const std::string &tn)
 void 
 LayoutHandle::set_tech_name (const std::string &tn)
 {
-  if (mp_layout && tn != tech_name ()) {
-    mp_layout->set_technology_name (tn);
+  if (tn != m_tech_name) {
+    if (db::Technologies::instance ()->has_technology (tn)) {
+      m_tech_name = tn;
+    } else {
+      m_tech_name = std::string ();
+    }
+    if (mp_layout) {
+      mp_layout->add_meta_info (db::MetaInfo ("technology", tl::to_string (tr ("Technology name")), tn));
+    }
+    technology_changed_event ();
   }
 }
 
@@ -270,17 +242,6 @@ LayoutHandle::find (const std::string &name)
   } else {
     return h->second;
   }
-}
-
-LayoutHandle *
-LayoutHandle::find_layout (const db::Layout *layout)
-{
-  for (auto h = ms_dict.begin (); h != ms_dict.end (); ++h) {
-    if (h->second->mp_layout == layout) {
-      return h->second;
-    }
-  }
-  return 0;
 }
 
 void 
@@ -303,15 +264,14 @@ LayoutHandle::set_save_options (const db::SaveLayoutOptions &options, bool valid
 void
 LayoutHandle::update_save_options (db::SaveLayoutOptions &options)
 {
-#if defined(HAVE_QT)
   for (tl::Registrar<lay::PluginDeclaration>::iterator cls = tl::Registrar<lay::PluginDeclaration>::begin (); cls != tl::Registrar<lay::PluginDeclaration>::end (); ++cls) {
 
     const lay::StreamWriterPluginDeclaration *decl = dynamic_cast <const lay::StreamWriterPluginDeclaration *> (&*cls);
-    if (! decl || decl->options_alias ()) {
+    if (! decl) {
       continue;
     }
 
-    std::unique_ptr<db::FormatSpecificWriterOptions> specific_options;
+    std::auto_ptr<db::FormatSpecificWriterOptions> specific_options;
     if (options.get_options (decl->format_name ())) {
       specific_options.reset (options.get_options (decl->format_name ())->clone ());
     } else {
@@ -324,11 +284,10 @@ LayoutHandle::update_save_options (db::SaveLayoutOptions &options)
     }
 
   }
-#endif
 }
 
 void 
-LayoutHandle::save_as (const std::string &fn, tl::OutputStream::OutputStreamMode om, const db::SaveLayoutOptions &options, bool update, int keep_backups)
+LayoutHandle::save_as (const std::string &fn, tl::OutputStream::OutputStreamMode om, const db::SaveLayoutOptions &options, bool update)
 {
   if (update) {
 
@@ -338,7 +297,7 @@ LayoutHandle::save_as (const std::string &fn, tl::OutputStream::OutputStreamMode
     //  reader options.
     m_load_options = db::LoadLayoutOptions ();
 
-    remove_file_from_watcher (filename ());
+    file_watcher ().remove_file (filename ());
 
     rename (filename_for_caption (fn));
 
@@ -352,24 +311,19 @@ LayoutHandle::save_as (const std::string &fn, tl::OutputStream::OutputStreamMode
     {
       //  The write needs to be finished before the file watcher gets the new modification time
       db::Writer writer (options);
-      tl::OutputStream stream (fn, om, false, keep_backups);
-      try {
-        writer.write (*mp_layout, stream);
-      } catch (...) {
-        stream.reject ();
-        throw;
-      }
+      tl::OutputStream stream (fn, om);
+      writer.write (*mp_layout, stream);
     }
 
     if (update) {
-      add_file_to_watcher (filename ());
+      file_watcher ().add_file (filename ());
       m_dirty = false;
     }
 
   } catch (...) {
 
     if (update) {
-      add_file_to_watcher (filename ());
+      file_watcher ().add_file (filename ());
     }
 
     throw;
@@ -381,8 +335,6 @@ db::LayerMap
 LayoutHandle::load (const db::LoadLayoutOptions &options, const std::string &technology)
 {
   m_load_options = options;
-  m_save_options = db::SaveLayoutOptions ();
-  m_save_options_valid = false;
 
   set_tech_name (technology);
 
@@ -392,17 +344,16 @@ LayoutHandle::load (const db::LoadLayoutOptions &options, const std::string &tec
 
   //  If there is no technology given and the reader reports one, use this one
   if (technology.empty ()) {
-    std::string tech_from_reader = layout ().technology_name ();
+    std::string tech_from_reader = layout ().meta_info_value ("technology");
     if (! tech_from_reader.empty ()) {
       set_tech_name (tech_from_reader);
     }
   }
 
   //  Update the file's data:
-  remove_file_from_watcher (filename ());
-  add_file_to_watcher (filename ());
+  file_watcher ().remove_file (filename ());
+  file_watcher ().add_file (filename ());
 
-  m_save_options.set_format (reader.format ());
   m_dirty = false;
   return new_lmap;
 }
@@ -411,8 +362,6 @@ db::LayerMap
 LayoutHandle::load ()
 {
   m_load_options = db::LoadLayoutOptions ();
-  m_save_options = db::SaveLayoutOptions ();
-  m_save_options_valid = false;
 
   set_tech_name (std::string ());
 
@@ -421,21 +370,19 @@ LayoutHandle::load ()
   db::LayerMap new_lmap = reader.read (layout (), m_load_options);
 
   //  Attach the technology from the reader if it reports one
-  std::string tech_from_reader = layout ().technology_name ();
+  std::string tech_from_reader = layout ().meta_info_value ("technology");
   if (! tech_from_reader.empty ()) {
     set_tech_name (tech_from_reader);
   }
 
   //  Update the file's data:
-  remove_file_from_watcher (filename ());
-  add_file_to_watcher (filename ());
+  file_watcher ().remove_file (filename ());
+  file_watcher ().add_file (filename ());
 
-  m_save_options.set_format (reader.format ());
   m_dirty = false;
   return new_lmap;
 }
 
-#if defined(HAVE_QT)
 tl::FileSystemWatcher &
 LayoutHandle::file_watcher ()
 {
@@ -446,10 +393,8 @@ LayoutHandle::file_watcher ()
   return *mp_file_watcher;
 }
 
-tl::FileSystemWatcher *LayoutHandle::mp_file_watcher = 0;
-#endif
-
 std::map <std::string, LayoutHandle *> LayoutHandle::ms_dict;
+tl::FileSystemWatcher *LayoutHandle::mp_file_watcher = 0;
 
 // -------------------------------------------------------------
 //  LayoutHandleRef implementation
@@ -495,10 +440,6 @@ LayoutHandleRef::operator= (const LayoutHandleRef &r)
 void
 LayoutHandleRef::set (LayoutHandle *h)
 {
-  if (mp_handle == h) {
-    return;
-  }
-
   if (mp_handle) {
     mp_handle->remove_ref ();
     mp_handle = 0;
@@ -545,13 +486,13 @@ CellView::is_valid () const
   }
 
   //  check, if the path references valid cell indices.
-  for (unspecific_cell_path_type::const_iterator pp = m_unspecific_path.begin (); pp != m_unspecific_path.end (); ++pp) {
-    if (! m_layout_href.get ()->layout ().is_valid_cell_index (*pp)) {
+  for (specific_cell_path_type::const_iterator pp = m_specific_path.begin (); pp != m_specific_path.end (); ++pp) {
+    if (! m_layout_href.get ()->layout ().is_valid_cell_index (pp->inst_ptr.cell_index ())) {
       return false;
     }
   }
-  for (specific_cell_path_type::const_iterator pp = m_specific_path.begin (); pp != m_specific_path.end (); ++pp) {
-    if (! pp->inst_ptr.instances () || ! pp->inst_ptr.instances ()->is_valid (pp->inst_ptr) || ! m_layout_href.get ()->layout ().is_valid_cell_index (pp->inst_ptr.cell_index ())) {
+  for (unspecific_cell_path_type::const_iterator pp = m_unspecific_path.begin (); pp != m_unspecific_path.end (); ++pp) {
+    if (! m_layout_href.get ()->layout ().is_valid_cell_index (*pp)) {
       return false;
     }
   }
@@ -700,16 +641,6 @@ CellView::context_trans () const
   return trans;
 }
 
-db::DCplxTrans
-CellView::context_dtrans () const
-{
-  tl_assert (m_layout_href.get () != 0);
-
-  db::CplxTrans dbu_trans (m_layout_href->layout ().dbu ());
-  return dbu_trans * context_trans () * dbu_trans.inverted ();
-}
-
-
 // -------------------------------------------------------------
 //  CellView implementation
 
@@ -718,7 +649,7 @@ CellViewRef::CellViewRef ()
   // .. nothing yet ..
 }
 
-CellViewRef::CellViewRef (lay::CellView *cv, lay::LayoutViewBase *view)
+CellViewRef::CellViewRef (lay::CellView *cv, lay::LayoutView *view)
   : mp_cv (cv), mp_view (view)
 {
   // .. nothing yet ..
@@ -750,7 +681,7 @@ CellViewRef::index () const
   }
 }
 
-lay::LayoutViewBase *
+lay::LayoutView *
 CellViewRef::view ()
 {
   return mp_view.get ();
@@ -875,16 +806,6 @@ CellViewRef::context_trans () const
     return mp_cv->context_trans ();
   } else {
     return db::ICplxTrans ();
-  }
-}
-
-db::DCplxTrans
-CellViewRef::context_dtrans () const
-{
-  if (is_valid ()) {
-    return mp_cv->context_dtrans ();
-  } else {
-    return db::DCplxTrans ();
   }
 }
 

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -57,12 +57,12 @@ static void run_test (tl::TestBase *_this, const std::string &base, const char *
   db::LoadLayoutOptions options;
   options.set_options (opt);
 
-  db::Manager m (false);
+  db::Manager m;
   db::Layout layout (&m), layout2 (&m), layout2_mag (&m), layout_au (&m);
 
   {
     std::string fn (base);
-    fn += "/magic/";
+    fn += "/testdata/magic/";
     fn += file;
     tl::InputStream stream (fn);
     db::Reader reader (stream);
@@ -121,7 +121,7 @@ static void run_test (tl::TestBase *_this, const std::string &base, const char *
 
   {
     std::string fn (base);
-    fn += "/magic/";
+    fn += "/testdata/magic/";
     fn += file_au;
     tl::InputStream stream (fn);
     db::Reader reader (stream);
@@ -141,23 +141,18 @@ static void run_test (tl::TestBase *_this, const std::string &base, const char *
 
 TEST(1)
 {
-  run_test (_this, tl::testdata (), "MAG_TEST.mag.gz", "mag_test_au.cif.gz");
+  run_test (_this, tl::testsrc (), "MAG_TEST.mag.gz", "mag_test_au.cif.gz");
 }
 
 TEST(2)
 {
   std::vector<std::string> lp;
   lp.push_back (std::string ("../.."));
-  run_test (_this, tl::testdata (), "PearlRiver/Layout/magic/PearlRiver_die.mag", "PearlRiver_au.cif.gz", 0, 1.0, 0.001, &lp);
+  run_test (_this, tl::testsrc (), "PearlRiver/Layout/magic/PearlRiver_die.mag", "PearlRiver_au.cif.gz", 0, 1.0, 0.001, &lp);
 }
 
 TEST(3)
 {
-  run_test (_this, tl::testdata (), "ringo/RINGO.mag", "ringo_au.cif.gz");
-}
-
-TEST(4)
-{
-  run_test (_this, tl::testdata (), "issue_1925/redux.mag", "redux_au.cif.gz");
+  run_test (_this, tl::testsrc (), "ringo/RINGO.mag", "ringo_au.cif.gz");
 }
 

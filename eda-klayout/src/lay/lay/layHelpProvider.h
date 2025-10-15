@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -29,8 +29,6 @@
 
 namespace lay
 {
-
-class HelpSource;
 
 /**
  *  @brief A provider for documentation in the help system
@@ -60,9 +58,9 @@ public:
    *
    *  @return The documentation path for the main entry point for this provider.
    */
-  virtual std::string index (lay::HelpSource *src) const
+  virtual std::string index () const
   {
-    return "/" + folder (src) + "/index.xml";
+    return "/" + folder () + "/index.xml";
   }
 
   /**
@@ -71,7 +69,7 @@ public:
    *  The DOM is the document in XML form which can be converted to HTML form for example
    *  or scanned for keywords.
    */
-  virtual QDomDocument get (lay::HelpSource * /*src*/, const std::string & /*path*/) const
+  virtual QDomDocument get (const std::string & /*path*/) const
   {
     return QDomDocument ();
   }
@@ -82,12 +80,12 @@ public:
    *  If this string is "doc" for example, all help documents will be looked up under
    *  "doc/...".
    */
-  virtual std::string folder (lay::HelpSource * /*src*/) const = 0;
+  virtual std::string folder () const = 0;
 
   /**
    *  @brief Gets the title for this category
    */
-  virtual std::string title (lay::HelpSource * /*src*/) const = 0;
+  virtual std::string title () const = 0;
 };
 
 }

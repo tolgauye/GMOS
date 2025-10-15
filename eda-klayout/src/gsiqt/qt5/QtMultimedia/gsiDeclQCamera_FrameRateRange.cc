@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@
 #include <QCamera>
 #include "gsiQt.h"
 #include "gsiQtMultimediaCommon.h"
+#include "gsiDeclQtMultimediaTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -74,12 +75,12 @@ static void _call_ctor_QCamera_FrameRateRange_2034 (const qt_gsi::GenericStaticM
 
 //  bool ::operator==(const QCamera::FrameRateRange &r1, const QCamera::FrameRateRange &r2)
 static bool op_QCamera_FrameRateRange_operator_eq__eq__6842(const QCamera::FrameRateRange *_self, const QCamera::FrameRateRange &r2) {
-  return operator==(*_self, r2);
+  return ::operator==(*_self, r2);
 }
 
 //  bool ::operator!=(const QCamera::FrameRateRange &r1, const QCamera::FrameRateRange &r2)
 static bool op_QCamera_FrameRateRange_operator_excl__eq__6842(const QCamera::FrameRateRange *_self, const QCamera::FrameRateRange &r2) {
-  return operator!=(*_self, r2);
+  return ::operator!=(*_self, r2);
 }
 
 

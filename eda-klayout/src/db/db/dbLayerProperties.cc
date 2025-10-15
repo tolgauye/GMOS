@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,6 @@
 
 
 #include "dbLayerProperties.h"
-#include "dbStreamLayers.h"
 
 namespace db
 {
@@ -31,7 +30,7 @@ namespace db
 //  Implementation of the LayerProperties class
 
 LayerProperties::LayerProperties () 
-  : name (), layer (db::any_ld ()), datatype (db::any_ld ())
+  : name (), layer (-1), datatype (-1)
 { }
 
 LayerProperties::LayerProperties (int l, int d) 
@@ -39,7 +38,7 @@ LayerProperties::LayerProperties (int l, int d)
 { }
 
 LayerProperties::LayerProperties (const std::string &n) 
-  : name (n), layer (db::any_ld ()), datatype (db::any_ld ())
+  : name (n), layer (-1), datatype (-1)
 { }
 
 LayerProperties::LayerProperties (int l, int d, const std::string &n) 
@@ -49,13 +48,7 @@ LayerProperties::LayerProperties (int l, int d, const std::string &n)
 bool 
 LayerProperties::is_named () const
 {
-  return db::is_any_ld (layer) && db::is_any_ld (datatype) && ! name.empty ();
-}
-
-bool
-LayerProperties::is_null () const
-{
-  return db::is_any_ld (layer) && db::is_any_ld (datatype) && name.empty ();
+  return (layer < 0 || datatype < 0) && ! name.empty ();
 }
 
 bool 
@@ -129,79 +122,34 @@ LayerProperties::operator< (const LayerProperties &b) const
   return name < b.name;
 }
 
-static std::string format_ld (db::ld_type ld)
-{
-  if (db::is_static_ld (ld)) {
-    return tl::to_string (ld);
-  } else if (db::is_any_ld (ld)) {
-    return "*";
-  } else if (db::is_relative_ld (ld)) {
-    db::ld_type offset = db::ld_offset (ld);
-    if (offset < 0) {
-      return "*-" + tl::to_string (-offset);
-    } else {
-      return "*+" + tl::to_string (offset);
-    }
-  } else {
-    return tl::to_string (ld);
-  }
-}
-
 std::string 
-LayerProperties::to_string (bool as_target) const
+LayerProperties::to_string () const
 {
   std::string r;
   if (! name.empty ()) {
     if (is_named ()) {
       r = tl::to_word_or_quoted_string (name);
     } else {
-      r = tl::to_word_or_quoted_string (name) + " (" + format_ld (layer) + "/" + format_ld (datatype) + ")";
+      r = tl::to_word_or_quoted_string (name) + tl::sprintf (" (%d/%d)", layer, datatype);
     }
-  } else if (! is_null () || as_target) {
-    r = format_ld (layer) + "/" + format_ld (datatype);
+  } else if (! is_null ()) {
+    r = tl::sprintf ("%d/%d", layer, datatype);
   }
   return r;
 }
 
-static bool read_ld (tl::Extractor &ex, ld_type &l, bool with_relative)
-{
-  if (ex.test ("*")) {
-
-    int offset = 0;
-
-    tl::Extractor eex = ex;
-    if (with_relative && eex.test ("+") && eex.try_read (offset)) {
-      l = db::relative_ld (offset);
-      ex = eex;
-    } else {
-      eex = ex;
-      if (with_relative && eex.test ("-") && eex.try_read (offset)) {
-        l = db::relative_ld (-offset);
-        ex = eex;
-      } else {
-        l = db::any_ld ();
-      }
-    }
-
-    return true;
-
-  } else {
-    return ex.try_read (l);
-  }
-}
-
 void
-LayerProperties::read (tl::Extractor &ex, bool as_target)
+LayerProperties::read (tl::Extractor &ex)
 {
-  layer = db::any_ld ();
-  datatype = db::any_ld ();
+  layer = -1;
+  datatype = -1;
   name.clear ();
 
   int l = 0, d = 0;
-  if (read_ld (ex, l, as_target)) {
+  if (ex.try_read (l)) {
 
     if (ex.test ("/")) {
-      read_ld (ex, d, as_target);
+      ex.read (d);
     }
 
     layer = l;
@@ -211,11 +159,10 @@ LayerProperties::read (tl::Extractor &ex, bool as_target)
 
     if (ex.test ("(")) {
 
-      read_ld (ex, l, as_target);
+      ex.read (l);
       if (ex.test ("/")) {
-        read_ld (ex, d, as_target);
+        ex.read (d);
       }
-
       ex.expect (")");
 
       layer = l;

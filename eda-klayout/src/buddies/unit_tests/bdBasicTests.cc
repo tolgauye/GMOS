@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -58,9 +58,9 @@ TEST(1)
                    "--write-cell-properties",
                    "--write-file-properties",
                    //  OASIS
-                   "-ob=false",
+                   "-ob",
                    "-ok=9",
-                   "-ot=false",
+                   "-ot",
                    "--recompress",
                    "--subst-char=XY",
                    "--write-std-properties=2"
@@ -82,13 +82,12 @@ TEST(1)
   EXPECT_EQ (stream_opt.get_option_by_name ("gds2_multi_xy_records").to_bool (), false);
   EXPECT_EQ (stream_opt.get_option_by_name ("gds2_write_timestamps").to_bool (), true);
   EXPECT_EQ (stream_opt.get_option_by_name ("gds2_no_zero_length_paths").to_bool (), false);
-  EXPECT_EQ (stream_opt.get_option_by_name ("gds2_user_units").to_double (), 1.0);
+  EXPECT_EQ (tl::to_string (stream_opt.get_option_by_name ("gds2_user_units").to_double ()), "1");
   EXPECT_EQ (stream_opt.get_option_by_name ("gds2_write_cell_properties").to_bool (), false);
   EXPECT_EQ (stream_opt.get_option_by_name ("gds2_write_file_properties").to_bool (), false);
-  EXPECT_EQ (stream_opt.get_option_by_name ("gds2_default_text_size").to_string (), "nil");
-  EXPECT_EQ (stream_opt.get_option_by_name ("oasis_write_cblocks").to_bool (), true);
+  EXPECT_EQ (stream_opt.get_option_by_name ("oasis_write_cblocks").to_bool (), false);
   EXPECT_EQ (stream_opt.get_option_by_name ("oasis_compression_level").to_int (), 2);
-  EXPECT_EQ (stream_opt.get_option_by_name ("oasis_strict_mode").to_bool (), true);
+  EXPECT_EQ (stream_opt.get_option_by_name ("oasis_strict_mode").to_bool (), false);
   EXPECT_EQ (stream_opt.get_option_by_name ("oasis_recompress").to_bool (), false);
   EXPECT_EQ (stream_opt.get_option_by_name ("oasis_substitution_char").to_string (), "*");
   EXPECT_EQ (stream_opt.get_option_by_name ("oasis_write_std_properties_ext").to_int (), 1);
@@ -108,62 +107,15 @@ TEST(1)
   EXPECT_EQ (stream_opt.get_option_by_name ("gds2_multi_xy_records").to_bool (), true);
   EXPECT_EQ (stream_opt.get_option_by_name ("gds2_write_timestamps").to_bool (), false);
   EXPECT_EQ (stream_opt.get_option_by_name ("gds2_no_zero_length_paths").to_bool (), true);
-  EXPECT_EQ (stream_opt.get_option_by_name ("gds2_user_units").to_double (), 2.5);
+  EXPECT_EQ (tl::to_string (stream_opt.get_option_by_name ("gds2_user_units").to_double ()), "2.5");
   EXPECT_EQ (stream_opt.get_option_by_name ("gds2_write_cell_properties").to_bool (), true);
   EXPECT_EQ (stream_opt.get_option_by_name ("gds2_write_file_properties").to_bool (), true);
-  EXPECT_EQ (stream_opt.get_option_by_name ("gds2_default_text_size").to_string (), "nil");
-  EXPECT_EQ (stream_opt.get_option_by_name ("oasis_write_cblocks").to_bool (), false);
+  EXPECT_EQ (stream_opt.get_option_by_name ("oasis_write_cblocks").to_bool (), true);
   EXPECT_EQ (stream_opt.get_option_by_name ("oasis_compression_level").to_int (), 9);
-  EXPECT_EQ (stream_opt.get_option_by_name ("oasis_strict_mode").to_bool (), false);
+  EXPECT_EQ (stream_opt.get_option_by_name ("oasis_strict_mode").to_bool (), true);
   EXPECT_EQ (stream_opt.get_option_by_name ("oasis_recompress").to_bool (), true);
   EXPECT_EQ (stream_opt.get_option_by_name ("oasis_substitution_char").to_string (), "X");
   EXPECT_EQ (stream_opt.get_option_by_name ("oasis_write_std_properties_ext").to_int (), 2);
-}
-
-//  Testing writer options (default_text_size)
-TEST(2)
-{
-  bd::GenericWriterOptions opt;
-  tl::CommandLineOptions cmd;
-
-  opt.add_options (cmd);
-
-  const char *argv[] = {
-                   "x",
-                   "--default-text-size=1.25",
-                 };
-
-  cmd.parse (sizeof (argv) / sizeof (argv[0]), const_cast<char **> (argv));
-
-  db::Layout layout;
-
-  db::SaveLayoutOptions stream_opt;
-  EXPECT_EQ (stream_opt.get_option_by_name ("gds2_default_text_size").to_string (), "nil");
-  opt.configure (stream_opt, layout);
-  EXPECT_EQ (stream_opt.get_option_by_name ("gds2_default_text_size").to_string (), "1.25");
-}
-
-//  Testing writer options (default_text_size)
-TEST(3)
-{
-  bd::GenericWriterOptions opt;
-  tl::CommandLineOptions cmd;
-
-  opt.add_options (cmd);
-
-  const char *argv[] = {
-                   "x",
-                   "--default-text-size=-1",
-                 };
-
-  cmd.parse (sizeof (argv) / sizeof (argv[0]), const_cast<char **> (argv));
-
-  db::Layout layout;
-
-  db::SaveLayoutOptions stream_opt;
-  EXPECT_EQ (stream_opt.get_option_by_name ("gds2_default_text_size").to_string (), "nil");
-  opt.configure (stream_opt, layout);
-  EXPECT_EQ (stream_opt.get_option_by_name ("gds2_default_text_size").to_string (), "nil");
 }
 
 static std::string cells2string (const db::Layout &layout, const std::set<db::cell_index_type> &cells)
@@ -179,7 +131,7 @@ static std::string cells2string (const db::Layout &layout, const std::set<db::ce
 }
 
 //  Testing writer options: cell resolution
-TEST(4)
+TEST(2)
 {
   //  Build a layout with the hierarchy
   //    TOP -> A, B
@@ -283,7 +235,6 @@ TEST(10)
                          //  General
                          "-im=1/0 3,4/0-255 A:17/0",
                          "-is",
-                         "--blend-mode=1",
                          //  OASIS
                          "--expect-strict-mode=1"
                        };
@@ -307,7 +258,6 @@ TEST(10)
   EXPECT_EQ (stream_opt.get_option_by_name ("dxf_text_scaling").to_int (), 100);
   EXPECT_EQ (stream_opt.get_option_by_name ("layer_map").to_user<db::LayerMap> ().to_string (), "layer_map()");
   EXPECT_EQ (stream_opt.get_option_by_name ("create_other_layers").to_bool (), true);
-  EXPECT_EQ (stream_opt.get_option_by_name ("cell_conflict_resolution").to_string (), "AddToCell");
   EXPECT_EQ (stream_opt.get_option_by_name ("properties_enabled").to_bool (), true);
   EXPECT_EQ (stream_opt.get_option_by_name ("text_enabled").to_bool (), true);
   EXPECT_EQ (stream_opt.get_option_by_name ("gds2_box_mode").to_uint (), (unsigned int) 1);
@@ -333,69 +283,11 @@ TEST(10)
   EXPECT_EQ (stream_opt.get_option_by_name ("dxf_text_scaling").to_int (), 75);
   EXPECT_EQ (stream_opt.get_option_by_name ("layer_map").to_user<db::LayerMap> ().to_string (), "layer_map('1/0';'3-4/0-255';'A : 17/0')");
   EXPECT_EQ (stream_opt.get_option_by_name ("create_other_layers").to_bool (), false);
-  EXPECT_EQ (stream_opt.get_option_by_name ("cell_conflict_resolution").to_string (), "OverwriteCell");
   EXPECT_EQ (stream_opt.get_option_by_name ("properties_enabled").to_bool (), false);
   EXPECT_EQ (stream_opt.get_option_by_name ("text_enabled").to_bool (), false);
   EXPECT_EQ (stream_opt.get_option_by_name ("gds2_box_mode").to_uint (), (unsigned int) 3);
   EXPECT_EQ (stream_opt.get_option_by_name ("gds2_allow_big_records").to_bool (), false);
   EXPECT_EQ (stream_opt.get_option_by_name ("gds2_allow_multi_xy_records").to_bool (), false);
   EXPECT_EQ (stream_opt.get_option_by_name ("oasis_expect_strict_mode").to_int (), 1);
-}
-
-
-//  Testing reader options - blend mode "Rename" is default
-TEST(11)
-{
-  bd::GenericReaderOptions opt;
-  tl::CommandLineOptions cmd;
-
-  opt.add_options (cmd);
-
-  const char *argv[] = { "x" };
-
-  cmd.parse (sizeof (argv) / sizeof (argv[0]), (char **) argv);
-
-  db::LoadLayoutOptions stream_opt;
-  opt.configure (stream_opt);
-
-  EXPECT_EQ (stream_opt.get_option_by_name ("cell_conflict_resolution").to_string (), "RenameCell");
-}
-
-//  Testing writer options
-TEST(12_issue1885)
-{
-  bd::GenericWriterOptions opt;
-  tl::CommandLineOptions cmd;
-
-  opt.add_options (cmd);
-
-  db::Layout layout;
-
-  db::SaveLayoutOptions stream_opt;
-  opt.configure (stream_opt, layout);
-
-  EXPECT_EQ (stream_opt.get_option_by_name ("oasis_substitution_char").to_string (), "");
-
-  const char *argv[] = {
-                   "x",
-                   "--subst-char=x",
-                 };
-
-  cmd.parse (sizeof (argv) / sizeof (argv[0]), const_cast<char **> (argv));
-
-  opt.configure (stream_opt, layout);
-
-  EXPECT_EQ (stream_opt.get_option_by_name ("oasis_substitution_char").to_string (), "x");
-
-  const char *argv2[] = {
-                   "x",
-                   "--subst-char=",
-                 };
-
-  cmd.parse (sizeof (argv2) / sizeof (argv2[0]), const_cast<char **> (argv2));
-
-  opt.configure (stream_opt, layout);
-
-  EXPECT_EQ (stream_opt.get_option_by_name ("oasis_substitution_char").to_string (), "");
 }
 

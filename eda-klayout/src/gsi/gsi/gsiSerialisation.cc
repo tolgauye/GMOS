@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -23,7 +23,6 @@
 
 #include "gsi.h"
 #include "gsiSerialisation.h"
-#include "tlLog.h"
 
 namespace gsi
 {
@@ -39,14 +38,7 @@ public:
 
   ~AdaptorSynchronizer ()
   {
-    try {
-      //  NOTE: exceptions must not escape destructors as a basic C++ design requirement
-      mp_src->copy_to (mp_target, *mp_heap);
-    } catch (tl::Exception &ex) {
-      tl::error << ex.msg ();
-    } catch (...) {
-    }
-
+    mp_src->copy_to (mp_target, *mp_heap);
     delete mp_src;
     delete mp_target;
     mp_src = 0;
@@ -69,7 +61,7 @@ AdaptorBase::~AdaptorBase ()
 
 void AdaptorBase::tie_copies (AdaptorBase *target, tl::Heap &heap) 
 {
-  std::unique_ptr<AdaptorBase> t (target);
+  std::auto_ptr<AdaptorBase> t (target);
   copy_to (target, heap);
 
   //  This object (which will be destroyed before this is responsible for copying back 

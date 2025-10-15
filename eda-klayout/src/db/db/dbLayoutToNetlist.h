@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -27,15 +27,9 @@
 #include "dbCellMapping.h"
 #include "dbNetlistExtractor.h"
 #include "dbNetlistDeviceExtractor.h"
-#include "dbLayoutToNetlistEnums.h"
-#include "dbLog.h"
-#include "tlGlobPattern.h"
-#include "tlOptional.h"
 
 namespace db
 {
-
-class NetlistBuilder;
 
 /**
  *  @brief A generic framework for extracting netlists from layouts
@@ -80,7 +74,6 @@ class DB_PUBLIC LayoutToNetlist
 {
 public:
   typedef std::map<unsigned int, std::string>::const_iterator layer_iterator;
-  typedef std::vector<db::LogEntryData> log_entries_type;
 
   /**
    *  @brief The constructor
@@ -194,69 +187,6 @@ public:
   }
 
   /**
-   *  @brief Gets the top level mode flag
-   */
-  bool top_level_mode () const
-  {
-    return m_top_level_mode;
-  }
-
-  /**
-   *  @brief Sets top level mode
-   *
-   *  In top level mode, must-connect warnings are turned into
-   *  errors for example.
-   *
-   *  By default, top-level mode is off.
-   */
-  void set_top_level_mode (bool f)
-  {
-    m_top_level_mode = f;
-  }
-
-  /**
-   *  @brief Gets the log entries
-   */
-  const log_entries_type &log_entries () const
-  {
-    return m_log_entries;
-  }
-
-  /**
-   *  @brief Iterator for the log entries (begin)
-   */
-  log_entries_type::const_iterator begin_log_entries () const
-  {
-    return m_log_entries.begin ();
-  }
-
-  /**
-   *  @brief Iterator for the log entries (end)
-   */
-  log_entries_type::const_iterator end_log_entries () const
-  {
-    return m_log_entries.end ();
-  }
-
-  /**
-   *  @brief Clears the log entries
-   */
-  void clear_log_entries ()
-  {
-    m_log_entries.clear ();
-  }
-
-  /**
-   *  @brief Adds a log entry
-   */
-  void log_entry (const db::LogEntryData &log_entry)
-  {
-    if (m_log_entries.empty () || m_log_entries.back () != log_entry) {
-      m_log_entries.push_back (log_entry);
-    }
-  }
-
-  /**
    *  @brief Sets the number of threads to use for operations which support multiple threads
    */
   void set_threads (int n);
@@ -303,28 +233,20 @@ public:
   double device_scaling () const;
 
   /**
-   *  @brief Register a layer, optionally under the given name
-   *  Using a name or layer properties (see below) enhances readability of backannotated information
+   *  @brief Register a layer under the given name
+   *  This is a formal name for the layer. Using a name or layer properties
+   *  (see below) enhances readability of backannotated information
    *  if layers are involved. Use this method to attach a name to a region
    *  derived by boolean operations for example.
-   *
-   *  Registered regions are persisted inside the LayoutToNetlist object
-   *  if they are flat or original layer regions.
-   *  This allows passing flat or original layer collections.
-   *
-   *  If no name is given, the region will not be registered under a name.
-   *  Still the collection will be persisted if required.
-   *
-   *  In addition to regions, text collections can be registered too.
-   *  Including texts in "connect" makes net names begin assigned from the text strings.
+   *  Named regions are persisted inside the LayoutToNetlist object.
    */
-  unsigned int register_layer (const ShapeCollection &collection, const std::string &name = std::string ());
+  void register_layer (const db::Region &region, const std::string &name);
 
   /**
-   *  @brief Gets the name of the given collection
-   *  Returns an empty string if the collection does not have a name.
+   *  @brief Gets the name of the given region
+   *  Returns an empty string if the region does not have a name.
    */
-  std::string name (const ShapeCollection &coll) const;
+  std::string name (const db::Region &region) const;
 
   /**
    *  @brief Gets the name of the given layer by index
@@ -350,18 +272,7 @@ public:
    *  Persisted regions have a name and are kept inside the LayoutToNetlist
    *  object.
    */
-  template <class Collection>
-  bool is_persisted (const Collection &coll) const
-  {
-    return is_persisted_impl (coll);
-  }
-
-  /**
-   *  @brief Gets the layer index from a name
-   *
-   *  If the name is not valid, the optional value will not be set.
-   */
-  tl::optional<unsigned int> layer_index_by_name (const std::string &name) const;
+  bool is_persisted (const db::Region &region) const;
 
   /**
    *  @brief Gets the region (layer) with the given name
@@ -372,42 +283,14 @@ public:
   db::Region *layer_by_name (const std::string &name);
 
   /**
-   *  @brief Gets the texts (layer) with the given name
-   *  If the name is not valid, this method returns 0. Otherwise it
-   *  will return a new'd Texts object referencing the layer with
-   *  the given name. It must be deleted by the caller.
-   */
-  db::Texts *texts_by_name (const std::string &name);
-
-  /**
    *  @brief Gets the region (layer) by index
    *  If the index is not valid, this method returns 0. Otherwise it
    *  will return a new'd Region object referencing the layer with
    *  the given name. It must be deleted by the caller.
+   *  Only named layers are managed by LayoutToNetlist and can
+   *  be retrieved with this method.
    */
   db::Region *layer_by_index (unsigned int index);
-
-  /**
-   *  @brief Gets the texts (layer) by index
-   *  If the index is not valid, this method returns 0. Otherwise it
-   *  will return a new'd Texts object referencing the layer with
-   *  the given name. It must be deleted by the caller.
-   */
-  db::Texts *texts_by_index (unsigned int index);
-
-  /**
-   *  @brief Gets the internal layer from the original layer
-   */
-  tl::optional<unsigned int> layer_by_original (const ShapeCollection &original_layer)
-  {
-    return layer_by_original (original_layer.get_delegate ());
-  }
-
-  /**
-   *  @brief Gets the layer from the original layer's delegate
-   *  Returns 0 if the original layer was not registered as an input_layer.
-   */
-  tl::optional<unsigned int> layer_by_original (const ShapeCollectionDelegateBase *original_delegate);
 
   /**
    *  @brief Iterates over the layer indexes and names managed by this object (begin)
@@ -432,12 +315,6 @@ public:
   db::Region *make_layer (const std::string &name = std::string ());
 
   /**
-   *  @brief Creates a new empty texts collection
-   *  This method returns a new'd object which must be deleted by the caller.
-   */
-  db::Texts *make_text_layer (const std::string &name = std::string ());
-
-  /**
    *  @brief Creates a new region representing an original layer
    *  "layer_index" is the layer index of the desired layer in the original layout.
    *  This variant produces polygons and takes texts for net name annotation.
@@ -452,10 +329,10 @@ public:
   db::Region *make_layer (unsigned int layer_index, const std::string &name = std::string ());
 
   /**
-   *  @brief Creates a new text collection representing an original layer taking texts only
+   *  @brief Creates a new region representing an original layer taking texts only
    *  See "make_layer" for details.
    */
-  db::Texts *make_text_layer (unsigned int layer_index, const std::string &name = std::string ());
+  db::Region *make_text_layer (unsigned int layer_index, const std::string &name = std::string ());
 
   /**
    *  @brief Creates a new region representing an original layer taking polygons and texts
@@ -469,22 +346,13 @@ public:
    *  This method will run device extraction for the given extractor. The layer map is specific
    *  for the extractor and uses the region objects derived with "make_layer" and it's variants.
    *
-   *  In addition, derived regions/text collections can be passed too. Certain limitations apply. It's safe to use
+   *  In addition, derived regions can be passed too. Certain limitations apply. It's safe to use
    *  boolean operations for deriving layers. Other operations are applicable as long as they are
    *  capable of delivering hierarchical layers.
    *
-   *  If errors occur, the device extractor will contain theses errors. They are also transferred
-   *  to the LayoutToNetlist object.
+   *  If errors occur, the device extractor will contain theses errors.
    */
-  void extract_devices (db::NetlistDeviceExtractor &extractor, const std::map<std::string, db::ShapeCollection *> &layers);
-
-  /**
-   *  @brief Resets the extracted netlist
-   *
-   *  This method will invalidate the netlist and extraction. It is called automatically when
-   *  one of the connect methods is called.
-   */
-  void reset_extracted ();
+  void extract_devices (db::NetlistDeviceExtractor &extractor, const std::map<std::string, db::Region *> &layers);
 
   /**
    *  @brief Defines an intra-layer connection for the given layer.
@@ -499,99 +367,13 @@ public:
    *  @brief Defines an inter-layer connection for the given layers.
    *  The conditions mentioned with intra-layer "connect" apply for this method too.
    */
-  void connect (const db::Region &a, const db::Region &b)
-  {
-    connect_impl (a, b);
-  }
-
-  /**
-   *  @brief Defines an inter-layer connection for the given layers.
-   *  As one layer is a texts layer, this connection will basically add net labels.
-   */
-  void connect (const db::Region &a, const db::Texts &b)
-  {
-    connect_impl (a, b);
-  }
-
-  /**
-   *  @brief Defines an inter-layer connection for the given layers.
-   *  As one layer is a texts layer, this connection will basically add net labels.
-   */
-  void connect (const db::Texts &a, const db::Region &b)
-  {
-    connect_impl (b, a);
-  }
-
-  /**
-   *  @brief Defines an inter-layer soft connection for the given layers.
-   *  The conditions mentioned with intra-layer "connect" apply for this method too.
-   *  The "a" layer is the "upper" and the "b" layer the "lower" layer of the
-   *  soft connection.
-   */
-  void soft_connect (const db::Region &a, const db::Region &b)
-  {
-    soft_connect_impl (a, b);
-  }
-
-  /**
-   *  @brief Defines an inter-layer connection for the given layers.
-   *  As one layer is a texts layer, this connection will basically add net labels.
-   *  The "a" layer is the "upper" and the "b" layer the "lower" layer of the
-   *  soft connection.
-   */
-  void soft_connect (const db::Region &a, const db::Texts &b)
-  {
-    soft_connect_impl (a, b);
-  }
-
-  /**
-   *  @brief Defines an inter-layer connection for the given layers.
-   *  As one layer is a texts layer, this connection will basically add net labels.
-   *  The "a" layer is the "upper" and the "b" layer the "lower" layer of the
-   *  soft connection.
-   */
-  void soft_connect (const db::Texts &a, const db::Region &b)
-  {
-    soft_connect_impl (b, a);
-  }
+  void connect (const db::Region &a, const db::Region &b);
 
   /**
    *  @brief Connects the given layer with a global net with the given name
    *  Returns the global net ID
    */
-  size_t connect_global (const db::Region &l, const std::string &gn)
-  {
-    return connect_global_impl (l, gn);
-  }
-
-  /**
-   *  @brief Connects the given text layer with a global net with the given name
-   *  Returns the global net ID
-   */
-  size_t connect_global (const db::Texts &l, const std::string &gn)
-  {
-    return connect_global_impl (l, gn);
-  }
-
-  /**
-   *  @brief Soft-connects the given layer with a global net with the given name
-   *  Returns the global net ID.
-   *  The global layer is the "lower" layer of the soft connection.
-   */
-  size_t soft_connect_global (const db::Region &l, const std::string &gn)
-  {
-    return soft_connect_global_impl (l, gn);
-  }
-
-  /**
-   *  @brief Soft-connects the given text layer with a global net with the given name
-   *  Returns the global net ID.
-   *  The global layer is the "lower" layer of the soft connection.
-   */
-  size_t soft_connect_global (const db::Texts &l, const std::string &gn)
-  {
-    return soft_connect_global_impl (l, gn);
-  }
+  size_t connect_global (const db::Region &l, const std::string &gn);
 
   /**
    *  @brief Gets the global net name for a given global net ID
@@ -604,111 +386,20 @@ public:
   size_t global_net_id (const std::string &name);
 
   /**
-   *  @brief Sets a flag indicating whether to include floating subcircuits
-   */
-  void set_include_floating_subcircuits (bool f);
-
-  /**
-   *  @brief Sets a flag indicating whether to include floating subcircuits
-   */
-  bool include_floating_subcircuits () const
-  {
-    return m_include_floating_subcircuits;
-  }
-
-  /**
-   *  @brief Clears the "join net names" settings
-   */
-  void clear_join_net_names ();
-
-  /**
-   *  @brief Joins net names matching the given expression
-   *
-   *  Using this function will *add* one more rule. To clear all registered rules, use "clear_join_net_names".
-   *  These pattern will only act on top level cells.
-   */
-  void join_net_names (const tl::GlobPattern &gp);
-
-  /**
-   *  @brief Joins net names matching the given expression
-   *
-   *  Using this function will *add* one more rule specific to cells matching the first glob pattern. To clear all registered rules, use "clear_join_net_names".
-   *  Pattern registered with this function will act on the given cells, regardless of whether it's top level or not.
-   */
-  void join_net_names (const tl::GlobPattern &cell, const tl::GlobPattern &gp);
-
-  /**
-   *  @brief Gets the joined net names for top level
-   *
-   *  This method is mainly provided to test purposes.
-   */
-  const std::list<tl::GlobPattern> &joined_net_names () const
-  {
-    return m_joined_net_names;
-  }
-
-  /**
-   *  @brief Gets the joined net names per cell
-   *
-   *  This method is mainly provided to test purposes.
-   */
-  const std::list<std::pair<tl::GlobPattern, tl::GlobPattern> > &joined_net_names_per_cell () const
-  {
-    return m_joined_net_names_per_cell;
-  }
-
-  /**
-   *  @brief Clears the "join nets" settings
-   */
-  void clear_join_nets ();
-
-  /**
-   *  @brief Joins the given nets for the top level cell
-   *
-   *  This method will make an explicit connection between the nets given in the name set.
-   *  This applies implicit joining of different nets with the same label (intra-net joining)
-   *  and of nets with different names (inter-net joining). Intra-net joining is implied always.
-   */
-  void join_nets (const std::set<std::string> &jn);
-
-  /**
-   *  @brief Joins the given nets for cells matching the given pattern
-   *
-   *  Using this function will *add* one more rule specific to cells matching the first glob pattern. To clear all registered rules, use "clear_join_nets".
-   *  Pattern registered with this function will act on the given cells, regardless of whether it's top level or not.
-   */
-  void join_nets (const tl::GlobPattern &cell, const std::set<std::string> &gp);
-
-  /**
-   *  @brief Gets the joined nets for top level
-   *
-   *  This method is mainly provided to test purposes.
-   */
-  const std::list<std::set<std::string> > &joined_nets () const
-  {
-    return m_joined_nets;
-  }
-
-  /**
-   *  @brief Gets the joined nets per cell
-   *
-   *  This method is mainly provided to test purposes.
-   */
-  const std::list<std::pair<tl::GlobPattern, std::set<std::string> > > &joined_nets_per_cell () const
-  {
-    return m_joined_nets_per_cell;
-  }
-
-  /**
    *  @brief Runs the netlist extraction
    *  See the class description for more details.
    */
-  void extract_netlist ();
+  void extract_netlist (const std::string &joined_net_names = std::string (), bool include_floating_subcircuits = false);
 
   /**
-   *  @brief Throws an exception if the extractor contains errors
+   *  @brief Runs the netlist extraction
+   *  In addition to the previous version, this extraction method allows specification of a per-cell list of
+   *  joined (labelled) net names.
+   *  The key of the "joined_net_names_per_cell" is a cell name or a glob expression for cells. On all matching cells,
+   *  the value is applied as a label selector for labels that are joined together. The "joined_net_names" expressions
+   *  is only applied to the top cell.
    */
-  void check_extraction_errors ();
+  void extract_netlist (const std::string &joined_net_names, const std::map<std::string, std::string> &joined_net_names_per_cell, bool include_floating_subcircuits = false);
 
   /**
    *  @brief Marks the netlist as extracted
@@ -716,14 +407,6 @@ public:
    *  use it.
    */
   void set_netlist_extracted ();
-
-  /**
-   *  @brief Gets a value indicating whether the netlist has been extracted
-   */
-  bool is_netlist_extracted () const
-  {
-    return m_netlist_extracted;
-  }
 
   /**
    *  @brief Gets the internal DeepShapeStore object
@@ -775,26 +458,6 @@ public:
   db::Cell *internal_top_cell ();
 
   /**
-   *  @brief Gets the original layout
-   */
-  const db::Layout *original_layout () const;
-
-  /**
-   *  @brief Gets the original top cell
-   */
-  const db::Cell *original_top_cell () const;
-
-  /**
-   *  @brief Gets the original layout (non-const version)
-   */
-  db::Layout *original_layout ();
-
-  /**
-   *  @brief Gets the original top cell (non-const version)
-   */
-  db::Cell *original_top_cell ();
-
-  /**
    *  @brief Gets the connectivity object
    */
   const db::Connectivity &connectivity () const
@@ -807,11 +470,7 @@ public:
    *  This method is required to derive the internal layer index - for example for
    *  investigating the cluster tree.
    */
-  template <class Collection>
-  unsigned int layer_of (const Collection &coll) const
-  {
-    return deep_layer_of (coll).layer ();
-  }
+  unsigned int layer_of (const db::Region &region) const;
 
   /**
    *  @brief Creates a cell mapping for copying shapes from the internal layout to the given target layout.
@@ -843,9 +502,8 @@ public:
    *  original layers as kept inside the LayoutToNetlist database.
    *  It will return a layer mapping table suitable for use with build_all_nets, build_nets etc.
    *  Layers without original layer information will be given layer numbers ln, ln+1 etc.
-   *  unless ln is < 0, in which case such layers will not be produced.
    */
-  std::map<unsigned int, unsigned int> create_layermap (db::Layout &target_layout, int ln = -1) const;
+  std::map<unsigned int, const db::Region *> create_layermap (db::Layout &target_layout, int ln) const;
 
   /**
    *  @brief gets the netlist extracted (0 if no extraction happened yet)
@@ -864,7 +522,7 @@ public:
    *  NOTE: the layer and cell indexes used inside this structure refer to the
    *  internal layout.
    */
-  const db::hier_clusters<db::NetShape> &net_clusters () const
+  const db::hier_clusters<db::PolygonRef> &net_clusters () const
   {
     return m_net_clusters;
   }
@@ -872,53 +530,13 @@ public:
   /**
    *  @brief Gets the hierarchical shape clusters derived in the net extraction (non-conver version)
    */
-  db::hier_clusters<db::NetShape> &net_clusters ()
+  db::hier_clusters<db::PolygonRef> &net_clusters ()
   {
     return m_net_clusters;
   }
 
   /**
-   *  @brief Gets the shapes that make the subcircuit pin
-   *
-   *  This method looks up all shapes from the subcircuit that interact with the shapes of the net
-   *  the subcircuit pin lives in. It will return a map of layer index vs. Region with these
-   *  shapes, transformed into the coordinate space of the net.
-   *
-   *  Note that this method only considers top-down interactions between the shapes of the net
-   *  and subcircuits on any level below, but not between subcircuits.
-   *  It is useful only for certain topologies - i.e. digital nets connecting gate cells.
-   */
-  std::map<unsigned int, db::Region> shapes_of_pin (const db::NetSubcircuitPinRef &pin, const db::ICplxTrans &trans = db::ICplxTrans ()) const;
-
-  /**
-   *  @brief Gets the shapes that make the device terminal
-   *
-   *  This method looks up all shapes from the device terminals that interact with the shapes of the net
-   *  the device terminal lives in. It will return a map of layer index vs. Region with these
-   *  shapes, transformed into the coordinate space of the net.
-   *
-   *  Note that this method only considers top-down interactions between the shapes of the net
-   *  and subcircuits on any level below, but not between subcircuits and devices.
-   *  It is useful for flat-extracted netlists for example.
-   */
-  std::map<unsigned int, db::Region> shapes_of_terminal (const db::NetTerminalRef &terminal, const db::ICplxTrans &trans = db::ICplxTrans ()) const;
-
-  /**
-   *  @brief Returns all polygons or texts of a specific net and layer.
-   *
-   *  If "recursive" is true, the returned region will contain the shapes of
-   *  all subcircuits too.
-   *
-   *  This version takes a layer index.
-   *
-   *  This methods returns a new'd Coll object. It's the responsibility of the caller
-   *  to delete this object.
-   */
-  template <class Coll>
-  Coll *shapes_of_net_with_layer_index (const db::Net &net, unsigned int lid, bool recursive, const db::ICplxTrans &trans = db::ICplxTrans ()) const;
-
-  /**
-   *  @brief Returns all polygons of a specific net and layer.
+   *  @brief Returns all shapes of a specific net and layer.
    *
    *  If "recursive" is true, the returned region will contain the shapes of
    *  all subcircuits too.
@@ -926,24 +544,7 @@ public:
    *  This methods returns a new'd Region. It's the responsibility of the caller
    *  to delete this object.
    */
-  db::Region *shapes_of_net (const db::Net &net, const db::Region &of_layer, bool recursive, const db::ICplxTrans &trans = db::ICplxTrans ()) const
-  {
-    return shapes_of_net_with_layer_index<db::Region> (net, layer_of (of_layer), recursive, trans);
-  }
-
-  /**
-   *  @brief Returns all texts of a specific net and layer.
-   *
-   *  If "recursive" is true, the returned region will contain the shapes of
-   *  all subcircuits too.
-   *
-   *  This methods returns a new'd Texts object. It's the responsibility of the caller
-   *  to delete this object.
-   */
-  db::Texts *shapes_of_net (const db::Net &net, const db::Texts &of_layer, bool recursive, const db::ICplxTrans &trans = db::ICplxTrans ()) const
-  {
-    return shapes_of_net_with_layer_index<db::Texts> (net, layer_of (of_layer), recursive, trans);
-  }
+  db::Region *shapes_of_net (const db::Net &net, const db::Region &of_layer, bool recursive) const;
 
   /**
    *  @brief Delivers all shapes of a specific net and layer to the given Shapes container.
@@ -956,14 +557,30 @@ public:
    *
    *  propid is an optional properties ID which is attached to the shapes if not 0.
    */
-  void shapes_of_net (const db::Net &net, const db::ShapeCollection &of_layer, bool recursive, db::Shapes &to, properties_id_type propid = 0, const db::ICplxTrans &trans = db::ICplxTrans ()) const;
+  void shapes_of_net (const db::Net &net, const db::Region &of_layer, bool recursive, db::Shapes &to, properties_id_type propid = 0) const;
 
   /**
-   *  @brief Delivers all shapes of a specific net and layer to the given Shapes container.
-   *
-   *  This version takes a layer index for the layer
+   *  @brief An enum describing the way the net hierarchy is mapped
    */
-  void shapes_of_net (const db::Net &net, unsigned int lid, bool recursive, db::Shapes &to, properties_id_type propid = 0, const db::ICplxTrans &trans = db::ICplxTrans ()) const;
+  enum BuildNetHierarchyMode
+  {
+    /**
+     *  @brief Flatten the net
+     *  Collects all shapes of a net and puts that into the net cell or circuit cell
+     */
+    BNH_Flatten = 0,
+    /**
+     *  @brief Build a net hierarchy adding cells for each subcircuit on the net
+     *  Uses the circuit_cell_prefix to build the subcircuit cell names
+     */
+    BNH_SubcircuitCells = 1,
+    /**
+     *  @brief No hierarchy
+     *  Just output the shapes of the net belonging to the circuit cell.
+     *  Connections are not indicated!
+     */
+    BNH_Disconnected = 2
+  };
 
   /**
    *  @brief Builds a net representation in the given layout and cell
@@ -986,17 +603,15 @@ public:
    *  using a name like device_cell_name_prefix + device name. Otherwise the device shapes are
    *  treated as part of the net.
    *
-   *  @param net The net to build
    *  @param target The target layout
    *  @param target_cell The target cell
    *  @param lmap Target layer indexes (keys) and net regions (values)
    *  @param hier_mode See description of this method
-   *  @param net_prop_mode How to attach properties to shapes
    *  @param netname_prop An (optional) property name to which to attach the net name
    *  @param cell_name_prefix Chooses recursive mode if non-null
    *  @param device_cell_name_prefix See above
    */
-  void build_net (const db::Net &net, db::Layout &target, db::Cell &target_cell, const std::map<unsigned int, unsigned int> &lmap, NetPropertyMode prop_mode, const tl::Variant &netname_prop, BuildNetHierarchyMode hier_mode, const char *cell_name_prefix, const char *device_cell_name_prefix) const;
+  void build_net (const db::Net &net, db::Layout &target, db::Cell &target_cell, const std::map<unsigned int, const db::Region *> &lmap, const tl::Variant &netname_prop, BuildNetHierarchyMode hier_mode, const char *cell_name_prefix, const char *device_cell_name_prefix) const;
 
   /**
    *  @brief Builds a full hierarchical representation of the nets
@@ -1029,19 +644,18 @@ public:
    *  @param cmap The mapping of internal layout to target layout for the circuit mapping
    *  @param target The target layout
    *  @param lmap Target layer indexes (keys) and net regions (values)
-   *  @param net_cell_name_prefix See method description
-   *  @param net_prop_mode How to attach properties to shapes
-   *  @param netname_prop The property key to use for the net name or "nil" for no netname properties
    *  @param hier_mode See description of this method
+   *  @param netname_prop An (optional) property name to which to attach the net name
    *  @param circuit_cell_name_prefix See method description
+   *  @param net_cell_name_prefix See method description
    *  @param device_cell_name_prefix See above
    */
-  void build_all_nets (const db::CellMapping &cmap, db::Layout &target, const std::map<unsigned int, unsigned int> &lmap, const char *net_cell_name_prefix, NetPropertyMode prop_mode, const tl::Variant &netname_prop, BuildNetHierarchyMode hier_mode, const char *circuit_cell_name_prefix, const char *device_cell_name_prefix) const;
+  void build_all_nets (const db::CellMapping &cmap, db::Layout &target, const std::map<unsigned int, const db::Region *> &lmap, const char *net_cell_name_prefix, const tl::Variant &netname_prop, BuildNetHierarchyMode hier_mode, const char *circuit_cell_name_prefix, const char *device_cell_name_prefix) const;
 
   /**
    *  @brief Like build_all_nets, but with the ability to select some nets
    */
-  void build_nets (const std::vector<const Net *> *nets, const db::CellMapping &cmap, db::Layout &target, const std::map<unsigned int, unsigned int> &lmap, const char *net_cell_name_prefix, NetPropertyMode prop_mode, const tl::Variant &netname_prop, BuildNetHierarchyMode hier_mode, const char *circuit_cell_name_prefix, const char *device_cell_name_prefix) const;
+  void build_nets (const std::vector<const Net *> *nets, const db::CellMapping &cmap, db::Layout &target, const std::map<unsigned int, const db::Region *> &lmap, const char *net_cell_name_prefix, const tl::Variant &netname_prop, BuildNetHierarchyMode hier_mode, const char *circuit_cell_name_prefix, const char *device_cell_name_prefix) const;
 
   /**
    *  @brief Finds the net by probing a specific location on the given layer
@@ -1054,11 +668,8 @@ public:
    *
    *  This variant accepts a micrometer-unit location. The location is given in the
    *  coordinate space of the initial cell.
-   *
-   *  The subcircuit path leading to the topmost net is stored in *sc_path_out if this
-   *  pointer is non-null.
    */
-  db::Net *probe_net (const db::Region &of_region, const db::DPoint &point, std::vector<SubCircuit *> *sc_path_out = 0, Circuit *initial_circuit = 0);
+  db::Net *probe_net (const db::Region &of_region, const db::DPoint &point);
 
   /**
    *  @brief Finds the net by probing a specific location on the given layer
@@ -1066,7 +677,7 @@ public:
    *  This variant accepts a database-unit location. The location is given in the
    *  coordinate space of the initial cell.
    */
-  db::Net *probe_net (const db::Region &of_region, const db::Point &point, std::vector<SubCircuit *> *sc_path_out = 0, Circuit *initial_circuit = 0);
+  db::Net *probe_net (const db::Region &of_region, const db::Point &point);
 
   /**
    *  @brief Runs an antenna check on the extracted clusters
@@ -1077,14 +688,6 @@ public:
    *  on the cluster. Of all clusters where the antenna ratio is larger than
    *  the limit ratio all metal shapes are copied to the output region as
    *  error markers.
-   *
-   *  The area computation of gate and metal happens by taking the polygon
-   *  area (A) and perimeter (P) into account:
-   *
-   *    A(antenna) = A + P * t
-   *
-   *  where t is the perimeter factor. The unit of this area factor is
-   *  micrometers.
    *
    *  The limit ratio can be modified by the presence of connections to
    *  other layers (specifically designating diodes for charge removal).
@@ -1098,57 +701,7 @@ public:
    *  regardless of the diode's area.
    *  In other words: any diode will make the net safe against antenna discharge.
    */
-  db::Region antenna_check (const db::Region &gate, double gate_perimeter_factor, const db::Region &metal, double metal_perimeter_factor, double ratio, const std::vector<std::pair<const db::Region *, double> > &diodes = std::vector<std::pair<const db::Region *, double> > (), db::Texts *values = 0)
-  {
-    return antenna_check (gate, 1.0, gate_perimeter_factor, metal, 1.0, metal_perimeter_factor, ratio, diodes, values);
-  }
-
-  /**
-   *  @brief Variant of the antenna check not using the perimeter
-   *  This version uses 0 for the perimeter factor hence not taking into account the perimeter at all.
-   */
-  db::Region antenna_check (const db::Region &gate, const db::Region &metal, double ratio, const std::vector<std::pair<const db::Region *, double> > &diodes = std::vector<std::pair<const db::Region *, double> > (), db::Texts *values = 0)
-  {
-    return antenna_check (gate, 1.0, 0.0, metal, 1.0, 0.0, ratio, diodes, values);
-  }
-
-  /**
-   *  @brief Variant of the antenna check providing an area scale factor
-   *
-   *  This version provides an additional area scale factor f, so the effective area becomes
-   *
-   *    A(antenna) = A * f + P * t
-   *
-   *  where f is the area scale factor and t the perimeter scale factor. This version allows to ignore the
-   *  area contribution entirely and switch to a perimeter-based antenna check by setting f to zero.
-   *
-   *  If values is non-null, texts explaining the violations are placed there.
-   */
-  db::Region antenna_check (const db::Region &gate, double gate_area_factor, double gate_perimeter_factor, const db::Region &metal, double metal_area_factor, double metal_perimeter_factor, double ratio, const std::vector<std::pair<const db::Region *, double> > &diodes = std::vector<std::pair<const db::Region *, double> > (), Texts *values = 0);
-
-  /**
-   *  @brief Runs a generic net measurement function
-   *
-   *  This method accepts some primary layer, a number of secondary layers with names and an expression.
-   *
-   *  It will look at nets connecting to shapes on the primary layer and execute the expression for each
-   *  of those nets. After that it will copy the primary shapes of the net to the output with the properties
-   *  placed by "put" attached to them.
-   *
-   *  It is possible to skip primary shapes of a specific net by calling the "skip" function with a "true"
-   *  value.
-   *
-   *  The formulas may use the following functions:
-   *
-   *  * "area": the area of all primary-layer shapes on the net in square um
-   *  * "area(name)": the area of all secondary-layer shapes. 'name' is a symbol with the name given in the secondary-layer map
-   *  * "perimeter": the perimeter of the primary-layer shapes on the net in um
-   *  * "perimeter(name)": the perimeter of the secondary-layer shapes. 'name' is a symbol with the name given in the secondary-layer map
-   *  * "put(name, value)": places the value as property 'name' on the output shapes
-   *  * "skip(flag)": will skip the primary shapes of that net when called with a true value
-   *  * "net": the Net object of the current net
-   */
-  db::Region measure_net (const db::Region &primary, const std::map<std::string, const db::Region *> &secondary, const std::string &expression, const std::map<std::string, tl::Variant> &variables, double dbu = -1.0);
+  db::Region antenna_check (const db::Region &gate, const db::Region &metal, double ratio, const std::vector<std::pair<const db::Region *, double> > &diodes = std::vector<std::pair<const db::Region *, double> > ());
 
   /**
    *  @brief Saves the database to the given path
@@ -1177,33 +730,6 @@ public:
    */
   static db::LayoutToNetlist *create_from_file (const std::string &path);
 
-  /**
-   *  @brief Generate memory statistics
-   */
-  void mem_stat (MemStatistics *stat, MemStatistics::purpose_t purpose, int cat, bool no_self = false, void *parent = 0) const;
-
-  //  for debugging and testing
-  bool make_soft_connection_diodes () const
-  {
-    return m_make_soft_connection_diodes;
-  }
-
-  //  for debugging and testing
-  void set_make_soft_connection_diodes (bool f)
-  {
-    m_make_soft_connection_diodes = f;
-  }
-
-  /**
-   *  @brief Utility: computes the area and perimeter of a net's shapes
-   */
-  void compute_area_and_perimeter_of_net_shapes (db::cell_index_type ci, size_t cid, unsigned int layer_id, db::Polygon::area_type &area, db::Polygon::perimeter_type &perimeter) const;
-
-  /**
-   *  @brief Utility: computes the merged shapes of a net
-   */
-  db::Point get_merged_shapes_of_net (db::cell_index_type ci, size_t cid, unsigned int layer_id, db::Shapes &shapes, db::properties_id_type prop_id) const;
-
 private:
   //  no copying
   LayoutToNetlist (const db::LayoutToNetlist &other);
@@ -1213,166 +739,22 @@ private:
   std::string m_name;
   std::string m_original_file;
   std::string m_filename;
-  log_entries_type m_log_entries;
   db::RecursiveShapeIterator m_iter;
-  std::unique_ptr<db::DeepShapeStore> mp_internal_dss;
+  std::auto_ptr<db::DeepShapeStore> mp_internal_dss;
   tl::weak_ptr<db::DeepShapeStore> mp_dss;
   unsigned int m_layout_index;
   db::Connectivity m_conn;
-  db::hier_clusters<db::NetShape> m_net_clusters;
-  std::unique_ptr<db::Netlist> mp_netlist;
+  db::hier_clusters<db::PolygonRef> m_net_clusters;
+  std::auto_ptr<db::Netlist> mp_netlist;
   std::set<db::DeepLayer> m_dlrefs;
-  std::map<std::string, db::DeepLayer> m_named_dls;
+  std::map<std::string, db::DeepLayer> m_named_regions;
   std::map<unsigned int, std::string> m_name_of_layer;
-  std::map<tl::id_type, db::DeepLayer> m_dl_by_original;
-  std::map<unsigned int, db::DeepLayer> m_dl_of_layer;
   bool m_netlist_extracted;
   bool m_is_flat;
   double m_device_scaling;
   db::DeepLayer m_dummy_layer;
   std::string m_generator;
-  bool m_include_floating_subcircuits;
-  bool m_top_level_mode;
-  bool m_make_soft_connection_diodes;
-  std::list<tl::GlobPattern> m_joined_net_names;
-  std::list<std::pair<tl::GlobPattern, tl::GlobPattern> > m_joined_net_names_per_cell;
-  std::list<std::set<std::string> > m_joined_nets;
-  std::list<std::pair<tl::GlobPattern, std::set<std::string> > > m_joined_nets_per_cell;
 
-  void init ();
-  void ensure_netlist ();
-  size_t search_net (const db::ICplxTrans &trans, const db::Cell *cell, const db::local_cluster<NetShape> &test_cluster, std::vector<db::InstElement> &rev_inst_path);
-  db::DeepLayer deep_layer_of (const ShapeCollection &coll) const;
-  void ensure_layout () const;
-  std::string make_new_name (const std::string &stem = std::string ());
-  db::CellMapping make_cell_mapping_into (db::Layout &layout, db::Cell &cell, const std::vector<const db::Net *> *nets, bool with_device_cells);
-  void collect_shapes_of_pin (const local_cluster<db::NetShape> &c, const db::Net *other_net, const db::ICplxTrans &sc_trans, const db::ICplxTrans &trans, std::map<unsigned int, db::Region> &result) const;
-  void connect_impl (const db::ShapeCollection &a, const db::ShapeCollection &b);
-  size_t connect_global_impl (const db::ShapeCollection &l, const std::string &gn);
-  void soft_connect_impl (const db::ShapeCollection &a, const db::ShapeCollection &b);
-  size_t soft_connect_global_impl (const db::ShapeCollection &l, const std::string &gn);
-  bool is_persisted_impl (const db::ShapeCollection &coll) const;
-  void do_join_nets (db::Circuit &c, const std::vector<Net *> &nets);
-  void do_join_nets ();
-  void do_soft_connections ();
-  void join_nets_from_pattern (db::Circuit &c, const tl::GlobPattern &p);
-  void join_nets_from_pattern (db::Circuit &c, const std::set<std::string> &p);
-  void check_must_connect (const db::Circuit &c, const std::vector<Net *> &nets);
-  void check_must_connect_impl (const db::Circuit &c, const std::vector<const Net *> &nets, const db::Circuit &c_org, const std::vector<const Net *> &nets_org, std::vector<const db::SubCircuit *> &path, bool same_names);
-
-  //  for debugging and testing
-  void place_soft_connection_diodes ();
-
-  //  implementation of NetlistManipulationCallbacks
-  virtual size_t link_net_to_parent_circuit (const Net *subcircuit_net, Circuit *parent_circuit, const DCplxTrans &trans);
-  virtual void link_nets (const db::Net *net, const db::Net *with);
-};
-
-/**
- *  @brief An object building nets (net-to-layout)
- *
- *  This object can be used to persist netlist builder information - e.g. reusing net cells when building individual
- *  layers from nets. In this case, build nets with a layer selection and call the build_net function many times.
- */
-
-class DB_PUBLIC NetBuilder
-{
-public:
-  /**
-   *  @brief Default constructor
-   */
-  NetBuilder ();
-
-  /**
-   *  @brief Constructs a net builder with a target layout, a cell mapping table and a LayoutToNetlist source
-   *
-   *  @param target The target layout
-   *  @param cmap The cell mapping from the internal layout (inside LayoutToNetlist) to the target - use LayoutInfo::cell_mapping_into to generate this map
-   *  @param source The LayoutToNetlist source.
-   *
-   *  A cell map needs to be supplied only if intending to build many nets in hierarchical mode from multiple circuits.
-   */
-  NetBuilder (db::Layout *target, const db::CellMapping &cmap, const db::LayoutToNetlist *source);
-
-  /**
-   *  @brief Constructs a net builder with a source only
-   *
-   *  @param source The LayoutToNetlist source.
-   *
-   *  This net builder can be used to build single nets into dedicated target cells.
-   */
-  NetBuilder (db::Layout *target, const db::LayoutToNetlist *source);
-
-  /**
-   *  @brief Copy constructor
-   */
-  NetBuilder (const db::NetBuilder &other);
-
-  /**
-   *  @brief Move constructor
-   */
-  NetBuilder (db::NetBuilder &&other);
-
-  /**
-   *  @brief Assignment
-   */
-  NetBuilder &operator= (const db::NetBuilder &other);
-
-  /**
-   *  @brief Move
-   */
-  NetBuilder &operator= (db::NetBuilder &&other);
-
-  /**
-   *  @brief Sets the net-to-hierarchy generation mode
-   */
-  void set_hier_mode (BuildNetHierarchyMode hm)
-  {
-    m_hier_mode = hm;
-  }
-
-  /**
-   *  @brief Sets or resets the net cell name prefix
-   *
-   *  Pass 0 to this string value to reset it.
-   */
-  void set_net_cell_name_prefix (const char *s);
-
-  /**
-   *  @brief Sets or resets the circuit cell name prefix
-   *
-   *  Pass 0 to this string value to reset it.
-   */
-  void set_cell_name_prefix (const char *s);
-
-  /**
-   *  @brief Sets or resets the device cell name prefix
-   *
-   *  Pass 0 to this string value to reset it.
-   */
-  void set_device_cell_name_prefix (const char *s);
-
-  /**
-   *  @brief See \LayoutToNetlist for details of this function
-   */
-  void build_net (db::Cell &target_cell, const db::Net &net, const std::map<unsigned int, unsigned int> &lmap, NetPropertyMode prop_mode, const tl::Variant &netname_prop) const;
-
-  /**
-   *  @brief See \LayoutToNetlist for details of this function
-   */
-  void build_all_nets (const std::map<unsigned int, unsigned int> &lmap, NetPropertyMode prop_mode, const tl::Variant &netname_prop) const;
-
-  /**
-   *  @brief See \LayoutToNetlist for details of this function
-   */
-  void build_nets (const std::vector<const Net *> *nets, const std::map<unsigned int, unsigned int> &lmap, NetPropertyMode prop_mode, const tl::Variant &netname_prop) const;
-
-  /**
-   *  @brief A helper function to create a property ID for a given net, net property name and net property mode
-   */
-  static db::properties_id_type make_netname_propid (NetPropertyMode net_prop_mode, const tl::Variant &netname_prop, const db::Net &net, const std::string &net_name_prefix = std::string ());
-
-private:
   struct CellReuseTableKey
   {
     CellReuseTableKey (db::cell_index_type _cell_index, db::properties_id_type _netname_propid, size_t _cluster_id)
@@ -1400,38 +782,35 @@ private:
     size_t cluster_id;
   };
 
-  typedef std::map<CellReuseTableKey, std::pair<db::cell_index_type, bool> > cell_reuse_table_type;
+  typedef std::map<CellReuseTableKey, db::cell_index_type> cell_reuse_table_type;
 
-  tl::weak_ptr<db::Layout> mp_target;
-  db::CellMapping m_cmap;
-  tl::weak_ptr<db::LayoutToNetlist> mp_source;
-  mutable cell_reuse_table_type m_reuse_table;
-  BuildNetHierarchyMode m_hier_mode;
-  bool m_has_net_cell_name_prefix;
-  std::string m_net_cell_name_prefix;
-  bool m_has_cell_name_prefix;
-  std::string m_cell_name_prefix;
-  bool m_has_device_cell_name_prefix;
-  std::string m_device_cell_name_prefix;
+  void init ();
+  void ensure_netlist ();
+  size_t search_net (const db::ICplxTrans &trans, const db::Cell *cell, const db::local_cluster<db::PolygonRef> &test_cluster, std::vector<db::InstElement> &rev_inst_path);
+  void build_net_rec (const db::Net &net, db::Layout &target, cell_index_type circuit_cell, const db::CellMapping &cmap, const std::map<unsigned int, const db::Region *> &lmap, const char *net_cell_name_prefix, db::properties_id_type netname_propid, BuildNetHierarchyMode hier_mode, const char *cell_name_prefix, const char *device_cell_name_prefix, cell_reuse_table_type &reuse_table, const ICplxTrans &tr) const;
+  void build_net_rec (const db::Net &net, db::Layout &target, db::Cell &target_cell, const std::map<unsigned int, const db::Region *> &lmap, const char *net_cell_name_prefix, db::properties_id_type netname_propid, BuildNetHierarchyMode hier_mode, const char *cell_name_prefix, const char *device_cell_name_prefix, cell_reuse_table_type &reuse_table, const ICplxTrans &tr) const;
+  void build_net_rec (db::cell_index_type ci, size_t cid, db::Layout &target, db::Cell &target_cell, const std::map<unsigned int, const db::Region *> &lmap, const Net *net, const char *net_cell_name_prefix, db::properties_id_type netname_propid, BuildNetHierarchyMode hier_mode, const char *cell_name_prefix, const char *device_cell_name_prefix, cell_reuse_table_type &reuse_table, const ICplxTrans &tr) const;
+  db::DeepLayer deep_layer_of (const db::Region &region) const;
+  void ensure_layout () const;
+  std::string make_new_name (const std::string &stem = std::string ());
+  db::properties_id_type make_netname_propid (db::Layout &ly, const tl::Variant &netname_prop, const db::Net &net) const;
+  db::CellMapping make_cell_mapping_into (db::Layout &layout, db::Cell &cell, const std::vector<const db::Net *> *nets, bool with_device_cells);
 
-  void build_net_rec (const db::Net &net, cell_index_type circuit_cell, const std::map<unsigned int, unsigned int> &lmap, const std::string &add_net_cell_name_prefix, db::properties_id_type netname_propid, const ICplxTrans &tr) const;
-  void build_net_rec (const db::Net &net, db::Cell &target_cell, const std::map<unsigned int, unsigned int> &lmap, const std::string &add_net_cell_name_prefix, db::properties_id_type netname_propid, const ICplxTrans &tr) const;
-  void build_net_rec (db::cell_index_type ci, size_t cid, db::Cell &target_cell, const std::map<unsigned int, unsigned int> &lmap, const Net *net, const std::string &add_net_cell_name_prefix, db::properties_id_type netname_propid, const ICplxTrans &tr) const;
-  void prepare_build_nets () const;
-
-  db::Layout &target () const
-  {
-    return const_cast<db::Layout &> (*mp_target);
-  }
+  //  implementation of NetlistManipulationCallbacks
+  virtual size_t link_net_to_parent_circuit (const Net *subcircuit_net, Circuit *parent_circuit, const DCplxTrans &trans);
 };
 
-/**
- *  @brief Memory statistics for LayoutToNetlist
- */
-inline void mem_stat (MemStatistics *stat, MemStatistics::purpose_t purpose, int cat, const LayoutToNetlist &x, bool no_self, void *parent)
-{
-  x.mem_stat (stat, purpose, cat, no_self, parent);
 }
+
+namespace tl
+{
+
+template<> struct type_traits<db::LayoutToNetlist> : public tl::type_traits<void>
+{
+  //  mark "NetlistDeviceExtractor" as not having a default ctor and no copy ctor
+  typedef tl::false_tag has_copy_constructor;
+  typedef tl::false_tag has_default_constructor;
+};
 
 }
 

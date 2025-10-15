@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -32,7 +32,6 @@
 #include "dbTrans.h"
 #include "dbObjectTag.h"
 #include "dbBox.h"
-#include "dbVector.h"
 #include "dbMemStatistics.h"
 #include "tlClassRegistry.h"
 
@@ -171,7 +170,6 @@ public:
   typedef C coord_type;
   typedef db::box<C> box_type;
   typedef db::point<C> point_type;
-  typedef db::vector<C> vector_type;
   typedef db::object_tag< user_object<C> > tag;
 
   /**
@@ -209,38 +207,12 @@ public:
   }
 
   /**
-   *  @brief The move constructor
-   */
-  user_object (user_object<C> &&d)
-    : mp_obj (0)
-  {
-    if (d.mp_obj) {
-      set_ptr (d.mp_obj);
-      d.mp_obj = 0;
-    }
-  }
-
-  /**
    *  @brief Assignment operator
    */
   user_object<C> &operator= (const user_object<C> &d)
   {
     if (d.mp_obj) {
       set_ptr (d.mp_obj->clone ());
-    } else {
-      set_ptr (0);
-    }
-    return *this;
-  }
-
-  /**
-   *  @brief Assignment operator (move)
-   */
-  user_object<C> &operator= (user_object<C> &&d)
-  {
-    if (d.mp_obj) {
-      set_ptr (d.mp_obj);
-      d.mp_obj = 0;
     } else {
       set_ptr (0);
     }
@@ -350,18 +322,17 @@ public:
   }
 
   /**
-   *  @brief Transforms the object with the given transformation
+   *  @brief Transform the object with the given transformation
    *
    *  @param t The transformation to apply.
    *  The actual behaviour is implemented by the base object.
    */
   template <class Trans>
-  db::user_object<C> &transform (const Trans &t)
+  void transform (const Trans &t)
   {
     if (mp_obj) {
       mp_obj->transform (t);
     }
-    return *this;
   }
 
   /**
@@ -369,7 +340,6 @@ public:
    *
    *  @param t The transformation to apply.
    *  The actual behaviour is implemented by the base object.
-   *  NOTE: user object can't be transformed into a different coordinate type as of now.
    */
   template <class Trans>
   db::user_object<C> transformed (const Trans &t) const
@@ -377,48 +347,6 @@ public:
     user_object o (*this);
     o.transform (t);
     return o;
-  }
-
-  /**
-   *  @brief Returns the scaled object
-   */
-  db::user_object<C> scaled (double s) const
-  {
-    db::complex_trans<C, C> ct (s);
-    return this->transformed (ct);
-  }
-
-  /**
-   *  @brief Moves the object
-   *
-   *  @param v The move vector to apply.
-   */
-  db::user_object<C> &move (const vector_type &v)
-  {
-    if (mp_obj) {
-      mp_obj->transform (db::simple_trans<C> (v));
-    }
-    return *this;
-  }
-
-  /**
-   *  @brief Returns the moved object
-   *
-   *  @param v The move vector to apply.
-   */
-  db::user_object<C> moved (const vector_type &v) const
-  {
-    user_object o (*this);
-    o.move (v);
-    return o;
-  }
-
-  /**
-   *  @brief Returns a string describing the object
-   */
-  std::string to_string () const
-  {
-    return mp_obj ? mp_obj->to_string () : std::string ();
   }
 
   /**
@@ -565,6 +493,19 @@ typedef user_object_factory<db::DCoord> DUserObjectFactory;
 typedef tl::RegisteredClass<user_object_factory_base<db::DCoord> > DUserObjectDeclaration;
 
 } // namespace db
+
+namespace tl 
+{
+  /**
+   *  @brief The type traits for the user object type
+   */
+  template <class C>
+  struct type_traits <db::user_object<C> > : public type_traits<void> 
+  {
+    typedef trivial_relocate_required relocate_requirements;
+    typedef true_tag has_efficient_swap;
+  };
+}
 
 //  inject a swap specialization into the std namespace:
 namespace std 

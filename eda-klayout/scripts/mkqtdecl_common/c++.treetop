@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2006-2025 Matthias Koefferlein
+# Copyright (C) 2006-2019 Matthias Koefferlein
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -49,35 +49,8 @@ grammar CPP
     "(" ( s ( "," s )? attribute_value )* s ")" / numeric_const / string_const / id
   end
 
-  rule ignored_attr
-    "__attribute__" s attribute_value / 
-    "__asm" s attribute_value / 
-    "constexpr" ![a-zA-Z0-9_] / 
-    "__extension__" / 
-    "__inline" / 
-    "__m64" / 
-    "__m128" / 
-    "__m128d" / 
-    "__m128i" / 
-    "__m256" / 
-    "__m256d" / 
-    "__m256i" / 
-    "__m512" / 
-    "__m512d" / 
-    "__m512i" / 
-    "__mmask8" / 
-    "__mmask16" / 
-    "__v8df" / 
-    "__v8di" / 
-    "__v16sf" / 
-    "__v16si" / 
-    "decltype" s attribute_value / 
-    "alignas" s "(" s block s ")" / 
-    "[[" s block s "]]"
-  end
-
   rule a
-    s ( ignored_attr s )*
+    s ( "__attribute__" s attribute_value s / "__asm" s attribute_value s / "__extension__" s )* 
   end
 
   rule unary_op
@@ -97,7 +70,7 @@ grammar CPP
   rule id
     "operator" s "," /
     "operator" s ( bin_op / unary_op / "," ) /
-    "operator" sp [a-zA-Z_0-9\*\& \t\n\r]+ &( s "(" ) /
+    "operator" sp [a-zA-Z\*\& \t\n\r]+ &( s "(" ) /
     "~"? [a-zA-Z_] [a-zA-Z_0-9]*
   end
 
@@ -137,11 +110,11 @@ grammar CPP
   end
 
   rule bool_type
-    "bool" ![a-zA-Z0-9_] <PBoolType>
+    "bool" <PBoolType>
   end
 
   rule void_type
-    "void" ![a-zA-Z0-9_] <PVoidType>
+    "void" <PVoidType>
   end
 
   rule float_type
@@ -149,41 +122,32 @@ grammar CPP
   end
 
   rule enum_spec
-    a id:id a initspec:( s "=" s init:block_wo_comma )? <PEnumSpec>
+    id:id initspec:( s "=" s init:block_wo_comma )? <PEnumSpec>
   end
 
   rule enum_body
-    enum_spec ( s "," s enum_spec )* ","?
+    enum_spec ( s "," s enum_spec )*
   end
 
   rule enum_type
-    "enum" ![a-zA-Z0-9_] a is_class:(s "class" )? s id:id? ( s ":" s type )? bodyspec:( s "{" s body:enum_body s "}" )? <PEnumType>
+    "enum" ![a-zA-Z0-9_] a s id:id? bodyspec:( s "{" s body:enum_body s "}" )? <PEnumType>
   end
 
   rule virtual_spec
-    "virtual" ![a-zA-Z0-9_] <PVirtual>
-  end
-
-  rule explicit_key
-    "explicit" ![a-zA-Z0-9_]
-  end
-
-  rule mutable_key
-    "mutable" ![a-zA-Z0-9_]
+    "virtual" <PVirtual>
   end
 
   rule member_declaration_wo_semicolon
     template:( d:template_decl s )?
-    attr:( ( explicit_key / mutable_key / storage_class / inline_spec / virtual_spec / ignored_attr ) s )*
+    attr:( ( "explicit" / "mutable" / storage_class / inline_spec / virtual_spec ) s )*
     t:type 
     # type declaration ends with a } .. does not need a semicolon
     # (i.e. nested struct or enum)
     &{ |seq| seq[-1].text_value_ends_with_curly_brace }
     s
     ( ":" s block_wo_curly_braces s )?
-    ( trailing_return_type )?
     a
-    blk:(
+    (
       "{" s block s "}" /
       ";"?
     ) <PDeclaration>
@@ -191,16 +155,15 @@ grammar CPP
 
   rule member_declaration_w_semicolon
     template:( d:template_decl s )?
-    attr:( ( explicit_key / mutable_key / storage_class / inline_spec / virtual_spec / ignored_attr ) s )*
+    attr:( ( "explicit" / "mutable" / storage_class / inline_spec / virtual_spec ) s )*
     t:type 
     # opposite case (member_see declaration_wo_semicolon)
     # (i.e. nested struct or enum)
     !{ |seq| seq[-1].text_value_ends_with_curly_brace }
     s
     ( ":" s block_wo_curly_braces s )?
-    ( trailing_return_type )?
     a
-    blk:(
+    (
       "{" s block s "}" /
       ";" 
     ) <PDeclaration>
@@ -215,7 +178,7 @@ grammar CPP
   end
 
   rule class_struct_body_declarations
-    ( s ";" / s static_assert / s friend_decl / s using / s typedef / s !( "public" / "private" / "protected" ) member_declaration )* 
+    ( s ";" / s friend_decl / s using / s typedef / s !( "public" / "private" / "protected" ) member_declaration )* 
   end
 
   rule class_struct_body
@@ -230,8 +193,8 @@ grammar CPP
   rule class_id 
     # In order to easily distinguish between constructor methods without 
     # a return type and class or typedef names we assume that all "name("
-    # constructs are considered constructor names but "name (*func_ptr) ()" or "name (class::*method_ptr) ()" is not.
-    qualified_id s ( "..." s )? !( "(" !( s "*" / s qualified_id s "::*" ) )
+    # constructs are considered constructor names but "name (*func_ptr) ()" is not.
+    qualified_id s !( "(" !( s "*" ) )
   end
 
   rule typeof 
@@ -259,11 +222,11 @@ grammar CPP
   end
 
   rule pointer 
-    "*" itspec:( s it:inner_type_with_cv )? <PPointer>
+    cvspec:( cv:cv s )? "*" itspec:( s it:inner_type )? <PPointer>
   end
     
   rule reference 
-    "&" itspec:( s it:inner_type_with_cv )? <PReference>
+    cvspec:( cv:cv s )? "&" itspec:( s it:inner_type )? <PReference>
   end
 
   rule array_spec
@@ -284,77 +247,59 @@ grammar CPP
     ellipsis
   end
 
-  rule noexcept_spec
-    "noexcept" ( s "(" s block s ")" )?
-  end
-
   rule func_spec
-    "(" s fa:( a:func_args )? s ")" cvspec:( s cv:cv )? refspec:( s ref:( "&" !"&" / "&&" ) )? ( s "throw" s "(" s ( type_wo_comma s )? ")" / s noexcept_spec / s override_key )* a <PFuncSpec>
+    "(" s fa:( a:func_args )? s ")" cvspec:( s cv:cv )? ( s "throw" s "(" s ( type_wo_comma s )? ")" )* a <PFuncSpec>
   end
 
   rule member_pointer
-    cspec:( qid:qualified_id s "::*" s ) itspec:( it:inner_type_with_cv )? refspec:( s ref:( "&" !"&" / "&&" ) )? <PMemberPointer> 
+    cspec:( qid:qualified_id s "::*" s ) itspec:( it:inner_type )? cvspec:( s cv:cv )? <PMemberPointer> 
   end
 
-  rule inner_type_part
-    "(" s inner_type s ")" /
-    pointer /
-    reference /
-    member_pointer /
-    ( "__restrict" ![a-zA-Z0-9_] s / "..." s )* qualified_id  
-  end
-
-  rule inner_type_part_with_cv_post
-    it:inner_type_part cvspec:( s cv:cv )? <PInnerTypeWithCV>
+  rule inner_type_with_cv
+    cvspec:cv s it:inner_type <PInnerTypeWithCV>
   end
 
   rule inner_type
-    it:inner_type_part_with_cv_post
-    s
+    it:( 
+      "(" s inner_type s ")" /
+      inner_type_with_cv /
+      pointer /
+      reference /
+      member_pointer /
+      ( "__restrict" ![a-zA-Z0-9_] s )? qualified_id  
+    ) 
     pfx:( s spec:( array_spec / func_spec ) )* 
     <PInnerType>
   end
 
-  rule inner_type_with_cv
-    cvspec:( cv:cv s )? it:inner_type <PInnerTypeWithCV>
-  end
-
-  rule init_spec
-    block_wo_comma / "default" / "delete" / "0"
-  end
-
-  rule tn
-    "typename" ![a-zA-Z0-9_] s 
-  end
-
   rule type
-    a 
-    dct:( cvspec:( cv:cv s ) a tn? ct:concrete_type / tn? ct:concrete_type a cvspec:( cv:cv s )? ) 
+    cvspec:( cv:cv s )? 
     a
-    il:( s t1:inner_type i1:(s "=" s is1:init_spec)? tt:( s "," s t2:inner_type i2:(s "=" s is2:init_spec)? )* )? 
+    ( "typename" ![a-zA-Z0-9_] s )? 
+    ct:concrete_type 
+    a
+    il:( s t1:inner_type i1:(s "=" s is1:block_wo_comma)? tt:( s "," s t2:inner_type i2:(s "=" s is2:block_wo_comma)? )* )? 
     # alternative initialization if only a concrete type is given:
-    pi:( s "=" s is:init_spec )? 
+    pi:( s "=" s is:block_wo_comma )? 
     <PType>
   end
 
   rule type_wo_comma
-    a 
-    dct:( cvspec:( cv:cv s ) a tn? ct:concrete_type / tn? ct:concrete_type a cvspec:( cv:cv s )? ) 
+    cvspec:( cv:cv s )? 
     a
-    il:( s t:inner_type i:(s "=" s is:init_spec)? )? 
+    ( "typename" ![a-zA-Z0-9_] s )? 
+    ct:concrete_type 
+    il:( s t:inner_type i:(s "=" s is:block_wo_comma)? )? 
     # alternative initialization if only a concrete type is given:
-    pi:( s "=" s is:init_spec )? 
+    pi:( s "=" s is:block_wo_comma )? 
     <PTypeWoComma>
   end
 
-  rule tnt
-    ( "typename" / "class" ) ![a-zA-Z0-9_] s ( "..." s )?
-  end
-
   rule type_for_template
-    a 
-    dct:( cvspec:( cv:cv s ) a tnt? ct:concrete_type / tnt? ct:concrete_type a cvspec:( cv:cv s )? ) 
+    cvspec:( cv:cv s )? 
     a
+    ( "typename" ![a-zA-Z0-9_] s )? 
+    ct:concrete_type 
     il:( s t:inner_type )? 
     <PTypeForTemplate>
   end
@@ -363,19 +308,15 @@ grammar CPP
     ( "static" ![a-zA-Z0-9_] / "extern" ![a-zA-Z0-9_] ( s '"C"' / s '"C++"' / s '"Pascal"' )? ) <PStorageClass>
   end
 
-  rule override_key
-    "override" ![a-zA-Z0-9_] 
-  end
-
   rule inline_spec
     "inline" ![a-zA-Z0-9_] <PInline>
   end
 
   # parse over blocks as gracefully as possible ...
   rule block_atom_wo_gt
-    "(" s block s ")" / "[" s block s "]" / "<" !"=" s block_wo_gt ( s "," s block_wo_gt )* s ">" / 
+    "(" s block s ")" / "[" s block s "]" / "<" s block_wo_gt ( s "," s block_wo_gt )* s ">" / 
     numeric_const / hex_const / string_const / char_const /
-    id ( s "{" s block s "}" )? / unary_op / bin_op_wo_gt / "?" / "::" / "." / ":" / ";"
+    id / unary_op / bin_op_wo_gt / "?" / "::" / "." / ":" / ";"
   end
 
   rule block_wo_gt
@@ -386,7 +327,7 @@ grammar CPP
   rule block_atom
     "(" s block s ")" / "[" s block s "]" / "<" s block_wo_gt ( s "," s block_wo_gt )* s ">" /
     numeric_const / hex_const / string_const / char_const /
-    id ( s "{" s block s "}" )? / unary_op / bin_op / "?" / "::" / "." / ":"
+    id / unary_op / bin_op / "?" / "::" / "." / ":"
   end
 
   rule block
@@ -405,38 +346,31 @@ grammar CPP
     "using" ![a-zA-Z0-9_] ( s "namespace" )? ![a-zA-Z0-9_] s id:qualified_id a ";" <PUsing>
   end
 
-  rule static_assert
-    "static_assert" s "(" s block s ")"
-  end
-
   rule typedef
     a "typedef" ![a-zA-Z0-9_] s t:type a ";" <PTypedef>
   end
 
   rule template_decl_arg
-    t:type_for_template dtspec:( s "=" s dt:block_wo_gt )? <PClassTemplateArg> 
+    ( "class" / "typename" ) ![a-zA-Z0-9_] s id:id dtspec:( s "=" s dt:type_for_template )? <PClassTemplateArg> / 
+    t:type_for_template initspec:( s "=" s init:block_wo_gt )? <PDirectTemplateArg>
   end
 
   rule template_decl
     "template" s "<" s ( !">" template_decl_arg s ( "," s template_decl_arg )* )? s ">" <PTemplateDecl>
   end
 
-  rule trailing_return_type
-    "->" s ( "decltype" s "(" s block s ")" / type )
-  end
-
   rule declaration_w_semicolon
     template:( d:template_decl s )?
     template_member:( d_member:template_decl s )?
-    attr:( ( storage_class / inline_spec / ignored_attr ) s )*
+    attr:( ( storage_class / inline_spec ) s )*
+    a
     t:type 
     # type declaration ends with a } .. does not need a semicolon
     # (i.e. nested struct or enum)
     !{ |seq| seq[-1].text_value_ends_with_curly_brace }
     s ( ":" s block_wo_curly_braces s )?
-    ( trailing_return_type )?
     a
-    blk:(
+    (
       "{" s block s "}" /
       ";" 
     ) <PDeclaration>
@@ -444,15 +378,15 @@ grammar CPP
 
   rule declaration_wo_semicolon
     template:( d:template_decl s )?
-    attr:( ( storage_class / inline_spec / ignored_attr ) s )*
+    attr:( ( storage_class / inline_spec ) s )*
+    a
     t:type 
     # opposite case (see declaration_wo_semicolon)
     # (i.e. nested struct or enum)
     &{ |seq| seq[-1].text_value_ends_with_curly_brace }
     s ( ":" s block_wo_curly_braces s )?
-    ( trailing_return_type )?
     a
-    blk:(
+    (
       "{" s block s "}" /
       ";"?
     ) <PDeclaration>
@@ -464,7 +398,7 @@ grammar CPP
 
   rule namespace
     "namespace" ![a-zA-Z0-9_] s n:id 
-    a "{" decls:( a ( ";" / static_assert / using / typedef / namespace / declaration ) )* s "}" <PNamespace>
+    a "{" decls:( a ( ";" / using / typedef / namespace / declaration ) )* s "}" <PNamespace>
   end
 
   rule extern_decl
@@ -472,12 +406,8 @@ grammar CPP
     a "{" decls:( a ( ";" / typedef / namespace / extern_decl / declaration ) )* s "}" <PExternBlock>
   end
 
-  rule asm
-    "asm" s "(" s block s ")"
-  end
-
   rule module
-    ( a ( ";" / static_assert / using / typedef / namespace / extern_decl / declaration / asm ) )* s <PModule>
+    ( a ( ";" / using / typedef / namespace / extern_decl / declaration ) )* s <PModule>
   end
 
 end

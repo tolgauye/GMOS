@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -43,8 +43,7 @@
 namespace db
 {
 
-template <class C> class matrix_3d;
-typedef matrix_3d<db::DCoord> Matrix3d;
+class Matrix3d;
 
 /**
  *  @brief Generic base class of DXF reader exceptions
@@ -53,12 +52,12 @@ class DB_PLUGIN_PUBLIC DXFReaderException
   : public ReaderException
 {
 public:
-  DXFReaderException (const std::string &msg, size_t p, const std::string &cell, const std::string &source)
-    : ReaderException (tl::sprintf (tl::to_string (tr ("%s (position=%ld, cell=%s), in file: %s")), msg.c_str (), p, cell, source))
+  DXFReaderException (const std::string &msg, size_t p, const std::string &cell)
+    : ReaderException (tl::sprintf (tl::to_string (tr ("%s (position=%ld, cell=%s)")), msg.c_str (), p, cell))
   { }
 
-  DXFReaderException (const std::string &msg, int line, const std::string &cell, const std::string &source)
-    : ReaderException (tl::sprintf (tl::to_string (tr ("%s (line=%d, cell=%s), in file: %s")), msg.c_str (), line, cell, source))
+  DXFReaderException (const std::string &msg, int line, const std::string &cell)
+    : ReaderException (tl::sprintf (tl::to_string (tr ("%s (line=%d, cell=%s)")), msg.c_str (), line, cell))
   { }
 };
 
@@ -134,7 +133,7 @@ public:
    *
    *  Reimplements DXFDiagnostics
    */
-  virtual void warn (const std::string &txt, int warn_level = 1);
+  virtual void warn (const std::string &txt);
 
 private:
   struct VariantKey
@@ -194,6 +193,7 @@ private:
 
   void do_read (db::Layout &layout, db::cell_index_type top);
 
+  std::pair <bool, unsigned int> open_layer (db::Layout &layout, const std::string &n);
   db::cell_index_type make_layer_variant (db::Layout &layout, const std::string &cellname, db::cell_index_type template_cell, unsigned int layer, double sx, double sy);
   void cleanup (db::Layout &layout, db::cell_index_type top);
 
@@ -212,7 +212,7 @@ private:
   int determine_polyline_mode ();
   void parse_entity (const std::string &entity_code, size_t &nsolids, size_t &closed_polylines);
   void add_bulge_segment (std::vector<db::DPoint> &points, const db::DPoint &p, double b);
-  std::list<db::DPoint> spline_interpolation (std::vector<std::pair<db::DPoint, double> > &points, int n, const std::vector<double> &knots);
+  void spline_interpolation (std::vector<db::DPoint> &points, int n, const std::vector<double> &knots, bool save_first = false);
   void arc_interpolation (std::vector<db::DPoint> &points, const std::vector<double> &rad, const std::vector<double> &start, const std::vector<double> &end, const std::vector<int> &ccw);
   void elliptic_interpolation (std::vector<db::DPoint> &points, const std::vector<double> &rmin, const std::vector<db::DPoint> &vmaj, const std::vector<double> &start, const std::vector<double> &end, const std::vector<int> &ccw);
   void deliver_points_to_edges (std::vector<db::DPoint> &points, const std::vector<db::DPoint> &points2, const db::DCplxTrans &tt, int edge_type, int value94, const std::vector<double> &value40, const std::vector<double> &value50, const std::vector<double> &value51, const std::vector<int> &value73, std::vector<db::Edge> &iedges);

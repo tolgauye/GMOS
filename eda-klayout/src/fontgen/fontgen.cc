@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -80,7 +80,7 @@ main (int argc, char *argv [])
 
       QFontMetrics fm (f);
 
-      int w = fm.averageCharWidth ();
+      int w = fm.width (QChar::fromLatin1 ('W'));
 
       printf ("\n// Font: %s\n", f.toString ().toLatin1 ().constData ());
       printf ("const unsigned int ff%d_height = %d;\nconst unsigned int ff%d_line_height = %d;\nconst unsigned int ff%d_width = %d;\nconst unsigned int ff%d_stride = %d;\n",

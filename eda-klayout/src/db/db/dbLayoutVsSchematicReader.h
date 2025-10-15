@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -28,7 +28,6 @@
 #include "dbCell.h"
 #include "dbLayoutVsSchematic.h"
 #include "dbLayoutToNetlistReader.h"
-#include "dbLog.h"
 #include "tlStream.h"
 
 namespace db {
@@ -79,8 +78,6 @@ private:
   void read_netlist (db::LayoutVsSchematic *lvs);
 
   bool read_status (db::NetlistCrossReference::Status &status);
-  void read_log_entry (db::NetlistCrossReference *xref);
-  void read_logs (db::NetlistCrossReference *xref);
   void read_xref (db::NetlistCrossReference *xref);
   void read_xrefs_for_circuits (db::NetlistCrossReference *xref, const db::Circuit *circuit_a, const db::Circuit *circuit_b);
   void read_net_pair (db::NetlistCrossReference *xref, const db::Circuit *circuit_a, const db::Circuit *circuit_b);

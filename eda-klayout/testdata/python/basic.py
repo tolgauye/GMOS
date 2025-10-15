@@ -1,5 +1,5 @@
 # KLayout Layout Viewer
-# Copyright (C) 2006-2025 Matthias Koefferlein
+# Copyright (C) 2006-2019 Matthias Koefferlein
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,16 +21,9 @@ import unittest
 import os
 import sys
 import gc
-import copy
 
 # Set this to True to disable some tests involving exceptions
 leak_check = "TEST_LEAK_CHECK" in os.environ
-
-class ObjectWithStr:
-  def __init__(self, s):
-    self.s = s
-  def __str__(self):
-    return self.s
 
 # see test_21
 class AEXT(pya.A):
@@ -41,7 +34,7 @@ class AEXT(pya.A):
   def g(self):
     return self.offset
   def m(self):
-    return self.offset+self.get_n()
+    return self.offset+self.a1()
   # Note: there are no protected methods, but this emulates the respective test for RBA
   def call_a10_prot(self, f):
     a10_prot(f)
@@ -49,7 +42,7 @@ class AEXT(pya.A):
     return str(self.offset)
 
 def repr_of_a(self):
-  return "a1=" + str(self.get_n())
+  return "a1=" + str(self.a1())
 
 pya.A.__repr__ = repr_of_a
 
@@ -149,15 +142,6 @@ class BasicTest(unittest.TestCase):
 
   def test_00(self):
 
-    # does not work with all Python versions
-    # (debugging shows that Python calls the setter on the metaclass,
-    # not on the class itself at least on 3.12)
-    # # static (class) properties
-    # pya.A.sp_i = 17
-    # self.assertEqual(pya.A.sp_i, 18)
-    # pya.A.sp_i = -1
-    # self.assertEqual(pya.A.sp_i, 0)
-
     # all references of PA are released now:
     ic0 = pya.A.instance_count()
 
@@ -165,9 +149,9 @@ class BasicTest(unittest.TestCase):
     self.assertEqual( pya.A.instance_count(), ic0 + 1 )
 
     a = pya.A()
-    self.assertEqual(a.get_n(), 17)
+    self.assertEqual(a.a1(), 17)
     a.assign(pya.A(110))
-    self.assertEqual(a.get_n(), 110)
+    self.assertEqual(a.a1(), 110)
 
     a = None
     self.assertEqual( pya.A.instance_count(), ic0 )
@@ -197,16 +181,15 @@ class BasicTest(unittest.TestCase):
     self.assertEqual( pya.A.aa(), "static_a" )
     self.assertEqual( a.aa(), "a" )
 
-    self.assertEqual( a.get_n(), 17 )
+    self.assertEqual( a.a1(), 17 )
     a.a5(-5)
-    self.assertEqual( a.get_n(), -5 )
+    self.assertEqual( a.a1(), -5 )
     a.a5(0x7fffffff)
-    self.assertEqual( a.get_n(), 0x7fffffff )
+    self.assertEqual( a.a1(), 0x7fffffff )
     a.a5(-0x80000000)
-    self.assertEqual( a.get_n(), -0x80000000 )
+    self.assertEqual( a.a1(), -0x80000000 )
 
     self.assertEqual( a.a3("a"), 1 )
-    self.assertEqual( a.a3(ObjectWithStr("abcde")), 5 )   # implicitly using to_s for string conversion
     self.assertEqual( a.a3("ab"), 2 )
     self.assertEqual( a.a3("µ"), 2 )  # two UTF8 bytes
     if "a3_qstr" in a.__dict__:
@@ -265,7 +248,7 @@ class BasicTest(unittest.TestCase):
     self.assertEqual( pya.A.instance_count(), ic0 )
     a = pya.A.new_a( 55 )
     self.assertEqual( pya.A.instance_count(), ic0 + 1 )
-    self.assertEqual( a.get_n(), 55 )
+    self.assertEqual( a.a1(), 55 )
     self.assertEqual( a.a_vp1( a.a_vp2() ), "abc" )
     a.destroy()
     self.assertEqual( pya.A.instance_count(), ic0 )
@@ -410,113 +393,6 @@ class BasicTest(unittest.TestCase):
       a.mod_efptr( ee, pya.Enum.a )
       self.assertEqual( str(ee), "a|b" )
 
-  def test_10(self):
-
-    # all references of A are released now:
-    ic0 = pya.A.instance_count()
-    self.assertEqual(ic0, 0)
-
-    a = pya.A.new_a_by_variant()
-    self.assertEqual(pya.A.instance_count(), ic0 + 1)
-
-    self.assertEqual(a.get_n(), 17)
-    a.a5(-15)
-    self.assertEqual(a.get_n(), -15)
-
-    a = None
-    self.assertEqual(pya.A.instance_count(), ic0)
-
-    ic0 = pya.B.instance_count()
-    self.assertEqual(ic0, 0)
-
-    b = pya.B.new_b_by_variant()
-    self.assertEqual(pya.B.instance_count(), ic0 + 1)
-
-    b.set_str_combine("x", "y")
-    self.assertEqual(b.str(), "xy")
-
-    b._destroy()
-    self.assertEqual(pya.B.instance_count(), ic0)
-
-  def test_11(self):
-
-    # implicitly converting tuples/lists to objects by calling the constructor
-
-    b = pya.B()
-    b.av_cptr = [ pya.A(17), [1,2], [4,6,0.5] ]
-
-    arr = []
-    for a in b.each_a():
-      arr.append(a.get_n_const())
-    self.assertEqual(arr, [17, 3, 5])
-    
-    b = pya.B()
-    # NOTE: this gives an error (printed only) that tuples can't be modified as out parameters
-    b.av_ref = ( (1,2), (6,2,0.25), [42] )
-
-    arr = []
-    for a in b.each_a():
-      arr.append(a.get_n_const())
-    self.assertEqual(arr, [3, 2, 42])
-    
-    b = pya.B()
-    aa = [ (1,2), (6,2,0.25), [42] ]
-    b.av_ptr = aa
-
-    arr = []
-    for a in b.each_a():
-      arr.append(a.get_n_const())
-    self.assertEqual(arr, [3, 2, 42])
-    
-    # NOTE: as we used aa in "av_ptr", it got modified as out parameter and
-    # now holds A object references
-    arr = []
-    for a in aa:
-      arr.append(a.get_n_const())
-    self.assertEqual(arr, [3, 2, 42])
-    
-    b.av = ()
-
-    arr = []
-    for a in b.each_a():
-      arr.append(a.get_n_const())
-    self.assertEqual(arr, [])
-    
-    b.push_a_ref( (1, 7) )
-
-    arr = []
-    for a in b.each_a():
-      arr.append(a.get_n_const())
-    self.assertEqual(arr, [8])
-    
-    b.push_a_ptr( (1, 7, 0.25) )
-
-    arr = []
-    for a in b.each_a():
-      arr.append(a.get_n_const())
-    self.assertEqual(arr, [8, 2])
-    
-    b.push_a_cref( [42] )
-
-    arr = []
-    for a in b.each_a():
-      arr.append(a.get_n_const())
-    self.assertEqual(arr, [8, 2, 42])
-    
-    b.push_a_cptr( (1, 16) )
-
-    arr = []
-    for a in b.each_a():
-      arr.append(a.get_n_const())
-    self.assertEqual(arr, [8, 2, 42, 17])
-    
-    b.push_a( (4, 6, 0.5) )
-
-    arr = []
-    for a in b.each_a():
-      arr.append(a.get_n_const())
-    self.assertEqual(arr, [8, 2, 42, 17, 5])
-    
   def test_12(self):
 
     a1 = pya.A()
@@ -524,16 +400,16 @@ class BasicTest(unittest.TestCase):
     a2 = a1
     a3 = a2.dup()
 
-    self.assertEqual( a1.get_n(), -15 )
-    self.assertEqual( a2.get_n(), -15 )
-    self.assertEqual( a3.get_n(), -15 )
+    self.assertEqual( a1.a1(), -15 )
+    self.assertEqual( a2.a1(), -15 )
+    self.assertEqual( a3.a1(), -15 )
 
     a1.a5( 11 )
     a3.a5( -11 )
     
-    self.assertEqual( a1.get_n(), 11 )
-    self.assertEqual( a2.get_n(), 11 )
-    self.assertEqual( a3.get_n(), -11 )
+    self.assertEqual( a1.a1(), 11 )
+    self.assertEqual( a2.a1(), 11 )
+    self.assertEqual( a3.a1(), -11 )
 
     self.assertEqual( a1.a10_d(5.2), "5.2" )
     self.assertEqual( a1.a10_s(0x70000000), "0" )
@@ -746,21 +622,21 @@ class BasicTest(unittest.TestCase):
 
       err_caught = False
       try:
-        b.amember_cptr().get_n() # cannot call non-const method on const reference
+        b.amember_cptr().a1() # cannot call non-const method on const reference
       except: 
         err_caught = True
       self.assertEqual( err_caught, True )
 
     b.amember_cptr().a2()
 
-    self.assertEqual(b.always_5(), 5)
-    self.assertEqual(b.str(), "")
-    b.set_str("xyz")
-    self.assertEqual(b.str(), "xyz")
-    self.assertEqual(b.str_ccptr(), "xyz")
-    b.set_str_combine("yx", "zz")
-    self.assertEqual(b.str(), "yxzz")
-    self.assertEqual(b.str_ccptr(), "yxzz")
+    self.assertEqual( b.b1(), 5 )
+    self.assertEqual( b.b2(), "" )
+    b.b5( "xyz" )
+    self.assertEqual( b.b2(), "xyz" )
+    self.assertEqual( b.b5a(), "xyz" )
+    b.b5b( "yx", "zz" )
+    self.assertEqual( b.b2(), "yxzz" )
+    self.assertEqual( b.b5a(), "yxzz" )
 
     arr = []
 
@@ -770,7 +646,7 @@ class BasicTest(unittest.TestCase):
 
       try:
         for a in b.b10():
-          arr.append(a.get_n())  # b10 is a const iterator - cannot call a1 on it
+          arr.append(a.a1())  # b10 is a const iterator - cannot call a1 on it
       except: 
         err_caught = True
       self.assertEqual( err_caught, True )
@@ -782,7 +658,7 @@ class BasicTest(unittest.TestCase):
 
       try:
         for a in b.b10p():
-          arr.append(a.get_n())  # b10p is a const iterator - cannot call a1 on it
+          arr.append(a.a1())  # b10p is a const iterator - cannot call a1 on it
       except: 
         err_caught = True
       self.assertEqual( err_caught, True )
@@ -790,7 +666,7 @@ class BasicTest(unittest.TestCase):
 
     arr = []
     for a in b.b10():
-      arr.append(a.dup().get_n()) 
+      arr.append(a.dup().a1()) 
     self.assertEqual(arr, [100, 121, 144])
 
     arr = []
@@ -801,99 +677,99 @@ class BasicTest(unittest.TestCase):
     #   destroyed too early.
     bdup = b.dup()
     for a in bdup.b10():
-      arr.append(a.dup().get_n()) 
+      arr.append(a.dup().a1()) 
     self.assertEqual(arr, [100, 121, 144])
     return
 
     arr = []
     for a in b.b10():
-      arr.append(a.get_n_const()) 
+      arr.append(a.a1c()) 
     self.assertEqual(arr, [100, 121, 144])
 
     arr = []
     for a in b.b10p():
-      arr.append(a.dup().get_n())
+      arr.append(a.dup().a1())
     self.assertEqual(arr, [100, 121, 144])
 
     arr = []
     # Ticket #811:
     for a in b.dup().b10p():
-      arr.append(a.dup().get_n())
+      arr.append(a.dup().a1())
     self.assertEqual(arr, [100, 121, 144])
 
     arr = []
     bdup = b.dup()
     for a in bdup.b10p():
-      arr.append(a.dup().get_n())
+      arr.append(a.dup().a1())
     self.assertEqual(arr, [100, 121, 144])
 
     arr = []
     for a in b.b10p():
-      arr.append(a.get_n_const())
+      arr.append(a.a1c())
     self.assertEqual(arr, [100, 121, 144])
 
     arr = []
     for a in b.b11():
-      arr.append(a.get_n())
+      arr.append(a.a1())
     self.assertEqual(arr, [100, 121, 144])
 
     arr = []
     bdup = b.dup()
     for a in bdup.b11():
-      arr.append(a.get_n())
+      arr.append(a.a1())
     self.assertEqual(arr, [100, 121, 144])
 
     arr = []
     for a in b.b12():
-      arr.append(a.get_n())
+      arr.append(a.a1())
     self.assertEqual(arr, [7100, 7121, 7144, 7169])
 
     arr = []
     bdup = b.dup()
     for a in bdup.b12():
-      arr.append(a.get_n())
+      arr.append(a.a1())
     self.assertEqual(arr, [7100, 7121, 7144, 7169])
 
     aarr = b.b16a()
     arr = []
     for a in aarr:
-      arr.append(a.get_n())
+      arr.append(a.a1())
     self.assertEqual(arr, [100, 121, 144])
 
     aarr = b.b16b()
     arr = []
     for a in aarr:
-      arr.append(a.get_n())
+      arr.append(a.a1())
     self.assertEqual(arr, [100, 121, 144])
 
     aarr = b.b16c()
     arr = []
     for a in aarr:
-      arr.append(a.get_n())
+      arr.append(a.a1())
     self.assertEqual(arr, [100, 121, 144])
 
     b.b17a( [ pya.A.new_a( 101 ), pya.A.new_a( -122 ) ] )
     arr = []
     for a in b.b11():
-      arr.append(a.get_n())
+      arr.append(a.a1())
     self.assertEqual(arr, [101, -122])
 
     b.b17a( [] )
     arr = []
     for a in b.b11():
-      arr.append(a.get_n())
+      arr.append(a.a1())
     self.assertEqual(arr, [])
 
     b.b17b( [ pya.A.new_a( 102 ), pya.A.new_a( -123 ) ] )
     arr = []
     for a in b.b11():
-      arr.append(a.get_n())
+      arr.append(a.a1())
     self.assertEqual(arr, [102, -123])
 
     b.b17c( [ pya.A.new_a( 100 ), pya.A.new_a( 121 ), pya.A.new_a( 144 ) ] )
     arr = []
     for a in b.b11():
-      arr.append(a.get_n())
+      arr.append(a.a1())
     self.assertEqual(arr, [100, 121, 144])
 
     if not leak_check: 
@@ -901,7 +777,7 @@ class BasicTest(unittest.TestCase):
       arr = []
       try:
         for a in b.b13():
-          arr.append(a.get_n())
+          arr.append(a.a1())
       except: 
         err_caught = True
       self.assertEqual( err_caught, True )
@@ -909,28 +785,28 @@ class BasicTest(unittest.TestCase):
 
     arr = []
     for a in b.b13():
-      arr.append(a.get_n_const())
+      arr.append(a.a1c())
     self.assertEqual(arr, [-3100, -3121])
 
     arr = []
     bdup = b.dup()
     for a in bdup.b13():
-      arr.append(a.get_n_const())
+      arr.append(a.a1c())
     self.assertEqual(arr, [-3100, -3121])
 
     arr = []
-    for a in b.each_a():
-      arr.append(a.get_n_const())
+    for a in b.b18():
+      arr.append(a.a1c())
     self.assertEqual(arr, [100, 121, 144])
 
     arr = []
-    for a in b.each_a():
-      arr.append(a.get_n())
+    for a in b.b18():
+      arr.append(a.a1())
     self.assertEqual(arr, [100, 121, 144])
 
     arr = []
-    for a in b.each_a_ref():
-      arr.append(a.get_n_const())
+    for a in b.b18b():
+      arr.append(a.a1c())
     self.assertEqual(arr, [100, 121, 144])
 
     arr = []
@@ -938,8 +814,8 @@ class BasicTest(unittest.TestCase):
     # since A is a managed object and is not turned into a copy.
     err_caught = False
     try:
-      for a in b.each_a_ref():
-        arr.append(a.get_n())
+      for a in b.b18b():
+        arr.append(a.a1())
     except:
       err_caught = True
     end
@@ -947,17 +823,17 @@ class BasicTest(unittest.TestCase):
     self.assertEqual(err_caught, True)
 
     arr = []
-    for a in b.each_a_ptr():
-      arr.append(a.get_n_const())
+    for a in b.b18c():
+      arr.append(a.a1c())
     self.assertEqual(arr, [100, 121, 144])
 
     arr = []
-    # this does not work since each_a_ptr delivers a "const *" which cannot be used to call a non-const
+    # this does not work since b18c delivers a "const *" which cannot be used to call a non-const
     # method on
     err_caught = False
     try: 
-      for a in b.each_a_ptr():
-        arr.append(a.get_n())
+      for a in b.b18c():
+        arr.append(a.a1())
     except:
       err_caught = True
     end
@@ -969,53 +845,53 @@ class BasicTest(unittest.TestCase):
     b = pya.B()
 
     bb = pya.B()
-    bb.set_str("a")
+    bb.b5("a")
     b.push_b(bb)
 
     bb = pya.B()
-    bb.set_str("y")
+    bb.b5("y")
     b.push_b(bb)
 
     bb = pya.B()
-    bb.set_str("uu")
+    bb.b5("uu")
     b.push_b(bb)
 
     arr = []
     for bb in b.each_b_copy():
-      arr.append(bb.str())
+      arr.append(bb.b2())
     self.assertEqual(arr, ["a", "y", "uu"])
 
     arr = []
     for bb in b.each_b_copy():
-      bb.set_str(bb.str() + "x")
-      arr.append(bb.str())
+      bb.b5(bb.b2() + "x")
+      arr.append(bb.b2())
     self.assertEqual(arr, ["ax", "yx", "uux"])
 
     arr = []
     for bb in b.each_b_copy():
-      arr.append(bb.str())
+      arr.append(bb.b2())
     self.assertEqual(arr, ["a", "y", "uu"])
 
     arr = []
     for bb in b.each_b_cref():
-      arr.append(bb.str())
+      arr.append(bb.b2())
     self.assertEqual(arr, ["a", "y", "uu"])
 
     arr = []
     # this works, since the "const B &" will be converted to a copy
     for bb in b.each_b_cref():
-      bb.set_str(bb.str() + "x")
-      arr.append(bb.str())
+      bb.b5(bb.b2() + "x")
+      arr.append(bb.b2())
     self.assertEqual(arr, ["ax", "yx", "uux"])
 
     arr = []
     for bb in b.each_b_cref():
-      arr.append(bb.str())
+      arr.append(bb.b2())
     self.assertEqual(arr, ["a", "y", "uu"])
 
     arr = []
     for bb in b.each_b_cptr():
-      arr.append(bb.str())
+      arr.append(bb.b2())
     self.assertEqual(arr, ["a", "y", "uu"])
 
     arr = []
@@ -1023,8 +899,8 @@ class BasicTest(unittest.TestCase):
     err_caught = False
     try:
       for bb in b.each_b_cptr():
-        bb.set_str(bb.str() + "x")
-        arr.append(bb.str())
+        bb.b5(bb.b2() + "x")
+        arr.append(bb.b2())
     except: 
       err_caught = True
     self.assertEqual(err_caught, True)
@@ -1032,39 +908,39 @@ class BasicTest(unittest.TestCase):
 
     arr = []
     for bb in b.each_b_cptr():
-      arr.append(bb.str())
+      arr.append(bb.b2())
     self.assertEqual(arr, ["a", "y", "uu"])
 
     arr = []
     for bb in b.each_b_ref():
-      arr.append(bb.str())
+      arr.append(bb.b2())
     self.assertEqual(arr, ["a", "y", "uu"])
 
     arr = []
     for bb in b.each_b_ref():
-      bb.set_str(bb.str() + "x")
-      arr.append(bb.str())
+      bb.b5(bb.b2() + "x")
+      arr.append(bb.b2())
     self.assertEqual(arr, ["ax", "yx", "uux"])
 
     arr = []
     for bb in b.each_b_ref():
-      arr.append(bb.str())
+      arr.append(bb.b2())
     self.assertEqual(arr, ["ax", "yx", "uux"])
 
     arr = []
     for bb in b.each_b_ptr():
-      arr.append(bb.str())
+      arr.append(bb.b2())
     self.assertEqual(arr, ["ax", "yx", "uux"])
 
     arr = []
     for bb in b.each_b_ptr():
-      bb.set_str(bb.str() + "x")
-      arr.append(bb.str())
+      bb.b5(bb.b2() + "x")
+      arr.append(bb.b2())
     self.assertEqual(arr, ["axx", "yxx", "uuxx"])
 
     arr = []
     for bb in b.each_b_ptr():
-      arr.append(bb.str())
+      arr.append(bb.b2())
     self.assertEqual(arr, ["axx", "yxx", "uuxx"])
 
   def test_14(self):
@@ -1107,7 +983,7 @@ class BasicTest(unittest.TestCase):
       self.assertEqual( False, True )  # this must never hit
     except Exception as e:
       err = str(e)
-    self.assertEqual( err, "Unexpected object type (expected argument of class A, got X) for argument #1 in B.b4" );
+    self.assertEqual( err, "Unexpected object type (expected argument of class A, got X) in B.b4" );
   
     # Test, if this throws an error (object of class X passed to A argument):
     err = ""
@@ -1118,7 +994,7 @@ class BasicTest(unittest.TestCase):
       self.assertEqual( False, True )  # this must never hit
     except Exception as e:
       err = str(e)
-    self.assertEqual( err, "Unexpected object type (expected argument of class A, got B) for argument #1 in B.b4" );
+    self.assertEqual( err, "Unexpected object type (expected argument of class A, got B) in B.b4" );
   
   def test_17(self):
 
@@ -1130,23 +1006,23 @@ class BasicTest(unittest.TestCase):
     a_count = pya.A.instance_count()
     a = b.make_a( 1971 );
     self.assertEqual( pya.A.instance_count(), a_count + 1 )
-    self.assertEqual( a.get_n(), 1971 );
+    self.assertEqual( a.a1(), 1971 );
     self.assertEqual( b.an( a ), 1971 );
 
     aa = b.make_a( -61 );
     self.assertEqual( pya.A.instance_count(), a_count + 2 )
     self.assertEqual( b.an_cref( aa ), -61 );
-    self.assertEqual( a.get_n(), 1971 );
+    self.assertEqual( a.a1(), 1971 );
     self.assertEqual( b.an( a ), 1971 );
-    self.assertEqual( aa.get_n(), -61 );
+    self.assertEqual( aa.a1(), -61 );
     self.assertEqual( b.an( aa ), -61 );
 
     aa.a5(98);
     a.a5(100);
     
-    self.assertEqual( a.get_n(), 100 );
+    self.assertEqual( a.a1(), 100 );
     self.assertEqual( b.an( a ), 100 );
-    self.assertEqual( aa.get_n(), 98 );
+    self.assertEqual( aa.a1(), 98 );
     self.assertEqual( b.an( aa ), 98 );
 
     a._destroy()
@@ -1159,10 +1035,10 @@ class BasicTest(unittest.TestCase):
 
     b = pya.B()
     b.set_an( 77 )
-    self.assertEqual( b.amember_cptr().get_n_const(), 77 );
+    self.assertEqual( b.amember_cptr().a1c(), 77 );
 
     b.set_an_cref( 79 )
-    self.assertEqual( b.amember_cptr().get_n_const(), 79 );
+    self.assertEqual( b.amember_cptr().a1c(), 79 );
 
     aref = b.amember_cptr()
     err_caught = False
@@ -1170,14 +1046,14 @@ class BasicTest(unittest.TestCase):
     if not leak_check:
 
       try:
-        x = aref.get_n() # cannot call non-const method on const reference (as delivered by amember_cptr)
+        x = aref.a1() # cannot call non-const method on const reference (as delivered by amember_cptr)
       except:
         err_caught = True
       self.assertEqual( err_caught, True )
-      self.assertEqual( aref.get_n_const(), 79 );
+      self.assertEqual( aref.a1c(), 79 );
 
     b.set_an( -1 )
-    self.assertEqual( aref.get_n_const(), -1 );
+    self.assertEqual( aref.a1c(), -1 );
 
   def test_19(self):
 
@@ -1235,11 +1111,11 @@ class BasicTest(unittest.TestCase):
 
     a1 = b.amember_or_nil_alt( True )
     a2 = b.amember_ptr_alt()
-    self.assertEqual( a1.get_n(), 17 )
-    self.assertEqual( a2.get_n(), 17 )
+    self.assertEqual( a1.a1(), 17 )
+    self.assertEqual( a2.a1(), 17 )
     a1.a5( 761 )
-    self.assertEqual( a1.get_n(), 761 )
-    self.assertEqual( a2.get_n(), 761 )
+    self.assertEqual( a1.a1(), 761 )
+    self.assertEqual( a2.a1(), 761 )
 
     a1 = b.amember_or_nil( False )
     self.assertEqual( a1, None )
@@ -1284,9 +1160,6 @@ class BasicTest(unittest.TestCase):
     # test client data binding to C++ objects 
     
     b = pya.B()
-
-    longint = 10000000000000000
-    longint_as_int = (sys.maxsize > 5000000000 or (str(longint) == "10000000000000000" and type(longint) is int))
     
     self.assertEqual( b.b20a( 5.0 ), False )
     self.assertEqual( b.b20a( None ), True )
@@ -1294,27 +1167,27 @@ class BasicTest(unittest.TestCase):
     self.assertEqual( b.b20a( "hallo" ), False )
     self.assertEqual( b.b20a( False ), False )
     self.assertEqual( b.b20a( True ), False )
-    self.assertEqual( b.b20a( longint ), False )
+    self.assertEqual( b.b20a( 10000000000000000 ), False )
     self.assertEqual( b.b20b( 5.0 ), True )
     self.assertEqual( b.b20b( None ), False )
     self.assertEqual( b.b20b( 1 ), False )
     self.assertEqual( b.b20b( "hallo" ), False )
     self.assertEqual( b.b20b( False ), False )
     self.assertEqual( b.b20b( True ), False )
-    if longint_as_int:
-      # this fits into a long value, therefore this test returns false:
-      self.assertEqual( b.b20b( longint ), False )
+    if sys.maxsize > 5000000000:
+      # on 64 bit platforms this fits into a long value, therefore this test returns false:
+      self.assertEqual( b.b20b( 10000000000000000 ), False )
     else:
       # otherwise it is converted to a double:
-      self.assertEqual( b.b20b( longint ), True )
+      self.assertEqual( b.b20b( 10000000000000000 ), True )
     self.assertEqual( b.b20c( 5.0 ), False )
     self.assertEqual( b.b20c( None ), False )
-    if longint_as_int:
-      # this fits into a long value, therefore this test returns false:
-      self.assertEqual( b.b20c( longint ), True )
+    if sys.maxsize > 5000000000:
+      # on 64 bit platforms this fits into a long value, therefore this test returns True:
+      self.assertEqual( b.b20c( 10000000000000000 ), True )
     else:
       # otherwise it is converted to a double and the test returns false:
-      self.assertEqual( b.b20c( longint ), False )
+      self.assertEqual( b.b20c( 10000000000000000 ), False )
     self.assertEqual( b.b20c( "hallo" ), False )
     self.assertEqual( b.b20c( False ), False )
     self.assertEqual( b.b20c( True ), False )
@@ -1324,14 +1197,14 @@ class BasicTest(unittest.TestCase):
     self.assertEqual( b.b20d( "hallo" ), True )
     self.assertEqual( b.b20d( False ), False )
     self.assertEqual( b.b20d( True ), False )
-    self.assertEqual( b.b20d( longint ), False )
+    self.assertEqual( b.b20d( 10000000000000000 ), False )
     self.assertEqual( b.b20e( 5.0 ), False )
     self.assertEqual( b.b20e( None ), False )
     self.assertEqual( b.b20e( 1 ), False )
     self.assertEqual( b.b20e( "hallo" ), False )
     self.assertEqual( b.b20e( False ), True )
     self.assertEqual( b.b20e( True ), True )
-    self.assertEqual( b.b20e( longint ), False )
+    self.assertEqual( b.b20e( 10000000000000000 ), False )
 
     self.assertEqual( b.b21a( 50 ), "50" )
     self.assertEqual( b.b21a( True ), "true" )
@@ -1399,13 +1272,6 @@ class BasicTest(unittest.TestCase):
     self.assertEqual( b.b22a( [ pya.LayerInfo("hallo") ] ), 1 ) 
     self.assertEqual( str(b.b22c()), "hallo" )
     self.assertEqual( type(b.b22c()).__name__, "LayerInfo" )
-
-    # byte arrays through Variants
-    if sys.version_info >= (3, 0):
-      self.assertEqual( b.b22a( [ bytes('abc', 'utf-8') ] ), 1 )
-      self.assertEqual( str(b.b22c()), "b'abc'" )
-      self.assertEqual( str(b.b22d()), "b'abc'" )
-      self.assertEqual( str(b.var()), "b'abc'" )
 
   def test_23(self):
 
@@ -1495,55 +1361,10 @@ class BasicTest(unittest.TestCase):
     def f4():
       n[0] = n[0] + 2
 
-    n[0] = 0
     e.e0(f4)
     e.s1()
-    self.assertEqual( 2, n[0] )
+    self.assertEqual( 4, n[0] )
 
-    # remove event handler -> no events triggered anymore
-    n[0] = 0
-    e.e0 -= f4
-    e.s1()
-    self.assertEqual( 0, n[0] )
-
-    # adding again will re-activate it
-    e.e0 += f4
-    n[0] = 0
-    e.s1()
-    self.assertEqual( 2, n[0] )
-
-    # two events at once
-    def f5():
-      n[0] = n[0] + 10
-    n[0] = 0
-    e.e0 += f5
-    e.s1()
-    self.assertEqual( 12, n[0] )
-
-    # clearing events
-    e.e0.clear()
-    e.s1()
-    n[0] = 0
-    self.assertEqual( 0, n[0] )
-
-    # synonyms: add, connect
-    e.e0.add(f4)
-    e.e0.connect(f5)
-    n[0] = 0
-    e.s1()
-    self.assertEqual( 12, n[0] )
-
-    # synonyms: remove, disconnect
-    e.e0.disconnect(f4)
-    n[0] = 0
-    e.s1()
-    self.assertEqual( 10, n[0] )
-    n[0] = 0
-    e.e0.remove(f5)
-    e.s1()
-    self.assertEqual( 0, n[0] )
-
-    # another signal
     e.s2()
     self.assertEqual( 100, n[1] )
     e.m = 1
@@ -2115,11 +1936,11 @@ class BasicTest(unittest.TestCase):
     # Hint: QApplication creates some leaks (FT, GTK). Hence it must not be used in the leak_check case ..
     if not leak_check:
       a = pya.QCoreApplication.instance()
-      self.assertEqual("<class 'klayout.pyacore.Application'>", str(type(a)))
+      self.assertEqual("<class 'pya.Application'>", str(type(a)))
       qd = pya.QDialog()
       pya.QApplication.setActiveWindow(qd)
       self.assertEqual(repr(pya.QApplication.activeWindow), repr(qd))
-      self.assertEqual("<class 'klayout.pyacore.QDialog'>", str(type(pya.QApplication.activeWindow)))
+      self.assertEqual("<class 'pya.QDialog'>", str(type(pya.QApplication.activeWindow)))
       qd._destroy()
       self.assertEqual(repr(pya.QApplication.activeWindow), "None")
 
@@ -2249,8 +2070,6 @@ class BasicTest(unittest.TestCase):
     self.assertEqual(a.call_a10_prot(1.25), "1.25")
 
   def test_38(self):
-
-    pya.E.reset_inst()
 
     # mixed const / non-const reference and events
     ec = pya.E.ic()
@@ -2421,8 +2240,13 @@ class BasicTest(unittest.TestCase):
     self.assertEqual(b.map1_cptr_null() == None, True);
     self.assertEqual(b.map1_ptr_null() == None, True);
 
-    b.map1 = { 42: 1, -17: True }
-    self.assertEqual(map2str(b.map1), "{-17: True, 42: 1}")
+    try: 
+      # error converting 1 or True to string
+      b.map1 = { 42: 1, -17: True }
+      error_caught = False
+    except:
+      error_caught = True
+    self.assertEqual(error_caught, True)
 
     b.map1 = { 42: "1", -17: "True" }
     self.assertEqual(map2str(b.map1), "{-17: True, 42: 1}")
@@ -2985,248 +2809,8 @@ class BasicTest(unittest.TestCase):
     self.assertEqual(sc.got_s0a, 0)
     self.assertEqual(sc.got_s0b, 0)
 
-  def test_QByteArray(self):
-
-    # QByteArray
-
-    if "ia_cref_to_qba" in pya.A.__dict__:
-
-      qba = pya.A.ia_cref_to_qba([ 16, 42, 0, 8 ])
-      if sys.version_info < (3, 0):
-        self.assertEqual(repr(qba), "bytearray(b'\\x10*\\x00\\x08')")
-        self.assertEqual(repr(pya.A.ft_qba(qba)), "bytearray(b'\\x10*\\x00\\x08')")
-        self.assertEqual(repr(pya.A.ft_var(qba)), "bytearray(b'\\x10*\\x00\\x08')")
-      else:
-        self.assertEqual(repr(qba), "b'\\x10*\\x00\\x08'")
-        self.assertEqual(repr(pya.A.ft_qba(qba)), "b'\\x10*\\x00\\x08'")
-        self.assertEqual(repr(pya.A.ft_var(qba)), "b'\\x10*\\x00\\x08'")
-
-      self.assertEqual(pya.A.qba_to_ia(qba), [ 16, 42, 0, 8 ])
-      self.assertEqual(pya.A.qba_cref_to_ia(qba), [ 16, 42, 0, 8 ])
-      self.assertEqual(pya.A.qba_cptr_to_ia(qba), [ 16, 42, 0, 8 ])
-      self.assertEqual(pya.A.qba_ref_to_ia(qba), [ 16, 42, 0, 8 ])
-      self.assertEqual(pya.A.qba_ptr_to_ia(qba), [ 16, 42, 0, 8 ])
-  
-      qba = pya.A.ia_cref_to_qba_cref([ 17, 42, 0, 8 ])
-      if sys.version_info < (3, 0):
-        self.assertEqual(repr(qba), "bytearray(b'\\x11*\\x00\\x08')")
-      else:
-        self.assertEqual(repr(qba), "b'\\x11*\\x00\\x08'")
-
-      qba = pya.A.ia_cref_to_qba_ref([ 18, 42, 0, 8 ])
-      if sys.version_info < (3, 0):
-        self.assertEqual(repr(qba), "bytearray(b'\\x12*\\x00\\x08')")
-      else:
-        self.assertEqual(repr(qba), "b'\\x12*\\x00\\x08'")
-
-      qba = pya.A.ia_cref_to_qba_cptr([ 19, 42, 0, 8 ])
-      if sys.version_info < (3, 0):
-        self.assertEqual(repr(qba), "bytearray(b'\\x13*\\x00\\x08')")
-      else:
-        self.assertEqual(repr(qba), "b'\\x13*\\x00\\x08'")
-
-      qba = pya.A.ia_cref_to_qba_ptr([ 20, 42, 0, 8 ])
-      if sys.version_info < (3, 0):
-        self.assertEqual(repr(qba), "bytearray(b'\\x14*\\x00\\x08')")
-      else:
-        self.assertEqual(repr(qba), "b'\\x14*\\x00\\x08'")
-
-      self.assertEqual(pya.A.qba_to_ia(b'\x00\x01\x02'), [ 0, 1, 2 ])
-
-  def test_QByteArrayView(self):
-
-    # QByteArrayView
-
-    if "ia_cref_to_qbav" in pya.A.__dict__:
-
-      qbav = pya.A.ia_cref_to_qbav([ 16, 42, 0, 8 ])
-      if sys.version_info < (3, 0):
-        self.assertEqual(repr(qbav), "bytearray(b'\\x10*\\x00\\x08')")
-      else:
-        self.assertEqual(repr(qbav), "b'\\x10*\\x00\\x08'")
-
-      self.assertEqual(pya.A.qbav_to_ia(qbav), [ 16, 42, 0, 8 ])
-      self.assertEqual(pya.A.qbav_cref_to_ia(qbav), [ 16, 42, 0, 8 ])
-      self.assertEqual(pya.A.qbav_cptr_to_ia(qbav), [ 16, 42, 0, 8 ])
-      self.assertEqual(pya.A.qbav_ref_to_ia(qbav), [ 16, 42, 0, 8 ])
-      self.assertEqual(pya.A.qbav_ptr_to_ia(qbav), [ 16, 42, 0, 8 ])
-  
-      qbav = pya.A.ia_cref_to_qbav_cref([ 17, 42, 0, 8 ])
-      if sys.version_info < (3, 0):
-        self.assertEqual(repr(qbav), "bytearray(b'\\x11*\\x00\\x08')")
-      else:
-        self.assertEqual(repr(qbav), "b'\\x11*\\x00\\x08'")
-
-      qbav = pya.A.ia_cref_to_qbav_ref([ 18, 42, 0, 8 ])
-      if sys.version_info < (3, 0):
-        self.assertEqual(repr(qbav), "bytearray(b'\\x12*\\x00\\x08')")
-      else:
-        self.assertEqual(repr(qbav), "b'\\x12*\\x00\\x08'")
-
-      qbav = pya.A.ia_cref_to_qbav_cptr([ 19, 42, 0, 8 ])
-      if sys.version_info < (3, 0):
-        self.assertEqual(repr(qbav), "bytearray(b'\\x13*\\x00\\x08')")
-      else:
-        self.assertEqual(repr(qbav), "b'\\x13*\\x00\\x08'")
-
-      qbav = pya.A.ia_cref_to_qbav_ptr([ 20, 42, 0, 8 ])
-      if sys.version_info < (3, 0):
-        self.assertEqual(repr(qbav), "bytearray(b'\\x14*\\x00\\x08')")
-      else:
-        self.assertEqual(repr(qbav), "b'\\x14*\\x00\\x08'")
-
-      self.assertEqual(pya.A.qbav_to_ia(b'\x00\x01\x02'), [ 0, 1, 2 ])
-
-  def test_QString(self):
-
-    # QString
-
-    if "ia_cref_to_qs" in pya.A.__dict__:
-
-      qs = pya.A.ia_cref_to_qs([ 16, 42, 0, 8, 0x03a9 ])
-      self.assertEqual(repr(qs), "'\\x10*\\x00\\x08\u03a9'")
-      # full cycle must preserve encoding, also for var
-      self.assertEqual(repr(pya.A.ft_qs(qs)), "'\\x10*\\x00\\x08\u03a9'")
-      self.assertEqual(repr(pya.A.ft_var(qs)), "'\\x10*\\x00\\x08\u03a9'")
-
-      self.assertEqual(pya.A.qs_to_ia(qs), [ 16, 42, 0, 8, 0x03a9 ])
-      self.assertEqual(pya.A.qs_cref_to_ia(qs), [ 16, 42, 0, 8, 0x03a9 ])
-      self.assertEqual(pya.A.qs_cptr_to_ia(qs), [ 16, 42, 0, 8, 0x03a9 ])
-      self.assertEqual(pya.A.qs_ref_to_ia(qs), [ 16, 42, 0, 8, 0x03a9 ])
-      self.assertEqual(pya.A.qs_ptr_to_ia(qs), [ 16, 42, 0, 8, 0x03a9 ])
-  
-      qs = pya.A.ia_cref_to_qs_cref([ 17, 42, 0, 8, 0x03a9 ])
-      self.assertEqual(repr(qs), "'\\x11*\\x00\\x08\u03a9'")
-
-      qs = pya.A.ia_cref_to_qs_ref([ 18, 42, 0, 8, 0x03a9 ])
-      self.assertEqual(repr(qs), "'\\x12*\\x00\\x08\u03a9'")
-
-      qs = pya.A.ia_cref_to_qs_cptr([ 19, 42, 0, 8, 0x03a9 ])
-      self.assertEqual(repr(qs), "'\\x13*\\x00\\x08\u03a9'")
-
-      qs = pya.A.ia_cref_to_qs_ptr([ 20, 42, 0, 8, 0x03a9 ])
-      self.assertEqual(repr(qs), "'\\x14*\\x00\\x08\u03a9'")
-
-      self.assertEqual(pya.A.qs_to_ia('\x00\x01\x02'), [ 0, 1, 2 ])
-
-  def test_QStringView(self):
-
-    # QStringView
-
-    if "ia_cref_to_qsv" in pya.A.__dict__:
-
-      qsv = pya.A.ia_cref_to_qsv([ 16, 42, 0, 8 ])
-      self.assertEqual(repr(qsv), "'\\x10*\\x00\\x08'")
-
-      self.assertEqual(pya.A.qsv_to_ia(qsv), [ 16, 42, 0, 8 ])
-      self.assertEqual(pya.A.qsv_cref_to_ia(qsv), [ 16, 42, 0, 8 ])
-      self.assertEqual(pya.A.qsv_cptr_to_ia(qsv), [ 16, 42, 0, 8 ])
-      self.assertEqual(pya.A.qsv_ref_to_ia(qsv), [ 16, 42, 0, 8 ])
-      self.assertEqual(pya.A.qsv_ptr_to_ia(qsv), [ 16, 42, 0, 8 ])
-  
-      qsv = pya.A.ia_cref_to_qsv_cref([ 17, 42, 0, 8 ])
-      self.assertEqual(repr(qsv), "'\\x11*\\x00\\x08'")
-
-      qsv = pya.A.ia_cref_to_qsv_ref([ 18, 42, 0, 8 ])
-      self.assertEqual(repr(qsv), "'\\x12*\\x00\\x08'")
-
-      qsv = pya.A.ia_cref_to_qsv_cptr([ 19, 42, 0, 8 ])
-      self.assertEqual(repr(qsv), "'\\x13*\\x00\\x08'")
-
-      qsv = pya.A.ia_cref_to_qsv_ptr([ 20, 42, 0, 8 ])
-      self.assertEqual(repr(qsv), "'\\x14*\\x00\\x08'")
-
-      self.assertEqual(pya.A.qsv_to_ia('\x00\x01\x02'), [ 0, 1, 2 ])
-
-  def test_QLatin1String(self):
-
-    # QLatin1String
-
-    if "ia_cref_to_ql1s" in pya.A.__dict__:
-
-      ql1s = pya.A.ia_cref_to_ql1s([ 16, 42, 0, 8, 0x03a9 ])
-      self.assertEqual(repr(ql1s), "'\\x10*\\x00\\x08\u00a9'")
-
-      self.assertEqual(pya.A.ql1s_to_ia(ql1s), [ 16, 42, 0, 8, 0xa9 ])
-      self.assertEqual(pya.A.ql1s_cref_to_ia(ql1s), [ 16, 42, 0, 8, 0xa9 ])
-      self.assertEqual(pya.A.ql1s_cptr_to_ia(ql1s), [ 16, 42, 0, 8, 0xa9 ])
-      self.assertEqual(pya.A.ql1s_ref_to_ia(ql1s), [ 16, 42, 0, 8, 0xa9 ])
-      self.assertEqual(pya.A.ql1s_ptr_to_ia(ql1s), [ 16, 42, 0, 8, 0xa9 ])
-  
-      ql1s = pya.A.ia_cref_to_ql1s_cref([ 17, 42, 0, 8, 0x03a9 ])
-      self.assertEqual(repr(ql1s), "'\\x11*\\x00\\x08\u00a9'")
-
-      ql1s = pya.A.ia_cref_to_ql1s_ref([ 18, 42, 0, 8, 0x03a9 ])
-      self.assertEqual(repr(ql1s), "'\\x12*\\x00\\x08\u00a9'")
-
-      ql1s = pya.A.ia_cref_to_ql1s_cptr([ 19, 42, 0, 8, 0x03a9 ])
-      self.assertEqual(repr(ql1s), "'\\x13*\\x00\\x08\u00a9'")
-
-      ql1s = pya.A.ia_cref_to_ql1s_ptr([ 20, 42, 0, 8, 0x03a9 ])
-      self.assertEqual(repr(ql1s), "'\\x14*\\x00\\x08\u00a9'")
-
-      self.assertEqual(pya.A.ql1s_to_ia('\x00\x01\x02'), [ 0, 1, 2 ])
-
-  def test_utf8Strings(self):
-
-    # UTF8 strings (non-Qt)
-    s = "\u0010*\u0000\b\u03a9"
-    self.assertEqual(repr(s), "'\\x10*\\x00\\x08\u03a9'")
-
-    # full cycle must preserve encoding, also for var
-    self.assertEqual(repr(pya.A.ft_str(s)), "'\\x10*\\x00\\x08\u03a9'")
-    self.assertEqual(repr(pya.A.ft_var(s)), "'\\x10*\\x00\\x08\u03a9'")
-
-    # NUL character terminates in const char * mode:
-    self.assertEqual(repr(pya.A.ft_cptr(s)), "'\\x10*'")
-
-  def test_binaryStrings(self):
-
-    # binary strings (non-Qt)
-
-    ba = pya.A.ia_cref_to_ba([ 17, 42, 0, 8 ])
-    if sys.version_info < (3, 0):
-      self.assertEqual(repr(ba), "bytearray(b'\\x11*\\x00\\x08')")
-      self.assertEqual(repr(pya.A.ft_cv(ba)), "bytearray(b'\\x11*\\x00\\x08')")
-      self.assertEqual(repr(pya.A.ft_var(ba)), "bytearray(b'\\x11*\\x00\\x08')")
-    else:
-      self.assertEqual(repr(ba), "b'\\x11*\\x00\\x08'")
-      self.assertEqual(repr(pya.A.ft_cv(ba)), "b'\\x11*\\x00\\x08'")
-      self.assertEqual(repr(pya.A.ft_var(ba)), "b'\\x11*\\x00\\x08'")
-
-    self.assertEqual(pya.A.ba_to_ia(ba), [ 17, 42, 0, 8 ])
-    self.assertEqual(pya.A.ba_cref_to_ia(ba), [ 17, 42, 0, 8 ])
-    self.assertEqual(pya.A.ba_cptr_to_ia(ba), [ 17, 42, 0, 8 ])
-    self.assertEqual(pya.A.ba_ref_to_ia(ba), [ 17, 42, 0, 8 ])
-    self.assertEqual(pya.A.ba_ptr_to_ia(ba), [ 17, 42, 0, 8 ])
-
-    ba = pya.A.ia_cref_to_ba_cref([ 17, 42, 0, 8 ])
-    if sys.version_info < (3, 0):
-      self.assertEqual(repr(ba), "bytearray(b'\\x11*\\x00\\x08')")
-    else:
-      self.assertEqual(repr(ba), "b'\\x11*\\x00\\x08'")
-
-    self.assertEqual(pya.A.ba_to_ia(b'\x00\x01\x02'), [ 0, 1, 2 ])
-
-  # Tests multi-base mixins (only constants and enums available)
-  def test_multiBaseMixins(self):
-    
-    bb = pya.BB()  # base classes B1,B2,B3
-    bb.set1(17)                                          # B1
-    self.assertEqual(bb.get1(), 17)                      # B1
-    bb.set1(21)                                          # B1
-
-    self.assertEqual(bb.get1(), 21)                      # B1
-    self.assertEqual(pya.BB.C2, 17)                      # B2
-    self.assertEqual(pya.BB.C3, -1)                      # B3
-    self.assertEqual(pya.BB.E.E3B.to_i(), 101)           # B3
-    self.assertEqual(bb.d3(pya.BB.E.E3C, pya.BB.E.E3A), -2)  # BB with B3 enums
-    self.assertEqual(bb.d3(pya.BB.E.E3A, pya.BB.E.E3C), 2)   # BB with B3 enums
-
   # Custom factory implemented in Python
-
   def test_80(self):
-
     gc = pya.GObject.g_inst_count()
     gf = PyGFactory()
     go = pya.GFactory.create_f(gf, 17)
@@ -3236,121 +2820,6 @@ class BasicTest(unittest.TestCase):
     go = None
     self.assertEqual(pya.GObject.g_inst_count(), gc)
 
-  # fallback to __rmul__ for not implemented __mul__
-
-  def test_90(self):
-
-    # skip this test for Python 2
-    if sys.version_info < (3, 0):
-      return
-
-    class RMulObject:
-      def __init__(self, factor):
-        self.factor = factor
-      def __rmul__(self, point):
-        return point * self.factor
-      def __radd__(self, point):
-        return point + pya.Vector(1,1) * self.factor
-
-    p = pya.Point(1, 0)
-    fac2 = RMulObject(2)
-    self.assertEqual(p * 2, p * fac2)  # p.__mul__(fac2) should return NotImplemented, which will call fac2.__rmul__(p)
-    self.assertEqual(pya.Point(3,2), p + fac2)
-
-  # copy and deepcopy
-
-  def test_91(self):
-
-    p = pya.Point(1, 0)
-    pc = copy.copy(p)
-    pdc = copy.deepcopy(p)
-
-    pdc.x = 4
-    pc.x = 3
-    p.x = 2
-    self.assertEqual(p.x, 2)
-    self.assertEqual(pc.x, 3)
-    self.assertEqual(pdc.x, 4)
-
-  # keyword arguments, enums and error messages
-
-  def test_92(self):
-
-    bb = pya.BB()
-    
-    m = ""
-    try:
-      bb.d4()
-    except Exception as ex:
-      m = str(ex)
-    self.assertEqual(m, "Can't match arguments. Variants are:\n  string d4(int a, string b, double c, B3::E d = E3A, variant e = nil) [no value given for argument #1 and following]\n in BB.d4")
-
-    m = ""
-    try:
-      bb.d4(1, "a")
-    except Exception as ex:
-      m = str(ex)
-    self.assertEqual(m, "Can't match arguments. Variants are:\n  string d4(int a, string b, double c, B3::E d = E3A, variant e = nil) [no value given for argument #3]\n in BB.d4")
-
-    m = ""
-    try:
-      bb.d4(1, "a", 2.0, xxx=17)
-    except Exception as ex:
-      m = str(ex)
-    self.assertEqual(m, "Can't match arguments. Variants are:\n  string d4(int a, string b, double c, B3::E d = E3A, variant e = nil) [unknown keyword parameter: xxx]\n in BB.d4")
-
-    m = ""
-    try:
-      bb.d4(a=1, b="a", c=2.0, xxx=17)
-    except Exception as ex:
-      m = str(ex)
-    self.assertEqual(m, "Can't match arguments. Variants are:\n  string d4(int a, string b, double c, B3::E d = E3A, variant e = nil) [unknown keyword parameter: xxx]\n in BB.d4")
-
-    self.assertEqual(bb.d4(1, "a", 2.0), "1,a,2,100,nil")
-    self.assertEqual(bb.d4(1, "a", 2.0, e=42), "1,a,2,100,42")
-    self.assertEqual(bb.d4(1, "a", c=2.0, e=42), "1,a,2,100,42")
-    self.assertEqual(bb.d4(c=2.0, a=1, b="a", e=42), "1,a,2,100,42")
-    self.assertEqual(bb.d4(1, "a", 2.0, d=pya.BB.E.E3B), "1,a,2,101,nil")
-    self.assertEqual(bb.d4(1, "a", d=pya.BB.E.E3B, c=2.5), "1,a,2.5,101,nil")
-    self.assertEqual(bb.d4(1, "a", 2.0, pya.BB.E.E3B, 42), "1,a,2,101,42")
-
-  # constness
-  def test_93(self):
-
-    b = pya.B()
-    self.assertEqual(b.is_const_object(), False)
-
-    bc = b._to_const_object()
-    self.assertEqual(bc.is_const_object(), True)
-
-    m = ""
-    try:
-      bc.set_str("abc")
-      self.assertEqual(1, 0)
-    except Exception as ex:
-      m = str(ex)
-
-    self.assertEqual(m, "Cannot call non-const method on a const reference in B.set_str")
-
-    b = pya.B()
-    bc = b
-    self.assertEqual(b._is_const_object(), False)
-    self.assertEqual(bc._is_const_object(), False)
-    bc = bc._to_const_object()
-    b.set_str("abc")
-    self.assertEqual(b._is_const_object(), False)
-    self.assertEqual(bc._is_const_object(), True)
-    self.assertEqual(b.str(), "abc")
-    self.assertEqual(bc.str(), "abc")
-
-    bnc = bc._const_cast()
-    self.assertEqual(b._is_const_object(), False)
-    self.assertEqual(bc._is_const_object(), True)
-    self.assertEqual(bnc._is_const_object(), False)
-    bnc.set_str("xyz")
-    self.assertEqual(b.str(), "xyz")
-    self.assertEqual(bc.str(), "xyz")
-    self.assertEqual(bnc.str(), "xyz")
 
 # run unit tests
 if __name__ == '__main__':

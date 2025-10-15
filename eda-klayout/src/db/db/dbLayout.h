@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -32,7 +32,6 @@
 #include "dbText.h"
 #include "dbCell.h"
 #include "dbLayoutStateModel.h"
-#include "dbLayoutLayers.h"
 #include "dbLayerProperties.h"
 #include "dbMetaInfo.h"
 #include "dbCellInst.h"
@@ -67,12 +66,6 @@ class LayerMapping;
 class Region;
 class Edges;
 class EdgePairs;
-class Texts;
-class Technology;
-class CellMapping;
-class LayerMapping;
-class VariantsCollectorBase;
-class HierarchyBuilder;
 
 template <class Coord> class generic_repository;
 typedef generic_repository<db::Coord> GenericRepository;
@@ -195,7 +188,7 @@ public:
    *  @brief Default constructor
    */
   cell_list_const_iterator (cell_list_iterator<cell_type> iter)
-    : mp_cell (iter.operator-> ())
+    : mp_cell (& (*iter))
   { }
 
   /**
@@ -397,6 +390,50 @@ private:
 };
 
 /**
+ *  @brief A layer iterator (for valid layers)
+ *
+ *  The layer iterator delivers layer indices and layer properties of layer layers.
+ */
+class DB_PUBLIC LayerIterator
+{
+public:
+  /**
+   *  @brief Constructor
+   */
+  LayerIterator (unsigned int layer_index, const db::Layout &layout);
+
+  /**
+   *  @brief Increment operator
+   */
+  LayerIterator &operator++();
+
+  /**
+   *  @brief Equality
+   */
+  bool operator== (const LayerIterator &i)
+  {
+    return i.m_layer_index == m_layer_index;
+  }
+
+  /**
+   *  @brief Inequality
+   */
+  bool operator!= (const LayerIterator &i)
+  {
+    return i.m_layer_index != m_layer_index;
+  }
+
+  /**
+   *  @brief Access operator
+   */
+  std::pair<unsigned int, const db::LayerProperties *> operator*() const;
+
+private:
+  unsigned int m_layer_index;
+  const db::Layout &m_layout;
+};
+
+/**
  *  @brief An interface that is used to map layer between libraries and PCells and the layout
  */
 class ImportLayerMapping
@@ -414,24 +451,6 @@ public:
    *  be performed. Otherwise it must return the layer index in the second member.
    */
   virtual std::pair <bool, unsigned int> map_layer (const LayerProperties &lprops) = 0;
-};
-
-/**
- *  @brief A binary object representing context information for regenerating library proxies and PCells
- */
-struct DB_PUBLIC LayoutOrCellContextInfo
-{
-  std::string lib_name;
-  std::string cell_name;
-  std::string pcell_name;
-  std::map<std::string, tl::Variant> pcell_parameters;
-  std::map<std::string, std::pair<tl::Variant, std::string> > meta_info;
-
-  static LayoutOrCellContextInfo deserialize (std::vector<std::string>::const_iterator from, std::vector<std::string>::const_iterator to);
-  void serialize (std::vector<std::string> &strings);
-
-  bool has_proxy_info () const;
-  bool has_meta_info () const;
 };
 
 /**
@@ -466,14 +485,13 @@ public:
   typedef cell_index_vector::const_iterator top_down_const_iterator;
   typedef tl::vector<cell_type *> cell_ptr_vector;
   typedef db::properties_id_type properties_id_type;
-  typedef db::pcell_id_type pcell_id_type;
+  typedef size_t pcell_id_type;
   typedef std::map<std::string, pcell_id_type> pcell_name_map;
   typedef pcell_name_map::const_iterator pcell_iterator;
   typedef std::map<std::pair<lib_id_type, cell_index_type>, cell_index_type> lib_proxy_map;
   typedef LayerIterator layer_iterator;
-  typedef size_t meta_info_name_id_type;
-  typedef std::map<meta_info_name_id_type, MetaInfo> meta_info_map;
-  typedef meta_info_map::const_iterator meta_info_iterator;
+  typedef std::vector<MetaInfo> meta_info;
+  typedef meta_info::const_iterator meta_info_iterator;
 
   /**
    *  @brief A helper functor to compare "const char *" by the content
@@ -492,18 +510,18 @@ public:
    *
    *  The editable mode will be taken from db::default_editable_mode.
    */
-  explicit Layout (db::Manager *manager = 0);
+  Layout (db::Manager *manager = 0);
 
   /**
    *  @brief Standard constructor which allows one to specify editable mode
    */
-  explicit Layout (bool editable, db::Manager *manager = 0);
+  Layout (bool editable, db::Manager *manager = 0);
 
   /**
    *  @brief The copy ctor
    *
    *  This copy constructor inherits the attachment to a manager.
-   *  For copying without attachment, create a layout without a manager attached
+   *  For copying without attachement, create a layout without a manager attached
    *  and use the assignment operator.
    */
   Layout (const Layout &d);
@@ -519,66 +537,9 @@ public:
   Layout &operator= (const Layout &d);
 
   /**
-   *  @brief Specifies, if the layout participates in cleanup
-   *
-   *  "cleanup" will be called to get rid of top level proxies.
-   *  This flag controls whether cleanup happens or not. Library
-   *  layouts for example must not loose proxies as they might
-   *  themselves be referenced.
-   *
-   *  The default is OFF.
-   */
-  void do_cleanup (bool f)
-  {
-    m_do_cleanup = f;
-  }
-
-  /**
-   *  @brief Clears the layout
+   *  @brief Clear the layout
    */
   void clear ();
-
-  /**
-   *  @brief Gets the technology name the layout is associated with
-   */
-  const std::string &technology_name () const
-  {
-    return m_tech_name;
-  }
-
-  /**
-   *  @brief Gets the library the layout lives in or NULL if the layout is not part of a library
-   */
-  Library *library () const
-  {
-    return mp_library;
-  }
-
-  /**
-   *  @brief Sets the library pointer
-   */
-  void set_library (db::Library *library)
-  {
-    mp_library = library;
-  }
-
-  /**
-   *  @brief Gets the technology object the layout is associated with or null if no valid technology is associated
-   */
-  const db::Technology *technology () const;
-
-  /**
-   *  @brief Changes the technology, the layout is associated with
-   *  Changing the layout may re-assess all the library references as libraries can be technology specific
-   */
-  void set_technology_name (const std::string &tech);
-
-  /**
-   *  @brief Changes the technology name
-   *  This method will only change the technology name, but does not re-assess the library links.
-   *  It's provided mainly to support undo/redo and testing.
-   */
-  void set_technology_name_without_update (const std::string &tech);
 
   /**
    *  @brief Accessor to the array repository
@@ -586,6 +547,14 @@ public:
   ArrayRepository &array_repository ()
   {
     return m_array_repository;
+  }
+
+  /**
+   *  @brief Accessor to the string repository
+   */
+  StringRepository &string_repository ()
+  {
+    return m_string_repository;
   }
 
   /**
@@ -597,18 +566,26 @@ public:
   }
 
   /**
-   *  @brief Accessor to the shape repository (const version)
+   *  @brief Accessor to the properties repository
    */
-  const GenericRepository &shape_repository () const
+  PropertiesRepository &properties_repository ()
   {
-    return m_shape_repository;
+    return m_properties_repository;
+  }
+
+  /**
+   *  @brief Accessor to the properties repository
+   */
+  const PropertiesRepository &properties_repository () const
+  {
+    return m_properties_repository;
   }
 
   /**
    *  @brief Gets the lock for the layout object
    *  This is a generic lock that can be used to lock modifications against multiple threads.
    */
-  tl::Mutex &lock () const
+  tl::Mutex &lock ()
   {
     return m_lock;
   }
@@ -731,25 +708,7 @@ public:
    */
   cell_index_type add_cell (const char *name = 0);
 
-  /**
-   *  @brief Adds a cell using another cell as a template
-   *
-   *  This method will use the name of the other cell and initialize the
-   *  new cell with the meta info from the other cell.
-   */
-  cell_index_type add_cell (const db::Layout &other, db::cell_index_type ci);
-
-  /**
-   *  @brief Add a cell without a name
-   *
-   *  The cell is created, but cannot be found by name. The name returned is an empty string.
-   *  The cell is created with the purpose of being renamed later.
-   *
-   *  @return The index of the new cell
-   */
-  cell_index_type add_anonymous_cell ();
-
-  /**
+  /** 
    *  @brief Rename a cell
    *
    *  Rename the cell with the given id.
@@ -840,9 +799,8 @@ public:
    *  @param parameters The PCell parameters
    *  @param cell_index The cell index which is to be replaced by the PCell variant proxy
    *  @param layer_mapping The optional layer mapping object that maps the PCell layers to the layout's layers
-   *  @param retain_layout Set to true for not using update() on the PCell but to retain existing layout (conservative approach)
    */
-  void get_pcell_variant_as (pcell_id_type pcell_id, const std::vector<tl::Variant> &parameters, cell_index_type cell_index, ImportLayerMapping *layer_mapping = 0, bool retain_layout = false);
+  void get_pcell_variant_as (pcell_id_type pcell_id, const std::vector<tl::Variant> &parameters, cell_index_type cell_index, ImportLayerMapping *layer_mapping = 0);
 
   /** 
    *  @brief Get the PCell variant cell of a existing cell with new parameters
@@ -988,78 +946,19 @@ public:
   /**
    *  @brief Get the proxy cell (index) for a given library an cell index (inside that library)
    *
-   *  @param retain_layout Set to true for not using update() on the PCell but to retain existing layout (conservative approach)
-   *
-   *  This method replaces the cell with the given target cell index by a library.
+   *  This method replaces the cell with the given target cell index by a library. 
    */
-  void get_lib_proxy_as (Library *lib, cell_index_type cell_index, cell_index_type target_cell_index, ImportLayerMapping *layer_mapping = 0, bool retain_layout = false);
-
-  /**
-   *  @brief Creates a cold proxy representing the given context information
-   */
-  cell_index_type create_cold_proxy (const db::LayoutOrCellContextInfo &info);
-
-  /**
-   *  @brief Subsitutes the given cell by a cold proxy representing the given context information
-   */
-  void create_cold_proxy_as (const db::LayoutOrCellContextInfo &info, cell_index_type cell_index);
-
-  /**
-   *  @brief Gets a value indicating whether layout context info is provided / needed
-   */
-  bool has_context_info() const;
-
-  /**
-   *  @brief Gets a value indicating whether layout context info is provided / needed
-   */
-  bool has_context_info(cell_index_type cell_index) const;
-
-  /**
-   *  @brief Get the context information for the layout (for writing into a file)
-   *
-   *  The context information is a sequence of strings which is pushed onto the given
-   *  vector. It can be used to fill meta information with fill_meta_info_from_context.
-   */
-  bool get_context_info (std::vector <std::string> &strings) const;
-
-  /**
-   *  @brief Gets the context information as a binary object
-   */
-  bool get_context_info (LayoutOrCellContextInfo &context_info) const;
-
-  /**
-   *  @brief Fills the layout's meta information from the context
-   */
-  void fill_meta_info_from_context (std::vector <std::string>::const_iterator from, std::vector <std::string>::const_iterator to);
-
-  /**
-   *  @brief Fills the layout's meta information from the binary context
-   */
-  void fill_meta_info_from_context (const LayoutOrCellContextInfo &context_info);
+  void get_lib_proxy_as (Library *lib, cell_index_type cell_index, cell_index_type target_cell_index, ImportLayerMapping *layer_mapping = 0);
 
   /**
    *  @brief Get the context information for a given cell (for writing into a file)
    *
    *  The context information is a sequence of strings which is pushed onto the given
-   *  vector. It can be used to recover a respective proxy cell with the recover_proxy method
-   *  or to fill meta information using fill_meta_info_from_context.
+   *  vector. It can be used to recover a respective proxy cell with the recover_proxy method.
+   *  If the given cell is not a valid proxy or library references are missing, the method
+   *  will return false.
    */
   bool get_context_info (cell_index_type cell_index, std::vector <std::string> &context_info) const;
-
-  /**
-   *  @brief Gets the context information as a binary object
-   */
-  bool get_context_info (cell_index_type cell_index, LayoutOrCellContextInfo &context_info) const;
-
-  /**
-   *  @brief Fills the layout's meta information from the context
-   */
-  void fill_meta_info_from_context (cell_index_type cell_index, std::vector <std::string>::const_iterator from, std::vector <std::string>::const_iterator to);
-
-  /**
-   *  @brief Fills the layout's meta information from the binary context
-   */
-  void fill_meta_info_from_context (cell_index_type cell_index, const LayoutOrCellContextInfo &context_info);
 
   /**
    *  @brief Recover a proxy cell from the given context info.
@@ -1071,11 +970,6 @@ public:
    *  @param to The end iterator for the strings from which to recover the cell
    */
   db::Cell *recover_proxy (std::vector <std::string>::const_iterator from, std::vector <std::string>::const_iterator to);
-
-  /**
-   *  @brief Recover a proxy cell from the given binary context info object.
-   */
-  db::Cell *recover_proxy (const LayoutOrCellContextInfo &context_info);
 
   /**
    *  @brief Recover a proxy cell from the given context info.
@@ -1093,35 +987,9 @@ public:
   bool recover_proxy_as (cell_index_type cell_index, std::vector <std::string>::const_iterator from, std::vector <std::string>::const_iterator to, ImportLayerMapping *layer_mapping = 0);
 
   /**
-   *  @brief Recover a proxy cell from the given binary context info object
-   *
-   *  See the string-based version of "recover_proxy_as" for details.
-   */
-  bool recover_proxy_as (cell_index_type cell_index, const LayoutOrCellContextInfo &context_info, ImportLayerMapping *layer_mapping = 0);
-
-  /**
-   *  @brief Restores proxies as far as possible
-   *
-   *  This feature can be used after a library update to make sure that proxies are updated.
-   *  Library updates may enabled lost connections which are help in cold proxies. This method will recover
-   *  these connections.
-   */
-  void restore_proxies(ImportLayerMapping *layer_mapping = 0);
-
-  /**
-   *  @brief Replaces the given cell index with the new cell
-   */
-  void replace_cell (cell_index_type target_cell_index, db::Cell *new_cell, bool retain_layout);
-
-  /**
-   *  @brief Replaces all instances of src_cell_index by target_cell_index
-   */
-  void replace_instances_of (cell_index_type src_cell_index, cell_index_type target_cell_index);
-
-  /**
    *  @brief Delete a cell plus the subcells not used otherwise
    *
-   *  All subcells referenced directly or indirectly but not used otherwise
+   *  All subcells referenced directy or indirectly but not used otherwise
    *  are deleted as well. This basically prunes the cell tree by this cell.
    *  All instances of this cell are deleted as well.
    *
@@ -1133,10 +1001,10 @@ public:
   /**
    *  @brief Delete cells plus their subcells not used otherwise
    *
-   *  All subcells referenced directly or indirectly but not used otherwise
+   *  All subcells referenced directy or indirectly but not used otherwise
    *  are deleted as well. This basically prunes the cell tree by this cell.
    *  All instances of this cell are deleted as well.
-   *  This method is more efficient than calling prune_cell multiple times.
+   *  This method is more efficent than calling prune_cell multiple times.
    *
    *  @param from A begin iterator delivering the cell id's to delete
    *  @param to An end iterator delivering the cell id's to delete
@@ -1153,10 +1021,10 @@ public:
   /**
    *  @brief Delete cells plus their subcells not used otherwise
    *
-   *  All subcells referenced directly or indirectly but not used otherwise
+   *  All subcells referenced directy or indirectly but not used otherwise
    *  are deleted as well. This basically prunes the cell tree by this cell.
    *  All instances of this cell are deleted as well.
-   *  This method is more efficient than calling prune_cell multiple times.
+   *  This method is more efficent than calling prune_cell multiple times.
    *
    *  @param cells A set of cell id's to prune
    *  @param levels The number of hierarchy levels to look for (-1: all, 0: none, 1: one level etc.)
@@ -1166,7 +1034,7 @@ public:
   /**
    *  @brief Delete the subcells of the given cell which are not used otherwise
    *
-   *  All subcells of the given cell which are referenced directly or indirectly but not used otherwise
+   *  All subcells of the given cell which are referenced directy or indirectly but not used otherwise
    *  are deleted. 
    *
    *  @param id The index whose subcells to delete
@@ -1177,9 +1045,10 @@ public:
   /**
    *  @brief Delete the subcells of the given cells which are not used otherwise
    *
-   *  All subcells referenced directly or indirectly but not used otherwise
-   *  are deleted as well.
-   *  This method is more efficient than calling prune_subcells for single cells multiple times.
+   *  All subcells referenced directy or indirectly but not used otherwise
+   *  are deleted as well. This basically prunes the cell tree by this cell.
+   *  All instances of this cell are deleted as well.
+   *  This method is more efficent than calling prune_subcells for single cells multiple times.
    *
    *  @param from A begin iterator delivering the cell id's to delete
    *  @param to An end iterator delivering the cell id's to delete
@@ -1196,9 +1065,10 @@ public:
   /**
    *  @brief Delete the subcells of the given cells which are not used otherwise
    *
-   *  All subcells referenced directly or indirectly but not used otherwise
-   *  are deleted as well.
-   *  This method is more efficient than calling prune_subcells for single cells multiple times.
+   *  All subcells referenced directy or indirectly but not used otherwise
+   *  are deleted as well. This basically prunes the cell tree by this cell.
+   *  All instances of this cell are deleted as well.
+   *  This method is more efficent than calling prune_subcells for single cells multiple times.
    *
    *  @param cells A set of cell id's to prune
    *  @param levels The number of hierarchy levels to look for (-1: all, 0: none, 1: one level etc.)
@@ -1254,18 +1124,9 @@ public:
   void insert (db::cell_index_type cell, int layer, const db::EdgePairs &edge_pairs);
 
   /**
-   *  @brief Inserts a text collection (potentially hierarchical) into the given cell and layer
-   *
-   *  If the text collection is flat (conceptionally), it will be put into the cell.
-   *  If the text collection is hierarchical, a cell hierarchy will be built below the
-   *  given cell.
-   */
-  void insert (db::cell_index_type cell, int layer, const db::Texts &texts);
-
-  /**
    *  @brief Delete a cell plus all subcells 
    *
-   *  All subcells referenced directly or indirectly are deleted as well.
+   *  All subcells referenced directy or indirectly are deleted as well.
    *  All instances of these cells are deleted as well.
    *
    *  @param id The index of the cell to delete
@@ -1347,15 +1208,7 @@ public:
    */
   void move_layer (unsigned int src, unsigned int dest);
 
-  /**
-   *  @brief Move a layer (selected shape types only)
-   *
-   *  Move a layer from the source to the target. The target is not cleared before, so that this method
-   *  merges shapes from the source with the target layer. The source layer is empty after that operation.
-   */
-  void move_layer (unsigned int src, unsigned int dest, unsigned int flags);
-
-  /**
+  /**  
    *  @brief Copy a layer
    *
    *  Copy a layer from the source to the target. The target is not cleared before, so that this method 
@@ -1363,63 +1216,20 @@ public:
    */
   void copy_layer (unsigned int src, unsigned int dest);
 
-  /**
-   *  @brief Copy a layer (selected shape types only)
-   *
-   *  Copy a layer from the source to the target. The target is not cleared before, so that this method
-   *  merges shapes from the source with the target layer.
-   */
-  void copy_layer (unsigned int src, unsigned int dest, unsigned int flags);
-
-  /**
+  /**  
    *  @brief Clear a layer
    *
    *  Clears the layer: removes all shapes.
    */
   void clear_layer (unsigned int n);
 
-  /**
-   *  @brief Clear a layer (selected shapes only)
-   *
-   *  Clears the layer: removes the shapes of the type given the flags (ShapeIterator::shapes_type)
-   */
-  void clear_layer (unsigned int n, unsigned int flags);
-
-  /**
+  /**  
    *  @brief Delete a layer
    *
    *  This does free the shapes of the cells and remembers the
    *  layer's index for recycling.
    */
   void delete_layer (unsigned int n);
-
-  /**
-   *  @brief Copies the shapes of certain cells from the given source layout into this layout
-   *
-   *  The affected cells are derived from the cell mapping object.
-   */
-  void copy_tree_shapes (const db::Layout &source_layout, const db::CellMapping &cm);
-
-  /**
-   *  @brief Copies the shapes of certain cells from the given source layout into this layout using the given layer mapping
-   *
-   *  The affected cells are derived from the cell mapping object.
-   */
-  void copy_tree_shapes (const db::Layout &source_layout, const db::CellMapping &cm, const db::LayerMapping &lm);
-
-  /**
-   *  @brief Moves the shapes of certain cells from the given source layout into this layout
-   *
-   *  The affected cells are derived from the cell mapping object.
-   */
-  void move_tree_shapes (db::Layout &source_layout, const db::CellMapping &cm);
-
-  /**
-   *  @brief Moves the shapes of certain cells from the given source layout into this layout using the given layer mapping
-   *
-   *  The affected cells are derived from the cell mapping object.
-   */
-  void move_tree_shapes (db::Layout &source_layout, const db::CellMapping &cm, const db::LayerMapping &lm);
 
   /**
    *  @brief Return true, if the cell index is a valid one
@@ -1431,7 +1241,7 @@ public:
    */
   bool is_valid_layer (unsigned int n) const
   {
-    return m_layers.layer_state (n) == db::LayoutLayers::Normal;
+    return (n < layers () && m_layer_states [n] == Normal);
   }
 
   /**
@@ -1439,7 +1249,7 @@ public:
    */
   bool is_free_layer (unsigned int n) const
   {
-    return m_layers.layer_state (n) == db::LayoutLayers::Free;
+    return (n >= layers () || m_layer_states [n] == Free);
   }
 
   /**
@@ -1447,19 +1257,19 @@ public:
    */
   bool is_special_layer (unsigned int n) const
   {
-    return m_layers.layer_state (n) == db::LayoutLayers::Special;
+    return (n < layers () && m_layer_states [n] == Special);
   }
 
   /**
    *  @brief Query the number of layers defined so far
    *  
    *  TODO: the list of 0 to nlayers-1 also contains the free layers -
-   *  we should get a vector containing the layers that are actually
+   *  we should get a vector containing the layers that are acually
    *  allocated.
    */
   unsigned int layers () const
   {
-    return m_layers.layers ();
+    return (cell_index_type) m_layer_states.size ();
   }
 
   /**
@@ -1467,7 +1277,7 @@ public:
    */
   layer_iterator begin_layers () const
   {
-    return m_layers.begin_layers ();
+    return layer_iterator (0, *this);
   }
 
   /**
@@ -1475,16 +1285,13 @@ public:
    */
   layer_iterator end_layers () const
   {
-    return m_layers.end_layers ();
+    return layer_iterator (layers (), *this);
   }
 
   /**
    *  @brief Reserve space for n layers
    */
-  void reserve_layers (unsigned int n)
-  {
-    m_layers.reserve_layers (n);
-  }
+  void reserve_layers (unsigned int n);
 
   /**
    *  @brief begin iterator of the unsorted cell list
@@ -1620,14 +1427,6 @@ public:
   top_down_const_iterator end_top_cells () const;
   
   /**
-   *  @brief Gets a value indicating whether an update is needed
-   *
-   *  If this value is false, update or force_update will not
-   *  do anything.
-   */
-  bool update_needed () const;
-
-  /**
    *  @brief Provide a const version of the update method
    *
    *  This pseudo-const version is required in order to automatically call
@@ -1652,14 +1451,6 @@ public:
    *  It can be given a list of cells which need to be kept.
    */
   void cleanup (const std::set<db::cell_index_type> &keep = std::set<db::cell_index_type> ());
-
-  /**
-   *  @brief Calls "update" on all cells of the layout
-   *
-   *  This will update PCells stored inside this layout, but will *not* update
-   *  PCells which are imported from a library.
-   */
-  void refresh ();
 
   /**
    *  @brief Implementation of the undo operations
@@ -1703,14 +1494,6 @@ public:
   unsigned int get_layer (const db::LayerProperties &props);
 
   /**
-   *  @brief Gets the layer with the given properties or -1 if such a layer does not exist
-   */
-  int get_layer_maybe (const db::LayerProperties &props) const
-  {
-    return m_layers.get_layer_maybe (props);
-  }
-
-  /**
    *  @brief Insert a new special layer with the given properties
    *
    *  A special layers is used for example to represent rulers.
@@ -1729,30 +1512,14 @@ public:
    *
    *  The guiding shape layer is used to store the guiding shapes of PCells
    */
-  unsigned int guiding_shape_layer () const
-  {
-    return m_layers.guiding_shape_layer ();
-  }
+  unsigned int guiding_shape_layer () const;
 
   /**
    *  @brief Gets the waste layer
    *
    *  The waste layer is used to store shapes that should not be visible and can be cleared at any time.
    */
-  unsigned int waste_layer () const
-  {
-    return m_layers.waste_layer ();
-  }
-
-  /**
-   *  @brief Gets the error layer
-   *
-   *  The error layer is used to display error messages.
-   */
-  unsigned int error_layer () const
-  {
-    return m_layers.error_layer ();
-  }
+  unsigned int waste_layer () const;
 
   /**
    *  @brief Set the properties for a specified layer
@@ -1764,7 +1531,7 @@ public:
    */
   const LayerProperties &get_properties (unsigned int i) const
   {
-    return m_layers.get_properties (i);
+    return m_layer_props [i];
   }
 
   /**
@@ -1774,7 +1541,7 @@ public:
    *  about to be brought into an invalid state. After calling
    *  this method, "under_construction" returns false which 
    *  tells foreign code (such as update which might be called
-   *  asynchronously for example because of a repaint event)
+   *  asynchroneously for example because of a repaint event)
    *  not to use this layout object.
    *  This state is cancelled by the end_changes () method.
    *  The start_changes () method can be called multiple times
@@ -1783,18 +1550,34 @@ public:
    *  an operation, the start/end_changes method pair does not
    *  need to be called.
    */
-  void start_changes ();
+  void start_changes ()
+  {
+    ++m_invalid;
+  }
 
   /**
    *  @brief Cancel the "in changes" state (see "start_changes")
    */
-  void end_changes ();
+  void end_changes ()
+  {
+    if (m_invalid > 0) {
+      --m_invalid;
+      if (! m_invalid) {
+        update ();
+      }
+    }
+  }
 
   /**
    *  @brief Cancel the "in changes" state (see "start_changes")
    *  This version does not force an update
    */
-  void end_changes_no_update ();
+  void end_changes_no_update ()
+  {
+    if (m_invalid > 0) {
+      --m_invalid;
+    }
+  }
 
   /**
    *  @brief Tell if the layout object is under construction
@@ -1853,255 +1636,28 @@ public:
   }
 
   /**
-   *  @brief Delivers the meta information (begin iterator) per cell
-   */
-  meta_info_iterator begin_meta (db::cell_index_type ci) const;
-
-  /**
-   *  @brief Delivers the meta information (end iterator) per cell
-   */
-  meta_info_iterator end_meta (db::cell_index_type ci) const;
-
-  /**
-   *  @brief Gets the meta informatio name by ID
-   */
-  const std::string &meta_info_name (meta_info_name_id_type name_id) const;
-
-  /**
-   *  @brief Gets the meta information name ID for a specific string
-   */
-  meta_info_name_id_type meta_info_name_id (const std::string &name) const;
-
-  /**
-   *  @brief Gets the meta information name ID for a specific string (const version)
-   */
-  meta_info_name_id_type meta_info_name_id (const std::string &name);
-
-  /**
    *  @brief Clears the meta information
    */
   void clear_meta ();
 
   /**
    *  @brief Adds meta information
-   *  The given meta information object is added to the meta information list.
+   *  The given meta information object is appended at the end of the meta information list.
    *  If a meta info object with the same name already exists it is overwritten.
    */
-  void add_meta_info (const std::string &name, const MetaInfo &i)
-  {
-    add_meta_info (meta_info_name_id (name), i);
-  }
-
-  /**
-   *  @brief Adds meta information (variant with name ID)
-   */
-  void add_meta_info (meta_info_name_id_type name_id, const MetaInfo &i);
-
-  /**
-   *  @brief Adds meta information from a sequence
-   */
-  template <class I>
-  void add_meta_info (const I &b, const I &e)
-  {
-    for (I i = b; i != e; ++i) {
-      m_meta_info.insert (b, e);
-    }
-  }
+  void add_meta_info (const MetaInfo &i);
 
   /**
    *  @brief Removes the meta information object with the given name
    *  The method will do nothing if no object with that name exists.
    */
-  void remove_meta_info (const std::string &name)
-  {
-    remove_meta_info (meta_info_name_id (name));
-  }
-
-  /**
-   *  @brief Removes the meta information object with the given name ID
-   */
-  void remove_meta_info (meta_info_name_id_type name_id);
+  void remove_meta_info (const std::string &name);
 
   /**
    *  @brief Gets the meta info value for a meta info object with the given name
    *  If no object with that name exists, an empty string is returned
    */
-  const MetaInfo &meta_info (const std::string &name) const
-  {
-    return meta_info (meta_info_name_id (name));
-  }
-
-  /**
-   *  @brief Gets the meta info value for a meta info object with the given name ID
-   */
-  const MetaInfo &meta_info (meta_info_name_id_type name_id) const;
-
-  /**
-   *  @brief Gets a value indicating whether a meta info with the given name is present
-   */
-  bool has_meta_info (const std::string &name) const
-  {
-    return has_meta_info (meta_info_name_id (name));
-  }
-
-  /**
-   *  @brief Gets a value indicating whether a meta info with the given name is present
-   */
-  bool has_meta_info (meta_info_name_id_type name_id) const;
-
-  /**
-   *  @brief Clears the meta information for a specific cell
-   */
-  void clear_meta (db::cell_index_type ci);
-
-  /**
-   *  @brief Clears all meta information (cells and layout)
-   */
-  void clear_all_meta ();
-
-  /**
-   *  @brief Adds meta information for a given cell
-   *  The given meta information object is to the meta information list for the given cell.
-   *  If a meta info object with the same name already exists it is overwritten.
-   */
-  void add_meta_info (db::cell_index_type ci, const std::string &name, const MetaInfo &i)
-  {
-    add_meta_info (ci, meta_info_name_id (name), i);
-  }
-
-  /**
-   *  @brief Adds meta information for a given cell (version with name ID)
-   *  The given meta information object is appended at the end of the meta information list.
-   *  If a meta info object with the same name already exists it is overwritten.
-   */
-  void add_meta_info (db::cell_index_type ci, meta_info_name_id_type name_id, const MetaInfo &i);
-
-  /**
-   *  @brief Adds meta information from a sequence
-   */
-  template <class I>
-  void add_meta_info (db::cell_index_type ci, const I &b, const I &e)
-  {
-    for (I i = b; i != e; ++i) {
-      m_meta_info_by_cell [ci].insert (b, e);
-    }
-  }
-
-  /**
-   *  @brief Merges meta information from the other layout into self
-   *  This applies to the layout-only meta information. Same keys get overwritten, new ones are added.
-   */
-  void merge_meta_info (const db::Layout &other);
-
-  /**
-   *  @brief Copies meta information from the other layout into self
-   *  This applies to the layout-only meta information. All keys are replaced.
-   */
-  void copy_meta_info (const db::Layout &other)
-  {
-    clear_meta ();
-    merge_meta_info (other);
-  }
-
-  /**
-   *  @brief Merges meta information from the other cell into the target cell from sel.
-   *  This applies to the cell-specific meta information. Same keys get overwritten, new ones are added.
-   */
-  void merge_meta_info (db::cell_index_type into_cell, const db::Layout &other, db::cell_index_type other_cell);
-
-  /**
-   *  @brief Copies meta information from the other cell into the target cell from sel.
-   *  This applies to the cell-specific meta information. All keys are replaced.
-   */
-  void copy_meta_info (db::cell_index_type into_cell, const db::Layout &other, db::cell_index_type other_cell)
-  {
-    clear_meta (into_cell);
-    merge_meta_info (into_cell, other, other_cell);
-  }
-
-  /**
-   *  @brief Merges meta information from the other cell into the target cell from sel using the given cell mapping.
-   *  The cell mapping specifies which meta information to merge from which cell into which cell.
-   */
-  void merge_meta_info (const db::Layout &other, const db::CellMapping &cm);
-
-  /**
-   *  @brief Copies meta information from the other cell into the target cell from sel using the given cell mapping.
-   *  The cell mapping specifies which meta information to copy from which cell into which cell.
-   */
-  void copy_meta_info (const db::Layout &other, const db::CellMapping &cm);
-
-  /**
-   *  @brief Gets a value indicating whether a meta info with the given name is present for the given cell
-   */
-  bool has_meta_info (db::cell_index_type ci, const std::string &name) const
-  {
-    return has_meta_info (ci, meta_info_name_id (name));
-  }
-
-  /**
-   *  @brief Gets a value indicating whether a meta info with the given name is present for the given cell
-   */
-  bool has_meta_info (db::cell_index_type ci, meta_info_name_id_type name_id) const;
-
-  /**
-   *  @brief Removes the meta information object with the given name from the given cell
-   *  The method will do nothing if no object with that name exists.
-   */
-  void remove_meta_info (db::cell_index_type ci, const std::string &name)
-  {
-    remove_meta_info (ci, meta_info_name_id (name));
-  }
-
-  /**
-   *  @brief Removes the meta information object with the given name ID from the given cell
-   *  The method will do nothing if no object with that name exists.
-   */
-  void remove_meta_info (db::cell_index_type ci, meta_info_name_id_type name_id);
-
-  /**
-   *  @brief Gets the meta info value for a meta info object with the given name for the given cell
-   *  If no object with that name exists, an empty string is returned
-   */
-  const MetaInfo &meta_info (db::cell_index_type ci, const std::string &name) const
-  {
-    return meta_info (ci, meta_info_name_id (name));
-  }
-
-  /**
-   *  @brief Gets the meta info value for a meta info object with the given name ID for the given cell
-   *  If no object with that name exists, an empty string is returned
-   */
-  const MetaInfo &meta_info (db::cell_index_type ci, meta_info_name_id_type name_id) const;
-
-  /**
-   *  @brief Sets the hierarchy builder reference
-   *  Used internally
-   */
-  void set_hierarchy_builder (db::HierarchyBuilder *builder)
-  {
-    mp_builder = builder;
-  }
-
-  /**
-   *  @brief Gets the hierarchy builder
-   *  Used internally
-   */
-  db::HierarchyBuilder *builder () const
-  {
-    return mp_builder;
-  }
-
-  /**
-   *  @brief This event is triggered when the technology changes
-   */
-  tl::Event technology_changed_event;
-
-  /**
-   *  @brief This event is raised when cell variants are built
-   *  It will specify a list of cells with their new variants.
-   */
-  tl::event<const std::map<db::cell_index_type, std::map<db::ICplxTrans, db::cell_index_type> > *> variants_created_event;
+  const std::string &meta_info_value (const std::string &name) const;
 
 protected:
   /**
@@ -2116,8 +1672,8 @@ protected:
   virtual void do_update ();
 
 private:
-  db::Library *mp_library;
-  db::HierarchyBuilder *mp_builder;
+  enum LayerState { Normal, Free, Special };
+
   cell_list m_cells;
   size_t m_cells_size;
   cell_ptr_vector m_cell_ptrs;
@@ -2125,25 +1681,25 @@ private:
   mutable unsigned int m_invalid;
   cell_index_vector m_top_down_list;
   size_t m_top_cells;
-  LayoutLayers m_layers;
+  std::vector<unsigned int> m_free_indices;
+  std::vector<LayerState> m_layer_states;
   std::vector<const char *> m_cell_names;
   cell_map_type m_cell_map;
+  std::vector<LayerProperties> m_layer_props;
   double m_dbu;
   db::properties_id_type m_prop_id;
+  StringRepository m_string_repository;
   GenericRepository m_shape_repository;
+  PropertiesRepository m_properties_repository;
   ArrayRepository m_array_repository;
   std::vector<pcell_header_type *> m_pcells;
   pcell_name_map m_pcell_ids;
   lib_proxy_map m_lib_proxy_map;
-  bool m_do_cleanup;
+  int m_guiding_shape_layer;
+  int m_waste_layer;
   bool m_editable;
-  std::map<std::string, meta_info_name_id_type> m_meta_info_name_map;
-  std::vector<std::string> m_meta_info_names;
-  meta_info_map m_meta_info;
-  std::map<db::cell_index_type, meta_info_map> m_meta_info_by_cell;
-
-  std::string m_tech_name;
-  mutable tl::Mutex m_lock;
+  meta_info m_meta_info;
+  tl::Mutex m_lock;
 
   /**
    *  @brief Sort the cells topologically
@@ -2172,6 +1728,21 @@ private:
    */
   cell_index_type allocate_new_cell ();
 
+  /**  
+   *  @brief Insert a new layer
+   *
+   *  This creates a new index number, either from the free list
+   *  of by creating a new one.
+   */
+  unsigned int do_insert_layer (bool special = false);
+
+  /**  
+   *  @brief Insert a new layer at the given index
+   *
+   *  If the index is unused, create a new layer there.
+   */
+  void do_insert_layer (unsigned int index, bool special = false);
+
   /**
    *  @brief Implementation of prune_cell and prune_subcells
    */
@@ -2181,16 +1752,6 @@ private:
    *  @brief Implementation of prune_cells and some prune_subcells variants
    */
   void do_prune_cells_or_subcells (const std::set<cell_index_type> &ids, int levels, bool subcells);
-
-  /**
-   *  @brief Recovers a proxy without considering the library from context_info
-   */
-  db::Cell *recover_proxy_no_lib (const LayoutOrCellContextInfo &context_info);
-
-  /**
-   *  @brief Does an update without checking under_construction() and no Mutex
-   */
-  void force_update_no_lock () const;
 };
 
 /**
@@ -2222,7 +1783,7 @@ public:
   explicit LayoutLocker (db::Layout *layout = 0, bool no_update = false)
     : mp_layout (layout), m_no_update (no_update)
   {
-    if (mp_layout.get ()) {
+    if (mp_layout) {
       mp_layout->start_changes ();
     }
   }
@@ -2235,7 +1796,7 @@ public:
   LayoutLocker (const LayoutLocker &other)
     : mp_layout (other.mp_layout), m_no_update (other.m_no_update)
   {
-    if (mp_layout.get ()) {
+    if (mp_layout) {
       mp_layout->start_changes ();
     }
   }
@@ -2246,17 +1807,17 @@ public:
       return *this;
     }
 
-    set (const_cast<db::Layout *> (other.mp_layout.get ()), other.m_no_update);
+    set (other.mp_layout, other.m_no_update);
     return *this;
   }
 
 private:
-  tl::weak_ptr<db::Layout> mp_layout;
+  db::Layout *mp_layout;
   bool m_no_update;
 
   void set (db::Layout *layout, bool no_update)
   {
-    if (mp_layout.get ()) {
+    if (mp_layout) {
       if (m_no_update) {
         mp_layout->end_changes_no_update ();
       } else {
@@ -2265,7 +1826,7 @@ private:
     }
     mp_layout = layout;
     m_no_update = no_update;
-    if (mp_layout.get ()) {
+    if (mp_layout) {
       mp_layout->start_changes ();
     }
   }

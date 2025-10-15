@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@
 #include <QBackingStore>
 #include "gsiQt.h"
 #include "gsiQtGuiCommon.h"
+#include "gsiDeclQtGuiTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -97,7 +98,7 @@ static void _init_f_flush_5041 (qt_gsi::GenericMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("region");
   decl->add_arg<const QRegion & > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("window", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("window", true, "0");
   decl->add_arg<QWindow * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("offset", true, "QPoint()");
   decl->add_arg<const QPoint & > (argspec_2);
@@ -109,7 +110,7 @@ static void _call_f_flush_5041 (const qt_gsi::GenericMethod * /*decl*/, void *cl
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const QRegion &arg1 = gsi::arg_reader<const QRegion & >() (args, heap);
-  QWindow *arg2 = args ? gsi::arg_reader<QWindow * >() (args, heap) : gsi::arg_maker<QWindow * >() (nullptr, heap);
+  QWindow *arg2 = args ? gsi::arg_reader<QWindow * >() (args, heap) : gsi::arg_maker<QWindow * >() (0, heap);
   const QPoint &arg3 = args ? gsi::arg_reader<const QPoint & >() (args, heap) : gsi::arg_maker<const QPoint & >() (QPoint(), heap);
   __SUPPRESS_UNUSED_WARNING(ret);
   ((QBackingStore *)cls)->flush (arg1, arg2, arg3);

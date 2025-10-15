@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -33,6 +33,7 @@
 #include <QObject>
 #include "gsiQt.h"
 #include "gsiQtGuiCommon.h"
+#include "gsiDeclQtGuiTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -328,12 +329,12 @@ gsi::Class<QGestureRecognizer> &qtdecl_QGestureRecognizer ();
 static gsi::Methods methods_QGestureRecognizer_Adaptor () {
   gsi::Methods methods;
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QGestureRecognizer::QGestureRecognizer()\nThis method creates an object of class QGestureRecognizer.", &_init_ctor_QGestureRecognizer_Adaptor_0, &_call_ctor_QGestureRecognizer_Adaptor_0);
-  methods += new qt_gsi::GenericMethod ("qt_create", "@brief Virtual method QGesture *QGestureRecognizer::create(QObject *target)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_create_1302_0, &_call_cbs_create_1302_0);
-  methods += new qt_gsi::GenericMethod ("qt_create", "@hide", false, &_init_cbs_create_1302_0, &_call_cbs_create_1302_0, &_set_callback_cbs_create_1302_0);
-  methods += new qt_gsi::GenericMethod ("recognize", "@brief Virtual method QFlags<QGestureRecognizer::ResultFlag> QGestureRecognizer::recognize(QGesture *state, QObject *watched, QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_recognize_3741_0, &_call_cbs_recognize_3741_0);
-  methods += new qt_gsi::GenericMethod ("recognize", "@hide", false, &_init_cbs_recognize_3741_0, &_call_cbs_recognize_3741_0, &_set_callback_cbs_recognize_3741_0);
-  methods += new qt_gsi::GenericMethod ("reset", "@brief Virtual method void QGestureRecognizer::reset(QGesture *state)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_reset_1438_0, &_call_cbs_reset_1438_0);
-  methods += new qt_gsi::GenericMethod ("reset", "@hide", false, &_init_cbs_reset_1438_0, &_call_cbs_reset_1438_0, &_set_callback_cbs_reset_1438_0);
+  methods += new qt_gsi::GenericMethod ("qt_create", "@hide", false, &_init_cbs_create_1302_0, &_call_cbs_create_1302_0);
+  methods += new qt_gsi::GenericMethod ("qt_create", "@brief Virtual method QGesture *QGestureRecognizer::create(QObject *target)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_create_1302_0, &_call_cbs_create_1302_0, &_set_callback_cbs_create_1302_0);
+  methods += new qt_gsi::GenericMethod ("recognize", "@hide", false, &_init_cbs_recognize_3741_0, &_call_cbs_recognize_3741_0);
+  methods += new qt_gsi::GenericMethod ("recognize", "@brief Virtual method QFlags<QGestureRecognizer::ResultFlag> QGestureRecognizer::recognize(QGesture *state, QObject *watched, QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_recognize_3741_0, &_call_cbs_recognize_3741_0, &_set_callback_cbs_recognize_3741_0);
+  methods += new qt_gsi::GenericMethod ("reset", "@hide", false, &_init_cbs_reset_1438_0, &_call_cbs_reset_1438_0);
+  methods += new qt_gsi::GenericMethod ("reset", "@brief Virtual method void QGestureRecognizer::reset(QGesture *state)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_reset_1438_0, &_call_cbs_reset_1438_0, &_set_callback_cbs_reset_1438_0);
   return methods;
 }
 

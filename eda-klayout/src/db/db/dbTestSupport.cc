@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -30,10 +30,6 @@
 #include "dbLayoutDiff.h"
 #include "dbNetlist.h"
 #include "dbNetlistCompare.h"
-#include "dbRegion.h"
-#include "dbEdges.h"
-#include "dbEdgePairs.h"
-#include "dbTexts.h"
 
 #include "tlUnitTest.h"
 #include "tlFileUtils.h"
@@ -62,10 +58,10 @@ void compare_layouts (tl::TestBase *_this, const db::Layout &layout, const std::
   std::string tmp_file;
   db::SaveLayoutOptions options;
 
-  if ((norm & db::NormFileMask) == WriteGDS2) {
+  if (norm == WriteGDS2) {
     tmp_file = _this->tmp_file (tl::sprintf ("tmp_%x.gds", hash));
     options.set_format ("GDS2");
-  } else if ((norm & db::NormFileMask) == WriteOAS) {
+  } else if (norm == WriteOAS) {
     tmp_file = _this->tmp_file (tl::sprintf ("tmp_%x.oas", hash));
     options.set_format ("OASIS");
   } else {
@@ -74,17 +70,13 @@ void compare_layouts (tl::TestBase *_this, const db::Layout &layout, const std::
     options.set_format_from_filename (tmp_file);
   }
 
-  if ((norm & NoContext) != 0) {
-    options.set_write_context_info (false);
-  }
-
   {
     tl::OutputStream stream (tmp_file.c_str ());
     db::Writer writer (options);
     writer.write (const_cast<db::Layout &> (layout), stream);
   }
 
-  if ((norm & db::NormFileMask) == WriteGDS2 || (norm & db::NormFileMask) == WriteOAS) {
+  if (norm == WriteGDS2 || norm == WriteOAS) {
 
     //  read all layers from the original layout, so the layer table is the same
     for (db::Layout::layer_iterator l = layout.begin_layers (); l != layout.end_layers (); ++l) {
@@ -137,9 +129,8 @@ void compare_layouts (tl::TestBase *_this, const db::Layout &layout, const std::
 
       equal = db::compare_layouts (*subject, layout_au,
                                      (n > 0 ? db::layout_diff::f_silent : db::layout_diff::f_verbose)
-                                     | ((norm & AsPolygons) != 0 ? db::layout_diff::f_boxes_as_polygons + db::layout_diff::f_paths_as_polygons : 0)
-                                     | ((norm & WithArrays) != 0 ? 0 : db::layout_diff::f_flatten_array_insts)
-                                     | ((norm & WithMeta) == 0 ? 0 : db::layout_diff::f_with_meta)
+                                     | (norm == AsPolygons ? db::layout_diff::f_boxes_as_polygons + db::layout_diff::f_paths_as_polygons : 0)
+                                     | db::layout_diff::f_flatten_array_insts
                                    /*| db::layout_diff::f_no_text_details | db::layout_diff::f_no_text_orientation*/
                                    , tolerance, 100 /*max diff lines*/);
       if (equal && n > 0) {
@@ -195,17 +186,17 @@ public:
     m_circuit = circuit2str (a) + " vs. " + circuit2str (b);
   }
 
-  virtual void device_class_mismatch (const db::DeviceClass *a, const db::DeviceClass *b, const std::string & /*msg*/)
+  virtual void device_class_mismatch (const db::DeviceClass *a, const db::DeviceClass *b)
   {
     out ("device_class_mismatch " + device_class2str (a) + " " + device_class2str (b));
   }
 
-  virtual void circuit_skipped (const db::Circuit *a, const db::Circuit *b, const std::string & /*msg*/)
+  virtual void circuit_skipped (const db::Circuit *a, const db::Circuit *b)
   {
     out ("circuit_skipped " + circuit2str (a) + " " + circuit2str (b));
   }
 
-  virtual void circuit_mismatch (const db::Circuit *a, const db::Circuit *b, const std::string & /*msg*/)
+  virtual void circuit_mismatch (const db::Circuit *a, const db::Circuit *b)
   {
     out ("circuit_mismatch " + circuit2str (a) + " " + circuit2str (b));
   }
@@ -215,12 +206,12 @@ public:
     out ("match_nets " + net2str (a) + " " + net2str (b));
   }
 
-  virtual void match_ambiguous_nets (const db::Net *a, const db::Net *b, const std::string & /*msg*/)
+  virtual void match_ambiguous_nets (const db::Net *a, const db::Net *b)
   {
     out ("match_ambiguous_nets " + net2str (a) + " " + net2str (b));
   }
 
-  virtual void net_mismatch (const db::Net *a, const db::Net *b, const std::string & /*msg*/)
+  virtual void net_mismatch (const db::Net *a, const db::Net *b)
   {
     out ("net_mismatch " + net2str (a) + " " + net2str (b));
   }
@@ -230,7 +221,7 @@ public:
     out ("match_devices " + device2str (a) + " " + device2str (b));
   }
 
-  virtual void device_mismatch (const db::Device *a, const db::Device *b, const std::string & /*msg*/)
+  virtual void device_mismatch (const db::Device *a, const db::Device *b)
   {
     out ("device_mismatch " + device2str (a) + " " + device2str (b));
   }
@@ -250,7 +241,7 @@ public:
     out ("match_pins " + pin2str (a) + " " + pin2str (b));
   }
 
-  virtual void pin_mismatch (const db::Pin *a, const db::Pin *b, const std::string & /*msg*/)
+  virtual void pin_mismatch (const db::Pin *a, const db::Pin *b)
   {
     out ("pin_mismatch " + pin2str (a) + " " + pin2str (b));
   }
@@ -260,7 +251,7 @@ public:
     out ("match_subcircuits " + subcircuit2str (a) + " " + subcircuit2str (b));
   }
 
-  virtual void subcircuit_mismatch (const db::SubCircuit *a, const db::SubCircuit *b, const std::string & /*msg*/)
+  virtual void subcircuit_mismatch (const db::SubCircuit *a, const db::SubCircuit *b)
   {
     out ("subcircuit_mismatch " + subcircuit2str (a) + " " + subcircuit2str (b));
   }
@@ -300,7 +291,7 @@ private:
   }
 };
 
-void DB_PUBLIC compare_netlist (tl::TestBase *_this, const db::Netlist &netlist, const std::string &au_nl_string, bool exact_parameter_match, bool with_names)
+void DB_PUBLIC compare_netlist (tl::TestBase *_this, const db::Netlist &netlist, const std::string &au_nl_string, bool exact_parameter_match)
 {
   db::Netlist au_nl;
   for (db::Netlist::const_device_class_iterator d = netlist.begin_device_classes (); d != netlist.end_device_classes (); ++d) {
@@ -309,13 +300,12 @@ void DB_PUBLIC compare_netlist (tl::TestBase *_this, const db::Netlist &netlist,
 
   au_nl.from_string (au_nl_string);
 
-  compare_netlist (_this, netlist, au_nl, exact_parameter_match, with_names);
+  compare_netlist (_this, netlist, au_nl, exact_parameter_match);
 }
 
-void DB_PUBLIC compare_netlist (tl::TestBase *_this, const db::Netlist &netlist, const db::Netlist &netlist_au, bool exact_parameter_match, bool with_names)
+void DB_PUBLIC compare_netlist (tl::TestBase *_this, const db::Netlist &netlist, const db::Netlist &netlist_au, bool exact_parameter_match)
 {
   db::NetlistComparer comp (0);
-  comp.set_dont_consider_net_names (! with_names);
 
   db::Netlist netlist_copy (netlist);
 
@@ -332,100 +322,9 @@ void DB_PUBLIC compare_netlist (tl::TestBase *_this, const db::Netlist &netlist,
     //  Compare once again - this time with logger
     CompareLogger logger;
     db::NetlistComparer comp (&logger);
-    comp.set_dont_consider_net_names (! with_names);
     comp.compare (&netlist_copy, &netlist_au);
   }
 }
 
-template <class Container, class Shape>
-static
-bool do_compare (const Container &cont, const std::string &string)
-{
-  std::set<Shape> a, b;
-
-  Container cs;
-  tl::Extractor ex (string.c_str ());
-  ex.read (cs);
-
-  for (typename Container::const_iterator i = cont.begin (); !i.at_end (); ++i) {
-    a.insert (*i);
-  }
-
-  for (typename Container::const_iterator i = cs.begin (); !i.at_end (); ++i) {
-    b.insert (*i);
-  }
-
-  if (a != b) {
-
-    tl::error << "Compare details:";
-    tl::error << "  a = '" << cont.to_string () << "'";
-    tl::error << "  b = '" << cs.to_string () << "'";
-    tl::error << "In list a, but not in b:";
-    for (typename std::set<Shape>::const_iterator i = a.begin (); i != a.end (); ++i) {
-      if (b.find (*i) == b.end ()) {
-        tl::error << "  " << i->to_string ();
-      }
-    }
-    tl::error << "In list b, but not in a:";
-    for (typename std::set<Shape>::const_iterator i = b.begin (); i != b.end (); ++i) {
-      if (a.find (*i) == a.end ()) {
-        tl::error << "  " << i->to_string ();
-      }
-    }
-
-    return false;
-
-  } else {
-    return true;
-  }
-}
-
-/**
- *  @brief Convenient compare of region vs. string
- */
-bool compare (const db::Region &region, const std::string &string)
-{
-  return do_compare<db::Region, db::Polygon> (region, string);
-}
-
-/**
- *  @brief Convenient compare of edges vs. string
- */
-bool compare (const db::Edges &edges, const std::string &string)
-{
-  return do_compare<db::Edges, db::Edge> (edges, string);
-}
-
-/**
- *  @brief Convenient compare of edge pairs vs. string
- */
-bool compare (const db::EdgePairs &edge_pairs, const std::string &string)
-{
-  return do_compare<db::EdgePairs, db::EdgePair> (edge_pairs, string);
-}
-
-/**
- *  @brief Convenient compare of texts vs. string
- */
-bool compare (const db::Texts &texts, const std::string &string)
-{
-  return do_compare<db::Texts, db::Text> (texts, string);
-}
-
-/**
- *  @brief Convenient compare of box vs. string
- */
-bool compare (const db::Box &box, const std::string &string)
-{
-  return box.to_string () == string;
-}
-
-/**
- *  @brief Converts a property ID into a property key/value string representation
- */
-std::string prop2string (db::properties_id_type prop_id)
-{
-  return db::properties (prop_id).to_dict_var ().to_string ();
-}
 
 }

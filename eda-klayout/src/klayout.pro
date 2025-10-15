@@ -7,36 +7,28 @@ SUBDIRS = \
   tl \
   gsi \
   db \
-  pex \
   rdb \
   lib \
   plugins \
   unit_tests \
-  buddies \
-  lym \
-  laybasic \
-  layview \
-  ant \
-  img \
-  edt \
-
-equals(HAVE_RUBY, "1") {
-  SUBDIRS += drc lvs
-}
 
 !equals(HAVE_QT, "0") {
 
+  # TODO: make buddies able to build without Qt
   SUBDIRS += \
     klayout_main \
+    laybasic \
     lay \
-    layui \
+    ant \
+    buddies \
+    lym \
+    img \
+    edt \
     fontgen \
-    doc \
-    icons \
 
 }
 
-LANG_DEPENDS = 
+LANG_DEPENDS =
 MAIN_DEPENDS =
 
 equals(HAVE_RUBY, "1") {
@@ -63,36 +55,24 @@ equals(HAVE_PYTHON, "1") {
 
 gsi.depends += tl
 db.depends += gsi
-pex.depends += db
 rdb.depends += db
 lib.depends += db
 
-lym.depends += gsi $$LANG_DEPENDS
-
-laybasic.depends += rdb pex
-layview.depends += laybasic
-
-ant.depends += layview
-img.depends += layview
-edt.depends += layview
-
-plugins.depends += lib
-
-equals(HAVE_PYTHON, "1") {
-  pymod.depends += layview lib ant img edt lym
-}
-
-equals(HAVE_RUBY, "1") {
-  MAIN_DEPENDS += drc lvs
-  drc.depends += rdb lym
-  lvs.depends += drc
-  buddies.depends += drc lvs
-}
+plugins.depends += lib rdb db
 
 !equals(HAVE_QT, "0") {
 
+  buddies.depends += plugins lym $$LANG_DEPENDS
+
   equals(HAVE_PYTHON, "1") {
     pymod.depends += lay
+  }
+
+  equals(HAVE_RUBY, "1") {
+    SUBDIRS += drc lvs
+    MAIN_DEPENDS += drc lvs
+    drc.depends += rdb lym
+    lvs.depends += drc
   }
 
   equals(HAVE_QTBINDINGS, "1") {
@@ -107,30 +87,21 @@ equals(HAVE_RUBY, "1") {
 
   }
 
-  layui.depends += laybasic
-  layview.depends += layui
-  lay.depends += ant img edt layui lym
+  plugins.depends += lay ant
 
-  plugins.depends += lay
-
-  klayout_main.depends += doc icons plugins $$MAIN_DEPENDS
-
-} else {
-
-  plugins.depends += layview ant img edt
+  lym.depends += gsi $$LANG_DEPENDS
+  laybasic.depends += rdb lym
+  ant.depends += laybasic
+  img.depends += laybasic
+  edt.depends += laybasic
+  lay.depends += laybasic ant img edt
+  klayout_main.depends += plugins $$MAIN_DEPENDS
 
 }
 
-buddies.depends += plugins pex lym $$LANG_DEPENDS
-unit_tests.depends += plugins pex lym $$MAIN_DEPENDS $$LANG_DEPENDS
+unit_tests.depends += plugins $$MAIN_DEPENDS
 
-!equals(HAVE_QT, "0") {
+RESOURCES += \
+    plugins/tools/import/lay_plugin/layResources.qrc \
+    laybasic/laybasic/layResources.qrc
 
-  unit_tests.depends += doc icons
-
-}
-
-# Adds an extra target for generating the doc: "update_doc"
-update_doc.commands = $$PWD/../scripts/make_drc_lvs_doc.sh
-update_doc.depends = klayout_main
-QMAKE_EXTRA_TARGETS += update_doc

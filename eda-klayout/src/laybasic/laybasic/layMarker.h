@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -40,12 +40,13 @@
 #include "dbEdgePair.h"
 #include "dbArray.h"
 #include "gsi.h"
-#include "gsiObject.h"
+
+#include <QColor>
 
 namespace lay
 {
 
-class LayoutViewBase;
+class LayoutView;
 
 /**
  *  @brief The marker base class
@@ -60,19 +61,14 @@ public:
   /** 
    *  @brief The constructor 
    */ 
-  MarkerBase (lay::LayoutViewBase *view);
-
-  /**
-   *  @brief Attaches to a new view
-   */
-  void set_view (lay::LayoutViewBase *view);
+  MarkerBase (lay::LayoutView *view);
 
   /**
    *  @brief Get the color by which the marker is drawn
    *
    *  If the color is invalid, the marker is drawn with the canvases foreground color.
    */
-  tl::Color get_color () const
+  QColor get_color () const
   {
     return m_color;
   }
@@ -82,14 +78,14 @@ public:
    *
    *  If the color is invalid, the marker is drawn with the canvases foreground color.
    */
-  void set_color (tl::Color color);
+  void set_color (QColor color);
 
   /**
    *  @brief Get the color by which the marker's frame is drawn
    *
    *  If the color is invalid, the marker's frame is drawn with the fill color.
    */
-  tl::Color get_frame_color () const
+  QColor get_frame_color () const
   {
     return m_frame_color;
   }
@@ -99,7 +95,7 @@ public:
    *
    *  If the color is invalid, the marker's frame is drawn with the fill color.
    */
-  void set_frame_color (tl::Color color);
+  void set_frame_color (QColor color);
 
   /**
    *  @brief Get the line width with which the marker is drawn
@@ -153,7 +149,7 @@ public:
   }
 
   /**
-   *  @brief Set the frame pattern index for the marker
+   *  @brief Set the framee pattern index for the marker
    *
    *  The default pattern is 0 (solid)
    */
@@ -232,24 +228,13 @@ public:
 protected:
   void get_bitmaps (const Viewport &vp, ViewObjectCanvas &canvas, lay::CanvasPlane *&fill, lay::CanvasPlane *&frame, lay::CanvasPlane *&vertex, lay::CanvasPlane *&text);
 
-  lay::LayoutViewBase *view ()
-  {
-    return mp_view;
-  }
-
-  const lay::LayoutViewBase *view () const
-  {
-    return mp_view;
-  }
-
-private:
-  tl::Color m_color;
-  tl::Color m_frame_color;
-  int m_line_width, m_vertex_size, m_halo;
+  QColor m_color;
+  QColor m_frame_color;
+  char m_line_width, m_vertex_size, m_halo;
   bool m_text_enabled;
   lay::ViewOp::Shape m_vertex_shape;
   int m_line_style, m_dither_pattern, m_frame_pattern;
-  lay::LayoutViewBase *mp_view;
+  lay::LayoutView *mp_view;
 };
 
 /**
@@ -269,7 +254,7 @@ public:
   /** 
    *  @brief The constructor 
    */ 
-  GenericMarkerBase (lay::LayoutViewBase *view, unsigned int cv_index);
+  GenericMarkerBase (lay::LayoutView *view, unsigned int cv_index);
 
   /**
    *  @brief The destructor
@@ -336,6 +321,14 @@ public:
   }
 
   /**
+   *  @brief Gets the view object
+   */
+  lay::LayoutView *view () const
+  {
+    return mp_view;
+  }
+
+  /**
    *  @brief Gets the bounding box
    */
   db::DBox bbox () const;
@@ -353,6 +346,7 @@ public:
 private:
   db::CplxTrans m_trans;
   std::vector<db::DCplxTrans> *mp_trans_vector;
+  lay::LayoutView *mp_view;
   unsigned int m_cv_index;
 
   /**
@@ -375,7 +369,7 @@ public:
   /** 
    *  @brief The constructor 
    */ 
-  ShapeMarker (lay::LayoutViewBase *view, unsigned int cv_index);
+  ShapeMarker (lay::LayoutView *view, unsigned int cv_index);
 
   /**
    *  @brief The destructor
@@ -397,14 +391,6 @@ public:
    *  must be stored somewhere else.
    */
   void set (const db::Shape &shape, const db::ICplxTrans &t1, const std::vector<db::DCplxTrans> &trans);
-
-  /**
-   *  @brief Gets the shape
-   */
-  const db::Shape &shape () const
-  {
-    return m_shape;
-  }
 
 private:
   virtual void render (const Viewport &vp, ViewObjectCanvas &canvas);
@@ -434,20 +420,12 @@ public:
    *  @param draw_outline True to have instances drawing their outline
    *  @param max_shapes The maximum number of shapes to draw for instances (just a box is drawn if more shapes are present)
    */ 
-  InstanceMarker (lay::LayoutViewBase *view, unsigned int cv_index, bool draw_outline = true, size_t max_shapes = 0);
+  InstanceMarker (lay::LayoutView *view, unsigned int cv_index, bool draw_outline = true, size_t max_shapes = 0);
 
   /**
    *  @brief The destructor
    */
   ~InstanceMarker ();
-
-  /**
-   *  @brief Gets the instance
-   */
-  const db::Instance &instance () const
-  {
-    return m_inst;
-  }
 
   /**
    *  @brief Set the instance the marker is to display
@@ -532,7 +510,7 @@ public:
    *  @param draw_outline True to have instances drawing their outline
    *  @param max_shapes The maximum number of shapes to draw for instances (just a box is drawn if more shapes are present)
    */ 
-  Marker (lay::LayoutViewBase *view, unsigned int cv_index, bool draw_outline = true, size_t max_shapes = 0);
+  Marker (lay::LayoutView *view, unsigned int cv_index, bool draw_outline = true, size_t max_shapes = 0);
 
   /**
    *  @brief The destructor
@@ -767,7 +745,7 @@ public:
   /** 
    *  @brief The constructor 
    */ 
-  DMarker (lay::LayoutViewBase *view);
+  DMarker (lay::LayoutView *view);
 
   /**
    *  @brief The destructor
@@ -829,23 +807,23 @@ private:
     db::DText *text;
     void *any;
   } m_object;
-};
 
-/**
- *  @brief A managed version of the marker class
- *
- *  It uses gsi::ObjectBase as a base class and serves as
- *  proxy for GSI binding.
- */
-class ManagedDMarker
-  : public lay::DMarker, public gsi::ObjectBase
-{
-public:
-  ManagedDMarker (lay::LayoutViewBase *view)
-    : lay::DMarker (view)
-  { }
+  lay::LayoutView *mp_view;
 };
 
 }
 
+namespace tl {
+  template <> struct type_traits<lay::Marker> : public type_traits<void> {
+    typedef tl::false_tag has_copy_constructor;
+    typedef tl::false_tag has_default_constructor;
+  };
+  template <> struct type_traits<lay::DMarker> : public type_traits<void> {
+    typedef tl::false_tag has_copy_constructor;
+    typedef tl::false_tag has_default_constructor;
+  };
+}
+
 #endif
+
+

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@
 #include <QAccessibleEditableTextInterface>
 #include "gsiQt.h"
 #include "gsiQtGuiCommon.h"
+#include "gsiDeclQtGuiTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -304,12 +305,12 @@ gsi::Class<QAccessibleEditableTextInterface> &qtdecl_QAccessibleEditableTextInte
 static gsi::Methods methods_QAccessibleEditableTextInterface_Adaptor () {
   gsi::Methods methods;
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QAccessibleEditableTextInterface::QAccessibleEditableTextInterface()\nThis method creates an object of class QAccessibleEditableTextInterface.", &_init_ctor_QAccessibleEditableTextInterface_Adaptor_0, &_call_ctor_QAccessibleEditableTextInterface_Adaptor_0);
-  methods += new qt_gsi::GenericMethod ("deleteText", "@brief Virtual method void QAccessibleEditableTextInterface::deleteText(int startOffset, int endOffset)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_deleteText_1426_0, &_call_cbs_deleteText_1426_0);
-  methods += new qt_gsi::GenericMethod ("deleteText", "@hide", false, &_init_cbs_deleteText_1426_0, &_call_cbs_deleteText_1426_0, &_set_callback_cbs_deleteText_1426_0);
-  methods += new qt_gsi::GenericMethod ("insertText", "@brief Virtual method void QAccessibleEditableTextInterface::insertText(int offset, const QString &text)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_insertText_2684_0, &_call_cbs_insertText_2684_0);
-  methods += new qt_gsi::GenericMethod ("insertText", "@hide", false, &_init_cbs_insertText_2684_0, &_call_cbs_insertText_2684_0, &_set_callback_cbs_insertText_2684_0);
-  methods += new qt_gsi::GenericMethod ("replaceText", "@brief Virtual method void QAccessibleEditableTextInterface::replaceText(int startOffset, int endOffset, const QString &text)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_replaceText_3343_0, &_call_cbs_replaceText_3343_0);
-  methods += new qt_gsi::GenericMethod ("replaceText", "@hide", false, &_init_cbs_replaceText_3343_0, &_call_cbs_replaceText_3343_0, &_set_callback_cbs_replaceText_3343_0);
+  methods += new qt_gsi::GenericMethod ("deleteText", "@hide", false, &_init_cbs_deleteText_1426_0, &_call_cbs_deleteText_1426_0);
+  methods += new qt_gsi::GenericMethod ("deleteText", "@brief Virtual method void QAccessibleEditableTextInterface::deleteText(int startOffset, int endOffset)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_deleteText_1426_0, &_call_cbs_deleteText_1426_0, &_set_callback_cbs_deleteText_1426_0);
+  methods += new qt_gsi::GenericMethod ("insertText", "@hide", false, &_init_cbs_insertText_2684_0, &_call_cbs_insertText_2684_0);
+  methods += new qt_gsi::GenericMethod ("insertText", "@brief Virtual method void QAccessibleEditableTextInterface::insertText(int offset, const QString &text)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_insertText_2684_0, &_call_cbs_insertText_2684_0, &_set_callback_cbs_insertText_2684_0);
+  methods += new qt_gsi::GenericMethod ("replaceText", "@hide", false, &_init_cbs_replaceText_3343_0, &_call_cbs_replaceText_3343_0);
+  methods += new qt_gsi::GenericMethod ("replaceText", "@brief Virtual method void QAccessibleEditableTextInterface::replaceText(int startOffset, int endOffset, const QString &text)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_replaceText_3343_0, &_call_cbs_replaceText_3343_0, &_set_callback_cbs_replaceText_3343_0);
   return methods;
 }
 

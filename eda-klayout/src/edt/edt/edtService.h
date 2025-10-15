@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -27,83 +27,52 @@
 
 #include "edtCommon.h"
 
-#include "layEditorServiceBase.h"
+#include "layEditable.h"
 #include "layPlugin.h"
+#include "layViewObject.h"
 #include "layMarker.h"
 #include "laySnap.h"
 #include "layObjectInstPath.h"
-#include "layTextInfo.h"
-#include "layEditorUtils.h"
-#include "tlColor.h"
 #include "dbLayout.h"
 #include "dbShape.h"
+#include "edtUtils.h"
 #include "edtConfig.h"
 #include "tlAssert.h"
 #include "tlException.h"
 
 #include <set>
 #include <vector>
-
-namespace lay {
-  class LayerPropertiesConstIterator;
-}
+#include <QColor>
 
 namespace edt {
 
 class Service;
 class PluginDeclarationBase;
+class EditorOptionsPages;
+class EditorOptionsPage;
+
+// -------------------------------------------------------------
+
+extern lay::angle_constraint_type ac_from_buttons (unsigned int buttons);
 
 // -------------------------------------------------------------
 
 /**
- *  @brief A helper class that identifies clipboard data for edt::
+ *  @brief Utility function: serialize PCell parameters into a string
  */
-class EDT_PUBLIC ClipboardData
-  : public db::ClipboardData
-{
-public:
-  ClipboardData () { }
-};
-
-// -------------------------------------------------------------
+std::string pcell_parameters_to_string (const std::map<std::string, tl::Variant> &parameters);
 
 /**
- *  @brief A utility class to implement a selection iterator across all editor services
+ *  @brief Utility: deserialize PCell parameters from a string
  */
-class EDT_PUBLIC EditableSelectionIterator
-{
-public:
-  typedef std::set<lay::ObjectInstPath> objects;
-  typedef objects::value_type value_type;
-  typedef objects::const_iterator iterator_type;
-  typedef const value_type *pointer;
-  typedef const value_type &reference;
-  typedef std::forward_iterator_tag iterator_category;
-  typedef void difference_type;
-
-  EditableSelectionIterator (const std::vector<edt::Service *> &services, bool transient);
-  EditableSelectionIterator (const edt::Service *service, bool transient);
-
-  bool at_end () const;
-
-  EditableSelectionIterator &operator++ ();
-  reference operator* () const;
-  pointer operator-> () const;
-
-private:
-  std::vector<const edt::Service *> m_services;
-  unsigned int m_service;
-  bool m_transient_selection;
-  iterator_type m_iter, m_end;
-
-  void next ();
-  void init ();
-};
+std::map<std::string, tl::Variant> pcell_parameters_from_string (const std::string &s);
 
 // -------------------------------------------------------------
 
 class EDT_PUBLIC Service
-  : public lay::EditorServiceBase,
+  : public lay::ViewService,
+    public lay::Editable,
+    public lay::Plugin,
     public db::Object
 {
 public: 
@@ -115,12 +84,12 @@ public:
   /**
    *  @brief The constructor for an service selecting shapes
    */
-  Service (db::Manager *manager, lay::LayoutViewBase *view, db::ShapeIterator::flags_type shape_types);
+  Service (db::Manager *manager, lay::LayoutView *view, db::ShapeIterator::flags_type shape_types);
 
   /**
    *  @brief The constructor for an service selecting instances
    */
-  Service (db::Manager *manager, lay::LayoutViewBase *view);
+  Service (db::Manager *manager, lay::LayoutView *view);
 
   /**
    *  @brief The destructor
@@ -137,10 +106,10 @@ public:
    */
   void restore_highlights ();
 
-  /**
-   *  @brief Highlights a group of objects
+  /** 
+   *  @brief Highlight a certain object
    */
-  void highlight (const std::set<const lay::ObjectInstPath *> &highlights);
+  void highlight (unsigned int n);
 
   /** 
    *  @brief "delete" operation
@@ -191,17 +160,12 @@ public:
   virtual void end_move (const db::DPoint &p, lay::angle_constraint_type ac);
 
   /**
-   *  @brief Indicates whether objects are selected
-   */
-  virtual bool has_selection ();
-
-  /**
-   *  @brief Indicates how many objects are selected
+   *  @brief Tell the number of selected objects
    */
   virtual size_t selection_size ();
 
   /**
-   *  @brief Indicates whether objects are selected in transient mode
+   *  @brief Tell if anything is selected in the transient selection
    */
   virtual bool has_transient_selection ();
 
@@ -211,16 +175,11 @@ public:
   virtual double click_proximity (const db::DPoint &pos, lay::Editable::SelectionMode mode);
 
   /**
-   *  @brief Gets the catch distance (for single click)
+   *  @brief Gets the catch distance
    */
   virtual double catch_distance ();
 
-  /**
-   *  @brief Gets the catch distance (for box)
-   */
-  virtual double catch_distance_box ();
-
-  /**
+  /** 
    *  @brief "select" operation
    */
   virtual bool select (const db::DBox &box, lay::Editable::SelectionMode mode);
@@ -235,7 +194,7 @@ public:
    */
   void get_selection (std::vector <lay::ObjectInstPath> &selection) const;
 
-  /**
+  /** 
    *  @brief "transform" operation with a transformation vector
    *
    *  This version of the transformation operation allows one to specify a transformation per selected object.
@@ -252,15 +211,47 @@ public:
   /**
    *  @brief Color accessor
    */
-  tl::Color color () const
+  QColor color () const
   {
     return m_color;
   }
 
   /**
+   *  @brief Obtain the lay::ViewService interface
+   */
+  lay::ViewService *view_service_interface ()
+  {
+    return this;
+  }
+
+  /**
+   *  @brief Obtain the lay::Editable interface
+   */
+  lay::Editable *editable_interface ()
+  {
+    return this;
+  }
+
+  /**
+   *  @brief Get the selection container
+   */
+  const objects &selection () const
+  {
+    return m_selection;
+  }
+
+  /**
+   *  @brief Get the transient selection container
+   */
+  const objects &transient_selection () const
+  {
+    return m_transient_selection;
+  }
+
+  /**
    *  @brief Access to the view object
    */
-  lay::LayoutViewBase *view () const
+  lay::LayoutView *view () const
   {
     tl_assert (mp_view != 0);
     return mp_view;
@@ -279,19 +270,9 @@ public:
   void clear_previous_selection ();
 
   /**
-   *  @brief Gets the selection iterator
-   */
-  EditableSelectionIterator begin_selection () const;
-
-  /**
    *  @brief Establish a transient selection
    */
   bool transient_select (const db::DPoint &pos);
-
-  /**
-   *  @brief Gets the transient selection iterator
-   */
-  EditableSelectionIterator begin_transient_selection () const;
 
   /**
    *  @brief Turns the transient selection to the selection
@@ -349,21 +330,6 @@ public:
   virtual bool mouse_double_click_event (const db::DPoint &p, unsigned int buttons, bool prio);
 
   /**
-   *  @brief Mouse leave event handler
-   */
-  virtual bool leave_event (bool prio);
-
-  /**
-   *  @brief Mouse enter event handler
-   */
-  virtual bool enter_event (bool prio);
-
-  /**
-   *  @brief Implements the key handler
-   */
-  virtual bool key_event (unsigned int /*key*/, unsigned int /*buttons*/);
-
-  /**
    *  @brief Implement the mouse mode: deactivate mouse mode
    */
   virtual void deactivated ();
@@ -377,18 +343,6 @@ public:
    *  @brief Cancel any edit operations (such as move)
    */
   virtual void edit_cancel ();
-
-  /**
-   *  @brief Triggered by tap - gives the new layer and if required the initial point
-   */
-  virtual void tap (const db::DPoint &initial);
-
-  /**
-   *  @brief Implements the via feature
-   *
-   *  "dir" is 0 for up or down, -1 for down and +1 for up.
-   */
-  virtual void via (int dir);
 
   /**
    *  @brief Delete the selected rulers
@@ -411,53 +365,23 @@ public:
    *
    *  @return true, if PCells have been updated, indicating that our selection is no longer valid
    *
-   *  @param commit If true, changes are "final" (and PCells are updated also in lazy evaluation mode)
-   *
    *  This version assumes there is only one guiding shape selected and will update the selection.
    *  It will also call layout.cleanup() if required.
    */
-  bool handle_guiding_shape_changes (bool commit);
+  bool handle_guiding_shape_changes ();
 
   /**
    *  @brief Handle changes in a specific guiding shape, i.e. create new PCell variants if required
    *
    *  @return A pair of bool (indicating that the object path has changed) and the new guiding shape path
    */
-  std::pair<bool, lay::ObjectInstPath> handle_guiding_shape_changes (const lay::ObjectInstPath &obj, bool commit) const;
-
-  /**
-   *  @brief Gets a value indicating whether a move operation is ongoing
-   */
-  bool is_moving () const
-  {
-    return m_moving;
-  }
-
-  /**
-   *  @brief Gets the current move transformation (in DBU space on context cell level)
-   */
-  const db::DTrans &move_trans () const
-  {
-    return m_move_trans;
-  }
+  std::pair<bool, lay::ObjectInstPath> handle_guiding_shape_changes (const lay::ObjectInstPath &obj) const;
 
 protected:
   /**
    *  @brief Update m_markers to reflect the selection
    */
   void selection_to_view ();
-
-  /**
-   *  @brief Callback when any geometry is changing in the layout
-   *
-   *  Will call selection_to_view() and invalidate the selection.
-   */
-  void geometry_changing ();
-
-  /**
-   *  @brief starts editing at the given point.
-   */
-  void begin_edit (const db::DPoint &p);
 
   /**
    *  @brief Reimplemented by the specific implementation of the shape editors
@@ -506,13 +430,6 @@ protected:
   /**
    *  @brief Reimplemented by the specific implementation of the shape editors
    *
-   *  This method is called when the backspace button is pressed
-   */
-  virtual void do_delete () { }
-
-  /**
-   *  @brief Reimplemented by the specific implementation of the shape editors
-   *
    *  This method is called when the object is finished
    */
   virtual void do_finish_edit () { }
@@ -523,11 +440,6 @@ protected:
    *  This method is called when the edit operation should be cancelled
    */
   virtual void do_cancel_edit () { }
-
-  /**
-   *  @brief Called when a configuration parameter provided by the service base class has changed
-   */
-  virtual void service_configuration_changed ();
 
   /**
    *  @brief Install a marker for representing the edited object
@@ -586,14 +498,6 @@ protected:
   db::DVector snap (const db::DVector &v, bool connect) const;
 
   /**
-   *  @brief Proposes a grid-snapped displacement vector
-   *
-   *  @param v The input displacement
-   *  @return A displacement that pushes the (current) markers on-grid, definition depending on marker
-   */
-  db::DVector snap_marker_to_grid (const db::DVector &v, bool &snapped) const;
-
-  /**
    *  @brief Snap a point to the edit grid with advanced snapping (including object snapping)
    *
    *  @param p The point to snap
@@ -624,44 +528,12 @@ protected:
     return m_max_shapes_of_instances;
   }
 
-  bool editing () const
-  {
-    return m_editing;
-  }
-
-  bool top_level_sel () const
-  {
-    return m_top_level_sel;
-  }
-
-  bool mouse_in_view () const
-  {
-    return m_mouse_in_view;
-  }
-
-  const db::DPoint &mouse_pos () const
-  {
-    return m_mouse_pos;
-  }
-
-  /**
-   *  @brief Commits the current configuration to the recent attributes list
-   */
-  void commit_recent ();
-
-  /**
-   *  @brief Point snapping with detailed return value
-   */
-  lay::PointSnapToObjectResult snap2_details (const db::DPoint &p) const;
-
 private:
-  friend class EditableSelectionIterator;
-
   //  The layout view that the editor service is attached to
-  lay::LayoutViewBase *mp_view;
+  lay::LayoutView *mp_view;
 
   //  The marker objects representing the selection
-  std::vector<std::pair<const lay::ObjectInstPath *, lay::ViewObject *> > m_markers;
+  std::vector<lay::ViewObject *> m_markers;
 
   //  Marker for the transient selection
   lay::ViewObject *mp_transient_marker;
@@ -669,23 +541,14 @@ private:
   //  The marker representing the object to be edited
   std::vector<lay::ViewObject *> m_edit_markers;
 
-  //  The last mouse position
-  db::DPoint m_mouse_pos;
-
-  //  A flag indicating whether the mouse is inside the view
-  bool m_mouse_in_view;
-
   //  True, if editing is in progress.
   bool m_editing;
 
   //  True, if on the first mouse move an immediate do_begin_edit should be issued.
   bool m_immediate;
 
-  //  The selection (mutable because we clean it on the fly)
-  mutable objects m_selection;
-
-  //  A flag indicating that the selection may need cleanup
-  mutable bool m_selection_maybe_invalid;
+  //  The selection
+  objects m_selection;
 
   //  The previous selection (used for cycling through different selections for single clicks)
   objects m_previous_selection;
@@ -700,7 +563,7 @@ private:
   db::ShapeIterator::flags_type m_flags;
 
   //  The look of the markers
-  tl::Color m_color;
+  QColor m_color;
 
   //  The current transformation on movement
   db::DTrans m_move_trans;
@@ -711,14 +574,10 @@ private:
   lay::angle_constraint_type m_connect_ac, m_move_ac, m_alt_ac;
   db::DVector m_edit_grid;
   bool m_snap_to_objects;
-  bool m_snap_objects_to_grid;
   db::DVector m_global_grid;
-
-  //  Other attributes
   bool m_top_level_sel;
   bool m_show_shapes_of_instances;
   unsigned int m_max_shapes_of_instances;
-  int m_pcell_lazy_evaluation;
 
   //  Hierarchical copy mode (-1: ask, 0: shallow, 1: deep)
   int m_hier_copy_mode;
@@ -726,10 +585,6 @@ private:
   //  Sequence number of selection
   bool m_indicate_secondary_selection;
   unsigned long m_seq;
-
-  //  selective highlights
-  bool m_highlights_selected;
-  std::set<const lay::ObjectInstPath *> m_selected_highlights;
 
   //  Deferred method to update the selection
   tl::DeferredMethod<edt::Service> dm_selection_to_view;
@@ -760,73 +615,7 @@ private:
    *  @brief Display the status bar message for the given selection
    */
   void display_status (bool transient);
-
-  /**
-   *  @brief Apply highlight selection
-   */
-  void apply_highlights ();
-
-  /**
-   *  @brief Get the selection container
-   */
-  const objects &selection () const;
-
-  /**
-   *  @brief Get the transient selection container
-   */
-  const objects &transient_selection () const;
-
-private:
-  void copy_selected (unsigned int inst_mode);
-  void update_vector_snapped_point (const db::DPoint &pt, db::DVector &vr, bool &result_set) const;
-  void update_vector_snapped_marker (const lay::ShapeMarker *sm, const db::DTrans &trans, db::DVector &vr, bool &result_set, size_t &count) const;
-  void update_vector_snapped_marker (const lay::InstanceMarker *sm, const db::DTrans &trans, db::DVector &vr, bool &result_set, size_t &count) const;
 };
-
-/**
- *  @brief Gets the combined selections over all editor services in the layout view
- */
-EDT_PUBLIC std::vector<edt::Service::objects::value_type> object_selection (const lay::LayoutViewBase *view);
-
-/**
- *  @brief Distributes the combined selection over all editor services in the layout view
- */
-EDT_PUBLIC void set_object_selection (const lay::LayoutViewBase *view, const std::vector<edt::Service::objects::value_type> &all_selected);
-
-/**
- *  @brief Gets a value indicating whether any editor service in the view has a selection
- */
-EDT_PUBLIC bool has_object_selection (const lay::LayoutViewBase *view);
-
-/**
- *  @brief Clears the selection of all editor services in the view
- */
-EDT_PUBLIC void clear_object_selection (const lay::LayoutViewBase *view);
-
-/**
- *  @brief Selects a specific object in the appropriate editor service of the view
- */
-EDT_PUBLIC void select_object (const lay::LayoutViewBase *view, const edt::Service::objects::value_type &object);
-
-/**
- *  @brief Unselects a specific object in the appropriate editor service of the view
- */
-EDT_PUBLIC void unselect_object (const lay::LayoutViewBase *view, const edt::Service::objects::value_type &object);
-
-/**
- *  @brief Gets a value indicating whether any editor service in the view has a transient selection
- */
-EDT_PUBLIC bool has_transient_object_selection (const lay::LayoutViewBase *view);
-
-/**
- *  @brief Iterates over all selected object of all editor services
- */
-EDT_PUBLIC EditableSelectionIterator begin_objects_selected (const lay::LayoutViewBase *view);
-
-/**
- *  @brief Iterates over all transiently selected object of all editor services
- */
-EDT_PUBLIC EditableSelectionIterator begin_objects_selected_transient (const lay::LayoutViewBase *view);
 
 }
 

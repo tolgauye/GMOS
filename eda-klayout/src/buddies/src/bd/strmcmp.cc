@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -25,7 +25,6 @@
 #include "dbLayoutDiff.h"
 #include "dbReader.h"
 #include "tlCommandLineParser.h"
-#include "tlTimer.h"
 
 BD_PUBLIC int strmcmp (int argc, char *argv[])
 {
@@ -42,7 +41,6 @@ BD_PUBLIC int strmcmp (int argc, char *argv[])
   std::string infile_a, infile_b;
   std::string top_a, top_b;
   bool silent = false;
-  bool ignore_duplicates = false;
   bool no_text_orientation = true;
   bool no_text_details = true;
   bool no_properties = false;
@@ -108,10 +106,6 @@ BD_PUBLIC int strmcmp (int argc, char *argv[])
       << tl::arg ("--expand-arrays",           &flatten_array_insts, "Expands array instances before compare",
                   "With this option, arrays are equivalent single instances are treated identical."
                  )
-      << tl::arg ("-1|--ignore-duplicates",    &ignore_duplicates, "Ignore duplicate instances and shapes",
-                  "With this option, duplicate instances or shapes are ignored and duplication "
-                  "does not count as a difference."
-                 )
       << tl::arg ("-l|--layer-details",        &dont_summarize_missing_layers, "Prints details about differences for missing layers",
                   "With this option, missing layers are treated as \"empty\" and details about differences to "
                   "other, non-empty layers are printed. Essentially the content of the non-empty counterpart "
@@ -142,29 +136,30 @@ BD_PUBLIC int strmcmp (int argc, char *argv[])
     throw tl::Exception ("Both -ta|--top-a and -tb|--top-b top cells must be given");
   }
 
-  tl::SelfTimer timer (tl::verbosity () >= 11, tl::to_string (tr ("Total")));
-
   db::Layout layout_a;
   db::Layout layout_b;
 
   {
     db::LoadLayoutOptions load_options;
     generic_reader_options_a.configure (load_options);
-    bd::read_files (layout_a, infile_a, load_options);
+
+    tl::InputStream stream (infile_a);
+    db::Reader reader (stream);
+    reader.read (layout_a, load_options);
   }
 
   {
     db::LoadLayoutOptions load_options;
     generic_reader_options_b.configure (load_options);
-    bd::read_files (layout_b, infile_b, load_options);
+
+    tl::InputStream stream (infile_b);
+    db::Reader reader (stream);
+    reader.read (layout_b, load_options);
   }
 
   unsigned int flags = 0;
   if (silent) {
     flags |= db::layout_diff::f_silent;
-  }
-  if (ignore_duplicates) {
-    flags |= db::layout_diff::f_ignore_duplicates;
   }
   if (no_text_orientation) {
     flags |= db::layout_diff::f_no_text_orientation;

@@ -6,61 +6,33 @@ trigger:
     - staging
   tags:
     include:
-      - 'v*'
+      - '*'
 
 jobs:
 - job: Build
   pool:
-    vmImage: 'windows-2019' # other options: 'macOS-10.13', 'ubuntu-16.04'
+    vmImage: 'vs2017-win2016' # other options: 'macOS-10.13', 'ubuntu-16.04'
   strategy:
     matrix:
+      # Python27:
+      #   python.version: '2.7'
+      cp35-cp35m-win_amd64.whl:
+        python.version: '3.5'
+        python.architecture: 'x64'
       cp36-cp36m-win_amd64.whl:
         python.version: '3.6'
         python.architecture: 'x64'
       cp37-cp37m-win_amd64.whl:
         python.version: '3.7'
         python.architecture: 'x64'
-      cp38-cp38-win_amd64.whl:
-        python.version: '3.8'
-        python.architecture: 'x64'
-      cp39-cp39-win_amd64.whl:
-        python.version: '3.9'
-        python.architecture: 'x64'
-      cp310-cp310-win_amd64.whl:
-        python.version: '3.10'
-        python.architecture: 'x64'
-      cp311-cp311-win_amd64.whl:
-        python.version: '3.11'
-        python.architecture: 'x64'
-      cp312-cp312-win_amd64.whl:
-        python.version: '3.12'
-        python.architecture: 'x64'
-      cp313-cp313-win_amd64.whl:
-        python.version: '3.13'
-        python.architecture: 'x64'
+      cp35-cp35m-win32.whl:
+        python.version: '3.5'
+        python.architecture: 'x86'
       cp36-cp36m-win32.whl:
         python.version: '3.6'
         python.architecture: 'x86'
       cp37-cp37m-win32.whl:
         python.version: '3.7'
-        python.architecture: 'x86'
-      cp38-cp38-win32.whl:
-        python.version: '3.8'
-        python.architecture: 'x86'
-      cp39-cp39-win32.whl:
-        python.version: '3.9'
-        python.architecture: 'x86'
-      cp310-cp310-win32.whl:
-        python.version: '3.10'
-        python.architecture: 'x86'
-      cp311-cp311-win32.whl:
-        python.version: '3.11'
-        python.architecture: 'x86'
-      cp312-cp312-win32.whl:
-        python.version: '3.12'
-        python.architecture: 'x86'
-      cp313-cp313-win32.whl:
-        python.version: '3.13'
         python.architecture: 'x86'
     maxParallel: 6
 
@@ -80,9 +52,9 @@ jobs:
       #arguments: # Optional
       script: | # Required when targetType == Inline
         pwd
-        Invoke-WebRequest -Uri "https://www.klayout.org/downloads/klayout-microbits-4.0.zip" -OutFile klayout-microbits-4.0.zip
+        Invoke-WebRequest -Uri "https://dl.bintray.com/lightwave-lab/klayout/klayout-microbits-1.0.zip" -OutFile klayout-microbits-1.0.zip
         dir
-        Expand-Archive klayout-microbits-4.0.zip -DestinationPath klayout-microbits
+        Expand-Archive klayout-microbits-1.0.zip -DestinationPath klayout-microbits
         dir klayout-microbits
       #errorActionPreference: 'stop' # Optional. Options: stop, continue, silentlyContinue
       #failOnStderr: false # Optional
@@ -91,36 +63,38 @@ jobs:
       #workingDirectory: # Optional
     displayName: 'Download and Extract KLayout bits'
 
+  # - script: |
+  #     curl https://download.microsoft.com/download/7/9/6/796EF2E4-801B-4FC4-AB28-B59FBF6D907B/VCForPython27.msi -o VCForPython27.msi
+  #     msiexec /i VCForPython27.msi /quiet
+  #     set "VS90COMNTOOLS=C:\Users\VssAdministrator\AppData\Local\Programs\Common\Microsoft\Visual C++ for Python\9.0\VC"
+  #     curl https://raw.githubusercontent.com/mattn/gntp-send/master/include/msinttypes/stdint.h -o "%VS90COMNTOOLS%\Include\stdint.h"
+  #     dir "%VS90COMNTOOLS%\Include"
+  #   condition: eq(variables['python.version'], '2.7')
+  #   displayName: 'Install Microsoft Visual C++ Compiler for Python 2.7'
+
   - script: |
-      # setuptools 67.0.0 is not working as of now (pypa/setuptools#4885)
-      python -m pip install --upgrade pip "setuptools<76.0.0" wheel
+      python -m pip install --upgrade pip setuptools wheel
     displayName: 'Update pip, setuptools and wheel'
 
   - script: |
       python -V
-      set "KLAYOUT_BITS=%cd%\klayout-microbits\klayout-microbits-4.0\msvc2017\%PYTHON_ARCHITECTURE%"
+      set "KLAYOUT_BITS=%cd%\klayout-microbits\klayout-microbits-1.0\msvc2017\%PYTHON_ARCHITECTURE%"
       echo KLAYOUT_BITS=%KLAYOUT_BITS%
       python setup.py bdist_wheel
     displayName: 'Build KLayout'
 
   - bash: |
-      bash `pwd`/ci-scripts/windows/fix_wheel.sh `pwd`/dist/*.whl "`pwd`/klayout-microbits/klayout-microbits-4.0/msvc2017/$PYTHON_ARCHITECTURE"
+      bash `pwd`/ci-scripts/windows/fix_wheel.sh `pwd`/dist/*.whl "`pwd`/klayout-microbits/klayout-microbits-1.0/msvc2017/$PYTHON_ARCHITECTURE"
     displayName: 'Copy klayout bits dlls into wheel'
 
-  - task: Bash@3
-    inputs:
-      targetType: 'inline'
-      script: |
-        set -e
-        echo $PATH
-        export TESTSRC=.
-        pip install klayout --no-index -f dist
-        python testdata/pymod/import_db.py
-        python testdata/pymod/import_rdb.py
-        python testdata/pymod/import_tl.py
-        python testdata/pymod/import_lib.py
-        python testdata/pymod/import_lay.py
-        python testdata/pymod/pya_tests.py
+  - script: |
+      echo PATH=%PATH%
+      pip install klayout --no-index -f dist
+      python testdata/pymod/import_db.py
+      python testdata/pymod/import_rdb.py
+      python testdata/pymod/import_tl.py
+      python testdata/pymod/import_lib.py
+      python testdata/pymod/pya_tests.py
     displayName: 'Test KLayout pymod'
 
   - task: CopyFiles@2
@@ -140,39 +114,9 @@ jobs:
   displayName: 'Combine Windows wheels and deploy to PyPI'
   dependsOn: Build
   pool:
-    vmImage: 'windows-2019' # other options: 'macOS-10.13', 'ubuntu-16.04'
+    vmImage: 'vs2017-win2016' # other options: 'macOS-10.13', 'ubuntu-16.04'
   steps:
     - checkout: none #skip checking out the default repository resource
-    - task: DownloadBuildArtifacts@0
-      displayName: 'Download Build Artifacts wheel-3.13.x64'
-      inputs:
-        artifactName: 'wheel-3.13.x64'
-        downloadPath: '$(System.DefaultWorkingDirectory)'
-    - task: DownloadBuildArtifacts@0
-      displayName: 'Download Build Artifacts wheel-3.12.x64'
-      inputs:
-        artifactName: 'wheel-3.12.x64'
-        downloadPath: '$(System.DefaultWorkingDirectory)'
-    - task: DownloadBuildArtifacts@0
-      displayName: 'Download Build Artifacts wheel-3.11.x64'
-      inputs:
-        artifactName: 'wheel-3.11.x64'
-        downloadPath: '$(System.DefaultWorkingDirectory)'
-    - task: DownloadBuildArtifacts@0
-      displayName: 'Download Build Artifacts wheel-3.10.x64'
-      inputs:
-        artifactName: 'wheel-3.10.x64'
-        downloadPath: '$(System.DefaultWorkingDirectory)'
-    - task: DownloadBuildArtifacts@0
-      displayName: 'Download Build Artifacts wheel-3.9.x64'
-      inputs:
-        artifactName: 'wheel-3.9.x64'
-        downloadPath: '$(System.DefaultWorkingDirectory)'
-    - task: DownloadBuildArtifacts@0
-      displayName: 'Download Build Artifacts wheel-3.8.x64'
-      inputs:
-        artifactName: 'wheel-3.8.x64'
-        downloadPath: '$(System.DefaultWorkingDirectory)'
     - task: DownloadBuildArtifacts@0
       displayName: 'Download Build Artifacts wheel-3.7.x64'
       inputs:
@@ -184,34 +128,9 @@ jobs:
         artifactName: 'wheel-3.6.x64'
         downloadPath: '$(System.DefaultWorkingDirectory)'
     - task: DownloadBuildArtifacts@0
-      displayName: 'Download Build Artifacts wheel-3.13.x86'
+      displayName: 'Download Build Artifacts wheel-3.5.x64'
       inputs:
-        artifactName: 'wheel-3.13.x86'
-        downloadPath: '$(System.DefaultWorkingDirectory)'
-    - task: DownloadBuildArtifacts@0
-      displayName: 'Download Build Artifacts wheel-3.12.x86'
-      inputs:
-        artifactName: 'wheel-3.12.x86'
-        downloadPath: '$(System.DefaultWorkingDirectory)'
-    - task: DownloadBuildArtifacts@0
-      displayName: 'Download Build Artifacts wheel-3.11.x86'
-      inputs:
-        artifactName: 'wheel-3.11.x86'
-        downloadPath: '$(System.DefaultWorkingDirectory)'
-    - task: DownloadBuildArtifacts@0
-      displayName: 'Download Build Artifacts wheel-3.10.x86'
-      inputs:
-        artifactName: 'wheel-3.10.x86'
-        downloadPath: '$(System.DefaultWorkingDirectory)'
-    - task: DownloadBuildArtifacts@0
-      displayName: 'Download Build Artifacts wheel-3.9.x86'
-      inputs:
-        artifactName: 'wheel-3.9.x86'
-        downloadPath: '$(System.DefaultWorkingDirectory)'
-    - task: DownloadBuildArtifacts@0
-      displayName: 'Download Build Artifacts wheel-3.8.x86'
-      inputs:
-        artifactName: 'wheel-3.8.x86'
+        artifactName: 'wheel-3.5.x64'
         downloadPath: '$(System.DefaultWorkingDirectory)'
     - task: DownloadBuildArtifacts@0
       displayName: 'Download Build Artifacts wheel-3.7.x86'
@@ -222,6 +141,11 @@ jobs:
       displayName: 'Download Build Artifacts wheel-3.6.x86'
       inputs:
         artifactName: 'wheel-3.6.x86'
+        downloadPath: '$(System.DefaultWorkingDirectory)'
+    - task: DownloadBuildArtifacts@0
+      displayName: 'Download Build Artifacts wheel-3.5.x86'
+      inputs:
+        artifactName: 'wheel-3.5.x86'
         downloadPath: '$(System.DefaultWorkingDirectory)'
     - task: CopyFiles@2
       condition: always()

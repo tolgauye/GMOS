@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -183,8 +183,9 @@ static int mode_anotb () { return int (db::BooleanOp::ANotB); }
 static int mode_bnota () { return int (db::BooleanOp::BNotA); }
 
 Class<db::EdgeProcessor> decl_EdgeProcessor ("db", "EdgeProcessor",
-  method_ext ("simple_merge_p2e|#simple_merge", &gsi::simple_merge1, gsi::arg ("in"),
+  method_ext ("simple_merge_p2e|#simple_merge", &gsi::simple_merge1,
     "@brief Merge the given polygons in a simple \"non-zero wrapcount\" fashion\n"
+    "@args in\n"
     "\n"
     "The wrapcount is computed over all polygons, i.e. overlapping polygons may \"cancel\" if they\n"
     "have different orientation (since a polygon is oriented by construction that is not easy to achieve).\n"
@@ -203,8 +204,9 @@ Class<db::EdgeProcessor> decl_EdgeProcessor ("db", "EdgeProcessor",
     "@param in The input polygons\n"
     "@return The output edges\n"
   ) +
-  method_ext ("simple_merge_p2e|#simple_merge", &gsi::simple_merge1m, gsi::arg ("in"), gsi::arg ("mode"),
+  method_ext ("simple_merge_p2e|#simple_merge", &gsi::simple_merge1m,
     "@brief Merge the given polygons and specify the merge mode\n"
+    "@args in, mode\n"
     "\n"
     "The wrapcount is computed over all polygons, i.e. overlapping polygons may \"cancel\" if they\n"
     "have different orientation (since a polygon is oriented by construction that is not easy to achieve).\n"
@@ -227,8 +229,9 @@ Class<db::EdgeProcessor> decl_EdgeProcessor ("db", "EdgeProcessor",
     "@param in The input polygons\n"
     "@return The output edges\n"
   ) +
-  method_ext ("simple_merge_p2p|#simple_merge_to_polygon", &gsi::simple_merge_to_polygon1, gsi::arg ("in"), gsi::arg ("resolve_holes"), gsi::arg ("min_coherence"),
+  method_ext ("simple_merge_p2p|#simple_merge_to_polygon", &gsi::simple_merge_to_polygon1,
     "@brief Merge the given polygons in a simple \"non-zero wrapcount\" fashion into polygons\n"
+    "@args in, resolve_holes, min_coherence\n"
     "\n"
     "The wrapcount is computed over all polygons, i.e. overlapping polygons may \"cancel\" if they\n"
     "have different orientation (since a polygon is oriented by construction that is not easy to achieve).\n"
@@ -248,8 +251,9 @@ Class<db::EdgeProcessor> decl_EdgeProcessor ("db", "EdgeProcessor",
     "@param min_coherence true, if touching corners should be resolved into less connected contours\n"
     "@return The output polygons\n"
   ) +
-  method_ext ("simple_merge_p2p|#simple_merge_to_polygon", &gsi::simple_merge_to_polygon1m, gsi::arg ("in"), gsi::arg ("resolve_holes"), gsi::arg ("min_coherence"), gsi::arg ("mode"),
+  method_ext ("simple_merge_p2p|#simple_merge_to_polygon", &gsi::simple_merge_to_polygon1m,
     "@brief Merge the given polygons and specify the merge mode\n"
+    "@args in, resolve_holes, min_coherence, mode\n"
     "\n"
     "The wrapcount is computed over all polygons, i.e. overlapping polygons may \"cancel\" if they\n"
     "have different orientation (since a polygon is oriented by construction that is not easy to achieve).\n"
@@ -273,8 +277,9 @@ Class<db::EdgeProcessor> decl_EdgeProcessor ("db", "EdgeProcessor",
     "@param min_coherence true, if touching corners should be resolved into less connected contours\n"
     "@return The output polygons\n"
   ) +
-  method_ext ("simple_merge_e2e|#simple_merge", &gsi::simple_merge2, gsi::arg ("in"),
+  method_ext ("simple_merge_e2e|#simple_merge", &gsi::simple_merge2,
     "@brief Merge the given edges in a simple \"non-zero wrapcount\" fashion\n"
+    "@args in\n"
     "\n"
     "The edges provided must form valid closed contours. Contours oriented differently \"cancel\" each other. \n"
     "Overlapping contours are merged when the orientation is the same.\n"
@@ -291,8 +296,9 @@ Class<db::EdgeProcessor> decl_EdgeProcessor ("db", "EdgeProcessor",
     "@param in The input edges\n"
     "@return The output edges\n"
   ) +
-  method_ext ("simple_merge_e2e|#simple_merge", &gsi::simple_merge2m, gsi::arg ("in"), gsi::arg ("mode"),
+  method_ext ("simple_merge_e2e|#simple_merge", &gsi::simple_merge2m,
     "@brief Merge the given polygons and specify the merge mode\n"
+    "@args in, mode\n"
     "\n"
     "The edges provided must form valid closed contours. Contours oriented differently \"cancel\" each other. \n"
     "Overlapping contours are merged when the orientation is the same.\n"
@@ -313,8 +319,9 @@ Class<db::EdgeProcessor> decl_EdgeProcessor ("db", "EdgeProcessor",
     "@param in The input edges\n"
     "@return The output edges\n"
   ) +
-  method_ext ("simple_merge_e2p|#simple_merge_to_polygon", &gsi::simple_merge_to_polygon2, gsi::arg ("in"), gsi::arg ("resolve_holes"), gsi::arg ("min_coherence"),
+  method_ext ("simple_merge_e2p|#simple_merge_to_polygon", &gsi::simple_merge_to_polygon2,
     "@brief Merge the given edges in a simple \"non-zero wrapcount\" fashion into polygons\n"
+    "@args in, resolve_holes, min_coherence\n"
     "\n"
     "The edges provided must form valid closed contours. Contours oriented differently \"cancel\" each other. \n"
     "Overlapping contours are merged when the orientation is the same.\n"
@@ -332,8 +339,9 @@ Class<db::EdgeProcessor> decl_EdgeProcessor ("db", "EdgeProcessor",
     "@param min_coherence true, if touching corners should be resolved into less connected contours\n"
     "@return The output polygons\n"
   ) +
-  method_ext ("simple_merge_e2p|#simple_merge_to_polygon", &gsi::simple_merge_to_polygon2m, gsi::arg ("in"), gsi::arg ("resolve_holes"), gsi::arg ("min_coherence"), gsi::arg ("mode"),
+  method_ext ("simple_merge_e2p|#simple_merge_to_polygon", &gsi::simple_merge_to_polygon2m,
     "@brief Merge the given polygons and specify the merge mode\n"
+    "@args in, resolve_holes, min_coherence, mode\n"
     "\n"
     "The edges provided must form valid closed contours. Contours oriented differently \"cancel\" each other. \n"
     "Overlapping contours are merged when the orientation is the same.\n"
@@ -355,8 +363,9 @@ Class<db::EdgeProcessor> decl_EdgeProcessor ("db", "EdgeProcessor",
     "@param min_coherence true, if touching corners should be resolved into less connected contours\n"
     "@return The output polygons\n"
   ) +
-  method_ext ("merge_p2e|#merge", &gsi::merge, gsi::arg ("in"), gsi::arg ("min_wc"),
+  method_ext ("merge_p2e|#merge", &gsi::merge,
     "@brief Merge the given polygons \n"
+    "@args in, min_wc\n"
     "\n"
     "In contrast to \"simple_merge\", this merge implementation considers each polygon individually before merging them.\n"
     "Thus self-overlaps are effectively removed before the output is computed and holes are correctly merged with the\n"
@@ -374,8 +383,9 @@ Class<db::EdgeProcessor> decl_EdgeProcessor ("db", "EdgeProcessor",
     "@param min_wc The minimum wrap count for output (0: all polygons, 1: at least two overlapping)\n"
     "@return The output edges\n"
   ) +
-  method_ext ("merge_p2p|#merge_to_polygon", &gsi::merge_to_polygon, gsi::arg ("in"), gsi::arg ("min_wc"), gsi::arg ("resolve_holes"), gsi::arg ("min_coherence"),
+  method_ext ("merge_p2p|#merge_to_polygon", &gsi::merge_to_polygon,
     "@brief Merge the given polygons \n"
+    "@args in, min_wc, resolve_holes, min_coherence\n"
     "\n"
     "In contrast to \"simple_merge\", this merge implementation considers each polygon individually before merging them.\n"
     "Thus self-overlaps are effectively removed before the output is computed and holes are correctly merged with the\n"
@@ -394,8 +404,9 @@ Class<db::EdgeProcessor> decl_EdgeProcessor ("db", "EdgeProcessor",
     "@param min_coherence true, if touching corners should be resolved into less connected contours\n"
     "@return The output polygons\n"
   ) +
-  method_ext ("size_p2e|#size", &gsi::size1, gsi::arg ("in"), gsi::arg ("dx"), gsi::arg ("dy"), gsi::arg ("mode"),
+  method_ext ("size_p2e|#size", &gsi::size1,
     "@brief Size the given polygons \n"
+    "@args in, dx, dy, mode\n"
     "\n"
     "This method sizes a set of polygons. Before the sizing is applied, the polygons are merged. After that, sizing is applied \n"
     "on the individual result polygons of the merge step. The result may contain overlapping contours, but no self-overlaps. \n"
@@ -406,7 +417,7 @@ Class<db::EdgeProcessor> decl_EdgeProcessor ("db", "EdgeProcessor",
     "\n"
     "The 'mode' parameter describes the corner fill strategy. Mode 0 connects all corner segments directly. Mode 1 is the 'octagon' strategy in which "
     "square corners are interpolated with a partial octagon. Mode 2 is the standard mode in which corners are filled by expanding edges unless these "
-    "edges form a sharp bend with an angle of more than 90 degree. In that case, the corners are cut off. In Mode 3, no cutoff occurs up to a bending angle of 135 degree. "
+    "edges form a sharp bend with an angle of more than 90 degree. In that case, the corners are cut off. In Mode 3, no cutoff occures up to a bending angle of 135 degree. "
     "Mode 4 and 5 are even more aggressive and allow very sharp bends without cutoff. This strategy may produce long spikes on sharply bending corners. "
     "\n"
     "The result is presented as a set of edges forming closed contours. Hulls are oriented clockwise while\n"
@@ -421,12 +432,13 @@ Class<db::EdgeProcessor> decl_EdgeProcessor ("db", "EdgeProcessor",
     "@param mode The sizing mode (standard is 2)\n"
     "@return The output edges\n"
   ) +
-  method_ext ("size_p2p|#size_to_polygon", &gsi::size_to_polygon1, gsi::arg ("in"), gsi::arg ("dx"), gsi::arg ("dy"), gsi::arg ("mode"), gsi::arg ("resolve_holes"), gsi::arg ("min_coherence"),
+  method_ext ("size_p2p|#size_to_polygon", &gsi::size_to_polygon1,
     "@brief Size the given polygons into polygons\n"
+    "@args in, dx, dy, mode, resolve_holes, min_coherence\n"
     "\n"
     "This method sizes a set of polygons. Before the sizing is applied, the polygons are merged. After that, sizing is applied \n"
     "on the individual result polygons of the merge step. The result may contain overlapping polygons, but no self-overlapping ones. \n"
-    "Polygon overlap occurs if the polygons are close enough, so a positive sizing makes polygons overlap.\n"
+    "Polygon overlap occures if the polygons are close enough, so a positive sizing makes polygons overlap.\n"
     "\n"
     "dx and dy describe the sizing. A positive value indicates oversize (outwards) while a negative one describes undersize (inwards).\n"
     "The sizing applied can be chosen differently in x and y direction. In this case, the sign must be identical for both\n"
@@ -434,7 +446,7 @@ Class<db::EdgeProcessor> decl_EdgeProcessor ("db", "EdgeProcessor",
     "\n"
     "The 'mode' parameter describes the corner fill strategy. Mode 0 connects all corner segments directly. Mode 1 is the 'octagon' strategy in which "
     "square corners are interpolated with a partial octagon. Mode 2 is the standard mode in which corners are filled by expanding edges unless these "
-    "edges form a sharp bend with an angle of more than 90 degree. In that case, the corners are cut off. In Mode 3, no cutoff occurs up to a bending angle of 135 degree. "
+    "edges form a sharp bend with an angle of more than 90 degree. In that case, the corners are cut off. In Mode 3, no cutoff occures up to a bending angle of 135 degree. "
     "Mode 4 and 5 are even more aggressive and allow very sharp bends without cutoff. This strategy may produce long spikes on sharply bending corners. "
     "\n"
     "This method produces polygons and allows fine-tuning of the parameters for that purpose.\n"
@@ -450,8 +462,9 @@ Class<db::EdgeProcessor> decl_EdgeProcessor ("db", "EdgeProcessor",
     "@param min_coherence true, if touching corners should be resolved into less connected contours\n"
     "@return The output polygons\n"
   ) +
-  method_ext ("size_p2e|#size", &gsi::size2, gsi::arg ("in"), gsi::arg ("d"), gsi::arg ("mode"),
+  method_ext ("size_p2e|#size", &gsi::size2,
     "@brief Size the given polygons (isotropic)\n"
+    "@args in, d, mode\n"
     "\n"
     "This method is equivalent to calling the anisotropic version with identical dx and dy.\n"
     "\n"
@@ -463,8 +476,9 @@ Class<db::EdgeProcessor> decl_EdgeProcessor ("db", "EdgeProcessor",
     "@param mode The sizing mode\n"
     "@return The output edges\n"
   ) +
-  method_ext ("size_p2p|#size_to_polygon", &gsi::size_to_polygon2, gsi::arg ("in"), gsi::arg ("d"), gsi::arg ("mode"), gsi::arg ("resolve_holes"), gsi::arg ("min_coherence"),
+  method_ext ("size_p2p|#size_to_polygon", &gsi::size_to_polygon2,
     "@brief Size the given polygons into polygons (isotropic)\n"
+    "@args in, d, mode, resolve_holes, min_coherence\n"
     "\n"
     "This method is equivalent to calling the anisotropic version with identical dx and dy.\n"
     "\n"
@@ -478,8 +492,9 @@ Class<db::EdgeProcessor> decl_EdgeProcessor ("db", "EdgeProcessor",
     "@param min_coherence true, if touching corners should be resolved into less connected contours\n"
     "@return The output polygons\n"
   ) +
-  method_ext ("boolean_p2e|#boolean", &gsi::boolean1, gsi::arg ("a"), gsi::arg ("b"), gsi::arg ("mode"),
+  method_ext ("boolean_p2e|#boolean", &gsi::boolean1,
     "@brief Boolean operation for a set of given polygons, creating edges\n"
+    "@args a, b, mode\n"
     "\n"
     "This method computes the result for the given boolean operation on two sets of polygons.\n"
     "The result is presented as a set of edges forming closed contours. Hulls are oriented clockwise while\n"
@@ -496,8 +511,9 @@ Class<db::EdgeProcessor> decl_EdgeProcessor ("db", "EdgeProcessor",
     "@param mode The boolean mode\n"
     "@return The output edges\n"
   ) +
-  method_ext ("boolean_p2p|#boolean_to_polygon", &gsi::boolean_to_polygon1, gsi::arg ("a"), gsi::arg ("b"), gsi::arg ("mode"), gsi::arg ("resolve_holes"), gsi::arg ("min_coherence"),
+  method_ext ("boolean_p2p|#boolean_to_polygon", &gsi::boolean_to_polygon1,
     "@brief Boolean operation for a set of given polygons, creating polygons\n"
+    "@args a, b, mode, resolve_holes, min_coherence\n"
     "\n"
     "This method computes the result for the given boolean operation on two sets of polygons.\n"
     "This method produces polygons on output and allows fine-tuning of the parameters for that purpose.\n"
@@ -515,8 +531,9 @@ Class<db::EdgeProcessor> decl_EdgeProcessor ("db", "EdgeProcessor",
     "@param min_coherence true, if touching corners should be resolved into less connected contours\n"
     "@return The output polygons\n"
   ) +
-  method_ext ("boolean_e2e|#boolean", &gsi::boolean2, gsi::arg ("a"), gsi::arg ("b"), gsi::arg ("mode"),
+  method_ext ("boolean_e2e|#boolean", &gsi::boolean2,
     "@brief Boolean operation for a set of given edges, creating edges\n"
+    "@args a, b, mode\n"
     "\n"
     "This method computes the result for the given boolean operation on two sets of edges.\n"
     "The input edges must form closed contours where holes and hulls must be oriented differently. \n"
@@ -533,8 +550,9 @@ Class<db::EdgeProcessor> decl_EdgeProcessor ("db", "EdgeProcessor",
     "@param mode The boolean mode (one of the Mode.. values)\n"
     "@return The output edges\n"
   ) +
-  method_ext ("boolean_e2p|#boolean_to_polygon", &gsi::boolean_to_polygon2, gsi::arg ("a"), gsi::arg ("b"), gsi::arg ("mode"), gsi::arg ("resolve_holes"), gsi::arg ("min_coherence"),
+  method_ext ("boolean_e2p|#boolean_to_polygon", &gsi::boolean_to_polygon2,
     "@brief Boolean operation for a set of given edges, creating polygons\n"
+    "@args a, b, mode, resolve_holes, min_coherence\n"
     "\n"
     "This method computes the result for the given boolean operation on two sets of edges.\n"
     "The input edges must form closed contours where holes and hulls must be oriented differently. \n"
@@ -552,8 +570,9 @@ Class<db::EdgeProcessor> decl_EdgeProcessor ("db", "EdgeProcessor",
     "@param min_coherence true, if touching corners should be resolved into less connected contours\n"
     "@return The output polygons\n"
   ) +
-  method ("enable_progress", &db::EdgeProcessor::enable_progress, gsi::arg ("label"),
+  method ("enable_progress", &db::EdgeProcessor::enable_progress,
     "@brief Enable progress reporting\n"
+    "@args label\n"
     "After calling this method, the edge processor will report the progress through a progress bar.\n"
     "The label is a text which is put in front of the progress bar.\n"
     "Using a progress bar will imply a performance penalty of a few percent typically.\n"
@@ -591,3 +610,4 @@ Class<db::EdgeProcessor> decl_EdgeProcessor ("db", "EdgeProcessor",
 );
 
 } // namespace gsi
+

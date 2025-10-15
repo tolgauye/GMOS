@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -21,21 +21,18 @@
 */
 
 
+#include <QMessageBox>
+
 #include "dbVector.h"
-#include "layLayoutViewBase.h"
+#include "layLayoutView.h"
 #include "laySnap.h"
 #include "layFinder.h"
-#include "layConverters.h"
 #include "tlProgress.h"
 #include "edtPartialService.h"
 #include "edtService.h"
 #include "edtConfig.h"
-#include "edtPlugin.h"
-
-#if defined(HAVE_QT)
-#  include "edtDialogs.h"
-#  include "edtEditorOptionsPages.h"
-#endif
+#include "edtDialogs.h"
+#include "edtEditorOptionsPages.h"
 
 #include <cmath>
 
@@ -244,14 +241,9 @@ insert_point_path (const db::Path &p, const std::set<EdgeWithIndex> &sel, db::Po
       ctr.push_back (p1);
       if (! found && sel.find (EdgeWithIndex (db::Edge (p1, p2), n, n + 1, 0)) != sel.end ()) {
         //  project the point onto the edge
-        db::Edge e (p1, p2);
-        std::pair <bool, db::Point> projected = e.projected (ins);
+        std::pair <bool, db::Point> projected = db::Edge (p1, p2).projected (ins);
         if (projected.first) {
-          if (e.is_ortho ()) {
-            //  NOTE: for skew edges we use the original point as the projected one usually
-            //  is off-grid.
-            ins = projected.second;
-          }
+          ins = projected.second;
           ctr.push_back (ins);
           found = true;
         }
@@ -268,33 +260,34 @@ insert_point_path (const db::Path &p, const std::set<EdgeWithIndex> &sel, db::Po
 }
 
 static void 
-remove_redundant_points (std::vector <db::Point> &ctr, bool cyclic)
+assign_path_compressed (db::Path &p, std::vector <db::Point> &ctr)
 {
   //  compress contour (remove redundant points)
   //  and assign to path
 
   std::vector<db::Point>::iterator wp = ctr.begin ();
+  std::vector<db::Point>::iterator wp0 = wp;
   std::vector<db::Point>::const_iterator rp = ctr.begin ();
-  db::Point pm1;
-  if (rp != ctr.end ()) {
-    if (cyclic) {
-      pm1 = ctr.back ();
-    } else {
-      pm1 = ctr.front ();
-      ++wp;
-      ++rp;
-    }
+  db::Point pm1 = *rp;
+  if (wp != ctr.end ()) {
+    ++wp;
+    ++rp;
     while (rp != ctr.end ()) {
       db::Point p0 = *rp;
-      if (p0 != pm1) {
+      ++rp;
+      if (rp != ctr.end ()) {
+        db::Point pp1 = *rp;
+        if (! (db::vprod_sign (pp1 - p0, p0 - pm1) == 0 && db::sprod_sign (pp1 - p0, p0 - pm1) >= 0)) {
+          *wp++ = p0;
+          pm1 = p0;
+        }
+      } else {
         *wp++ = p0;
       }
-      pm1 = p0;
-      ++rp;
     }
   }
 
-  ctr.erase (wp, ctr.end ());
+  p.assign (wp0, wp);
 }
 
 static db::Path
@@ -316,8 +309,7 @@ del_points_path (const db::Path &p, const std::set<EdgeWithIndex> &sel)
     }
   }
 
-  remove_redundant_points (ctr, false);
-  new_path.assign (ctr.begin (), ctr.end ());
+  assign_path_compressed (new_path, ctr);
 
   return new_path;
 }
@@ -369,10 +361,10 @@ modify_path (db::Path &p, const std::map <PointWithIndex, db::Point> &new_points
   }
 
   if (compress) {
-    remove_redundant_points (ctr, false);
+    assign_path_compressed (p, ctr);
+  } else {
+    p.assign (ctr.begin (), ctr.end ());
   }
-
-  p.assign (ctr.begin (), ctr.end ());
 }
 
 bool
@@ -396,14 +388,10 @@ insert_point_poly (const db::Polygon &p, const std::set<EdgeWithIndex> &sel, db:
 
       ctr.push_back ((*e).p1 ());
       if (! found && sel.find (EdgeWithIndex (*e, n, nn, c)) != sel.end ()) {
-        //  project the point onto the edge - use the first edge the point projects to
+        //  project the point onto the edge
         std::pair <bool, db::Point> projected = (*e).projected (ins);
         if (projected.first) {
-          if ((*e).is_ortho ()) {
-            //  NOTE: for skew edges we use the original point as the projected one usually
-            //  is off-grid.
-            ins = projected.second;
-          }
+          ins = projected.second;
           ctr.push_back (ins);
           found = true;
         }
@@ -412,8 +400,6 @@ insert_point_poly (const db::Polygon &p, const std::set<EdgeWithIndex> &sel, db:
     }
 
     if (found) {
-
-      remove_redundant_points (ctr, true);
 
       new_poly = p;
       if (c == 0) {
@@ -449,12 +435,10 @@ del_points_poly (const db::Polygon &p, const std::set<EdgeWithIndex> &sel)
       }
     }
 
-    remove_redundant_points (ctr, true);
-
     if (c == 0) {
-      new_poly.assign_hull (ctr.begin (), ctr.end (), false /*compress*/);
+      new_poly.assign_hull (ctr.begin (), ctr.end (), true /*compress*/);
     } else {
-      new_poly.assign_hole (c - 1, ctr.begin (), ctr.end (), false /*compress*/);
+      new_poly.assign_hole (c - 1, ctr.begin (), ctr.end (), true /*compress*/);
     }
 
   }
@@ -510,14 +494,10 @@ modify_polygon (db::Polygon &p,
 
     }
 
-    if (compress) {
-      remove_redundant_points (ctr, true);
-    }
-
     if (c == 0) {
-      p.assign_hull (ctr.begin (), ctr.end (), false /*compress*/);
+      p.assign_hull (ctr.begin (), ctr.end (), compress);
     } else {
-      p.assign_hole (c - 1, ctr.begin (), ctr.end (), false /*compress*/);
+      p.assign_hole (c - 1, ctr.begin (), ctr.end (), compress);
     }
 
   }
@@ -743,7 +723,7 @@ public:
   }
 
 private:
-  virtual void visit_cell (const db::Cell &cell, const db::Box &hit_box, const db::Box &scan_box, const db::DCplxTrans &vp, const db::ICplxTrans &t, int level);
+  virtual void visit_cell (const db::Cell &cell, const db::Box &search_box, const db::ICplxTrans &t, int /*level*/);
 
   founds_vector_type m_founds;
 };
@@ -752,29 +732,30 @@ private:
 //  PartialShapeFinder implementation
 
 PartialShapeFinder::PartialShapeFinder (bool point_mode, bool top_level_sel, db::ShapeIterator::flags_type flags)
-  : lay::ShapeFinder (point_mode, top_level_sel, flags, 0)
+  : lay::ShapeFinder (point_mode, top_level_sel, flags)
 {
   set_test_count (point_sel_tests);
 }
 
 void 
-PartialShapeFinder::visit_cell (const db::Cell &cell, const db::Box &hit_box, const db::Box &scan_box, const db::DCplxTrans &vp, const db::ICplxTrans &t, int /*level*/)
+PartialShapeFinder::visit_cell (const db::Cell &cell, const db::Box &search_box, const db::ICplxTrans &t, int /*level*/)
 {
   if (! point_mode ()) {
 
     for (std::vector<int>::const_iterator l = layers ().begin (); l != layers ().end (); ++l) {
 
-      if (layers ().size () == 1 || (layers ().size () > 1 && cell.bbox ((unsigned int) *l).touches (scan_box))) {
+      if (layers ().size () == 1 || (layers ().size () > 1 && cell.bbox ((unsigned int) *l).touches (search_box))) {
 
         checkpoint ();
 
         const db::Shapes &shapes = cell.shapes (*l);
 
-        db::ShapeIterator shape = shapes.begin_touching (scan_box, flags (), prop_sel (), inv_prop_sel ());
+        db::ShapeIterator shape = shapes.begin_touching (search_box, flags (), prop_sel (), inv_prop_sel ());
         while (! shape.at_end ()) {
 
           checkpoint ();
 
+          //  in point mode just store that found that has the least "distance"
           m_founds.push_back (founds_vector_type::value_type ());
 
           lay::ObjectInstPath &inst_path = m_founds.back ().first;
@@ -786,8 +767,7 @@ PartialShapeFinder::visit_cell (const db::Cell &cell, const db::Box &hit_box, co
           inst_path.set_layer (*l);
           inst_path.set_shape (*shape);
 
-          //  in box mode, select the edges depending on whether an endpoint is inside the
-          //  box or not
+          //  in point mode, test the edges and use a "closest" criterion
           if (shape->is_polygon ()) {
 
             for (unsigned int c = 0; c < shape->holes () + 1; ++c) {
@@ -800,9 +780,9 @@ PartialShapeFinder::visit_cell (const db::Cell &cell, const db::Box &hit_box, co
                 ++ee;
                 unsigned int nn = ee.at_end () ? 0 : n + 1;
 
-                if (hit_box.contains ((*e).p1 ())) {
+                if (search_box.contains ((*e).p1 ())) {
                   edges.push_back (EdgeWithIndex (db::Edge ((*e).p1 (), (*e).p1 ()), n, n, c));
-                  if (hit_box.contains ((*e).p2 ())) {
+                  if (search_box.contains ((*e).p2 ())) {
                     edges.push_back (EdgeWithIndex (*e, n, nn, c));
                   } 
                 } 
@@ -817,9 +797,9 @@ PartialShapeFinder::visit_cell (const db::Cell &cell, const db::Box &hit_box, co
             db::Point pl;
             unsigned int n = 0;
             for (db::Shape::point_iterator pt = shape->begin_point (); pt != shape->end_point (); ++pt, ++n) {
-              if (hit_box.contains (*pt)) {
+              if (search_box.contains (*pt)) {
                 edges.push_back (EdgeWithIndex (db::Edge (*pt, *pt), n, n, 0));
-                if (pl_set && hit_box.contains (pl)) {
+                if (pl_set && search_box.contains (pl)) {
                   edges.push_back (EdgeWithIndex (db::Edge (pl, *pt), n - 1, n, 0));
                 }
               }
@@ -841,43 +821,20 @@ PartialShapeFinder::visit_cell (const db::Cell &cell, const db::Box &hit_box, co
               ++ee;
               unsigned int nn = ee.at_end () ? 0 : n + 1;
 
-              if (hit_box.contains ((*e).p1 ())) {
+              if (search_box.contains ((*e).p1 ())) {
                 edges.push_back (EdgeWithIndex (db::Edge ((*e).p1 (), (*e).p1 ()), n, n, 0));
-                if (hit_box.contains ((*e).p2 ())) {
+                if (search_box.contains ((*e).p2 ())) {
                   edges.push_back (EdgeWithIndex (*e, n, nn, 0));
                 } 
               } 
 
             }
 
-          } else if (shape->is_point ()) {
-
-            db::Point tp (shape->point ());
-
-            if (hit_box.contains (tp)) {
-              edges.push_back (EdgeWithIndex (db::Edge (tp, tp), 0, 0, 0));
-            }
-
           } else if (shape->is_text ()) {
 
             db::Point tp (shape->text_trans () * db::Point ());
-
-            if (text_info () && ! text_info ()->point_mode ()) {
-
-              db::CplxTrans t_dbu = db::CplxTrans (layout ().dbu ()) * t;
-              db::Text text;
-              shape->text (text);
-              db::Box tb = t_dbu.inverted () * text_info ()->bbox (t_dbu * text, vp);
-              if (tb.inside (hit_box)) {
-                edges.push_back (EdgeWithIndex (db::Edge (tp, tp), 0, 0, 0));
-              }
-
-            } else {
-
-              if (hit_box.contains (tp)) {
-                edges.push_back (EdgeWithIndex (db::Edge (tp, tp), 0, 0, 0));
-              }
-
+            if (search_box.contains (tp)) {
+              edges.push_back (EdgeWithIndex (db::Edge (tp, tp), 0, 0, 0));
             }
 
           }
@@ -899,181 +856,143 @@ PartialShapeFinder::visit_cell (const db::Cell &cell, const db::Box &hit_box, co
 
     for (std::vector<int>::const_iterator l = layers ().begin (); l != layers ().end (); ++l) {
 
-      if (layers ().size () == 1 || (layers ().size () > 1 && cell.bbox ((unsigned int) *l).touches (hit_box))) {
+      if (layers ().size () == 1 || (layers ().size () > 1 && cell.bbox ((unsigned int) *l).touches (search_box))) {
 
         checkpoint ();
 
         const db::Shapes &shapes = cell.shapes (*l);
         std::vector <EdgeWithIndex> edge_sel;
 
-        //  two passes - one with points, second with edges
+        db::ShapeIterator shape = shapes.begin_touching (search_box, flags (), prop_sel (), inv_prop_sel ());
+        while (! shape.at_end ()) {
 
-        bool any = false;
-        for (int pass = 0; pass < 2 && ! any; ++pass) {
+          bool match = false;
+          double d = std::numeric_limits<double>::max ();
 
-          db::ShapeIterator shape = shapes.begin_touching (scan_box, flags (), prop_sel (), inv_prop_sel ());
-          while (! shape.at_end ()) {
+          edge_sel.clear ();
 
-            bool match = false;
-            double d = std::numeric_limits<double>::max ();
+          checkpoint ();
 
-            edge_sel.clear ();
+          //  in point mode, test the edges and use a "closest" criterion
+          if (shape->is_polygon ()) {
 
-            checkpoint ();
-
-            //  in point mode, test the edges and use a "closest" criterion
-            if (shape->is_polygon ()) {
-
-              for (unsigned int c = 0; c < shape->holes () + 1; ++c) {
-
-                unsigned int n = 0;
-                db::Shape::polygon_edge_iterator ee;
-                for (db::Shape::polygon_edge_iterator e = shape->begin_edge (c); ! e.at_end (); e = ee, ++n) {
-
-                  ee = e;
-                  ++ee;
-                  unsigned int nn = ee.at_end () ? 0 : n + 1;
-
-                  unsigned int r = test_edge (t, *e, pass == 0, d, match);
-                  if (r) {
-                    edge_sel.clear ();
-                    if ((r & 1) != 0) {
-                      edge_sel.push_back (EdgeWithIndex (db::Edge ((*e).p1 (), (*e).p1 ()), n, n, c));
-                    }
-                    if ((r & 2) != 0) {
-                      edge_sel.push_back (EdgeWithIndex (db::Edge ((*e).p2 (), (*e).p2 ()), nn, nn, c));
-                    }
-                    if (r == 3) {
-                      edge_sel.push_back (EdgeWithIndex (*e, n, nn, c));
-                    }
-                  }
-
-                }
-
-              }
-
-            } else if (shape->is_path ()) {
-
-              //  test the "spine"
-              db::Shape::point_iterator pt = shape->begin_point ();
-              if (pt != shape->end_point ()) {
-                db::Point p (*pt);
-                ++pt;
-                unsigned int n = 0;
-                for (; pt != shape->end_point (); ++pt, ++n) {
-                  unsigned int r = test_edge (t, db::Edge (p, *pt), pass == 0, d, match);
-                  if (r) {
-                    edge_sel.clear ();
-                    if ((r & 1) != 0) {
-                      edge_sel.push_back (EdgeWithIndex (db::Edge (p, p), n, n, 0));
-                    }
-                    if ((r & 2) != 0) {
-                      edge_sel.push_back (EdgeWithIndex (db::Edge (*pt, *pt), n + 1, n + 1, 0));
-                    }
-                    if (r == 3) {
-                      edge_sel.push_back (EdgeWithIndex (db::Edge (p, *pt), n, n + 1, 0));
-                    }
-                  }
-                  p = *pt;
-                }
-              }
-
-            } else if (shape->is_box ()) {
-
-              const db::Box &box = shape->box ();
-
-              //  convert to polygon and test those edges
-              db::Polygon poly (box);
+            for (unsigned int c = 0; c < shape->holes () + 1; ++c) {
 
               unsigned int n = 0;
               db::Shape::polygon_edge_iterator ee;
-              for (db::Shape::polygon_edge_iterator e = poly.begin_edge (); ! e.at_end (); e = ee, ++n) {
+              for (db::Shape::polygon_edge_iterator e = shape->begin_edge (c); ! e.at_end (); e = ee, ++n) {
 
                 ee = e;
                 ++ee;
                 unsigned int nn = ee.at_end () ? 0 : n + 1;
 
-                unsigned int r = test_edge (t, *e, pass == 0, d, match);
+                unsigned int r = test_edge (t * *e, d, match);
                 if (r) {
                   edge_sel.clear ();
-                  if ((r & 1) != 0) {
-                    edge_sel.push_back (EdgeWithIndex (db::Edge ((*e).p1 (), (*e).p1 ()), n, n, 0));
+                  if ((r & 1) == 1) {
+                    edge_sel.push_back (EdgeWithIndex (db::Edge ((*e).p1 (), (*e).p1 ()), n, n, c));
                   }
-                  if ((r & 2) != 0) {
-                    edge_sel.push_back (EdgeWithIndex (db::Edge ((*e).p2 (), (*e).p2 ()), nn, nn, 0));
+                  if ((r & 2) == 2) {
+                    edge_sel.push_back (EdgeWithIndex (db::Edge ((*e).p2 (), (*e).p2 ()), nn, nn, c));
                   }
                   if (r == 3) {
-                    edge_sel.push_back (EdgeWithIndex (*e, n, nn, 0));
+                    edge_sel.push_back (EdgeWithIndex (*e, n, nn, c));
                   }
                 }
 
               }
 
-            } else if (shape->is_point ()) {
+            }
 
-              db::Point tp (shape->point ());
+          } else if (shape->is_path ()) {
 
-              if (hit_box.contains (tp)) {
-                d = tp.distance (hit_box.center ());
+            //  test the "spine"
+            db::Shape::point_iterator pt = shape->begin_point (); 
+            if (pt != shape->end_point ()) {
+              db::Point p (*pt);
+              ++pt;
+              unsigned int n = 0;
+              for (; pt != shape->end_point (); ++pt, ++n) {
+                unsigned int r = test_edge (t * db::Edge (p, *pt), d, match);
+                if (r) {
+                  edge_sel.clear ();
+                  if ((r & 1) == 1) {
+                    edge_sel.push_back (EdgeWithIndex (db::Edge (p, p), n, n, 0));
+                  }
+                  if ((r & 2) == 2) {
+                    edge_sel.push_back (EdgeWithIndex (db::Edge (*pt, *pt), n + 1, n + 1, 0));
+                  }
+                  if (r == 3) {
+                    edge_sel.push_back (EdgeWithIndex (db::Edge (p, *pt), n, n + 1, 0));
+                  }
+                }
+                p = *pt;
+              }
+            }
+
+          } else if (shape->is_box ()) {
+
+            const db::Box &box = shape->box ();
+
+            //  convert to polygon and test those edges
+            db::Polygon poly (box);
+
+            unsigned int n = 0;
+            db::Shape::polygon_edge_iterator ee;
+            for (db::Shape::polygon_edge_iterator e = poly.begin_edge (); ! e.at_end (); e = ee, ++n) {
+
+              ee = e;
+              ++ee;
+              unsigned int nn = ee.at_end () ? 0 : n + 1;
+
+              unsigned int r = test_edge (t * *e, d, match);
+              if (r) {
                 edge_sel.clear ();
-                edge_sel.push_back (EdgeWithIndex (db::Edge (tp, tp), 0, 0, 0));
-                match = true;
-              }
-
-            } else if (shape->is_text ()) {
-
-              db::Point tp (shape->text_trans () * db::Point ());
-
-              if (text_info () && ! text_info ()->point_mode ()) {
-
-                db::CplxTrans t_dbu = db::CplxTrans (layout ().dbu ()) * t;
-                db::Text text;
-                shape->text (text);
-                db::Box tb (t_dbu.inverted () * text_info ()->bbox (t_dbu * text, vp));
-                if (tb.contains (hit_box.center ())) {
-                  d = tp.distance (hit_box.center ());
-                  edge_sel.clear ();
-                  edge_sel.push_back (EdgeWithIndex (db::Edge (tp, tp), 0, 0, 0));
-                  match = true;
+                if ((r & 1) == 1) {
+                  edge_sel.push_back (EdgeWithIndex (db::Edge ((*e).p1 (), (*e).p1 ()), n, n, 0));
                 }
-
-              } else {
-
-                if (hit_box.contains (tp)) {
-                  d = tp.distance (hit_box.center ());
-                  edge_sel.clear ();
-                  edge_sel.push_back (EdgeWithIndex (db::Edge (tp, tp), 0, 0, 0));
-                  match = true;
+                if ((r & 2) == 2) {
+                  edge_sel.push_back (EdgeWithIndex (db::Edge ((*e).p2 (), (*e).p2 ()), nn, nn, 0));
                 }
-
+                if (r == 3) {
+                  edge_sel.push_back (EdgeWithIndex (*e, n, nn, 0));
+                }
               }
 
             }
 
-            if (match && closer (d)) {
+          } else if (shape->is_text ()) {
 
-              //  in point mode just store that found that has the least "distance"
-              if (m_founds.empty ()) {
-                m_founds.push_back (founds_vector_type::value_type ());
-              }
-
-              lay::ObjectInstPath &inst_path = m_founds.back ().first;
-
-              inst_path.set_cv_index (cv_index ());
-              inst_path.set_topcell (topcell ());
-              inst_path.assign_path (path ().begin (), path ().end ());
-              inst_path.set_layer (*l);
-              inst_path.set_shape (*shape);
-
-              m_founds.back ().second = edge_sel;
-
-              any = true;
-
+            db::Point tp (shape->text_trans () * db::Point ());
+            if (search_box.contains (tp)) {
+              d = tp.distance (search_box.center ());
+              edge_sel.clear ();
+              edge_sel.push_back (EdgeWithIndex (db::Edge (tp, tp), 0, 0, 0));
+              match = true;
             }
-
-            ++shape;
 
           }
+
+          if (match && closer (d)) {
+
+            //  in point mode just store that found that has the least "distance"
+            if (m_founds.empty ()) {
+              m_founds.push_back (founds_vector_type::value_type ());
+            }
+
+            lay::ObjectInstPath &inst_path = m_founds.back ().first;
+
+            inst_path.set_cv_index (cv_index ());
+            inst_path.set_topcell (topcell ());
+            inst_path.assign_path (path ().begin (), path ().end ());
+            inst_path.set_layer (*l);
+            inst_path.set_shape (*shape);
+
+            m_founds.back ().second = edge_sel;
+
+          }
+
+          ++shape;
 
         }
 
@@ -1088,11 +1007,11 @@ PartialShapeFinder::visit_cell (const db::Cell &cell, const db::Box &hit_box, co
 // -----------------------------------------------------------------------------
 //  Main Service implementation
 
-PartialService::PartialService (db::Manager *manager, lay::LayoutViewBase *view, lay::Dispatcher *root) :
-#if defined(HAVE_QT)
-    QObject (),
-#endif
-    lay::EditorServiceBase (view),
+PartialService::PartialService (db::Manager *manager, lay::LayoutView *view, lay::PluginRoot *root)
+  : QObject (),
+    lay::ViewService (view->view_object_widget ()), 
+    lay::Editable (view),
+    lay::Plugin (view),
     db::Object (manager),
     mp_view (view),
     mp_root (root),
@@ -1103,19 +1022,13 @@ PartialService::PartialService (db::Manager *manager, lay::LayoutViewBase *view,
     m_buttons (0),
     m_connect_ac (lay::AC_Any), m_move_ac (lay::AC_Any), m_alt_ac (lay::AC_Global),
     m_snap_to_objects (true),
-    m_snap_objects_to_grid (true),
     m_top_level_sel (false),
     m_hover (false),
-    m_hover_wait (false),
-    dm_selection_to_view (this, &edt::PartialService::do_selection_to_view)
-{
-#if defined(HAVE_QT)
+    m_hover_wait (false)
+{ 
   m_timer.setInterval (100 /*hover time*/);
   m_timer.setSingleShot (true);
   connect (&m_timer, SIGNAL (timeout ()), this, SLOT (timeout ()));
-#endif
-
-  mp_view->geom_changed_event.add (this, &edt::PartialService::selection_to_view);
 }
 
 PartialService::~PartialService ()
@@ -1148,22 +1061,22 @@ PartialService::move_ac () const
 void  
 PartialService::deactivated ()
 {
+  //  clear selection when this mode is left
+  partial_select (db::DBox (), lay::Editable::Reset);
   clear_partial_transient_selection ();
 }
 
 void  
 PartialService::activated ()
 {
-  //  .. nothing yet ..
+  // ... 
 }
 
 void 
 PartialService::hover_reset ()
 {
   if (m_hover_wait) {
-#if defined(HAVE_QT)
     m_timer.stop ();
-#endif
     m_hover_wait = false;
   }
   if (m_hover) {
@@ -1172,29 +1085,13 @@ PartialService::hover_reset ()
   }
 }
 
-//  TODO: should receive timer calls from regular timer update
-#if defined(HAVE_QT)
-void
+void 
 PartialService::timeout ()
 {
   m_hover_wait = false;
   m_hover = true;
   
   mp_view->clear_transient_selection ();
-  clear_mouse_cursors ();
-
-  double le = catch_distance () * 3.0;  //  see Editables::selection_catch_bbox()
-  db::DBox sel_catch_box = selection_bbox ().enlarged (db::DVector (le, le));
-  if (has_selection () && sel_catch_box.contains (m_hover_point)) {
-
-    //  no transient selection if inside current selection - if we click there, we catch the
-    //  currently selected objects
-    resize_markers (0, true);
-    resize_inst_markers (0, true);
-
-    return;
-
-  }
 
   //  compute search box
   double l = catch_distance ();
@@ -1214,7 +1111,7 @@ PartialService::timeout ()
     partial_objects::const_iterator r = transient_selection.begin (); 
 
     //  build the transformation variants cache
-    lay::TransformationVariants tv (view ());
+    TransformationVariants tv (view ());
 
     const lay::CellView &cv = view ()->cellview (r->first.cv_index ());
 
@@ -1290,11 +1187,6 @@ PartialService::timeout ()
           db::Point tp (r->first.shape ().text_trans () * db::Point ());
           enter_edge (EdgeWithIndex (db::Edge (tp, tp), 0, 0, 0), n_marker, r, new_points, new_edges, gt, *tv_list, true);
 
-        } else if (r->first.shape ().is_point ()) {
-
-          db::Point tp (r->first.shape ().point ());
-          enter_edge (EdgeWithIndex (db::Edge (tp, tp), 0, 0, 0), n_marker, r, new_points, new_edges, gt, *tv_list, true);
-
         }
 
       }
@@ -1316,7 +1208,6 @@ PartialService::timeout ()
   resize_inst_markers (n_inst_marker, true);
 
 }
-#endif
 
 void
 PartialService::clear_partial_transient_selection ()
@@ -1328,7 +1219,7 @@ PartialService::clear_partial_transient_selection ()
 }
 
 void 
-PartialService::set_colors (tl::Color /*background*/, tl::Color color)
+PartialService::set_colors (QColor /*background*/, QColor color)
 {
   m_color = color.rgb ();
   if (mp_box) {
@@ -1345,8 +1236,8 @@ PartialService::menu_activated (const std::string & /*symbol*/)
 bool 
 PartialService::configure (const std::string &name, const std::string &value)
 {
-  lay::EditGridConverter egc;
-  lay::ACConverter acc;
+  edt::EditGridConverter egc;
+  edt::ACConverter acc;
 
   if (name == cfg_edit_global_grid) {
     egc.from_string (value, m_global_grid);
@@ -1355,9 +1246,6 @@ PartialService::configure (const std::string &name, const std::string &value)
     return true;  //  taken
   } else if (name == cfg_edit_snap_to_objects) {
     tl::from_string (value, m_snap_to_objects);
-    return true;  //  taken
-  } else if (name == cfg_edit_snap_objects_to_grid) {
-    tl::from_string (value, m_snap_objects_to_grid);
     return true;  //  taken
   } else if (name == cfg_edit_move_angle_mode) {
     acc.from_string (value, m_move_ac);
@@ -1392,10 +1280,8 @@ PartialService::snap (const db::DPoint &p) const
 }
 
 db::DVector
-PartialService::snap (const db::DVector &v_org) const
+PartialService::snap (const db::DVector &v) const
 {
-  db::DVector v = lay::snap_angle (v_org, move_ac ());
-
   //  snap according to the grid
   if (m_edit_grid == db::DVector ()) {
     return lay::snap_xy (db::DPoint () + v, m_global_grid) - db::DPoint ();
@@ -1408,11 +1294,11 @@ PartialService::snap (const db::DVector &v_org) const
 
 const int sr_pixels = 8; //  TODO: make variable
 
-lay::PointSnapToObjectResult
+db::DPoint 
 PartialService::snap2 (const db::DPoint &p) const
 {
-  double snap_range = ui ()->mouse_event_trans ().inverted ().ctrans (sr_pixels);
-  return lay::obj_snap (m_snap_to_objects ? view () : 0, m_start, p, m_edit_grid == db::DVector () ? m_global_grid : m_edit_grid, move_ac (), snap_range);
+  double snap_range = widget ()->mouse_event_trans ().inverted ().ctrans (sr_pixels);
+  return lay::obj_snap (m_snap_to_objects ? view () : 0, p, m_edit_grid == db::DVector () ? m_global_grid : m_edit_grid, snap_range).second;
 }
 
 void
@@ -1430,220 +1316,11 @@ PartialService::transform (const db::DCplxTrans &tr)
   selection_to_view ();
 }
 
-void
-PartialService::open_editor_hooks ()
-{
-  lay::CellViewRef cv_ref (view ()->cellview_ref (view ()->active_cellview_index ()));
-  if (! cv_ref.is_valid ()) {
-    return;
-  }
-
-  std::string technology;
-  if (cv_ref->layout ().technology ()) {
-    technology = cv_ref->layout ().technology ()->name ();
-  }
-
-  m_editor_hooks = edt::EditorHooks::get_editor_hooks (technology);
-  call_editor_hooks<lay::CellViewRef &> (m_editor_hooks, &edt::EditorHooks::begin_edit, (lay::CellViewRef &) cv_ref);
-}
-
-void
-PartialService::close_editor_hooks (bool commit)
-{
-  if (commit) {
-    call_editor_hooks (m_editor_hooks, &edt::EditorHooks::commit_edit);
-  }
-  call_editor_hooks (m_editor_hooks, &edt::EditorHooks::end_edit);
-
-  m_editor_hooks.clear ();
-}
-
-void
-PartialService::issue_editor_hook_calls (const tl::weak_collection<edt::EditorHooks> &hooks)
-{
-  if (hooks.empty ()) {
-    return;
-  }
-
-  //  NOTE: needs to be called during move operations
-  db::DTrans move_trans = db::DTrans (m_current - m_start);
-
-  //  build the transformation variants cache
-  lay::TransformationVariants tv (view ());
-
-  //  Issue editor hook calls for the shape modification events
-
-  //  since a shape reference may become invalid while moving it and
-  //  because it creates ambiguities, we treat each shape separately:
-  //  collect the valid selected items in a selection-per-shape map.
-  std::map <db::Shape, std::vector<partial_objects::iterator> > sel_per_shape;
-
-  for (partial_objects::iterator r = m_selection.begin (); r != m_selection.end (); ++r) {
-    if (! r->first.is_cell_inst ()) {
-      const std::vector<db::DCplxTrans> *tv_list = tv.per_cv_and_layer (r->first.cv_index (), r->first.layer ());
-      if (tv_list && ! tv_list->empty ()) {
-        sel_per_shape.insert (std::make_pair (r->first.shape (), std::vector<partial_objects::iterator> ())).first->second.push_back (r);
-      }
-    }
-  }
-
-  db::Shapes tmp_shapes;
-
-  for (std::map <db::Shape, std::vector<partial_objects::iterator> >::iterator sps = sel_per_shape.begin (); sps != sel_per_shape.end (); ++sps) {
-
-    db::Shape shape = tmp_shapes.insert (sps->first);
-    for (std::vector<partial_objects::iterator>::const_iterator rr = sps->second.begin (); rr != sps->second.end (); ++rr) {
-
-      std::map <EdgeWithIndex, db::Edge> new_edges;
-      std::map <PointWithIndex, db::Point> new_points;
-
-      shape = modify_shape (tv, shape, (*rr)->first, (*rr)->second, move_trans, new_edges, new_points);
-
-    }
-
-    for (std::vector<partial_objects::iterator>::const_iterator rr = sps->second.begin (); rr != sps->second.end (); ++rr) {
-
-      const lay::ObjectInstPath &sel = (*rr)->first;
-
-      const lay::CellView &cv = view ()->cellview (sel.cv_index ());
-
-      //  compute the transformation into context cell's micron space
-      double dbu = cv->layout ().dbu ();
-      db::CplxTrans gt = db::CplxTrans (dbu) * cv.context_trans () * sel.trans ();
-
-      //  get one representative global transformation
-      const std::vector<db::DCplxTrans> *tv_list = tv.per_cv_and_layer (sel.cv_index (), sel.layer ());
-      if (tv_list && ! tv_list->empty ()) {
-        gt = tv_list->front () * gt;
-      }
-
-      call_editor_hooks<const lay::ObjectInstPath &, const db::Shape &, const db::CplxTrans &> (hooks, &edt::EditorHooks::modified, (*rr)->first, shape, gt);
-
-    }
-
-  }
-
-  //  Issue editor hook calls for the instance transformation events
-
-  //  sort the selected objects (the instances) by the cell they are in
-  //  The key is a pair: cell_index, cv_index
-  std::map <std::pair <db::cell_index_type, unsigned int>, std::vector <partial_objects::const_iterator> > insts_by_cell;
-  for (partial_objects::const_iterator r = m_selection.begin (); r != m_selection.end (); ++r) {
-    if (r->first.is_cell_inst ()) {
-      insts_by_cell.insert (std::make_pair (std::make_pair (r->first.cell_index (), r->first.cv_index ()), std::vector <partial_objects::const_iterator> ())).first->second.push_back (r);
-    }
-  }
-
-  for (std::map <std::pair <db::cell_index_type, unsigned int>, std::vector <partial_objects::const_iterator> >::const_iterator ibc = insts_by_cell.begin (); ibc != insts_by_cell.end (); ++ibc) {
-
-    const lay::CellView &cv = view ()->cellview (ibc->first.second);
-    if (cv.is_valid ()) {
-
-      const std::vector<db::DCplxTrans> *tv_list = tv.per_cv (ibc->first.second);
-      db::DCplxTrans tvt;
-      if (tv_list && ! tv_list->empty ()) {
-        tvt = tv_list->front ();
-      }
-
-      for (auto inst = ibc->second.begin (); inst != ibc->second.end (); ++inst) {
-
-        db::CplxTrans gt = tvt * db::CplxTrans (cv->layout ().dbu ()) * cv.context_trans () * (*inst)->first.trans ();
-        db::ICplxTrans applied = gt.inverted () * db::DCplxTrans (move_trans) * gt;
-
-        call_editor_hooks<const lay::ObjectInstPath &, const db::ICplxTrans &, const db::CplxTrans &> (hooks, &edt::EditorHooks::transformed, (*inst)->first, applied, gt);
-
-      }
-
-    }
-
-  }
-}
-
-db::Shape
-PartialService::modify_shape (lay::TransformationVariants &tv, const db::Shape &shape_in, const lay::ObjectInstPath &path, const std::set <EdgeWithIndex> &sel, const db::DTrans &move_trans, std::map <EdgeWithIndex, db::Edge> &new_edges, std::map <PointWithIndex, db::Point> &new_points)
-{
-  tl_assert (shape_in.shapes () != 0);
-  db::Shape shape = shape_in;
-  db::Shapes &shapes = *shape_in.shapes ();
-
-  const lay::CellView &cv = view ()->cellview (path.cv_index ());
-
-  //  use only the first one of the explicit transformations
-  //  TODO: clarify how this can be implemented in a more generic form or leave it thus.
-
-  db::ICplxTrans gt (cv.context_trans () * path.trans ());
-  const std::vector<db::DCplxTrans> *tv_list = tv.per_cv_and_layer (path.cv_index (), path.layer ());
-  db::CplxTrans tt = (*tv_list) [0] * db::CplxTrans (cv->layout ().dbu ()) * gt;
-  db::Vector move_vector = db::Vector ((tt.inverted () * db::DCplxTrans (move_trans) * tt).disp ());
-
-  create_shift_sets (shape, sel, new_points, new_edges, move_vector);
-
-  //  modify the shapes and insert
-
-  if (shape.is_polygon ()) {
-
-    db::Polygon poly;
-    shape.polygon (poly);
-
-    //  warning: poly is modified:
-    modify_polygon (poly, new_points, new_edges, true /*compress*/);
-
-    shape = shapes.replace (shape, poly);
-
-  } else if (shape.is_path ()) {
-
-    db::Path path;
-    shape.path (path);
-
-    //  warning: path is modified:
-    modify_path (path, new_points, new_edges, true /*compress*/);
-
-    shape = shapes.replace (shape, path);
-
-  } else if (shape.is_box ()) {
-
-    db::Polygon poly;
-    shape.polygon (poly);
-
-    //  warning: poly is modified:
-    modify_polygon (poly, new_points, new_edges, true /*compress*/);
-
-    shape = shapes.replace (shape, poly.box ());
-
-  } else if (shape.is_text ()) {
-
-    db::Text t;
-    shape.text (t);
-
-    db::Point tp (shape.text_trans () * db::Point ());
-    std::map <PointWithIndex, db::Point>::const_iterator np = new_points.find (PointWithIndex (tp, 0, 0));
-
-    if (np != new_points.end ()) {
-      t.transform (db::Trans (np->second - tp));
-      shape = shapes.replace (shape, t);
-    }
-
-  } else if (shape.is_point ()) {
-
-    db::Point p;
-    shape.point (p);
-
-    std::map <PointWithIndex, db::Point>::const_iterator np = new_points.find (PointWithIndex (p, 0, 0));
-
-    if (np != new_points.end ()) {
-      shape = shapes.replace (shape, np->second);
-    }
-
-  }
-
-  return shape;
-}
-
-void
+void  
 PartialService::transform_selection (const db::DTrans &move_trans)
 {
   //  build the transformation variants cache
-  lay::TransformationVariants tv (view ());
+  TransformationVariants tv (view ());
 
   //  since a shape reference may become invalid while moving it and
   //  because it creates ambiguities, we treat each shape separately:
@@ -1667,9 +1344,68 @@ PartialService::transform_selection (const db::DTrans &move_trans)
 
       partial_objects::iterator r = *rr;
 
+      const lay::CellView &cv = view ()->cellview (r->first.cv_index ());
+
+      //  use only the first one of the explicit transformations 
+      //  TODO: clarify how this can be implemented in a more generic form or leave it thus.
+
+      db::ICplxTrans gt (cv.context_trans () * r->first.trans ());
+      const std::vector<db::DCplxTrans> *tv_list = tv.per_cv_and_layer (r->first.cv_index (), r->first.layer ());
+      db::CplxTrans tt = (*tv_list) [0] * db::CplxTrans (cv->layout ().dbu ()) * gt;
+      db::Vector move_vector = db::Vector ((tt.inverted () * db::DCplxTrans (move_trans) * tt).disp ());
+
       std::map <EdgeWithIndex, db::Edge> new_edges;
       std::map <PointWithIndex, db::Point> new_points;
-      shape = modify_shape (tv, shape, r->first, r->second, move_trans, new_edges, new_points);
+      create_shift_sets (shape, r->second, new_points, new_edges, move_vector);
+
+      //  modify the shapes and insert
+
+      db::Shapes &shapes = cv->layout ().cell (r->first.cell_index ()).shapes (r->first.layer ());
+
+      if (shape.is_polygon ()) {
+
+        db::Polygon poly;
+        shape.polygon (poly);
+
+        //  warning: poly is modified:
+        modify_polygon (poly, new_points, new_edges, true /*compress*/);
+
+        shape = shapes.replace (shape, poly);
+
+      } else if (shape.is_path ()) {
+
+        db::Path path;
+        shape.path (path);
+
+        //  warning: path is modified:
+        modify_path (path, new_points, new_edges, true /*compress*/);
+
+        shape = shapes.replace (shape, path);
+
+      } else if (shape.is_box ()) {
+
+        db::Polygon poly;
+        shape.polygon (poly);
+
+        //  warning: poly is modified:
+        modify_polygon (poly, new_points, new_edges, true /*compress*/);
+
+        shape = shapes.replace (shape, poly.box ());
+
+      } else if (shape.is_text ()) {
+
+        db::Text t;
+        shape.text (t);
+
+        db::Point tp (shape.text_trans () * db::Point ());
+        std::map <PointWithIndex, db::Point>::const_iterator np = new_points.find (PointWithIndex (tp, 0, 0));
+
+        if (np != new_points.end ()) {
+          t.transform (db::Trans (np->second - tp));
+          shape = shapes.replace (shape, t);
+        }
+
+      }
 
       //  transform the selection 
       
@@ -1719,6 +1455,9 @@ PartialService::transform_selection (const db::DTrans &move_trans)
 
   //  then move all instances.
   
+  //  TODO: DTrans should have a ctor that takes a vector
+  db::DTrans move_trans_inst = db::DTrans (db::DVector () + lay::snap_angle (m_current - m_start, move_ac ()));
+
   //  sort the selected objects (the instances) by the cell they are in
   //  The key is a pair: cell_index, cv_index
   std::map <std::pair <db::cell_index_type, unsigned int>, std::vector <partial_objects::const_iterator> > insts_by_cell;
@@ -1744,7 +1483,7 @@ PartialService::transform_selection (const db::DTrans &move_trans)
       if (tv_list && ! tv_list->empty ()) {
 
         db::CplxTrans tt = (*tv_list) [0] * db::CplxTrans (cv->layout ().dbu ()) * cv.context_trans ();
-        db::ICplxTrans move_trans_dbu (tt.inverted () * db::DCplxTrans (move_trans) * tt);
+        db::ICplxTrans move_trans_dbu (tt.inverted () * db::DCplxTrans (move_trans_inst) * tt);
 
         std::sort (insts_to_transform.begin (), insts_to_transform.end ());
         std::vector <std::pair <db::Instance, db::ICplxTrans> >::const_iterator unique_end = std::unique (insts_to_transform.begin (), insts_to_transform.end ());
@@ -1776,15 +1515,13 @@ PartialService::edit_cancel ()
     mp_box = 0;
   }
 
-  ui ()->ungrab_mouse (this);
-
-  close_editor_hooks (false);
+  widget ()->ungrab_mouse (this);
 
   selection_to_view ();
 }
 
 bool 
-PartialService::wheel_event (int /*delta*/, bool /*horizontal*/, const db::DPoint & /*p*/, unsigned int /*buttons*/, bool /*prio*/)
+PartialService::wheel_event (int /*delta*/, bool /*horizonal*/, const db::DPoint & /*p*/, unsigned int /*buttons*/, bool /*prio*/)
 {
   hover_reset ();
   return false;
@@ -1793,69 +1530,21 @@ PartialService::wheel_event (int /*delta*/, bool /*horizontal*/, const db::DPoin
 bool  
 PartialService::mouse_move_event (const db::DPoint &p, unsigned int buttons, bool prio)
 {
-  clear_mouse_cursors ();
-
   if (m_dragging) {
 
     set_cursor (lay::Cursor::size_all);
 
-    m_alt_ac = lay::ac_from_buttons (buttons);
+    m_alt_ac = ac_from_buttons (buttons);
 
-    //  drag the vertex or edge/segment
-    if (is_single_point_selection () || is_single_edge_selection ()) {
-
-      lay::PointSnapToObjectResult snap_details;
-
-      //  for a single selected point or edge, m_start is the original position and we snap the target -
-      //  thus, we can bring the point on grid or to an object's edge or vertex
-      snap_details = snap2 (p);
-
-      if (snap_details.object_snap == lay::PointSnapToObjectResult::NoObject) {
-
-        m_current = m_start + snap_move (p - m_start);
-
-      } else {
-
-        auto snapped_to_object = snap_details.snapped_point;
-        m_current = snapped_to_object;
-
-        if (snap_details.object_snap != lay::PointSnapToObjectResult::ObjectVertex) {
-          //  snap to grid on longer side of reference edge and to object on shorter
-          auto snapped_to_object_and_grid = m_start + snap_move (snapped_to_object - m_start);
-          if (std::abs (snap_details.object_ref.dx ()) > std::abs (snap_details.object_ref.dy ())) {
-            m_current.set_x (snapped_to_object_and_grid.x ());
-            //  project to edge, so we always hit it
-            auto cp = snap_details.object_ref.cut_point (db::DEdge (m_current, m_current + db::DVector (0, 1.0)));
-            if (cp.first) {
-              m_current.set_y (cp.second.y ());
-            }
-          } else if (std::abs (snap_details.object_ref.dy ()) > std::abs (snap_details.object_ref.dx ())) {
-            m_current.set_y (snapped_to_object_and_grid.y ());
-            //  project to edge, so we always hit it
-            auto cp = snap_details.object_ref.cut_point (db::DEdge (m_current, m_current + db::DVector (1.0, 0)));
-            if (cp.first) {
-              m_current.set_x (cp.second.x ());
-            }
-          }
-        }
-
-        mouse_cursor_from_snap_details (snap_details);
-
-      }
-
+    // drag the vertex or edge/segment
+    if (is_single_point_selection ()) {
+      //  for a single selected point, m_start is the original position and we snap the target - 
+      //  thus, we can bring the point on grid or to an object's edge or vertex 
+      m_current = snap2 (p);
     } else {
-
-      //  snap movement to angle and grid without object
-      m_current = m_start + snap_move (p - m_start);
-      clear_mouse_cursors ();
-
+      m_current = m_start + snap (p - m_start);
     }
-
     selection_to_view ();
-
-    call_editor_hooks (m_editor_hooks, &edt::EditorHooks::begin_edits);
-    issue_editor_hook_calls (m_editor_hooks);
-    call_editor_hooks (m_editor_hooks, &edt::EditorHooks::end_edits);
 
     m_alt_ac = lay::AC_Global;
 
@@ -1863,7 +1552,7 @@ PartialService::mouse_move_event (const db::DPoint &p, unsigned int buttons, boo
     
     if (mp_box) {
 
-      m_alt_ac = lay::ac_from_buttons (buttons);
+      m_alt_ac = ac_from_buttons (buttons);
 
       m_p2 = p;
       mp_box->set_points (m_p1, m_p2);
@@ -1873,9 +1562,7 @@ PartialService::mouse_move_event (const db::DPoint &p, unsigned int buttons, boo
     } else if (view ()->transient_selection_mode ()) {
 
       m_hover_wait = true;
-#if defined(HAVE_QT)
       m_timer.start ();
-#endif
       m_hover_point = p;
 
     }
@@ -1884,17 +1571,6 @@ PartialService::mouse_move_event (const db::DPoint &p, unsigned int buttons, boo
 
   //  pass on this event to other handlers
   return false;
-}
-
-static db::DPoint
-projected_to_edge (const db::DEdge &edge, const db::DPoint &p)
-{
-  if (edge.is_degenerate ()) {
-    return edge.p1 ();
-  } else {
-    db::DVector v = edge.d () * (1.0 / edge.length ());
-    return edge.p1 () + v * db::sprod (p - edge.p1 (), v);
-  }
 }
 
 bool  
@@ -1923,7 +1599,7 @@ PartialService::mouse_press_event (const db::DPoint &p, unsigned int buttons, bo
 
   } else if (! mp_box) {
 
-    m_alt_ac = lay::ac_from_buttons (buttons);
+    m_alt_ac = ac_from_buttons (buttons);
 
     if (m_selection.empty ()) {
 
@@ -1937,7 +1613,8 @@ PartialService::mouse_press_event (const db::DPoint &p, unsigned int buttons, bo
       try {
         partial_select (db::DBox (p, p), lay::Editable::Replace);
       } catch (tl::Exception &ex) {
-        show_error (ex);
+        tl::error << ex.msg ();
+        QMessageBox::critical (0, QObject::tr ("Error"), tl::to_qstring (ex.msg ()));
         //  clear selection
         partial_select (db::DBox (), lay::Editable::Reset);
       }
@@ -1957,10 +1634,10 @@ PartialService::mouse_press_event (const db::DPoint &p, unsigned int buttons, bo
 
       m_p1 = p;
       m_p2 = p;
-      mp_box = new lay::RubberBox (ui (), m_color, p, p);
+      mp_box = new lay::RubberBox (widget (), m_color, p, p);
       mp_box->set_stipple (6); // coarse hatched
 
-      ui ()->grab_mouse (this, true);
+      widget ()->grab_mouse (this, true);
 
     } else {
 
@@ -1970,19 +1647,13 @@ PartialService::mouse_press_event (const db::DPoint &p, unsigned int buttons, bo
 
       if (is_single_point_selection ()) {
         //  for a single selected point we use the original point as the start location which 
-        //  allows bringing it to grid
+        //  allows bringing a to grid
         m_current = m_start = single_selected_point ();
-      } else if (is_single_edge_selection ()) {
-        //  for an edge selection use the point projected to edge as the start location which
-        //  allows bringing it to grid
-        m_current = m_start = projected_to_edge (single_selected_edge (), p);
       } else {
         m_current = m_start = p;
       }
 
-      ui ()->grab_mouse (this, true);
-
-      open_editor_hooks ();
+      widget ()->grab_mouse (this, true);
 
     }
 
@@ -2016,26 +1687,28 @@ PartialService::mouse_click_event (const db::DPoint &p, unsigned int buttons, bo
 
   if (m_dragging) {
 
-    m_alt_ac = lay::ac_from_buttons (buttons);
+    m_alt_ac = ac_from_buttons (buttons);
 
     if (m_current != m_start) {
 
       //  stop dragging
-      ui ()->ungrab_mouse (this);
+      widget ()->ungrab_mouse (this);
       
-      if (manager ()) {
-        manager ()->transaction (tl::to_string (tr ("Partial move")));
-      }
+      manager ()->transaction (tl::to_string (QObject::tr ("Partial move"))); 
 
       //  heuristically, if there is just one edge selected: do not confine to the movement
       //  angle constraint - the edge usually is confined enough
-      db::DTrans move_trans = db::DTrans (m_current - m_start);
+      db::DTrans move_trans;
+      if (m_selection.size () == 1 && m_selection.begin ()->second.size () == 3 /*p1,p2,edge*/) {
+        move_trans = db::DTrans (m_current - m_start);
+      } else {
+        //  TODO: DTrans should have a ctor that takes a vector
+        move_trans = db::DTrans (lay::snap_angle (m_current - m_start, move_ac ()));
+      }
 
       transform_selection (move_trans);
 
-      if (manager ()) {
-        manager ()->commit ();
-      }
+      manager ()->commit ();
 
     }
 
@@ -2046,13 +1719,11 @@ PartialService::mouse_click_event (const db::DPoint &p, unsigned int buttons, bo
     m_dragging = false;
     selection_to_view ();
 
-    close_editor_hooks (true);
-
     m_alt_ac = lay::AC_Global;
 
     return true;
 
-  } else if (ui ()->mouse_event_viewport ().contains (p)) { 
+  } else if (widget ()->mouse_event_viewport ().contains (p)) { 
 
     //  clear other selection when this mode gets active
     //  (save the selection so our own selection does not get cleared)
@@ -2060,7 +1731,7 @@ PartialService::mouse_click_event (const db::DPoint &p, unsigned int buttons, bo
     view ()->clear_selection ();
     m_selection = selection;
 
-    m_alt_ac = lay::ac_from_buttons (buttons);
+    m_alt_ac = ac_from_buttons (buttons);
 
     lay::Editable::SelectionMode mode = lay::Editable::Replace;
     bool shift = ((buttons & lay::ShiftButton) != 0);
@@ -2076,13 +1747,45 @@ PartialService::mouse_click_event (const db::DPoint &p, unsigned int buttons, bo
     //  select is allowed to throw an exception 
     try {
 
-      bool new_selection = true;
+      //  compute search box
+      double l = catch_distance ();
+      db::DBox search_box = db::DBox (p, p).enlarged (db::DVector (l, l));
 
-      double le = catch_distance () * 3.0;  //  see Editables::selection_catch_bbox()
-      db::DBox sel_catch_box = selection_bbox ().enlarged (db::DVector (le, le));
-      if (mode == lay::Editable::Replace && has_selection () && sel_catch_box.contains (p)) {
-        //  drag current selection
-        new_selection = false;
+      //  check, if there is a selected shape under the mouse - in this case, we do not do a new selection
+      PartialShapeFinder finder (true /*point mode*/, m_top_level_sel, db::ShapeIterator::All);
+      finder.find (view (), search_box);
+
+      //  check, if there is a selected shape under the mouse - in this case, we do not do a new selection
+      lay::InstFinder inst_finder (true /*point mode*/, m_top_level_sel, true /*full arrays*/, true /*enclose*/, 0 /*no excludes*/, true /*visible layers*/);
+      inst_finder.find (view (), search_box);
+
+      //  collect the founds from the finder
+      //  consider a new selection if new objects are selected or the current selection is shape-only 
+      //  (this may happen if points have been inserted)
+      bool new_selection = ((finder.begin () == finder.end () && inst_finder.begin () == inst_finder.end ()) 
+                             || mode != lay::Editable::Replace);
+
+      for (PartialShapeFinder::iterator f = finder.begin (); f != finder.end () && ! new_selection; ++f) {
+        partial_objects::const_iterator sel = m_selection.find (f->first);
+        new_selection = true;
+        if (sel != m_selection.end ()) {
+          for (std::vector<edt::EdgeWithIndex>::const_iterator e = f->second.begin (); e != f->second.end () && new_selection; ++e) {
+            if (sel->second.find (*e) != sel->second.end ()) {
+              new_selection = false;
+            }
+          }
+        }
+      }
+
+      if (finder.begin () == finder.end ()) {
+
+        for (lay::InstFinder::iterator f = inst_finder.begin (); f != inst_finder.end () && ! new_selection; ++f) {
+          partial_objects::const_iterator sel = m_selection.find (*f);
+          if (sel == m_selection.end ()) {
+            new_selection = true;
+          }
+        }
+
       }
 
       if (new_selection) {
@@ -2090,18 +1793,6 @@ PartialService::mouse_click_event (const db::DPoint &p, unsigned int buttons, bo
         if (mode == lay::Editable::Replace) {
           m_selection.clear ();
         }
-
-        //  compute search box
-        double l = catch_distance ();
-        db::DBox search_box = db::DBox (p, p).enlarged (db::DVector (l, l));
-
-        //  identify the edges under the mouse
-        PartialShapeFinder finder (true /*point mode*/, m_top_level_sel, db::ShapeIterator::All);
-        finder.find (view (), search_box);
-
-        //  identify the instances under the mouse
-        lay::InstFinder inst_finder (true /*point mode*/, m_top_level_sel, true /*full arrays*/, true /*enclose*/, 0 /*no excludes*/, true /*visible layers*/);
-        inst_finder.find (view (), search_box);
 
         //  clear the selection if we now select a guiding shape or if it was consisting of a guiding shape before
         //  (that way we ensure there is only a guiding shape selected)
@@ -2151,24 +1842,19 @@ PartialService::mouse_click_event (const db::DPoint &p, unsigned int buttons, bo
 
         if (is_single_point_selection ()) {
           //  for a single selected point we use the original point as the start location which 
-          //  allows bringing it to grid
+          //  allows bringing a to grid
           m_current = m_start = single_selected_point ();
-        } else if (is_single_edge_selection ()) {
-          //  for an edge selection use the point projected to edge as the start location which
-          //  allows bringing it to grid
-          m_current = m_start = projected_to_edge (single_selected_edge (), p);
         } else {
           m_current = m_start = p;
         }
-
-        open_editor_hooks ();
 
       }
 
       selection_to_view ();
 
     } catch (tl::Exception &ex) {
-      show_error (ex);
+      tl::error << ex.msg ();
+      QMessageBox::critical (0, QObject::tr ("Error"), tl::to_qstring (ex.msg ()));
       //  clear selection
       partial_select (db::DBox (), lay::Editable::Reset);
     }
@@ -2193,12 +1879,10 @@ PartialService::mouse_double_click_event (const db::DPoint &p, unsigned int butt
 
   if ((buttons & lay::LeftButton) != 0 && prio) {
 
-    m_alt_ac = lay::ac_from_buttons (buttons);
-
-    close_editor_hooks (false);
+    m_alt_ac = ac_from_buttons (buttons);
 
     //  stop dragging
-    ui ()->ungrab_mouse (this);
+    widget ()->ungrab_mouse (this);
     m_dragging = false;
       
     partial_select (db::DBox (p, p), lay::Editable::Replace);
@@ -2208,15 +1892,13 @@ PartialService::mouse_double_click_event (const db::DPoint &p, unsigned int butt
       partial_objects::iterator r = m_selection.begin (); // we assert above that we have at least one selected element
       if (! r->first.is_cell_inst ()) {
 
-        if (manager ()) {
-          manager ()->transaction (tl::to_string (tr ("Insert point")));
-        }
+        manager ()->transaction (tl::to_string (QObject::tr ("Insert point"))); 
 
         //  snap the point
         db::DPoint new_point_d = snap (p);
 
         //  build the transformation variants cache
-        lay::TransformationVariants tv (view (), true /*per cv and layer*/, false /*per cv*/);
+        TransformationVariants tv (view (), true /*per cv and layer*/, false /*per cv*/); 
 
         const std::vector<db::DCplxTrans> *tv_list = tv.per_cv_and_layer (r->first.cv_index (), r->first.layer ());
         if (tv_list && ! tv_list->empty ()) {
@@ -2277,9 +1959,7 @@ PartialService::mouse_double_click_event (const db::DPoint &p, unsigned int butt
 
           handle_guiding_shape_changes ();
 
-          if (manager ()) {
-            manager ()->commit ();
-          }
+          manager ()->commit ();
 
           selection_to_view ();
 
@@ -2305,14 +1985,14 @@ PartialService::mouse_release_event (const db::DPoint &p, unsigned int buttons, 
 
   if (prio && mp_box) {
 
-    m_alt_ac = lay::ac_from_buttons (buttons);
+    m_alt_ac = ac_from_buttons (buttons);
 
-    ui ()->ungrab_mouse (this);
+    widget ()->ungrab_mouse (this);
 
     delete mp_box;
     mp_box = 0;
 
-    if (ui ()->mouse_event_viewport ().contains (p)) { 
+    if (widget ()->mouse_event_viewport ().contains (p)) { 
 
       lay::Editable::SelectionMode mode = lay::Editable::Replace;
       bool shift = ((m_buttons & lay::ShiftButton) != 0);
@@ -2329,7 +2009,8 @@ PartialService::mouse_release_event (const db::DPoint &p, unsigned int buttons, 
       try {
         partial_select (db::DBox (m_p1, m_p2), mode);
       } catch (tl::Exception &ex) {
-        show_error (ex);
+        tl::error << ex.msg ();
+        QMessageBox::critical (0, QObject::tr ("Error"), tl::to_qstring (ex.msg ()));
         //  clear selection
         partial_select (db::DBox (), lay::Editable::Reset);
       }
@@ -2345,271 +2026,17 @@ PartialService::mouse_release_event (const db::DPoint &p, unsigned int buttons, 
   return false;
 }
 
-bool
-PartialService::begin_move (MoveMode mode, const db::DPoint &p, lay::angle_constraint_type ac)
-{
-  if (has_selection () && mode == lay::Editable::Selected) {
-
-    m_alt_ac = ac;
-
-    m_dragging = true;
-    m_keep_selection = true;
-
-    if (is_single_point_selection ()) {
-      //  for a single selected point we use the original point as the start location which
-      //  allows bringing it to grid
-      m_current = m_start = single_selected_point ();
-    } else if (is_single_edge_selection ()) {
-      //  for an edge selection use the point projected to edge as the start location which
-      //  allows bringing it to grid
-      m_current = m_start = projected_to_edge (single_selected_edge (), p);
-    } else {
-      m_current = m_start = p;
-    }
-
-    m_alt_ac = lay::AC_Global;
-
-    return true;
-
-  } else {
-    return false;
-  }
-}
-
-void
-PartialService::update_vector_snapped_point (const db::DPoint &pt, db::DVector &vr, bool &result_set) const
-{
-  db::DVector v = snap (pt) - pt;
-
-  if (! result_set || v.length () < vr.length ()) {
-    result_set = true;
-    vr = v;
-  }
-}
-
-db::DVector
-PartialService::snap_marker_to_grid (const db::DVector &v, bool &snapped) const
-{
-  if (! m_snap_objects_to_grid) {
-    return v;
-  }
-
-  snapped = false;
-  db::DVector vr;
-
-  //  max. 10000 checks
-  size_t count = 10000;
-
-  db::DVector snapped_to (1.0, 1.0);
-  db::DVector vv = lay::snap_angle (v, move_ac (), &snapped_to);
-
-  lay::TransformationVariants tv (view ());
-
-  for (auto r = m_selection.begin (); r != m_selection.end (); ++r) {
-
-    if (! r->first.is_valid (view ()) || r->first.is_cell_inst ()) {
-      continue;
-    }
-
-    const lay::CellView &cv = view ()->cellview (r->first.cv_index ());
-    const std::vector<db::DCplxTrans> *tv_list = tv.per_cv_and_layer (r->first.cv_index (), r->first.layer ());
-    if (!tv_list || tv_list->empty ()) {
-      continue;
-    }
-
-    db::CplxTrans tr = db::DCplxTrans (vv) * tv_list->front () * db::CplxTrans (cv->layout ().dbu ()) * cv.context_trans () * r->first.trans ();
-
-    for (auto e = r->second.begin (); e != r->second.end () && count > 0; ++e) {
-      update_vector_snapped_point (tr * e->p1 (), vr, snapped);
-      --count;
-      if (count > 0) {
-        update_vector_snapped_point (tr * e->p2 (), vr, snapped);
-        --count;
-      }
-    }
-
-  }
-
-  if (snapped) {
-    vr += vv;
-    return db::DVector (vr.x () * snapped_to.x (), vr.y () * snapped_to.y ());
-  } else {
-    return db::DVector ();
-  }
-}
-
-db::DVector
-PartialService::snap_move (const db::DVector &v) const
-{
-  bool snapped = false;
-  db::DVector vs = snap_marker_to_grid (v, snapped);
-  if (! snapped) {
-    vs = snap (v);
-  }
-  return vs;
-}
-
-void
-PartialService::move (const db::DPoint &p, lay::angle_constraint_type ac)
-{
-  if (! m_dragging) {
-    return;
-  }
-
-  m_alt_ac = ac;
-
-  set_cursor (lay::Cursor::size_all);
-
-  //  drag the vertex or edge/segment
-  if (is_single_point_selection () || is_single_edge_selection ()) {
-
-    lay::PointSnapToObjectResult snap_details;
-
-    //  for a single selected point or edge, m_start is the original position and we snap the target -
-    //  thus, we can bring the point on grid or to an object's edge or vertex
-    snap_details = snap2 (p);
-    if (snap_details.object_snap == lay::PointSnapToObjectResult::NoObject) {
-      m_current = m_start + snap_move (p - m_start);
-    } else {
-      m_current = snap_details.snapped_point;
-      mouse_cursor_from_snap_details (snap_details);
-    }
-
-  } else {
-
-    //  snap movement to angle and grid without object
-    m_current = m_start + snap_move (p - m_start);
-    clear_mouse_cursors ();
-
-  }
-
-  selection_to_view ();
-
-  m_alt_ac = lay::AC_Global;
-}
-
-void
-PartialService::end_move (const db::DPoint & /*p*/, lay::angle_constraint_type ac)
-{
-  if (! m_dragging) {
-    return;
-  }
-
-  m_alt_ac = ac;
-
-  if (m_current != m_start) {
-
-    //  stop dragging
-    ui ()->ungrab_mouse (this);
-
-    if (manager ()) {
-      manager ()->transaction (tl::to_string (tr ("Partial move")));
-    }
-
-    //  heuristically, if there is just one edge selected: do not confine to the movement
-    //  angle constraint - the edge usually is confined enough
-    db::DTrans move_trans = db::DTrans (m_current - m_start);
-
-    transform_selection (move_trans);
-
-    if (manager ()) {
-      manager ()->commit ();
-    }
-
-  }
-
-  if (! m_keep_selection) {
-    m_selection.clear ();
-  }
-
-  m_dragging = false;
-  selection_to_view ();
-
-  clear_mouse_cursors ();
-
-  close_editor_hooks (false);
-
-  m_alt_ac = lay::AC_Global;
-}
-
-bool
-PartialService::has_selection ()
-{
-  return ! m_selection.empty ();
-}
-
-size_t
+size_t 
 PartialService::selection_size ()
 {
   return m_selection.size ();
 }
 
-db::DBox
-PartialService::selection_bbox ()
-{
-  //  build the transformation variants cache
-  //  TODO: this is done multiple times - once for each service!
-  lay::TransformationVariants tv (view ());
-  const db::DCplxTrans &vp = view ()->viewport ().trans ();
-
-  lay::TextInfo text_info (view ());
-
-  db::DBox box;
-  for (partial_objects::const_iterator r = m_selection.begin (); r != m_selection.end (); ++r) {
-
-    const lay::CellView &cv = view ()->cellview (r->first.cv_index ());
-    const db::Layout &layout = cv->layout ();
-
-    db::CplxTrans ctx_trans = db::CplxTrans (layout.dbu ()) * cv.context_trans () * r->first.trans ();
-
-    db::box_convert<db::CellInst> bc (layout);
-    if (! r->first.is_cell_inst ()) {
-
-      const std::vector<db::DCplxTrans> *tv_list = tv.per_cv_and_layer (r->first.cv_index (), r->first.layer ());
-      if (tv_list != 0) {
-        for (std::vector<db::DCplxTrans>::const_iterator t = tv_list->begin (); t != tv_list->end (); ++t) {
-          if (r->first.shape ().is_text ()) {
-            db::Text text;
-            r->first.shape ().text (text);
-            box += *t * text_info.bbox (ctx_trans * text, vp * *t);
-          } else {
-            for (auto e = r->second.begin (); e != r->second.end (); ++e) {
-              box += *t * (ctx_trans * e->bbox ());
-            }
-          }
-        }
-      }
-
-    } else {
-
-      const std::vector<db::DCplxTrans> *tv_list = tv.per_cv (r->first.cv_index ());
-      if (tv_list != 0) {
-        for (std::vector<db::DCplxTrans>::const_iterator t = tv_list->begin (); t != tv_list->end (); ++t) {
-          box += *t * (ctx_trans * r->first.back ().bbox (bc));
-        }
-      }
-
-    }
-
-  }
-
-  return box;
-}
-
-bool
-PartialService::has_transient_selection ()
-{
-  //  there is no specific transient selection for the partial editor
-  return false;
-}
-
-void
+void 
 PartialService::del ()
 {
-  std::set<db::Layout *> needs_cleanup;
-
   //  stop dragging
-  ui ()->ungrab_mouse (this);
+  widget ()->ungrab_mouse (this);
   
   std::map <std::pair <db::cell_index_type, std::pair <unsigned int, unsigned int> >, std::vector <partial_objects::const_iterator> > shapes_to_delete_by_cell;
 
@@ -2656,7 +2083,7 @@ PartialService::del ()
           shapes_to_delete_by_cell.insert (std::make_pair (std::make_pair (r->first.cell_index (), std::make_pair (r->first.cv_index (), r->first.layer ())), std::vector <partial_objects::const_iterator> ())).first->second.push_back (r);
         }
 
-      } else if (shape.is_text () || shape.is_point ()) {
+      } else if (shape.is_text ()) {
 
         shapes_to_delete_by_cell.insert (std::make_pair (std::make_pair (r->first.cell_index (), std::make_pair (r->first.cv_index (), r->first.layer ())), std::vector <partial_objects::const_iterator> ())).first->second.push_back (r);
 
@@ -2689,9 +2116,6 @@ PartialService::del ()
     if (r->first.is_cell_inst ()) {
       const lay::CellView &cv = view ()->cellview (r->first.cv_index ());
       if (cv.is_valid ()) {
-        if (cv->layout ().cell (r->first.back ().inst_ptr.cell_index ()).is_proxy ()) {
-          needs_cleanup.insert (& cv->layout ());
-        }
         cv->layout ().cell (r->first.cell_index ()).erase (r->first.back ().inst_ptr);
       }
     }
@@ -2705,13 +2129,6 @@ PartialService::del ()
   m_selection.clear ();
   m_dragging = false;
   selection_to_view ();
-
-  close_editor_hooks (false);
-
-  //  clean up the layouts that need to do so.
-  for (std::set<db::Layout *>::const_iterator l = needs_cleanup.begin (); l != needs_cleanup.end (); ++l) {
-    (*l)->cleanup ();
-  }
 }
 
 lay::InstanceMarker *
@@ -2885,10 +2302,6 @@ PartialService::enter_edge (const EdgeWithIndex &e, size_t &nmarker, partial_obj
       db::DEdge ee = db::DEdge (db::DPoint (ep2) + ((db::DPoint (ep1) - db::DPoint (ep2)) * 0.25), db::DPoint (ep2));
       marker->set (ee, db::DCplxTrans (gt), tv);
 
-      if (transient && sel->second.size () == 1) {
-        add_mouse_cursor (ep2, sel->first.cv_index (), gt, tv, true);
-      }
-
     } 
 
     if (p1_sel && !p12_sel) {
@@ -2899,22 +2312,12 @@ PartialService::enter_edge (const EdgeWithIndex &e, size_t &nmarker, partial_obj
       db::DEdge ee = db::DEdge (db::DPoint (ep1), db::DPoint (ep1) + ((db::DPoint (ep2) - db::DPoint (ep1)) * 0.25));
       marker->set (ee, db::DCplxTrans (gt), tv);
 
-      if (transient && sel->second.size () == 1) {
-        add_mouse_cursor (ep1, sel->first.cv_index (), gt, tv, true);
-      }
-
-    }
+    } 
 
     if (p12_sel) {
-
       lay::Marker *marker = new_marker (nmarker, sel->first.cv_index (), transient);
       marker->set_vertex_size (0);
       marker->set (enew, gt, tv);
-
-      if (transient) {
-        add_edge_marker (enew, sel->first.cv_index (), gt, tv, true);
-      }
-
     }
 
   }
@@ -2924,22 +2327,16 @@ PartialService::enter_edge (const EdgeWithIndex &e, size_t &nmarker, partial_obj
 double
 PartialService::catch_distance ()
 {
-  return double (view ()->search_range ()) / ui ()->mouse_event_trans ().mag ();
+  return double (view ()->search_range ()) / widget ()->mouse_event_trans ().mag ();
 }
 
-double
-PartialService::catch_distance_box ()
-{
-  return double (view ()->search_range_box ()) / ui ()->mouse_event_trans ().mag ();
-}
-
-db::DPoint
+db::DPoint 
 PartialService::single_selected_point () const
 {
   //  build the transformation variants cache and 
   //  use only the first one of the explicit transformations 
   //  TODO: clarify how this can be implemented in a more generic form or leave it thus.
-  lay::TransformationVariants tv (view ());
+  TransformationVariants tv (view ());
   const std::vector<db::DCplxTrans> *tv_list = tv.per_cv_and_layer (m_selection.begin ()->first.cv_index (), m_selection.begin ()->first.layer ());
 
   const lay::CellView &cv = view ()->cellview (m_selection.begin ()->first.cv_index ());
@@ -2955,36 +2352,6 @@ PartialService::is_single_point_selection () const
   return (m_selection.size () == 1 && ! m_selection.begin ()->first.is_cell_inst () && m_selection.begin ()->second.size () == 1 /*p*/);
 }
 
-db::DEdge
-PartialService::single_selected_edge () const
-{
-  //  build the transformation variants cache and
-  //  use only the first one of the explicit transformations
-  //  TODO: clarify how this can be implemented in a more generic form or leave it thus.
-  lay::TransformationVariants tv (view ());
-  const std::vector<db::DCplxTrans> *tv_list = tv.per_cv_and_layer (m_selection.begin ()->first.cv_index (), m_selection.begin ()->first.layer ());
-
-  const lay::CellView &cv = view ()->cellview (m_selection.begin ()->first.cv_index ());
-  db::ICplxTrans gt (cv.context_trans () * m_selection.begin ()->first.trans ());
-  db::CplxTrans tt = (*tv_list)[0] * db::CplxTrans (cv->layout ().dbu ()) * gt;
-
-  //  pick the edge from the selection (there is: p1, p2 and the edge between them)
-  for (auto s = m_selection.begin ()->second.begin (); s != m_selection.begin ()->second.end (); ++s) {
-    if (s->n != s->nn) {
-      return tt * *s;
-    }
-  }
-
-  //  fallback: should not happen
-  return tt * *m_selection.begin ()->second.begin ();
-}
-
-bool
-PartialService::is_single_edge_selection () const
-{
-  return (m_selection.size () == 1 && ! m_selection.begin ()->first.is_cell_inst () && m_selection.begin ()->second.size () == 3 /*p1,p2,edge*/);
-}
-
 bool
 PartialService::select (const db::DBox &box, SelectionMode mode)
 {
@@ -2997,14 +2364,8 @@ PartialService::select (const db::DBox &box, SelectionMode mode)
   return false;
 }
 
-void
+void 
 PartialService::selection_to_view ()
-{
-  dm_selection_to_view ();
-}
-
-void
-PartialService::do_selection_to_view ()
 {
   //  if dragging, establish the current displacement
   db::DTrans move_trans;
@@ -3026,147 +2387,127 @@ PartialService::do_selection_to_view ()
 
   }
 
+  //  build the transformation variants cache
+  TransformationVariants tv (view ());
+
   size_t n_marker = 0;
   size_t n_inst_marker = 0;
 
-  //  Reduce the selection to valid paths (issue-1145)
-  std::vector<partial_objects::iterator> invalid_objects;
-  for (partial_objects::iterator r = m_selection.begin (); r != m_selection.end (); ++r) {
-    if (! r->first.is_valid (view ())) {
-      invalid_objects.push_back (r);
-    }
-  }
-  for (auto i = invalid_objects.begin (); i != invalid_objects.end (); ++i) {
-    m_selection.erase (*i);
-  }
+  for (partial_objects::const_iterator r = m_selection.begin (); r != m_selection.end (); ++r) {
 
-  if (! m_selection.empty ()) {
+    const lay::CellView &cv = view ()->cellview (r->first.cv_index ());
 
-    //  build the transformation variants cache
-    lay::TransformationVariants tv (view ());
+    if (! r->first.is_cell_inst ()) {
 
-    for (partial_objects::const_iterator r = m_selection.begin (); r != m_selection.end (); ++r) {
+      const std::vector<db::DCplxTrans> *tv_list = tv.per_cv_and_layer (r->first.cv_index (), r->first.layer ());
+      if (tv_list && !tv_list->empty ()) {
 
-      const lay::CellView &cv = view ()->cellview (r->first.cv_index ());
+        //  use only the first one of the explicit transformations 
+        //  TODO: clarify how this can be implemented in a more generic form or leave it thus.
+        db::ICplxTrans gt (cv.context_trans () * r->first.trans ());
+        db::CplxTrans tt = (*tv_list) [0] * db::CplxTrans (cv->layout ().dbu ()) * gt;
+        db::Vector move_vector (tt.inverted () * (move_trans * (tt * db::Point ())));
 
-      if (! r->first.is_cell_inst ()) {
+        //  create the shift sets describing how points and edges are being moved
+        
+        std::map <EdgeWithIndex, db::Edge> new_edges;
+        std::map <PointWithIndex, db::Point> new_points;
 
-        const std::vector<db::DCplxTrans> *tv_list = tv.per_cv_and_layer (r->first.cv_index (), r->first.layer ());
-        if (tv_list && !tv_list->empty ()) {
+        if (m_dragging) {
+          create_shift_sets (r->first.shape (), r->second, new_points, new_edges, move_vector);
+        }
 
-          //  use only the first one of the explicit transformations
-          //  TODO: clarify how this can be implemented in a more generic form or leave it thus.
-          db::ICplxTrans gt (cv.context_trans () * r->first.trans ());
-          db::CplxTrans tt = (*tv_list) [0] * db::CplxTrans (cv->layout ().dbu ()) * gt;
-          db::Vector move_vector (tt.inverted () * (move_trans * (tt * db::Point ())));
+        //  create the markers to represent vertices and edges
 
-          //  create the shift sets describing how points and edges are being moved
+        enter_vertices (n_marker, r, new_points, new_edges, gt, *tv_list, false);
 
-          std::map <EdgeWithIndex, db::Edge> new_edges;
-          std::map <PointWithIndex, db::Point> new_points;
+        if (r->first.shape ().is_polygon ()) {
 
-          if (m_dragging) {
-            create_shift_sets (r->first.shape (), r->second, new_points, new_edges, move_vector);
-          }
+          for (unsigned int c = 0; c < r->first.shape ().holes () + 1; ++c) {
 
-          //  create the markers to represent vertices and edges
-
-          enter_vertices (n_marker, r, new_points, new_edges, gt, *tv_list, false);
-
-          if (r->first.shape ().is_polygon ()) {
-
-            for (unsigned int c = 0; c < r->first.shape ().holes () + 1; ++c) {
-
-              unsigned int n = 0;
-              db::Shape::polygon_edge_iterator ee;
-              for (db::Shape::polygon_edge_iterator e = r->first.shape ().begin_edge (c); ! e.at_end (); e = ee, ++n) {
-                ee = e;
-                ++ee;
-                unsigned int nn = ee.at_end () ? 0 : n + 1;
-                enter_edge (EdgeWithIndex (*e, n, nn, c), n_marker, r, new_points, new_edges, gt, *tv_list, false);
-              }
-
-            }
-
-            db::Polygon poly;
-            r->first.shape ().polygon (poly);
-
-            //  warning: poly is modified:
-            enter_polygon (poly, n_marker, r, new_points, new_edges, gt, *tv_list, false);
-
-          } else if (r->first.shape ().is_path ()) {
-
-            if (r->first.shape ().begin_point () != r->first.shape ().end_point ()) {
-
-              db::Shape::point_iterator pt = r->first.shape ().begin_point ();
-              db::Point p1 = *pt;
-
-              unsigned int n = 0;
-              while (true) {
-
-                ++pt;
-                if (pt == r->first.shape ().end_point ()) {
-                  break;
-                }
-
-                enter_edge (EdgeWithIndex (db::Edge (p1, *pt), n, n + 1, 0), n_marker, r, new_points, new_edges, gt, *tv_list, false);
-
-                p1 = *pt;
-                ++n;
-
-              }
-
-              //  TODO: ... put this somewhere else:
-              db::Path path;
-              r->first.shape ().path (path);
-
-              //  warning: path is modified:
-              enter_path (path, n_marker, r, new_points, new_edges, gt, *tv_list, false);
-
-            }
-
-          } else if (r->first.shape ().is_box ()) {
-
-            //  convert to polygon and test those edges
-            db::Polygon poly (r->first.shape ().box ());
             unsigned int n = 0;
             db::Shape::polygon_edge_iterator ee;
-            for (db::Shape::polygon_edge_iterator e = poly.begin_edge (); ! e.at_end (); e = ee, ++n) {
+            for (db::Shape::polygon_edge_iterator e = r->first.shape ().begin_edge (c); ! e.at_end (); e = ee, ++n) {
               ee = e;
               ++ee;
               unsigned int nn = ee.at_end () ? 0 : n + 1;
-              enter_edge (EdgeWithIndex (*e, n, nn, 0), n_marker, r, new_points, new_edges, gt, *tv_list, false);
+              enter_edge (EdgeWithIndex (*e, n, nn, c), n_marker, r, new_points, new_edges, gt, *tv_list, false);
             }
-
-            //  warning: poly is modified:
-            enter_polygon (poly, n_marker, r, new_points, new_edges, gt, *tv_list, false);
-
-          } else if (r->first.shape ().is_text ()) {
-
-            db::Point tp (r->first.shape ().text_trans () * db::Point ());
-            enter_edge (EdgeWithIndex (db::Edge (tp, tp), 0, 0, 0), n_marker, r, new_points, new_edges, gt, *tv_list, false);
-
-          } else if (r->first.shape ().is_point ()) {
-
-            db::Point tp (r->first.shape ().point ());
-            enter_edge (EdgeWithIndex (db::Edge (tp, tp), 0, 0, 0), n_marker, r, new_points, new_edges, gt, *tv_list, false);
 
           }
 
+          db::Polygon poly;
+          r->first.shape ().polygon (poly);
+
+          //  warning: poly is modified:
+          enter_polygon (poly, n_marker, r, new_points, new_edges, gt, *tv_list, false);
+
+        } else if (r->first.shape ().is_path ()) {
+
+          if (r->first.shape ().begin_point () != r->first.shape ().end_point ()) {
+
+            db::Shape::point_iterator pt = r->first.shape ().begin_point ();
+            db::Point p1 = *pt;
+
+            unsigned int n = 0;
+            while (true) {
+
+              ++pt;
+              if (pt == r->first.shape ().end_point ()) {
+                break;
+              }
+              
+              enter_edge (EdgeWithIndex (db::Edge (p1, *pt), n, n + 1, 0), n_marker, r, new_points, new_edges, gt, *tv_list, false);
+
+              p1 = *pt;
+              ++n;
+
+            }
+
+            //  TODO: ... put this somewhere else: 
+            db::Path path;
+            r->first.shape ().path (path);
+
+            //  warning: path is modified:
+            enter_path (path, n_marker, r, new_points, new_edges, gt, *tv_list, false);
+
+          }
+
+        } else if (r->first.shape ().is_box ()) {
+
+          //  convert to polygon and test those edges
+          db::Polygon poly (r->first.shape ().box ());
+          unsigned int n = 0;
+          db::Shape::polygon_edge_iterator ee;
+          for (db::Shape::polygon_edge_iterator e = poly.begin_edge (); ! e.at_end (); e = ee, ++n) {
+            ee = e;
+            ++ee;
+            unsigned int nn = ee.at_end () ? 0 : n + 1;
+            enter_edge (EdgeWithIndex (*e, n, nn, 0), n_marker, r, new_points, new_edges, gt, *tv_list, false);
+          }
+
+          //  warning: poly is modified:
+          enter_polygon (poly, n_marker, r, new_points, new_edges, gt, *tv_list, false);
+
+        } else if (r->first.shape ().is_text ()) {
+
+          db::Point tp (r->first.shape ().text_trans () * db::Point ());
+          enter_edge (EdgeWithIndex (db::Edge (tp, tp), 0, 0, 0), n_marker, r, new_points, new_edges, gt, *tv_list, false);
+
         }
 
-      } else {
+      }
 
-        //  compute the global transformation including movement, context and explicit transformation
-        db::ICplxTrans gt = db::VCplxTrans (1.0 / cv->layout ().dbu ()) * db::DCplxTrans (move_trans) * db::CplxTrans (cv->layout ().dbu ());
-        gt *= (cv.context_trans () * r->first.trans ());
+    } else {
 
-        const std::vector<db::DCplxTrans> *tv_list = tv.per_cv (r->first.cv_index ());
-        if (tv_list  && ! tv_list->empty ()) {
-          lay::InstanceMarker *marker = new_inst_marker (n_inst_marker, r->first.cv_index (), false);
-          marker->set (r->first.back ().inst_ptr, gt, *tv_list);
-        }
+      //  compute the global transformation including movement, context and explicit transformation
+      db::ICplxTrans gt = db::VCplxTrans (1.0 / cv->layout ().dbu ()) * db::DCplxTrans (move_trans) * db::CplxTrans (cv->layout ().dbu ());
+      gt *= (cv.context_trans () * r->first.trans ());
 
+      const std::vector<db::DCplxTrans> *tv_list = tv.per_cv (r->first.cv_index ());
+      if (tv_list  && ! tv_list->empty ()) {
+        lay::InstanceMarker *marker = new_inst_marker (n_inst_marker, r->first.cv_index (), false);
+        marker->set (r->first.back ().inst_ptr, gt, *tv_list);
       }
 
     }
@@ -3216,7 +2557,7 @@ PartialService::partial_select (const db::DBox &box, lay::Editable::SelectionMod
   clear_partial_transient_selection ();
 
   //  compute search box
-  double l = box.is_point () ? catch_distance () : catch_distance_box ();
+  double l = catch_distance ();
   db::DBox search_box = box.enlarged (db::DVector (l, l));
 
   bool needs_update = false;
@@ -3247,29 +2588,7 @@ PartialService::partial_select (const db::DBox &box, lay::Editable::SelectionMod
 
   } else {
 
-    int shape_flags = 0;
-    if (edt::polygons_enabled ()) {
-      shape_flags |= db::ShapeIterator::Polygons;
-    }
-    if (edt::paths_enabled ()) {
-      //  Note: points, edges and edge pairs don't have separate entires, so
-      //  we count them as paths here
-      shape_flags |= db::ShapeIterator::Paths;
-      shape_flags |= db::ShapeIterator::Edges;
-      shape_flags |= db::ShapeIterator::EdgePairs;
-      shape_flags |= db::ShapeIterator::Points;
-    }
-    if (edt::boxes_enabled ()) {
-      shape_flags |= db::ShapeIterator::Boxes;
-    }
-    if (edt::points_enabled ()) {
-      shape_flags |= db::ShapeIterator::Points;
-    }
-    if (edt::texts_enabled ()) {
-      shape_flags |= db::ShapeIterator::Texts;
-    }
-
-    PartialShapeFinder finder (box.is_point (), m_top_level_sel, db::ShapeIterator::flags_type (shape_flags));
+    PartialShapeFinder finder (box.is_point (), m_top_level_sel, db::ShapeIterator::All);
     finder.find (view (), search_box);
 
     //  We must make sure that guiding shapes are only selected alone. The first selected object will 
@@ -3319,9 +2638,9 @@ PartialService::partial_select (const db::DBox &box, lay::Editable::SelectionMod
     }
 
     //  check, if there is a selected instance inside the box - in this case, we do not do a new selection
-    if (! box.is_point () && edt::instances_enabled ()) {
+    if (! box.is_point ()) {
 
-      lay::InstFinder inst_finder (box.is_point (), m_top_level_sel, true /*full arrays*/, true /*enclose*/, 0 /*no excludes*/, true /*visible layers*/);
+      lay::InstFinder inst_finder (box.is_point (), m_top_level_sel, true /*full arrays*/, true /*enclose*/, 0 /*no exludes*/, true /*visible layers*/);
       inst_finder.find (view (), search_box);
 
       //  collect the founds from the finder
@@ -3407,19 +2726,19 @@ PartialService::handle_guiding_shape_changes ()
     parent_inst = s->first.back ().inst_ptr;
   }
 
-  db::property_names_id_type name_id = db::property_names_id ("name");
+  db::property_names_id_type pn = layout->properties_repository ().prop_name_id ("name");
 
-  const db::PropertiesSet &input_props = db::properties (s->first.shape ().prop_id ());
-  tl::Variant name_value = input_props.value (name_id);
-  if (name_value.is_nil ()) {
+  const db::PropertiesRepository::properties_set &input_props = layout->properties_repository ().properties (s->first.shape ().prop_id ());
+  db::PropertiesRepository::properties_set::const_iterator input_pv = input_props.find (pn);
+  if (input_pv == input_props.end ()) {
     return false;
   }
 
-  std::string shape_name = name_value.to_string ();
+  std::string shape_name = input_pv->second.to_string ();
 
   //  Hint: get_parameters_from_pcell_and_guiding_shapes invalidates the shapes because it resets the changed
   //  guiding shapes. We must not access s->shape after that.
-  if (! lay::get_parameters_from_pcell_and_guiding_shapes (layout, s->first.cell_index (), parameters_for_pcell)) {
+  if (! get_parameters_from_pcell_and_guiding_shapes (layout, s->first.cell_index (), parameters_for_pcell)) {
     return false;
   }
 
@@ -3432,14 +2751,17 @@ PartialService::handle_guiding_shape_changes ()
     //  try to identify the selected shape in the new shapes and select this one
     db::Shapes::shape_iterator sh = layout->cell (new_inst.cell_index ()).shapes (layout->guiding_shape_layer ()).begin (db::ShapeIterator::All);
     while (! sh.at_end ()) {
-      const db::PropertiesSet &props = db::properties (sh->prop_id ());
-      if (props.value (name_id) == shape_name) {
-        lay::ObjectInstPath inst_path = s->first;
-        inst_path.back ().inst_ptr = new_inst;
-        inst_path.back ().array_inst = new_inst.begin ();
-        inst_path.set_shape (*sh);
-        new_sel.insert (std::make_pair (inst_path, s->second));
-        break;
+      const db::PropertiesRepository::properties_set &props = layout->properties_repository ().properties (sh->prop_id ());
+      db::PropertiesRepository::properties_set::const_iterator pv = props.find (pn);
+      if (pv != props.end ()) {
+        if (pv->second.to_string () == shape_name) {
+          lay::ObjectInstPath inst_path = s->first;
+          inst_path.back ().inst_ptr = new_inst;
+          inst_path.back ().array_inst = new_inst.begin ();
+          inst_path.set_shape (*sh);
+          new_sel.insert (std::make_pair (inst_path, s->second));
+          break;
+        }
       }
       ++sh;
     }

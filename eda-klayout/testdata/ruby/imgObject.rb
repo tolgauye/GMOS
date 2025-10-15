@@ -1,7 +1,7 @@
 # encoding: UTF-8
 
 # KLayout Layout Viewer
-# Copyright (C) 2006-2025 Matthias Koefferlein
+# Copyright (C) 2006-2019 Matthias Koefferlein
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -53,31 +53,14 @@ class IMG_TestClass < TestBase
     assert_equal(dm.num_colormap_entries, 0)
     dm.add_colormap_entry(0, 0x123456);
     dm.add_colormap_entry(0.5, 0xff0000);
-    dm.add_colormap_entry(0.75, 0x123456, 0x654321);
     dm.add_colormap_entry(1.0, 0x00ff00);
-    assert_equal(dm.num_colormap_entries, 4)
+    assert_equal(dm.num_colormap_entries, 3)
     assert_equal(dm.colormap_color(0) & 0xffffff, 0x123456)
     assert_equal(dm.colormap_value(0), 0.0)
     assert_equal(dm.colormap_color(1) & 0xffffff, 0xff0000)
-    assert_equal(dm.colormap_lcolor(1) & 0xffffff, 0xff0000)
-    assert_equal(dm.colormap_rcolor(1) & 0xffffff, 0xff0000)
     assert_equal(dm.colormap_value(1), 0.5)
-    assert_equal(dm.colormap_color(2) & 0xffffff, 0x123456)
-    assert_equal(dm.colormap_lcolor(2) & 0xffffff, 0x123456)
-    assert_equal(dm.colormap_rcolor(2) & 0xffffff, 0x654321)
-    assert_equal(dm.colormap_value(2), 0.75)
-    assert_equal(dm.colormap_color(3) & 0xffffff, 0x00ff00)
-    assert_equal(dm.colormap_value(3), 1.0)
-
-    image = RBA::Image.new 
-    image.data_mapping = dm
-
-    dm2 = image.data_mapping
-    assert_equal(dm2.num_colormap_entries, 4)
-
-    dm.clear_colormap
-    assert_equal(dm2.num_colormap_entries, 4)
-    assert_equal(dm.num_colormap_entries, 0)
+    assert_equal(dm.colormap_color(2) & 0xffffff, 0x00ff00)
+    assert_equal(dm.colormap_value(2), 1.0)
 
   end
 
@@ -91,20 +74,11 @@ class IMG_TestClass < TestBase
     assert_equal(image.to_s, "empty:")
     assert_equal(image.is_empty?, true)
 
-    image2 = RBA::Image::from_s(image.to_s)
-    assert_equal(image2.to_s, image.to_s)
-
     image = RBA::Image.new(2, 3, [])
     assert_equal(image.to_s, "mono:matrix=(1,0,0) (0,1,0) (0,0,1);min_value=0;max_value=1;is_visible=true;z_position=0;brightness=0;contrast=0;gamma=1;red_gain=1;green_gain=1;blue_gain=1;color_mapping=[0,'#000000';1,'#ffffff';];width=2;height=3;data=[0;0;0;0;0;0;]")
 
-    image2 = RBA::Image::from_s(image.to_s)
-    assert_equal(image2.to_s, image.to_s)
-
     image = RBA::Image.new(2, 3, [], [], [])
     assert_equal(image.to_s, "color:matrix=(1,0,0) (0,1,0) (0,0,1);min_value=0;max_value=1;is_visible=true;z_position=0;brightness=0;contrast=0;gamma=1;red_gain=1;green_gain=1;blue_gain=1;color_mapping=[0,'#000000';1,'#ffffff';];width=2;height=3;data=[0,0,0;0,0,0;0,0,0;0,0,0;0,0,0;0,0,0;]")
-
-    image2 = RBA::Image::from_s(image.to_s)
-    assert_equal(image2.to_s, image.to_s)
 
     data = [0.0, 0.5, 1.5, 2.5, 10, 20]
     image = RBA::Image.new(2, 3, data)
@@ -135,14 +109,9 @@ class IMG_TestClass < TestBase
     assert_equal(ii.mask(1, 2), true)
     assert_equal(ii.to_s, "mono:matrix=(0,-2.5,-2.75) (2.5,0,7.5) (0,0,1);min_value=0;max_value=1;is_visible=true;z_position=0;brightness=0;contrast=0;gamma=1;red_gain=1;green_gain=1;blue_gain=1;color_mapping=[0,'#000000';1,'#ffffff';];width=2;height=3;data=[0;0.5;1.5;2.5;10;20;]")
     image.set_mask(1, 2, false)
-    md = image.mask_data
     assert_equal(ii.to_s, "mono:matrix=(0,-2.5,-2.75) (2.5,0,7.5) (0,0,1);min_value=0;max_value=1;is_visible=true;z_position=0;brightness=0;contrast=0;gamma=1;red_gain=1;green_gain=1;blue_gain=1;color_mapping=[0,'#000000';1,'#ffffff';];width=2;height=3;data=[0,1;0.5,1;1.5,1;2.5,1;10,1;20,0;]")
     assert_equal(ii.mask(1, 2), false)
     image.set_mask(1, 2, true)
-    assert_equal(ii.mask(1, 2), true)
-    image.mask_data = md 
-    assert_equal(ii.mask(1, 2), false)
-    image.mask_data = [] 
     assert_equal(ii.mask(1, 2), true)
 
     image.set_data(2, 3, data, data2, [])
@@ -161,12 +130,6 @@ class IMG_TestClass < TestBase
     assert_equal(image.get_pixel(1, 2, 2), 300)
 
     image.set_data(2, 3, data)
-    assert_equal(image.to_s, "mono:matrix=(0,-2.5,-2.75) (2.5,0,7.5) (0,0,1);min_value=0;max_value=1;is_visible=true;z_position=0;brightness=0;contrast=0;gamma=1;red_gain=1;green_gain=1;blue_gain=1;color_mapping=[0,'#000000';1,'#ffffff';];width=2;height=3;data=[0;0.5;1.5;2.5;10;20;]")
-
-    d = image.data
-    image.set_data(2, 3, [])
-    assert_equal(image.to_s, "mono:matrix=(0,-2.5,-2.75) (2.5,0,7.5) (0,0,1);min_value=0;max_value=1;is_visible=true;z_position=0;brightness=0;contrast=0;gamma=1;red_gain=1;green_gain=1;blue_gain=1;color_mapping=[0,'#000000';1,'#ffffff';];width=2;height=3;data=[0;0;0;0;0;0;]")
-    image.set_data(2, 3, d)
     assert_equal(image.to_s, "mono:matrix=(0,-2.5,-2.75) (2.5,0,7.5) (0,0,1);min_value=0;max_value=1;is_visible=true;z_position=0;brightness=0;contrast=0;gamma=1;red_gain=1;green_gain=1;blue_gain=1;color_mapping=[0,'#000000';1,'#ffffff';];width=2;height=3;data=[0;0.5;1.5;2.5;10;20;]")
 
     assert_equal(image.width, 2);
@@ -190,18 +153,18 @@ class IMG_TestClass < TestBase
 
     assert_equal(image.filename, "")
 
-    fn = ENV["TESTSRC"] + "/testdata/img/gs.png"
-
-    image = RBA::Image.new(fn)
-    assert_equal(image.trans.to_s, "r0 *1 -513.5,-349")
-    assert_equal(image.width, 1027)
-    assert_equal(image.height, 698)
-    assert_equal(image.filename, fn)
-    
-    image = RBA::Image.new(fn, t)
-    assert_equal(image.trans.to_s, "r90 *1 873.5,-1278.75")
-    assert_equal(image.width, 1027)
-    assert_equal(image.height, 698)
+    if false 
+      image = RBA::Image.new("/home/matthias/a.png")
+      assert_equal(image.trans.to_s, "r0 *1 0,0")
+      assert_equal(image.width, 728)
+      assert_equal(image.height, 762)
+      assert_equal(image.filename, "/home/matthias/a.png")
+      
+      image = RBA::Image.new("/home/matthias/a.png", t)
+      assert_equal(image.trans.to_s, "r90 *2.5 1,5")
+      assert_equal(image.width, 728)
+      assert_equal(image.height, 762)
+    end
     
     image.min_value = -12.5
     assert_equal(image.min_value, -12.5)
@@ -212,14 +175,6 @@ class IMG_TestClass < TestBase
     image = copy1
     assert_equal(image.to_s, "color:matrix=(0,-2.5,-2.75) (2.5,0,7.5) (0,0,1);min_value=0;max_value=1;is_visible=true;z_position=0;brightness=0;contrast=0;gamma=1;red_gain=1;green_gain=1;blue_gain=1;color_mapping=[0,'#000000';1,'#ffffff';];width=2;height=3;data=[0,1,0;0.5,1.5,0;1.5,2.5,0;2.5,3.5,0;10,0,0;20,0,0;]")
 
-    assert_equal(image.layer_binding.to_s, "")
-    image.layer_binding = RBA::LayerInfo::new(17, 42)
-    assert_equal(image.layer_binding.to_s, "17/42")
-    assert_equal(image.to_s, "color:matrix=(0,-2.5,-2.75) (2.5,0,7.5) (0,0,1);min_value=0;max_value=1;is_visible=true;z_position=0;layer_binding=17/42;brightness=0;contrast=0;gamma=1;red_gain=1;green_gain=1;blue_gain=1;color_mapping=[0,'#000000';1,'#ffffff';];width=2;height=3;data=[0,1,0;0.5,1.5,0;1.5,2.5,0;2.5,3.5,0;10,0,0;20,0,0;]")
-    assert_equal(RBA::Image::from_s(image.to_s).to_s, image.to_s)
-    image.layer_binding = RBA::LayerInfo::new
-    assert_equal(image.layer_binding.to_s, "")
-
     dm = image.data_mapping.dup
     dm.brightness=0.5
     image.data_mapping = dm
@@ -228,14 +183,6 @@ class IMG_TestClass < TestBase
     assert_equal(image.is_visible?, true)
     image.visible = false
     assert_equal(image.is_visible?, false)
-    assert_equal(image.to_s, "color:matrix=(0,-2.5,-2.75) (2.5,0,7.5) (0,0,1);min_value=0;max_value=1;is_visible=false;z_position=0;brightness=0.5;contrast=0;gamma=1;red_gain=1;green_gain=1;blue_gain=1;color_mapping=[0,'#000000';1,'#ffffff';];width=2;height=3;data=[0,1,0;0.5,1.5,0;1.5,2.5,0;2.5,3.5,0;10,0,0;20,0,0;]")
-
-    d1 = image.data(0)
-    d2 = image.data(1)
-    d3 = image.data(2)
-    image.set_data(2, 3, [], [], [])
-    assert_equal(image.to_s, "color:matrix=(0,-2.5,-2.75) (2.5,0,7.5) (0,0,1);min_value=0;max_value=1;is_visible=false;z_position=0;brightness=0.5;contrast=0;gamma=1;red_gain=1;green_gain=1;blue_gain=1;color_mapping=[0,'#000000';1,'#ffffff';];width=2;height=3;data=[0,0,0;0,0,0;0,0,0;0,0,0;0,0,0;0,0,0;]")
-    image.set_data(2, 3, d1, d2, d3)
     assert_equal(image.to_s, "color:matrix=(0,-2.5,-2.75) (2.5,0,7.5) (0,0,1);min_value=0;max_value=1;is_visible=false;z_position=0;brightness=0.5;contrast=0;gamma=1;red_gain=1;green_gain=1;blue_gain=1;color_mapping=[0,'#000000';1,'#ffffff';];width=2;height=3;data=[0,1,0;0.5,1.5,0;1.5,2.5,0;2.5,3.5,0;10,0,0;20,0,0;]")
 
   end
@@ -401,57 +348,6 @@ class IMG_TestClass < TestBase
     assert_equal(total, 0)
 
     mw.close_all
-
-  end
-
-  def test_5
-
-    tmp = File::join($ut_testtmp, "tmp.lyimg")
-
-    t = RBA::DCplxTrans.new(2.5, 90, false, RBA::DPoint.new(1, 5))
-
-    image = RBA::Image.new(2, 3, t, [1,2,3,4,5,6])
-    assert_equal(image.to_s, "mono:matrix=(0,-2.5,-2.75) (2.5,0,7.5) (0,0,1);min_value=0;max_value=1;is_visible=true;z_position=0;brightness=0;contrast=0;gamma=1;red_gain=1;green_gain=1;blue_gain=1;color_mapping=[0,'#000000';1,'#ffffff';];width=2;height=3;data=[1;2;3;4;5;6;]")
-
-    image.write(tmp)
-
-    image.clear
-    assert_equal(image.to_s, "mono:matrix=(0,-2.5,-2.75) (2.5,0,7.5) (0,0,1);min_value=0;max_value=1;is_visible=true;z_position=0;brightness=0;contrast=0;gamma=1;red_gain=1;green_gain=1;blue_gain=1;color_mapping=[0,'#000000';1,'#ffffff';];width=2;height=3;data=[0;0;0;0;0;0;]")
-
-    image2 = RBA::Image::read(tmp)
-    assert_equal(image2.to_s, "mono:matrix=(0,-2.5,-2.75) (2.5,0,7.5) (0,0,1);min_value=0;max_value=1;is_visible=true;z_position=0;brightness=0;contrast=0;gamma=1;red_gain=1;green_gain=1;blue_gain=1;color_mapping=[0,'#000000';1,'#ffffff';];width=2;height=3;data=[1;2;3;4;5;6;]")
-
-  end
-
-  # Construction from PixelBuffer
-  def test_6
-
-    fn = ENV["TESTSRC"] + "/testdata/img/gs.png"
-    pb = RBA::PixelBuffer::read_png(fn)
-
-    image = RBA::Image.new(pb)
-    assert_equal(image.trans.to_s, "r0 *1 -513.5,-349")
-
-    assert_equal(image.width, 1027)
-    assert_equal(image.height, 698)
-
-  end
-
-  # Construction from QImage
-  def test_7
-
-    if RBA.constants.find { |x| x == :QImage }
-
-      fn = ENV["TESTSRC"] + "/testdata/img/gs.png"
-      qimage = RBA::QImage::new(fn)
-
-      image = RBA::Image.new(qimage)
-      assert_equal(image.trans.to_s, "r0 *1 -513.5,-349")
-
-      assert_equal(image.width, 1027)
-      assert_equal(image.height, 698)
-
-    end
 
   end
 

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,6 @@
 
 
 #include "dbRegion.h"
-#include "dbRegionUtils.h"
 #include "dbOriginalLayerRegion.h"
 #include "dbEmptyRegion.h"
 #include "dbFlatRegion.h"
@@ -30,17 +29,153 @@
 #include "dbDeepEdges.h"
 #include "dbFlatEdges.h"
 #include "dbPolygonTools.h"
-#include "dbCompoundOperation.h"
-#include "dbLayout.h"
-#include "dbWriter.h"
-#include "tlStream.h"
 #include "tlGlobPattern.h"
-
-//  NOTE: include this to provide the symbols for "make_variant"
-#include "gsiDecl.h"
 
 namespace db
 {
+
+namespace
+{
+
+// -------------------------------------------------------------------------------------------------------------
+//  Strange polygon processor
+
+/**
+ *  @brief A helper class to implement the strange polygon detector
+ */
+struct StrangePolygonInsideFunc
+{
+  inline bool operator() (int wc) const
+  {
+    return wc < 0 || wc > 1;
+  }
+};
+
+class StrangePolygonCheckProcessor
+  : public PolygonProcessorBase
+{
+public:
+  StrangePolygonCheckProcessor () { }
+
+  virtual void process (const db::Polygon &poly, std::vector<db::Polygon> &res) const
+  {
+    EdgeProcessor ep;
+    ep.insert (poly);
+
+    StrangePolygonInsideFunc inside;
+    db::GenericMerge<StrangePolygonInsideFunc> op (inside);
+    db::PolygonContainer pc (res, false);
+    db::PolygonGenerator pg (pc, false, false);
+    ep.process (pg, op);
+  }
+
+  virtual const TransformationReducer *vars () const { return 0; }
+  virtual bool result_is_merged () const { return false; }
+  virtual bool requires_raw_input () const { return true; }
+  virtual bool wants_variants () const { return true; }
+  virtual bool result_must_not_be_merged () const { return false; }
+};
+
+// -------------------------------------------------------------------------------------------------------------
+//  Smoothing processor
+
+class SmoothingProcessor
+  : public PolygonProcessorBase
+{
+public:
+  SmoothingProcessor (db::Coord d) : m_d (d) { }
+
+  virtual void process (const db::Polygon &poly, std::vector<db::Polygon> &res) const
+  {
+    res.push_back (db::smooth (poly, m_d));
+  }
+
+  virtual const TransformationReducer *vars () const { return &m_vars; }
+  virtual bool result_is_merged () const { return false; }
+  virtual bool requires_raw_input () const { return false; }
+  virtual bool wants_variants () const { return true; }
+  virtual bool result_must_not_be_merged () const { return false; }
+
+private:
+  db::Coord m_d;
+  db::MagnificationReducer m_vars;
+};
+
+// -------------------------------------------------------------------------------------------------------------
+//  Rounded corners processor
+
+class RoundedCornersProcessor
+  : public PolygonProcessorBase
+{
+public:
+  RoundedCornersProcessor (double rinner, double router, unsigned int n)
+    : m_rinner (rinner), m_router (router), m_n (n)
+  { }
+
+  virtual void process (const db::Polygon &poly, std::vector<db::Polygon> &res) const
+  {
+    res.push_back (db::compute_rounded (poly, m_rinner, m_router, m_n));
+  }
+
+  virtual const TransformationReducer *vars () const { return &m_vars; }
+  virtual bool result_is_merged () const { return true; }   //  we believe so ...
+  virtual bool requires_raw_input () const { return false; }
+  virtual bool wants_variants () const { return true; }
+  virtual bool result_must_not_be_merged () const { return false; }
+
+private:
+  double m_rinner, m_router;
+  unsigned int m_n;
+  db::MagnificationReducer m_vars;
+};
+
+// -------------------------------------------------------------------------------------------------------------
+//  Holes decomposition processor
+
+class HolesExtractionProcessor
+  : public PolygonProcessorBase
+{
+public:
+  HolesExtractionProcessor () { }
+
+  virtual void process (const db::Polygon &poly, std::vector<db::Polygon> &res) const
+  {
+    for (size_t i = 0; i < poly.holes (); ++i) {
+      res.push_back (db::Polygon ());
+      res.back ().assign_hull (poly.begin_hole ((unsigned int) i), poly.end_hole ((unsigned int) i));
+    }
+  }
+
+  virtual const TransformationReducer *vars () const { return 0; }
+  virtual bool result_is_merged () const { return true; }   //  we believe so ...
+  virtual bool requires_raw_input () const { return false; }
+  virtual bool wants_variants () const { return true; }
+  virtual bool result_must_not_be_merged () const { return false; }
+};
+
+// -------------------------------------------------------------------------------------------------------------
+//  Hull extraction processor
+
+class HullExtractionProcessor
+  : public PolygonProcessorBase
+{
+public:
+  HullExtractionProcessor () { }
+
+  virtual void process (const db::Polygon &poly, std::vector<db::Polygon> &res) const
+  {
+    res.push_back (db::Polygon ());
+    res.back ().assign_hull (poly.begin_hull (), poly.end_hull ());
+  }
+
+  virtual const TransformationReducer *vars () const { return 0; }
+  virtual bool result_is_merged () const { return true; }   //  we believe so ...
+  virtual bool requires_raw_input () const { return false; }
+  virtual bool wants_variants () const { return true; }
+  virtual bool result_must_not_be_merged () const { return false; }
+};
+
+}
 
 // -------------------------------------------------------------------------------------------------------------
 //  Region implementation
@@ -58,7 +193,7 @@ Region::Region (RegionDelegate *delegate)
 }
 
 Region::Region (const Region &other)
-  : db::ShapeCollection (), mp_delegate (other.mp_delegate->clone ())
+  : gsi::ObjectBase (), mp_delegate (other.mp_delegate->clone ())
 {
   //  .. nothing yet ..
 }
@@ -77,42 +212,14 @@ Region &Region::operator= (const Region &other)
   return *this;
 }
 
-Region::Region (const RecursiveShapeIterator &si, bool merged_semantics, bool is_merged)
+Region::Region (const RecursiveShapeIterator &si)
 {
-  mp_delegate = new OriginalLayerRegion (si, db::ICplxTrans (), merged_semantics, is_merged);
+  mp_delegate = new OriginalLayerRegion (si);
 }
 
-Region::Region (const RecursiveShapeIterator &si, const db::ICplxTrans &trans, bool merged_semantics, bool is_merged)
+Region::Region (const RecursiveShapeIterator &si, const db::ICplxTrans &trans, bool merged_semantics)
 {
-  mp_delegate = new OriginalLayerRegion (si, trans, merged_semantics, is_merged);
-}
-
-Region::Region (const Shapes &shapes, bool merged_semantics, bool is_merged)
-{
-  db::FlatRegion *flat_region = new FlatRegion (is_merged);
-  flat_region->reserve (shapes.size (db::ShapeIterator::Regions));
-
-  //  NOTE: we need to normalize the shapes to polygons because this is what the flat region expects
-  for (auto s = shapes.begin (db::ShapeIterator::Regions); ! s.at_end (); ++s) {
-    flat_region->insert (*s);
-  }
-
-  mp_delegate = flat_region;
-  mp_delegate->set_merged_semantics (merged_semantics);
-}
-
-Region::Region (const Shapes &shapes, const db::ICplxTrans &trans, bool merged_semantics, bool is_merged)
-{
-  db::FlatRegion *flat_region = new FlatRegion (is_merged);
-  flat_region->reserve (shapes.size (db::ShapeIterator::Regions));
-
-  //  NOTE: we need to normalize the shapes to polygons because this is what the flat region expects
-  for (auto s = shapes.begin (db::ShapeIterator::Regions); ! s.at_end (); ++s) {
-    flat_region->insert (*s, trans);
-  }
-
-  mp_delegate = flat_region;
-  mp_delegate->set_merged_semantics (merged_semantics);
+  mp_delegate = new OriginalLayerRegion (si, trans, merged_semantics);
 }
 
 Region::Region (const RecursiveShapeIterator &si, DeepShapeStore &dss, double area_ratio, size_t max_vertex_count)
@@ -132,28 +239,11 @@ Region::Region (DeepShapeStore &dss)
   mp_delegate = new db::DeepRegion (db::DeepLayer (&dss, layout_index, dss.layout (layout_index).insert_layer ()));
 }
 
-void
-Region::write (const std::string &fn) const
-{
-  //  method provided for debugging purposes
-
-  db::Layout layout;
-  const db::Cell &top = layout.cell (layout.add_cell ("REGION"));
-  unsigned int li = layout.insert_layer (db::LayerProperties (0, 0));
-  insert_into (&layout, top.cell_index (), li);
-
-  tl::OutputStream os (fn);
-  db::SaveLayoutOptions opt;
-  opt.set_format_from_filename (fn);
-  db::Writer writer (opt);
-  writer.write (layout, os);
-}
-
 const db::RecursiveShapeIterator &
 Region::iter () const
 {
   static db::RecursiveShapeIterator def_iter;
-  const db::RecursiveShapeIterator *i = mp_delegate ? mp_delegate->iter () : 0;
+  const db::RecursiveShapeIterator *i = mp_delegate->iter ();
   return *(i ? i : &def_iter);
 }
 
@@ -179,13 +269,13 @@ Region::clear ()
 void
 Region::reserve (size_t n)
 {
-  mutable_region ()->reserve (n);
+  flat_region ()->reserve (n);
 }
 
 template <class T>
 Region &Region::transform (const T &trans)
 {
-  mutable_region ()->transform (trans);
+  flat_region ()->transform (trans);
   return *this;
 }
 
@@ -193,94 +283,48 @@ Region &Region::transform (const T &trans)
 template DB_PUBLIC Region &Region::transform (const db::ICplxTrans &);
 template DB_PUBLIC Region &Region::transform (const db::Trans &);
 template DB_PUBLIC Region &Region::transform (const db::Disp &);
-template DB_PUBLIC Region &Region::transform (const db::IMatrix2d &);
-template DB_PUBLIC Region &Region::transform (const db::IMatrix3d &);
 
 template <class Sh>
 void Region::insert (const Sh &shape)
 {
-  mutable_region ()->insert (shape);
+  flat_region ()->insert (shape);
 }
 
 template DB_PUBLIC void Region::insert (const db::Box &);
-template DB_PUBLIC void Region::insert (const db::BoxWithProperties &);
 template DB_PUBLIC void Region::insert (const db::SimplePolygon &);
-template DB_PUBLIC void Region::insert (const db::SimplePolygonWithProperties &);
 template DB_PUBLIC void Region::insert (const db::Polygon &);
-template DB_PUBLIC void Region::insert (const db::PolygonWithProperties &);
 template DB_PUBLIC void Region::insert (const db::Path &);
-template DB_PUBLIC void Region::insert (const db::PathWithProperties &);
 
 void Region::insert (const db::Shape &shape)
 {
-  mutable_region ()->insert (shape);
+  flat_region ()->insert (shape);
 }
 
 template <class T>
 void Region::insert (const db::Shape &shape, const T &trans)
 {
-  mutable_region ()->insert (shape, trans);
+  flat_region ()->insert (shape, trans);
 }
 
 template DB_PUBLIC void Region::insert (const db::Shape &, const db::ICplxTrans &);
 template DB_PUBLIC void Region::insert (const db::Shape &, const db::Trans &);
 template DB_PUBLIC void Region::insert (const db::Shape &, const db::Disp &);
 
-MutableRegion *
-Region::mutable_region ()
+FlatRegion *
+Region::flat_region ()
 {
-  MutableRegion *region = dynamic_cast<MutableRegion *> (mp_delegate);
+  FlatRegion *region = dynamic_cast<FlatRegion *> (mp_delegate);
   if (! region) {
-
-    FlatRegion *flat_region = new FlatRegion ();
-    region = flat_region;
-
+    region = new FlatRegion ();
     if (mp_delegate) {
-      flat_region->RegionDelegate::operator= (*mp_delegate);   //  copy basic flags
-      flat_region->insert_seq (begin ());
-      flat_region->set_is_merged (mp_delegate->is_merged ());
+      region->RegionDelegate::operator= (*mp_delegate);   //  copy basic flags
+      region->insert_seq (begin ());
+      region->set_is_merged (mp_delegate->is_merged ());
     }
-
-    set_delegate (flat_region);
-
+    set_delegate (region);
   }
 
   return region;
-}
-
-EdgePairs
-Region::cop_to_edge_pairs (db::CompoundRegionOperationNode &node, db::PropertyConstraint prop_constraint)
-{
-  tl_assert (node.result_type () == db::CompoundRegionOperationNode::EdgePairs);
-  return EdgePairs (mp_delegate->cop_to_edge_pairs (node, prop_constraint));
-}
-
-Region
-Region::cop_to_region (db::CompoundRegionOperationNode &node, db::PropertyConstraint prop_constraint)
-{
-  tl_assert (node.result_type () == db::CompoundRegionOperationNode::Region);
-  return Region (mp_delegate->cop_to_region (node, prop_constraint));
-}
-
-Edges
-Region::cop_to_edges (db::CompoundRegionOperationNode &node, db::PropertyConstraint prop_constraint)
-{
-  tl_assert (node.result_type () == db::CompoundRegionOperationNode::Edges);
-  return Edges (mp_delegate->cop_to_edges (node, prop_constraint));
-}
-
-tl::Variant
-Region::cop (db::CompoundRegionOperationNode &node, db::PropertyConstraint prop_constraint)
-{
-  if (node.result_type () == db::CompoundRegionOperationNode::EdgePairs) {
-    return tl::Variant::make_variant (new EdgePairs (mp_delegate->cop_to_edge_pairs (node, prop_constraint)));
-  } else if (node.result_type () == db::CompoundRegionOperationNode::Edges) {
-    return tl::Variant::make_variant (new Edges (mp_delegate->cop_to_edges (node, prop_constraint)));
-  } else if (node.result_type () == db::CompoundRegionOperationNode::Region) {
-    return tl::Variant::make_variant (new Region (mp_delegate->cop_to_region (node, prop_constraint)));
-  } else {
-    return tl::Variant ();
-  }
 }
 
 Region &
@@ -309,32 +353,6 @@ Region::sized (coord_type dx, coord_type dy, unsigned int mode) const
   return Region (mp_delegate->sized (dx, dy, mode));
 }
 
-Region &
-Region::size_inside (const db::Region &inside, bool outside, coord_type d, int steps, unsigned int mode)
-{
-  set_delegate (mp_delegate->sized_inside (inside, outside, d, steps, mode));
-  return *this;
-}
-
-Region &
-Region::size_inside (const db::Region &inside, bool outside, coord_type dx, coord_type dy, int steps, unsigned int mode)
-{
-  set_delegate (mp_delegate->sized_inside (inside, outside, dx, dy, steps, mode));
-  return *this;
-}
-
-Region
-Region::sized_inside (const db::Region &inside, bool outside, coord_type d, int steps, unsigned int mode) const
-{
-  return Region (mp_delegate->sized_inside (inside, outside, d, steps, mode));
-}
-
-Region
-Region::sized_inside (const db::Region &inside, bool outside, coord_type dx, coord_type dy, int steps, unsigned int mode) const
-{
-  return Region (mp_delegate->sized_inside (inside, outside, dx, dy, steps, mode));
-}
-
 void
 Region::round_corners (double rinner, double router, unsigned int n)
 {
@@ -348,22 +366,15 @@ Region::rounded_corners (double rinner, double router, unsigned int n) const
 }
 
 void
-Region::smooth (coord_type d, bool keep_hv)
+Region::smooth (coord_type d)
 {
-  process (SmoothingProcessor (d, keep_hv));
+  process (SmoothingProcessor (d));
 }
 
 Region
-Region::smoothed (coord_type d, bool keep_hv) const
+Region::smoothed (coord_type d) const
 {
-  return processed (SmoothingProcessor (d, keep_hv));
-}
-
-db::Region &
-Region::flatten ()
-{
-  mutable_region ()->flatten ();
-  return *this;
+  return processed (SmoothingProcessor (d));
 }
 
 void
@@ -454,12 +465,10 @@ static void fill_texts (const Iter &iter, const std::string &pat, bool pattern, 
   const db::Layout *layout = 0;
 
   if (org_deep) {
-    //  NOTE: deep regions can store texts in a special way - as small boxes with a special property attached.
-    //  The property will give the text string. This function can restore these pseudo-texts as Text objects.
     layout = &org_deep->deep_layer ().layout ();
     const db::DeepShapeStore *store = org_deep->deep_layer ().store ();
     if (! store->text_property_name ().is_nil ()) {
-      text_annot_name_id = db::PropertiesRepository::instance ().get_id_of_name (store->text_property_name ());
+      text_annot_name_id = layout->properties_repository ().get_id_of_name (store->text_property_name ());
     }
   }
 
@@ -487,11 +496,11 @@ static void fill_texts (const Iter &iter, const std::string &pat, bool pattern, 
     } else if (layout && text_annot_name_id.first && si->prop_id () > 0) {
 
       //  a text marker
-      const db::PropertiesSet &ps = db::properties (si->prop_id ());
+      const db::PropertiesRepository::properties_set &ps = layout->properties_repository ().properties (si->prop_id ());
 
-      for (db::PropertiesSet::iterator j = ps.begin (); j != ps.end () && ! is_text; ++j) {
+      for (db::PropertiesRepository::properties_set::const_iterator j = ps.begin (); j != ps.end () && ! is_text; ++j) {
         if (j->first == text_annot_name_id.second) {
-          text_string = db::property_value (j->second).to_string ();
+          text_string = j->second.to_string ();
           is_text = true;
         }
       }
@@ -518,7 +527,7 @@ public:
       mp_layout = & org_deep->deep_layer ().layout ();
       const db::DeepShapeStore *store = org_deep->deep_layer ().store ();
       if (! store->text_property_name ().is_nil ()) {
-        m_text_annot_name_id = db::PropertiesRepository::instance ().get_id_of_name (store->text_property_name ());
+        m_text_annot_name_id = mp_layout->properties_repository ().get_id_of_name (store->text_property_name ());
       }
     }
 
@@ -531,7 +540,7 @@ public:
     }
   }
 
-  virtual void push (const db::Shape &shape, db::properties_id_type, const db::ICplxTrans &trans, const db::Box &region, const db::RecursiveShapeReceiver::box_tree_type *complex_region, db::Shapes *target)
+  virtual void push (const db::Shape &shape, const db::ICplxTrans &trans, const db::Box &region, const db::RecursiveShapeReceiver::box_tree_type *complex_region, db::Shapes *target)
   {
     bool is_text = false;
     std::string text_string;
@@ -545,11 +554,11 @@ public:
     } else if (mp_layout && m_text_annot_name_id.first && shape.prop_id () > 0) {
 
       //  a text marker
-      const db::PropertiesSet &ps = db::properties (shape.prop_id ());
+      const db::PropertiesRepository::properties_set &ps = mp_layout->properties_repository ().properties (shape.prop_id ());
 
-      for (db::PropertiesSet::iterator j = ps.begin (); j != ps.end () && ! is_text; ++j) {
+      for (db::PropertiesRepository::properties_set::const_iterator j = ps.begin (); j != ps.end () && ! is_text; ++j) {
         if (j->first == m_text_annot_name_id.second) {
-          text_string = db::property_value (j->second).to_string ();
+          text_string = j->second.to_string ();
           is_text = true;
         }
       }
@@ -574,8 +583,8 @@ public:
     }
   }
 
-  virtual void push (const db::Box &, db::properties_id_type, const db::ICplxTrans &, const db::Box &, const db::RecursiveShapeReceiver::box_tree_type *, db::Shapes *) { }
-  virtual void push (const db::Polygon &, db::properties_id_type, const db::ICplxTrans &, const db::Box &, const db::RecursiveShapeReceiver::box_tree_type *, db::Shapes *) { }
+  virtual void push (const db::Box &, const db::ICplxTrans &, const db::Box &, const db::RecursiveShapeReceiver::box_tree_type *, db::Shapes *) { }
+  virtual void push (const db::Polygon &, const db::ICplxTrans &, const db::Box &, const db::RecursiveShapeReceiver::box_tree_type *, db::Shapes *) { }
 
 private:
   Delivery m_delivery;
@@ -603,7 +612,7 @@ Region::texts_as_dots (const std::string &pat, bool pattern) const
     si.first.shape_flags (si.first.shape_flags () & db::ShapeIterator::Texts);
   }
 
-  std::unique_ptr<db::FlatEdges> res (new db::FlatEdges ());
+  std::auto_ptr<db::FlatEdges> res (new db::FlatEdges ());
   res->set_merged_semantics (false);
 
   fill_texts (si.first, pat, pattern, dot_delivery<db::FlatEdges> (), res.get (), si.second, dr);
@@ -625,28 +634,21 @@ Region::texts_as_dots (const std::string &pat, bool pattern, db::DeepShapeStore 
   if (! si.first.layout ()) {
 
     //  flat fallback if the source isn't a deep or original layer
-    std::unique_ptr<db::FlatEdges> res (new db::FlatEdges ());
+    std::auto_ptr<db::FlatEdges> res (new db::FlatEdges ());
     res->set_merged_semantics (false);
 
     fill_texts (si.first, pat, pattern, dot_delivery<db::FlatEdges> (), res.get (), si.second, dr);
 
-    Edges edges (res.release ());
-    edges.set_merged_semantics (false);
-    return edges;
+    return Edges (res.release ());
 
   }
-
-  db::Edges edges;
 
   text_shape_receiver<dot_delivery<db::Shapes> > pipe = text_shape_receiver<dot_delivery<db::Shapes> > (dot_delivery<db::Shapes> (), pat, pattern, dr);
   if (dr && dr->deep_layer ().store () == &store) {
-    edges = Edges (new db::DeepEdges (store.create_copy (dr->deep_layer (), &pipe)));
+    return Edges (new db::DeepEdges (store.create_copy (dr->deep_layer (), &pipe)));
   } else {
-    edges = Edges (new db::DeepEdges (store.create_custom_layer (si.first, &pipe, si.second)));
+    return Edges (new db::DeepEdges (store.create_custom_layer (si.first, &pipe, si.second)));
   }
-
-  edges.set_merged_semantics (false);
-  return edges;
 }
 
 Region
@@ -663,7 +665,7 @@ Region::texts_as_boxes (const std::string &pat, bool pattern, db::Coord enl) con
     si.first.shape_flags (si.first.shape_flags () & db::ShapeIterator::Texts);
   }
 
-  std::unique_ptr<db::FlatRegion> res (new db::FlatRegion ());
+  std::auto_ptr<db::FlatRegion> res (new db::FlatRegion ());
   res->set_merged_semantics (false);
 
   fill_texts (si.first, pat, pattern, box_delivery<db::FlatRegion> (enl), res.get (), si.second, dr);
@@ -685,7 +687,7 @@ Region::texts_as_boxes (const std::string &pat, bool pattern, db::Coord enl, db:
   if (! si.first.layout ()) {
 
     //  flat fallback if the source isn't a deep or original layer
-    std::unique_ptr<db::FlatRegion> res (new db::FlatRegion ());
+    std::auto_ptr<db::FlatRegion> res (new db::FlatRegion ());
     res->set_merged_semantics (false);
 
     fill_texts (si.first, pat, pattern, box_delivery<db::FlatRegion> (enl), res.get (), si.second, dr);
@@ -710,9 +712,6 @@ namespace tl
   {
     db::Polygon p;
 
-    if (ex.at_end ()) {
-      return true;
-    }
     if (! ex.try_read (p)) {
       return false;
     }
@@ -729,7 +728,7 @@ namespace tl
   template<> DB_PUBLIC void extractor_impl (tl::Extractor &ex, db::Region &b)
   {
     if (! test_extractor_impl (ex, b)) {
-      ex.error (tl::to_string (tr ("Expected a region specification")));
+      ex.error (tl::to_string (tr ("Expected an region collection specification")));
     }
   }
 }

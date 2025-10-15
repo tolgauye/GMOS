@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -109,14 +109,12 @@ public:
     : max_vertex_count (8000),
       no_zero_length_paths (false),
       multi_xy_records (false),
-      resolve_skew_arrays (false),
       max_cellname_length (32000),
       libname ("LIB"),
       user_units (1.0),
       write_timestamps (true),
       write_cell_properties (false),
-      write_file_properties (false),
-      default_text_size (-1.0)
+      write_file_properties (false)
   {
     //  .. nothing yet ..
   }
@@ -147,13 +145,6 @@ public:
    *  at the cost of incompatible formats.
    */
   bool multi_xy_records;
-
-  /**
-   *  @brief Resolve skew arrays into single instances
-   *
-   *  Setting this property to true will resolve skew (non-orthogonal) arrays into single instances.
-   */
-  bool resolve_skew_arrays;
 
   /**
    *  @brief Maximum length of cell names
@@ -191,14 +182,6 @@ public:
    *  @brief Write layout properties (non-standard PROPATTR/PROPVALUE records)
    */
   bool write_file_properties;
-
-  /**
-   *  @brief The default text size if none is given (in fact, if the text size is zero)
-   *
-   *  You can set to option to 0 to preserve the zero text size on writing.
-   *  A negative value means the text size is not set if missing.
-   */
-  double default_text_size;
 
   /**
    *  @brief Implementation of FormatSpecificWriterOptions

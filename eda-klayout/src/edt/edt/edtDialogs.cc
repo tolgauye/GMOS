@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -20,16 +20,13 @@
 
 */
 
-#if defined(HAVE_QT)
-
 #include "dbBox.h"
 #include "dbLayout.h"
 
 #include "edtDialogs.h"
-#include "layEditorUtils.h"
 #include "layObjectInstPath.h"
 #include "layCellView.h"
-#include "layLayoutViewBase.h"
+#include "layLayoutView.h"
 #include "layMarker.h"
 #include "tlException.h"
 #include "tlExceptions.h"
@@ -80,43 +77,33 @@ InstantiationForm::double_clicked (QListWidgetItem *item)
     return;
   }
 
-  int cv_index = mp_path->cv_index ();
-  const lay::CellView &cv = mp_view->cellview (cv_index);
-
-  lay::CellView::unspecific_cell_path_type path (cv.combined_unspecific_path ());
+  lay::CellView::unspecific_cell_path_type path (mp_view->cellview (mp_path->cv_index ()).combined_unspecific_path ());
   int nrow = 0;
-
-  for (lay::CellView::specific_cell_path_type::const_iterator p = cv.specific_path ().begin (); p != cv.specific_path ().end () && nrow < row; ++p, ++nrow) {
-    path.push_back (p->inst_ptr.cell_index ());
-  }
   for (lay::ObjectInstPath::iterator p = mp_path->begin (); p != mp_path->end () && nrow < row; ++p, ++nrow) {
     path.push_back (p->inst_ptr.cell_index ());
   }
 
-  mp_view->set_current_cell_path (cv_index, path);
+  mp_view->set_current_cell_path (mp_path->cv_index (), path);
 
   if (! mp_marker) {
-    mp_marker = new lay::Marker (mp_view, cv_index);
+    mp_marker = new lay::Marker (mp_view, mp_path->cv_index ());
   }
 
-  const db::Layout &layout = cv->layout ();
-  db::Box box = layout.cell (row == 0 ? cv.ctx_cell_index (): path.back ()).bbox ();
+  const db::Layout &layout = mp_view->cellview (mp_path->cv_index ())->layout ();
+  db::Box box = layout.cell (row == 0 ? mp_path->topcell () : path.back ()).bbox ();
 
   //  TODO: this does not consider global transformation and variants of this
   db::ICplxTrans abs_trans;
   nrow = 0;
-  for (lay::CellView::specific_cell_path_type::const_iterator p = cv.specific_path ().begin (); p != cv.specific_path ().end () && nrow < row; ++p, ++nrow) {
-    abs_trans = abs_trans * p->complex_trans ();
-  }
   for (lay::ObjectInstPath::iterator p = mp_path->begin (); p != mp_path->end () && nrow < row; ++p, ++nrow) {
-    abs_trans = abs_trans * p->complex_trans ();
+    abs_trans = abs_trans * (p->inst_ptr.cell_inst ().complex_trans (*(p->array_inst)));
   }
 
-  mp_marker->set (box, abs_trans, mp_view->cv_transform_variants (cv_index));
+  mp_marker->set (box, abs_trans, mp_view->cv_transform_variants (mp_path->cv_index ()));
 }
 
 void 
-InstantiationForm::show (lay::LayoutViewBase *view, const lay::ObjectInstPath &path)
+InstantiationForm::show (lay::LayoutView *view, const lay::ObjectInstPath &path)
 {
   mp_view = view;
   mp_path = &path;
@@ -147,15 +134,14 @@ InstantiationForm::update ()
   list->clear ();
 
   list->addItem (tl::to_qstring (cv->layout ().cell_name (cv.ctx_cell_index ())));
-  db::ICplxTrans abs_trans;
+  db::CplxTrans abs_trans;
 
   //  first include the context path of the cellview in order to tell the path within the cell shown
   for (lay::CellView::specific_cell_path_type::const_iterator p = cv.specific_path ().begin (); p != cv.specific_path ().end (); ++p) {
 
     //  build the instance information from the path
 
-    db::ICplxTrans trans = p->complex_trans ();
-    size_t n = p->array_inst.at_end () ? p->inst_ptr.cell_inst ().size () : size_t (1);
+    db::CplxTrans trans (p->inst_ptr.cell_inst ().complex_trans (*(p->array_inst)));
     abs_trans = abs_trans * trans;
 
     if (abs_coord) {
@@ -164,11 +150,8 @@ InstantiationForm::update ()
 
     std::string line;
     line += cv->layout ().cell_name (p->inst_ptr.cell_index ());
-    line += "\t" + tl::to_string (tr ("at")) + " ";
+    line += "\tat ";
     line += trans.to_string (true /*lazy*/, dbu_coord ? 0.0 : dbu);
-    if (n > 1) {
-      line += " " + tl::sprintf (tl::to_string (tr ("(first of %lu array members)")), (unsigned long) n);
-    }
     
     list->addItem (tl::to_qstring (line));
 
@@ -179,8 +162,7 @@ InstantiationForm::update ()
 
     //  build the instance information from the path
 
-    db::ICplxTrans trans = p->complex_trans ();
-    size_t n = p->array_inst.at_end () ? p->inst_ptr.cell_inst ().size () : size_t (1);
+    db::CplxTrans trans (p->inst_ptr.cell_inst ().complex_trans (*(p->array_inst)));
     abs_trans = abs_trans * trans;
 
     if (abs_coord) {
@@ -189,12 +171,9 @@ InstantiationForm::update ()
 
     std::string line;
     line += cv->layout ().cell_name (p->inst_ptr.cell_index ());
-    line += "\t" + tl::to_string (tr ("at")) + " ";
+    line += "\tat ";
     line += trans.to_string (true /*lazy*/, dbu_coord ? 0.0 : dbu);
-    if (n > 1) {
-      line += " " + tl::sprintf (tl::to_string (tr ("(first of %lu array members)")), (unsigned long) n);
-    }
-
+    
     list->addItem (tl::to_qstring (line));
 
   }
@@ -252,7 +231,7 @@ ChangeLayerOptionsDialog::~ChangeLayerOptionsDialog ()
 }
 
 bool 
-ChangeLayerOptionsDialog::exec_dialog (lay::LayoutViewBase *view, int cv_index, unsigned int &new_layer)
+ChangeLayerOptionsDialog::exec_dialog (lay::LayoutView *view, int cv_index, unsigned int &new_layer)
 {
   std::vector <std::pair <db::LayerProperties, unsigned int> > ll;
 
@@ -301,7 +280,7 @@ AlignOptionsDialog::~AlignOptionsDialog ()
 }
 
 bool 
-AlignOptionsDialog::exec_dialog (int &hmode, int &vmode, bool &visible_layers)
+AlignOptionsDialog::exec_dialog (lay::LayoutView * /*view*/, int &hmode, int &vmode, bool &visible_layers)
 {
   QRadioButton *hmode_buttons [] = { this->h_none_rb, this->h_left_rb, this->h_center_rb, this->h_right_rb };
   QRadioButton *vmode_buttons [] = { this->v_none_rb, this->v_top_rb, this->v_center_rb, this->v_bottom_rb };
@@ -332,93 +311,6 @@ AlignOptionsDialog::exec_dialog (int &hmode, int &vmode, bool &visible_layers)
         vmode = i;
       }
     }
-
-    visible_layers = false;
-    for (int i = 0; i < 2; ++i) {
-      if (layers_buttons [i]->isChecked ()) {
-        visible_layers = (i != 0);
-      }
-    }
-
-    return true;
-
-  } else {
-    return false;
-  }
-}
-
-// --------------------------------------------------------------------------------
-//  DistributeOptionsDialog implementation
-
-DistributeOptionsDialog::DistributeOptionsDialog (QWidget *parent)
-  : QDialog (parent)
-{
-  setObjectName (QString::fromUtf8 ("change_layer_options_dialog"));
-
-  Ui::DistributeOptionsDialog::setupUi (this);
-}
-
-DistributeOptionsDialog::~DistributeOptionsDialog ()
-{
-  //  .. nothing yet ..
-}
-
-bool
-DistributeOptionsDialog::exec_dialog (bool &hdistribute, int &hmode, double &hpitch, double &hspace, bool &vdistribute, int &vmode, double &vpitch, double &vspace, bool &visible_layers)
-{
-  QRadioButton *hmode_buttons [] = { this->h_none_rb, this->h_left_rb, this->h_center_rb, this->h_right_rb };
-  QRadioButton *vmode_buttons [] = { this->v_none_rb, this->v_top_rb, this->v_center_rb, this->v_bottom_rb };
-  QRadioButton *layers_buttons [] = { this->all_layers_rb, this->visible_layers_rb };
-
-  this->h_distribute->setChecked (hdistribute);
-  for (int i = 1; i < 4; ++i) {
-    hmode_buttons [i]->setChecked (hmode == i);
-  }
-
-  this->h_space->setText (tl::to_qstring (tl::micron_to_string (hspace)));
-  this->h_pitch->setText (tl::to_qstring (tl::micron_to_string (hpitch)));
-
-  this->v_distribute->setChecked (vdistribute);
-  for (int i = 1; i < 4; ++i) {
-    vmode_buttons [i]->setChecked (vmode == i);
-  }
-
-  this->v_space->setText (tl::to_qstring (tl::micron_to_string (vspace)));
-  this->v_pitch->setText (tl::to_qstring (tl::micron_to_string (vpitch)));
-
-  for (int i = 0; i < 2; ++i) {
-    layers_buttons [i]->setChecked (int (visible_layers) == i);
-  }
-
-  if (QDialog::exec ()) {
-
-    hdistribute = this->h_distribute->isChecked ();
-    hmode = -1;
-    for (int i = 1; i < 4; ++i) {
-      if (hmode_buttons [i]->isChecked ()) {
-        hmode = i;
-      }
-    }
-
-    hspace = 0.0;
-    tl::from_string_ext (tl::to_string (this->h_space->text ()), hspace);
-
-    hpitch = 0.0;
-    tl::from_string_ext (tl::to_string (this->h_pitch->text ()), hpitch);
-
-    vdistribute = this->v_distribute->isChecked ();
-    vmode = -1;
-    for (int i = 1; i < 4; ++i) {
-      if (vmode_buttons [i]->isChecked ()) {
-        vmode = i;
-      }
-    }
-
-    vspace = 0.0;
-    tl::from_string_ext (tl::to_string (this->v_space->text ()), vspace);
-
-    vpitch = 0.0;
-    tl::from_string_ext (tl::to_string (this->v_pitch->text ()), vpitch);
 
     visible_layers = false;
     for (int i = 0; i < 2; ++i) {
@@ -578,13 +470,13 @@ RoundCornerOptionsDialog::exec_dialog (const db::Layout &layout, double &router,
 
     undo_before_apply = m_has_extracted && amend_cb->isChecked ();
 
-    tl::from_string_ext (tl::to_string (router_le->text ()), router);
+    tl::from_string (tl::to_string (router_le->text ()), router);
     if (rinner_le->text ().isEmpty ()) {
       rinner = router;
     } else {
-      tl::from_string_ext (tl::to_string (rinner_le->text ()), rinner);
+      tl::from_string (tl::to_string (rinner_le->text ()), rinner);
     }
-    tl::from_string_ext (tl::to_string (points_le->text ()), npoints);
+    tl::from_string (tl::to_string (points_le->text ()), npoints);
 
     mp_layout = 0;
     return true;
@@ -603,13 +495,13 @@ BEGIN_PROTECTED;
   double rhull = 0.0, rholes = 0.0;
   unsigned int npoints = 0;
   
-  tl::from_string_ext (tl::to_string (router_le->text ()), rhull);
+  tl::from_string (tl::to_string (router_le->text ()), rhull);
   if (rinner_le->text ().isEmpty ()) {
     rholes = rhull;
   } else {
-    tl::from_string_ext (tl::to_string (rinner_le->text ()), rholes);
+    tl::from_string (tl::to_string (rinner_le->text ()), rholes);
   }
-  tl::from_string_ext (tl::to_string (points_le->text ()), npoints);
+  tl::from_string (tl::to_string (points_le->text ()), npoints);
 
   const unsigned int min_points = 16;
   const double seg_thr = 10.0; // in DBU
@@ -659,12 +551,12 @@ MakeArrayOptionsDialog::exec_dialog (db::DVector &a, unsigned int &na, db::DVect
     double bx = 0.0, by = 0.0;
     double ax = 0.0, ay = 0.0;
 
-    tl::from_string_ext (tl::to_string (column_x_le->text ()), bx);
-    tl::from_string_ext (tl::to_string (column_y_le->text ()), by);
-    tl::from_string_ext (tl::to_string (columns_le->text ()), nb);
-    tl::from_string_ext (tl::to_string (row_x_le->text ()), ax);
-    tl::from_string_ext (tl::to_string (row_y_le->text ()), ay);
-    tl::from_string_ext (tl::to_string (rows_le->text ()), na);
+    tl::from_string (tl::to_string (column_x_le->text ()), bx);
+    tl::from_string (tl::to_string (column_y_le->text ()), by);
+    tl::from_string (tl::to_string (columns_le->text ()), nb);
+    tl::from_string (tl::to_string (row_x_le->text ()), ax);
+    tl::from_string (tl::to_string (row_y_le->text ()), ay);
+    tl::from_string (tl::to_string (rows_le->text ()), na);
 
     a = db::DVector (ax, ay);
     b = db::DVector (bx, by);
@@ -686,12 +578,12 @@ BEGIN_PROTECTED;
   double ax = 0.0, ay = 0.0;
   int na, nb;
 
-  tl::from_string_ext (tl::to_string (column_x_le->text ()), bx);
-  tl::from_string_ext (tl::to_string (column_y_le->text ()), by);
-  tl::from_string_ext (tl::to_string (columns_le->text ()), nb);
-  tl::from_string_ext (tl::to_string (row_x_le->text ()), ax);
-  tl::from_string_ext (tl::to_string (row_y_le->text ()), ay);
-  tl::from_string_ext (tl::to_string (rows_le->text ()), na);
+  tl::from_string (tl::to_string (column_x_le->text ()), bx);
+  tl::from_string (tl::to_string (column_y_le->text ()), by);
+  tl::from_string (tl::to_string (columns_le->text ()), nb);
+  tl::from_string (tl::to_string (row_x_le->text ()), ax);
+  tl::from_string (tl::to_string (row_y_le->text ()), ay);
+  tl::from_string (tl::to_string (rows_le->text ()), na);
 
   if (na < 1 || nb < 1) {
     throw tl::Exception (tl::to_string (QObject::tr ("Invalid row or column count (must be larger or equal one)")));
@@ -702,30 +594,5 @@ BEGIN_PROTECTED;
 END_PROTECTED;
 }
 
-// --------------------------------------------------------------------------------
-//  AreaAndPerimeterDialog implementation
-
-AreaAndPerimeterDialog::AreaAndPerimeterDialog (QWidget *parent)
-  : QDialog (parent)
-{
-  setupUi (this);
 }
-
-AreaAndPerimeterDialog::~AreaAndPerimeterDialog ()
-{
-  //  .. nothing yet ..
-}
-
-bool
-AreaAndPerimeterDialog::exec_dialog (double area, double perimeter)
-{
-  area_le->setText (tl::to_qstring (tl::sprintf ("%.12g", area)));
-  perimeter_le->setText (tl::to_qstring (tl::sprintf ("%.12g", perimeter)));
-
-  return exec () != 0;
-}
-
-}
-
-#endif
 

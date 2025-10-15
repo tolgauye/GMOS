@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -30,14 +30,8 @@
 #include <string>
 #include <vector>
 
-#if !defined(HAVE_CURL) && !defined(HAVE_QT)
-#  error "tlWebDAV.h can only be used with either curl or Qt enabled"
-#endif
-
 namespace tl
 {
-
-class InputHttpStreamCallback;
 
 /**
  *  @brief Represents an item in a WebDAV collection
@@ -115,7 +109,7 @@ public:
    *  @brief Populates the collection from the given URL
    *  The depth value can be 0 (self only) or 1 (self + collection members).
    */
-  void read (const std::string &url, int depth, double timeout = 60.0, tl::InputHttpStreamCallback *callback = 0);
+  void read (const std::string &url, int depth);
 
   /**
    *  @brief Gets the items of this collection (begin iterator)
@@ -145,17 +139,17 @@ public:
    *
    *  Sub-directories are created if required.
    *
-   *  This method returns false if the directory structure could
+   *  This method throws an exception if the directory structure could
    *  not be obtained or downloading of one file failed.
    */
-  static bool download (const std::string &url, const std::string &target, double timeout = 60.0, tl::InputHttpStreamCallback *callback = 0);
+  static bool download (const std::string &url, const std::string &target);
 
   /**
    *  @brief Gets a stream object for downloading the single item of the given URL
    *
    *  The stream object returned needs to be deleted by the caller.
    */
-  static tl::InputStream *download_item (const std::string &url, double timeout = 60.0, tl::InputHttpStreamCallback *callback = 0);
+  static tl::InputStream *download_item (const std::string &url);
 
 private:
   container m_items;

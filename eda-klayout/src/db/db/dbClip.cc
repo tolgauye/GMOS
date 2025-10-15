@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -61,14 +61,14 @@ private:
 
 //  TODO: check, if the clip can be implemented by subsequent "cut" operations using all four borders
 //  Is that more efficient?
-template <class P, class Sink> static void
-clip_poly (const P &poly, const db::Box &box, Sink &psink, bool resolve_holes)
+template <class P, class PC> static void 
+clip_poly (const P &poly, const db::Box &box, std::vector <P> &clipped_poly, bool resolve_holes)
 {
   db::Box pbox = poly.box ();
 
   //  Polygon completely inside the clip box -> return the polygon
   if (pbox.inside (box)) {
-    psink.put (poly);
+    clipped_poly.push_back (poly);
     return;
   }
 
@@ -261,7 +261,9 @@ clip_poly (const P &poly, const db::Box &box, Sink &psink, bool resolve_holes)
   ep.insert_sequence (edges.begin (), edges.end ());
   edges.clear ();
 
-  db::PolygonGenerator poly_gen (psink);
+  PC poly_cont (clipped_poly);
+
+  db::PolygonGenerator poly_gen (poly_cont);
   poly_gen.min_coherence (false);
   poly_gen.resolve_holes (resolve_holes);
 
@@ -273,29 +275,13 @@ clip_poly (const P &poly, const db::Box &box, Sink &psink, bool resolve_holes)
 void 
 clip_poly (const db::Polygon &poly, const db::Box &box, std::vector <db::Polygon> &clipped_poly, bool resolve_holes)
 {
-  db::PolygonContainer pc (clipped_poly);
-  clip_poly (poly, box, pc, resolve_holes);
+  clip_poly<db::Polygon, db::PolygonContainer> (poly, box, clipped_poly, resolve_holes);
 }
 
 void 
 clip_poly (const db::SimplePolygon &poly, const db::Box &box, std::vector <db::SimplePolygon> &clipped_poly, bool resolve_holes)
 {
-  db::SimplePolygonContainer pc (clipped_poly);
-  clip_poly (poly, box, pc, resolve_holes);
-}
-
-void
-clip_poly (const db::PolygonWithProperties &poly, const db::Box &box, std::vector <db::PolygonWithProperties> &clipped_poly, bool resolve_holes)
-{
-  db::PolygonContainerWithProperties pc (clipped_poly, poly.properties_id ());
-  clip_poly (poly, box, pc, resolve_holes);
-}
-
-void
-clip_poly (const db::SimplePolygonWithProperties &poly, const db::Box &box, std::vector <db::SimplePolygonWithProperties> &clipped_poly, bool resolve_holes)
-{
-  db::SimplePolygonContainerWithProperties pc (clipped_poly, poly.properties_id ());
-  clip_poly (poly, box, pc, resolve_holes);
+  clip_poly<db::SimplePolygon, db::SimplePolygonContainer> (poly, box, clipped_poly, resolve_holes);
 }
 
 // ------------------------------------------------------------------------------
@@ -377,7 +363,7 @@ clip_cell (const db::Layout &layout,
               target_cell.shapes (l).insert (db::PathRef (path, target_layout.shape_repository ()));
             }
 
-          } else if (sh->is_simple_polygon () || sh->is_path ()) {
+          } else if (sh->is_polygon () || sh->is_simple_polygon () || sh->is_path ()) {
 
             db::SimplePolygon poly;
 
@@ -385,12 +371,17 @@ clip_cell (const db::Layout &layout,
               db::Path path;
               sh->path (path);
               poly = path.simple_polygon ();
+            } else if (sh->is_polygon ()) {
+              db::Polygon ppoly;
+              sh->polygon (ppoly);
+              poly = db::SimplePolygon (ppoly);
             } else {
               sh->simple_polygon (poly);
             }
 
+            std::vector <db::SimplePolygon> clipped_polygons;
+
             if (! poly.box ().inside (clip_box)) {
-              std::vector <db::SimplePolygon> clipped_polygons;
               clip_poly (poly, clip_box, clipped_polygons);
               for (std::vector <db::SimplePolygon>::const_iterator cp = clipped_polygons.begin (); cp != clipped_polygons.end (); ++cp) {
                 if (sh->has_prop_id ()) {
@@ -404,29 +395,6 @@ clip_cell (const db::Layout &layout,
                 target_cell.shapes (l).insert (db::SimplePolygonRefWithProperties (db::SimplePolygonRef (poly, target_layout.shape_repository ()), sh->prop_id ()));
               } else {
                 target_cell.shapes (l).insert (db::SimplePolygonRef (poly, target_layout.shape_repository ()));
-              }
-            }
-
-          } else if (sh->is_polygon ()) {
-
-            db::Polygon poly;
-            sh->polygon (poly);
-
-            if (! poly.box ().inside (clip_box)) {
-              std::vector <db::Polygon> clipped_polygons;
-              clip_poly (poly, clip_box, clipped_polygons);
-              for (std::vector <db::Polygon>::const_iterator cp = clipped_polygons.begin (); cp != clipped_polygons.end (); ++cp) {
-                if (sh->has_prop_id ()) {
-                  target_cell.shapes (l).insert (db::PolygonRefWithProperties (db::PolygonRef (*cp, target_layout.shape_repository ()), sh->prop_id ()));
-                } else {
-                  target_cell.shapes (l).insert (db::PolygonRef (*cp, target_layout.shape_repository ()));
-                }
-              }
-            } else {
-              if (sh->has_prop_id ()) {
-                target_cell.shapes (l).insert (db::PolygonRefWithProperties (db::PolygonRef (poly, target_layout.shape_repository ()), sh->prop_id ()));
-              } else {
-                target_cell.shapes (l).insert (db::PolygonRef (poly, target_layout.shape_repository ()));
               }
             }
 
@@ -588,7 +556,7 @@ make_clip_variants (const db::Layout &layout,
   for (std::map <std::pair <db::cell_index_type, db::Box>, db::cell_index_type>::iterator v = variants.begin (); v != variants.end (); ++v) {
     if (v->first.second != layout.cell (v->first.first).bbox () || &layout != &target_layout) {
       //  need for a new cell
-      v->second = target_layout.add_cell (layout, v->first.first);
+      v->second = target_layout.add_cell (layout.cell_name (v->first.first));
     } else {
       v->second = v->first.first;
     }

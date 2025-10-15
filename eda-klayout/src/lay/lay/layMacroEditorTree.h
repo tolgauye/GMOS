@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -46,7 +46,7 @@ public:
   MacroTreeModel (QObject *parent, lay::MacroEditorDialog *dialog, lym::MacroCollection *root, const std::string &cat);
   MacroTreeModel (QWidget *parent, lym::MacroCollection *root, const std::string &cat);
 
-  int columnCount (const QModelIndex &parent) const;
+  int	columnCount (const QModelIndex &parent) const;
   QVariant data (const QModelIndex &index, int role) const;
   Qt::ItemFlags flags (const QModelIndex &index) const;
   bool hasChildren (const QModelIndex &parent) const;
@@ -69,9 +69,7 @@ signals:
 
 private slots:
   void macro_changed ();
-  void macro_about_to_be_deleted (lym::Macro *macro);
   void macro_deleted (lym::Macro *macro);
-  void macro_collection_about_to_be_deleted (lym::MacroCollection *mc);
   void macro_collection_deleted (lym::MacroCollection *mc);
   void macro_collection_changed ();
   void about_to_change ();

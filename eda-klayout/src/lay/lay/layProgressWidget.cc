@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -26,7 +26,6 @@
 #include <QFrame>
 #include <QGridLayout>
 #include <QLabel>
-#include <QListView>
 
 #include <math.h>
 
@@ -60,7 +59,7 @@ private:
 
 ProgressBarWidget::ProgressBarWidget (QWidget *parent, const char *name)
   : QWidget (parent),
-    m_value (0.0), m_width (200), m_length (0), m_fw (1), m_bw (0)
+    m_value (0.0), m_width (64), m_length (0), m_fw (1), m_bw (0)
 {
   setObjectName (QString::fromUtf8 (name));
   setMinimumSize (64, 10);
@@ -90,17 +89,13 @@ QSize
 ProgressBarWidget::sizeHint () const
 {
   QFontMetrics fm (font ());
-#if QT_VERSION >= 0x60000
-  return QSize (fm.horizontalAdvance (QString::fromUtf8("100%")) * 4, fm.height () + 2);
-#else
-  return QSize (fm.width (QString::fromUtf8("100%")) * 4, fm.height () + 2);
-#endif
+  return QSize (m_width, fm.height () + 2);
 }
 
 QSize
 ProgressBarWidget::minimumSizeHint () const
 {
-  return QSize (50, 1);
+  return QSize (m_width, 1);
 }
 
 void 
@@ -139,50 +134,12 @@ ProgressBarWidget::resizeEvent (QResizeEvent *)
 
 // --------------------------------------------------------------------
 
-ProgressWidget::ProgressWidget (ProgressReporter *pr, QWidget *parent, bool fw)
+ProgressWidget::ProgressWidget (ProgressReporter *pr, QWidget *parent, bool full_width)
   : QFrame (parent),
-    mp_widget (0), mp_pr (pr), m_log_file (0, true), m_log_visible (false)
+    mp_widget (0), mp_pr (pr)
 {
   QVBoxLayout *top_layout = new QVBoxLayout (this);
   top_layout->addStretch (1);
-
-  mp_log_frame = new QFrame (this);
-  mp_log_frame->setFrameShape (QFrame::NoFrame);
-  mp_log_frame->hide ();
-  top_layout->addWidget (mp_log_frame);
-
-  QVBoxLayout *log_layout = new QVBoxLayout (mp_log_frame);
-
-  mp_log_label = new QLabel (mp_log_frame);
-  mp_log_label->setText (QString ());
-  mp_log_label->setSizePolicy (QSizePolicy (QSizePolicy::Ignored, QSizePolicy::Preferred));
-  log_layout->addWidget (mp_log_label);
-
-  QListView *log_view = new QListView (this);
-  log_view->setModel (&m_log_file);
-  log_view->setUniformItemSizes (true);
-  log_layout->addWidget (log_view);
-
-  QFrame *attn_frame = new QFrame (this);
-  attn_frame->setFrameShape (QFrame::NoFrame);
-  attn_frame->hide ();
-  log_layout->addWidget (attn_frame);
-
-  QHBoxLayout *attn_layout = new QHBoxLayout (attn_frame);
-  attn_layout->setContentsMargins (0, 0, 0, 0);
-
-  QLabel *attn_label1 = new QLabel (attn_frame);
-  attn_label1->setPixmap (QPixmap (QString::fromUtf8 (":/warn_16px@2x.png")));
-  attn_layout->addWidget (attn_label1);
-
-  QLabel *attn_label2 = new QLabel (attn_frame);
-  attn_label2->setText (tr ("There are errors or warnings"));
-  attn_layout->addWidget (attn_label2);
-
-  attn_layout->addStretch (1);
-
-  connect (&m_log_file, SIGNAL (layoutChanged ()), log_view, SLOT (scrollToBottom ()));
-  connect (&m_log_file, SIGNAL (attention_changed (bool)), attn_frame, SLOT (setVisible (bool)));
 
   QFrame *bar_frame = new QFrame (this);
   top_layout->addWidget (bar_frame);
@@ -196,35 +153,37 @@ ProgressWidget::ProgressWidget (ProgressReporter *pr, QWidget *parent, bool fw)
   mp_layout = layout;
 
   layout->setSpacing (4);
-  layout->setContentsMargins (0, 0, 0, 0);
+  layout->setMargin (0);
 
   int col = 0;
 
-  layout->addItem (new QSpacerItem (8, 8, QSizePolicy::Expanding, QSizePolicy::Expanding), 0, col, 1, 1);
-  m_left_col = col++;
+  if (! full_width) {
+    layout->addItem (new QSpacerItem (8, 8, QSizePolicy::Expanding, QSizePolicy::Expanding), 0, col, 1, 1);
+    layout->setColumnStretch (col++, 1);
+  }
 
   mp_label = new QLabel (bar_frame);
-  layout->setColumnStretch(col, 2);
   layout->addWidget (mp_label, 0, col++, 1, 1);
 
   layout->addItem (new QSpacerItem (8, 8, QSizePolicy::Fixed, QSizePolicy::Fixed), 0, col++, 1, 1);
 
-  mp_progress_bar_frame = new QFrame (bar_frame);
-  mp_progress_bar_frame->setFrameStyle (QFrame::Box | QFrame::Plain);
-  mp_progress_bar_frame->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Expanding);
-  layout->addWidget (mp_progress_bar_frame, 0, col, 1, 1);
+  QFrame *progress_bar_frame = new QFrame (bar_frame);
+  progress_bar_frame->setFrameStyle (QFrame::Box | QFrame::Plain);
+  progress_bar_frame->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Expanding);
+  layout->addWidget (progress_bar_frame, 0, col, 1, 1);
+  layout->setColumnStretch(col++, 2);
 
-  QGridLayout *pbf_layout = new QGridLayout (mp_progress_bar_frame);
-  mp_progress_bar_frame->setLayout (pbf_layout);
-  pbf_layout->setContentsMargins (0, 0, 0, 0);
+  QGridLayout *pbf_layout = new QGridLayout (progress_bar_frame);
+  progress_bar_frame->setLayout (pbf_layout);
+  pbf_layout->setMargin (0);
   pbf_layout->setSpacing (0);
 
-  mp_progress_bar1 = new ProgressBarWidget (mp_progress_bar_frame);
-  pbf_layout->addWidget (mp_progress_bar1, 0, 2, 1, 1);
-  mp_progress_bar2 = new ProgressBarWidget (mp_progress_bar_frame);
-  pbf_layout->addWidget (mp_progress_bar2, 0, 1, 1, 1);
-  mp_progress_bar3 = new ProgressBarWidget (mp_progress_bar_frame);
-  pbf_layout->addWidget (mp_progress_bar3, 0, 0, 1, 1);
+  mp_progress_bar1 = new ProgressBarWidget (progress_bar_frame);
+  pbf_layout->addWidget (mp_progress_bar1, 0, 0, 1, 1);
+  mp_progress_bar2 = new ProgressBarWidget (progress_bar_frame);
+  pbf_layout->addWidget (mp_progress_bar2, 1, 0, 1, 1);
+  mp_progress_bar3 = new ProgressBarWidget (progress_bar_frame);
+  pbf_layout->addWidget (mp_progress_bar3, 2, 0, 1, 1);
 
   layout->addItem (new QSpacerItem (8, 8, QSizePolicy::Fixed, QSizePolicy::Fixed), 0, col++, 1, 1);
 
@@ -232,42 +191,16 @@ ProgressWidget::ProgressWidget (ProgressReporter *pr, QWidget *parent, bool fw)
   mp_cancel_button->setText (QObject::tr ("Cancel"));
   layout->addWidget (mp_cancel_button, 0, col++, 1, 1);
 
-  layout->addItem (new QSpacerItem (8, 8, QSizePolicy::Expanding, QSizePolicy::Expanding), 0, col, 1, 1);
-  m_right_col = col++;
+  if (! full_width) {
+    layout->addItem (new QSpacerItem (8, 8, QSizePolicy::Expanding, QSizePolicy::Expanding), 0, col, 1, 1);
+    layout->setColumnStretch (col++, 1);
+  }
 
   layout->addItem (new QSpacerItem (10, 10, QSizePolicy::Fixed, QSizePolicy::Fixed), 1, 0, 1, col);
 
   m_widget_col = col;
 
   connect (mp_cancel_button, SIGNAL (clicked ()), this, SLOT (signal_break ()));
-
-  set_full_width (fw);
-}
-
-void
-ProgressWidget::set_log_visible (tl::Progress *progress)
-{
-  if ((progress != 0) != m_log_visible) {
-    m_log_visible = (progress != 0);
-    mp_log_frame->setVisible (m_log_visible);
-    mp_log_label->setText (progress ? tl::to_qstring (progress->desc ()) : QString ());
-    set_full_width (m_full_width);
-  }
-}
-void
-ProgressWidget::set_full_width (bool fw)
-{
-  m_full_width = fw;
-
-  bool f = (fw || m_log_visible);
-  mp_layout->setColumnStretch (m_left_col, f ? 0 : 1);
-  mp_layout->setColumnStretch (m_right_col, f ? 0 : 1);
-}
-
-bool
-ProgressWidget::full_width () const
-{
-  return m_full_width;
 }
 
 QWidget *
@@ -300,25 +233,6 @@ ProgressWidget::remove_widget ()
 void
 ProgressWidget::set_progress (tl::Progress *progress)
 {
-  lay::ProgressBarWidget *progress_bars[] = { mp_progress_bar1, mp_progress_bar2, mp_progress_bar3 };
-
-  if (! progress || progress->is_abstract ()) {
-
-    if (! progress) {
-      m_log_file.clear ();
-    }
-    m_log_file.set_max_entries (progress ? 1000 : 0);
-
-    set_log_visible (progress);
-
-    mp_progress_bar_frame->hide ();
-    mp_cancel_button->setEnabled (true);
-    mp_label->setText (QString ());
-
-    return;
-
-  }
-
   bool can_cancel = false;
   std::string text;
 
@@ -329,6 +243,8 @@ ProgressWidget::set_progress (tl::Progress *progress)
 
   mp_cancel_button->setEnabled (can_cancel);
   mp_label->setText (tl::to_qstring (text));
+
+  lay::ProgressBarWidget *progress_bars[] = { mp_progress_bar1, mp_progress_bar2, mp_progress_bar3 };
 
   for (size_t i = 0; i < sizeof (progress_bars) / sizeof (progress_bars[0]); ++i) {
 
@@ -342,19 +258,13 @@ ProgressWidget::set_progress (tl::Progress *progress)
       double v = progress->value ();
       pb->set_value (v, value);
 
-      if (progress->final ()) {
-        progress = 0;
-      } else {
-        progress = progress->next ();
-      }
+      progress = progress->next ();
 
     } else {
       pb->hide ();
     }
 
   }
-
-  mp_progress_bar_frame->show ();
 
   //  according to the doc this should not be required, but without, the progress bar does not resize
   mp_progress_bar1->parentWidget ()->updateGeometry ();

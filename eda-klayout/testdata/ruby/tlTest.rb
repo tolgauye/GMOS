@@ -1,7 +1,7 @@
 # encoding: UTF-8
 
 # KLayout Layout Viewer
-# Copyright (C) 2006-2025 Matthias Koefferlein
+# Copyright (C) 2006-2019 Matthias Koefferlein
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -121,7 +121,7 @@ class Tl_TestClass < TestBase
     expr = RBA::Expression::new("x=a&b; y=x; z=y; [x,y,z]", { "a" => box1, "b" => box2, "x" => nil, "y" => nil, "z" => nil })
     res = expr.eval
 
-    assert_equal(res.map(&:to_s), %w((50,150;200,300) (50,150;200,300) (50,150;200,300)))
+    assert_equal(res.inspect, "[(50,150;200,300), (50,150;200,300), (50,150;200,300)]")
 
     # all objects are individual copies
     assert_not_equal(res[0].object_id, box1.object_id)
@@ -136,7 +136,7 @@ class Tl_TestClass < TestBase
     expr = RBA::Expression::new("var x=a&b; var y=x; var z=y; [x,y,z]", { "a" => box1, "b" => box2 })
     res = expr.eval
 
-    assert_equal(res.map(&:to_s), %w((50,150;200,300) (50,150;200,300) (50,150;200,300)))
+    assert_equal(res.inspect, "[(50,150;200,300), (50,150;200,300), (50,150;200,300)]")
 
     # all objects are individual copies
     assert_not_equal(res[0].object_id, box1.object_id)
@@ -146,7 +146,7 @@ class Tl_TestClass < TestBase
 
     # destruction of the expression's object space does not matter since we have copies
     expr._destroy
-    assert_equal(res.map(&:to_s), %w((50,150;200,300) (50,150;200,300) (50,150;200,300)))
+    assert_equal(res.inspect, "[(50,150;200,300), (50,150;200,300), (50,150;200,300)]")
 
     # -------------------------------------------------
 
@@ -185,7 +185,7 @@ class Tl_TestClass < TestBase
     expr = RBA::Expression::new("x=a&b; y=x; z=y; [x,y,z]", { "a" => region1, "b" => region2, "x" => nil, "y" => nil, "z" => nil })
     res = expr.eval
 
-    assert_equal(res.map(&:to_s), %w((50,150;50,300;200,300;200,150) (50,150;50,300;200,300;200,150) (50,150;50,300;200,300;200,150)))
+    assert_equal(res.inspect, "[(50,150;50,300;200,300;200,150), (50,150;50,300;200,300;200,150), (50,150;50,300;200,300;200,150)]")
 
     # regions are managed objects -> passing the object through the expression persists it's object ID
     assert_not_equal(res[0].object_id, region1.object_id)
@@ -202,7 +202,7 @@ class Tl_TestClass < TestBase
     expr = RBA::Expression::new("var x=a&b; var y=x; var z=y; [x,y,z]", { "a" => region1, "b" => region2 })
     res = expr.eval
 
-    assert_equal(res.map(&:to_s), %w((50,150;50,300;200,300;200,150) (50,150;50,300;200,300;200,150) (50,150;50,300;200,300;200,150)))
+    assert_equal(res.inspect, "[(50,150;50,300;200,300;200,150), (50,150;50,300;200,300;200,150), (50,150;50,300;200,300;200,150)]")
 
     # regions are managed objects -> passing the object through the expression persists it's object ID
     assert_not_equal(res[0].object_id, region1.object_id)
@@ -262,29 +262,17 @@ class Tl_TestClass < TestBase
 
   end
 
-  class MyRecipeExecutable < RBA::Executable
-
-    def initialize(params)
-      @params = params
-    end
-
-    def execute
-      a = @params["A"] || 0
-      b = @params["B"] || 0.0
-      c = @params["C"] || 1.0
-      b * a * c
-    end
-
-  end
-
   class MyRecipe < RBA::Recipe
 
     def initialize
       super("rba_test_recipe", "description")
     end
 
-    def executable(params)
-      return MyRecipeExecutable::new(params)
+    def execute(params)
+      a = params["A"] || 0
+      b = params["B"] || 0.0
+      c = params["C"] || 1.0
+      b * a * c
     end
 
   end
@@ -303,7 +291,7 @@ class Tl_TestClass < TestBase
 
     g = my_recipe.generator("A" => 6, "B" => 7.0)
     assert_equal(g, "rba_test_recipe: A=#6,B=##7")
-    assert_equal("%g" % RBA::Recipe::make(g), "42")
+    assert_equal("%g" % RBA::Recipe::make(g).to_s, "42")
     assert_equal("%g" % RBA::Recipe::make(g, "C" => 1.5).to_s, "63")
 
     my_recipe._destroy

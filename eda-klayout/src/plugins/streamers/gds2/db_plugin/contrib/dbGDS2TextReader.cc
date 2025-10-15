@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -51,11 +51,23 @@ GDS2ReaderText::~GDS2ReaderText()
   //  .. nothing yet ..
 }
   
-void
-GDS2ReaderText::init (const db::LoadLayoutOptions &options)
+const LayerMap &
+GDS2ReaderText::read (db::Layout &layout, const db::LoadLayoutOptions &options)
 {
-  GDS2ReaderBase::init (options);
   storedRecId = 0;
+
+  //  HINT: reuse the standard GDS2 reader options for the text reader. 
+  //  However, the allow_big_records and allow_multi_xy_records options are ignored.
+  db::GDS2ReaderOptions gds2_options = options.get_options<db::GDS2ReaderOptions> ();
+  db::CommonReaderOptions common_options = options.get_options<db::CommonReaderOptions> ();
+
+  return basic_read (layout, common_options.layer_map, common_options.create_other_layers, common_options.enable_text_objects, common_options.enable_properties, false, gds2_options.box_mode);
+}
+
+const LayerMap &
+GDS2ReaderText::read (db::Layout &layout)
+{
+  return read (layout, db::LoadLayoutOptions ());
 }
 
 void
@@ -247,7 +259,7 @@ GDS2ReaderText::get_double ()
 }
 
 void
-GDS2ReaderText::get_string (std::string &s) const
+GDS2ReaderText::get_string (tl::string &s) const
 {
   //  TODO: get rid of this const_cast hack
   s = (const_cast<GDS2ReaderText *> (this))->reader.skip ();
@@ -289,38 +301,20 @@ GDS2ReaderText::get_ushort ()
   return x;
 }
 
-std::string
-GDS2ReaderText::path () const
-{
-  return sStream.source ();
-}
-
 void 
 GDS2ReaderText::error (const std::string &msg)
 {
-  throw GDS2ReaderTextException (msg, int (sStream.line_number()), cellname ().c_str (), sStream.source ());
+  throw GDS2ReaderTextException (msg, int(sStream.line_number()), cellname().c_str ());
 }
 
 void 
-GDS2ReaderText::warn (const std::string &msg, int wl)
+GDS2ReaderText::warn (const std::string &msg) 
 {
-  if (warn_level () < wl) {
-    return;
-  }
-
-  if (first_warning ()) {
-    tl::warn << tl::sprintf (tl::to_string (tr ("In file %s:")), sStream.source ());
-  }
-
-  int ws = compress_warning (msg);
-  if (ws < 0) {
-    tl::warn << msg
-             << tl::to_string (tr (", line number=")) << sStream.line_number()
-             << tl::to_string (tr (", cell=")) << cellname ().c_str ()
-             << ")";
-  } else if (ws == 0) {
-    tl::warn << tl::to_string (tr ("... further warnings of this kind are not shown"));
-  }
+  // TODO: compress
+  tl::warn << msg 
+           << tl::to_string (tr (", line number=")) << sStream.line_number()
+           << tl::to_string (tr (", cell=")) << cellname ().c_str ()
+           << ")";
 }
 
 void 

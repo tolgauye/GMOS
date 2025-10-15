@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -32,7 +32,6 @@
 #include <QAuthenticator>
 #include <QChildEvent>
 #include <QEvent>
-#include <QHstsPolicy>
 #include <QHttpMultiPart>
 #include <QIODevice>
 #include <QMetaMethod>
@@ -50,6 +49,7 @@
 #include <QTimerEvent>
 #include "gsiQt.h"
 #include "gsiQtNetworkCommon.h"
+#include "gsiDeclQtNetworkTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -83,26 +83,6 @@ static void _call_f_activeConfiguration_c0 (const qt_gsi::GenericMethod * /*decl
 }
 
 
-// void QNetworkAccessManager::addStrictTransportSecurityHosts(const QVector<QHstsPolicy> &knownHosts)
-
-
-static void _init_f_addStrictTransportSecurityHosts_3266 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("knownHosts");
-  decl->add_arg<const QVector<QHstsPolicy> & > (argspec_0);
-  decl->set_return<void > ();
-}
-
-static void _call_f_addStrictTransportSecurityHosts_3266 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const QVector<QHstsPolicy> &arg1 = gsi::arg_reader<const QVector<QHstsPolicy> & >() (args, heap);
-  __SUPPRESS_UNUSED_WARNING(ret);
-  ((QNetworkAccessManager *)cls)->addStrictTransportSecurityHosts (arg1);
-}
-
-
 // QAbstractNetworkCache *QNetworkAccessManager::cache()
 
 
@@ -131,22 +111,6 @@ static void _call_f_clearAccessCache_0 (const qt_gsi::GenericMethod * /*decl*/, 
   __SUPPRESS_UNUSED_WARNING(args);
   __SUPPRESS_UNUSED_WARNING(ret);
   ((QNetworkAccessManager *)cls)->clearAccessCache ();
-}
-
-
-// void QNetworkAccessManager::clearConnectionCache()
-
-
-static void _init_f_clearConnectionCache_0 (qt_gsi::GenericMethod *decl)
-{
-  decl->set_return<void > ();
-}
-
-static void _call_f_clearConnectionCache_0 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  __SUPPRESS_UNUSED_WARNING(ret);
-  ((QNetworkAccessManager *)cls)->clearConnectionCache ();
 }
 
 
@@ -248,29 +212,6 @@ static void _call_f_deleteResource_2885 (const qt_gsi::GenericMethod * /*decl*/,
 }
 
 
-// void QNetworkAccessManager::enableStrictTransportSecurityStore(bool enabled, const QString &storeDir)
-
-
-static void _init_f_enableStrictTransportSecurityStore_2781 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("enabled");
-  decl->add_arg<bool > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("storeDir", true, "QString()");
-  decl->add_arg<const QString & > (argspec_1);
-  decl->set_return<void > ();
-}
-
-static void _call_f_enableStrictTransportSecurityStore_2781 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  bool arg1 = gsi::arg_reader<bool >() (args, heap);
-  const QString &arg2 = args ? gsi::arg_reader<const QString & >() (args, heap) : gsi::arg_maker<const QString & >() (QString(), heap);
-  __SUPPRESS_UNUSED_WARNING(ret);
-  ((QNetworkAccessManager *)cls)->enableStrictTransportSecurityStore (arg1, arg2);
-}
-
-
 // QNetworkReply *QNetworkAccessManager::get(const QNetworkRequest &request)
 
 
@@ -306,36 +247,6 @@ static void _call_f_head_2885 (const qt_gsi::GenericMethod * /*decl*/, void *cls
   tl::Heap heap;
   const QNetworkRequest &arg1 = gsi::arg_reader<const QNetworkRequest & >() (args, heap);
   ret.write<QNetworkReply * > ((QNetworkReply *)((QNetworkAccessManager *)cls)->head (arg1));
-}
-
-
-// bool QNetworkAccessManager::isStrictTransportSecurityEnabled()
-
-
-static void _init_f_isStrictTransportSecurityEnabled_c0 (qt_gsi::GenericMethod *decl)
-{
-  decl->set_return<bool > ();
-}
-
-static void _call_f_isStrictTransportSecurityEnabled_c0 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  ret.write<bool > ((bool)((QNetworkAccessManager *)cls)->isStrictTransportSecurityEnabled ());
-}
-
-
-// bool QNetworkAccessManager::isStrictTransportSecurityStoreEnabled()
-
-
-static void _init_f_isStrictTransportSecurityStoreEnabled_c0 (qt_gsi::GenericMethod *decl)
-{
-  decl->set_return<bool > ();
-}
-
-static void _call_f_isStrictTransportSecurityStoreEnabled_c0 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  ret.write<bool > ((bool)((QNetworkAccessManager *)cls)->isStrictTransportSecurityStoreEnabled ());
 }
 
 
@@ -516,21 +427,6 @@ static void _call_f_put_4826 (const qt_gsi::GenericMethod * /*decl*/, void *cls,
 }
 
 
-// QNetworkRequest::RedirectPolicy QNetworkAccessManager::redirectPolicy()
-
-
-static void _init_f_redirectPolicy_c0 (qt_gsi::GenericMethod *decl)
-{
-  decl->set_return<qt_gsi::Converter<QNetworkRequest::RedirectPolicy>::target_type > ();
-}
-
-static void _call_f_redirectPolicy_c0 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  ret.write<qt_gsi::Converter<QNetworkRequest::RedirectPolicy>::target_type > ((qt_gsi::Converter<QNetworkRequest::RedirectPolicy>::target_type)qt_gsi::CppToQtAdaptor<QNetworkRequest::RedirectPolicy>(((QNetworkAccessManager *)cls)->redirectPolicy ()));
-}
-
-
 // QNetworkReply *QNetworkAccessManager::sendCustomRequest(const QNetworkRequest &request, const QByteArray &verb, QIODevice *data)
 
 
@@ -540,7 +436,7 @@ static void _init_f_sendCustomRequest_6425 (qt_gsi::GenericMethod *decl)
   decl->add_arg<const QNetworkRequest & > (argspec_0);
   static gsi::ArgSpecBase argspec_1 ("verb");
   decl->add_arg<const QByteArray & > (argspec_1);
-  static gsi::ArgSpecBase argspec_2 ("data", true, "nullptr");
+  static gsi::ArgSpecBase argspec_2 ("data", true, "0");
   decl->add_arg<QIODevice * > (argspec_2);
   decl->set_return<QNetworkReply * > ();
 }
@@ -551,57 +447,7 @@ static void _call_f_sendCustomRequest_6425 (const qt_gsi::GenericMethod * /*decl
   tl::Heap heap;
   const QNetworkRequest &arg1 = gsi::arg_reader<const QNetworkRequest & >() (args, heap);
   const QByteArray &arg2 = gsi::arg_reader<const QByteArray & >() (args, heap);
-  QIODevice *arg3 = args ? gsi::arg_reader<QIODevice * >() (args, heap) : gsi::arg_maker<QIODevice * >() (nullptr, heap);
-  ret.write<QNetworkReply * > ((QNetworkReply *)((QNetworkAccessManager *)cls)->sendCustomRequest (arg1, arg2, arg3));
-}
-
-
-// QNetworkReply *QNetworkAccessManager::sendCustomRequest(const QNetworkRequest &request, const QByteArray &verb, const QByteArray &data)
-
-
-static void _init_f_sendCustomRequest_7287 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("request");
-  decl->add_arg<const QNetworkRequest & > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("verb");
-  decl->add_arg<const QByteArray & > (argspec_1);
-  static gsi::ArgSpecBase argspec_2 ("data");
-  decl->add_arg<const QByteArray & > (argspec_2);
-  decl->set_return<QNetworkReply * > ();
-}
-
-static void _call_f_sendCustomRequest_7287 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const QNetworkRequest &arg1 = gsi::arg_reader<const QNetworkRequest & >() (args, heap);
-  const QByteArray &arg2 = gsi::arg_reader<const QByteArray & >() (args, heap);
-  const QByteArray &arg3 = gsi::arg_reader<const QByteArray & >() (args, heap);
-  ret.write<QNetworkReply * > ((QNetworkReply *)((QNetworkAccessManager *)cls)->sendCustomRequest (arg1, arg2, arg3));
-}
-
-
-// QNetworkReply *QNetworkAccessManager::sendCustomRequest(const QNetworkRequest &request, const QByteArray &verb, QHttpMultiPart *multiPart)
-
-
-static void _init_f_sendCustomRequest_7027 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("request");
-  decl->add_arg<const QNetworkRequest & > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("verb");
-  decl->add_arg<const QByteArray & > (argspec_1);
-  static gsi::ArgSpecBase argspec_2 ("multiPart");
-  decl->add_arg<QHttpMultiPart * > (argspec_2);
-  decl->set_return<QNetworkReply * > ();
-}
-
-static void _call_f_sendCustomRequest_7027 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const QNetworkRequest &arg1 = gsi::arg_reader<const QNetworkRequest & >() (args, heap);
-  const QByteArray &arg2 = gsi::arg_reader<const QByteArray & >() (args, heap);
-  QHttpMultiPart *arg3 = gsi::arg_reader<QHttpMultiPart * >() (args, heap);
+  QIODevice *arg3 = args ? gsi::arg_reader<QIODevice * >() (args, heap) : gsi::arg_maker<QIODevice * >() (0, heap);
   ret.write<QNetworkReply * > ((QNetworkReply *)((QNetworkAccessManager *)cls)->sendCustomRequest (arg1, arg2, arg3));
 }
 
@@ -726,61 +572,6 @@ static void _call_f_setProxyFactory_2723 (const qt_gsi::GenericMethod * /*decl*/
 }
 
 
-// void QNetworkAccessManager::setRedirectPolicy(QNetworkRequest::RedirectPolicy policy)
-
-
-static void _init_f_setRedirectPolicy_3566 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("policy");
-  decl->add_arg<const qt_gsi::Converter<QNetworkRequest::RedirectPolicy>::target_type & > (argspec_0);
-  decl->set_return<void > ();
-}
-
-static void _call_f_setRedirectPolicy_3566 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const qt_gsi::Converter<QNetworkRequest::RedirectPolicy>::target_type & arg1 = gsi::arg_reader<const qt_gsi::Converter<QNetworkRequest::RedirectPolicy>::target_type & >() (args, heap);
-  __SUPPRESS_UNUSED_WARNING(ret);
-  ((QNetworkAccessManager *)cls)->setRedirectPolicy (qt_gsi::QtToCppAdaptor<QNetworkRequest::RedirectPolicy>(arg1).cref());
-}
-
-
-// void QNetworkAccessManager::setStrictTransportSecurityEnabled(bool enabled)
-
-
-static void _init_f_setStrictTransportSecurityEnabled_864 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("enabled");
-  decl->add_arg<bool > (argspec_0);
-  decl->set_return<void > ();
-}
-
-static void _call_f_setStrictTransportSecurityEnabled_864 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  bool arg1 = gsi::arg_reader<bool >() (args, heap);
-  __SUPPRESS_UNUSED_WARNING(ret);
-  ((QNetworkAccessManager *)cls)->setStrictTransportSecurityEnabled (arg1);
-}
-
-
-// QVector<QHstsPolicy> QNetworkAccessManager::strictTransportSecurityHosts()
-
-
-static void _init_f_strictTransportSecurityHosts_c0 (qt_gsi::GenericMethod *decl)
-{
-  decl->set_return<QVector<QHstsPolicy> > ();
-}
-
-static void _call_f_strictTransportSecurityHosts_c0 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  ret.write<QVector<QHstsPolicy> > ((QVector<QHstsPolicy>)((QNetworkAccessManager *)cls)->strictTransportSecurityHosts ());
-}
-
-
 // QStringList QNetworkAccessManager::supportedSchemes()
 
 
@@ -803,7 +594,7 @@ static void _init_f_tr_4013 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("s");
   decl->add_arg<const char * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("c", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("c", true, "__null");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("n", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -815,7 +606,7 @@ static void _call_f_tr_4013 (const qt_gsi::GenericStaticMethod * /*decl*/, gsi::
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (__null, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QNetworkAccessManager::tr (arg1, arg2, arg3));
 }
@@ -828,7 +619,7 @@ static void _init_f_trUtf8_4013 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("s");
   decl->add_arg<const char * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("c", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("c", true, "__null");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("n", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -840,7 +631,7 @@ static void _call_f_trUtf8_4013 (const qt_gsi::GenericStaticMethod * /*decl*/, g
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (__null, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QNetworkAccessManager::trUtf8 (arg1, arg2, arg3));
 }
@@ -853,20 +644,15 @@ static gsi::Methods methods_QNetworkAccessManager () {
   gsi::Methods methods;
   methods += new qt_gsi::GenericStaticMethod ("staticMetaObject", "@brief Obtains the static MetaObject for this class.", &_init_smo, &_call_smo);
   methods += new qt_gsi::GenericMethod ("activeConfiguration", "@brief Method QNetworkConfiguration QNetworkAccessManager::activeConfiguration()\n", true, &_init_f_activeConfiguration_c0, &_call_f_activeConfiguration_c0);
-  methods += new qt_gsi::GenericMethod ("addStrictTransportSecurityHosts", "@brief Method void QNetworkAccessManager::addStrictTransportSecurityHosts(const QVector<QHstsPolicy> &knownHosts)\n", false, &_init_f_addStrictTransportSecurityHosts_3266, &_call_f_addStrictTransportSecurityHosts_3266);
   methods += new qt_gsi::GenericMethod (":cache", "@brief Method QAbstractNetworkCache *QNetworkAccessManager::cache()\n", true, &_init_f_cache_c0, &_call_f_cache_c0);
   methods += new qt_gsi::GenericMethod ("clearAccessCache", "@brief Method void QNetworkAccessManager::clearAccessCache()\n", false, &_init_f_clearAccessCache_0, &_call_f_clearAccessCache_0);
-  methods += new qt_gsi::GenericMethod ("clearConnectionCache", "@brief Method void QNetworkAccessManager::clearConnectionCache()\n", false, &_init_f_clearConnectionCache_0, &_call_f_clearConnectionCache_0);
   methods += new qt_gsi::GenericMethod (":configuration", "@brief Method QNetworkConfiguration QNetworkAccessManager::configuration()\n", true, &_init_f_configuration_c0, &_call_f_configuration_c0);
   methods += new qt_gsi::GenericMethod ("connectToHost", "@brief Method void QNetworkAccessManager::connectToHost(const QString &hostName, quint16 port)\n", false, &_init_f_connectToHost_3017, &_call_f_connectToHost_3017);
   methods += new qt_gsi::GenericMethod ("connectToHostEncrypted", "@brief Method void QNetworkAccessManager::connectToHostEncrypted(const QString &hostName, quint16 port, const QSslConfiguration &sslConfiguration)\n", false, &_init_f_connectToHostEncrypted_5977, &_call_f_connectToHostEncrypted_5977);
   methods += new qt_gsi::GenericMethod (":cookieJar", "@brief Method QNetworkCookieJar *QNetworkAccessManager::cookieJar()\n", true, &_init_f_cookieJar_c0, &_call_f_cookieJar_c0);
   methods += new qt_gsi::GenericMethod ("deleteResource", "@brief Method QNetworkReply *QNetworkAccessManager::deleteResource(const QNetworkRequest &request)\n", false, &_init_f_deleteResource_2885, &_call_f_deleteResource_2885);
-  methods += new qt_gsi::GenericMethod ("enableStrictTransportSecurityStore", "@brief Method void QNetworkAccessManager::enableStrictTransportSecurityStore(bool enabled, const QString &storeDir)\n", false, &_init_f_enableStrictTransportSecurityStore_2781, &_call_f_enableStrictTransportSecurityStore_2781);
   methods += new qt_gsi::GenericMethod ("get", "@brief Method QNetworkReply *QNetworkAccessManager::get(const QNetworkRequest &request)\n", false, &_init_f_get_2885, &_call_f_get_2885);
   methods += new qt_gsi::GenericMethod ("head", "@brief Method QNetworkReply *QNetworkAccessManager::head(const QNetworkRequest &request)\n", false, &_init_f_head_2885, &_call_f_head_2885);
-  methods += new qt_gsi::GenericMethod ("isStrictTransportSecurityEnabled?|:strictTransportSecurityEnabled", "@brief Method bool QNetworkAccessManager::isStrictTransportSecurityEnabled()\n", true, &_init_f_isStrictTransportSecurityEnabled_c0, &_call_f_isStrictTransportSecurityEnabled_c0);
-  methods += new qt_gsi::GenericMethod ("isStrictTransportSecurityStoreEnabled?", "@brief Method bool QNetworkAccessManager::isStrictTransportSecurityStoreEnabled()\n", true, &_init_f_isStrictTransportSecurityStoreEnabled_c0, &_call_f_isStrictTransportSecurityStoreEnabled_c0);
   methods += new qt_gsi::GenericMethod (":networkAccessible", "@brief Method QNetworkAccessManager::NetworkAccessibility QNetworkAccessManager::networkAccessible()\n", true, &_init_f_networkAccessible_c0, &_call_f_networkAccessible_c0);
   methods += new qt_gsi::GenericMethod ("post", "@brief Method QNetworkReply *QNetworkAccessManager::post(const QNetworkRequest &request, QIODevice *data)\n", false, &_init_f_post_4224, &_call_f_post_4224);
   methods += new qt_gsi::GenericMethod ("post", "@brief Method QNetworkReply *QNetworkAccessManager::post(const QNetworkRequest &request, const QByteArray &data)\n", false, &_init_f_post_5086, &_call_f_post_5086);
@@ -876,19 +662,13 @@ static gsi::Methods methods_QNetworkAccessManager () {
   methods += new qt_gsi::GenericMethod ("put", "@brief Method QNetworkReply *QNetworkAccessManager::put(const QNetworkRequest &request, QIODevice *data)\n", false, &_init_f_put_4224, &_call_f_put_4224);
   methods += new qt_gsi::GenericMethod ("put", "@brief Method QNetworkReply *QNetworkAccessManager::put(const QNetworkRequest &request, const QByteArray &data)\n", false, &_init_f_put_5086, &_call_f_put_5086);
   methods += new qt_gsi::GenericMethod ("put", "@brief Method QNetworkReply *QNetworkAccessManager::put(const QNetworkRequest &request, QHttpMultiPart *multiPart)\n", false, &_init_f_put_4826, &_call_f_put_4826);
-  methods += new qt_gsi::GenericMethod (":redirectPolicy", "@brief Method QNetworkRequest::RedirectPolicy QNetworkAccessManager::redirectPolicy()\n", true, &_init_f_redirectPolicy_c0, &_call_f_redirectPolicy_c0);
   methods += new qt_gsi::GenericMethod ("sendCustomRequest", "@brief Method QNetworkReply *QNetworkAccessManager::sendCustomRequest(const QNetworkRequest &request, const QByteArray &verb, QIODevice *data)\n", false, &_init_f_sendCustomRequest_6425, &_call_f_sendCustomRequest_6425);
-  methods += new qt_gsi::GenericMethod ("sendCustomRequest", "@brief Method QNetworkReply *QNetworkAccessManager::sendCustomRequest(const QNetworkRequest &request, const QByteArray &verb, const QByteArray &data)\n", false, &_init_f_sendCustomRequest_7287, &_call_f_sendCustomRequest_7287);
-  methods += new qt_gsi::GenericMethod ("sendCustomRequest", "@brief Method QNetworkReply *QNetworkAccessManager::sendCustomRequest(const QNetworkRequest &request, const QByteArray &verb, QHttpMultiPart *multiPart)\n", false, &_init_f_sendCustomRequest_7027, &_call_f_sendCustomRequest_7027);
   methods += new qt_gsi::GenericMethod ("setCache|cache=", "@brief Method void QNetworkAccessManager::setCache(QAbstractNetworkCache *cache)\n", false, &_init_f_setCache_2737, &_call_f_setCache_2737);
   methods += new qt_gsi::GenericMethod ("setConfiguration|configuration=", "@brief Method void QNetworkAccessManager::setConfiguration(const QNetworkConfiguration &config)\n", false, &_init_f_setConfiguration_3508, &_call_f_setConfiguration_3508);
   methods += new qt_gsi::GenericMethod ("setCookieJar|cookieJar=", "@brief Method void QNetworkAccessManager::setCookieJar(QNetworkCookieJar *cookieJar)\n", false, &_init_f_setCookieJar_2336, &_call_f_setCookieJar_2336);
   methods += new qt_gsi::GenericMethod ("setNetworkAccessible|networkAccessible=", "@brief Method void QNetworkAccessManager::setNetworkAccessible(QNetworkAccessManager::NetworkAccessibility accessible)\n", false, &_init_f_setNetworkAccessible_4770, &_call_f_setNetworkAccessible_4770);
   methods += new qt_gsi::GenericMethod ("setProxy|proxy=", "@brief Method void QNetworkAccessManager::setProxy(const QNetworkProxy &proxy)\n", false, &_init_f_setProxy_2686, &_call_f_setProxy_2686);
   methods += new qt_gsi::GenericMethod ("setProxyFactory|proxyFactory=", "@brief Method void QNetworkAccessManager::setProxyFactory(QNetworkProxyFactory *factory)\n", false, &_init_f_setProxyFactory_2723, &_call_f_setProxyFactory_2723);
-  methods += new qt_gsi::GenericMethod ("setRedirectPolicy|redirectPolicy=", "@brief Method void QNetworkAccessManager::setRedirectPolicy(QNetworkRequest::RedirectPolicy policy)\n", false, &_init_f_setRedirectPolicy_3566, &_call_f_setRedirectPolicy_3566);
-  methods += new qt_gsi::GenericMethod ("setStrictTransportSecurityEnabled|strictTransportSecurityEnabled=", "@brief Method void QNetworkAccessManager::setStrictTransportSecurityEnabled(bool enabled)\n", false, &_init_f_setStrictTransportSecurityEnabled_864, &_call_f_setStrictTransportSecurityEnabled_864);
-  methods += new qt_gsi::GenericMethod ("strictTransportSecurityHosts", "@brief Method QVector<QHstsPolicy> QNetworkAccessManager::strictTransportSecurityHosts()\n", true, &_init_f_strictTransportSecurityHosts_c0, &_call_f_strictTransportSecurityHosts_c0);
   methods += new qt_gsi::GenericMethod ("supportedSchemes", "@brief Method QStringList QNetworkAccessManager::supportedSchemes()\n", true, &_init_f_supportedSchemes_c0, &_call_f_supportedSchemes_c0);
   methods += gsi::qt_signal<QNetworkReply *, QAuthenticator * > ("authenticationRequired(QNetworkReply *, QAuthenticator *)", "authenticationRequired", gsi::arg("reply"), gsi::arg("authenticator"), "@brief Signal declaration for QNetworkAccessManager::authenticationRequired(QNetworkReply *reply, QAuthenticator *authenticator)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<QObject * > ("destroyed(QObject *)", "destroyed", gsi::arg("arg1"), "@brief Signal declaration for QNetworkAccessManager::destroyed(QObject *)\nYou can bind a procedure to this signal.");
@@ -896,7 +676,6 @@ static gsi::Methods methods_QNetworkAccessManager () {
   methods += gsi::qt_signal<QNetworkReply * > ("finished(QNetworkReply *)", "finished", gsi::arg("reply"), "@brief Signal declaration for QNetworkAccessManager::finished(QNetworkReply *reply)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<const qt_gsi::Converter<QNetworkAccessManager::NetworkAccessibility>::target_type & > ("networkAccessibleChanged(QNetworkAccessManager::NetworkAccessibility)", "networkAccessibleChanged", gsi::arg("accessible"), "@brief Signal declaration for QNetworkAccessManager::networkAccessibleChanged(QNetworkAccessManager::NetworkAccessibility accessible)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal ("networkSessionConnected()", "networkSessionConnected", "@brief Signal declaration for QNetworkAccessManager::networkSessionConnected()\nYou can bind a procedure to this signal.");
-  methods += gsi::qt_signal<const QString & > ("objectNameChanged(const QString &)", "objectNameChanged", gsi::arg("objectName"), "@brief Signal declaration for QNetworkAccessManager::objectNameChanged(const QString &objectName)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<QNetworkReply *, QSslPreSharedKeyAuthenticator * > ("preSharedKeyAuthenticationRequired(QNetworkReply *, QSslPreSharedKeyAuthenticator *)", "preSharedKeyAuthenticationRequired", gsi::arg("reply"), gsi::arg("authenticator"), "@brief Signal declaration for QNetworkAccessManager::preSharedKeyAuthenticationRequired(QNetworkReply *reply, QSslPreSharedKeyAuthenticator *authenticator)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<const QNetworkProxy &, QAuthenticator * > ("proxyAuthenticationRequired(const QNetworkProxy &, QAuthenticator *)", "proxyAuthenticationRequired", gsi::arg("proxy"), gsi::arg("authenticator"), "@brief Signal declaration for QNetworkAccessManager::proxyAuthenticationRequired(const QNetworkProxy &proxy, QAuthenticator *authenticator)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<QNetworkReply *, const QList<QSslError> & > ("sslErrors(QNetworkReply *, const QList<QSslError> &)", "sslErrors", gsi::arg("reply"), gsi::arg("errors"), "@brief Signal declaration for QNetworkAccessManager::sslErrors(QNetworkReply *reply, const QList<QSslError> &errors)\nYou can bind a procedure to this signal.");
@@ -977,33 +756,33 @@ public:
     emit QNetworkAccessManager::encrypted(reply);
   }
 
-  //  [adaptor impl] bool QNetworkAccessManager::event(QEvent *event)
-  bool cbs_event_1217_0(QEvent *_event)
+  //  [adaptor impl] bool QNetworkAccessManager::event(QEvent *)
+  bool cbs_event_1217_0(QEvent *arg1)
   {
-    return QNetworkAccessManager::event(_event);
+    return QNetworkAccessManager::event(arg1);
   }
 
-  virtual bool event(QEvent *_event)
+  virtual bool event(QEvent *arg1)
   {
     if (cb_event_1217_0.can_issue()) {
-      return cb_event_1217_0.issue<QNetworkAccessManager_Adaptor, bool, QEvent *>(&QNetworkAccessManager_Adaptor::cbs_event_1217_0, _event);
+      return cb_event_1217_0.issue<QNetworkAccessManager_Adaptor, bool, QEvent *>(&QNetworkAccessManager_Adaptor::cbs_event_1217_0, arg1);
     } else {
-      return QNetworkAccessManager::event(_event);
+      return QNetworkAccessManager::event(arg1);
     }
   }
 
-  //  [adaptor impl] bool QNetworkAccessManager::eventFilter(QObject *watched, QEvent *event)
-  bool cbs_eventFilter_2411_0(QObject *watched, QEvent *event)
+  //  [adaptor impl] bool QNetworkAccessManager::eventFilter(QObject *, QEvent *)
+  bool cbs_eventFilter_2411_0(QObject *arg1, QEvent *arg2)
   {
-    return QNetworkAccessManager::eventFilter(watched, event);
+    return QNetworkAccessManager::eventFilter(arg1, arg2);
   }
 
-  virtual bool eventFilter(QObject *watched, QEvent *event)
+  virtual bool eventFilter(QObject *arg1, QEvent *arg2)
   {
     if (cb_eventFilter_2411_0.can_issue()) {
-      return cb_eventFilter_2411_0.issue<QNetworkAccessManager_Adaptor, bool, QObject *, QEvent *>(&QNetworkAccessManager_Adaptor::cbs_eventFilter_2411_0, watched, event);
+      return cb_eventFilter_2411_0.issue<QNetworkAccessManager_Adaptor, bool, QObject *, QEvent *>(&QNetworkAccessManager_Adaptor::cbs_eventFilter_2411_0, arg1, arg2);
     } else {
-      return QNetworkAccessManager::eventFilter(watched, event);
+      return QNetworkAccessManager::eventFilter(arg1, arg2);
     }
   }
 
@@ -1025,13 +804,6 @@ public:
     emit QNetworkAccessManager::networkSessionConnected();
   }
 
-  //  [emitter impl] void QNetworkAccessManager::objectNameChanged(const QString &objectName)
-  void emitter_QNetworkAccessManager_objectNameChanged_4567(const QString &objectName)
-  {
-    __SUPPRESS_UNUSED_WARNING (objectName);
-    throw tl::Exception ("Can't emit private signal 'void QNetworkAccessManager::objectNameChanged(const QString &objectName)'");
-  }
-
   //  [emitter impl] void QNetworkAccessManager::preSharedKeyAuthenticationRequired(QNetworkReply *reply, QSslPreSharedKeyAuthenticator *authenticator)
   void emitter_QNetworkAccessManager_preSharedKeyAuthenticationRequired_5436(QNetworkReply *reply, QSslPreSharedKeyAuthenticator *authenticator)
   {
@@ -1050,18 +822,18 @@ public:
     emit QNetworkAccessManager::sslErrors(reply, errors);
   }
 
-  //  [adaptor impl] void QNetworkAccessManager::childEvent(QChildEvent *event)
-  void cbs_childEvent_1701_0(QChildEvent *event)
+  //  [adaptor impl] void QNetworkAccessManager::childEvent(QChildEvent *)
+  void cbs_childEvent_1701_0(QChildEvent *arg1)
   {
-    QNetworkAccessManager::childEvent(event);
+    QNetworkAccessManager::childEvent(arg1);
   }
 
-  virtual void childEvent(QChildEvent *event)
+  virtual void childEvent(QChildEvent *arg1)
   {
     if (cb_childEvent_1701_0.can_issue()) {
-      cb_childEvent_1701_0.issue<QNetworkAccessManager_Adaptor, QChildEvent *>(&QNetworkAccessManager_Adaptor::cbs_childEvent_1701_0, event);
+      cb_childEvent_1701_0.issue<QNetworkAccessManager_Adaptor, QChildEvent *>(&QNetworkAccessManager_Adaptor::cbs_childEvent_1701_0, arg1);
     } else {
-      QNetworkAccessManager::childEvent(event);
+      QNetworkAccessManager::childEvent(arg1);
     }
   }
 
@@ -1080,18 +852,18 @@ public:
     }
   }
 
-  //  [adaptor impl] void QNetworkAccessManager::customEvent(QEvent *event)
-  void cbs_customEvent_1217_0(QEvent *event)
+  //  [adaptor impl] void QNetworkAccessManager::customEvent(QEvent *)
+  void cbs_customEvent_1217_0(QEvent *arg1)
   {
-    QNetworkAccessManager::customEvent(event);
+    QNetworkAccessManager::customEvent(arg1);
   }
 
-  virtual void customEvent(QEvent *event)
+  virtual void customEvent(QEvent *arg1)
   {
     if (cb_customEvent_1217_0.can_issue()) {
-      cb_customEvent_1217_0.issue<QNetworkAccessManager_Adaptor, QEvent *>(&QNetworkAccessManager_Adaptor::cbs_customEvent_1217_0, event);
+      cb_customEvent_1217_0.issue<QNetworkAccessManager_Adaptor, QEvent *>(&QNetworkAccessManager_Adaptor::cbs_customEvent_1217_0, arg1);
     } else {
-      QNetworkAccessManager::customEvent(event);
+      QNetworkAccessManager::customEvent(arg1);
     }
   }
 
@@ -1110,18 +882,18 @@ public:
     }
   }
 
-  //  [adaptor impl] void QNetworkAccessManager::timerEvent(QTimerEvent *event)
-  void cbs_timerEvent_1730_0(QTimerEvent *event)
+  //  [adaptor impl] void QNetworkAccessManager::timerEvent(QTimerEvent *)
+  void cbs_timerEvent_1730_0(QTimerEvent *arg1)
   {
-    QNetworkAccessManager::timerEvent(event);
+    QNetworkAccessManager::timerEvent(arg1);
   }
 
-  virtual void timerEvent(QTimerEvent *event)
+  virtual void timerEvent(QTimerEvent *arg1)
   {
     if (cb_timerEvent_1730_0.can_issue()) {
-      cb_timerEvent_1730_0.issue<QNetworkAccessManager_Adaptor, QTimerEvent *>(&QNetworkAccessManager_Adaptor::cbs_timerEvent_1730_0, event);
+      cb_timerEvent_1730_0.issue<QNetworkAccessManager_Adaptor, QTimerEvent *>(&QNetworkAccessManager_Adaptor::cbs_timerEvent_1730_0, arg1);
     } else {
-      QNetworkAccessManager::timerEvent(event);
+      QNetworkAccessManager::timerEvent(arg1);
     }
   }
 
@@ -1140,7 +912,7 @@ QNetworkAccessManager_Adaptor::~QNetworkAccessManager_Adaptor() { }
 
 static void _init_ctor_QNetworkAccessManager_Adaptor_1302 (qt_gsi::GenericStaticMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("parent", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("parent", true, "0");
   decl->add_arg<QObject * > (argspec_0);
   decl->set_return_new<QNetworkAccessManager_Adaptor> ();
 }
@@ -1149,7 +921,7 @@ static void _call_ctor_QNetworkAccessManager_Adaptor_1302 (const qt_gsi::Generic
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (nullptr, heap);
+  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (0, heap);
   ret.write<QNetworkAccessManager_Adaptor *> (new QNetworkAccessManager_Adaptor (arg1));
 }
 
@@ -1175,11 +947,11 @@ static void _call_emitter_authenticationRequired_3939 (const qt_gsi::GenericMeth
 }
 
 
-// void QNetworkAccessManager::childEvent(QChildEvent *event)
+// void QNetworkAccessManager::childEvent(QChildEvent *)
 
 static void _init_cbs_childEvent_1701_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QChildEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1228,11 +1000,11 @@ static void _set_callback_cbs_createRequest_7733_1 (void *cls, const gsi::Callba
 }
 
 
-// void QNetworkAccessManager::customEvent(QEvent *event)
+// void QNetworkAccessManager::customEvent(QEvent *)
 
 static void _init_cbs_customEvent_1217_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1256,7 +1028,7 @@ static void _set_callback_cbs_customEvent_1217_0 (void *cls, const gsi::Callback
 
 static void _init_emitter_destroyed_1302 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("arg1", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("arg1", true, "0");
   decl->add_arg<QObject * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1265,7 +1037,7 @@ static void _call_emitter_destroyed_1302 (const qt_gsi::GenericMethod * /*decl*/
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (nullptr, heap);
+  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (0, heap);
   ((QNetworkAccessManager_Adaptor *)cls)->emitter_QNetworkAccessManager_destroyed_1302 (arg1);
 }
 
@@ -1312,11 +1084,11 @@ static void _call_emitter_encrypted_1973 (const qt_gsi::GenericMethod * /*decl*/
 }
 
 
-// bool QNetworkAccessManager::event(QEvent *event)
+// bool QNetworkAccessManager::event(QEvent *)
 
 static void _init_cbs_event_1217_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QEvent * > (argspec_0);
   decl->set_return<bool > ();
 }
@@ -1335,13 +1107,13 @@ static void _set_callback_cbs_event_1217_0 (void *cls, const gsi::Callback &cb)
 }
 
 
-// bool QNetworkAccessManager::eventFilter(QObject *watched, QEvent *event)
+// bool QNetworkAccessManager::eventFilter(QObject *, QEvent *)
 
 static void _init_cbs_eventFilter_2411_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("watched");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QObject * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("event");
+  static gsi::ArgSpecBase argspec_1 ("arg2");
   decl->add_arg<QEvent * > (argspec_1);
   decl->set_return<bool > ();
 }
@@ -1426,24 +1198,6 @@ static void _call_emitter_networkSessionConnected_0 (const qt_gsi::GenericMethod
 {
   __SUPPRESS_UNUSED_WARNING(args);
   ((QNetworkAccessManager_Adaptor *)cls)->emitter_QNetworkAccessManager_networkSessionConnected_0 ();
-}
-
-
-// emitter void QNetworkAccessManager::objectNameChanged(const QString &objectName)
-
-static void _init_emitter_objectNameChanged_4567 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("objectName");
-  decl->add_arg<const QString & > (argspec_0);
-  decl->set_return<void > ();
-}
-
-static void _call_emitter_objectNameChanged_4567 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs & /*ret*/) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const QString &arg1 = gsi::arg_reader<const QString & >() (args, heap);
-  ((QNetworkAccessManager_Adaptor *)cls)->emitter_QNetworkAccessManager_objectNameChanged_4567 (arg1);
 }
 
 
@@ -1570,11 +1324,11 @@ static void _call_fp_supportedSchemesImplementation_c0 (const qt_gsi::GenericMet
 }
 
 
-// void QNetworkAccessManager::timerEvent(QTimerEvent *event)
+// void QNetworkAccessManager::timerEvent(QTimerEvent *)
 
 static void _init_cbs_timerEvent_1730_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QTimerEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1603,25 +1357,24 @@ static gsi::Methods methods_QNetworkAccessManager_Adaptor () {
   gsi::Methods methods;
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QNetworkAccessManager::QNetworkAccessManager(QObject *parent)\nThis method creates an object of class QNetworkAccessManager.", &_init_ctor_QNetworkAccessManager_Adaptor_1302, &_call_ctor_QNetworkAccessManager_Adaptor_1302);
   methods += new qt_gsi::GenericMethod ("emit_authenticationRequired", "@brief Emitter for signal void QNetworkAccessManager::authenticationRequired(QNetworkReply *reply, QAuthenticator *authenticator)\nCall this method to emit this signal.", false, &_init_emitter_authenticationRequired_3939, &_call_emitter_authenticationRequired_3939);
-  methods += new qt_gsi::GenericMethod ("*childEvent", "@brief Virtual method void QNetworkAccessManager::childEvent(QChildEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0);
-  methods += new qt_gsi::GenericMethod ("*childEvent", "@hide", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0, &_set_callback_cbs_childEvent_1701_0);
-  methods += new qt_gsi::GenericMethod ("*createRequest", "@brief Virtual method QNetworkReply *QNetworkAccessManager::createRequest(QNetworkAccessManager::Operation op, const QNetworkRequest &request, QIODevice *outgoingData)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_createRequest_7733_1, &_call_cbs_createRequest_7733_1);
-  methods += new qt_gsi::GenericMethod ("*createRequest", "@hide", false, &_init_cbs_createRequest_7733_1, &_call_cbs_createRequest_7733_1, &_set_callback_cbs_createRequest_7733_1);
-  methods += new qt_gsi::GenericMethod ("*customEvent", "@brief Virtual method void QNetworkAccessManager::customEvent(QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*customEvent", "@hide", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0, &_set_callback_cbs_customEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*childEvent", "@hide", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0);
+  methods += new qt_gsi::GenericMethod ("*childEvent", "@brief Virtual method void QNetworkAccessManager::childEvent(QChildEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0, &_set_callback_cbs_childEvent_1701_0);
+  methods += new qt_gsi::GenericMethod ("*createRequest", "@hide", false, &_init_cbs_createRequest_7733_1, &_call_cbs_createRequest_7733_1);
+  methods += new qt_gsi::GenericMethod ("*createRequest", "@brief Virtual method QNetworkReply *QNetworkAccessManager::createRequest(QNetworkAccessManager::Operation op, const QNetworkRequest &request, QIODevice *outgoingData)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_createRequest_7733_1, &_call_cbs_createRequest_7733_1, &_set_callback_cbs_createRequest_7733_1);
+  methods += new qt_gsi::GenericMethod ("*customEvent", "@hide", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*customEvent", "@brief Virtual method void QNetworkAccessManager::customEvent(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0, &_set_callback_cbs_customEvent_1217_0);
   methods += new qt_gsi::GenericMethod ("emit_destroyed", "@brief Emitter for signal void QNetworkAccessManager::destroyed(QObject *)\nCall this method to emit this signal.", false, &_init_emitter_destroyed_1302, &_call_emitter_destroyed_1302);
-  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@brief Virtual method void QNetworkAccessManager::disconnectNotify(const QMetaMethod &signal)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0);
-  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@hide", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0, &_set_callback_cbs_disconnectNotify_2394_0);
+  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@hide", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0);
+  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@brief Virtual method void QNetworkAccessManager::disconnectNotify(const QMetaMethod &signal)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0, &_set_callback_cbs_disconnectNotify_2394_0);
   methods += new qt_gsi::GenericMethod ("emit_encrypted", "@brief Emitter for signal void QNetworkAccessManager::encrypted(QNetworkReply *reply)\nCall this method to emit this signal.", false, &_init_emitter_encrypted_1973, &_call_emitter_encrypted_1973);
-  methods += new qt_gsi::GenericMethod ("event", "@brief Virtual method bool QNetworkAccessManager::event(QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0);
-  methods += new qt_gsi::GenericMethod ("event", "@hide", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0, &_set_callback_cbs_event_1217_0);
-  methods += new qt_gsi::GenericMethod ("eventFilter", "@brief Virtual method bool QNetworkAccessManager::eventFilter(QObject *watched, QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0);
-  methods += new qt_gsi::GenericMethod ("eventFilter", "@hide", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0, &_set_callback_cbs_eventFilter_2411_0);
+  methods += new qt_gsi::GenericMethod ("event", "@hide", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0);
+  methods += new qt_gsi::GenericMethod ("event", "@brief Virtual method bool QNetworkAccessManager::event(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0, &_set_callback_cbs_event_1217_0);
+  methods += new qt_gsi::GenericMethod ("eventFilter", "@hide", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0);
+  methods += new qt_gsi::GenericMethod ("eventFilter", "@brief Virtual method bool QNetworkAccessManager::eventFilter(QObject *, QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0, &_set_callback_cbs_eventFilter_2411_0);
   methods += new qt_gsi::GenericMethod ("emit_finished", "@brief Emitter for signal void QNetworkAccessManager::finished(QNetworkReply *reply)\nCall this method to emit this signal.", false, &_init_emitter_finished_1973, &_call_emitter_finished_1973);
   methods += new qt_gsi::GenericMethod ("*isSignalConnected", "@brief Method bool QNetworkAccessManager::isSignalConnected(const QMetaMethod &signal)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_isSignalConnected_c2394, &_call_fp_isSignalConnected_c2394);
   methods += new qt_gsi::GenericMethod ("emit_networkAccessibleChanged", "@brief Emitter for signal void QNetworkAccessManager::networkAccessibleChanged(QNetworkAccessManager::NetworkAccessibility accessible)\nCall this method to emit this signal.", false, &_init_emitter_networkAccessibleChanged_4770, &_call_emitter_networkAccessibleChanged_4770);
   methods += new qt_gsi::GenericMethod ("emit_networkSessionConnected", "@brief Emitter for signal void QNetworkAccessManager::networkSessionConnected()\nCall this method to emit this signal.", false, &_init_emitter_networkSessionConnected_0, &_call_emitter_networkSessionConnected_0);
-  methods += new qt_gsi::GenericMethod ("emit_objectNameChanged", "@brief Emitter for signal void QNetworkAccessManager::objectNameChanged(const QString &objectName)\nCall this method to emit this signal.", false, &_init_emitter_objectNameChanged_4567, &_call_emitter_objectNameChanged_4567);
   methods += new qt_gsi::GenericMethod ("emit_preSharedKeyAuthenticationRequired", "@brief Emitter for signal void QNetworkAccessManager::preSharedKeyAuthenticationRequired(QNetworkReply *reply, QSslPreSharedKeyAuthenticator *authenticator)\nCall this method to emit this signal.", false, &_init_emitter_preSharedKeyAuthenticationRequired_5436, &_call_emitter_preSharedKeyAuthenticationRequired_5436);
   methods += new qt_gsi::GenericMethod ("emit_proxyAuthenticationRequired", "@brief Emitter for signal void QNetworkAccessManager::proxyAuthenticationRequired(const QNetworkProxy &proxy, QAuthenticator *authenticator)\nCall this method to emit this signal.", false, &_init_emitter_proxyAuthenticationRequired_4652, &_call_emitter_proxyAuthenticationRequired_4652);
   methods += new qt_gsi::GenericMethod ("*receivers", "@brief Method int QNetworkAccessManager::receivers(const char *signal)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_receivers_c1731, &_call_fp_receivers_c1731);
@@ -1629,8 +1382,8 @@ static gsi::Methods methods_QNetworkAccessManager_Adaptor () {
   methods += new qt_gsi::GenericMethod ("*senderSignalIndex", "@brief Method int QNetworkAccessManager::senderSignalIndex()\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_senderSignalIndex_c0, &_call_fp_senderSignalIndex_c0);
   methods += new qt_gsi::GenericMethod ("emit_sslErrors", "@brief Emitter for signal void QNetworkAccessManager::sslErrors(QNetworkReply *reply, const QList<QSslError> &errors)\nCall this method to emit this signal.", false, &_init_emitter_sslErrors_4702, &_call_emitter_sslErrors_4702);
   methods += new qt_gsi::GenericMethod ("*supportedSchemesImplementation", "@brief Method QStringList QNetworkAccessManager::supportedSchemesImplementation()\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_supportedSchemesImplementation_c0, &_call_fp_supportedSchemesImplementation_c0);
-  methods += new qt_gsi::GenericMethod ("*timerEvent", "@brief Virtual method void QNetworkAccessManager::timerEvent(QTimerEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0);
-  methods += new qt_gsi::GenericMethod ("*timerEvent", "@hide", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0, &_set_callback_cbs_timerEvent_1730_0);
+  methods += new qt_gsi::GenericMethod ("*timerEvent", "@hide", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0);
+  methods += new qt_gsi::GenericMethod ("*timerEvent", "@brief Virtual method void QNetworkAccessManager::timerEvent(QTimerEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0, &_set_callback_cbs_timerEvent_1730_0);
   return methods;
 }
 

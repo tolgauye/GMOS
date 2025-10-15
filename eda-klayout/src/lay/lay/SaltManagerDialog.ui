@@ -17,7 +17,7 @@
    <item>
     <widget class="QTabWidget" name="mode_tab">
      <property name="currentIndex">
-      <number>2</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="tab_2">
       <attribute name="title">
@@ -76,8 +76,8 @@
                  <string>Mark</string>
                 </property>
                 <property name="icon">
-                 <iconset resource="../../icons/icons.qrc">
-                  <normaloff>:/marked_16px.png</normaloff>:/marked_16px.png</iconset>
+                 <iconset resource="layResources.qrc">
+                  <normaloff>:/marked_16.png</normaloff>:/marked_16.png</iconset>
                 </property>
                 <property name="autoRaise">
                  <bool>true</bool>
@@ -103,7 +103,7 @@
                  <string/>
                 </property>
                 <property name="pixmap">
-                 <pixmap resource="../../icons/icons.qrc">:/find_16px@2x.png</pixmap>
+                 <pixmap resource="layResources.qrc">:/find.png</pixmap>
                 </property>
                </widget>
               </item>
@@ -217,32 +217,14 @@
               </property>
               <item>
                <widget class="QLabel" name="label_6">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-                  <horstretch>1</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
                 <property name="font">
                  <font>
+                  <weight>75</weight>
                   <bold>true</bold>
                  </font>
                 </property>
                 <property name="text">
                  <string>Details</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QCheckBox" name="detailed_view">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="text">
-                 <string>More details</string>
                 </property>
                </widget>
               </item>
@@ -255,8 +237,8 @@
                  <string>...</string>
                 </property>
                 <property name="icon">
-                 <iconset resource="../../icons/icons.qrc">
-                  <normaloff>:/empty_16px.png</normaloff>:/empty_16px.png</iconset>
+                 <iconset resource="layResources.qrc">
+                  <normaloff>:/empty_16.png</normaloff>:/empty_16.png</iconset>
                 </property>
                 <property name="autoRaise">
                  <bool>true</bool>
@@ -393,8 +375,8 @@
                  <string>Mark</string>
                 </property>
                 <property name="icon">
-                 <iconset resource="../../icons/icons.qrc">
-                  <normaloff>:/marked_16px.png</normaloff>:/marked_16px.png</iconset>
+                 <iconset resource="layResources.qrc">
+                  <normaloff>:/marked_16.png</normaloff>:/marked_16.png</iconset>
                 </property>
                 <property name="autoRaise">
                  <bool>true</bool>
@@ -420,7 +402,7 @@
                  <string/>
                 </property>
                 <property name="pixmap">
-                 <pixmap resource="../../icons/icons.qrc">:/find_16px@2x.png</pixmap>
+                 <pixmap resource="layResources.qrc">:/find.png</pixmap>
                 </property>
                </widget>
               </item>
@@ -534,26 +516,14 @@
               </property>
               <item>
                <widget class="QLabel" name="label_9">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-                  <horstretch>1</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
                 <property name="font">
                  <font>
+                  <weight>75</weight>
                   <bold>true</bold>
                  </font>
                 </property>
                 <property name="text">
                  <string>Details</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QCheckBox" name="detailed_view2">
-                <property name="text">
-                 <string>More details</string>
                 </property>
                </widget>
               </item>
@@ -566,8 +536,8 @@
                  <string>...</string>
                 </property>
                 <property name="icon">
-                 <iconset resource="../../icons/icons.qrc">
-                  <normaloff>:/empty_16px.png</normaloff>:/empty_16px.png</iconset>
+                 <iconset resource="layResources.qrc">
+                  <normaloff>:/empty_16.png</normaloff>:/empty_16.png</iconset>
                 </property>
                 <property name="autoRaise">
                  <bool>true</bool>
@@ -720,7 +690,7 @@
                  <string/>
                 </property>
                 <property name="pixmap">
-                 <pixmap resource="../../icons/icons.qrc">:/find_16px@2x.png</pixmap>
+                 <pixmap resource="layResources.qrc">:/find.png</pixmap>
                 </property>
                </widget>
               </item>
@@ -834,8 +804,8 @@
                       <rect>
                        <x>0</x>
                        <y>0</y>
-                       <width>334</width>
-                       <height>213</height>
+                       <width>537</width>
+                       <height>284</height>
                       </rect>
                      </property>
                      <layout class="QGridLayout" name="gridLayout_2">
@@ -858,7 +828,7 @@
                          <string/>
                         </property>
                         <property name="pixmap">
-                         <pixmap resource="../../icons/icons.qrc">:/salt@2x.png</pixmap>
+                         <pixmap resource="layResources.qrc">:/salt.png</pixmap>
                         </property>
                        </widget>
                       </item>
@@ -873,6 +843,7 @@
                         <property name="font">
                          <font>
                           <pointsize>9</pointsize>
+                          <weight>50</weight>
                           <bold>false</bold>
                          </font>
                         </property>
@@ -900,7 +871,7 @@
 &lt;table&gt;
   &lt;tr&gt;&lt;td&gt;The &quot;Install New Packages&quot; tab to install a package&lt;br/&gt;from an external repository&lt;/td&gt;&lt;/tr&gt;
   &lt;tr&gt;&lt;/tr&gt;
-  &lt;tr&gt;&lt;td&gt;The &lt;a href=&quot;:add&quot;&gt;&lt;img src=&quot;:/add_16px@2x.png&quot;&gt;&lt;/a&gt; button to create a new package&lt;/td&gt;&lt;/tr&gt;
+  &lt;tr&gt;&lt;td&gt;The &lt;a href=&quot;:add&quot;&gt;&lt;img src=&quot;:/add.png&quot;&gt;&lt;/a&gt; button to create a new package&lt;/td&gt;&lt;/tr&gt;
 &lt;/table&gt;
 &lt;/body&gt;&lt;/html&gt;</string>
                         </property>
@@ -967,23 +938,11 @@
            <property name="bottomMargin">
             <number>0</number>
            </property>
-           <item row="1" column="0" colspan="3">
-            <widget class="lay::SaltGrainDetailsTextWidget" name="details_text">
-             <property name="openExternalLinks">
-              <bool>true</bool>
-             </property>
-            </widget>
-           </item>
            <item row="0" column="0">
             <widget class="QLabel" name="label">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-               <horstretch>1</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
              <property name="font">
               <font>
+               <weight>75</weight>
                <bold>true</bold>
               </font>
              </property>
@@ -992,7 +951,7 @@
              </property>
             </widget>
            </item>
-           <item row="0" column="2">
+           <item row="0" column="1">
             <widget class="QToolButton" name="edit_button">
              <property name="toolTip">
               <string>Edit Package Details</string>
@@ -1001,18 +960,18 @@
               <string>Edit</string>
              </property>
              <property name="icon">
-              <iconset resource="../../icons/icons.qrc">
-               <normaloff>:/edit_16px.png</normaloff>:/edit_16px.png</iconset>
+              <iconset resource="layResources.qrc">
+               <normaloff>:/edit.png</normaloff>:/edit.png</iconset>
              </property>
              <property name="autoRaise">
               <bool>true</bool>
              </property>
             </widget>
            </item>
-           <item row="0" column="1">
-            <widget class="QCheckBox" name="detailed_view3">
-             <property name="text">
-              <string>More details</string>
+           <item row="1" column="0" colspan="2">
+            <widget class="lay::SaltGrainDetailsTextWidget" name="details_text">
+             <property name="openExternalLinks">
+              <bool>true</bool>
              </property>
             </widget>
            </item>
@@ -1053,8 +1012,8 @@
              <string>Remove Package</string>
             </property>
             <property name="icon">
-             <iconset resource="../../icons/icons.qrc">
-              <normaloff>:/clear_16px.png</normaloff>:/clear_16px.png</iconset>
+             <iconset resource="layResources.qrc">
+              <normaloff>:/clear.png</normaloff>:/clear.png</iconset>
             </property>
            </widget>
           </item>
@@ -1077,8 +1036,8 @@
              <string>Create (Edit) Package</string>
             </property>
             <property name="icon">
-             <iconset resource="../../icons/icons.qrc">
-              <normaloff>:/add_16px.png</normaloff>:/add_16px.png</iconset>
+             <iconset resource="layResources.qrc">
+              <normaloff>:/add.png</normaloff>:/add.png</iconset>
             </property>
             <property name="autoDefault">
              <bool>false</bool>
@@ -1102,8 +1061,8 @@
   </layout>
   <action name="actionNew">
    <property name="icon">
-    <iconset resource="../../icons/icons.qrc">
-     <normaloff>:/add_16px.png</normaloff>:/add_16px.png</iconset>
+    <iconset resource="layResources.qrc">
+     <normaloff>:/add.png</normaloff>:/add.png</iconset>
    </property>
    <property name="text">
     <string>New</string>
@@ -1114,8 +1073,8 @@
   </action>
   <action name="actionDelete">
    <property name="icon">
-    <iconset resource="../../icons/icons.qrc">
-     <normaloff>:/clear_16px.png</normaloff>:/clear_16px.png</iconset>
+    <iconset resource="layResources.qrc">
+     <normaloff>:/clear.png</normaloff>:/clear.png</iconset>
    </property>
    <property name="text">
     <string>Remove Package</string>
@@ -1174,8 +1133,8 @@
   </action>
   <action name="actionCreatePackage">
    <property name="icon">
-    <iconset resource="../../icons/icons.qrc">
-     <normaloff>:/add_16px.png</normaloff>:/add_16px.png</iconset>
+    <iconset resource="layResources.qrc">
+     <normaloff>:/add.png</normaloff>:/add.png</iconset>
    </property>
    <property name="text">
     <string>Create (edit) package</string>
@@ -1202,37 +1161,24 @@
    <class>lay::SaltGrainDetailsTextWidget</class>
    <extends>QTextBrowser</extends>
    <header>laySaltGrainDetailsTextWidget.h</header>
-   <slots>
-    <slot>show_detailed_view(bool)</slot>
-   </slots>
   </customwidget>
  </customwidgets>
  <tabstops>
   <tabstop>mode_tab</tabstop>
-  <tabstop>mark_new_button</tabstop>
-  <tabstop>search_new_edit</tabstop>
-  <tabstop>salt_mine_view_new</tabstop>
-  <tabstop>detailed_view</tabstop>
-  <tabstop>toolButton</tabstop>
-  <tabstop>details_new_text</tabstop>
-  <tabstop>mark_update_button</tabstop>
-  <tabstop>search_update_edit</tabstop>
-  <tabstop>salt_mine_view_update</tabstop>
-  <tabstop>detailed_view2</tabstop>
-  <tabstop>toolButton_2</tabstop>
-  <tabstop>details_update_text</tabstop>
   <tabstop>search_installed_edit</tabstop>
   <tabstop>salt_view</tabstop>
-  <tabstop>detailed_view3</tabstop>
-  <tabstop>edit_button</tabstop>
   <tabstop>details_text</tabstop>
-  <tabstop>create_button</tabstop>
+  <tabstop>edit_button</tabstop>
+  <tabstop>search_new_edit</tabstop>
+  <tabstop>mark_new_button</tabstop>
+  <tabstop>salt_mine_view_new</tabstop>
+  <tabstop>details_new_text</tabstop>
+  <tabstop>toolButton</tabstop>
   <tabstop>apply_new_button</tabstop>
-  <tabstop>apply_update_button</tabstop>
   <tabstop>scrollArea</tabstop>
  </tabstops>
  <resources>
-  <include location="../../icons/icons.qrc"/>
+  <include location="layResources.qrc"/>
  </resources>
  <connections>
   <connection>
@@ -1248,54 +1194,6 @@
     <hint type="destinationlabel">
      <x>653</x>
      <y>432</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>detailed_view</sender>
-   <signal>clicked(bool)</signal>
-   <receiver>details_new_text</receiver>
-   <slot>show_detailed_view(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>588</x>
-     <y>57</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>578</x>
-     <y>121</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>detailed_view2</sender>
-   <signal>clicked(bool)</signal>
-   <receiver>details_update_text</receiver>
-   <slot>show_detailed_view(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>616</x>
-     <y>58</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>615</x>
-     <y>96</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>detailed_view3</sender>
-   <signal>clicked(bool)</signal>
-   <receiver>details_text</receiver>
-   <slot>show_detailed_view(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>602</x>
-     <y>58</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>603</x>
-     <y>91</y>
     </hint>
    </hints>
   </connection>

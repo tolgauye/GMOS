@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,6 @@
 
 
 #include "gsiDecl.h"
-#include "gsiDeclDbPropertiesSupport.h"
 #include "dbPoint.h"
 #include "dbEdge.h"
 #include "dbHash.h"
@@ -48,7 +47,7 @@ struct edge_defs
   static C *from_string (const char *s)
   {
     tl::Extractor ex (s);
-    std::unique_ptr<C> c (new C ());
+    std::auto_ptr<C> c (new C ());
     ex.read (*c.get ());
     return c.release ();
   }
@@ -76,16 +75,6 @@ struct edge_defs
   static tl::Variant intersect_point (const C *e, const C &ee)
   {
     std::pair<bool, point_type> ip = e->intersect_point (ee);
-    if (ip.first) {
-      return tl::Variant (ip.second);
-    } else {
-      return tl::Variant ();
-    }
-  }
-
-  static tl::Variant cut_point (const C *e, const C &ee)
-  {
-    std::pair<bool, point_type> ip = e->cut_point (ee);
     if (ip.first) {
       return tl::Variant (ip.second);
     } else {
@@ -170,7 +159,7 @@ struct edge_defs
 
   static size_t hash_value (const C *e)
   {
-    return tl::hfunc (*e);
+    return std::hfunc (*e);
   }
 
   static gsi::Methods methods ()
@@ -208,17 +197,17 @@ struct edge_defs
       "\n"
       "This method has been introduced in version 0.25.\n"
     ) +
-    method ("moved", &C::moved, gsi::arg ("v"),
+    method ("moved", &C::moved, gsi::arg ("p"),
       "@brief Returns the moved edge (does not modify self)\n"
       "\n"
       "Moves the edge by the given offset and returns the \n"
       "moved edge. The edge is not modified.\n"
       "\n"
-      "@param v The distance to move the edge.\n"
+      "@param p The distance to move the edge.\n"
       "\n"
       "@return The moved edge.\n"
     ) +
-    method_ext ("moved", &moved_xy, gsi::arg ("dx", 0), gsi::arg ("dy", 0),
+    method_ext ("moved", &moved_xy, gsi::arg ("dx"), gsi::arg ("dy"),
       "@brief Returns the moved edge (does not modify self)\n"
       "\n"
       "Moves the edge by the given offset and returns the \n"
@@ -326,17 +315,17 @@ struct edge_defs
       "\n"
       "@return The transformed edge.\n"
     ) +
-    method ("move", &C::move, gsi::arg ("v"),
+    method ("move", &C::move, gsi::arg ("p"),
       "@brief Moves the edge.\n"
       "\n"
       "Moves the edge by the given offset and returns the \n"
       "moved edge. The edge is overwritten.\n"
       "\n"
-      "@param v The distance to move the edge.\n"
+      "@param p The distance to move the edge.\n"
       "\n"
       "@return The moved edge.\n"
     ) +
-    method_ext ("move", &move_xy, gsi::arg ("dx", 0), gsi::arg ("dy", 0),
+    method_ext ("move", &move_xy, gsi::arg ("dx"), gsi::arg ("dy"),
       "@brief Moves the edge.\n"
       "\n"
       "Moves the edge by the given offset and returns the \n"
@@ -440,11 +429,8 @@ struct edge_defs
       "\n"
       "This method has been added in version 0.23.\n"
     ) +
-    method ("to_s", &C::to_string, gsi::arg ("dbu", 0.0),
-      "@brief Returns a string representing the edge\n "
-      "If a DBU is given, the output units will be micrometers.\n"
-      "\n"
-      "The DBU argument has been added in version 0.27.6.\n"
+    method ("to_s", (std::string (C::*) () const) &C::to_string,
+      "@brief Returns a string representing the edge\n"
     ) +
     method ("is_parallel?", &C::parallel, gsi::arg ("e"),
       "@brief Test for being parallel\n"
@@ -465,7 +451,7 @@ struct edge_defs
       "@return The scaled edge\n"
     ) +
     method ("contains?", &C::contains, gsi::arg ("p"),
-      "@brief Tests whether a point is on an edge.\n"
+      "@brief Test whether a point is on an edge.\n"
       "\n"
       "A point is on a edge if it is on (or at least closer \n"
       "than a grid point to) the edge.\n"
@@ -475,7 +461,7 @@ struct edge_defs
       "@return True if the point is on the edge.\n"
     ) +
     method ("contains_excl?", &C::contains_excl, gsi::arg ("p"),
-      "@brief Tests whether a point is on an edge excluding the endpoints.\n"
+      "@brief Test whether a point is on an edge excluding the endpoints.\n"
       "\n"
       "A point is on a edge if it is on (or at least closer \n"
       "than a grid point to) the edge.\n"
@@ -495,40 +481,26 @@ struct edge_defs
       "\n"
       "@return True if the edges are coincident.\n"
     ) +
-    method ("intersects?|#intersect?", &C::intersect, gsi::arg ("e"),
+    method ("intersect?", &C::intersect, gsi::arg ("e"),
       "@brief Intersection test. \n"
       "\n"
       "Returns true if the edges intersect. Two edges intersect if they share at least one point. \n"
       "If the edges coincide, they also intersect.\n"
-      "If one of the edges is degenerate (both points are identical), that point is "
-      "required to sit exaclty on the other edge. If both edges are degenerate, their "
-      "points are required to be identical.\n"
+      "For degenerated edges, the intersection is mapped to\n"
+      "point containment tests.\n"
       "\n"
       "@param e The edge to test.\n"
-      "\n"
-      "The 'intersects' (with an 's') synonym has been introduced in version 0.28.12.\n"
     ) +
     method_ext ("intersection_point", &intersect_point, gsi::arg ("e"),
       "@brief Returns the intersection point of two edges. \n"
       "\n"
-      "This method delivers the intersection point. If the edges do not intersect, the result will be nil.\n"
+      "This method delivers the intersection point. If the edges do not intersect, the result is undefined.\n"
       "\n"
       "@param e The edge to test.\n"
       "@return The point where the edges intersect.\n"
       "\n"
       "This method has been introduced in version 0.19.\n"
       "From version 0.26.2, this method will return nil in case of non-intersection.\n"
-    ) +
-    method_ext ("cut_point", &cut_point, gsi::arg ("e"),
-      "@brief Returns the intersection point of the lines through the two edges.\n"
-      "\n"
-      "This method delivers the intersection point between the lines through the two edges. If the lines are parallel and do not intersect, the result will be nil.\n"
-      "In contrast to \\intersection_point, this method will regard the edges as infinitely extended and intersection is not confined to the edge span.\n"
-      "\n"
-      "@param e The edge to test.\n"
-      "@return The point where the lines intersect.\n"
-      "\n"
-      "This method has been introduced in version 0.27.1.\n"
     ) +
     method_ext ("clipped", &clipped, gsi::arg ("box"),
       "@brief Returns the edge clipped at the given box\n"
@@ -544,7 +516,7 @@ struct edge_defs
       "@param box The clip box.\n"
       "@return The part of the line through the box or nil if the line does not intersect with the box.\n"
       "\n"
-      "In contrast to \\clipped, this method will consider the edge extended infinitely (a \"line\"). "
+      "In contrast to \\clipped, this method will consider the edge exended infinitely (a \"line\"). "
       "The returned edge will be the part of this line going through the box.\n"
       "\n"
       "This method has been introduced in version 0.26.2.\n"
@@ -556,7 +528,7 @@ struct edge_defs
       "This method has been introduced in version 0.26.2.\n"
     ) +
     method ("distance", &C::distance, gsi::arg ("p"),
-      "@brief Gets the distance of the point from the line through the edge.\n"
+      "@brief Distance between the edge and a point.\n"
       "\n"
       "Returns the distance between the edge and the point. The \n"
       "distance is signed which is negative if the point is to the\n"
@@ -564,11 +536,6 @@ struct edge_defs
       "The distance is measured by projecting the point onto the\n"
       "line through the edge. If the edge is degenerated, the distance\n"
       "is not defined.\n"
-      "\n"
-      "This method considers the edge to define an infinite line running through it.\n"
-      "\\distance returns the distance of 'p' to this line.\n"
-      "A similar method is \\euclidian_distance, but the latter regards\n"
-      "the edge a finite set of points between the endpoints.\n"
       "\n"
       "@param p The point to test.\n"
       "\n"
@@ -583,19 +550,6 @@ struct edge_defs
       "@param p The point to test.\n"
       "\n"
       "@return The side value\n"
-    ) +
-    method ("euclidian_distance", &C::euclidian_distance, gsi::arg ("p"),
-      "@brief Gets the distance of the point from the the edge.\n"
-      "\n"
-      "Returns the minimum distance of the point to any point on the edge.\n"
-      "Unlike \\distance, the edge is considered a finite set of points between\n"
-      "the endpoints. The result is also not signed like it is the case for \\distance.\n"
-      "\n"
-      "This method has been introduced in version 0.28.14.\n"
-      "\n"
-      "@param p The point to test.\n"
-      "\n"
-      "@return The distance\n"
     ) +
     method ("distance_abs", &C::distance_abs, gsi::arg ("p"),
       "@brief Absolute distance between the edge and a point.\n"
@@ -622,21 +576,19 @@ struct edge_defs
       "This method has been introduced in version 0.23.\n"
     ) +
     method ("crossed_by?", &C::crossed_by, gsi::arg ("e"),
-      "@brief Checks, if the line given by self is crossed by the edge e\n"
+      "@brief Check, if an edge is cut by a line (given by an edge)\n"
       "\n"
-      "self if considered an infinite line. This predicate renders true "
-      "if the edge e is cut by this line. In other words: "
-      "this method returns true if e.p1 is in one semispace of self \n"
-      "while e.p2 is in the other or one of them is exactly on self.\n"
+      "This method returns true if p1 is in one semispace \n"
+      "while p2 is in the other or one of them is on the line\n"
+      "through the edge \"e\"\n"
       "\n"
       "@param e The edge representing the line that the edge must be crossing.\n"
     ) +
     method_ext ("crossing_point", &crossing_point, gsi::arg ("e"),
       "@brief Returns the crossing point on two edges. \n"
       "\n"
-      "This method delivers the point where the given line (self) crosses the edge given "
-      "by the argument \"e\". self is considered infinitely long and is required to cut "
-      "through the edge \"e\". If self does not cut this line, the result is undefined. "
+      "This method delivers the point where the given edge (self) crosses the line given "
+      "by the edge in argument \"e\". If self does not cross this line, the result is undefined. "
       "See \\crossed_by? for a description of the crossing predicate.\n"
       "\n"
       "@param e The edge representing the line that self must be crossing.\n"
@@ -695,33 +647,6 @@ Class<db::Edge> decl_Edge ("db", "Edge",
   "database objects like the Edge class."
 );
 
-static db::EdgeWithProperties *new_edge_with_properties (const db::Edge &edge, db::properties_id_type pid)
-{
-  return new db::EdgeWithProperties (edge, pid);
-}
-
-static db::EdgeWithProperties *new_edge_with_properties2 (const db::Edge &edge, const std::map<tl::Variant, tl::Variant> &properties)
-{
-  return new db::EdgeWithProperties (edge, db::properties_id (db::PropertiesSet (properties.begin (), properties.end ())));
-}
-
-Class<db::EdgeWithProperties> decl_EdgeWithProperties (decl_Edge, "db", "EdgeWithProperties",
-  gsi::properties_support_methods<db::EdgeWithProperties> () +
-  constructor ("new", &new_edge_with_properties, gsi::arg ("edge"), gsi::arg ("properties_id", db::properties_id_type (0)),
-    "@brief Creates a new object from a property-less object and a properties ID."
-  ) +
-  constructor ("new", &new_edge_with_properties2, gsi::arg ("edge"), gsi::arg ("properties"),
-    "@brief Creates a new object from a property-less object and a properties hash."
-  )
-  ,
-  "@brief A Edge object with properties attached.\n"
-  "This class represents a combination of a Edge object an user properties. User properties are "
-  "stored in form of a properties ID. Convenience methods are provided to manipulate or retrieve "
-  "user properties directly.\n"
-  "\n"
-  "This class has been introduced in version 0.30."
-);
-
 static db::DEdge *dedge_from_iedge (const db::Edge &e)
 {
   return new db::DEdge (e);
@@ -766,33 +691,6 @@ Class<db::DEdge> decl_DEdge ("db", "DEdge",
   "\n"
   "See @<a href=\"/programming/database_api.xml\">The Database API@</a> for more details about the "
   "database objects like the Edge class."
-);
-
-static db::DEdgeWithProperties *new_dedge_with_properties (const db::DEdge &edge, db::properties_id_type pid)
-{
-  return new db::DEdgeWithProperties (edge, pid);
-}
-
-static db::DEdgeWithProperties *new_dedge_with_properties2 (const db::DEdge &edge, const std::map<tl::Variant, tl::Variant> &properties)
-{
-  return new db::DEdgeWithProperties (edge, db::properties_id (db::PropertiesSet (properties.begin (), properties.end ())));
-}
-
-Class<db::DEdgeWithProperties> decl_DEdgeWithProperties (decl_DEdge, "db", "DEdgeWithProperties",
-  gsi::properties_support_methods<db::DEdgeWithProperties> () +
-  constructor ("new", &new_dedge_with_properties, gsi::arg ("edge"), gsi::arg ("properties_id", db::properties_id_type (0)),
-    "@brief Creates a new object from a property-less object and a properties ID."
-  ) +
-  constructor ("new", &new_dedge_with_properties2, gsi::arg ("edge"), gsi::arg ("properties"),
-    "@brief Creates a new object from a property-less object and a properties hash."
-  )
-  ,
-  "@brief A DEdge object with properties attached.\n"
-  "This class represents a combination of a DEdge object an user properties. User properties are "
-  "stored in form of a properties ID. Convenience methods are provided to manipulate or retrieve "
-  "user properties directly.\n"
-  "\n"
-  "This class has been introduced in version 0.30."
 );
 
 }

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -43,7 +43,7 @@ class PYAObjectBase;
  *  @param arg The argument to serialize (a Python object)
  *  @param heap A heap for temporary objects
  *
- *  The heap collects objects created while filling the buffer.
+ *  The heap collects objects created while filling the buffer. 
  *  The stack must persist as long as the serial buffer is used.
  */
 void
@@ -58,7 +58,7 @@ push_arg (const gsi::ArgType &atype, gsi::SerialArgs &aserial, PyObject *arg, tl
  *  @param self The self object of the method call (for shortcut evaluation to return self if possible)
  *  @return The deserialized object (a new reference)
  */
-PythonRef pull_arg (const gsi::ArgType &atype, gsi::SerialArgs &aserial, PYAObjectBase *self, tl::Heap &heap);
+PythonRef pop_arg (const gsi::ArgType &atype, gsi::SerialArgs &aserial, PYAObjectBase *self, tl::Heap &heap);
 
 /**
  *  @brief Tests whether the given object is compatible with the given type
@@ -69,13 +69,13 @@ PythonRef pull_arg (const gsi::ArgType &atype, gsi::SerialArgs &aserial, PYAObje
  *  @return True, if the type match
  */
 bool
-test_arg (const gsi::ArgType &atype, PyObject *arg, bool loose, bool object_substitution);
+test_arg (const gsi::ArgType &atype, PyObject *arg, bool loose);
 
 /**
  *  @brief Correct constness if a reference is const and a non-const reference is required
  *  HINT: this is a workaround for the fact that unlike C++, Python does not have const or non-const
  *  references. Since a reference is identical with the object it points to, there are only const or non-const
- *  objects. We deliver const objects first, but if a non-const version is requested, the
+ *  objects. We deliver const objects first, but if a non-const version is requestes, the
  *  object turns into a non-const one. This may be confusing but provides a certain level
  *  of "constness", at least until there is another non-const reference for that object.
  */
@@ -84,3 +84,4 @@ void correct_constness (PyObject *obj, bool const_required);
 }
 
 #endif
+

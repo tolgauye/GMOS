@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -22,16 +22,14 @@
 
 
 #include "imgObject.h"
-#include "imgStream.h"
+#include "imgWidgets.h" // for interpolate_color()
 #include "tlLog.h"
 #include "tlTimer.h"
 #include "layPlugin.h"
 #include "layConverters.h"
-#include "tlPixelBuffer.h"
 #include "dbPolygonTools.h"
 #include "tlFileUtils.h"
 #include "tlUri.h"
-#include "tlThreads.h"
 
 #include <cmath>
 #include <cstring>
@@ -40,9 +38,8 @@
 #include <string>
 #include <memory.h>
 
-#if defined(HAVE_QT)
-#  include <QImage>
-#endif
+#include <QImage>
+#include <QMutex>
 
 namespace img
 {
@@ -53,8 +50,8 @@ namespace img
 DataMapping::DataMapping ()
   : brightness (0.0), contrast (0.0), gamma (1.0), red_gain (1.0), green_gain (1.0), blue_gain (1.0)
 {
-  false_color_nodes.push_back (std::make_pair (0.0, std::make_pair (tl::Color (0, 0, 0), tl::Color (0, 0, 0))));
-  false_color_nodes.push_back (std::make_pair (1.0, std::make_pair (tl::Color (255, 255, 255), tl::Color (255, 255, 255))));
+  false_color_nodes.push_back (std::make_pair (0.0, QColor (0, 0, 0)));
+  false_color_nodes.push_back (std::make_pair (1.0, QColor (255, 255, 255)));
 }
 
 bool 
@@ -94,10 +91,7 @@ DataMapping::operator== (const DataMapping &d) const
     if (fabs (false_color_nodes[i].first - d.false_color_nodes[i].first) > epsilon) {
       return false;
     }
-    if (false_color_nodes[i].second.first != d.false_color_nodes[i].second.first) {
-      return false;
-    }
-    if (false_color_nodes[i].second.second != d.false_color_nodes[i].second.second) {
+    if (false_color_nodes[i].second != d.false_color_nodes[i].second) {
       return false;
     }
   }
@@ -142,11 +136,8 @@ DataMapping::operator< (const DataMapping &d) const
     if (fabs (false_color_nodes[i].first - d.false_color_nodes[i].first) > epsilon) {
       return false_color_nodes[i].first < d.false_color_nodes[i].first;
     }
-    if (false_color_nodes[i].second.first != d.false_color_nodes[i].second.first) {
-      return false_color_nodes[i].second.first.rgb () < d.false_color_nodes[i].second.first.rgb ();
-    }
-    if (false_color_nodes[i].second.second != d.false_color_nodes[i].second.second) {
-      return false_color_nodes[i].second.second.rgb () < d.false_color_nodes[i].second.second.rgb ();
+    if (false_color_nodes[i].second != d.false_color_nodes[i].second) {
+      return false_color_nodes[i].second.rgb () < d.false_color_nodes[i].second.rgb ();
     }
   }
 
@@ -194,25 +185,21 @@ DataMapping::create_data_mapping (bool monochrome, double xmin, double xmax, uns
 
     for (unsigned int i = 1; i < false_color_nodes.size (); ++i) {
 
-      unsigned int h1, s1, v1;
-      false_color_nodes [i - 1].second.second.get_hsv (h1, s1, v1);
+      int h1, s1, v1;
+      false_color_nodes [i - 1].second.getHsv (&h1, &s1, &v1);
 
-      unsigned int h2, s2, v2;
-      false_color_nodes [i].second.first.get_hsv (h2, s2, v2);
-
-      int dh = int (h1) - int (h2);
-      int ds = int (s1) - int (s2);
-      int dv = int (v1) - int (v2);
+      int h2, s2, v2;
+      false_color_nodes [i].second.getHsv (&h2, &s2, &v2);
 
       //  The number of steps is chosen such that the full HSV band divides into approximately 200 steps
-      double nsteps = 0.5 * sqrt (double (dh * dh) + double (ds * ds) + double (dv * dv));
+      double nsteps = 0.5 * sqrt (double (h1 - h2) * double (h1 - h2) + double (s1 - s2) * double (s1 - s2) + double (v1 - v2) * double (v1 - v2));
       int n = int (floor (nsteps + 1.0));
       double dx = (false_color_nodes [i].first - false_color_nodes [i - 1].first) / n;
       double x = false_color_nodes [i - 1].first;
 
       for (int j = 0; j < n; ++j) {
 
-        tl::Color c = interpolated_color (false_color_nodes, x);
+        QColor c = interpolated_color (false_color_nodes, x);
 
         double y = 0.0;
         if (channel == 0) {
@@ -233,11 +220,11 @@ DataMapping::create_data_mapping (bool monochrome, double xmin, double xmax, uns
 
     double ylast = 0.0;
     if (channel == 0) {
-      ylast = false_color_nodes.back ().second.second.red ();
+      ylast = false_color_nodes.back ().second.red ();
     } else if (channel == 1) {
-      ylast = false_color_nodes.back ().second.second.green ();
+      ylast = false_color_nodes.back ().second.green ();
     } else if (channel == 2) {
-      ylast = false_color_nodes.back ().second.second.blue ();
+      ylast = false_color_nodes.back ().second.blue ();
     }
 
     gray_to_color->push_back (false_color_nodes.back ().first, ylast / 255.0);
@@ -264,57 +251,6 @@ DataMapping::create_data_mapping (bool monochrome, double xmin, double xmax, uns
   }
 
   return dm;
-}
-
-// --------------------------------------------------------------------------------------
-
-namespace
-{
-
-struct compare_first_of_node
-{
-  bool operator() (const std::pair <double, std::pair<tl::Color, tl::Color> > &a, const std::pair <double, std::pair<tl::Color, tl::Color> > &b) const
-  {
-    return a.first < b.first;
-  }
-};
-
-}
-
-tl::Color
-interpolated_color (const DataMapping::false_color_nodes_type &nodes, double x)
-{
-  if (nodes.size () < 1) {
-    return tl::Color ();
-  } else if (nodes.size () < 2) {
-    return x < nodes[0].first ? nodes[0].second.first : nodes[0].second.second;
-  } else {
-
-    std::vector<std::pair<double, std::pair<tl::Color, tl::Color> > >::const_iterator p = std::lower_bound (nodes.begin (), nodes.end (), std::make_pair (x, std::make_pair (tl::Color (), tl::Color ())), compare_first_of_node ());
-    if (p == nodes.end ()) {
-      return nodes.back ().second.second;
-    } else if (p == nodes.begin ()) {
-      return nodes.front ().second.first;
-    } else {
-
-      double x1 = p[-1].first;
-      double x2 = p->first;
-
-      unsigned int h1 = 0, s1 = 0, v1 = 0;
-      p[-1].second.second.get_hsv (h1, s1, v1);
-
-      unsigned int h2 = 0, s2 = 0, v2 = 0;
-      p->second.first.get_hsv (h2, s2, v2);
-
-      int h = int (0.5 + h1 + double(x - x1) * double (int (h2) - int (h1)) / double(x2 - x1));
-      int s = int (0.5 + s1 + double(x - x1) * double (int (s2) - int (s1)) / double(x2 - x1));
-      int v = int (0.5 + v1 + double(x - x1) * double (int (v2) - int (v1)) / double(x2 - x1));
-
-      return tl::Color::from_hsv ((unsigned int) h, (unsigned int) s, (unsigned int) v);
-
-    }
-
-  }
 }
 
 // --------------------------------------------------------------------------------------
@@ -682,21 +618,21 @@ public:
     size_t n = data_length ();
     for (unsigned int i = 0; i < 3; ++i) {
       if (mp_color_data[i]) {
-        stat->add (typeid (float []), (void *) mp_color_data[i], n * sizeof (float), n * sizeof (float), (void *) this, purpose, cat);
+        stat->add (typeid (float []), (void *) mp_color_data[i], sizeof (n * sizeof (float)), sizeof (n * sizeof (float)), (void *) this, purpose, cat);
       }
       if (mp_color_byte_data[i]) {
-        stat->add (typeid (unsigned char []), (void *) mp_color_byte_data[i], n * sizeof (unsigned char), n * sizeof (unsigned char), (void *) this, purpose, cat);
+        stat->add (typeid (unsigned char []), (void *) mp_color_byte_data[i], sizeof (n * sizeof (unsigned char)), sizeof (n * sizeof (unsigned char)), (void *) this, purpose, cat);
       }
     }
 
     if (mp_mask) {
-      stat->add (typeid (unsigned char []), (void *) mp_mask, n * sizeof (unsigned char), n * sizeof (unsigned char), (void *) this, purpose, cat);
+      stat->add (typeid (unsigned char []), (void *) mp_mask, sizeof (n * sizeof (unsigned char)), sizeof (n * sizeof (unsigned char)), (void *) this, purpose, cat);
     }
     if (mp_data) {
-      stat->add (typeid (float []), (void *) mp_data, n * sizeof (float), n * sizeof (float), (void *) this, purpose, cat);
+      stat->add (typeid (float []), (void *) mp_data, sizeof (n * sizeof (float)), sizeof (n * sizeof (float)), (void *) this, purpose, cat);
     }
     if (mp_byte_data) {
-      stat->add (typeid (unsigned char []), (void *) mp_byte_data, n * sizeof (unsigned char), n * sizeof (unsigned char), (void *) this, purpose, cat);
+      stat->add (typeid (unsigned char []), (void *) mp_byte_data, sizeof (n * sizeof (unsigned char)), sizeof (n * sizeof (unsigned char)), (void *) this, purpose, cat);
     }
   }
 
@@ -747,7 +683,7 @@ private:
 
 static size_t make_id ()
 {
-  static tl::Mutex id_lock;
+  static QMutex id_lock;
   static size_t s_id_counter = 1;
 
   //  Get a new Id for the object. Id == 0 is reserved.
@@ -768,16 +704,31 @@ Object::Object ()
   mp_pixel_data = 0;
 }
 
-Object::Object (size_t w, size_t h, const db::DCplxTrans &trans, bool color, bool byte_data)
+Object::Object (size_t w, size_t h, const db::DCplxTrans &trans, bool color)
   : m_trans (trans), m_id (make_id ()), m_min_value (0.0), m_max_value (1.0), m_min_value_set (false), m_max_value_set (false), m_visible (true), m_z_position (0)
 {
   m_updates_enabled = false;
   mp_pixel_data = 0;
 
-  mp_data = new DataHeader (w, h, color, byte_data);
+  mp_data = new DataHeader (w, h, color, false);
   mp_data->add_ref ();
-  clear ();
-  m_updates_enabled = true;
+
+  //  The default data type is float
+  tl_assert (! is_byte_data ());
+
+  if (is_color ()) {
+    for (unsigned int c = 0; c < 3; ++c) {
+      float *d = mp_data->float_data (c);
+      for (size_t i = data_length (); i > 0; --i) {
+        *d++ = 0.0;
+      }
+    }
+  } else {
+    float *d = mp_data->float_data ();
+    for (size_t i = data_length (); i > 0; --i) {
+      *d++ = 0.0;
+    }
+  }
 }
 
 Object::Object (size_t w, size_t h, const db::DCplxTrans &trans, unsigned char *d)
@@ -851,39 +802,32 @@ Object::Object (const std::string &filename, const db::DCplxTrans &trans)
   m_updates_enabled = true;
 }
 
-Object::Object (const tl::PixelBuffer &pixel_buffer, const db::DCplxTrans &trans)
-  : m_filename ("<object>"), m_trans (trans), m_id (make_id ()), m_min_value (0.0), m_max_value (1.0), m_min_value_set (false), m_max_value_set (false), m_visible (true), m_z_position (0)
-{
-  m_updates_enabled = false;
-  mp_pixel_data = 0;
-
-  mp_data = 0;
-  create_from_pixel_buffer (pixel_buffer);
-  m_updates_enabled = true;
-}
-
-#if defined(HAVE_QT)
-Object::Object (const QImage &qimage, const db::DCplxTrans &trans)
-  : m_filename ("<object>"), m_trans (trans), m_id (make_id ()), m_min_value (0.0), m_max_value (1.0), m_min_value_set (false), m_max_value_set (false), m_visible (true), m_z_position (0)
-{
-  m_updates_enabled = false;
-  mp_pixel_data = 0;
-
-  mp_data = 0;
-  create_from_qimage (qimage);
-  m_updates_enabled = true;
-}
-#endif
-
-Object::Object (size_t w, size_t h, const db::Matrix3d &trans, bool color, bool byte_data)
+Object::Object (size_t w, size_t h, const db::Matrix3d &trans, bool color)
   : m_trans (trans), m_id (make_id ()), m_min_value (0.0), m_max_value (1.0), m_min_value_set (false), m_max_value_set (false), m_visible (true), m_z_position (0)
 {
   m_updates_enabled = false;
   mp_pixel_data = 0;
 
-  mp_data = new DataHeader (w, h, color, byte_data);
+  mp_data = new DataHeader (w, h, color, false);
   mp_data->add_ref ();
-  clear ();
+
+  //  The default data type is float
+  tl_assert (! is_byte_data ());
+
+  if (is_color ()) {
+    for (unsigned int c = 0; c < 3; ++c) {
+      float *d = mp_data->float_data (c);
+      for (size_t i = data_length (); i > 0; --i) {
+        *d++ = 0.0;
+      }
+    }
+  } else {
+    float *d = mp_data->float_data ();
+    for (size_t i = data_length (); i > 0; --i) {
+      *d++ = 0.0;
+    }
+  }
+
   m_updates_enabled = true;
 }
 
@@ -958,31 +902,6 @@ Object::Object (const std::string &filename, const db::Matrix3d &trans)
   m_updates_enabled = true;
 }
 
-Object::Object (const tl::PixelBuffer &pixel_buffer, const db::Matrix3d &trans)
-  : m_filename ("<object>"), m_trans (trans), m_id (make_id ()), m_min_value (0.0), m_max_value (1.0), m_min_value_set (false), m_max_value_set (false), m_visible (true), m_z_position (0)
-{
-  m_updates_enabled = false;
-  mp_pixel_data = 0;
-
-  mp_data = 0;
-  create_from_pixel_buffer (pixel_buffer);
-  read_file ();
-  m_updates_enabled = true;
-}
-
-#if defined(HAVE_QT)
-Object::Object (const QImage &qimage, const db::Matrix3d &trans)
-  : m_filename ("<object>"), m_trans (trans), m_id (make_id ()), m_min_value (0.0), m_max_value (1.0), m_min_value_set (false), m_max_value_set (false), m_visible (true), m_z_position (0)
-{
-  m_updates_enabled = false;
-  mp_pixel_data = 0;
-
-  mp_data = 0;
-  create_from_qimage (qimage);
-  m_updates_enabled = true;
-}
-#endif
-
 Object::Object (const img::Object &d)
 {
   m_updates_enabled = false;
@@ -1020,7 +939,6 @@ Object::operator= (const img::Object &d)
 
     m_visible = d.m_visible;
     m_z_position = d.m_z_position;
-    m_layer_binding = d.m_layer_binding;
 
     m_min_value = d.m_min_value;
     m_min_value_set = d.m_min_value_set;
@@ -1051,10 +969,6 @@ Object::less (const db::DUserObjectBase *d) const
 
   if (m_z_position != img_object->m_z_position) {
     return m_z_position < img_object->m_z_position;
-  }
-
-  if (m_layer_binding != img_object->m_layer_binding) {
-    return m_layer_binding < img_object->m_layer_binding;
   }
 
   double epsilon = (std::abs (m_min_value) + std::abs (m_max_value)) * 1e-6;
@@ -1107,11 +1021,7 @@ Object::operator== (const img::Object &d) const
     return false;
   }
 
-  if (m_layer_binding != d.m_layer_binding) {
-    return false;
-  }
-
-  //  operator== is all fuzzy compare -
+  //  operator== is all fuzzy compare - 
   double epsilon = (std::abs (m_min_value) + std::abs (m_max_value)) * 1e-6;
   if (std::abs (m_min_value - d.m_min_value) > epsilon) {
     return false;
@@ -1166,48 +1076,6 @@ db::DUserObjectBase *
 Object::clone () const
 {
   return new img::Object (*this);
-}
-
-void
-Object::clear ()
-{
-  if (is_byte_data ()) {
-
-    if (is_color ()) {
-
-      for (unsigned int c = 0; c < 3; ++c) {
-        unsigned char *d = mp_data->byte_data (c);
-        for (size_t i = data_length (); i > 0; --i) {
-          *d++ = 0.0;
-        }
-      }
-
-    } else {
-
-      unsigned char *d = mp_data->byte_data ();
-      for (size_t i = data_length (); i > 0; --i) {
-        *d++ = 0.0;
-      }
-
-    }
-
-  } else if (is_color ()) {
-
-    for (unsigned int c = 0; c < 3; ++c) {
-      float *d = mp_data->float_data (c);
-      for (size_t i = data_length (); i > 0; --i) {
-        *d++ = 0.0;
-      }
-    }
-
-  } else {
-
-    float *d = mp_data->float_data ();
-    for (size_t i = data_length (); i > 0; --i) {
-      *d++ = 0.0;
-    }
-
-  }
 }
 
 db::DPolygon
@@ -1358,9 +1226,6 @@ Object::from_string (const char *str, const char *base_dir)
       color = true;
     } else if (ex.test ("mono:")) {
       color = false;
-    } else {
-      //  unrecognized token
-      return;
     }
 
     size_t w = 0;
@@ -1401,33 +1266,18 @@ Object::from_string (const char *str, const char *base_dir)
 
         double x = 0.0;
         lay::ColorConverter cc;
-        tl::Color cl, cr;
+        QColor c;
         std::string s;
 
         m_data_mapping.false_color_nodes.clear ();
 
         while (! ex.at_end () && ! ex.test ("]")) {
-
           ex.read (x);
-
           ex.test (",");
-
-          s.clear ();
           ex.read_word_or_quoted (s);
-          cc.from_string (s, cl);
-
-          if (ex.test (",")) {
-            s.clear ();
-            ex.read_word_or_quoted (s);
-            cc.from_string (s, cr);
-          } else {
-            cr = cl;
-          }
-
-          m_data_mapping.false_color_nodes.push_back (std::make_pair (x, std::make_pair (cl, cr)));
-
+          cc.from_string (s, c);
+          m_data_mapping.false_color_nodes.push_back (std::make_pair (x, c));
           ex.test (";");
-
         }
 
       } else if (ex.test ("width=")) {
@@ -1436,8 +1286,6 @@ Object::from_string (const char *str, const char *base_dir)
         ex.read (h);
       } else if (ex.test ("is_visible=")) {
         ex.read (m_visible);
-      } else if (ex.test ("layer_binding=")) {
-        ex.read (m_layer_binding);
       } else if (ex.test ("z_position=")) {
         ex.read (m_z_position);
       } else if (ex.test ("min_value=")) {
@@ -1463,7 +1311,7 @@ Object::from_string (const char *str, const char *base_dir)
 
         tl::URI fp_uri (m_filename);
         if (base_dir && ! tl::is_absolute (fp_uri.path ())) {
-          m_filename = tl::URI (base_dir).resolved (fp_uri).to_abstract_path ();
+          m_filename = tl::URI (base_dir).resolved (fp_uri).to_string ();
         }
 
         read_file ();
@@ -1560,9 +1408,6 @@ Object::from_string (const char *str, const char *base_dir)
 
         ex.test ("]");
 
-      } else {
-        //  otherwise stop
-        break;
       }
 
       ex.test (";");
@@ -1611,176 +1456,63 @@ Object::read_file ()
     tl::info << "Reading image file " << m_filename;
   }
 
-  try {
-
-    tl::InputFile file (m_filename);
-    tl::InputStream stream (file);
-    std::unique_ptr<img::Object> read;
-    read.reset (img::ImageStreamer::read (stream));
-    read->m_filename = m_filename;
-
-    //  for now we need to copy here ...
-    *this = *read;
-
-    //  exit on success
-    return;
-
-  } catch (...) {
-    //  continue with other formats ...
-  }
-
-#if defined(HAVE_QT)
-
   QImage qimage (tl::to_qstring (m_filename));
-  create_from_qimage (qimage);
 
-#elif defined(HAVE_PNG)
+  if (! qimage.isNull ()) {
 
-  tl::PixelBuffer img;
-
-  {
-    tl::InputStream stream (m_filename);
-    img = tl::PixelBuffer::read_png (stream);
-  }
-
-  create_from_pixel_buffer (img);
-
-#else
-  throw tl::Exception ("No PNG support compiled in - cannot load PNG files");
-#endif
-}
-
-#if defined(HAVE_QT)
-void
-Object::create_from_qimage (const QImage &qimage)
-{
-  if (qimage.isNull ()) {
-    return;
-  }
-
-  if (! m_min_value_set) {
-    m_min_value = 0.0;
-  }
-
-  if (! m_max_value_set) {
-    m_max_value = 255.0;
-  }
-
-  m_min_value_set = true;
-  m_max_value_set = true;
-
-  size_t w = qimage.width (), h = qimage.height ();
-
-  mp_data = new DataHeader (w, h, ! qimage.isGrayscale (), true);
-  mp_data->add_ref ();
-
-  size_t i = 0;
-
-  if (is_color ()) {
-
-    unsigned char *red   = mp_data->byte_data (0);
-    unsigned char *green = mp_data->byte_data (1);
-    unsigned char *blue  = mp_data->byte_data (2);
-    unsigned char *msk   = qimage.hasAlphaChannel () ? mp_data->set_mask () : 0;
-
-    for (size_t y = 0; y < h; ++y) {
-      for (size_t x = 0; x < w; ++x) {
-        QRgb rgb = qimage.pixel (QPoint (int (x), int (h - y - 1)));
-        red[i] = qRed (rgb);
-        green[i] = qGreen (rgb);
-        blue[i] = qBlue (rgb);
-        if (msk) {
-          msk[i] = qAlpha (rgb) > 128;
-        }
-        ++i;
-      }
+    if (! m_min_value_set) {
+      m_min_value = 0.0;
     }
 
-  } else {
-
-    unsigned char *d = mp_data->byte_data ();
-    unsigned char *msk = qimage.hasAlphaChannel () ? mp_data->set_mask () : 0;
-
-    for (size_t y = 0; y < h; ++y) {
-      for (size_t x = 0; x < w; ++x) {
-        QRgb rgb = qimage.pixel (QPoint (int (x), int (h - y - 1)));
-        *d++ = qGreen (rgb);
-        if (msk) {
-          msk[i] = qAlpha (rgb) > 128;
-        }
-      }
+    if (! m_max_value_set) {
+      m_max_value = 255.0;
     }
 
-  }
+    m_min_value_set = true;
+    m_max_value_set = true;
 
-}
-#endif
+    size_t w = qimage.width (), h = qimage.height ();
 
-void
-Object::create_from_pixel_buffer (const tl::PixelBuffer &img)
-{
-  bool is_color = false;
-  for (unsigned int i = 0; i < img.height () && ! is_color; ++i) {
-    const tl::color_t *d = img.scan_line (i);
-    const tl::color_t *dd = d + img.width ();
-    while (! is_color && d != dd) {
-      tl::color_t c = *d++;
-      is_color = (((c >> 8) ^ c) & 0xffff) != 0;
-    }
-  }
+    mp_data = new DataHeader (w, h, ! qimage.isGrayscale (), true);
+    mp_data->add_ref ();
 
-  if (! m_min_value_set) {
-    m_min_value = 0.0;
-  }
+    size_t i = 0;
 
-  if (! m_max_value_set) {
-    m_max_value = 255.0;
-  }
+    if (is_color ()) {
 
-  m_min_value_set = true;
-  m_max_value_set = true;
-
-  unsigned int w = img.width (), h = img.height ();
-
-  mp_data = new DataHeader (w, h, is_color, true);
-  mp_data->add_ref ();
-
-  if (is_color) {
-
-    unsigned char *red   = mp_data->byte_data (0);
-    unsigned char *green = mp_data->byte_data (1);
-    unsigned char *blue  = mp_data->byte_data (2);
-    unsigned char *msk   = img.transparent () ? mp_data->set_mask () : 0;
-
-    for (unsigned int y = 0; y < h; ++y) {
-      const tl::color_t *d = img.scan_line (h - y - 1);
-      const tl::color_t *dd = d + img.width ();
-      while (d != dd) {
-        tl::color_t rgb = *d++;
-        *red++ = tl::red (rgb);
-        *green++ = tl::green (rgb);
-        *blue++ = tl::blue (rgb);
-        if (msk) {
-          *msk++ = tl::alpha (rgb) > 128;
+      unsigned char *red   = mp_data->byte_data (0);
+      unsigned char *green = mp_data->byte_data (1);
+      unsigned char *blue  = mp_data->byte_data (2);
+      unsigned char *msk   = qimage.hasAlphaChannel () ? mp_data->set_mask () : 0;
+     
+      for (size_t y = 0; y < h; ++y) {
+        for (size_t x = 0; x < w; ++x) {
+          QRgb rgb = qimage.pixel (QPoint (int (x), int (h - y - 1)));
+          red[i] = qRed (rgb);
+          green[i] = qGreen (rgb);
+          blue[i] = qBlue (rgb);
+          if (msk) {
+            msk[i] = qAlpha (rgb) > 128;
+          }
+          ++i;
         }
       }
-    }
 
-  } else {
+    } else {
 
-    unsigned char *mono = mp_data->byte_data ();
-    unsigned char *msk = img.transparent () ? mp_data->set_mask () : 0;
+      unsigned char *d = mp_data->byte_data ();
+      unsigned char *msk = qimage.hasAlphaChannel () ? mp_data->set_mask () : 0;
 
-    for (unsigned int y = 0; y < h; ++y) {
-      const tl::color_t *d = img.scan_line (h - y - 1);
-      const tl::color_t *dd = d + img.width ();
-      while (d != dd) {
-        tl::color_t rgb = *d++;
-        *mono++ = tl::green (rgb);
-        if (msk) {
-          *msk++ = tl::alpha (rgb) > 128;
+      for (size_t y = 0; y < h; ++y) {
+        for (size_t x = 0; x < w; ++x) {
+          QRgb rgb = qimage.pixel (QPoint (int (x), int (h - y - 1)));
+          *d++ = qGreen (rgb);
+          if (msk) {
+            msk[i] = qAlpha (rgb) > 128;
+          }
         }
       }
+
     }
 
   }
@@ -1831,12 +1563,6 @@ Object::to_string () const
     os << tl::to_string (m_z_position);
     os << ";";
 
-    if (m_layer_binding != db::LayerProperties ()) {
-      os << "layer_binding=";
-      os << m_layer_binding.to_string ();
-      os << ";";
-    }
-
     os << "brightness=";
     os << tl::to_string (data_mapping ().brightness);
     os << ";";
@@ -1878,12 +1604,7 @@ Object::to_string () const
     for (unsigned int i = 0; i < data_mapping ().false_color_nodes.size (); ++i) {
       os << data_mapping ().false_color_nodes[i].first;
       os << ",";
-      const std::pair<tl::Color, tl::Color> &clr = data_mapping ().false_color_nodes[i].second;
-      os << tl::to_word_or_quoted_string (cc.to_string (clr.first));
-      if (clr.first != clr.second) {
-        os << ",";
-        os << tl::to_word_or_quoted_string (cc.to_string (clr.second));
-      }
+      os << tl::to_word_or_quoted_string (cc.to_string (data_mapping ().false_color_nodes[i].second));
       os << ";";
     }
 
@@ -1958,26 +1679,6 @@ Object::to_string () const
   }
   
   return os.str ();
-}
-
-void
-Object::swap (Object &other)
-{
-  m_filename.swap (other.m_filename);
-  std::swap (m_trans, other.m_trans);
-  std::swap (mp_data, other.mp_data);
-  std::swap (m_id, other.m_id);
-  std::swap (m_min_value, other.m_min_value);
-  std::swap (m_max_value, other.m_max_value);
-  std::swap (m_min_value_set, other.m_min_value_set);
-  std::swap (m_max_value_set, other.m_max_value_set);
-  std::swap (m_data_mapping, other.m_data_mapping);
-  std::swap (m_visible, other.m_visible);
-  std::swap (mp_pixel_data, other.mp_pixel_data);
-  m_landmarks.swap (other.m_landmarks);
-  std::swap (m_z_position, other.m_z_position);
-  std::swap (m_layer_binding, other.m_layer_binding);
-  std::swap (m_updates_enabled, other.m_updates_enabled);
 }
 
 size_t 
@@ -2310,7 +2011,7 @@ Object::validate_pixel_data () const
 
     size_t n = data_length ();
 
-    tl::color_t *nc_pixel_data = new tl::color_t [n];
+    lay::color_t *nc_pixel_data = new lay::color_t [n];
     mp_pixel_data = nc_pixel_data;
 
     double min = 0.0, max = 255.0;
@@ -2335,7 +2036,7 @@ Object::validate_pixel_data () const
 
       if (mp_data->is_color ()) {
 
-        tl::color_t *pixel_data = nc_pixel_data;
+        lay::color_t *pixel_data = nc_pixel_data;
         const unsigned char *f = mp_data->byte_data (0);
         const tl::DataMappingLookupTable *l = &lut[0];
         for (size_t j = 0; j < n; ++j) {
@@ -2358,7 +2059,7 @@ Object::validate_pixel_data () const
 
       } else {
 
-        tl::color_t *pixel_data = nc_pixel_data;
+        lay::color_t *pixel_data = nc_pixel_data;
         const unsigned char *f = mp_data->byte_data ();
         const tl::DataMappingLookupTable *l = &lut[0];
         for (size_t j = 0; j < n; ++j) {
@@ -2385,7 +2086,7 @@ Object::validate_pixel_data () const
 
       if (mp_data->is_color ()) {
 
-        tl::color_t *pixel_data = nc_pixel_data;
+        lay::color_t *pixel_data = nc_pixel_data;
         const float *f = mp_data->float_data (0);
         const tl::DataMappingLookupTable *l = &lut[0];
         for (size_t j = 0; j < n; ++j) {
@@ -2408,7 +2109,7 @@ Object::validate_pixel_data () const
 
       } else {
 
-        tl::color_t *pixel_data = nc_pixel_data;
+        lay::color_t *pixel_data = nc_pixel_data;
         const float *f = mp_data->float_data ();
         const tl::DataMappingLookupTable *l = &lut[0];
         for (size_t j = 0; j < n; ++j) {
@@ -2502,19 +2203,13 @@ Object::mem_stat (db::MemStatistics *stat, db::MemStatistics::purpose_t purpose,
 const char *
 Object::class_name () const
 {
-  if (m_layer_binding != db::LayerProperties ()) {
-    //  This makes old KLayout versions ignore these images and not crash
-    return "img::ObjectV2";
-  } else {
-    return "img::Object";
-  }
+  return "img::Object";
 }
 
 /**
  *  @brief Registration of the img::Object class in the DUserObject space
  */
 static db::DUserObjectDeclaration class_registrar (new db::user_object_factory_impl<img::Object, db::DCoord> ("img::Object"));
-static db::DUserObjectDeclaration class_registrar_v2 (new db::user_object_factory_impl<img::Object, db::DCoord> ("img::ObjectV2"));
 
 } // namespace img
 

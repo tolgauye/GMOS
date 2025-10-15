@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -38,9 +38,7 @@ namespace tl
 TL_PUBLIC NO_RETURN void assertion_failed (const char *filename, unsigned int line, const char *condition);
 
 //  the throw int(0) instruction will tell the compiler that the assertion will not return
-#define tl_assert(COND) if (!(COND)) { \
-  tl::assertion_failed (__FILE__, __LINE__, #COND); \
-}
+#define tl_assert(COND) if (!(COND)) { tl::assertion_failed (__FILE__, __LINE__, #COND); }
 
 } // namespace tl
 

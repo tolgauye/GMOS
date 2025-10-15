@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -92,6 +92,7 @@
 #include <QWindow>
 #include "gsiQt.h"
 #include "gsiQtWidgetsCommon.h"
+#include "gsiDeclQtWidgetsTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -457,7 +458,7 @@ static void _init_f_tr_4013 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("s");
   decl->add_arg<const char * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("c", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("c", true, "__null");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("n", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -469,7 +470,7 @@ static void _call_f_tr_4013 (const qt_gsi::GenericStaticMethod * /*decl*/, gsi::
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (__null, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QTextBrowser::tr (arg1, arg2, arg3));
 }
@@ -482,7 +483,7 @@ static void _init_f_trUtf8_4013 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("s");
   decl->add_arg<const char * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("c", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("c", true, "__null");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("n", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -494,7 +495,7 @@ static void _call_f_trUtf8_4013 (const qt_gsi::GenericStaticMethod * /*decl*/, g
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (__null, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QTextBrowser::trUtf8 (arg1, arg2, arg3));
 }
@@ -537,7 +538,6 @@ static gsi::Methods methods_QTextBrowser () {
   methods += gsi::qt_signal<const QUrl & > ("highlighted(const QUrl &)", "highlighted", gsi::arg("arg1"), "@brief Signal declaration for QTextBrowser::highlighted(const QUrl &)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<const QString & > ("highlighted(const QString &)", "highlighted_qs", gsi::arg("arg1"), "@brief Signal declaration for QTextBrowser::highlighted(const QString &)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal ("historyChanged()", "historyChanged", "@brief Signal declaration for QTextBrowser::historyChanged()\nYou can bind a procedure to this signal.");
-  methods += gsi::qt_signal<const QString & > ("objectNameChanged(const QString &)", "objectNameChanged", gsi::arg("objectName"), "@brief Signal declaration for QTextBrowser::objectNameChanged(const QString &objectName)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<bool > ("redoAvailable(bool)", "redoAvailable", gsi::arg("b"), "@brief Signal declaration for QTextBrowser::redoAvailable(bool b)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal ("selectionChanged()", "selectionChanged", "@brief Signal declaration for QTextBrowser::selectionChanged()\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<const QUrl & > ("sourceChanged(const QUrl &)", "sourceChanged", gsi::arg("arg1"), "@brief Signal declaration for QTextBrowser::sourceChanged(const QUrl &)\nYou can bind a procedure to this signal.");
@@ -841,13 +841,6 @@ public:
     }
   }
 
-  //  [emitter impl] void QTextBrowser::objectNameChanged(const QString &objectName)
-  void emitter_QTextBrowser_objectNameChanged_4567(const QString &objectName)
-  {
-    __SUPPRESS_UNUSED_WARNING (objectName);
-    throw tl::Exception ("Can't emit private signal 'void QTextBrowser::objectNameChanged(const QString &objectName)'");
-  }
-
   //  [adaptor impl] QPaintEngine *QTextBrowser::paintEngine()
   QPaintEngine * cbs_paintEngine_c0_0() const
   {
@@ -986,18 +979,18 @@ public:
     emit QTextBrowser::windowTitleChanged(title);
   }
 
-  //  [adaptor impl] void QTextBrowser::actionEvent(QActionEvent *event)
-  void cbs_actionEvent_1823_0(QActionEvent *event)
+  //  [adaptor impl] void QTextBrowser::actionEvent(QActionEvent *)
+  void cbs_actionEvent_1823_0(QActionEvent *arg1)
   {
-    QTextBrowser::actionEvent(event);
+    QTextBrowser::actionEvent(arg1);
   }
 
-  virtual void actionEvent(QActionEvent *event)
+  virtual void actionEvent(QActionEvent *arg1)
   {
     if (cb_actionEvent_1823_0.can_issue()) {
-      cb_actionEvent_1823_0.issue<QTextBrowser_Adaptor, QActionEvent *>(&QTextBrowser_Adaptor::cbs_actionEvent_1823_0, event);
+      cb_actionEvent_1823_0.issue<QTextBrowser_Adaptor, QActionEvent *>(&QTextBrowser_Adaptor::cbs_actionEvent_1823_0, arg1);
     } else {
-      QTextBrowser::actionEvent(event);
+      QTextBrowser::actionEvent(arg1);
     }
   }
 
@@ -1031,33 +1024,33 @@ public:
     }
   }
 
-  //  [adaptor impl] void QTextBrowser::childEvent(QChildEvent *event)
-  void cbs_childEvent_1701_0(QChildEvent *event)
+  //  [adaptor impl] void QTextBrowser::childEvent(QChildEvent *)
+  void cbs_childEvent_1701_0(QChildEvent *arg1)
   {
-    QTextBrowser::childEvent(event);
+    QTextBrowser::childEvent(arg1);
   }
 
-  virtual void childEvent(QChildEvent *event)
+  virtual void childEvent(QChildEvent *arg1)
   {
     if (cb_childEvent_1701_0.can_issue()) {
-      cb_childEvent_1701_0.issue<QTextBrowser_Adaptor, QChildEvent *>(&QTextBrowser_Adaptor::cbs_childEvent_1701_0, event);
+      cb_childEvent_1701_0.issue<QTextBrowser_Adaptor, QChildEvent *>(&QTextBrowser_Adaptor::cbs_childEvent_1701_0, arg1);
     } else {
-      QTextBrowser::childEvent(event);
+      QTextBrowser::childEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QTextBrowser::closeEvent(QCloseEvent *event)
-  void cbs_closeEvent_1719_0(QCloseEvent *event)
+  //  [adaptor impl] void QTextBrowser::closeEvent(QCloseEvent *)
+  void cbs_closeEvent_1719_0(QCloseEvent *arg1)
   {
-    QTextBrowser::closeEvent(event);
+    QTextBrowser::closeEvent(arg1);
   }
 
-  virtual void closeEvent(QCloseEvent *event)
+  virtual void closeEvent(QCloseEvent *arg1)
   {
     if (cb_closeEvent_1719_0.can_issue()) {
-      cb_closeEvent_1719_0.issue<QTextBrowser_Adaptor, QCloseEvent *>(&QTextBrowser_Adaptor::cbs_closeEvent_1719_0, event);
+      cb_closeEvent_1719_0.issue<QTextBrowser_Adaptor, QCloseEvent *>(&QTextBrowser_Adaptor::cbs_closeEvent_1719_0, arg1);
     } else {
-      QTextBrowser::closeEvent(event);
+      QTextBrowser::closeEvent(arg1);
     }
   }
 
@@ -1091,18 +1084,18 @@ public:
     }
   }
 
-  //  [adaptor impl] void QTextBrowser::customEvent(QEvent *event)
-  void cbs_customEvent_1217_0(QEvent *event)
+  //  [adaptor impl] void QTextBrowser::customEvent(QEvent *)
+  void cbs_customEvent_1217_0(QEvent *arg1)
   {
-    QTextBrowser::customEvent(event);
+    QTextBrowser::customEvent(arg1);
   }
 
-  virtual void customEvent(QEvent *event)
+  virtual void customEvent(QEvent *arg1)
   {
     if (cb_customEvent_1217_0.can_issue()) {
-      cb_customEvent_1217_0.issue<QTextBrowser_Adaptor, QEvent *>(&QTextBrowser_Adaptor::cbs_customEvent_1217_0, event);
+      cb_customEvent_1217_0.issue<QTextBrowser_Adaptor, QEvent *>(&QTextBrowser_Adaptor::cbs_customEvent_1217_0, arg1);
     } else {
-      QTextBrowser::customEvent(event);
+      QTextBrowser::customEvent(arg1);
     }
   }
 
@@ -1196,18 +1189,18 @@ public:
     }
   }
 
-  //  [adaptor impl] void QTextBrowser::enterEvent(QEvent *event)
-  void cbs_enterEvent_1217_0(QEvent *event)
+  //  [adaptor impl] void QTextBrowser::enterEvent(QEvent *)
+  void cbs_enterEvent_1217_0(QEvent *arg1)
   {
-    QTextBrowser::enterEvent(event);
+    QTextBrowser::enterEvent(arg1);
   }
 
-  virtual void enterEvent(QEvent *event)
+  virtual void enterEvent(QEvent *arg1)
   {
     if (cb_enterEvent_1217_0.can_issue()) {
-      cb_enterEvent_1217_0.issue<QTextBrowser_Adaptor, QEvent *>(&QTextBrowser_Adaptor::cbs_enterEvent_1217_0, event);
+      cb_enterEvent_1217_0.issue<QTextBrowser_Adaptor, QEvent *>(&QTextBrowser_Adaptor::cbs_enterEvent_1217_0, arg1);
     } else {
-      QTextBrowser::enterEvent(event);
+      QTextBrowser::enterEvent(arg1);
     }
   }
 
@@ -1286,18 +1279,18 @@ public:
     }
   }
 
-  //  [adaptor impl] void QTextBrowser::hideEvent(QHideEvent *event)
-  void cbs_hideEvent_1595_0(QHideEvent *event)
+  //  [adaptor impl] void QTextBrowser::hideEvent(QHideEvent *)
+  void cbs_hideEvent_1595_0(QHideEvent *arg1)
   {
-    QTextBrowser::hideEvent(event);
+    QTextBrowser::hideEvent(arg1);
   }
 
-  virtual void hideEvent(QHideEvent *event)
+  virtual void hideEvent(QHideEvent *arg1)
   {
     if (cb_hideEvent_1595_0.can_issue()) {
-      cb_hideEvent_1595_0.issue<QTextBrowser_Adaptor, QHideEvent *>(&QTextBrowser_Adaptor::cbs_hideEvent_1595_0, event);
+      cb_hideEvent_1595_0.issue<QTextBrowser_Adaptor, QHideEvent *>(&QTextBrowser_Adaptor::cbs_hideEvent_1595_0, arg1);
     } else {
-      QTextBrowser::hideEvent(event);
+      QTextBrowser::hideEvent(arg1);
     }
   }
 
@@ -1376,18 +1369,18 @@ public:
     }
   }
 
-  //  [adaptor impl] void QTextBrowser::leaveEvent(QEvent *event)
-  void cbs_leaveEvent_1217_0(QEvent *event)
+  //  [adaptor impl] void QTextBrowser::leaveEvent(QEvent *)
+  void cbs_leaveEvent_1217_0(QEvent *arg1)
   {
-    QTextBrowser::leaveEvent(event);
+    QTextBrowser::leaveEvent(arg1);
   }
 
-  virtual void leaveEvent(QEvent *event)
+  virtual void leaveEvent(QEvent *arg1)
   {
     if (cb_leaveEvent_1217_0.can_issue()) {
-      cb_leaveEvent_1217_0.issue<QTextBrowser_Adaptor, QEvent *>(&QTextBrowser_Adaptor::cbs_leaveEvent_1217_0, event);
+      cb_leaveEvent_1217_0.issue<QTextBrowser_Adaptor, QEvent *>(&QTextBrowser_Adaptor::cbs_leaveEvent_1217_0, arg1);
     } else {
-      QTextBrowser::leaveEvent(event);
+      QTextBrowser::leaveEvent(arg1);
     }
   }
 
@@ -1466,18 +1459,18 @@ public:
     }
   }
 
-  //  [adaptor impl] void QTextBrowser::moveEvent(QMoveEvent *event)
-  void cbs_moveEvent_1624_0(QMoveEvent *event)
+  //  [adaptor impl] void QTextBrowser::moveEvent(QMoveEvent *)
+  void cbs_moveEvent_1624_0(QMoveEvent *arg1)
   {
-    QTextBrowser::moveEvent(event);
+    QTextBrowser::moveEvent(arg1);
   }
 
-  virtual void moveEvent(QMoveEvent *event)
+  virtual void moveEvent(QMoveEvent *arg1)
   {
     if (cb_moveEvent_1624_0.can_issue()) {
-      cb_moveEvent_1624_0.issue<QTextBrowser_Adaptor, QMoveEvent *>(&QTextBrowser_Adaptor::cbs_moveEvent_1624_0, event);
+      cb_moveEvent_1624_0.issue<QTextBrowser_Adaptor, QMoveEvent *>(&QTextBrowser_Adaptor::cbs_moveEvent_1624_0, arg1);
     } else {
-      QTextBrowser::moveEvent(event);
+      QTextBrowser::moveEvent(arg1);
     }
   }
 
@@ -1586,18 +1579,18 @@ public:
     }
   }
 
-  //  [adaptor impl] void QTextBrowser::tabletEvent(QTabletEvent *event)
-  void cbs_tabletEvent_1821_0(QTabletEvent *event)
+  //  [adaptor impl] void QTextBrowser::tabletEvent(QTabletEvent *)
+  void cbs_tabletEvent_1821_0(QTabletEvent *arg1)
   {
-    QTextBrowser::tabletEvent(event);
+    QTextBrowser::tabletEvent(arg1);
   }
 
-  virtual void tabletEvent(QTabletEvent *event)
+  virtual void tabletEvent(QTabletEvent *arg1)
   {
     if (cb_tabletEvent_1821_0.can_issue()) {
-      cb_tabletEvent_1821_0.issue<QTextBrowser_Adaptor, QTabletEvent *>(&QTextBrowser_Adaptor::cbs_tabletEvent_1821_0, event);
+      cb_tabletEvent_1821_0.issue<QTextBrowser_Adaptor, QTabletEvent *>(&QTextBrowser_Adaptor::cbs_tabletEvent_1821_0, arg1);
     } else {
-      QTextBrowser::tabletEvent(event);
+      QTextBrowser::tabletEvent(arg1);
     }
   }
 
@@ -1728,7 +1721,7 @@ QTextBrowser_Adaptor::~QTextBrowser_Adaptor() { }
 
 static void _init_ctor_QTextBrowser_Adaptor_1315 (qt_gsi::GenericStaticMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("parent", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("parent", true, "0");
   decl->add_arg<QWidget * > (argspec_0);
   decl->set_return_new<QTextBrowser_Adaptor> ();
 }
@@ -1737,16 +1730,16 @@ static void _call_ctor_QTextBrowser_Adaptor_1315 (const qt_gsi::GenericStaticMet
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  QWidget *arg1 = args ? gsi::arg_reader<QWidget * >() (args, heap) : gsi::arg_maker<QWidget * >() (nullptr, heap);
+  QWidget *arg1 = args ? gsi::arg_reader<QWidget * >() (args, heap) : gsi::arg_maker<QWidget * >() (0, heap);
   ret.write<QTextBrowser_Adaptor *> (new QTextBrowser_Adaptor (arg1));
 }
 
 
-// void QTextBrowser::actionEvent(QActionEvent *event)
+// void QTextBrowser::actionEvent(QActionEvent *)
 
 static void _init_cbs_actionEvent_1823_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QActionEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1869,11 +1862,11 @@ static void _set_callback_cbs_changeEvent_1217_0 (void *cls, const gsi::Callback
 }
 
 
-// void QTextBrowser::childEvent(QChildEvent *event)
+// void QTextBrowser::childEvent(QChildEvent *)
 
 static void _init_cbs_childEvent_1701_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QChildEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1893,11 +1886,11 @@ static void _set_callback_cbs_childEvent_1701_0 (void *cls, const gsi::Callback 
 }
 
 
-// void QTextBrowser::closeEvent(QCloseEvent *event)
+// void QTextBrowser::closeEvent(QCloseEvent *)
 
 static void _init_cbs_closeEvent_1719_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QCloseEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -2053,11 +2046,11 @@ static void _call_emitter_customContextMenuRequested_1916 (const qt_gsi::Generic
 }
 
 
-// void QTextBrowser::customEvent(QEvent *event)
+// void QTextBrowser::customEvent(QEvent *)
 
 static void _init_cbs_customEvent_1217_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -2103,7 +2096,7 @@ static void _call_fp_destroy_1620 (const qt_gsi::GenericMethod * /*decl*/, void 
 
 static void _init_emitter_destroyed_1302 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("arg1", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("arg1", true, "0");
   decl->add_arg<QObject * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -2112,7 +2105,7 @@ static void _call_emitter_destroyed_1302 (const qt_gsi::GenericMethod * /*decl*/
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (nullptr, heap);
+  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (0, heap);
   ((QTextBrowser_Adaptor *)cls)->emitter_QTextBrowser_destroyed_1302 (arg1);
 }
 
@@ -2280,11 +2273,11 @@ static void _set_callback_cbs_dropEvent_1622_0 (void *cls, const gsi::Callback &
 }
 
 
-// void QTextBrowser::enterEvent(QEvent *event)
+// void QTextBrowser::enterEvent(QEvent *)
 
 static void _init_cbs_enterEvent_1217_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -2532,11 +2525,11 @@ static void _set_callback_cbs_heightForWidth_c767_0 (void *cls, const gsi::Callb
 }
 
 
-// void QTextBrowser::hideEvent(QHideEvent *event)
+// void QTextBrowser::hideEvent(QHideEvent *)
 
 static void _init_cbs_hideEvent_1595_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QHideEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -2806,11 +2799,11 @@ static void _set_callback_cbs_keyReleaseEvent_1514_0 (void *cls, const gsi::Call
 }
 
 
-// void QTextBrowser::leaveEvent(QEvent *event)
+// void QTextBrowser::leaveEvent(QEvent *)
 
 static void _init_cbs_leaveEvent_1217_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -2994,11 +2987,11 @@ static void _set_callback_cbs_mouseReleaseEvent_1738_0 (void *cls, const gsi::Ca
 }
 
 
-// void QTextBrowser::moveEvent(QMoveEvent *event)
+// void QTextBrowser::moveEvent(QMoveEvent *)
 
 static void _init_cbs_moveEvent_1624_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QMoveEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -3044,24 +3037,6 @@ static void _call_cbs_nativeEvent_4678_0 (const qt_gsi::GenericMethod * /*decl*/
 static void _set_callback_cbs_nativeEvent_4678_0 (void *cls, const gsi::Callback &cb)
 {
   ((QTextBrowser_Adaptor *)cls)->cb_nativeEvent_4678_0 = cb;
-}
-
-
-// emitter void QTextBrowser::objectNameChanged(const QString &objectName)
-
-static void _init_emitter_objectNameChanged_4567 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("objectName");
-  decl->add_arg<const QString & > (argspec_0);
-  decl->set_return<void > ();
-}
-
-static void _call_emitter_objectNameChanged_4567 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs & /*ret*/) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const QString &arg1 = gsi::arg_reader<const QString & >() (args, heap);
-  ((QTextBrowser_Adaptor *)cls)->emitter_QTextBrowser_objectNameChanged_4567 (arg1);
 }
 
 
@@ -3479,11 +3454,11 @@ static void _call_emitter_sourceChanged_1701 (const qt_gsi::GenericMethod * /*de
 }
 
 
-// void QTextBrowser::tabletEvent(QTabletEvent *event)
+// void QTextBrowser::tabletEvent(QTabletEvent *)
 
 static void _init_cbs_tabletEvent_1821_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QTabletEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -3735,155 +3710,154 @@ gsi::Class<QTextBrowser> &qtdecl_QTextBrowser ();
 static gsi::Methods methods_QTextBrowser_Adaptor () {
   gsi::Methods methods;
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QTextBrowser::QTextBrowser(QWidget *parent)\nThis method creates an object of class QTextBrowser.", &_init_ctor_QTextBrowser_Adaptor_1315, &_call_ctor_QTextBrowser_Adaptor_1315);
-  methods += new qt_gsi::GenericMethod ("*actionEvent", "@brief Virtual method void QTextBrowser::actionEvent(QActionEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_actionEvent_1823_0, &_call_cbs_actionEvent_1823_0);
-  methods += new qt_gsi::GenericMethod ("*actionEvent", "@hide", false, &_init_cbs_actionEvent_1823_0, &_call_cbs_actionEvent_1823_0, &_set_callback_cbs_actionEvent_1823_0);
+  methods += new qt_gsi::GenericMethod ("*actionEvent", "@hide", false, &_init_cbs_actionEvent_1823_0, &_call_cbs_actionEvent_1823_0);
+  methods += new qt_gsi::GenericMethod ("*actionEvent", "@brief Virtual method void QTextBrowser::actionEvent(QActionEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_actionEvent_1823_0, &_call_cbs_actionEvent_1823_0, &_set_callback_cbs_actionEvent_1823_0);
   methods += new qt_gsi::GenericMethod ("emit_anchorClicked", "@brief Emitter for signal void QTextBrowser::anchorClicked(const QUrl &)\nCall this method to emit this signal.", false, &_init_emitter_anchorClicked_1701, &_call_emitter_anchorClicked_1701);
-  methods += new qt_gsi::GenericMethod ("backward", "@brief Virtual method void QTextBrowser::backward()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_backward_0_0, &_call_cbs_backward_0_0);
-  methods += new qt_gsi::GenericMethod ("backward", "@hide", false, &_init_cbs_backward_0_0, &_call_cbs_backward_0_0, &_set_callback_cbs_backward_0_0);
+  methods += new qt_gsi::GenericMethod ("backward", "@hide", false, &_init_cbs_backward_0_0, &_call_cbs_backward_0_0);
+  methods += new qt_gsi::GenericMethod ("backward", "@brief Virtual method void QTextBrowser::backward()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_backward_0_0, &_call_cbs_backward_0_0, &_set_callback_cbs_backward_0_0);
   methods += new qt_gsi::GenericMethod ("emit_backwardAvailable", "@brief Emitter for signal void QTextBrowser::backwardAvailable(bool)\nCall this method to emit this signal.", false, &_init_emitter_backwardAvailable_864, &_call_emitter_backwardAvailable_864);
-  methods += new qt_gsi::GenericMethod ("*canInsertFromMimeData", "@brief Virtual method bool QTextBrowser::canInsertFromMimeData(const QMimeData *source)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_canInsertFromMimeData_c2168_0, &_call_cbs_canInsertFromMimeData_c2168_0);
-  methods += new qt_gsi::GenericMethod ("*canInsertFromMimeData", "@hide", true, &_init_cbs_canInsertFromMimeData_c2168_0, &_call_cbs_canInsertFromMimeData_c2168_0, &_set_callback_cbs_canInsertFromMimeData_c2168_0);
-  methods += new qt_gsi::GenericMethod ("*changeEvent", "@brief Virtual method void QTextBrowser::changeEvent(QEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_changeEvent_1217_0, &_call_cbs_changeEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*changeEvent", "@hide", false, &_init_cbs_changeEvent_1217_0, &_call_cbs_changeEvent_1217_0, &_set_callback_cbs_changeEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*childEvent", "@brief Virtual method void QTextBrowser::childEvent(QChildEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0);
-  methods += new qt_gsi::GenericMethod ("*childEvent", "@hide", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0, &_set_callback_cbs_childEvent_1701_0);
-  methods += new qt_gsi::GenericMethod ("*closeEvent", "@brief Virtual method void QTextBrowser::closeEvent(QCloseEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_closeEvent_1719_0, &_call_cbs_closeEvent_1719_0);
-  methods += new qt_gsi::GenericMethod ("*closeEvent", "@hide", false, &_init_cbs_closeEvent_1719_0, &_call_cbs_closeEvent_1719_0, &_set_callback_cbs_closeEvent_1719_0);
-  methods += new qt_gsi::GenericMethod ("*contextMenuEvent", "@brief Virtual method void QTextBrowser::contextMenuEvent(QContextMenuEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_contextMenuEvent_2363_0, &_call_cbs_contextMenuEvent_2363_0);
-  methods += new qt_gsi::GenericMethod ("*contextMenuEvent", "@hide", false, &_init_cbs_contextMenuEvent_2363_0, &_call_cbs_contextMenuEvent_2363_0, &_set_callback_cbs_contextMenuEvent_2363_0);
+  methods += new qt_gsi::GenericMethod ("*canInsertFromMimeData", "@hide", true, &_init_cbs_canInsertFromMimeData_c2168_0, &_call_cbs_canInsertFromMimeData_c2168_0);
+  methods += new qt_gsi::GenericMethod ("*canInsertFromMimeData", "@brief Virtual method bool QTextBrowser::canInsertFromMimeData(const QMimeData *source)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_canInsertFromMimeData_c2168_0, &_call_cbs_canInsertFromMimeData_c2168_0, &_set_callback_cbs_canInsertFromMimeData_c2168_0);
+  methods += new qt_gsi::GenericMethod ("*changeEvent", "@hide", false, &_init_cbs_changeEvent_1217_0, &_call_cbs_changeEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*changeEvent", "@brief Virtual method void QTextBrowser::changeEvent(QEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_changeEvent_1217_0, &_call_cbs_changeEvent_1217_0, &_set_callback_cbs_changeEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*childEvent", "@hide", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0);
+  methods += new qt_gsi::GenericMethod ("*childEvent", "@brief Virtual method void QTextBrowser::childEvent(QChildEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0, &_set_callback_cbs_childEvent_1701_0);
+  methods += new qt_gsi::GenericMethod ("*closeEvent", "@hide", false, &_init_cbs_closeEvent_1719_0, &_call_cbs_closeEvent_1719_0);
+  methods += new qt_gsi::GenericMethod ("*closeEvent", "@brief Virtual method void QTextBrowser::closeEvent(QCloseEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_closeEvent_1719_0, &_call_cbs_closeEvent_1719_0, &_set_callback_cbs_closeEvent_1719_0);
+  methods += new qt_gsi::GenericMethod ("*contextMenuEvent", "@hide", false, &_init_cbs_contextMenuEvent_2363_0, &_call_cbs_contextMenuEvent_2363_0);
+  methods += new qt_gsi::GenericMethod ("*contextMenuEvent", "@brief Virtual method void QTextBrowser::contextMenuEvent(QContextMenuEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_contextMenuEvent_2363_0, &_call_cbs_contextMenuEvent_2363_0, &_set_callback_cbs_contextMenuEvent_2363_0);
   methods += new qt_gsi::GenericMethod ("emit_copyAvailable", "@brief Emitter for signal void QTextBrowser::copyAvailable(bool b)\nCall this method to emit this signal.", false, &_init_emitter_copyAvailable_864, &_call_emitter_copyAvailable_864);
-  methods += new qt_gsi::GenericMethod ("*create|qt_create", "@brief Method void QTextBrowser::create(WId, bool initializeWindow, bool destroyOldWindow)\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_create_2208, &_call_fp_create_2208);
-  methods += new qt_gsi::GenericMethod ("*createMimeDataFromSelection", "@brief Virtual method QMimeData *QTextBrowser::createMimeDataFromSelection()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_createMimeDataFromSelection_c0_0, &_call_cbs_createMimeDataFromSelection_c0_0);
-  methods += new qt_gsi::GenericMethod ("*createMimeDataFromSelection", "@hide", true, &_init_cbs_createMimeDataFromSelection_c0_0, &_call_cbs_createMimeDataFromSelection_c0_0, &_set_callback_cbs_createMimeDataFromSelection_c0_0);
+  methods += new qt_gsi::GenericMethod ("*qt_create", "@brief Method void QTextBrowser::create(WId, bool initializeWindow, bool destroyOldWindow)\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_create_2208, &_call_fp_create_2208);
+  methods += new qt_gsi::GenericMethod ("*createMimeDataFromSelection", "@hide", true, &_init_cbs_createMimeDataFromSelection_c0_0, &_call_cbs_createMimeDataFromSelection_c0_0);
+  methods += new qt_gsi::GenericMethod ("*createMimeDataFromSelection", "@brief Virtual method QMimeData *QTextBrowser::createMimeDataFromSelection()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_createMimeDataFromSelection_c0_0, &_call_cbs_createMimeDataFromSelection_c0_0, &_set_callback_cbs_createMimeDataFromSelection_c0_0);
   methods += new qt_gsi::GenericMethod ("emit_currentCharFormatChanged", "@brief Emitter for signal void QTextBrowser::currentCharFormatChanged(const QTextCharFormat &format)\nCall this method to emit this signal.", false, &_init_emitter_currentCharFormatChanged_2814, &_call_emitter_currentCharFormatChanged_2814);
   methods += new qt_gsi::GenericMethod ("emit_cursorPositionChanged", "@brief Emitter for signal void QTextBrowser::cursorPositionChanged()\nCall this method to emit this signal.", false, &_init_emitter_cursorPositionChanged_0, &_call_emitter_cursorPositionChanged_0);
   methods += new qt_gsi::GenericMethod ("emit_customContextMenuRequested", "@brief Emitter for signal void QTextBrowser::customContextMenuRequested(const QPoint &pos)\nCall this method to emit this signal.", false, &_init_emitter_customContextMenuRequested_1916, &_call_emitter_customContextMenuRequested_1916);
-  methods += new qt_gsi::GenericMethod ("*customEvent", "@brief Virtual method void QTextBrowser::customEvent(QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*customEvent", "@hide", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0, &_set_callback_cbs_customEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*destroy|qt_destroy", "@brief Method void QTextBrowser::destroy(bool destroyWindow, bool destroySubWindows)\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_destroy_1620, &_call_fp_destroy_1620);
+  methods += new qt_gsi::GenericMethod ("*customEvent", "@hide", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*customEvent", "@brief Virtual method void QTextBrowser::customEvent(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0, &_set_callback_cbs_customEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*qt_destroy", "@brief Method void QTextBrowser::destroy(bool destroyWindow, bool destroySubWindows)\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_destroy_1620, &_call_fp_destroy_1620);
   methods += new qt_gsi::GenericMethod ("emit_destroyed", "@brief Emitter for signal void QTextBrowser::destroyed(QObject *)\nCall this method to emit this signal.", false, &_init_emitter_destroyed_1302, &_call_emitter_destroyed_1302);
-  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@brief Virtual method void QTextBrowser::disconnectNotify(const QMetaMethod &signal)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0);
-  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@hide", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0, &_set_callback_cbs_disconnectNotify_2394_0);
-  methods += new qt_gsi::GenericMethod ("*doSetTextCursor", "@brief Virtual method void QTextBrowser::doSetTextCursor(const QTextCursor &cursor)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_doSetTextCursor_2453_0, &_call_cbs_doSetTextCursor_2453_0);
-  methods += new qt_gsi::GenericMethod ("*doSetTextCursor", "@hide", false, &_init_cbs_doSetTextCursor_2453_0, &_call_cbs_doSetTextCursor_2453_0, &_set_callback_cbs_doSetTextCursor_2453_0);
-  methods += new qt_gsi::GenericMethod ("*dragEnterEvent", "@brief Virtual method void QTextBrowser::dragEnterEvent(QDragEnterEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_dragEnterEvent_2109_0, &_call_cbs_dragEnterEvent_2109_0);
-  methods += new qt_gsi::GenericMethod ("*dragEnterEvent", "@hide", false, &_init_cbs_dragEnterEvent_2109_0, &_call_cbs_dragEnterEvent_2109_0, &_set_callback_cbs_dragEnterEvent_2109_0);
-  methods += new qt_gsi::GenericMethod ("*dragLeaveEvent", "@brief Virtual method void QTextBrowser::dragLeaveEvent(QDragLeaveEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_dragLeaveEvent_2092_0, &_call_cbs_dragLeaveEvent_2092_0);
-  methods += new qt_gsi::GenericMethod ("*dragLeaveEvent", "@hide", false, &_init_cbs_dragLeaveEvent_2092_0, &_call_cbs_dragLeaveEvent_2092_0, &_set_callback_cbs_dragLeaveEvent_2092_0);
-  methods += new qt_gsi::GenericMethod ("*dragMoveEvent", "@brief Virtual method void QTextBrowser::dragMoveEvent(QDragMoveEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_dragMoveEvent_2006_0, &_call_cbs_dragMoveEvent_2006_0);
-  methods += new qt_gsi::GenericMethod ("*dragMoveEvent", "@hide", false, &_init_cbs_dragMoveEvent_2006_0, &_call_cbs_dragMoveEvent_2006_0, &_set_callback_cbs_dragMoveEvent_2006_0);
+  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@hide", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0);
+  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@brief Virtual method void QTextBrowser::disconnectNotify(const QMetaMethod &signal)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0, &_set_callback_cbs_disconnectNotify_2394_0);
+  methods += new qt_gsi::GenericMethod ("*doSetTextCursor", "@hide", false, &_init_cbs_doSetTextCursor_2453_0, &_call_cbs_doSetTextCursor_2453_0);
+  methods += new qt_gsi::GenericMethod ("*doSetTextCursor", "@brief Virtual method void QTextBrowser::doSetTextCursor(const QTextCursor &cursor)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_doSetTextCursor_2453_0, &_call_cbs_doSetTextCursor_2453_0, &_set_callback_cbs_doSetTextCursor_2453_0);
+  methods += new qt_gsi::GenericMethod ("*dragEnterEvent", "@hide", false, &_init_cbs_dragEnterEvent_2109_0, &_call_cbs_dragEnterEvent_2109_0);
+  methods += new qt_gsi::GenericMethod ("*dragEnterEvent", "@brief Virtual method void QTextBrowser::dragEnterEvent(QDragEnterEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_dragEnterEvent_2109_0, &_call_cbs_dragEnterEvent_2109_0, &_set_callback_cbs_dragEnterEvent_2109_0);
+  methods += new qt_gsi::GenericMethod ("*dragLeaveEvent", "@hide", false, &_init_cbs_dragLeaveEvent_2092_0, &_call_cbs_dragLeaveEvent_2092_0);
+  methods += new qt_gsi::GenericMethod ("*dragLeaveEvent", "@brief Virtual method void QTextBrowser::dragLeaveEvent(QDragLeaveEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_dragLeaveEvent_2092_0, &_call_cbs_dragLeaveEvent_2092_0, &_set_callback_cbs_dragLeaveEvent_2092_0);
+  methods += new qt_gsi::GenericMethod ("*dragMoveEvent", "@hide", false, &_init_cbs_dragMoveEvent_2006_0, &_call_cbs_dragMoveEvent_2006_0);
+  methods += new qt_gsi::GenericMethod ("*dragMoveEvent", "@brief Virtual method void QTextBrowser::dragMoveEvent(QDragMoveEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_dragMoveEvent_2006_0, &_call_cbs_dragMoveEvent_2006_0, &_set_callback_cbs_dragMoveEvent_2006_0);
   methods += new qt_gsi::GenericMethod ("*drawFrame", "@brief Method void QTextBrowser::drawFrame(QPainter *)\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_drawFrame_1426, &_call_fp_drawFrame_1426);
-  methods += new qt_gsi::GenericMethod ("*dropEvent", "@brief Virtual method void QTextBrowser::dropEvent(QDropEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_dropEvent_1622_0, &_call_cbs_dropEvent_1622_0);
-  methods += new qt_gsi::GenericMethod ("*dropEvent", "@hide", false, &_init_cbs_dropEvent_1622_0, &_call_cbs_dropEvent_1622_0, &_set_callback_cbs_dropEvent_1622_0);
-  methods += new qt_gsi::GenericMethod ("*enterEvent", "@brief Virtual method void QTextBrowser::enterEvent(QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_enterEvent_1217_0, &_call_cbs_enterEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*enterEvent", "@hide", false, &_init_cbs_enterEvent_1217_0, &_call_cbs_enterEvent_1217_0, &_set_callback_cbs_enterEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*event", "@brief Virtual method bool QTextBrowser::event(QEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0);
-  methods += new qt_gsi::GenericMethod ("*event", "@hide", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0, &_set_callback_cbs_event_1217_0);
-  methods += new qt_gsi::GenericMethod ("*eventFilter", "@brief Virtual method bool QTextBrowser::eventFilter(QObject *, QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0);
-  methods += new qt_gsi::GenericMethod ("*eventFilter", "@hide", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0, &_set_callback_cbs_eventFilter_2411_0);
-  methods += new qt_gsi::GenericMethod ("*focusInEvent", "@brief Virtual method void QTextBrowser::focusInEvent(QFocusEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_focusInEvent_1729_0, &_call_cbs_focusInEvent_1729_0);
-  methods += new qt_gsi::GenericMethod ("*focusInEvent", "@hide", false, &_init_cbs_focusInEvent_1729_0, &_call_cbs_focusInEvent_1729_0, &_set_callback_cbs_focusInEvent_1729_0);
+  methods += new qt_gsi::GenericMethod ("*dropEvent", "@hide", false, &_init_cbs_dropEvent_1622_0, &_call_cbs_dropEvent_1622_0);
+  methods += new qt_gsi::GenericMethod ("*dropEvent", "@brief Virtual method void QTextBrowser::dropEvent(QDropEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_dropEvent_1622_0, &_call_cbs_dropEvent_1622_0, &_set_callback_cbs_dropEvent_1622_0);
+  methods += new qt_gsi::GenericMethod ("*enterEvent", "@hide", false, &_init_cbs_enterEvent_1217_0, &_call_cbs_enterEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*enterEvent", "@brief Virtual method void QTextBrowser::enterEvent(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_enterEvent_1217_0, &_call_cbs_enterEvent_1217_0, &_set_callback_cbs_enterEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*event", "@hide", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0);
+  methods += new qt_gsi::GenericMethod ("*event", "@brief Virtual method bool QTextBrowser::event(QEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0, &_set_callback_cbs_event_1217_0);
+  methods += new qt_gsi::GenericMethod ("*eventFilter", "@hide", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0);
+  methods += new qt_gsi::GenericMethod ("*eventFilter", "@brief Virtual method bool QTextBrowser::eventFilter(QObject *, QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0, &_set_callback_cbs_eventFilter_2411_0);
+  methods += new qt_gsi::GenericMethod ("*focusInEvent", "@hide", false, &_init_cbs_focusInEvent_1729_0, &_call_cbs_focusInEvent_1729_0);
+  methods += new qt_gsi::GenericMethod ("*focusInEvent", "@brief Virtual method void QTextBrowser::focusInEvent(QFocusEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_focusInEvent_1729_0, &_call_cbs_focusInEvent_1729_0, &_set_callback_cbs_focusInEvent_1729_0);
   methods += new qt_gsi::GenericMethod ("*focusNextChild", "@brief Method bool QTextBrowser::focusNextChild()\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_focusNextChild_0, &_call_fp_focusNextChild_0);
-  methods += new qt_gsi::GenericMethod ("*focusNextPrevChild", "@brief Virtual method bool QTextBrowser::focusNextPrevChild(bool next)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_focusNextPrevChild_864_0, &_call_cbs_focusNextPrevChild_864_0);
-  methods += new qt_gsi::GenericMethod ("*focusNextPrevChild", "@hide", false, &_init_cbs_focusNextPrevChild_864_0, &_call_cbs_focusNextPrevChild_864_0, &_set_callback_cbs_focusNextPrevChild_864_0);
-  methods += new qt_gsi::GenericMethod ("*focusOutEvent", "@brief Virtual method void QTextBrowser::focusOutEvent(QFocusEvent *ev)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_focusOutEvent_1729_0, &_call_cbs_focusOutEvent_1729_0);
-  methods += new qt_gsi::GenericMethod ("*focusOutEvent", "@hide", false, &_init_cbs_focusOutEvent_1729_0, &_call_cbs_focusOutEvent_1729_0, &_set_callback_cbs_focusOutEvent_1729_0);
+  methods += new qt_gsi::GenericMethod ("*focusNextPrevChild", "@hide", false, &_init_cbs_focusNextPrevChild_864_0, &_call_cbs_focusNextPrevChild_864_0);
+  methods += new qt_gsi::GenericMethod ("*focusNextPrevChild", "@brief Virtual method bool QTextBrowser::focusNextPrevChild(bool next)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_focusNextPrevChild_864_0, &_call_cbs_focusNextPrevChild_864_0, &_set_callback_cbs_focusNextPrevChild_864_0);
+  methods += new qt_gsi::GenericMethod ("*focusOutEvent", "@hide", false, &_init_cbs_focusOutEvent_1729_0, &_call_cbs_focusOutEvent_1729_0);
+  methods += new qt_gsi::GenericMethod ("*focusOutEvent", "@brief Virtual method void QTextBrowser::focusOutEvent(QFocusEvent *ev)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_focusOutEvent_1729_0, &_call_cbs_focusOutEvent_1729_0, &_set_callback_cbs_focusOutEvent_1729_0);
   methods += new qt_gsi::GenericMethod ("*focusPreviousChild", "@brief Method bool QTextBrowser::focusPreviousChild()\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_focusPreviousChild_0, &_call_fp_focusPreviousChild_0);
-  methods += new qt_gsi::GenericMethod ("forward", "@brief Virtual method void QTextBrowser::forward()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_forward_0_0, &_call_cbs_forward_0_0);
-  methods += new qt_gsi::GenericMethod ("forward", "@hide", false, &_init_cbs_forward_0_0, &_call_cbs_forward_0_0, &_set_callback_cbs_forward_0_0);
+  methods += new qt_gsi::GenericMethod ("forward", "@hide", false, &_init_cbs_forward_0_0, &_call_cbs_forward_0_0);
+  methods += new qt_gsi::GenericMethod ("forward", "@brief Virtual method void QTextBrowser::forward()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_forward_0_0, &_call_cbs_forward_0_0, &_set_callback_cbs_forward_0_0);
   methods += new qt_gsi::GenericMethod ("emit_forwardAvailable", "@brief Emitter for signal void QTextBrowser::forwardAvailable(bool)\nCall this method to emit this signal.", false, &_init_emitter_forwardAvailable_864, &_call_emitter_forwardAvailable_864);
-  methods += new qt_gsi::GenericMethod ("hasHeightForWidth", "@brief Virtual method bool QTextBrowser::hasHeightForWidth()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_hasHeightForWidth_c0_0, &_call_cbs_hasHeightForWidth_c0_0);
-  methods += new qt_gsi::GenericMethod ("hasHeightForWidth", "@hide", true, &_init_cbs_hasHeightForWidth_c0_0, &_call_cbs_hasHeightForWidth_c0_0, &_set_callback_cbs_hasHeightForWidth_c0_0);
-  methods += new qt_gsi::GenericMethod ("heightForWidth", "@brief Virtual method int QTextBrowser::heightForWidth(int)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_heightForWidth_c767_0, &_call_cbs_heightForWidth_c767_0);
-  methods += new qt_gsi::GenericMethod ("heightForWidth", "@hide", true, &_init_cbs_heightForWidth_c767_0, &_call_cbs_heightForWidth_c767_0, &_set_callback_cbs_heightForWidth_c767_0);
-  methods += new qt_gsi::GenericMethod ("*hideEvent", "@brief Virtual method void QTextBrowser::hideEvent(QHideEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_hideEvent_1595_0, &_call_cbs_hideEvent_1595_0);
-  methods += new qt_gsi::GenericMethod ("*hideEvent", "@hide", false, &_init_cbs_hideEvent_1595_0, &_call_cbs_hideEvent_1595_0, &_set_callback_cbs_hideEvent_1595_0);
+  methods += new qt_gsi::GenericMethod ("hasHeightForWidth", "@hide", true, &_init_cbs_hasHeightForWidth_c0_0, &_call_cbs_hasHeightForWidth_c0_0);
+  methods += new qt_gsi::GenericMethod ("hasHeightForWidth", "@brief Virtual method bool QTextBrowser::hasHeightForWidth()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_hasHeightForWidth_c0_0, &_call_cbs_hasHeightForWidth_c0_0, &_set_callback_cbs_hasHeightForWidth_c0_0);
+  methods += new qt_gsi::GenericMethod ("heightForWidth", "@hide", true, &_init_cbs_heightForWidth_c767_0, &_call_cbs_heightForWidth_c767_0);
+  methods += new qt_gsi::GenericMethod ("heightForWidth", "@brief Virtual method int QTextBrowser::heightForWidth(int)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_heightForWidth_c767_0, &_call_cbs_heightForWidth_c767_0, &_set_callback_cbs_heightForWidth_c767_0);
+  methods += new qt_gsi::GenericMethod ("*hideEvent", "@hide", false, &_init_cbs_hideEvent_1595_0, &_call_cbs_hideEvent_1595_0);
+  methods += new qt_gsi::GenericMethod ("*hideEvent", "@brief Virtual method void QTextBrowser::hideEvent(QHideEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_hideEvent_1595_0, &_call_cbs_hideEvent_1595_0, &_set_callback_cbs_hideEvent_1595_0);
   methods += new qt_gsi::GenericMethod ("emit_highlighted", "@brief Emitter for signal void QTextBrowser::highlighted(const QUrl &)\nCall this method to emit this signal.", false, &_init_emitter_highlighted_1701, &_call_emitter_highlighted_1701);
   methods += new qt_gsi::GenericMethod ("emit_highlighted_qs", "@brief Emitter for signal void QTextBrowser::highlighted(const QString &)\nCall this method to emit this signal.", false, &_init_emitter_highlighted_2025, &_call_emitter_highlighted_2025);
   methods += new qt_gsi::GenericMethod ("emit_historyChanged", "@brief Emitter for signal void QTextBrowser::historyChanged()\nCall this method to emit this signal.", false, &_init_emitter_historyChanged_0, &_call_emitter_historyChanged_0);
-  methods += new qt_gsi::GenericMethod ("home", "@brief Virtual method void QTextBrowser::home()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_home_0_0, &_call_cbs_home_0_0);
-  methods += new qt_gsi::GenericMethod ("home", "@hide", false, &_init_cbs_home_0_0, &_call_cbs_home_0_0, &_set_callback_cbs_home_0_0);
-  methods += new qt_gsi::GenericMethod ("*initPainter", "@brief Virtual method void QTextBrowser::initPainter(QPainter *painter)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_initPainter_c1426_0, &_call_cbs_initPainter_c1426_0);
-  methods += new qt_gsi::GenericMethod ("*initPainter", "@hide", true, &_init_cbs_initPainter_c1426_0, &_call_cbs_initPainter_c1426_0, &_set_callback_cbs_initPainter_c1426_0);
+  methods += new qt_gsi::GenericMethod ("home", "@hide", false, &_init_cbs_home_0_0, &_call_cbs_home_0_0);
+  methods += new qt_gsi::GenericMethod ("home", "@brief Virtual method void QTextBrowser::home()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_home_0_0, &_call_cbs_home_0_0, &_set_callback_cbs_home_0_0);
+  methods += new qt_gsi::GenericMethod ("*initPainter", "@hide", true, &_init_cbs_initPainter_c1426_0, &_call_cbs_initPainter_c1426_0);
+  methods += new qt_gsi::GenericMethod ("*initPainter", "@brief Virtual method void QTextBrowser::initPainter(QPainter *painter)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_initPainter_c1426_0, &_call_cbs_initPainter_c1426_0, &_set_callback_cbs_initPainter_c1426_0);
   methods += new qt_gsi::GenericMethod ("*initStyleOption", "@brief Method void QTextBrowser::initStyleOption(QStyleOptionFrame *option)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_initStyleOption_c2356, &_call_fp_initStyleOption_c2356);
-  methods += new qt_gsi::GenericMethod ("*inputMethodEvent", "@brief Virtual method void QTextBrowser::inputMethodEvent(QInputMethodEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_inputMethodEvent_2354_0, &_call_cbs_inputMethodEvent_2354_0);
-  methods += new qt_gsi::GenericMethod ("*inputMethodEvent", "@hide", false, &_init_cbs_inputMethodEvent_2354_0, &_call_cbs_inputMethodEvent_2354_0, &_set_callback_cbs_inputMethodEvent_2354_0);
-  methods += new qt_gsi::GenericMethod ("inputMethodQuery", "@brief Virtual method QVariant QTextBrowser::inputMethodQuery(Qt::InputMethodQuery property)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_inputMethodQuery_c2420_0, &_call_cbs_inputMethodQuery_c2420_0);
-  methods += new qt_gsi::GenericMethod ("inputMethodQuery", "@hide", true, &_init_cbs_inputMethodQuery_c2420_0, &_call_cbs_inputMethodQuery_c2420_0, &_set_callback_cbs_inputMethodQuery_c2420_0);
-  methods += new qt_gsi::GenericMethod ("*insertFromMimeData", "@brief Virtual method void QTextBrowser::insertFromMimeData(const QMimeData *source)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_insertFromMimeData_2168_0, &_call_cbs_insertFromMimeData_2168_0);
-  methods += new qt_gsi::GenericMethod ("*insertFromMimeData", "@hide", false, &_init_cbs_insertFromMimeData_2168_0, &_call_cbs_insertFromMimeData_2168_0, &_set_callback_cbs_insertFromMimeData_2168_0);
+  methods += new qt_gsi::GenericMethod ("*inputMethodEvent", "@hide", false, &_init_cbs_inputMethodEvent_2354_0, &_call_cbs_inputMethodEvent_2354_0);
+  methods += new qt_gsi::GenericMethod ("*inputMethodEvent", "@brief Virtual method void QTextBrowser::inputMethodEvent(QInputMethodEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_inputMethodEvent_2354_0, &_call_cbs_inputMethodEvent_2354_0, &_set_callback_cbs_inputMethodEvent_2354_0);
+  methods += new qt_gsi::GenericMethod ("inputMethodQuery", "@hide", true, &_init_cbs_inputMethodQuery_c2420_0, &_call_cbs_inputMethodQuery_c2420_0);
+  methods += new qt_gsi::GenericMethod ("inputMethodQuery", "@brief Virtual method QVariant QTextBrowser::inputMethodQuery(Qt::InputMethodQuery property)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_inputMethodQuery_c2420_0, &_call_cbs_inputMethodQuery_c2420_0, &_set_callback_cbs_inputMethodQuery_c2420_0);
+  methods += new qt_gsi::GenericMethod ("*insertFromMimeData", "@hide", false, &_init_cbs_insertFromMimeData_2168_0, &_call_cbs_insertFromMimeData_2168_0);
+  methods += new qt_gsi::GenericMethod ("*insertFromMimeData", "@brief Virtual method void QTextBrowser::insertFromMimeData(const QMimeData *source)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_insertFromMimeData_2168_0, &_call_cbs_insertFromMimeData_2168_0, &_set_callback_cbs_insertFromMimeData_2168_0);
   methods += new qt_gsi::GenericMethod ("*isSignalConnected", "@brief Method bool QTextBrowser::isSignalConnected(const QMetaMethod &signal)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_isSignalConnected_c2394, &_call_fp_isSignalConnected_c2394);
-  methods += new qt_gsi::GenericMethod ("*keyPressEvent", "@brief Virtual method void QTextBrowser::keyPressEvent(QKeyEvent *ev)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_keyPressEvent_1514_0, &_call_cbs_keyPressEvent_1514_0);
-  methods += new qt_gsi::GenericMethod ("*keyPressEvent", "@hide", false, &_init_cbs_keyPressEvent_1514_0, &_call_cbs_keyPressEvent_1514_0, &_set_callback_cbs_keyPressEvent_1514_0);
-  methods += new qt_gsi::GenericMethod ("*keyReleaseEvent", "@brief Virtual method void QTextBrowser::keyReleaseEvent(QKeyEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_keyReleaseEvent_1514_0, &_call_cbs_keyReleaseEvent_1514_0);
-  methods += new qt_gsi::GenericMethod ("*keyReleaseEvent", "@hide", false, &_init_cbs_keyReleaseEvent_1514_0, &_call_cbs_keyReleaseEvent_1514_0, &_set_callback_cbs_keyReleaseEvent_1514_0);
-  methods += new qt_gsi::GenericMethod ("*leaveEvent", "@brief Virtual method void QTextBrowser::leaveEvent(QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_leaveEvent_1217_0, &_call_cbs_leaveEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*leaveEvent", "@hide", false, &_init_cbs_leaveEvent_1217_0, &_call_cbs_leaveEvent_1217_0, &_set_callback_cbs_leaveEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("loadResource", "@brief Virtual method QVariant QTextBrowser::loadResource(int type, const QUrl &name)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_loadResource_2360_0, &_call_cbs_loadResource_2360_0);
-  methods += new qt_gsi::GenericMethod ("loadResource", "@hide", false, &_init_cbs_loadResource_2360_0, &_call_cbs_loadResource_2360_0, &_set_callback_cbs_loadResource_2360_0);
-  methods += new qt_gsi::GenericMethod ("*metric", "@brief Virtual method int QTextBrowser::metric(QPaintDevice::PaintDeviceMetric)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_metric_c3445_0, &_call_cbs_metric_c3445_0);
-  methods += new qt_gsi::GenericMethod ("*metric", "@hide", true, &_init_cbs_metric_c3445_0, &_call_cbs_metric_c3445_0, &_set_callback_cbs_metric_c3445_0);
-  methods += new qt_gsi::GenericMethod ("minimumSizeHint", "@brief Virtual method QSize QTextBrowser::minimumSizeHint()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_minimumSizeHint_c0_0, &_call_cbs_minimumSizeHint_c0_0);
-  methods += new qt_gsi::GenericMethod ("minimumSizeHint", "@hide", true, &_init_cbs_minimumSizeHint_c0_0, &_call_cbs_minimumSizeHint_c0_0, &_set_callback_cbs_minimumSizeHint_c0_0);
-  methods += new qt_gsi::GenericMethod ("*mouseDoubleClickEvent", "@brief Virtual method void QTextBrowser::mouseDoubleClickEvent(QMouseEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_mouseDoubleClickEvent_1738_0, &_call_cbs_mouseDoubleClickEvent_1738_0);
-  methods += new qt_gsi::GenericMethod ("*mouseDoubleClickEvent", "@hide", false, &_init_cbs_mouseDoubleClickEvent_1738_0, &_call_cbs_mouseDoubleClickEvent_1738_0, &_set_callback_cbs_mouseDoubleClickEvent_1738_0);
-  methods += new qt_gsi::GenericMethod ("*mouseMoveEvent", "@brief Virtual method void QTextBrowser::mouseMoveEvent(QMouseEvent *ev)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_mouseMoveEvent_1738_0, &_call_cbs_mouseMoveEvent_1738_0);
-  methods += new qt_gsi::GenericMethod ("*mouseMoveEvent", "@hide", false, &_init_cbs_mouseMoveEvent_1738_0, &_call_cbs_mouseMoveEvent_1738_0, &_set_callback_cbs_mouseMoveEvent_1738_0);
-  methods += new qt_gsi::GenericMethod ("*mousePressEvent", "@brief Virtual method void QTextBrowser::mousePressEvent(QMouseEvent *ev)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_mousePressEvent_1738_0, &_call_cbs_mousePressEvent_1738_0);
-  methods += new qt_gsi::GenericMethod ("*mousePressEvent", "@hide", false, &_init_cbs_mousePressEvent_1738_0, &_call_cbs_mousePressEvent_1738_0, &_set_callback_cbs_mousePressEvent_1738_0);
-  methods += new qt_gsi::GenericMethod ("*mouseReleaseEvent", "@brief Virtual method void QTextBrowser::mouseReleaseEvent(QMouseEvent *ev)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_mouseReleaseEvent_1738_0, &_call_cbs_mouseReleaseEvent_1738_0);
-  methods += new qt_gsi::GenericMethod ("*mouseReleaseEvent", "@hide", false, &_init_cbs_mouseReleaseEvent_1738_0, &_call_cbs_mouseReleaseEvent_1738_0, &_set_callback_cbs_mouseReleaseEvent_1738_0);
-  methods += new qt_gsi::GenericMethod ("*moveEvent", "@brief Virtual method void QTextBrowser::moveEvent(QMoveEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_moveEvent_1624_0, &_call_cbs_moveEvent_1624_0);
-  methods += new qt_gsi::GenericMethod ("*moveEvent", "@hide", false, &_init_cbs_moveEvent_1624_0, &_call_cbs_moveEvent_1624_0, &_set_callback_cbs_moveEvent_1624_0);
-  methods += new qt_gsi::GenericMethod ("*nativeEvent", "@brief Virtual method bool QTextBrowser::nativeEvent(const QByteArray &eventType, void *message, long int *result)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_nativeEvent_4678_0, &_call_cbs_nativeEvent_4678_0);
-  methods += new qt_gsi::GenericMethod ("*nativeEvent", "@hide", false, &_init_cbs_nativeEvent_4678_0, &_call_cbs_nativeEvent_4678_0, &_set_callback_cbs_nativeEvent_4678_0);
-  methods += new qt_gsi::GenericMethod ("emit_objectNameChanged", "@brief Emitter for signal void QTextBrowser::objectNameChanged(const QString &objectName)\nCall this method to emit this signal.", false, &_init_emitter_objectNameChanged_4567, &_call_emitter_objectNameChanged_4567);
-  methods += new qt_gsi::GenericMethod ("paintEngine", "@brief Virtual method QPaintEngine *QTextBrowser::paintEngine()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_paintEngine_c0_0, &_call_cbs_paintEngine_c0_0);
-  methods += new qt_gsi::GenericMethod ("paintEngine", "@hide", true, &_init_cbs_paintEngine_c0_0, &_call_cbs_paintEngine_c0_0, &_set_callback_cbs_paintEngine_c0_0);
-  methods += new qt_gsi::GenericMethod ("*paintEvent", "@brief Virtual method void QTextBrowser::paintEvent(QPaintEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_paintEvent_1725_0, &_call_cbs_paintEvent_1725_0);
-  methods += new qt_gsi::GenericMethod ("*paintEvent", "@hide", false, &_init_cbs_paintEvent_1725_0, &_call_cbs_paintEvent_1725_0, &_set_callback_cbs_paintEvent_1725_0);
+  methods += new qt_gsi::GenericMethod ("*keyPressEvent", "@hide", false, &_init_cbs_keyPressEvent_1514_0, &_call_cbs_keyPressEvent_1514_0);
+  methods += new qt_gsi::GenericMethod ("*keyPressEvent", "@brief Virtual method void QTextBrowser::keyPressEvent(QKeyEvent *ev)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_keyPressEvent_1514_0, &_call_cbs_keyPressEvent_1514_0, &_set_callback_cbs_keyPressEvent_1514_0);
+  methods += new qt_gsi::GenericMethod ("*keyReleaseEvent", "@hide", false, &_init_cbs_keyReleaseEvent_1514_0, &_call_cbs_keyReleaseEvent_1514_0);
+  methods += new qt_gsi::GenericMethod ("*keyReleaseEvent", "@brief Virtual method void QTextBrowser::keyReleaseEvent(QKeyEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_keyReleaseEvent_1514_0, &_call_cbs_keyReleaseEvent_1514_0, &_set_callback_cbs_keyReleaseEvent_1514_0);
+  methods += new qt_gsi::GenericMethod ("*leaveEvent", "@hide", false, &_init_cbs_leaveEvent_1217_0, &_call_cbs_leaveEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*leaveEvent", "@brief Virtual method void QTextBrowser::leaveEvent(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_leaveEvent_1217_0, &_call_cbs_leaveEvent_1217_0, &_set_callback_cbs_leaveEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("loadResource", "@hide", false, &_init_cbs_loadResource_2360_0, &_call_cbs_loadResource_2360_0);
+  methods += new qt_gsi::GenericMethod ("loadResource", "@brief Virtual method QVariant QTextBrowser::loadResource(int type, const QUrl &name)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_loadResource_2360_0, &_call_cbs_loadResource_2360_0, &_set_callback_cbs_loadResource_2360_0);
+  methods += new qt_gsi::GenericMethod ("*metric", "@hide", true, &_init_cbs_metric_c3445_0, &_call_cbs_metric_c3445_0);
+  methods += new qt_gsi::GenericMethod ("*metric", "@brief Virtual method int QTextBrowser::metric(QPaintDevice::PaintDeviceMetric)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_metric_c3445_0, &_call_cbs_metric_c3445_0, &_set_callback_cbs_metric_c3445_0);
+  methods += new qt_gsi::GenericMethod ("minimumSizeHint", "@hide", true, &_init_cbs_minimumSizeHint_c0_0, &_call_cbs_minimumSizeHint_c0_0);
+  methods += new qt_gsi::GenericMethod ("minimumSizeHint", "@brief Virtual method QSize QTextBrowser::minimumSizeHint()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_minimumSizeHint_c0_0, &_call_cbs_minimumSizeHint_c0_0, &_set_callback_cbs_minimumSizeHint_c0_0);
+  methods += new qt_gsi::GenericMethod ("*mouseDoubleClickEvent", "@hide", false, &_init_cbs_mouseDoubleClickEvent_1738_0, &_call_cbs_mouseDoubleClickEvent_1738_0);
+  methods += new qt_gsi::GenericMethod ("*mouseDoubleClickEvent", "@brief Virtual method void QTextBrowser::mouseDoubleClickEvent(QMouseEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_mouseDoubleClickEvent_1738_0, &_call_cbs_mouseDoubleClickEvent_1738_0, &_set_callback_cbs_mouseDoubleClickEvent_1738_0);
+  methods += new qt_gsi::GenericMethod ("*mouseMoveEvent", "@hide", false, &_init_cbs_mouseMoveEvent_1738_0, &_call_cbs_mouseMoveEvent_1738_0);
+  methods += new qt_gsi::GenericMethod ("*mouseMoveEvent", "@brief Virtual method void QTextBrowser::mouseMoveEvent(QMouseEvent *ev)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_mouseMoveEvent_1738_0, &_call_cbs_mouseMoveEvent_1738_0, &_set_callback_cbs_mouseMoveEvent_1738_0);
+  methods += new qt_gsi::GenericMethod ("*mousePressEvent", "@hide", false, &_init_cbs_mousePressEvent_1738_0, &_call_cbs_mousePressEvent_1738_0);
+  methods += new qt_gsi::GenericMethod ("*mousePressEvent", "@brief Virtual method void QTextBrowser::mousePressEvent(QMouseEvent *ev)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_mousePressEvent_1738_0, &_call_cbs_mousePressEvent_1738_0, &_set_callback_cbs_mousePressEvent_1738_0);
+  methods += new qt_gsi::GenericMethod ("*mouseReleaseEvent", "@hide", false, &_init_cbs_mouseReleaseEvent_1738_0, &_call_cbs_mouseReleaseEvent_1738_0);
+  methods += new qt_gsi::GenericMethod ("*mouseReleaseEvent", "@brief Virtual method void QTextBrowser::mouseReleaseEvent(QMouseEvent *ev)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_mouseReleaseEvent_1738_0, &_call_cbs_mouseReleaseEvent_1738_0, &_set_callback_cbs_mouseReleaseEvent_1738_0);
+  methods += new qt_gsi::GenericMethod ("*moveEvent", "@hide", false, &_init_cbs_moveEvent_1624_0, &_call_cbs_moveEvent_1624_0);
+  methods += new qt_gsi::GenericMethod ("*moveEvent", "@brief Virtual method void QTextBrowser::moveEvent(QMoveEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_moveEvent_1624_0, &_call_cbs_moveEvent_1624_0, &_set_callback_cbs_moveEvent_1624_0);
+  methods += new qt_gsi::GenericMethod ("*nativeEvent", "@hide", false, &_init_cbs_nativeEvent_4678_0, &_call_cbs_nativeEvent_4678_0);
+  methods += new qt_gsi::GenericMethod ("*nativeEvent", "@brief Virtual method bool QTextBrowser::nativeEvent(const QByteArray &eventType, void *message, long int *result)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_nativeEvent_4678_0, &_call_cbs_nativeEvent_4678_0, &_set_callback_cbs_nativeEvent_4678_0);
+  methods += new qt_gsi::GenericMethod ("paintEngine", "@hide", true, &_init_cbs_paintEngine_c0_0, &_call_cbs_paintEngine_c0_0);
+  methods += new qt_gsi::GenericMethod ("paintEngine", "@brief Virtual method QPaintEngine *QTextBrowser::paintEngine()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_paintEngine_c0_0, &_call_cbs_paintEngine_c0_0, &_set_callback_cbs_paintEngine_c0_0);
+  methods += new qt_gsi::GenericMethod ("*paintEvent", "@hide", false, &_init_cbs_paintEvent_1725_0, &_call_cbs_paintEvent_1725_0);
+  methods += new qt_gsi::GenericMethod ("*paintEvent", "@brief Virtual method void QTextBrowser::paintEvent(QPaintEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_paintEvent_1725_0, &_call_cbs_paintEvent_1725_0, &_set_callback_cbs_paintEvent_1725_0);
   methods += new qt_gsi::GenericMethod ("*receivers", "@brief Method int QTextBrowser::receivers(const char *signal)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_receivers_c1731, &_call_fp_receivers_c1731);
-  methods += new qt_gsi::GenericMethod ("*redirected", "@brief Virtual method QPaintDevice *QTextBrowser::redirected(QPoint *offset)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_redirected_c1225_0, &_call_cbs_redirected_c1225_0);
-  methods += new qt_gsi::GenericMethod ("*redirected", "@hide", true, &_init_cbs_redirected_c1225_0, &_call_cbs_redirected_c1225_0, &_set_callback_cbs_redirected_c1225_0);
+  methods += new qt_gsi::GenericMethod ("*redirected", "@hide", true, &_init_cbs_redirected_c1225_0, &_call_cbs_redirected_c1225_0);
+  methods += new qt_gsi::GenericMethod ("*redirected", "@brief Virtual method QPaintDevice *QTextBrowser::redirected(QPoint *offset)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_redirected_c1225_0, &_call_cbs_redirected_c1225_0, &_set_callback_cbs_redirected_c1225_0);
   methods += new qt_gsi::GenericMethod ("emit_redoAvailable", "@brief Emitter for signal void QTextBrowser::redoAvailable(bool b)\nCall this method to emit this signal.", false, &_init_emitter_redoAvailable_864, &_call_emitter_redoAvailable_864);
-  methods += new qt_gsi::GenericMethod ("reload", "@brief Virtual method void QTextBrowser::reload()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_reload_0_0, &_call_cbs_reload_0_0);
-  methods += new qt_gsi::GenericMethod ("reload", "@hide", false, &_init_cbs_reload_0_0, &_call_cbs_reload_0_0, &_set_callback_cbs_reload_0_0);
-  methods += new qt_gsi::GenericMethod ("*resizeEvent", "@brief Virtual method void QTextBrowser::resizeEvent(QResizeEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_resizeEvent_1843_0, &_call_cbs_resizeEvent_1843_0);
-  methods += new qt_gsi::GenericMethod ("*resizeEvent", "@hide", false, &_init_cbs_resizeEvent_1843_0, &_call_cbs_resizeEvent_1843_0, &_set_callback_cbs_resizeEvent_1843_0);
-  methods += new qt_gsi::GenericMethod ("*scrollContentsBy", "@brief Virtual method void QTextBrowser::scrollContentsBy(int dx, int dy)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_scrollContentsBy_1426_0, &_call_cbs_scrollContentsBy_1426_0);
-  methods += new qt_gsi::GenericMethod ("*scrollContentsBy", "@hide", false, &_init_cbs_scrollContentsBy_1426_0, &_call_cbs_scrollContentsBy_1426_0, &_set_callback_cbs_scrollContentsBy_1426_0);
+  methods += new qt_gsi::GenericMethod ("reload", "@hide", false, &_init_cbs_reload_0_0, &_call_cbs_reload_0_0);
+  methods += new qt_gsi::GenericMethod ("reload", "@brief Virtual method void QTextBrowser::reload()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_reload_0_0, &_call_cbs_reload_0_0, &_set_callback_cbs_reload_0_0);
+  methods += new qt_gsi::GenericMethod ("*resizeEvent", "@hide", false, &_init_cbs_resizeEvent_1843_0, &_call_cbs_resizeEvent_1843_0);
+  methods += new qt_gsi::GenericMethod ("*resizeEvent", "@brief Virtual method void QTextBrowser::resizeEvent(QResizeEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_resizeEvent_1843_0, &_call_cbs_resizeEvent_1843_0, &_set_callback_cbs_resizeEvent_1843_0);
+  methods += new qt_gsi::GenericMethod ("*scrollContentsBy", "@hide", false, &_init_cbs_scrollContentsBy_1426_0, &_call_cbs_scrollContentsBy_1426_0);
+  methods += new qt_gsi::GenericMethod ("*scrollContentsBy", "@brief Virtual method void QTextBrowser::scrollContentsBy(int dx, int dy)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_scrollContentsBy_1426_0, &_call_cbs_scrollContentsBy_1426_0, &_set_callback_cbs_scrollContentsBy_1426_0);
   methods += new qt_gsi::GenericMethod ("emit_selectionChanged", "@brief Emitter for signal void QTextBrowser::selectionChanged()\nCall this method to emit this signal.", false, &_init_emitter_selectionChanged_0, &_call_emitter_selectionChanged_0);
   methods += new qt_gsi::GenericMethod ("*sender", "@brief Method QObject *QTextBrowser::sender()\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_sender_c0, &_call_fp_sender_c0);
   methods += new qt_gsi::GenericMethod ("*senderSignalIndex", "@brief Method int QTextBrowser::senderSignalIndex()\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_senderSignalIndex_c0, &_call_fp_senderSignalIndex_c0);
-  methods += new qt_gsi::GenericMethod ("setSource", "@brief Virtual method void QTextBrowser::setSource(const QUrl &name)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setSource_1701_0, &_call_cbs_setSource_1701_0);
-  methods += new qt_gsi::GenericMethod ("setSource", "@hide", false, &_init_cbs_setSource_1701_0, &_call_cbs_setSource_1701_0, &_set_callback_cbs_setSource_1701_0);
+  methods += new qt_gsi::GenericMethod ("setSource", "@hide", false, &_init_cbs_setSource_1701_0, &_call_cbs_setSource_1701_0);
+  methods += new qt_gsi::GenericMethod ("setSource", "@brief Virtual method void QTextBrowser::setSource(const QUrl &name)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setSource_1701_0, &_call_cbs_setSource_1701_0, &_set_callback_cbs_setSource_1701_0);
   methods += new qt_gsi::GenericMethod ("*setViewportMargins", "@brief Method void QTextBrowser::setViewportMargins(int left, int top, int right, int bottom)\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_setViewportMargins_2744, &_call_fp_setViewportMargins_2744);
   methods += new qt_gsi::GenericMethod ("*setViewportMargins", "@brief Method void QTextBrowser::setViewportMargins(const QMargins &margins)\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_setViewportMargins_2115, &_call_fp_setViewportMargins_2115);
-  methods += new qt_gsi::GenericMethod ("setVisible", "@brief Virtual method void QTextBrowser::setVisible(bool visible)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setVisible_864_0, &_call_cbs_setVisible_864_0);
-  methods += new qt_gsi::GenericMethod ("setVisible", "@hide", false, &_init_cbs_setVisible_864_0, &_call_cbs_setVisible_864_0, &_set_callback_cbs_setVisible_864_0);
-  methods += new qt_gsi::GenericMethod ("setupViewport", "@brief Virtual method void QTextBrowser::setupViewport(QWidget *viewport)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setupViewport_1315_0, &_call_cbs_setupViewport_1315_0);
-  methods += new qt_gsi::GenericMethod ("setupViewport", "@hide", false, &_init_cbs_setupViewport_1315_0, &_call_cbs_setupViewport_1315_0, &_set_callback_cbs_setupViewport_1315_0);
-  methods += new qt_gsi::GenericMethod ("*sharedPainter", "@brief Virtual method QPainter *QTextBrowser::sharedPainter()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_sharedPainter_c0_0, &_call_cbs_sharedPainter_c0_0);
-  methods += new qt_gsi::GenericMethod ("*sharedPainter", "@hide", true, &_init_cbs_sharedPainter_c0_0, &_call_cbs_sharedPainter_c0_0, &_set_callback_cbs_sharedPainter_c0_0);
-  methods += new qt_gsi::GenericMethod ("*showEvent", "@brief Virtual method void QTextBrowser::showEvent(QShowEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_showEvent_1634_0, &_call_cbs_showEvent_1634_0);
-  methods += new qt_gsi::GenericMethod ("*showEvent", "@hide", false, &_init_cbs_showEvent_1634_0, &_call_cbs_showEvent_1634_0, &_set_callback_cbs_showEvent_1634_0);
-  methods += new qt_gsi::GenericMethod ("sizeHint", "@brief Virtual method QSize QTextBrowser::sizeHint()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_sizeHint_c0_0, &_call_cbs_sizeHint_c0_0);
-  methods += new qt_gsi::GenericMethod ("sizeHint", "@hide", true, &_init_cbs_sizeHint_c0_0, &_call_cbs_sizeHint_c0_0, &_set_callback_cbs_sizeHint_c0_0);
+  methods += new qt_gsi::GenericMethod ("setVisible", "@hide", false, &_init_cbs_setVisible_864_0, &_call_cbs_setVisible_864_0);
+  methods += new qt_gsi::GenericMethod ("setVisible", "@brief Virtual method void QTextBrowser::setVisible(bool visible)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setVisible_864_0, &_call_cbs_setVisible_864_0, &_set_callback_cbs_setVisible_864_0);
+  methods += new qt_gsi::GenericMethod ("setupViewport", "@hide", false, &_init_cbs_setupViewport_1315_0, &_call_cbs_setupViewport_1315_0);
+  methods += new qt_gsi::GenericMethod ("setupViewport", "@brief Virtual method void QTextBrowser::setupViewport(QWidget *viewport)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setupViewport_1315_0, &_call_cbs_setupViewport_1315_0, &_set_callback_cbs_setupViewport_1315_0);
+  methods += new qt_gsi::GenericMethod ("*sharedPainter", "@hide", true, &_init_cbs_sharedPainter_c0_0, &_call_cbs_sharedPainter_c0_0);
+  methods += new qt_gsi::GenericMethod ("*sharedPainter", "@brief Virtual method QPainter *QTextBrowser::sharedPainter()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_sharedPainter_c0_0, &_call_cbs_sharedPainter_c0_0, &_set_callback_cbs_sharedPainter_c0_0);
+  methods += new qt_gsi::GenericMethod ("*showEvent", "@hide", false, &_init_cbs_showEvent_1634_0, &_call_cbs_showEvent_1634_0);
+  methods += new qt_gsi::GenericMethod ("*showEvent", "@brief Virtual method void QTextBrowser::showEvent(QShowEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_showEvent_1634_0, &_call_cbs_showEvent_1634_0, &_set_callback_cbs_showEvent_1634_0);
+  methods += new qt_gsi::GenericMethod ("sizeHint", "@hide", true, &_init_cbs_sizeHint_c0_0, &_call_cbs_sizeHint_c0_0);
+  methods += new qt_gsi::GenericMethod ("sizeHint", "@brief Virtual method QSize QTextBrowser::sizeHint()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_sizeHint_c0_0, &_call_cbs_sizeHint_c0_0, &_set_callback_cbs_sizeHint_c0_0);
   methods += new qt_gsi::GenericMethod ("emit_sourceChanged", "@brief Emitter for signal void QTextBrowser::sourceChanged(const QUrl &)\nCall this method to emit this signal.", false, &_init_emitter_sourceChanged_1701, &_call_emitter_sourceChanged_1701);
-  methods += new qt_gsi::GenericMethod ("*tabletEvent", "@brief Virtual method void QTextBrowser::tabletEvent(QTabletEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_tabletEvent_1821_0, &_call_cbs_tabletEvent_1821_0);
-  methods += new qt_gsi::GenericMethod ("*tabletEvent", "@hide", false, &_init_cbs_tabletEvent_1821_0, &_call_cbs_tabletEvent_1821_0, &_set_callback_cbs_tabletEvent_1821_0);
+  methods += new qt_gsi::GenericMethod ("*tabletEvent", "@hide", false, &_init_cbs_tabletEvent_1821_0, &_call_cbs_tabletEvent_1821_0);
+  methods += new qt_gsi::GenericMethod ("*tabletEvent", "@brief Virtual method void QTextBrowser::tabletEvent(QTabletEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_tabletEvent_1821_0, &_call_cbs_tabletEvent_1821_0, &_set_callback_cbs_tabletEvent_1821_0);
   methods += new qt_gsi::GenericMethod ("emit_textChanged", "@brief Emitter for signal void QTextBrowser::textChanged()\nCall this method to emit this signal.", false, &_init_emitter_textChanged_0, &_call_emitter_textChanged_0);
-  methods += new qt_gsi::GenericMethod ("*timerEvent", "@brief Virtual method void QTextBrowser::timerEvent(QTimerEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0);
-  methods += new qt_gsi::GenericMethod ("*timerEvent", "@hide", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0, &_set_callback_cbs_timerEvent_1730_0);
+  methods += new qt_gsi::GenericMethod ("*timerEvent", "@hide", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0);
+  methods += new qt_gsi::GenericMethod ("*timerEvent", "@brief Virtual method void QTextBrowser::timerEvent(QTimerEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0, &_set_callback_cbs_timerEvent_1730_0);
   methods += new qt_gsi::GenericMethod ("emit_undoAvailable", "@brief Emitter for signal void QTextBrowser::undoAvailable(bool b)\nCall this method to emit this signal.", false, &_init_emitter_undoAvailable_864, &_call_emitter_undoAvailable_864);
   methods += new qt_gsi::GenericMethod ("*updateMicroFocus", "@brief Method void QTextBrowser::updateMicroFocus()\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_updateMicroFocus_0, &_call_fp_updateMicroFocus_0);
-  methods += new qt_gsi::GenericMethod ("*viewportEvent", "@brief Virtual method bool QTextBrowser::viewportEvent(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_viewportEvent_1217_0, &_call_cbs_viewportEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*viewportEvent", "@hide", false, &_init_cbs_viewportEvent_1217_0, &_call_cbs_viewportEvent_1217_0, &_set_callback_cbs_viewportEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*viewportEvent", "@hide", false, &_init_cbs_viewportEvent_1217_0, &_call_cbs_viewportEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*viewportEvent", "@brief Virtual method bool QTextBrowser::viewportEvent(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_viewportEvent_1217_0, &_call_cbs_viewportEvent_1217_0, &_set_callback_cbs_viewportEvent_1217_0);
   methods += new qt_gsi::GenericMethod ("*viewportMargins", "@brief Method QMargins QTextBrowser::viewportMargins()\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_viewportMargins_c0, &_call_fp_viewportMargins_c0);
-  methods += new qt_gsi::GenericMethod ("*viewportSizeHint", "@brief Virtual method QSize QTextBrowser::viewportSizeHint()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_viewportSizeHint_c0_0, &_call_cbs_viewportSizeHint_c0_0);
-  methods += new qt_gsi::GenericMethod ("*viewportSizeHint", "@hide", true, &_init_cbs_viewportSizeHint_c0_0, &_call_cbs_viewportSizeHint_c0_0, &_set_callback_cbs_viewportSizeHint_c0_0);
-  methods += new qt_gsi::GenericMethod ("*wheelEvent", "@brief Virtual method void QTextBrowser::wheelEvent(QWheelEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_wheelEvent_1718_0, &_call_cbs_wheelEvent_1718_0);
-  methods += new qt_gsi::GenericMethod ("*wheelEvent", "@hide", false, &_init_cbs_wheelEvent_1718_0, &_call_cbs_wheelEvent_1718_0, &_set_callback_cbs_wheelEvent_1718_0);
+  methods += new qt_gsi::GenericMethod ("*viewportSizeHint", "@hide", true, &_init_cbs_viewportSizeHint_c0_0, &_call_cbs_viewportSizeHint_c0_0);
+  methods += new qt_gsi::GenericMethod ("*viewportSizeHint", "@brief Virtual method QSize QTextBrowser::viewportSizeHint()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_viewportSizeHint_c0_0, &_call_cbs_viewportSizeHint_c0_0, &_set_callback_cbs_viewportSizeHint_c0_0);
+  methods += new qt_gsi::GenericMethod ("*wheelEvent", "@hide", false, &_init_cbs_wheelEvent_1718_0, &_call_cbs_wheelEvent_1718_0);
+  methods += new qt_gsi::GenericMethod ("*wheelEvent", "@brief Virtual method void QTextBrowser::wheelEvent(QWheelEvent *e)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_wheelEvent_1718_0, &_call_cbs_wheelEvent_1718_0, &_set_callback_cbs_wheelEvent_1718_0);
   methods += new qt_gsi::GenericMethod ("emit_windowIconChanged", "@brief Emitter for signal void QTextBrowser::windowIconChanged(const QIcon &icon)\nCall this method to emit this signal.", false, &_init_emitter_windowIconChanged_1787, &_call_emitter_windowIconChanged_1787);
   methods += new qt_gsi::GenericMethod ("emit_windowIconTextChanged", "@brief Emitter for signal void QTextBrowser::windowIconTextChanged(const QString &iconText)\nCall this method to emit this signal.", false, &_init_emitter_windowIconTextChanged_2025, &_call_emitter_windowIconTextChanged_2025);
   methods += new qt_gsi::GenericMethod ("emit_windowTitleChanged", "@brief Emitter for signal void QTextBrowser::windowTitleChanged(const QString &title)\nCall this method to emit this signal.", false, &_init_emitter_windowTitleChanged_2025, &_call_emitter_windowTitleChanged_2025);

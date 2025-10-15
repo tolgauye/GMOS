@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -89,7 +89,7 @@ public:
    *
    *  For a detailed description of this method see db::Manager::queue.
    *  This method has been declared to be no-throwing since it is
-   *  assumed that once the operation is successfully queued it can be undone
+   *  assumed that once the operation is sucessfully queued it can be undone
    *  in every case.
    */
   virtual void undo (db::Op * /*op*/) 
@@ -100,7 +100,7 @@ public:
    *
    *  For a detailed description of this method see db::Manager::queue.
    *  This method has been declared to be no-throwing since it is
-   *  assumed that once the operation is successfully queued it can be redone
+   *  assumed that once the operation is sucessfully queued it can be redone
    *  in every case.
    */
   virtual void redo (db::Op * /*op*/)
@@ -128,26 +128,6 @@ public:
   bool replaying () const
   {
     return manager () && manager ()->replaying ();
-  }
-
-  /**
-   *  @brief Begins a transaction (same as calling manager ()->transaction (), but safe against null manager ())
-   */
-  void transaction (const std::string &description, db::Manager::transaction_id_t join_with = 0)
-  {
-    if (manager ()) {
-      manager ()->transaction (description, join_with);
-    }
-  }
-
-  /**
-   *  @brief Ends a transaction (same as calling manager ()->commit (), but safe against null manager ())
-   */
-  void commit ()
-  {
-    if (manager ()) {
-      manager ()->commit ();
-    }
   }
 
 private:

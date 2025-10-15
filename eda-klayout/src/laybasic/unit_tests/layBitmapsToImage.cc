@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -20,19 +20,23 @@
 
 */
 
+
 #include "layBitmapsToImage.h"
 #include "layBitmap.h"
 #include "layDitherPattern.h"
 #include "layLineStyles.h"
-#include "tlPixelBuffer.h"
 #include "tlUnitTest.h"
 
+#include <QImage>
+#include <QColor>
+#include <QMutex>
+
 std::string
-to_string (const tl::PixelBuffer &img, unsigned int mask)
+to_string (const QImage &img, unsigned int mask)
 {
   std::string s;
   for (unsigned int i = 0; i < 32; ++i) {
-    const unsigned int *data = (const unsigned int *)img.scan_line (i);
+    const unsigned int *data = (const unsigned int *)img.scanLine (i);
     for (unsigned int j = 0; j < 32; ++j) {
       s += (data[j] & mask) ? "x" : ".";
     }
@@ -43,14 +47,14 @@ to_string (const tl::PixelBuffer &img, unsigned int mask)
 
 TEST(1) 
 {
-  lay::Bitmap b1 (32, 32, 1.0, 1.0);
-  lay::Bitmap b2 (32, 32, 1.0, 1.0);
-  lay::Bitmap b3 (32, 32, 1.0, 1.0);
-  lay::Bitmap b4 (32, 32, 1.0, 1.0);
-  lay::Bitmap b5 (32, 32, 1.0, 1.0);
-  lay::Bitmap b6 (32, 32, 1.0, 1.0);
-  lay::Bitmap b7 (32, 32, 1.0, 1.0);
-  lay::Bitmap b8 (32, 32, 1.0, 1.0);
+  lay::Bitmap b1 (32, 32, 1.0);
+  lay::Bitmap b2 (32, 32, 1.0);
+  lay::Bitmap b3 (32, 32, 1.0);
+  lay::Bitmap b4 (32, 32, 1.0);
+  lay::Bitmap b5 (32, 32, 1.0);
+  lay::Bitmap b6 (32, 32, 1.0);
+  lay::Bitmap b7 (32, 32, 1.0);
+  lay::Bitmap b8 (32, 32, 1.0);
 
   std::vector<lay::Bitmap *> pbitmaps;
   pbitmaps.push_back (&b1);
@@ -85,14 +89,14 @@ TEST(1)
   view_ops.push_back (lay::ViewOp (0x000080, lay::ViewOp::Copy, 0, 0, 0, lay::ViewOp::Rect, 1));
   view_ops.push_back (lay::ViewOp (0x0000c0, lay::ViewOp::Or, 0, 0, 0, lay::ViewOp::Rect, 3));
 
-  tl::PixelBuffer img (32, 32);
+  QImage img (QSize (32, 32), QImage::Format_RGB32);
   img.fill (0);
 
   lay::DitherPattern dp;
   lay::LineStyles ls;
 
-  tl::Mutex m;
-  lay::bitmaps_to_image (view_ops, pbitmaps, dp, ls, 1.0, &img, 32, 32, 0, &m);
+  QMutex m;
+  lay::bitmaps_to_image (view_ops, pbitmaps, dp, ls, &img, 32, 32, 0, &m);
 
   EXPECT_EQ (to_string (img, 0x800000),
     "................................\n"
@@ -935,3 +939,4 @@ TEST(1)
   );
 
 }
+

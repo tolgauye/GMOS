@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -56,12 +56,12 @@ public:
   /** 
    *  @brief Constructor
    */
-  EdgeSink () : m_can_stop (false) { }
+  EdgeSink () { }
 
   /** 
    *  @brief Destructor
    */
-  virtual ~EdgeSink () { }
+  virtual ~EdgeSink () { };
 
   /**
    *  @brief Start event
@@ -88,15 +88,6 @@ public:
   virtual void put (const db::Edge &) { }
 
   /**
-   *  @brief Deliver a tagged edge
-   *
-   *  This method delivers an edge that ends or starts at the current scanline.
-   *  This version includes a tag which is generated when using "select_edge".
-   *  A tag is a value > 0 returned by "select_edge".
-   */
-  virtual void put (const db::Edge &, int /*tag*/) { }
-
-  /**
    *  @brief Deliver an edge that crosses the scanline
    *
    *  This method is called to deliver an edge that is not starting or ending at the
@@ -110,7 +101,7 @@ public:
   /**
    *  @brief Deliver an edge set forming a closed sequence
    *
-   *  See description of "crossing_edge" for details.
+   *  See description of "crossing_egde" for details.
    */
   virtual void skip_n (size_t /*n*/) { }
 
@@ -123,38 +114,6 @@ public:
    *  @brief Signal the end of a scanline at the given y coordinate
    */
   virtual void end_scanline (db::Coord /*y*/) { }
-
-  /**
-   *  @brief Gets a value indicating that the generator wants to stop
-   */
-  bool can_stop () const
-  {
-    return m_can_stop;
-  }
-
-  /**
-   *  @brief Resets the stop request
-   */
-  void reset_stop ()
-  {
-    m_can_stop = false;
-  }
-
-protected:
-  /**
-   *  @brief Sets the stop request
-   *
-   *  The scanner can choose to stop once the request is set.
-   *  This is useful for implementing receivers that can stop once a
-   *  specific condition is found.
-   */
-  void request_stop ()
-  {
-    m_can_stop = true;
-  }
-
-private:
-  bool m_can_stop;
 };
 
 /**
@@ -171,15 +130,15 @@ public:
   /**
    *  @brief Constructor connecting this receiver to an external edge vector
    */
-  EdgeContainer (std::vector<db::Edge> &edges, bool clear = false, int tag = 0, EdgeContainer *chained = 0)
-    : EdgeSink (), mp_edges (&edges), m_clear (clear), m_tag (tag), mp_chained (chained)
+  EdgeContainer (std::vector<db::Edge> &edges, bool clear = false) 
+    : EdgeSink (), mp_edges (&edges), m_clear (clear) 
   { }
 
   /**
    *  @brief Constructor using an internal edge vector
    */
-  EdgeContainer (int tag = 0, EdgeContainer *chained = 0)
-    : EdgeSink (), mp_edges (&m_edges), m_clear (false), m_tag (tag), mp_chained (chained)
+  EdgeContainer ()
+    : EdgeSink (), mp_edges (&m_edges), m_clear (false)
   { }
 
   /**
@@ -208,9 +167,6 @@ public:
       //  The single-shot scheme is a easy way to overcome problems with multiple start/flush brackets (i.e. on size filter)
       m_clear = false;
     }
-    if (mp_chained) {
-      mp_chained->start ();
-    }
   }
 
   /**
@@ -219,30 +175,12 @@ public:
   virtual void put (const db::Edge &e) 
   {
     mp_edges->push_back (e);
-    if (mp_chained) {
-      mp_chained->put (e);
-    }
-  }
-
-  /**
-   *  @brief Implementation of the EdgeSink interface
-   */
-  virtual void put (const db::Edge &e, int tag)
-  {
-    if (m_tag == 0 || tag == m_tag) {
-      mp_edges->push_back (e);
-    }
-    if (mp_chained) {
-      mp_chained->put (e, tag);
-    }
   }
 
 private:
   std::vector<db::Edge> m_edges;
   std::vector<db::Edge> *mp_edges;
   bool m_clear;
-  int m_tag;
-  EdgeContainer *mp_chained;
 };
 
 /**
@@ -266,7 +204,7 @@ public:
   virtual void reset () { }
   virtual void reserve (size_t /*n*/) { }
   virtual int edge (bool /*north*/, bool /*enter*/, property_type /*p*/) { return 0; }
-  virtual int select_edge (bool /*horizontal*/, property_type /*p*/) { return 0; }
+  virtual bool select_edge (bool /*horizontal*/, property_type /*p*/) { return false; }
   virtual int compare_ns () const { return 0; }
   virtual bool is_reset () const { return false; }
   virtual bool prefer_touch () const { return false; }
@@ -277,8 +215,8 @@ public:
  *  @brief An intersection detector
  *
  *  This edge evaluator will not produce output edges but rather record the 
- *  property pairs of polygons intersecting or interacting in the specified
- *  way.
+ *  property pairs of polygons intersecting. Only intersections (overlaps)
+ *  are recorded. Touching contacts are not recorded.
  *
  *  It will build a set of property pairs, where the lower property value
  *  is the first one of the pairs. 
@@ -294,27 +232,23 @@ public:
    *  @brief Constructor
    *
    *  The mode parameter selects the interaction check mode.
-   *  0 is "overlapping" or "touching".
-   *  -1 will select all secondary polygons inside polygons from the primary.
-   *  -2 will select all primary polygons enclosing polygons from the secondary.
-   *  +1 will select all secondary polygons outside polygons from the primary.
+   *  0 is "overlapping". 
+   *  -1 will select all polygons inside polygons from the other layer.
+   *  +1 will select all polygons outside polygons from the other layer.
    *
-   *  Use set_include_touching(f) to specify whether to include or not include the touching
-   *  case as interacting for mode 0.
+   *  In mode -1 and +1, finish () needs to be called before the interactions
+   *  can be used. In mode -1 and +1, the interactions delivered will contain
+   *  interactions of the reference property vs. the property of the respective
+   *  input polygons (property != reference property). In mode +1 these are 
+   *  pseudo-interactions, because "outside" by definition means non-interacting.
    *
-   *  In modes -2, -1 and +1, finish () needs to be called before the interactions
-   *  can be used.
-   *
-   *  All modes require property IDs to differentiate both inputs into primary and secondary.
-   *  Property IDs from 0 to the given last primary ID value are considered to belong to
-   *  the primary region. Property IDs above the last primary ID are considered to belong to
-   *  the secondary region.
-   *  This last property ID must be specified in the last_primary_id parameter.
-   *  The reported interactions will be (primary_id,secondary_id) even for outside mode.
-   *  For outside mode, the primary_id is always last_primary_id. In outside mode, the
-   *  interactions are pseudo-interactions as by definition outside polygons don't interact.
+   *  Mode -1 (inside) and +1 (outside) requires a single property value for the containing region.
+   *  This property value must be specified in the container_id parameter. 
+   *  For correct operation, the container_id must be the lowest property ID and
+   *  the interacting edges must have higher property id's.
+   *  The reported interactions will be (container_id,polygon_id) even for outside mode.
    */
-  InteractionDetector (int mode = 0, property_type last_primary_id = 0);
+  InteractionDetector (int mode = 0, property_type container_id = 0);
 
   /**
    *  @brief Sets the "touching" flag
@@ -371,7 +305,7 @@ public:
 private:
   int m_mode;
   bool m_include_touching;
-  property_type m_last_primary_id;
+  property_type m_container_id;
   std::vector <int> m_wcv_n, m_wcv_s;
   std::set <property_type> m_inside_n, m_inside_s;
   std::set<std::pair<property_type, property_type> > m_interactions;
@@ -554,33 +488,23 @@ class DB_PUBLIC EdgePolygonOp
 {
 public:
   /**
-   * @brief The operation mode
-   */
-  enum mode_t {
-    Inside = 0,    //  Selects inside edges
-    Outside = 1,   //  Selects outside edges
-    Both = 2       //  Selects both (inside -> tag #1, outside -> tag #2)
-  };
-
-  /**
    *  @brief Constructor
    *
    *  @param outside If true, the operator will deliver edges outside the polygon
    *  @param include_touching If true, edges on the polygon's border will be considered "inside" of polygons
    *  @param polygon_mode Determines how the polygon edges on property 0 are interpreted (see merge operators)
    */
-  EdgePolygonOp (mode_t mode = Inside, bool include_touching = true, int polygon_mode = -1);
+  EdgePolygonOp (bool outside = false, bool include_touching = true, int polygon_mode = -1);
 
   virtual void reset ();
-  virtual int select_edge (bool horizontal, property_type p);
+  virtual bool select_edge (bool horizontal, property_type p);
   virtual int edge (bool north, bool enter, property_type p);
   virtual bool is_reset () const;
   virtual bool prefer_touch () const;
   virtual bool selects_edges () const;
 
 private:
-  mode_t m_mode;
-  bool m_include_touching;
+  bool m_outside, m_include_touching;
   db::ParametrizedInsideFunc m_function;
   int m_wcp_n, m_wcp_s;
 };
@@ -696,86 +620,14 @@ public:
   void reserve (size_t n);
 
   /**
-   *  @brief Reports the number of edges stored in the processor
-   */
-  size_t count () const;
-
-  /**
    *  @brief Insert an edge 
    */
   void insert (const db::Edge &e, property_type p = 0);
 
   /**
-   *  @brief Insert an edge with transformation
+   *  @brief Insert an polygon 
    */
-  template <class Trans>
-  void insert_with_trans (const db::Edge &e, const Trans &tr, property_type p = 0)
-  {
-    insert (tr * e, p);
-  }
-
-  /**
-   *  @brief Insert a polygon
-   */
-  void insert (const db::Polygon &q, property_type p = 0)
-  {
-    for (db::Polygon::polygon_edge_iterator e = q.begin_edge (); ! e.at_end (); ++e) {
-      insert (*e, p);
-    }
-  }
-
-  /**
-   *  @brief Insert a polygon with transformation
-   */
-  template <class Trans>
-  void insert_with_trans (const db::Polygon &q, const Trans &tr, property_type p = 0)
-  {
-    for (db::Polygon::polygon_edge_iterator e = q.begin_edge (); ! e.at_end (); ++e) {
-      insert (tr * *e, p);
-    }
-  }
-
-  /**
-   *  @brief Insert a simple polygon
-   */
-  void insert (const db::SimplePolygon &q, property_type p = 0)
-  {
-    for (db::SimplePolygon::polygon_edge_iterator e = q.begin_edge (); ! e.at_end (); ++e) {
-      insert (*e, p);
-    }
-  }
-
-  /**
-   *  @brief Insert a simple polygon with transformation
-   */
-  template <class Trans>
-  void insert_with_trans (const db::SimplePolygon &q, const Trans &tr, property_type p = 0)
-  {
-    for (db::SimplePolygon::polygon_edge_iterator e = q.begin_edge (); ! e.at_end (); ++e) {
-      insert (tr * *e, p);
-    }
-  }
-
-  /**
-   *  @brief Insert a polygon reference
-   */
-  void insert (const db::PolygonRef &q, property_type p = 0)
-  {
-    for (db::PolygonRef::polygon_edge_iterator e = q.begin_edge (); ! e.at_end (); ++e) {
-      insert (*e, p);
-    }
-  }
-
-  /**
-   *  @brief Insert a polygon reference with transformation
-   */
-  template <class Trans>
-  void insert_with_trans (const db::PolygonRef &q, const Trans &tr, property_type p = 0)
-  {
-    for (db::PolygonRef::polygon_edge_iterator e = q.begin_edge (); ! e.at_end (); ++e) {
-      insert (tr * *e, p);
-    }
-  }
+  void insert (const db::Polygon &q, property_type p = 0);
 
   /**
    *  @brief Insert a sequence of edges
@@ -806,44 +658,14 @@ public:
   }
 
   /**
-   *  @brief Clears all edges stored currently in this processor
+   *  @brief Clear all edges stored currently in this processor
    */
-  void clear ();
+  void clear (); 
 
   /**
-   *  @brief Performs the actual processing
-   *
-   *  This method will use the edges stored so far and runs it through the
-   *  scanline algorithm.
+   *  @brief Process the edges stored currently
    */
   void process (db::EdgeSink &es, EdgeEvaluatorBase &op);
-
-  /**
-   *  @brief Performs the actual processing
-   *
-   *  This version allows giving multiple edge sinks and evaluators.
-   *  Each evaluator is worked on separately and feeds the corresponding
-   *  edge sink.
-   */
-  void process (const std::vector<std::pair<db::EdgeSink *, db::EdgeEvaluatorBase *> > &gen);
-
-  /**
-   *  @brief Performs the actual processing again
-   *
-   *  This method can be called after "process" was used and will re-run the
-   *  scanline algorithm. This is somewhat more efficient as the initial
-   *  sorting and edge clipping can be skipped.
-   */
-  void redo (db::EdgeSink &es, EdgeEvaluatorBase &op);
-
-  /**
-   *  @brief Performs the actual processing again
-   *
-   *  This method can be called after "process" was used and will re-run the
-   *  scanline algorithm. This is somewhat more efficient as the initial
-   *  sorting and edge clipping can be skipped.
-   */
-  void redo (const std::vector<std::pair<db::EdgeSink *, db::EdgeEvaluatorBase *> > &gen);
 
   /**
    *  @brief Merge the given polygons in a simple "non-zero wrapcount" fashion
@@ -995,7 +817,7 @@ public:
    *
    *  This method sizes a set of polygons. Before the sizing is applied, the polygons are merged. After that, sizing is applied 
    *  on the individual result polygons of the merge step. The result may contain overlapping polygons, but no self-overlapping ones. 
-   *  Polygon overlap occurs if the polygons are close enough, so a positive sizing makes polygons overlap.
+   *  Polygon overlap occures if the polygons are close enough, so a positive sizing makes polygons overlap.
    *  
    *  dx and dy describe the sizing. A positive value indicates oversize (outwards) while a negative one describes undersize (inwards).
    *  The sizing applied can be chosen differently in x and y direction. In this case, the sign must be identical for both
@@ -1148,36 +970,6 @@ private:
     }
     return n;
   }
-
-  void redo_or_process (const std::vector<std::pair<db::EdgeSink *, db::EdgeEvaluatorBase *> > &gen, bool redo);
-};
-
-/**
- *  @brief An edge sink feeding into an EdgeProcessor
- */
-class DB_PUBLIC EdgesToEdgeProcessor
-  : public EdgeSink
-{
-public:
-  EdgesToEdgeProcessor (db::EdgeProcessor &ep, db::EdgeProcessor::property_type prop)
-    : mp_ep (&ep), m_prop (prop)
-  {
-    //  .. nothing yet ..
-  }
-
-  virtual void put (const db::Edge &edge)
-  {
-    mp_ep->insert (edge, m_prop);
-  }
-
-  virtual void put (const db::Edge &edge, int /*tag*/)
-  {
-    mp_ep->insert (edge, m_prop);
-  }
-
-private:
-  db::EdgeProcessor *mp_ep;
-  db::EdgeProcessor::property_type m_prop;
 };
 
 }

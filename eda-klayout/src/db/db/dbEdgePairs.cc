@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -30,9 +30,6 @@
 #include "dbOriginalLayerEdgePairs.h"
 #include "dbEdges.h"
 #include "dbRegion.h"
-#include "dbLayout.h"
-#include "dbWriter.h"
-#include "tlStream.h"
 
 #include "tlVariant.h"
 
@@ -40,9 +37,6 @@
 
 namespace db
 {
-
-// ---------------------------------------------------------------------------------------------------
-//  EdgePairs implementation
 
 EdgePairs::EdgePairs ()
   : mp_delegate (new EmptyEdgePairs ())
@@ -63,7 +57,7 @@ EdgePairs::EdgePairs (EdgePairsDelegate *delegate)
 }
 
 EdgePairs::EdgePairs (const EdgePairs &other)
-  : db::ShapeCollection (), mp_delegate (other.mp_delegate->clone ())
+  : gsi::ObjectBase (), mp_delegate (other.mp_delegate->clone ())
 {
   //  .. nothing yet ..
 }
@@ -96,48 +90,23 @@ EdgePairs::EdgePairs (const RecursiveShapeIterator &si, DeepShapeStore &dss, con
   mp_delegate = new DeepEdgePairs (si, dss, trans);
 }
 
-EdgePairs::EdgePairs (DeepShapeStore &dss)
-{
-  tl_assert (dss.is_singular ());
-  unsigned int layout_index = 0; // singular layout index
-  mp_delegate = new DeepEdgePairs (DeepLayer (&dss, layout_index, dss.layout (layout_index).insert_layer ()));
-}
-
-void
-EdgePairs::write (const std::string &fn) const
-{
-  //  method provided for debugging purposes
-
-  db::Layout layout;
-  const db::Cell &top = layout.cell (layout.add_cell ("EDGE_PAIRS"));
-  unsigned int li = layout.insert_layer (db::LayerProperties (0, 0));
-  insert_into (&layout, top.cell_index (), li);
-
-  tl::OutputStream os (fn);
-  db::SaveLayoutOptions opt;
-  opt.set_format_from_filename (fn);
-  db::Writer writer (opt);
-  writer.write (layout, os);
-}
-
 template <class Sh>
 void EdgePairs::insert (const Sh &shape)
 {
-  mutable_edge_pairs ()->insert (shape);
+  flat_edge_pairs ()->insert (shape);
 }
 
 template DB_PUBLIC void EdgePairs::insert (const db::EdgePair &);
-template DB_PUBLIC void EdgePairs::insert (const db::EdgePairWithProperties &);
 
 void EdgePairs::insert (const db::Shape &shape)
 {
-  mutable_edge_pairs ()->insert (shape);
+  flat_edge_pairs ()->insert (shape);
 }
 
 template <class T>
 void EdgePairs::insert (const db::Shape &shape, const T &trans)
 {
-  mutable_edge_pairs ()->insert (shape, trans);
+  flat_edge_pairs ()->insert (shape, trans);
 }
 
 template DB_PUBLIC void EdgePairs::insert (const db::Shape &, const db::ICplxTrans &);
@@ -151,18 +120,13 @@ void EdgePairs::clear ()
 
 void EdgePairs::reserve (size_t n)
 {
-  mutable_edge_pairs ()->reserve (n);
-}
-
-void EdgePairs::flatten ()
-{
-  mutable_edge_pairs ()->flatten ();
+  flat_edge_pairs ()->reserve (n);
 }
 
 template <class T>
 EdgePairs &EdgePairs::transform (const T &trans)
 {
-  mutable_edge_pairs ()->transform (trans);
+  flat_edge_pairs ()->transform (trans);
   return *this;
 }
 
@@ -170,30 +134,13 @@ EdgePairs &EdgePairs::transform (const T &trans)
 template DB_PUBLIC EdgePairs &EdgePairs::transform (const db::ICplxTrans &);
 template DB_PUBLIC EdgePairs &EdgePairs::transform (const db::Trans &);
 template DB_PUBLIC EdgePairs &EdgePairs::transform (const db::Disp &);
-template DB_PUBLIC EdgePairs &EdgePairs::transform (const db::IMatrix2d &);
-template DB_PUBLIC EdgePairs &EdgePairs::transform (const db::IMatrix3d &);
 
 const db::RecursiveShapeIterator &
 EdgePairs::iter () const
 {
   static db::RecursiveShapeIterator def_iter;
-  const db::RecursiveShapeIterator *i = mp_delegate ? mp_delegate->iter () : 0;
+  const db::RecursiveShapeIterator *i = mp_delegate->iter ();
   return *(i ? i : &def_iter);
-}
-
-EdgePairs EdgePairs::processed (const EdgePairProcessorBase &proc) const
-{
-  return EdgePairs (mp_delegate->processed (proc));
-}
-
-void EdgePairs::processed (Region &output, const EdgePairToPolygonProcessorBase &proc) const
-{
-  output = Region (mp_delegate->processed_to_polygons (proc));
-}
-
-void EdgePairs::processed (Edges &output, const EdgePairToEdgeProcessorBase &proc) const
-{
-  output = Edges (mp_delegate->processed_to_edges (proc));
 }
 
 void EdgePairs::polygons (Region &output, db::Coord e) const
@@ -216,16 +163,6 @@ void EdgePairs::second_edges (Edges &output) const
   output.set_delegate (mp_delegate->second_edges ());
 }
 
-void EdgePairs::pull_interacting (Region &output, const Region &other) const
-{
-  output = Region (mp_delegate->pull_interacting (other));
-}
-
-void EdgePairs::pull_interacting (Edges &output, const Edges &other) const
-{
-  output = Edges (mp_delegate->pull_interacting (other));
-}
-
 void EdgePairs::set_delegate (EdgePairsDelegate *delegate)
 {
   if (delegate != mp_delegate) {
@@ -234,9 +171,9 @@ void EdgePairs::set_delegate (EdgePairsDelegate *delegate)
   }
 }
 
-MutableEdgePairs *EdgePairs::mutable_edge_pairs ()
+FlatEdgePairs *EdgePairs::flat_edge_pairs ()
 {
-  MutableEdgePairs *edge_pairs = dynamic_cast<MutableEdgePairs *> (mp_delegate);
+  FlatEdgePairs *edge_pairs = dynamic_cast<FlatEdgePairs *> (mp_delegate);
   if (! edge_pairs) {
     edge_pairs = new FlatEdgePairs ();
     if (mp_delegate) {
@@ -257,9 +194,6 @@ namespace tl
   {
     db::EdgePair ep;
 
-    if (ex.at_end ()) {
-      return true;
-    }
     if (! ex.try_read (ep)) {
       return false;
     }

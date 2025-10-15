@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -25,64 +25,25 @@
 #include "dbLibraryProxy.h"
 #include "dbPCellDeclaration.h"
 #include "dbPCellVariant.h"
-#include "dbLibraryManager.h"
-
-#include <limits>
 
 namespace db
 {
 
 Library::Library()
-  : m_id (std::numeric_limits<lib_id_type>::max ()), m_layout (true)
+  : m_id (0), m_layout (true)
 {
-  m_layout.set_library (this);
+  // .. nothing yet ..
 }
 
 Library::Library(const Library &d)
-  : gsi::ObjectBase (), tl::Object (), m_name (d.m_name), m_description (d.m_description), m_id (std::numeric_limits<lib_id_type>::max ()), m_layout (d.m_layout)
+  : gsi::ObjectBase (), tl::Object (), m_name (d.m_name), m_description (d.m_description), m_id (0), m_layout (d.m_layout)
 {
-  m_layout.set_library (this);
+  // .. nothing yet ..
 }
 
 Library::~Library ()
 {
-  //  unregister if not done yet
-  if (db::LibraryManager::initialized ()) {
-    db::LibraryManager::instance ().unregister_lib (this);
-  }
-}
-
-bool
-Library::is_for_technology (const std::string &name) const
-{
-  return m_technologies.find (name) != m_technologies.end ();
-}
-
-bool
-Library::for_technologies () const
-{
-  return ! m_technologies.empty ();
-}
-
-void
-Library::set_technology (const std::string &t)
-{
-  m_technologies.clear ();
-  if (! t.empty ()) {
-    m_technologies.insert (t);
-  }
-}
-
-void
-Library::clear_technologies ()
-{
-  m_technologies.clear ();
-}
-
-void
-Library::add_technology (const std::string &tech)
-{
-  m_technologies.insert (tech);
+  // .. nothing yet ..
 }
 
 void 
@@ -109,8 +70,7 @@ Library::unregister_proxy (db::LibraryProxy *lib_proxy, db::Layout *ly)
       db::cell_index_type ci = c->first;
       m_refcount.erase (c);
       //  remove cells which are itself proxies and are no longer used
-      db::Cell *lib_cell = &layout ().cell (ci);
-      if (lib_cell && lib_cell->is_proxy () && lib_cell->parent_cells () == 0) {
+      if (layout ().cell (ci).is_proxy () && layout ().cell (ci).parent_cells () == 0) {
         layout ().delete_cell (ci);
       }
     }
@@ -143,13 +103,6 @@ Library::is_retired (const db::cell_index_type library_cell_index) const
   std::map<db::cell_index_type, int>::const_iterator i = m_refcount.find (library_cell_index);
   std::map<db::cell_index_type, int>::const_iterator j = m_retired_count.find (library_cell_index);
   return (i != m_refcount.end () && j != m_retired_count.end () && i->second == j->second);
-}
-
-void
-Library::refresh ()
-{
-  layout ().refresh ();
-  remap_to (this);
 }
 
 void
@@ -204,10 +157,10 @@ Library::remap_to (db::Library *other)
 
       if (! pn.first) {
 
-        //  substitute by a cold proxy
-        db::LayoutOrCellContextInfo info;
-        r->first->get_context_info (ci, info);
-        r->first->create_cold_proxy_as (info, ci);
+        std::string name = r->first->cell_name (ci);
+        db::Cell *old_cell = r->first->take_cell (ci);
+        r->first->insert_cell (ci, name, new db::Cell (*old_cell));
+        delete old_cell;
 
       } else {
 
@@ -215,26 +168,16 @@ Library::remap_to (db::Library *other)
         const db::PCellDeclaration *new_pcell_decl = other->layout ().pcell_declaration (pn.second);
         if (! old_pcell_decl || ! new_pcell_decl) {
 
-          //  substitute by a cold proxy
-          db::LayoutOrCellContextInfo info;
-          r->first->get_context_info (ci, info);
-          r->first->create_cold_proxy_as (info, ci);
+          std::string name = r->first->cell_name (ci);
+          db::Cell *old_cell = r->first->take_cell (ci);
+          r->first->insert_cell (ci, name, new db::Cell (*old_cell));
+          delete old_cell;
 
         } else {
 
-          db::pcell_parameters_type new_parameters = new_pcell_decl->map_parameters (lib_pcell->parameters_by_name ());
-
-          //  coerce the new parameters if requested
-          try {
-            db::pcell_parameters_type plist = new_parameters;
-            new_pcell_decl->coerce_parameters (other->layout (), plist);
-            plist.swap (new_parameters);
-          } catch (tl::Exception &ex) {
-            //  ignore exception - we will do that again on update() to establish an error message
-            tl::error << ex.msg ();
-          }
-
-          lp->first->remap (other->get_id (), other->layout ().get_pcell_variant (pn.second, new_parameters));
+          //  map pcell parameters by name
+          std::map<std::string, tl::Variant> param_by_name = lib_pcell->parameters_by_name ();
+          lp->first->remap (other->get_id (), other->layout ().get_pcell_variant (pn.second, new_pcell_decl->map_parameters (param_by_name)));
 
         }
 
@@ -253,10 +196,11 @@ Library::remap_to (db::Library *other)
 
       if (! cn.first) {
 
-        //  substitute by a cold proxy
-        db::LayoutOrCellContextInfo info;
-        r->first->get_context_info (ci, info);
-        r->first->create_cold_proxy_as (info, ci);
+        //  unlink this proxy
+        std::string name = r->first->cell_name (ci);
+        db::Cell *old_cell = r->first->take_cell (ci);
+        r->first->insert_cell (ci, name, new db::Cell (*old_cell));
+        delete old_cell;
 
       } else {
 

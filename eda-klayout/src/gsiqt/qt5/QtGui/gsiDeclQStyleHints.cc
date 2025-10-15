@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -36,6 +36,7 @@
 #include <QTimerEvent>
 #include "gsiQt.h"
 #include "gsiQtGuiCommon.h"
+#include "gsiDeclQtGuiTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -144,21 +145,6 @@ static void _call_f_mousePressAndHoldInterval_c0 (const qt_gsi::GenericMethod * 
 }
 
 
-// int QStyleHints::mouseQuickSelectionThreshold()
-
-
-static void _init_f_mouseQuickSelectionThreshold_c0 (qt_gsi::GenericMethod *decl)
-{
-  decl->set_return<int > ();
-}
-
-static void _call_f_mouseQuickSelectionThreshold_c0 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  ret.write<int > ((int)((QStyleHints *)cls)->mouseQuickSelectionThreshold ());
-}
-
-
 // QChar QStyleHints::passwordMaskCharacter()
 
 
@@ -264,46 +250,6 @@ static void _call_f_setMouseDoubleClickInterval_767 (const qt_gsi::GenericMethod
 }
 
 
-// void QStyleHints::setMousePressAndHoldInterval(int mousePressAndHoldInterval)
-
-
-static void _init_f_setMousePressAndHoldInterval_767 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("mousePressAndHoldInterval");
-  decl->add_arg<int > (argspec_0);
-  decl->set_return<void > ();
-}
-
-static void _call_f_setMousePressAndHoldInterval_767 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  int arg1 = gsi::arg_reader<int >() (args, heap);
-  __SUPPRESS_UNUSED_WARNING(ret);
-  ((QStyleHints *)cls)->setMousePressAndHoldInterval (arg1);
-}
-
-
-// void QStyleHints::setMouseQuickSelectionThreshold(int threshold)
-
-
-static void _init_f_setMouseQuickSelectionThreshold_767 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("threshold");
-  decl->add_arg<int > (argspec_0);
-  decl->set_return<void > ();
-}
-
-static void _call_f_setMouseQuickSelectionThreshold_767 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  int arg1 = gsi::arg_reader<int >() (args, heap);
-  __SUPPRESS_UNUSED_WARNING(ret);
-  ((QStyleHints *)cls)->setMouseQuickSelectionThreshold (arg1);
-}
-
-
 // void QStyleHints::setStartDragDistance(int startDragDistance)
 
 
@@ -344,66 +290,6 @@ static void _call_f_setStartDragTime_767 (const qt_gsi::GenericMethod * /*decl*/
 }
 
 
-// void QStyleHints::setTabFocusBehavior(Qt::TabFocusBehavior tabFocusBehavior)
-
-
-static void _init_f_setTabFocusBehavior_2356 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("tabFocusBehavior");
-  decl->add_arg<const qt_gsi::Converter<Qt::TabFocusBehavior>::target_type & > (argspec_0);
-  decl->set_return<void > ();
-}
-
-static void _call_f_setTabFocusBehavior_2356 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const qt_gsi::Converter<Qt::TabFocusBehavior>::target_type & arg1 = gsi::arg_reader<const qt_gsi::Converter<Qt::TabFocusBehavior>::target_type & >() (args, heap);
-  __SUPPRESS_UNUSED_WARNING(ret);
-  ((QStyleHints *)cls)->setTabFocusBehavior (qt_gsi::QtToCppAdaptor<Qt::TabFocusBehavior>(arg1).cref());
-}
-
-
-// void QStyleHints::setUseHoverEffects(bool useHoverEffects)
-
-
-static void _init_f_setUseHoverEffects_864 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("useHoverEffects");
-  decl->add_arg<bool > (argspec_0);
-  decl->set_return<void > ();
-}
-
-static void _call_f_setUseHoverEffects_864 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  bool arg1 = gsi::arg_reader<bool >() (args, heap);
-  __SUPPRESS_UNUSED_WARNING(ret);
-  ((QStyleHints *)cls)->setUseHoverEffects (arg1);
-}
-
-
-// void QStyleHints::setWheelScrollLines(int scrollLines)
-
-
-static void _init_f_setWheelScrollLines_767 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("scrollLines");
-  decl->add_arg<int > (argspec_0);
-  decl->set_return<void > ();
-}
-
-static void _call_f_setWheelScrollLines_767 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  int arg1 = gsi::arg_reader<int >() (args, heap);
-  __SUPPRESS_UNUSED_WARNING(ret);
-  ((QStyleHints *)cls)->setWheelScrollLines (arg1);
-}
-
-
 // bool QStyleHints::showIsFullScreen()
 
 
@@ -416,36 +302,6 @@ static void _call_f_showIsFullScreen_c0 (const qt_gsi::GenericMethod * /*decl*/,
 {
   __SUPPRESS_UNUSED_WARNING(args);
   ret.write<bool > ((bool)((QStyleHints *)cls)->showIsFullScreen ());
-}
-
-
-// bool QStyleHints::showIsMaximized()
-
-
-static void _init_f_showIsMaximized_c0 (qt_gsi::GenericMethod *decl)
-{
-  decl->set_return<bool > ();
-}
-
-static void _call_f_showIsMaximized_c0 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  ret.write<bool > ((bool)((QStyleHints *)cls)->showIsMaximized ());
-}
-
-
-// bool QStyleHints::showShortcutsInContextMenus()
-
-
-static void _init_f_showShortcutsInContextMenus_c0 (qt_gsi::GenericMethod *decl)
-{
-  decl->set_return<bool > ();
-}
-
-static void _call_f_showShortcutsInContextMenus_c0 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  ret.write<bool > ((bool)((QStyleHints *)cls)->showShortcutsInContextMenus ());
 }
 
 
@@ -524,21 +380,6 @@ static void _call_f_tabFocusBehavior_c0 (const qt_gsi::GenericMethod * /*decl*/,
 }
 
 
-// bool QStyleHints::useHoverEffects()
-
-
-static void _init_f_useHoverEffects_c0 (qt_gsi::GenericMethod *decl)
-{
-  decl->set_return<bool > ();
-}
-
-static void _call_f_useHoverEffects_c0 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  ret.write<bool > ((bool)((QStyleHints *)cls)->useHoverEffects ());
-}
-
-
 // bool QStyleHints::useRtlExtensions()
 
 
@@ -554,21 +395,6 @@ static void _call_f_useRtlExtensions_c0 (const qt_gsi::GenericMethod * /*decl*/,
 }
 
 
-// int QStyleHints::wheelScrollLines()
-
-
-static void _init_f_wheelScrollLines_c0 (qt_gsi::GenericMethod *decl)
-{
-  decl->set_return<int > ();
-}
-
-static void _call_f_wheelScrollLines_c0 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  ret.write<int > ((int)((QStyleHints *)cls)->wheelScrollLines ());
-}
-
-
 // static QString QStyleHints::tr(const char *s, const char *c, int n)
 
 
@@ -576,7 +402,7 @@ static void _init_f_tr_4013 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("s");
   decl->add_arg<const char * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("c", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("c", true, "__null");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("n", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -588,7 +414,7 @@ static void _call_f_tr_4013 (const qt_gsi::GenericStaticMethod * /*decl*/, gsi::
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (__null, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QStyleHints::tr (arg1, arg2, arg3));
 }
@@ -601,7 +427,7 @@ static void _init_f_trUtf8_4013 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("s");
   decl->add_arg<const char * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("c", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("c", true, "__null");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("n", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -613,7 +439,7 @@ static void _call_f_trUtf8_4013 (const qt_gsi::GenericStaticMethod * /*decl*/, g
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (__null, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QStyleHints::trUtf8 (arg1, arg2, arg3));
 }
@@ -631,43 +457,27 @@ static gsi::Methods methods_QStyleHints () {
   methods += new qt_gsi::GenericMethod (":keyboardInputInterval", "@brief Method int QStyleHints::keyboardInputInterval()\n", true, &_init_f_keyboardInputInterval_c0, &_call_f_keyboardInputInterval_c0);
   methods += new qt_gsi::GenericMethod (":mouseDoubleClickInterval", "@brief Method int QStyleHints::mouseDoubleClickInterval()\n", true, &_init_f_mouseDoubleClickInterval_c0, &_call_f_mouseDoubleClickInterval_c0);
   methods += new qt_gsi::GenericMethod (":mousePressAndHoldInterval", "@brief Method int QStyleHints::mousePressAndHoldInterval()\n", true, &_init_f_mousePressAndHoldInterval_c0, &_call_f_mousePressAndHoldInterval_c0);
-  methods += new qt_gsi::GenericMethod (":mouseQuickSelectionThreshold", "@brief Method int QStyleHints::mouseQuickSelectionThreshold()\n", true, &_init_f_mouseQuickSelectionThreshold_c0, &_call_f_mouseQuickSelectionThreshold_c0);
   methods += new qt_gsi::GenericMethod (":passwordMaskCharacter", "@brief Method QChar QStyleHints::passwordMaskCharacter()\n", true, &_init_f_passwordMaskCharacter_c0, &_call_f_passwordMaskCharacter_c0);
   methods += new qt_gsi::GenericMethod (":passwordMaskDelay", "@brief Method int QStyleHints::passwordMaskDelay()\n", true, &_init_f_passwordMaskDelay_c0, &_call_f_passwordMaskDelay_c0);
   methods += new qt_gsi::GenericMethod ("setCursorFlashTime", "@brief Method void QStyleHints::setCursorFlashTime(int cursorFlashTime)\n", false, &_init_f_setCursorFlashTime_767, &_call_f_setCursorFlashTime_767);
   methods += new qt_gsi::GenericMethod (":setFocusOnTouchRelease", "@brief Method bool QStyleHints::setFocusOnTouchRelease()\n", true, &_init_f_setFocusOnTouchRelease_c0, &_call_f_setFocusOnTouchRelease_c0);
   methods += new qt_gsi::GenericMethod ("setKeyboardInputInterval", "@brief Method void QStyleHints::setKeyboardInputInterval(int keyboardInputInterval)\n", false, &_init_f_setKeyboardInputInterval_767, &_call_f_setKeyboardInputInterval_767);
   methods += new qt_gsi::GenericMethod ("setMouseDoubleClickInterval", "@brief Method void QStyleHints::setMouseDoubleClickInterval(int mouseDoubleClickInterval)\n", false, &_init_f_setMouseDoubleClickInterval_767, &_call_f_setMouseDoubleClickInterval_767);
-  methods += new qt_gsi::GenericMethod ("setMousePressAndHoldInterval", "@brief Method void QStyleHints::setMousePressAndHoldInterval(int mousePressAndHoldInterval)\n", false, &_init_f_setMousePressAndHoldInterval_767, &_call_f_setMousePressAndHoldInterval_767);
-  methods += new qt_gsi::GenericMethod ("setMouseQuickSelectionThreshold|mouseQuickSelectionThreshold=", "@brief Method void QStyleHints::setMouseQuickSelectionThreshold(int threshold)\n", false, &_init_f_setMouseQuickSelectionThreshold_767, &_call_f_setMouseQuickSelectionThreshold_767);
   methods += new qt_gsi::GenericMethod ("setStartDragDistance", "@brief Method void QStyleHints::setStartDragDistance(int startDragDistance)\n", false, &_init_f_setStartDragDistance_767, &_call_f_setStartDragDistance_767);
   methods += new qt_gsi::GenericMethod ("setStartDragTime", "@brief Method void QStyleHints::setStartDragTime(int startDragTime)\n", false, &_init_f_setStartDragTime_767, &_call_f_setStartDragTime_767);
-  methods += new qt_gsi::GenericMethod ("setTabFocusBehavior", "@brief Method void QStyleHints::setTabFocusBehavior(Qt::TabFocusBehavior tabFocusBehavior)\n", false, &_init_f_setTabFocusBehavior_2356, &_call_f_setTabFocusBehavior_2356);
-  methods += new qt_gsi::GenericMethod ("setUseHoverEffects|useHoverEffects=", "@brief Method void QStyleHints::setUseHoverEffects(bool useHoverEffects)\n", false, &_init_f_setUseHoverEffects_864, &_call_f_setUseHoverEffects_864);
-  methods += new qt_gsi::GenericMethod ("setWheelScrollLines", "@brief Method void QStyleHints::setWheelScrollLines(int scrollLines)\n", false, &_init_f_setWheelScrollLines_767, &_call_f_setWheelScrollLines_767);
   methods += new qt_gsi::GenericMethod (":showIsFullScreen", "@brief Method bool QStyleHints::showIsFullScreen()\n", true, &_init_f_showIsFullScreen_c0, &_call_f_showIsFullScreen_c0);
-  methods += new qt_gsi::GenericMethod (":showIsMaximized", "@brief Method bool QStyleHints::showIsMaximized()\n", true, &_init_f_showIsMaximized_c0, &_call_f_showIsMaximized_c0);
-  methods += new qt_gsi::GenericMethod (":showShortcutsInContextMenus", "@brief Method bool QStyleHints::showShortcutsInContextMenus()\n", true, &_init_f_showShortcutsInContextMenus_c0, &_call_f_showShortcutsInContextMenus_c0);
   methods += new qt_gsi::GenericMethod (":singleClickActivation", "@brief Method bool QStyleHints::singleClickActivation()\n", true, &_init_f_singleClickActivation_c0, &_call_f_singleClickActivation_c0);
   methods += new qt_gsi::GenericMethod (":startDragDistance", "@brief Method int QStyleHints::startDragDistance()\n", true, &_init_f_startDragDistance_c0, &_call_f_startDragDistance_c0);
   methods += new qt_gsi::GenericMethod (":startDragTime", "@brief Method int QStyleHints::startDragTime()\n", true, &_init_f_startDragTime_c0, &_call_f_startDragTime_c0);
   methods += new qt_gsi::GenericMethod (":startDragVelocity", "@brief Method int QStyleHints::startDragVelocity()\n", true, &_init_f_startDragVelocity_c0, &_call_f_startDragVelocity_c0);
   methods += new qt_gsi::GenericMethod (":tabFocusBehavior", "@brief Method Qt::TabFocusBehavior QStyleHints::tabFocusBehavior()\n", true, &_init_f_tabFocusBehavior_c0, &_call_f_tabFocusBehavior_c0);
-  methods += new qt_gsi::GenericMethod (":useHoverEffects", "@brief Method bool QStyleHints::useHoverEffects()\n", true, &_init_f_useHoverEffects_c0, &_call_f_useHoverEffects_c0);
   methods += new qt_gsi::GenericMethod (":useRtlExtensions", "@brief Method bool QStyleHints::useRtlExtensions()\n", true, &_init_f_useRtlExtensions_c0, &_call_f_useRtlExtensions_c0);
-  methods += new qt_gsi::GenericMethod (":wheelScrollLines", "@brief Method int QStyleHints::wheelScrollLines()\n", true, &_init_f_wheelScrollLines_c0, &_call_f_wheelScrollLines_c0);
   methods += gsi::qt_signal<int > ("cursorFlashTimeChanged(int)", "cursorFlashTimeChanged", gsi::arg("cursorFlashTime"), "@brief Signal declaration for QStyleHints::cursorFlashTimeChanged(int cursorFlashTime)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<QObject * > ("destroyed(QObject *)", "destroyed", gsi::arg("arg1"), "@brief Signal declaration for QStyleHints::destroyed(QObject *)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<int > ("keyboardInputIntervalChanged(int)", "keyboardInputIntervalChanged", gsi::arg("keyboardInputInterval"), "@brief Signal declaration for QStyleHints::keyboardInputIntervalChanged(int keyboardInputInterval)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<int > ("mouseDoubleClickIntervalChanged(int)", "mouseDoubleClickIntervalChanged", gsi::arg("mouseDoubleClickInterval"), "@brief Signal declaration for QStyleHints::mouseDoubleClickIntervalChanged(int mouseDoubleClickInterval)\nYou can bind a procedure to this signal.");
-  methods += gsi::qt_signal<int > ("mousePressAndHoldIntervalChanged(int)", "mousePressAndHoldIntervalChanged", gsi::arg("mousePressAndHoldInterval"), "@brief Signal declaration for QStyleHints::mousePressAndHoldIntervalChanged(int mousePressAndHoldInterval)\nYou can bind a procedure to this signal.");
-  methods += gsi::qt_signal<int > ("mouseQuickSelectionThresholdChanged(int)", "mouseQuickSelectionThresholdChanged", gsi::arg("threshold"), "@brief Signal declaration for QStyleHints::mouseQuickSelectionThresholdChanged(int threshold)\nYou can bind a procedure to this signal.");
-  methods += gsi::qt_signal<const QString & > ("objectNameChanged(const QString &)", "objectNameChanged", gsi::arg("objectName"), "@brief Signal declaration for QStyleHints::objectNameChanged(const QString &objectName)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<int > ("startDragDistanceChanged(int)", "startDragDistanceChanged", gsi::arg("startDragDistance"), "@brief Signal declaration for QStyleHints::startDragDistanceChanged(int startDragDistance)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<int > ("startDragTimeChanged(int)", "startDragTimeChanged", gsi::arg("startDragTime"), "@brief Signal declaration for QStyleHints::startDragTimeChanged(int startDragTime)\nYou can bind a procedure to this signal.");
-  methods += gsi::qt_signal<const qt_gsi::Converter<Qt::TabFocusBehavior>::target_type & > ("tabFocusBehaviorChanged(Qt::TabFocusBehavior)", "tabFocusBehaviorChanged", gsi::arg("tabFocusBehavior"), "@brief Signal declaration for QStyleHints::tabFocusBehaviorChanged(Qt::TabFocusBehavior tabFocusBehavior)\nYou can bind a procedure to this signal.");
-  methods += gsi::qt_signal<bool > ("useHoverEffectsChanged(bool)", "useHoverEffectsChanged", gsi::arg("useHoverEffects"), "@brief Signal declaration for QStyleHints::useHoverEffectsChanged(bool useHoverEffects)\nYou can bind a procedure to this signal.");
-  methods += gsi::qt_signal<int > ("wheelScrollLinesChanged(int)", "wheelScrollLinesChanged", gsi::arg("scrollLines"), "@brief Signal declaration for QStyleHints::wheelScrollLinesChanged(int scrollLines)\nYou can bind a procedure to this signal.");
   methods += new qt_gsi::GenericStaticMethod ("tr", "@brief Static method QString QStyleHints::tr(const char *s, const char *c, int n)\nThis method is static and can be called without an instance.", &_init_f_tr_4013, &_call_f_tr_4013);
   methods += new qt_gsi::GenericStaticMethod ("trUtf8", "@brief Static method QString QStyleHints::trUtf8(const char *s, const char *c, int n)\nThis method is static and can be called without an instance.", &_init_f_trUtf8_4013, &_call_f_trUtf8_4013);
   return methods;
@@ -722,33 +532,33 @@ public:
     emit QStyleHints::destroyed(arg1);
   }
 
-  //  [adaptor impl] bool QStyleHints::event(QEvent *event)
-  bool cbs_event_1217_0(QEvent *_event)
+  //  [adaptor impl] bool QStyleHints::event(QEvent *)
+  bool cbs_event_1217_0(QEvent *arg1)
   {
-    return QStyleHints::event(_event);
+    return QStyleHints::event(arg1);
   }
 
-  virtual bool event(QEvent *_event)
+  virtual bool event(QEvent *arg1)
   {
     if (cb_event_1217_0.can_issue()) {
-      return cb_event_1217_0.issue<QStyleHints_Adaptor, bool, QEvent *>(&QStyleHints_Adaptor::cbs_event_1217_0, _event);
+      return cb_event_1217_0.issue<QStyleHints_Adaptor, bool, QEvent *>(&QStyleHints_Adaptor::cbs_event_1217_0, arg1);
     } else {
-      return QStyleHints::event(_event);
+      return QStyleHints::event(arg1);
     }
   }
 
-  //  [adaptor impl] bool QStyleHints::eventFilter(QObject *watched, QEvent *event)
-  bool cbs_eventFilter_2411_0(QObject *watched, QEvent *event)
+  //  [adaptor impl] bool QStyleHints::eventFilter(QObject *, QEvent *)
+  bool cbs_eventFilter_2411_0(QObject *arg1, QEvent *arg2)
   {
-    return QStyleHints::eventFilter(watched, event);
+    return QStyleHints::eventFilter(arg1, arg2);
   }
 
-  virtual bool eventFilter(QObject *watched, QEvent *event)
+  virtual bool eventFilter(QObject *arg1, QEvent *arg2)
   {
     if (cb_eventFilter_2411_0.can_issue()) {
-      return cb_eventFilter_2411_0.issue<QStyleHints_Adaptor, bool, QObject *, QEvent *>(&QStyleHints_Adaptor::cbs_eventFilter_2411_0, watched, event);
+      return cb_eventFilter_2411_0.issue<QStyleHints_Adaptor, bool, QObject *, QEvent *>(&QStyleHints_Adaptor::cbs_eventFilter_2411_0, arg1, arg2);
     } else {
-      return QStyleHints::eventFilter(watched, event);
+      return QStyleHints::eventFilter(arg1, arg2);
     }
   }
 
@@ -764,25 +574,6 @@ public:
     emit QStyleHints::mouseDoubleClickIntervalChanged(mouseDoubleClickInterval);
   }
 
-  //  [emitter impl] void QStyleHints::mousePressAndHoldIntervalChanged(int mousePressAndHoldInterval)
-  void emitter_QStyleHints_mousePressAndHoldIntervalChanged_767(int mousePressAndHoldInterval)
-  {
-    emit QStyleHints::mousePressAndHoldIntervalChanged(mousePressAndHoldInterval);
-  }
-
-  //  [emitter impl] void QStyleHints::mouseQuickSelectionThresholdChanged(int threshold)
-  void emitter_QStyleHints_mouseQuickSelectionThresholdChanged_767(int threshold)
-  {
-    emit QStyleHints::mouseQuickSelectionThresholdChanged(threshold);
-  }
-
-  //  [emitter impl] void QStyleHints::objectNameChanged(const QString &objectName)
-  void emitter_QStyleHints_objectNameChanged_4567(const QString &objectName)
-  {
-    __SUPPRESS_UNUSED_WARNING (objectName);
-    throw tl::Exception ("Can't emit private signal 'void QStyleHints::objectNameChanged(const QString &objectName)'");
-  }
-
   //  [emitter impl] void QStyleHints::startDragDistanceChanged(int startDragDistance)
   void emitter_QStyleHints_startDragDistanceChanged_767(int startDragDistance)
   {
@@ -795,51 +586,33 @@ public:
     emit QStyleHints::startDragTimeChanged(startDragTime);
   }
 
-  //  [emitter impl] void QStyleHints::tabFocusBehaviorChanged(Qt::TabFocusBehavior tabFocusBehavior)
-  void emitter_QStyleHints_tabFocusBehaviorChanged_2356(Qt::TabFocusBehavior tabFocusBehavior)
+  //  [adaptor impl] void QStyleHints::childEvent(QChildEvent *)
+  void cbs_childEvent_1701_0(QChildEvent *arg1)
   {
-    emit QStyleHints::tabFocusBehaviorChanged(tabFocusBehavior);
+    QStyleHints::childEvent(arg1);
   }
 
-  //  [emitter impl] void QStyleHints::useHoverEffectsChanged(bool useHoverEffects)
-  void emitter_QStyleHints_useHoverEffectsChanged_864(bool useHoverEffects)
-  {
-    emit QStyleHints::useHoverEffectsChanged(useHoverEffects);
-  }
-
-  //  [emitter impl] void QStyleHints::wheelScrollLinesChanged(int scrollLines)
-  void emitter_QStyleHints_wheelScrollLinesChanged_767(int scrollLines)
-  {
-    emit QStyleHints::wheelScrollLinesChanged(scrollLines);
-  }
-
-  //  [adaptor impl] void QStyleHints::childEvent(QChildEvent *event)
-  void cbs_childEvent_1701_0(QChildEvent *event)
-  {
-    QStyleHints::childEvent(event);
-  }
-
-  virtual void childEvent(QChildEvent *event)
+  virtual void childEvent(QChildEvent *arg1)
   {
     if (cb_childEvent_1701_0.can_issue()) {
-      cb_childEvent_1701_0.issue<QStyleHints_Adaptor, QChildEvent *>(&QStyleHints_Adaptor::cbs_childEvent_1701_0, event);
+      cb_childEvent_1701_0.issue<QStyleHints_Adaptor, QChildEvent *>(&QStyleHints_Adaptor::cbs_childEvent_1701_0, arg1);
     } else {
-      QStyleHints::childEvent(event);
+      QStyleHints::childEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QStyleHints::customEvent(QEvent *event)
-  void cbs_customEvent_1217_0(QEvent *event)
+  //  [adaptor impl] void QStyleHints::customEvent(QEvent *)
+  void cbs_customEvent_1217_0(QEvent *arg1)
   {
-    QStyleHints::customEvent(event);
+    QStyleHints::customEvent(arg1);
   }
 
-  virtual void customEvent(QEvent *event)
+  virtual void customEvent(QEvent *arg1)
   {
     if (cb_customEvent_1217_0.can_issue()) {
-      cb_customEvent_1217_0.issue<QStyleHints_Adaptor, QEvent *>(&QStyleHints_Adaptor::cbs_customEvent_1217_0, event);
+      cb_customEvent_1217_0.issue<QStyleHints_Adaptor, QEvent *>(&QStyleHints_Adaptor::cbs_customEvent_1217_0, arg1);
     } else {
-      QStyleHints::customEvent(event);
+      QStyleHints::customEvent(arg1);
     }
   }
 
@@ -858,18 +631,18 @@ public:
     }
   }
 
-  //  [adaptor impl] void QStyleHints::timerEvent(QTimerEvent *event)
-  void cbs_timerEvent_1730_0(QTimerEvent *event)
+  //  [adaptor impl] void QStyleHints::timerEvent(QTimerEvent *)
+  void cbs_timerEvent_1730_0(QTimerEvent *arg1)
   {
-    QStyleHints::timerEvent(event);
+    QStyleHints::timerEvent(arg1);
   }
 
-  virtual void timerEvent(QTimerEvent *event)
+  virtual void timerEvent(QTimerEvent *arg1)
   {
     if (cb_timerEvent_1730_0.can_issue()) {
-      cb_timerEvent_1730_0.issue<QStyleHints_Adaptor, QTimerEvent *>(&QStyleHints_Adaptor::cbs_timerEvent_1730_0, event);
+      cb_timerEvent_1730_0.issue<QStyleHints_Adaptor, QTimerEvent *>(&QStyleHints_Adaptor::cbs_timerEvent_1730_0, arg1);
     } else {
-      QStyleHints::timerEvent(event);
+      QStyleHints::timerEvent(arg1);
     }
   }
 
@@ -883,11 +656,11 @@ public:
 
 QStyleHints_Adaptor::~QStyleHints_Adaptor() { }
 
-// void QStyleHints::childEvent(QChildEvent *event)
+// void QStyleHints::childEvent(QChildEvent *)
 
 static void _init_cbs_childEvent_1701_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QChildEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -925,11 +698,11 @@ static void _call_emitter_cursorFlashTimeChanged_767 (const qt_gsi::GenericMetho
 }
 
 
-// void QStyleHints::customEvent(QEvent *event)
+// void QStyleHints::customEvent(QEvent *)
 
 static void _init_cbs_customEvent_1217_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -953,7 +726,7 @@ static void _set_callback_cbs_customEvent_1217_0 (void *cls, const gsi::Callback
 
 static void _init_emitter_destroyed_1302 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("arg1", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("arg1", true, "0");
   decl->add_arg<QObject * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -962,7 +735,7 @@ static void _call_emitter_destroyed_1302 (const qt_gsi::GenericMethod * /*decl*/
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (nullptr, heap);
+  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (0, heap);
   ((QStyleHints_Adaptor *)cls)->emitter_QStyleHints_destroyed_1302 (arg1);
 }
 
@@ -991,11 +764,11 @@ static void _set_callback_cbs_disconnectNotify_2394_0 (void *cls, const gsi::Cal
 }
 
 
-// bool QStyleHints::event(QEvent *event)
+// bool QStyleHints::event(QEvent *)
 
 static void _init_cbs_event_1217_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QEvent * > (argspec_0);
   decl->set_return<bool > ();
 }
@@ -1014,13 +787,13 @@ static void _set_callback_cbs_event_1217_0 (void *cls, const gsi::Callback &cb)
 }
 
 
-// bool QStyleHints::eventFilter(QObject *watched, QEvent *event)
+// bool QStyleHints::eventFilter(QObject *, QEvent *)
 
 static void _init_cbs_eventFilter_2411_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("watched");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QObject * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("event");
+  static gsi::ArgSpecBase argspec_1 ("arg2");
   decl->add_arg<QEvent * > (argspec_1);
   decl->set_return<bool > ();
 }
@@ -1091,60 +864,6 @@ static void _call_emitter_mouseDoubleClickIntervalChanged_767 (const qt_gsi::Gen
   tl::Heap heap;
   int arg1 = gsi::arg_reader<int >() (args, heap);
   ((QStyleHints_Adaptor *)cls)->emitter_QStyleHints_mouseDoubleClickIntervalChanged_767 (arg1);
-}
-
-
-// emitter void QStyleHints::mousePressAndHoldIntervalChanged(int mousePressAndHoldInterval)
-
-static void _init_emitter_mousePressAndHoldIntervalChanged_767 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("mousePressAndHoldInterval");
-  decl->add_arg<int > (argspec_0);
-  decl->set_return<void > ();
-}
-
-static void _call_emitter_mousePressAndHoldIntervalChanged_767 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs & /*ret*/) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  int arg1 = gsi::arg_reader<int >() (args, heap);
-  ((QStyleHints_Adaptor *)cls)->emitter_QStyleHints_mousePressAndHoldIntervalChanged_767 (arg1);
-}
-
-
-// emitter void QStyleHints::mouseQuickSelectionThresholdChanged(int threshold)
-
-static void _init_emitter_mouseQuickSelectionThresholdChanged_767 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("threshold");
-  decl->add_arg<int > (argspec_0);
-  decl->set_return<void > ();
-}
-
-static void _call_emitter_mouseQuickSelectionThresholdChanged_767 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs & /*ret*/) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  int arg1 = gsi::arg_reader<int >() (args, heap);
-  ((QStyleHints_Adaptor *)cls)->emitter_QStyleHints_mouseQuickSelectionThresholdChanged_767 (arg1);
-}
-
-
-// emitter void QStyleHints::objectNameChanged(const QString &objectName)
-
-static void _init_emitter_objectNameChanged_4567 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("objectName");
-  decl->add_arg<const QString & > (argspec_0);
-  decl->set_return<void > ();
-}
-
-static void _call_emitter_objectNameChanged_4567 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs & /*ret*/) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const QString &arg1 = gsi::arg_reader<const QString & >() (args, heap);
-  ((QStyleHints_Adaptor *)cls)->emitter_QStyleHints_objectNameChanged_4567 (arg1);
 }
 
 
@@ -1230,29 +949,11 @@ static void _call_emitter_startDragTimeChanged_767 (const qt_gsi::GenericMethod 
 }
 
 
-// emitter void QStyleHints::tabFocusBehaviorChanged(Qt::TabFocusBehavior tabFocusBehavior)
-
-static void _init_emitter_tabFocusBehaviorChanged_2356 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("tabFocusBehavior");
-  decl->add_arg<const qt_gsi::Converter<Qt::TabFocusBehavior>::target_type & > (argspec_0);
-  decl->set_return<void > ();
-}
-
-static void _call_emitter_tabFocusBehaviorChanged_2356 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs & /*ret*/) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const qt_gsi::Converter<Qt::TabFocusBehavior>::target_type & arg1 = gsi::arg_reader<const qt_gsi::Converter<Qt::TabFocusBehavior>::target_type & >() (args, heap);
-  ((QStyleHints_Adaptor *)cls)->emitter_QStyleHints_tabFocusBehaviorChanged_2356 (arg1);
-}
-
-
-// void QStyleHints::timerEvent(QTimerEvent *event)
+// void QStyleHints::timerEvent(QTimerEvent *)
 
 static void _init_cbs_timerEvent_1730_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QTimerEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1272,42 +973,6 @@ static void _set_callback_cbs_timerEvent_1730_0 (void *cls, const gsi::Callback 
 }
 
 
-// emitter void QStyleHints::useHoverEffectsChanged(bool useHoverEffects)
-
-static void _init_emitter_useHoverEffectsChanged_864 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("useHoverEffects");
-  decl->add_arg<bool > (argspec_0);
-  decl->set_return<void > ();
-}
-
-static void _call_emitter_useHoverEffectsChanged_864 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs & /*ret*/) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  bool arg1 = gsi::arg_reader<bool >() (args, heap);
-  ((QStyleHints_Adaptor *)cls)->emitter_QStyleHints_useHoverEffectsChanged_864 (arg1);
-}
-
-
-// emitter void QStyleHints::wheelScrollLinesChanged(int scrollLines)
-
-static void _init_emitter_wheelScrollLinesChanged_767 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("scrollLines");
-  decl->add_arg<int > (argspec_0);
-  decl->set_return<void > ();
-}
-
-static void _call_emitter_wheelScrollLinesChanged_767 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs & /*ret*/) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  int arg1 = gsi::arg_reader<int >() (args, heap);
-  ((QStyleHints_Adaptor *)cls)->emitter_QStyleHints_wheelScrollLinesChanged_767 (arg1);
-}
-
-
 namespace gsi
 {
 
@@ -1315,34 +980,28 @@ gsi::Class<QStyleHints> &qtdecl_QStyleHints ();
 
 static gsi::Methods methods_QStyleHints_Adaptor () {
   gsi::Methods methods;
-  methods += new qt_gsi::GenericMethod ("*childEvent", "@brief Virtual method void QStyleHints::childEvent(QChildEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0);
-  methods += new qt_gsi::GenericMethod ("*childEvent", "@hide", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0, &_set_callback_cbs_childEvent_1701_0);
+  methods += new qt_gsi::GenericMethod ("*childEvent", "@hide", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0);
+  methods += new qt_gsi::GenericMethod ("*childEvent", "@brief Virtual method void QStyleHints::childEvent(QChildEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0, &_set_callback_cbs_childEvent_1701_0);
   methods += new qt_gsi::GenericMethod ("emit_cursorFlashTimeChanged", "@brief Emitter for signal void QStyleHints::cursorFlashTimeChanged(int cursorFlashTime)\nCall this method to emit this signal.", false, &_init_emitter_cursorFlashTimeChanged_767, &_call_emitter_cursorFlashTimeChanged_767);
-  methods += new qt_gsi::GenericMethod ("*customEvent", "@brief Virtual method void QStyleHints::customEvent(QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*customEvent", "@hide", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0, &_set_callback_cbs_customEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*customEvent", "@hide", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*customEvent", "@brief Virtual method void QStyleHints::customEvent(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0, &_set_callback_cbs_customEvent_1217_0);
   methods += new qt_gsi::GenericMethod ("emit_destroyed", "@brief Emitter for signal void QStyleHints::destroyed(QObject *)\nCall this method to emit this signal.", false, &_init_emitter_destroyed_1302, &_call_emitter_destroyed_1302);
-  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@brief Virtual method void QStyleHints::disconnectNotify(const QMetaMethod &signal)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0);
-  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@hide", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0, &_set_callback_cbs_disconnectNotify_2394_0);
-  methods += new qt_gsi::GenericMethod ("event", "@brief Virtual method bool QStyleHints::event(QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0);
-  methods += new qt_gsi::GenericMethod ("event", "@hide", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0, &_set_callback_cbs_event_1217_0);
-  methods += new qt_gsi::GenericMethod ("eventFilter", "@brief Virtual method bool QStyleHints::eventFilter(QObject *watched, QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0);
-  methods += new qt_gsi::GenericMethod ("eventFilter", "@hide", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0, &_set_callback_cbs_eventFilter_2411_0);
+  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@hide", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0);
+  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@brief Virtual method void QStyleHints::disconnectNotify(const QMetaMethod &signal)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0, &_set_callback_cbs_disconnectNotify_2394_0);
+  methods += new qt_gsi::GenericMethod ("event", "@hide", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0);
+  methods += new qt_gsi::GenericMethod ("event", "@brief Virtual method bool QStyleHints::event(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0, &_set_callback_cbs_event_1217_0);
+  methods += new qt_gsi::GenericMethod ("eventFilter", "@hide", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0);
+  methods += new qt_gsi::GenericMethod ("eventFilter", "@brief Virtual method bool QStyleHints::eventFilter(QObject *, QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0, &_set_callback_cbs_eventFilter_2411_0);
   methods += new qt_gsi::GenericMethod ("*isSignalConnected", "@brief Method bool QStyleHints::isSignalConnected(const QMetaMethod &signal)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_isSignalConnected_c2394, &_call_fp_isSignalConnected_c2394);
   methods += new qt_gsi::GenericMethod ("emit_keyboardInputIntervalChanged", "@brief Emitter for signal void QStyleHints::keyboardInputIntervalChanged(int keyboardInputInterval)\nCall this method to emit this signal.", false, &_init_emitter_keyboardInputIntervalChanged_767, &_call_emitter_keyboardInputIntervalChanged_767);
   methods += new qt_gsi::GenericMethod ("emit_mouseDoubleClickIntervalChanged", "@brief Emitter for signal void QStyleHints::mouseDoubleClickIntervalChanged(int mouseDoubleClickInterval)\nCall this method to emit this signal.", false, &_init_emitter_mouseDoubleClickIntervalChanged_767, &_call_emitter_mouseDoubleClickIntervalChanged_767);
-  methods += new qt_gsi::GenericMethod ("emit_mousePressAndHoldIntervalChanged", "@brief Emitter for signal void QStyleHints::mousePressAndHoldIntervalChanged(int mousePressAndHoldInterval)\nCall this method to emit this signal.", false, &_init_emitter_mousePressAndHoldIntervalChanged_767, &_call_emitter_mousePressAndHoldIntervalChanged_767);
-  methods += new qt_gsi::GenericMethod ("emit_mouseQuickSelectionThresholdChanged", "@brief Emitter for signal void QStyleHints::mouseQuickSelectionThresholdChanged(int threshold)\nCall this method to emit this signal.", false, &_init_emitter_mouseQuickSelectionThresholdChanged_767, &_call_emitter_mouseQuickSelectionThresholdChanged_767);
-  methods += new qt_gsi::GenericMethod ("emit_objectNameChanged", "@brief Emitter for signal void QStyleHints::objectNameChanged(const QString &objectName)\nCall this method to emit this signal.", false, &_init_emitter_objectNameChanged_4567, &_call_emitter_objectNameChanged_4567);
   methods += new qt_gsi::GenericMethod ("*receivers", "@brief Method int QStyleHints::receivers(const char *signal)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_receivers_c1731, &_call_fp_receivers_c1731);
   methods += new qt_gsi::GenericMethod ("*sender", "@brief Method QObject *QStyleHints::sender()\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_sender_c0, &_call_fp_sender_c0);
   methods += new qt_gsi::GenericMethod ("*senderSignalIndex", "@brief Method int QStyleHints::senderSignalIndex()\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_senderSignalIndex_c0, &_call_fp_senderSignalIndex_c0);
   methods += new qt_gsi::GenericMethod ("emit_startDragDistanceChanged", "@brief Emitter for signal void QStyleHints::startDragDistanceChanged(int startDragDistance)\nCall this method to emit this signal.", false, &_init_emitter_startDragDistanceChanged_767, &_call_emitter_startDragDistanceChanged_767);
   methods += new qt_gsi::GenericMethod ("emit_startDragTimeChanged", "@brief Emitter for signal void QStyleHints::startDragTimeChanged(int startDragTime)\nCall this method to emit this signal.", false, &_init_emitter_startDragTimeChanged_767, &_call_emitter_startDragTimeChanged_767);
-  methods += new qt_gsi::GenericMethod ("emit_tabFocusBehaviorChanged", "@brief Emitter for signal void QStyleHints::tabFocusBehaviorChanged(Qt::TabFocusBehavior tabFocusBehavior)\nCall this method to emit this signal.", false, &_init_emitter_tabFocusBehaviorChanged_2356, &_call_emitter_tabFocusBehaviorChanged_2356);
-  methods += new qt_gsi::GenericMethod ("*timerEvent", "@brief Virtual method void QStyleHints::timerEvent(QTimerEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0);
-  methods += new qt_gsi::GenericMethod ("*timerEvent", "@hide", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0, &_set_callback_cbs_timerEvent_1730_0);
-  methods += new qt_gsi::GenericMethod ("emit_useHoverEffectsChanged", "@brief Emitter for signal void QStyleHints::useHoverEffectsChanged(bool useHoverEffects)\nCall this method to emit this signal.", false, &_init_emitter_useHoverEffectsChanged_864, &_call_emitter_useHoverEffectsChanged_864);
-  methods += new qt_gsi::GenericMethod ("emit_wheelScrollLinesChanged", "@brief Emitter for signal void QStyleHints::wheelScrollLinesChanged(int scrollLines)\nCall this method to emit this signal.", false, &_init_emitter_wheelScrollLinesChanged_767, &_call_emitter_wheelScrollLinesChanged_767);
+  methods += new qt_gsi::GenericMethod ("*timerEvent", "@hide", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0);
+  methods += new qt_gsi::GenericMethod ("*timerEvent", "@brief Virtual method void QStyleHints::timerEvent(QTimerEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0, &_set_callback_cbs_timerEvent_1730_0);
   return methods;
 }
 

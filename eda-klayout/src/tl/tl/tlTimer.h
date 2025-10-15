@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -92,17 +92,12 @@ public:
    */
   double sec_wall () const
   {
-    return (double (m_wall_ns_res) * 1e-9);
+    return (double (m_wall_ms_res) * 0.001);
   }
 
-  /**
-   *  @brief Reports the current memory usage
-   */
-  static size_t memory_size ();
-
 private:
-  timer_t m_user_ms, m_sys_ms, m_wall_ns;
-  timer_t m_user_ms_res, m_sys_ms_res, m_wall_ns_res;
+  timer_t m_user_ms, m_sys_ms, m_wall_ms;
+  timer_t m_user_ms_res, m_sys_ms_res, m_wall_ms_res;
 };
 
 /**
@@ -182,7 +177,7 @@ public:
   /**
    *  @brief Default constructor: construct a clock object pointing to an arbitrary value
    */
-  Clock () : m_clock_ns (0)
+  Clock () : m_clock_ms (0)
   {
     // .. nothing yet ..
   }
@@ -196,7 +191,7 @@ public:
    *  @brief Copy constructor
    */
   Clock (const Clock &d)
-    : m_clock_ns (d.m_clock_ns)
+    : m_clock_ms (d.m_clock_ms)
   {
     //  .. nothing yet ..
   }
@@ -206,7 +201,7 @@ public:
    */
   Clock &operator= (Clock d)
   {
-    m_clock_ns = d.m_clock_ns;
+    m_clock_ms = d.m_clock_ms;
     return *this;
   }
 
@@ -215,7 +210,7 @@ public:
    */
   bool operator== (Clock d) const
   {
-    return m_clock_ns == d.m_clock_ns;
+    return m_clock_ms == d.m_clock_ms;
   }
 
   /**
@@ -231,7 +226,7 @@ public:
    */
   bool operator< (Clock d) const
   {
-    return m_clock_ns < d.m_clock_ns;
+    return m_clock_ms < d.m_clock_ms;
   }
 
   /**
@@ -239,7 +234,7 @@ public:
    */
   Clock &operator-= (Clock d)
   {
-    m_clock_ns -= d.m_clock_ns;
+    m_clock_ms -= d.m_clock_ms;
     return *this;
   }
 
@@ -264,7 +259,7 @@ public:
   static Clock current ();
 
 private:
-  timer_t m_clock_ns;
+  timer_t m_clock_ms;
 };
 
 } // namespace tl

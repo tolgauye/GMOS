@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -32,6 +32,7 @@
 #include <QImage>
 #include "gsiQt.h"
 #include "gsiQtGuiCommon.h"
+#include "gsiDeclQtGuiTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -602,25 +603,6 @@ static void _call_f_write_1877 (const qt_gsi::GenericMethod * /*decl*/, void *cl
 }
 
 
-// static QList<QByteArray> QImageWriter::imageFormatsForMimeType(const QByteArray &mimeType)
-
-
-static void _init_f_imageFormatsForMimeType_2309 (qt_gsi::GenericStaticMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("mimeType");
-  decl->add_arg<const QByteArray & > (argspec_0);
-  decl->set_return<QList<QByteArray> > ();
-}
-
-static void _call_f_imageFormatsForMimeType_2309 (const qt_gsi::GenericStaticMethod * /*decl*/, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const QByteArray &arg1 = gsi::arg_reader<const QByteArray & >() (args, heap);
-  ret.write<QList<QByteArray> > ((QList<QByteArray>)QImageWriter::imageFormatsForMimeType (arg1));
-}
-
-
 // static QList<QByteArray> QImageWriter::supportedImageFormats()
 
 
@@ -658,7 +640,7 @@ static void _init_f_tr_4013 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("sourceText");
   decl->add_arg<const char * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("disambiguation", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("disambiguation", true, "0");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("n", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -670,7 +652,7 @@ static void _call_f_tr_4013 (const qt_gsi::GenericStaticMethod * /*decl*/, gsi::
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (0, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QImageWriter::tr (arg1, arg2, arg3));
 }
@@ -683,7 +665,7 @@ static void _init_f_trUtf8_4013 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("sourceText");
   decl->add_arg<const char * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("disambiguation", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("disambiguation", true, "0");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("n", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -695,7 +677,7 @@ static void _call_f_trUtf8_4013 (const qt_gsi::GenericStaticMethod * /*decl*/, g
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (0, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QImageWriter::trUtf8 (arg1, arg2, arg3));
 }
@@ -739,7 +721,6 @@ static gsi::Methods methods_QImageWriter () {
   methods += new qt_gsi::GenericMethod ("supportsOption", "@brief Method bool QImageWriter::supportsOption(QImageIOHandler::ImageOption option)\n", true, &_init_f_supportsOption_c3086, &_call_f_supportsOption_c3086);
   methods += new qt_gsi::GenericMethod (":transformation", "@brief Method QFlags<QImageIOHandler::Transformation> QImageWriter::transformation()\n", true, &_init_f_transformation_c0, &_call_f_transformation_c0);
   methods += new qt_gsi::GenericMethod ("write", "@brief Method bool QImageWriter::write(const QImage &image)\n", false, &_init_f_write_1877, &_call_f_write_1877);
-  methods += new qt_gsi::GenericStaticMethod ("imageFormatsForMimeType", "@brief Static method QList<QByteArray> QImageWriter::imageFormatsForMimeType(const QByteArray &mimeType)\nThis method is static and can be called without an instance.", &_init_f_imageFormatsForMimeType_2309, &_call_f_imageFormatsForMimeType_2309);
   methods += new qt_gsi::GenericStaticMethod ("supportedImageFormats", "@brief Static method QList<QByteArray> QImageWriter::supportedImageFormats()\nThis method is static and can be called without an instance.", &_init_f_supportedImageFormats_0, &_call_f_supportedImageFormats_0);
   methods += new qt_gsi::GenericStaticMethod ("supportedMimeTypes", "@brief Static method QList<QByteArray> QImageWriter::supportedMimeTypes()\nThis method is static and can be called without an instance.", &_init_f_supportedMimeTypes_0, &_call_f_supportedMimeTypes_0);
   methods += new qt_gsi::GenericStaticMethod ("tr", "@brief Static method QString QImageWriter::tr(const char *sourceText, const char *disambiguation, int n)\nThis method is static and can be called without an instance.", &_init_f_tr_4013, &_call_f_tr_4013);
@@ -764,8 +745,7 @@ namespace qt_gsi
 static gsi::Enum<QImageWriter::ImageWriterError> decl_QImageWriter_ImageWriterError_Enum ("QtGui", "QImageWriter_ImageWriterError",
     gsi::enum_const ("UnknownError", QImageWriter::UnknownError, "@brief Enum constant QImageWriter::UnknownError") +
     gsi::enum_const ("DeviceError", QImageWriter::DeviceError, "@brief Enum constant QImageWriter::DeviceError") +
-    gsi::enum_const ("UnsupportedFormatError", QImageWriter::UnsupportedFormatError, "@brief Enum constant QImageWriter::UnsupportedFormatError") +
-    gsi::enum_const ("InvalidImageError", QImageWriter::InvalidImageError, "@brief Enum constant QImageWriter::InvalidImageError"),
+    gsi::enum_const ("UnsupportedFormatError", QImageWriter::UnsupportedFormatError, "@brief Enum constant QImageWriter::UnsupportedFormatError"),
   "@qt\n@brief This class represents the QImageWriter::ImageWriterError enum");
 
 static gsi::QFlagsClass<QImageWriter::ImageWriterError > decl_QImageWriter_ImageWriterError_Enums ("QtGui", "QImageWriter_QFlags_ImageWriterError",

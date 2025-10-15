@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -31,6 +31,7 @@
 #include <QSize>
 #include "gsiQt.h"
 #include "gsiQtCoreCommon.h"
+#include "gsiDeclQtCoreTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -495,32 +496,32 @@ static void _call_f_width_c0 (const qt_gsi::GenericMethod * /*decl*/, void *cls,
 
 //  bool ::operator==(const QSizeF &s1, const QSizeF &s2)
 static bool op_QSizeF_operator_eq__eq__3642(const QSizeF *_self, const QSizeF &s2) {
-  return operator==(*_self, s2);
+  return ::operator==(*_self, s2);
 }
 
 //  bool ::operator!=(const QSizeF &s1, const QSizeF &s2)
 static bool op_QSizeF_operator_excl__eq__3642(const QSizeF *_self, const QSizeF &s2) {
-  return operator!=(*_self, s2);
+  return ::operator!=(*_self, s2);
 }
 
 //  const QSizeF ::operator+(const QSizeF &s1, const QSizeF &s2)
 static const QSizeF op_QSizeF_operator_plus__3642(const QSizeF *_self, const QSizeF &s2) {
-  return operator+(*_self, s2);
+  return ::operator+(*_self, s2);
 }
 
 //  const QSizeF ::operator-(const QSizeF &s1, const QSizeF &s2)
 static const QSizeF op_QSizeF_operator_minus__3642(const QSizeF *_self, const QSizeF &s2) {
-  return operator-(*_self, s2);
+  return ::operator-(*_self, s2);
 }
 
 //  const QSizeF ::operator*(const QSizeF &s, qreal c)
 static const QSizeF op_QSizeF_operator_star__2736(const QSizeF *_self, qreal c) {
-  return operator*(*_self, c);
+  return ::operator*(*_self, c);
 }
 
 //  const QSizeF ::operator/(const QSizeF &s, qreal c)
 static const QSizeF op_QSizeF_operator_slash__2736(const QSizeF *_self, qreal c) {
-  return operator/(*_self, c);
+  return ::operator/(*_self, c);
 }
 
 

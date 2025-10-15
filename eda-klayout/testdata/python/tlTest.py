@@ -1,5 +1,5 @@
 # KLayout Layout Viewer
-# Copyright (C) 2006-2025 Matthias Koefferlein
+# Copyright (C) 2006-2019 Matthias Koefferlein
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,12 +19,6 @@
 import pya
 import unittest
 import sys
-
-def astr(a):
-  astr = []
-  for i in a:
-    astr.append(str(i))
-  return "[" + ", ".join(astr) + "]"
 
 class TLTest(unittest.TestCase):
 
@@ -120,7 +114,7 @@ class TLTest(unittest.TestCase):
     expr = pya.Expression("x=a&b; y=x; z=y; [x,y,z]", { "a": box1, "b": box2, "x": None, "y": None, "z": None })
     res = expr.eval()
 
-    self.assertEqual(astr(res), "[(50,150;200,300), (50,150;200,300), (50,150;200,300)]")
+    self.assertEqual(str(res), "[(50,150;200,300), (50,150;200,300), (50,150;200,300)]")
 
     # all objects are individual copies
     self.assertNotEqual(id(res[0]), id(box1))
@@ -135,7 +129,7 @@ class TLTest(unittest.TestCase):
     expr = pya.Expression("var x=a&b; var y=x; var z=y; [x,y,z]", { "a": box1, "b": box2 })
     res = expr.eval()
 
-    self.assertEqual(astr(res), "[(50,150;200,300), (50,150;200,300), (50,150;200,300)]")
+    self.assertEqual(str(res), "[(50,150;200,300), (50,150;200,300), (50,150;200,300)]")
 
     # all objects are individual copies
     self.assertNotEqual(id(res[0]), id(box1))
@@ -145,7 +139,7 @@ class TLTest(unittest.TestCase):
 
     # destruction of the expression's object space does not matter since we have copies
     expr._destroy()
-    self.assertEqual(astr(res), "[(50,150;200,300), (50,150;200,300), (50,150;200,300)]")
+    self.assertEqual(str(res), "[(50,150;200,300), (50,150;200,300), (50,150;200,300)]")
 
     # -------------------------------------------------
 
@@ -184,7 +178,7 @@ class TLTest(unittest.TestCase):
     expr = pya.Expression("x=a&b; y=x; z=y; [x,y,z]", { "a": region1, "b": region2, "x": None, "y": None, "z": None })
     res = expr.eval()
 
-    self.assertEqual(astr(res), "[(50,150;50,300;200,300;200,150), (50,150;50,300;200,300;200,150), (50,150;50,300;200,300;200,150)]")
+    self.assertEqual(str(res), "[(50,150;50,300;200,300;200,150), (50,150;50,300;200,300;200,150), (50,150;50,300;200,300;200,150)]")
 
     # regions are managed objects -> passing the object through the expression persists it's object ID
     self.assertNotEqual(id(res[0]), id(region1))
@@ -201,7 +195,7 @@ class TLTest(unittest.TestCase):
     expr = pya.Expression("var x=a&b; var y=x; var z=y; [x,y,z]", { "a": region1, "b": region2 })
     res = expr.eval()
 
-    self.assertEqual(astr(res), "[(50,150;50,300;200,300;200,150), (50,150;50,300;200,300;200,150), (50,150;50,300;200,300;200,150)]")
+    self.assertEqual(str(res), "[(50,150;50,300;200,300;200,150), (50,150;50,300;200,300;200,150), (50,150;50,300;200,300;200,150)]")
 
     # regions are managed objects -> passing the object through the expression persists it's object ID
     self.assertNotEqual(id(res[0]), id(region1))

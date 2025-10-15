@@ -10,6 +10,6 @@ HEADERS += \
 
 LIBS += -lklayout_QtCore -lklayout_QtGui
 
-greaterThan(QT_MAJOR_VERSION, 4) {
+equals(HAVE_QT5, "1") {
   LIBS += -lklayout_QtWidgets
 }

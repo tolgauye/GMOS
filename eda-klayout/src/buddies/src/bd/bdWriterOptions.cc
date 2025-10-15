@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -30,46 +30,33 @@ namespace bd
 {
 
 GenericWriterOptions::GenericWriterOptions ()
-  : m_scale_factor (1.0)
+  : m_scale_factor (1.0),
+    m_dbu (0.0),
+    m_dont_write_empty_cells (false),
+    m_keep_instances (false),
+    m_write_context_info (true),
+    m_gds2_max_vertex_count (8000),
+    m_gds2_no_zero_length_paths (false),
+    m_gds2_multi_xy_records (false),
+    m_gds2_max_cellname_length (32000),
+    m_gds2_libname ("LIB"),
+    m_gds2_user_units (1.0),
+    m_gds2_write_timestamps (true),
+    m_gds2_write_cell_properties (false),
+    m_gds2_write_file_properties (false),
+    m_oasis_compression_level (2),
+    m_oasis_write_cblocks (false),
+    m_oasis_strict_mode (false),
+    m_oasis_recompress (false),
+    m_oasis_permissive (false),
+    m_oasis_write_std_properties (1),
+    m_oasis_subst_char ("*"),
+    m_cif_dummy_calls (false),
+    m_cif_blank_separator (false),
+    m_magic_lambda (1.0),
+    m_dxf_polygon_mode (0)
 {
-  db::SaveLayoutOptions save_options;
-
-  m_dbu = save_options.get_option_by_name ("dbu").to_double ();
-
-  m_dont_write_empty_cells = save_options.get_option_by_name ("no_empty_cells").to_bool ();
-  m_keep_instances = save_options.get_option_by_name ("keep_instances").to_bool ();
-  m_write_context_info = save_options.get_option_by_name ("write_context_info").to_bool ();
-
-  m_gds2_max_vertex_count = save_options.get_option_by_name ("gds2_max_vertex_count").to_uint ();
-  m_gds2_no_zero_length_paths = save_options.get_option_by_name ("gds2_no_zero_length_paths").to_bool ();
-  m_gds2_multi_xy_records = save_options.get_option_by_name ("gds2_multi_xy_records").to_bool ();
-  m_gds2_resolve_skew_arrays = save_options.get_option_by_name ("gds2_resolve_skew_arrays").to_bool ();
-  m_gds2_max_cellname_length = save_options.get_option_by_name ("gds2_max_cellname_length").to_uint ();
-  m_gds2_libname = save_options.get_option_by_name ("gds2_libname").to_string ();
-  m_gds2_user_units = save_options.get_option_by_name ("gds2_user_units").to_double ();
-  m_gds2_write_timestamps = save_options.get_option_by_name ("gds2_write_timestamps").to_bool ();
-  m_gds2_write_cell_properties = save_options.get_option_by_name ("gds2_write_cell_properties").to_bool ();
-  m_gds2_write_file_properties = save_options.get_option_by_name ("gds2_write_file_properties").to_bool ();
-  tl::Variant def_text_size = save_options.get_option_by_name ("gds2_default_text_size");
-  m_gds2_default_text_size = def_text_size.is_nil () ? -1.0 : def_text_size.to_double ();
-
-  m_oasis_compression_level = save_options.get_option_by_name ("oasis_compression_level").to_int ();
-  m_oasis_write_cblocks = save_options.get_option_by_name ("oasis_write_cblocks").to_bool ();
-  m_oasis_strict_mode = save_options.get_option_by_name ("oasis_strict_mode").to_bool ();
-  m_oasis_recompress = save_options.get_option_by_name ("oasis_recompress").to_bool ();
-  m_oasis_permissive = save_options.get_option_by_name ("oasis_permissive").to_bool ();
-  m_oasis_write_std_properties = save_options.get_option_by_name ("oasis_write_std_properties").to_int ();
-  //  No substitution by default (issue #1885), so skip this:
-  //  m_oasis_subst_char = save_options.get_option_by_name ("oasis_substitution_char").to_string ();
-
-  m_cif_dummy_calls = save_options.get_option_by_name ("cif_dummy_calls").to_bool ();
-  m_cif_blank_separator = save_options.get_option_by_name ("cif_blank_separator").to_bool ();
-
-  //  The default options do not specify a lambda, but we prefer having a default here:
-  //  m_magic_lambda = save_options.get_option_by_name ("mag_lambda").to_double ();
-  m_magic_lambda = 1.0;
-
-  m_dxf_polygon_mode = save_options.get_option_by_name ("dxf_polygon_mode").to_int ();
+  //  .. nothing yet ..
 }
 
 const std::string GenericWriterOptions::gds2_format_name      = "GDS2";
@@ -108,7 +95,7 @@ GenericWriterOptions::add_options (tl::CommandLineOptions &cmd, const std::strin
   if (format.empty () || format == gds2_format_name || format == gds2text_format_name) {
     cmd << tl::arg (group +
                     "#--keep-instances",      &m_keep_instances, "Keeps instances of dropped cells",
-                    "If given, instances of dropped cells won't be removed. Hence, ghost cells are "
+                    "If given, instances of dropped cell's won't be removed. Hence, ghost cells are "
                     "produced. The resulting layout may not be readable by consumers that require "
                     "all instantiated cells to be present as actual cells.\n"
                     "Dropped cells are those which are removed by a negative cell selection (see "
@@ -139,11 +126,11 @@ GenericWriterOptions::add_options (tl::CommandLineOptions &cmd, const std::strin
                   "\n"
                   "Multiple operations can be specified by combining them with a comma. "
                   "Positive and negative selection happens in the order given. Hence it's possible "
-                  "to select a cell with its children and then unselect some children of this cell.\n"
+                  "to select a cell with it's children and then unselect some children of this cell.\n"
                   "\n"
                   "Examples:\n\n"
                   "* \"TOP1,TOP2\" - Select cells TOP1 and TOP2 with all of their children\n"
-                  "* \"(TOP)\" - Select only cell TOP, but none of its child cells\n"
+                  "* \"(TOP)\" - Select only cell TOP, but none of it's child cells\n"
                   "* \"TOP,-A\" - Select cell TOP (plus children), then remove A (with children)"
                  );
 
@@ -162,12 +149,6 @@ GenericWriterOptions::add_options (tl::CommandLineOptions &cmd, const std::strin
                     "#--multi-xy-records", &m_gds2_multi_xy_records, "Allows unlimited number of points",
                     "If this option is given, multiple XY records will be written to accommodate an unlimited number "
                     "of points per polygon or path. However, such files may not be compatible with some consumers."
-                   )
-        << tl::arg (group +
-                    "-ow|--resolve-skew-arrays", &m_gds2_resolve_skew_arrays, "Resolve skew (non-orthogonal) arrays",
-                    "If this option is given, skew arrays are resolved into single instances. Skew arrays "
-                    "are ones where the row or column vectors are not horizontal or vertical. Such arrays can cause problems "
-                    "in legacy software. This option will eliminate them at the expense of bigger files and loss of the array instance property."
                    )
         << tl::arg (group +
                     "#--no-zero-length-paths", &m_gds2_no_zero_length_paths, "Converts zero-length paths to polygons",
@@ -203,13 +184,6 @@ GenericWriterOptions::add_options (tl::CommandLineOptions &cmd, const std::strin
                     "This option enables a GDS2 extension that allows writing of file properties to GDS2 files. "
                     "Consumers that don't support this feature, may not be able to read such a GDS2 files."
                    )
-        << tl::arg (group +
-                    "#--default-text-size", &m_gds2_default_text_size, "Default text size",
-                    "This text size (given in micrometers) is applied to text objects not coming with their "
-                    "own text size (technically: with a zero text size). It can be set to 0 to preserve an original "
-                    "text size of zero. This option is also handy to give text objects from OASIS files a "
-                    "specific size. By default, text objects without a size (i.e. with a zero size) do not receive one."
-                   )
       ;
 
   }
@@ -229,14 +203,10 @@ GenericWriterOptions::add_options (tl::CommandLineOptions &cmd, const std::strin
                     "* 2++ - enhanced shape array search algorithm using 2nd and further neighbor distances as well\n"
                    )
         << tl::arg (group +
-                    "-ob|--cblocks", &m_oasis_write_cblocks, "Uses CBLOCK compression",
-                    "Please note that since version 0.27.12, CBLOCK compression is enabled by default. If you do not want "
-                    "CBLOCK compression, use '--cblocks=false'."
+                    "-ob|--cblocks", &m_oasis_write_cblocks, "Uses CBLOCK compression"
                    )
         << tl::arg (group +
-                    "-ot|--strict-mode", &m_oasis_strict_mode, "Uses strict mode",
-                    "Please note that since version 0.27.12, strict mode is enabled by default. If you do not want "
-                    "strict mode, use '--strict-mode=false'."
+                    "-ot|--strict-mode", &m_oasis_strict_mode, "Uses strict mode"
                    )
         << tl::arg (group +
                     "#--recompress", &m_oasis_recompress, "Compresses shape arrays again",
@@ -320,8 +290,6 @@ void GenericWriterOptions::set_oasis_substitution_char (const std::string &text)
 {
   if (! text.empty ()) {
     m_oasis_subst_char = text[0];
-  } else {
-    m_oasis_subst_char = std::string ();
   }
 }
 
@@ -381,14 +349,12 @@ GenericWriterOptions::configure (db::SaveLayoutOptions &save_options, const db::
   save_options.set_option_by_name ("gds2_max_vertex_count", m_gds2_max_vertex_count);
   save_options.set_option_by_name ("gds2_no_zero_length_paths", m_gds2_no_zero_length_paths);
   save_options.set_option_by_name ("gds2_multi_xy_records", m_gds2_multi_xy_records);
-  save_options.set_option_by_name ("gds2_resolve_skew_arrays", m_gds2_resolve_skew_arrays);
   save_options.set_option_by_name ("gds2_max_cellname_length", m_gds2_max_cellname_length);
   save_options.set_option_by_name ("gds2_libname", m_gds2_libname);
   save_options.set_option_by_name ("gds2_user_units", m_gds2_user_units);
   save_options.set_option_by_name ("gds2_write_timestamps", m_gds2_write_timestamps);
   save_options.set_option_by_name ("gds2_write_cell_properties", m_gds2_write_cell_properties);
   save_options.set_option_by_name ("gds2_write_file_properties", m_gds2_write_file_properties);
-  save_options.set_option_by_name ("gds2_default_text_size", m_gds2_default_text_size < 0.0 ? tl::Variant () : tl::Variant (m_gds2_default_text_size));
 
   save_options.set_option_by_name ("oasis_compression_level", m_oasis_compression_level);
   save_options.set_option_by_name ("oasis_write_cblocks", m_oasis_write_cblocks);

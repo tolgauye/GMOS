@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -20,23 +20,23 @@
 
 */
 
-#if defined(HAVE_QT)
-#  include <QEvent>
-#  include <QPainter>
-#  include <QApplication>
-#  include <QWheelEvent>
-#endif
+
+#include <QEvent>
+#include <QPixmap>
+#include <QBitmap>
+#include <QPainter>
+#include <QApplication>
+#include <QBuffer>
+#include <QWheelEvent>
 
 #include "tlTimer.h"
 #include "tlLog.h"
 #include "tlAssert.h"
 #include "layLayoutCanvas.h"
 #include "layRedrawThread.h"
-#include "layLayoutViewBase.h"
+#include "layLayoutView.h"
 #include "layMarker.h"
-#if defined(HAVE_QT)
-#  include "gtf.h"
-#endif
+#include "gtf.h"
 
 #include "layBitmapsToImage.h"
 
@@ -131,6 +131,137 @@ std::string ImageCacheEntry::to_string () const
 
 // ----------------------------------------------------------------------------
 
+static void 
+blowup (const QImage &src, QImage &dest, unsigned int os)
+{
+  unsigned int ymax = src.height ();
+  unsigned int xmax = src.width ();
+
+  for (unsigned int y = 0; y < ymax; ++y) {
+    for (unsigned int i = 0; i < os; ++i) {
+      const uint32_t *psrc = (const uint32_t *) src.scanLine (y);
+      uint32_t *pdest = (uint32_t *) dest.scanLine (y * os + i);
+      for (unsigned int x = 0; x < xmax; ++x) {
+        for (unsigned int j = 0; j < os; ++j) {
+          *pdest++ = *psrc;
+        }
+        ++psrc;
+      }
+    }
+  }
+}
+
+static void 
+subsample (const QImage &src, QImage &dest, unsigned int os, double g)
+{
+  //  TODO: this is probably not compatible with the endianess of SPARC ..
+  
+  //  LUT's for combining the RGB channels
+
+  //  forward transformation table
+  unsigned short lut1[256];
+  for (unsigned int i = 0; i < 256; ++i) {
+    double f = (65536 / (os * os)) - 1;
+    lut1[i] = (unsigned short)std::min (f, std::max (0.0, floor (0.5 + pow (i / 255.0, g) * f)));
+  } 
+
+  //  backward transformation table
+  unsigned char lut2[65536];
+  for (unsigned int i = 0; i < 65536; ++i) {
+    double f = os * os * ((65536 / (os * os)) - 1);
+    lut2[i] = (unsigned char)std::min (255.0, std::max (0.0, floor (0.5 + pow (i / f, 1.0 / g) * 255.0)));
+  } 
+
+  //  LUT's for alpha channel
+
+  //  forward transformation table
+  unsigned short luta1[256];
+  for (unsigned int i = 0; i < 256; ++i) {
+    double f = (65536 / (os * os)) - 1;
+    luta1[i] = (unsigned short)std::min (f, std::max (0.0, floor (0.5 + (i / 255.0) * f)));
+  }
+
+  //  backward transformation table
+  unsigned char luta2[65536];
+  for (unsigned int i = 0; i < 65536; ++i) {
+    double f = os * os * ((65536 / (os * os)) - 1);
+    luta2[i] = (unsigned char)std::min (255.0, std::max (0.0, floor (0.5 + (i / f) * 255.0)));
+  }
+
+  unsigned int ymax = dest.height ();
+  unsigned int xmax = dest.width ();
+
+  unsigned short *buffer = new unsigned short[xmax * 4];
+
+  for (unsigned int y = 0; y < ymax; ++y) {
+
+    {
+
+      const unsigned char *psrc = src.scanLine (y * os);
+      unsigned short *pdest = buffer;
+
+      for (unsigned int x = 0; x < xmax; ++x) {
+
+        pdest[0] = lut1[psrc[0]];
+        pdest[1] = lut1[psrc[1]];
+        pdest[2] = lut1[psrc[2]];
+        pdest[3] = luta1[psrc[3]];
+        psrc += 4;
+
+        for (unsigned int j = os; j > 1; j--) {
+          pdest[0] += lut1[psrc[0]];
+          pdest[1] += lut1[psrc[1]];
+          pdest[2] += lut1[psrc[2]];
+          pdest[3] += luta1[psrc[3]];
+          psrc += 4;
+        }
+
+        pdest += 4;
+
+      }
+
+    }
+
+    for (unsigned int i = 1; i < os; ++i) {
+
+      const unsigned char *psrc = src.scanLine (y * os + i);
+      unsigned short *pdest = buffer;
+
+      for (unsigned int x = 0; x < xmax; ++x) {
+
+        for (unsigned int j = os; j > 0; j--) {
+          pdest[0] += lut1[psrc[0]];
+          pdest[1] += lut1[psrc[1]];
+          pdest[2] += lut1[psrc[2]];
+          pdest[3] += luta1[psrc[3]];
+          psrc += 4;
+        }
+
+        pdest += 4;
+
+      }
+
+    }
+
+    {
+
+      unsigned char *pdest = dest.scanLine (y);
+      const unsigned short *psrc = buffer;
+
+      for (unsigned int x = 0; x < xmax; ++x) {
+        *pdest++ = lut2[*psrc++];
+        *pdest++ = lut2[*psrc++];
+        *pdest++ = lut2[*psrc++];
+        *pdest++ = luta2[*psrc++];
+      }
+
+    }
+
+  }
+
+  delete[] buffer;
+}
+
 void 
 invert (unsigned char *data, unsigned int width, unsigned int height)
 {
@@ -143,24 +274,25 @@ invert (unsigned char *data, unsigned int width, unsigned int height)
   }
 }
 
-LayoutCanvas::LayoutCanvas (lay::LayoutViewBase *view)
-  : lay::ViewObjectUI (),
+LayoutCanvas::LayoutCanvas (QWidget *parent, lay::LayoutView *view, const char *name)
+  : lay::ViewObjectWidget (parent, name), 
     mp_view (view),
-    mp_image (0), mp_image_bg (0),
-    mp_image_fg (0),
+    mp_image (0), mp_image_bg (0), mp_pixmap (0), 
     m_background (0), m_foreground (0), m_active (0),
     m_oversampling (1),
-    m_hrm (false),
-    m_srm (false),
+    m_dpr (1),
     m_need_redraw (false),
     m_redraw_clearing (false),
     m_redraw_force_update (true),
     m_update_image (true),
-    m_drawing_finished (false),
     m_do_update_image_dm (this, &LayoutCanvas::do_update_image),
     m_do_end_of_drawing_dm (this, &LayoutCanvas::do_end_of_drawing),
     m_image_cache_size (1)
 {
+#if QT_VERSION > 0x050000
+  m_dpr = devicePixelRatio ();
+#endif
+
   //  The gamma value used for subsampling: something between 1.8 and 2.2.
   m_gamma = 2.0;
 
@@ -170,8 +302,11 @@ LayoutCanvas::LayoutCanvas (lay::LayoutViewBase *view)
 
   mp_redraw_thread = new lay::RedrawThread (this, view);
 
-  tl::Color bg (0xffffffff), fg (0xff000000), active (0xffc0c0c0);
-  set_colors (bg, fg, active);
+  setBackgroundRole (QPalette::NoRole);
+  set_colors (palette ().color (QPalette::Normal, QPalette::Background),
+              palette ().color (QPalette::Normal, QPalette::Text),
+              palette ().color (QPalette::Normal, QPalette::Mid));
+  setAttribute (Qt::WA_NoSystemBackground);
 }
 
 LayoutCanvas::~LayoutCanvas ()
@@ -187,9 +322,9 @@ LayoutCanvas::~LayoutCanvas ()
     delete mp_image_bg;
     mp_image_bg = 0;
   }
-  if (mp_image_fg) {
-    delete mp_image_fg;
-    mp_image_fg = 0;
+  if (mp_pixmap) {
+    delete mp_pixmap;
+    mp_pixmap = 0;
   }
   if (mp_redraw_thread) {
     delete mp_redraw_thread;
@@ -199,64 +334,28 @@ LayoutCanvas::~LayoutCanvas ()
   clear_fg_bitmaps ();
 }
 
-double
-LayoutCanvas::resolution () const
-{
-  return (m_srm ? 1.0 : 1.0 / m_oversampling) * (m_hrm ? 1.0 : 1.0 / dpr ());
-}
-
-double
-LayoutCanvas::font_resolution () const
-{
-  //  NOTE: for font resolution we do not include the subresolution mode - otherwise
-  //  the labels will become very hard to read.
-  return (1.0 / m_oversampling) * (m_hrm ? 1.0 : 1.0 / dpr ());
-}
-
-#if defined(HAVE_QT)
-void
-LayoutCanvas::init_ui (QWidget *parent)
-{
-  lay::ViewObjectUI::init_ui (parent);
-
-  if (widget ()) {
-
-    widget ()->setObjectName (QString::fromUtf8 ("canvas"));
-    widget ()->setBackgroundRole (QPalette::NoRole);
-
-    tl::Color bg = tl::Color (widget ()->palette ().color (QPalette::Normal, QPalette::Window).rgb ());
-    tl::Color fg = tl::Color (widget ()->palette ().color (QPalette::Normal, QPalette::Text).rgb ());
-    tl::Color active = tl::Color (widget ()->palette ().color (QPalette::Normal, QPalette::Mid).rgb ());
-    set_colors (bg, fg, active);
-
-    widget ()->setAttribute (Qt::WA_NoSystemBackground);
-
-  }
-}
-#endif
-
 void
 LayoutCanvas::key_event (unsigned int key, unsigned int buttons)
 {
   if (! (buttons & lay::ShiftButton)) {
-    if (int (key) == lay::KeyDown) {
-      down_arrow_key_pressed ();
-    } else if (int (key) == lay::KeyUp) {
-      up_arrow_key_pressed ();
-    } else if (int (key) == lay::KeyLeft) {
-      left_arrow_key_pressed ();
-    } else if (int (key) == lay::KeyRight) {
-      right_arrow_key_pressed ();
+    if (int (key) == Qt::Key_Down) {
+      emit down_arrow_key_pressed ();
+    } else if (int (key) == Qt::Key_Up) {
+      emit up_arrow_key_pressed ();
+    } else if (int (key) == Qt::Key_Left) {
+      emit left_arrow_key_pressed ();
+    } else if (int (key) == Qt::Key_Right) {
+      emit right_arrow_key_pressed ();
     }
   } else {
-    if (int (key) == lay::KeyDown) {
-      down_arrow_key_pressed_with_shift ();
-    } else if (int (key) == lay::KeyUp) {
-      up_arrow_key_pressed_with_shift ();
-    } else if (int (key) == lay::KeyLeft) {
-      left_arrow_key_pressed_with_shift ();
-    } else if (int (key) == lay::KeyRight) {
-      right_arrow_key_pressed_with_shift ();
+    if (int (key) == Qt::Key_Down) {
+      emit down_arrow_key_pressed_with_shift ();
+    } else if (int (key) == Qt::Key_Up) {
+      emit up_arrow_key_pressed_with_shift ();
+    } else if (int (key) == Qt::Key_Left) {
+      emit left_arrow_key_pressed_with_shift ();
+    } else if (int (key) == Qt::Key_Right) {
+      emit right_arrow_key_pressed_with_shift ();
     }
   }
 }
@@ -278,38 +377,8 @@ LayoutCanvas::set_oversampling (unsigned int os)
   }
 }
 
-void
-LayoutCanvas::set_highres_mode (bool hrm)
-{
-  if (hrm != m_hrm) {
-    m_image_cache.clear ();
-    m_hrm = hrm;
-    do_redraw_all ();
-  }
-}
-
-void
-LayoutCanvas::set_subres_mode (bool srm)
-{
-  if (srm != m_srm) {
-    m_image_cache.clear ();
-    m_srm = srm;
-    do_redraw_all ();
-  }
-}
-
-double
-LayoutCanvas::dpr () const
-{
-#if defined(HAVE_QT) && QT_VERSION >= 0x50000
-  return widget () ? widget ()->devicePixelRatio () : 1.0;
-#else
-  return 1.0;
-#endif
-}
-
 void 
-LayoutCanvas::set_colors (tl::Color background, tl::Color foreground, tl::Color active)
+LayoutCanvas::set_colors (QColor background, QColor foreground, QColor active)
 {
   m_background = background.rgb ();
   m_foreground = foreground.rgb ();
@@ -329,7 +398,6 @@ LayoutCanvas::set_view_ops (std::vector <lay::ViewOp> &view_ops)
 {
   if (view_ops != m_view_ops) {
     m_view_ops.swap (view_ops);
-    m_scaled_view_ops.clear ();
     update_image ();
   }
 }
@@ -352,33 +420,12 @@ LayoutCanvas::set_line_styles (const lay::LineStyles &s)
   }
 }
 
-const std::vector <lay::ViewOp> &
-LayoutCanvas::scaled_view_ops (unsigned int lw)
-{
-  if (lw <= 1) {
-    return m_view_ops;
-  }
-
-  auto cached = m_scaled_view_ops.find (lw);
-  if (cached != m_scaled_view_ops.end ()) {
-    return cached->second;
-  }
-
-  std::vector<lay::ViewOp> &scaled_view_ops = m_scaled_view_ops [lw];
-  scaled_view_ops = m_view_ops;
-  for (std::vector<lay::ViewOp>::iterator vo = scaled_view_ops.begin (); vo != scaled_view_ops.end (); ++vo) {
-    vo->width (std::min (31, vo->width () * int (lw)));
-  }
-
-  return scaled_view_ops;
-}
-
 void
 LayoutCanvas::prepare_drawing ()
 {
   if (m_need_redraw) {
 
-    BitmapViewObjectCanvas::set_size (m_viewport_l.width (), m_viewport_l.height (), resolution (), font_resolution ());
+    BitmapViewObjectCanvas::set_size (m_viewport_l.width (), m_viewport_l.height (), 1.0 / double (m_oversampling * m_dpr));
 
     if (! mp_image ||
         (unsigned int) mp_image->width () != m_viewport_l.width () || 
@@ -386,10 +433,13 @@ LayoutCanvas::prepare_drawing ()
       if (mp_image) {
         delete mp_image;
       }
-      mp_image = new tl::PixelBuffer (m_viewport_l.width (), m_viewport_l.height ());
-      if (mp_image_fg) {
-        delete mp_image_fg;
-        mp_image_fg = 0;
+      mp_image = new QImage (m_viewport_l.width (), m_viewport_l.height (), QImage::Format_RGB32);
+#if QT_VERSION > 0x050000
+      mp_image->setDevicePixelRatio (double (m_dpr));
+#endif
+      if (mp_pixmap) {
+        delete mp_pixmap;
+        mp_pixmap = 0;
       }
     }
 
@@ -414,7 +464,7 @@ LayoutCanvas::prepare_drawing ()
         ++c;
       }
 
-      mp_redraw_thread->commit (m_layers, m_viewport_l, resolution (), font_resolution ());
+      mp_redraw_thread->commit (m_layers, m_viewport_l, 1.0 / double (m_oversampling * m_dpr));
 
       if (tl::verbosity () >= 20) {
         tl::info << "Restored image from cache";
@@ -464,7 +514,7 @@ LayoutCanvas::prepare_drawing ()
       }
 
       if (m_redraw_clearing) {
-        mp_redraw_thread->start (mp_view->synchronous () ? 0 : mp_view->drawing_workers (), m_layers, m_viewport_l, resolution (), font_resolution (), m_redraw_force_update);
+        mp_redraw_thread->start (mp_view->synchronous () ? 0 : mp_view->drawing_workers (), m_layers, m_viewport_l, 1.0 / double (m_oversampling * m_dpr), m_redraw_force_update);
       } else {
         mp_redraw_thread->restart (m_need_redraw_layer);
       }
@@ -496,15 +546,14 @@ LayoutCanvas::update_image ()
 void
 LayoutCanvas::free_resources ()
 {
-  if (mp_image_fg) {
-    delete mp_image_fg;
-    mp_image_fg = 0;
+  if (mp_pixmap) {
+    delete mp_pixmap;
+    mp_pixmap = 0;
   }
 }
 
-#if defined(HAVE_QT)
 void
-LayoutCanvas::paint_event ()
+LayoutCanvas::paintEvent (QPaintEvent *)
 {
   //  this is the update image request
   tl::SelfTimer timer_info (tl::verbosity () >= 41, tl::to_string (QObject::tr ("PaintEvent")));
@@ -527,7 +576,7 @@ LayoutCanvas::paint_event ()
         if (mp_image_bg) {
           delete mp_image_bg;
         }
-        mp_image_bg = new tl::PixelBuffer (*mp_image);
+        mp_image_bg = new QImage (*mp_image);
 
       } else {
         //  else reuse the saved image
@@ -535,11 +584,11 @@ LayoutCanvas::paint_event ()
       }
 
       //  render the main bitmaps
-      to_image (scaled_view_ops (1.0 / resolution ()), dither_pattern (), line_styles (), 1.0 / resolution (), background_color (), foreground_color (), active_color (), this, *mp_image, m_viewport_l.width (), m_viewport_l.height ());
+      to_image (m_view_ops, dither_pattern (), line_styles (), background_color (), foreground_color (), active_color (), this, *mp_image, m_viewport_l.width (), m_viewport_l.height ());
 
-      if (mp_image_fg) {
-        delete mp_image_fg;
-        mp_image_fg = 0;
+      if (mp_pixmap) {
+        delete mp_pixmap;
+        mp_pixmap = 0;
       }
 
       m_update_image = false;
@@ -549,44 +598,51 @@ LayoutCanvas::paint_event ()
     //  create a base pixmap consisting of the layout with background
     //  and static foreground objects
 
-    if (! mp_image_fg || needs_update_static () ||
-        int (mp_image->width ()) != (int) mp_image_fg->width () * int (m_oversampling) ||
-        int (mp_image->height ()) != (int) mp_image_fg->height () * int (m_oversampling)) {
+    if (! mp_pixmap || needs_update_static () || 
+        mp_image->size ().width () != mp_pixmap->size ().width () * int (m_oversampling) ||
+        mp_image->size ().height () != mp_pixmap->size ().height () * int (m_oversampling)) {
 
-      if (mp_image_fg) {
-        delete mp_image_fg;
+      if (mp_pixmap) {
+        delete mp_pixmap;
       } 
 
       clear_fg_bitmaps ();
       do_render (m_viewport_l, *this, true);
 
-      mp_image_fg = new tl::PixelBuffer ();
+      mp_pixmap = new QPixmap ();
 
       if (fg_bitmaps () > 0) {
 
-        tl::PixelBuffer full_image (*mp_image);
-        bitmaps_to_image (fg_view_op_vector (), fg_bitmap_vector (), dither_pattern (), line_styles (), 1.0 / resolution (), &full_image, m_viewport_l.width (), m_viewport_l.height (), false, &m_mutex);
+        QImage full_image (*mp_image);
+#if QT_VERSION > 0x050000
+        full_image.setDevicePixelRatio (double (m_dpr));
+#endif
+        bitmaps_to_image (fg_view_op_vector (), fg_bitmap_vector (), dither_pattern (), line_styles (), &full_image, m_viewport_l.width (), m_viewport_l.height (), false, &m_mutex);
 
         //  render the foreground parts ..
         if (m_oversampling == 1) {
-          *mp_image_fg = full_image;
+          *mp_pixmap = QPixmap::fromImage (full_image); // Qt 4.6.0 workaround
         } else {
-          tl::PixelBuffer subsampled_image (m_viewport.width (), m_viewport.height ());
-          subsampled_image.set_transparent (mp_image->transparent ());
-          full_image.subsample (subsampled_image, m_oversampling, m_gamma);
-          *mp_image_fg = subsampled_image;
+          QImage subsampled_image (m_viewport.width (), m_viewport.height (), mp_image->format ());
+#if QT_VERSION > 0x050000
+          subsampled_image.setDevicePixelRatio (double (m_dpr));
+#endif
+          subsample (full_image, subsampled_image, m_oversampling, m_gamma);
+          *mp_pixmap = QPixmap::fromImage (subsampled_image); // Qt 4.6.0 workaround
         }
 
       } else if (m_oversampling == 1) {
 
-        *mp_image_fg = *mp_image;
+        *mp_pixmap = QPixmap::fromImage (*mp_image);
 
       } else {
 
-        tl::PixelBuffer subsampled_image (m_viewport.width (), m_viewport.height ());
-        subsampled_image.set_transparent (mp_image->transparent ());
-        mp_image->subsample (subsampled_image, m_oversampling, m_gamma);
-        *mp_image_fg = subsampled_image;
+        QImage subsampled_image (m_viewport.width (), m_viewport.height (), mp_image->format ());
+#if QT_VERSION > 0x050000
+        subsampled_image.setDevicePixelRatio (double (m_dpr));
+#endif
+        subsample (*mp_image, subsampled_image, m_oversampling, m_gamma);
+        *mp_pixmap = QPixmap::fromImage (subsampled_image);
 
       }
 
@@ -599,37 +655,29 @@ LayoutCanvas::paint_event ()
     do_render (m_viewport_l, *this, false);
 
     //  produce the pixmap first and then overdraw with dynamic content.
-    QPainter painter (widget ());
-    QImage img = mp_image_fg->to_image ();
-#if QT_VERSION >= 0x050000
-    img.setDevicePixelRatio (dpr ());
-#endif
-    painter.drawImage (QPoint (0, 0), img);
+    QPainter painter (this);
+    painter.drawPixmap (QPoint (0, 0), *mp_pixmap);
 
     if (fg_bitmaps () > 0) {
 
-      tl::PixelBuffer full_image (mp_image->width (), mp_image->height ());
-      full_image.set_transparent (true);
+      QImage full_image (mp_image->size ().width (), mp_image->size ().height (), QImage::Format_ARGB32);
       full_image.fill (0);
 
-      bitmaps_to_image (fg_view_op_vector (), fg_bitmap_vector (), dither_pattern (), line_styles (), 1.0 / resolution (), &full_image, m_viewport_l.width (), m_viewport_l.height (), false, &m_mutex);
+#if QT_VERSION > 0x050000
+      full_image.setDevicePixelRatio (double (m_dpr));
+#endif
+      bitmaps_to_image (fg_view_op_vector (), fg_bitmap_vector (), dither_pattern (), line_styles (), &full_image, m_viewport_l.width (), m_viewport_l.height (), false, &m_mutex);
 
       //  render the foreground parts ..
       if (m_oversampling == 1) {
-        QImage img = full_image.to_image ();
-#if QT_VERSION >= 0x050000
-        img.setDevicePixelRatio (dpr ());
-#endif
-        painter.drawImage (QPoint (0, 0), img);
+        painter.drawPixmap (QPoint (0, 0), QPixmap::fromImage (full_image));
       } else {
-        tl::PixelBuffer subsampled_image (m_viewport.width (), m_viewport.height ());
-        subsampled_image.set_transparent (true);
-        full_image.subsample (subsampled_image, m_oversampling, m_gamma);
-        QImage img = subsampled_image.to_image ();
-#if QT_VERSION >= 0x050000
-        img.setDevicePixelRatio (dpr ());
+        QImage subsampled_image (m_viewport.width (), m_viewport.height (), QImage::Format_ARGB32);
+#if QT_VERSION > 0x050000
+        subsampled_image.setDevicePixelRatio (double (m_dpr));
 #endif
-        painter.drawImage (QPoint (0, 0), img);
+        subsample (full_image, subsampled_image, m_oversampling, m_gamma);
+        painter.drawPixmap (QPoint (0, 0), QPixmap::fromImage (subsampled_image));
       }
 
     }
@@ -644,22 +692,20 @@ LayoutCanvas::paint_event ()
   }
 
 }
-#endif
 
 class DetachedViewObjectCanvas
   : public BitmapViewObjectCanvas
 {
 public:
-  DetachedViewObjectCanvas (tl::Color bg, tl::Color fg, tl::Color ac, unsigned int width_l, unsigned int height_l, double resolution, double font_resolution, tl::PixelBuffer *img)
-    : BitmapViewObjectCanvas (width_l, height_l, resolution, font_resolution),
+  DetachedViewObjectCanvas (QColor bg, QColor fg, QColor ac, unsigned int width_l, unsigned int height_l, double resolution, QImage *img)
+    : BitmapViewObjectCanvas (width_l, height_l, resolution),
       m_bg (bg), m_fg (fg), m_ac (ac), mp_image (img)
   {
     //  TODO: Good choice?
     m_gamma = 2.0;
 
-    if (img->width () != width_l || img->height () != height_l) {
-      mp_image_l = new tl::PixelBuffer (width_l, height_l);
-      mp_image_l->set_transparent (img->transparent ());
+    if (img->width () != int (width_l) || img->height () != int (height_l)) {
+      mp_image_l = new QImage (width_l, height_l, img->format ());
       mp_image_l->fill (bg.rgb ());
     } else {
       mp_image_l = 0;
@@ -676,35 +722,35 @@ public:
     }
   }
 
-  tl::Color background_color () const
+  QColor background_color () const
   {
     return m_bg;
   }
 
-  tl::Color foreground_color () const
+  QColor foreground_color () const
   {
     return m_fg;
   }
 
-  tl::Color active_color () const
+  QColor active_color () const
   {
     return m_ac;
   }
 
-  virtual tl::PixelBuffer *bg_image ()
+  virtual QImage &bg_image () 
   {
-    return mp_image_l ? mp_image_l : mp_image;
+    return mp_image_l ? *mp_image_l : *mp_image;
   }
 
   void transfer_to_image (const lay::DitherPattern &dp, const lay::LineStyles &ls, unsigned int width, unsigned int height)
   {
     if (mp_image_l) {
       unsigned int os = mp_image_l->width () / width;
-      mp_image->blowup (*mp_image_l, os);
-      bitmaps_to_image (fg_view_op_vector (), fg_bitmap_vector (), dp, ls, 1.0 / resolution (), mp_image_l, mp_image_l->width (), mp_image_l->height (), false, 0);
-      mp_image_l->subsample (*mp_image, os, m_gamma);
+      blowup (*mp_image, *mp_image_l, os);
+      bitmaps_to_image (fg_view_op_vector (), fg_bitmap_vector (), dp, ls, mp_image_l, mp_image_l->width (), mp_image_l->height (), false, 0);
+      subsample (*mp_image_l, *mp_image, os, m_gamma);
     } else {
-      bitmaps_to_image (fg_view_op_vector (), fg_bitmap_vector (), dp, ls, 1.0 / resolution (), mp_image, width, height, false, 0);
+      bitmaps_to_image (fg_view_op_vector (), fg_bitmap_vector (), dp, ls, mp_image, width, height, false, 0);
     }
     clear_fg_bitmaps ();
   }
@@ -713,103 +759,63 @@ public:
   {
     if (mp_image_l && mp_image->width () > 0) {
       unsigned int os = mp_image_l->width () / mp_image->width ();
-      mp_image_l->subsample (*mp_image, os, m_gamma);
+      subsample (*mp_image_l, *mp_image, os, m_gamma);
     }
   }
 
 private:
-  tl::Color m_bg, m_fg, m_ac;
-  tl::PixelBuffer *mp_image;
-  tl::PixelBuffer *mp_image_l;
+  QColor m_bg, m_fg, m_ac;
+  QImage *mp_image;
+  QImage *mp_image_l;
   double m_gamma;
 };
 
-/**
- *  @brief A simplistic monochrome canvas
- *
- *  NOTE: this canvas does not support background painting (currently the background objects
- *  do not support monochrome background painting anyway).
- *  Nor does it support subsampling (that would mean grayscale).
- */
-class DetachedViewObjectCanvasMono
-  : public BitmapViewObjectCanvas
-{
-public:
-  DetachedViewObjectCanvasMono (bool bg, bool fg, bool ac, unsigned int width, unsigned int height)
-    : BitmapViewObjectCanvas (width, height, 1.0, 1.0),
-      m_bg (bg), m_fg (fg), m_ac (ac)
-  {
-    //  .. nothing yet ..
-  }
-
-  ~DetachedViewObjectCanvasMono ()
-  {
-    clear_fg_bitmaps ();
-  }
-
-  tl::Color background_color () const
-  {
-    return m_bg ? 0xffffffff : 0;
-  }
-
-  tl::Color foreground_color () const
-  {
-    return m_fg ? 0xffffffff : 0;
-  }
-
-  tl::Color active_color () const
-  {
-    return m_ac ? 0xffffffff : 0;
-  }
-
-private:
-  bool m_bg, m_fg, m_ac;
-};
-
-tl::PixelBuffer
+QImage 
 LayoutCanvas::image (unsigned int width, unsigned int height) 
 {
-  return image_with_options (width, height, -1, -1, -1.0, -1.0, tl::Color (), tl::Color (), tl::Color (), db::DBox ());
+  return image_with_options (width, height, -1, -1, -1.0, QColor (), QColor (), QColor (), db::DBox (), false); 
 }
 
-tl::PixelBuffer
-LayoutCanvas::image_with_options (unsigned int width, unsigned int height, int linewidth, int oversampling, double resolution, double font_resolution, tl::Color background, tl::Color foreground, tl::Color active, const db::DBox &target_box)
+QImage 
+LayoutCanvas::image_with_options (unsigned int width, unsigned int height, int linewidth, int oversampling, double resolution, QColor background, QColor foreground, QColor active, const db::DBox &target_box, bool is_mono) 
 {
   if (oversampling <= 0) {
     oversampling = m_oversampling;
   }
+  if (linewidth <= 0) {
+    linewidth = 1;
+  }
   if (resolution <= 0.0) {
     resolution = 1.0 / oversampling;
   }
-  if (font_resolution <= 0.0) {
-    font_resolution = resolution;
-  }
-  if (linewidth <= 0) {
-    linewidth = 1.0 / resolution + 0.5;
-  }
-  if (! background.is_valid ()) {
+  if (background == QColor ()) {
     background = background_color ();
   }
-  if (! foreground.is_valid ()) {
+  if (foreground == QColor ()) {
     foreground = foreground_color ();
   }
-  if (! active.is_valid ()) {
+  if (active == QColor ()) {
     active = active_color ();
   }
 
   //  TODO: for other architectures MonoLSB may not be the right format
-  tl::PixelBuffer img (width, height);
+  QImage img (width, height, is_mono ? QImage::Format_MonoLSB : QImage::Format_RGB32);
 
   //  this may happen for BIG images:
-  if (img.width () != width || img.height () != height) {
-    throw tl::Exception (tl::to_string (tr ("Unable to create an image with size %dx%d pixels")), width, height);
+  if (img.width () != int (width) || img.height () != int (height)) {
+    throw tl::Exception (tl::to_string (QObject::tr ("Unable to create an image with size %dx%d pixels")), width, height);
   }
 
-  img.fill (background.rgb ());
+  if (is_mono) {
+    //  in mono mode the background's color is white for green > 128 and black otherwise
+    img.fill ((background.rgb () & 0x8000) >> 15);
+  } else {
+    img.fill (background.rgb ());
+  }
 
   //  provide canvas objects for the layout bitmaps and the foreground/background objects
   BitmapRedrawThreadCanvas rd_canvas;
-  DetachedViewObjectCanvas vo_canvas (background, foreground, active, width * oversampling, height * oversampling, resolution, font_resolution, &img);
+  DetachedViewObjectCanvas vo_canvas (background, foreground, active, width * oversampling, height * oversampling, resolution, &img);
 
   //  compute the new viewport 
   db::DBox tb (target_box);
@@ -819,84 +825,64 @@ LayoutCanvas::image_with_options (unsigned int width, unsigned int height, int l
   Viewport vp (width * oversampling, height * oversampling, tb);
   vp.set_global_trans (m_viewport.global_trans ());
 
+  std::vector<lay::ViewOp> view_ops (m_view_ops); 
+  if (linewidth > 1) {
+    for (std::vector<lay::ViewOp>::iterator vo = view_ops.begin (); vo != view_ops.end (); ++vo) {
+      vo->width (std::min (31, vo->width () * linewidth));
+    }
+  }
+
   lay::RedrawThread redraw_thread (&rd_canvas, mp_view);
 
   //  render the layout
-  redraw_thread.start (0 /*synchronous*/, m_layers, vp, resolution, font_resolution, true);
+  redraw_thread.start (0 /*synchroneous*/, m_layers, vp, resolution, true);
   redraw_thread.stop (); // safety
 
   //  paint the background objects. It uses "img" to paint on.
-  do_render_bg (vp, vo_canvas);
+  if (! is_mono) {
 
-  //  paint the layout bitmaps
-  rd_canvas.to_image (scaled_view_ops (linewidth), dither_pattern (), line_styles (), 1.0 / resolution, background, foreground, active, this, *vo_canvas.bg_image (), vp.width (), vp.height ());
+    do_render_bg (vp, vo_canvas);
 
-  //  subsample current image to provide the background for the foreground objects
-  vo_canvas.make_background ();
+    //  paint the layout bitmaps
+    rd_canvas.to_image (view_ops, dither_pattern (), line_styles (), background, foreground, active, this, vo_canvas.bg_image (), vp.width (), vp.height ());
 
-  //  render the foreground parts ..
-  do_render (vp, vo_canvas, true);
-  vo_canvas.transfer_to_image (dither_pattern (), line_styles (), width, height);
+    //  subsample current image to provide the background for the foreground objects
+    vo_canvas.make_background ();
 
-  do_render (vp, vo_canvas, false);
-  vo_canvas.transfer_to_image (dither_pattern (), line_styles (), width, height);
+    //  render the foreground parts ..
+    do_render (vp, vo_canvas, true);
+    vo_canvas.transfer_to_image (dither_pattern (), line_styles (), width, height);
+
+    do_render (vp, vo_canvas, false);
+    vo_canvas.transfer_to_image (dither_pattern (), line_styles (), width, height);
+
+  } else {
+
+    //  TODO: Painting of background objects???
+    //  paint the layout bitmaps
+    rd_canvas.to_image (view_ops, dither_pattern (), line_styles (), background, foreground, active, this, vo_canvas.bg_image (), vp.width (), vp.height ());
+
+  }
 
   return img;
 }
 
-tl::BitmapBuffer
-LayoutCanvas::image_with_options_mono (unsigned int width, unsigned int height, int linewidth, tl::Color background_c, tl::Color foreground_c, tl::Color active_c, const db::DBox &target_box)
-{
-  if (linewidth <= 0) {
-    linewidth = 1;
-  }
-
-  bool background = background_c.is_valid () ? background_c.to_mono () : background_color ().to_mono ();
-  bool foreground = foreground_c.is_valid () ? foreground_c.to_mono () : foreground_color ().to_mono ();
-  bool active = active_c.is_valid () ? active_c.to_mono () : active_color ().to_mono ();
-
-  //  provide canvas objects for the layout bitmaps and the foreground/background objects
-  BitmapRedrawThreadCanvas rd_canvas;
-  DetachedViewObjectCanvasMono vo_canvas (background, foreground, active, width, height);
-
-  //  compute the new viewport
-  db::DBox tb (target_box);
-  if (tb.empty ()) {
-    tb = m_viewport.target_box ();
-  }
-  Viewport vp (width, height, tb);
-  vp.set_global_trans (m_viewport.global_trans ());
-
-  lay::RedrawThread redraw_thread (&rd_canvas, mp_view);
-
-  //  render the layout
-  redraw_thread.start (0 /*synchronous*/, m_layers, vp, 1.0, 1.0, true);
-  redraw_thread.stop (); // safety
-
-  tl::BitmapBuffer img (width, height);
-  img.fill (background);
-
-  rd_canvas.to_image_mono (scaled_view_ops (linewidth), dither_pattern (), line_styles (), linewidth, background, foreground, active, this, img, vp.width (), vp.height ());
-
-  return img;
-}
-
-tl::PixelBuffer
+QImage 
 LayoutCanvas::screenshot () 
 {
   //  if required, start the redraw thread ..
   prepare_drawing ();
 
-  tl::PixelBuffer img (m_viewport.width (), m_viewport.height ());
+  QImage img (m_viewport.width (), m_viewport.height (), QImage::Format_RGB32);
   img.fill (m_background);
 
-  DetachedViewObjectCanvas vo_canvas (background_color (), foreground_color (), active_color (), m_viewport_l.width (), m_viewport_l.height (), resolution (), font_resolution (), &img);
+  DetachedViewObjectCanvas vo_canvas (background_color (), foreground_color (), active_color (), m_viewport_l.width (), m_viewport_l.height (), 1.0 / double (m_oversampling * m_dpr), &img);
 
   //  and paint the background objects. It uses "img" to paint on.
   do_render_bg (m_viewport_l, vo_canvas);
 
   //  paint the layout bitmaps
-  to_image (scaled_view_ops (1.0 / resolution ()), dither_pattern (), line_styles (), 1.0 / resolution (), background_color (), foreground_color (), active_color (), this, *vo_canvas.bg_image (), m_viewport_l.width (), m_viewport_l.height ());
+  to_image (m_view_ops, dither_pattern (), line_styles (), background_color (), foreground_color (), active_color (), this, vo_canvas.bg_image (), m_viewport_l.width (), m_viewport_l.height ());
 
   //  subsample current image to provide the background for the foreground objects
   vo_canvas.make_background ();
@@ -911,33 +897,24 @@ LayoutCanvas::screenshot ()
   return img;
 }
 
-void
-LayoutCanvas::resize_event (unsigned int width, unsigned int height)
+void 
+LayoutCanvas::resizeEvent (QResizeEvent *)
 {
-  unsigned int w = width * dpr () + 0.5, h = height * dpr () + 0.5;
-  unsigned int wl = width * m_oversampling * dpr () + 0.5, hl = height * m_oversampling * dpr () + 0.5;
+  //  clear the image cache
+  m_image_cache.clear ();
 
-  if (m_viewport.width () != w || m_viewport.height () != h ||
-      m_viewport_l.width () != wl || m_viewport_l.height () != hl) {
-
-    //  clear the image cache
-    m_image_cache.clear ();
-
-    //  set the viewport to the new size
-    m_viewport.set_size (width * dpr () + 0.5, height * dpr () + 0.5);
-    m_viewport_l.set_size (width * m_oversampling * dpr () + 0.5, height * m_oversampling * dpr () + 0.5);
-
-    mouse_event_trans (db::DCplxTrans (1.0 / dpr ()) * m_viewport.trans ());
-    do_redraw_all (true);
-    viewport_changed_event ();
-
-  }
+  //  set the viewport to the new size
+  m_viewport.set_size (width () * m_dpr, height () * m_dpr);
+  m_viewport_l.set_size (width () * m_oversampling * m_dpr, height () * m_oversampling * m_dpr);
+  mouse_event_trans (db::DCplxTrans (1.0 / double (m_dpr)) * m_viewport.trans ());
+  do_redraw_all (true);
+  viewport_changed_event ();
 }
 
 void 
 LayoutCanvas::update_viewport ()
 {
-  mouse_event_trans (db::DCplxTrans (1.0 / dpr ()) * m_viewport.trans ());
+  mouse_event_trans (db::DCplxTrans (1.0 / double (m_dpr)) * m_viewport.trans ());
   for (service_iterator svc = begin_services (); svc != end_services (); ++svc) {
     (*svc)->update ();
   }
@@ -978,14 +955,6 @@ LayoutCanvas::zoom_trans (const db::DCplxTrans &trans)
   update_viewport ();
 }
 
-bool
-LayoutCanvas::drawing_finished ()
-{
-  bool f = m_drawing_finished;
-  m_drawing_finished = false;
-  return f;
-}
-
 void 
 LayoutCanvas::do_end_of_drawing ()
 {
@@ -1002,8 +971,6 @@ LayoutCanvas::do_end_of_drawing ()
   }
 
   set_default_cursor (lay::Cursor::none);
-
-  m_drawing_finished = true;
 }
 
 void
@@ -1012,15 +979,24 @@ LayoutCanvas::do_update_image ()
   update_image ();
 }
 
-#if defined(HAVE_QT)
-void
-LayoutCanvas::gtf_probe ()
+bool
+LayoutCanvas::event (QEvent *e) 
 {
-  if (gtf::Recorder::instance () && gtf::Recorder::instance ()->recording ()) {
-    gtf::Recorder::instance ()->probe (widget (), gtf::image_to_variant (screenshot ().to_image_copy ()));
+  if (e->type () == QEvent::MaxUser) {
+
+    //  GTF probe event
+    //  record the contents (the screenshot) as ASCII text
+    if (gtf::Recorder::instance () && gtf::Recorder::instance ()->recording ()) {
+      gtf::Recorder::instance ()->probe (this, gtf::image_to_variant (screenshot ()));
+    }
+
+    e->accept ();
+    return true;
+
+  } else {
+    return QWidget::event (e);
   }
 }
-#endif
 
 void
 LayoutCanvas::redraw_all ()

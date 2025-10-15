@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -27,11 +27,9 @@
 #include "rdbCommon.h"
 
 #include "dbTrans.h"
-#include "dbObjectWithProperties.h"
 #include "gsi.h"
 #include "tlObject.h"
 #include "tlObjectCollection.h"
-#include "tlPixelBuffer.h"
 
 #include <string>
 #include <list>
@@ -51,7 +49,6 @@ namespace tl
 namespace db
 {
   class Shape;
-  class Layout;
 }
 
 namespace rdb
@@ -72,7 +69,7 @@ class Items;
  *  An item is member of exactly one category. This can be a check for example. 
  *  A category is described by a name and a description string. An Id is provided
  *  to reference this category from actual report items.
- *  Categories can be organized hierarchically for which a category collection 
+ *  Categories can be organised hierarchically for which a category collection 
  *  is provided and member of the individual category.
  *
  *  A category can only be created by the database object, since the
@@ -414,8 +411,8 @@ public:
   }
 
   void add_category (Category *cath);
+
   void set_database (Database *database);
-  Category *category_by_raw_name (const std::string &name);
 };
 
 /**
@@ -439,8 +436,6 @@ public:
   virtual std::string to_string () const = 0;
 
   virtual std::string to_display_string () const = 0;
-
-  virtual bool is_shape () const = 0;
 
   virtual ValueBase *clone () const = 0;
 
@@ -507,9 +502,10 @@ public:
     return type_index_of<C> (); 
   }
 
-  bool compare (const ValueBase *other) const;
-
-  bool is_shape () const;
+  bool compare (const ValueBase *other) const 
+  {
+    return m_value < static_cast<const Value<C> *> (other)->m_value;
+  }
 
   std::string to_string () const;
 
@@ -529,15 +525,6 @@ private:
  */
 template <class T>
 RDB_PUBLIC_TEMPLATE ValueBase *make_value (const T &value)
-{
-  return new Value<T> (value);
-}
-
-/**
- *  @brief Type bindings
- */
-template <class T>
-RDB_PUBLIC_TEMPLATE ValueBase *make_value (const db::object_with_properties<T> &value)
 {
   return new Value<T> (value);
 }
@@ -639,7 +626,7 @@ public:
   /**
    *  @brief Convert the values collection to a string 
    */
-  std::string to_string (const Database *rdb = 0) const;
+  std::string to_string (const Database *rdb) const;
 
   /**
    *  @brief Fill the values collection from the string
@@ -685,19 +672,6 @@ public:
    *  @brief Assignment 
    */
   Values &operator= (const Values &d);
-
-  /**
-   *  @brief Compare two value sets (less operator)
-   *
-   *  This compare function will use the tag mapping provided by tag map ("this" tag id to "other" tag id).
-   *  Values with tags not listed in the tag map will not be compared.
-   *  Untagged values (tag_id 0) will be compared always.
-   *
-   *  "rev_tag_map" needs to be the reverse of "tag_map".
-   *
-   *  The order of the values matters.
-   */
-  bool compare (const Values &other, const std::map<id_type, id_type> &tag_map, const std::map<id_type, id_type> &rev_tag_map) const;
 
   /**
    *  @brief The const iterator (begin)
@@ -757,14 +731,6 @@ public:
   void swap (Values &other)
   {
     m_values.swap (other.m_values);
-  }
-
-  /**
-   *  @brief Clears the values
-   */
-  void clear ()
-  {
-    m_values.clear ();
   }
 
   /**
@@ -893,11 +859,9 @@ public:
    *  @brief Add a value in a generic way
    */
   template <class V>
-  ValueBase *add_value (const V &v, id_type tag_id = 0)
+  void add_value (const V &v)
   {
-    ValueBase *value = new Value<V> (v);
-    values ().add (value, tag_id);
-    return value;
+    values ().add (new Value<V> (v));
   }
 
   /**
@@ -977,69 +941,35 @@ public:
 
 #if defined(HAVE_QT)
   /**
-   *  @brief Gets the image object attached to this item
+   *  @brief Get the image object attached to this item 
    *
-   *  @return The image object or an empty image if no image is attached
+   *  @return The image object or 0 if no object is attached
    */
-  QImage image () const;
+  const QImage *image () const
+  {
+    return mp_image.get ();
+  }
 
   /**
-   *  @brief Set the image for this item
-   */
-  void set_image (const QImage &image);
-#endif
-
-#if defined(HAVE_PNG)
-  /**
-   *  @brief Gets the image as a tl::PixelBuffer object
-   */
-  tl::PixelBuffer image_pixels () const;
-
-  /**
-   *  @brief Sets the image from a tl::PixelBuffer object
-   */
-  void set_image (const tl::PixelBuffer &image);
-#endif
-
-  /**
-   *  @brief Gets a value indicating whether the item has an image
-   */
-  bool has_image () const;
-
-  /**
-   *  @brief Gets the image as a string (PNG, base64 coded)
+   *  @brief Set an image for this item
    *
-   *  Note: if neither PNG support for Qt are compiled in, this string will be empty
+   *  The image object will become owned by the item
+   */
+  void set_image (QImage *image);
+
+  /**
+   *  @brief Get an image as a string (base64 coded)
    */
   std::string image_str () const;
 
   /**
-   *  @brief Gets the image from a string (PNG, base64 coded)
+   *  @brief Get an image from a string (base64 coded)
    *
    *  If the image string is empty, the image will be cleared.
    *  If the image string is not valid, the image will also be cleared.
    */
   void set_image_str (const std::string &s);
-
-  /**
-   *  @brief Gets the item comment
-   *
-   *  The comment string is an arbitrary string attached to the item.
-   */
-  const std::string &comment () const
-  {
-    return m_comment;
-  }
-
-  /**
-   *  @brief Sets the item comment
-   *
-   *  The comment string is an arbitrary string attached to the item.
-   */
-  void set_comment (const std::string &s)
-  {
-    m_comment = s;
-  }
+#endif
 
   /**
    *  @brief Get the database reference
@@ -1065,11 +995,12 @@ private:
   id_type m_cell_id;
   id_type m_category_id;
   size_t m_multiplicity;
-  std::string m_comment;
   bool m_visited;
   std::vector <bool> m_tag_ids;
   Database *mp_database;
-  std::string m_image_str;
+#if defined(HAVE_QT)
+  std::auto_ptr<QImage> mp_image;
+#endif
 
   Item ();
 
@@ -1490,7 +1421,7 @@ public:
    *
    *  This method is provided for persistency application only. It should not be used otherwise.
    */
-  Cell (id_type id, const std::string &name, const std::string &variant, const std::string &layout_name);
+  Cell (id_type id, const std::string &name, const std::string &variant);
 
   /**
    *  @brief Cell destructor
@@ -1516,7 +1447,7 @@ public:
   }
 
   /**
-   *  @brief Gets the cell name
+   *  @brief Get the cell name
    */
   const std::string &name () const
   {
@@ -1524,7 +1455,7 @@ public:
   }
 
   /**
-   *  @brief Sets the name string
+   *  @brief Set the name string (setter)
    *
    *  This method must not be used for items in the database to keep the database consistent.
    */
@@ -1534,7 +1465,7 @@ public:
   }
 
   /**
-   *  @brief Gets the variant id
+   *  @brief Get the variant id
    */
   const std::string &variant () const
   {
@@ -1542,31 +1473,13 @@ public:
   }
 
   /**
-   *  @brief Sets the variant string
+   *  @brief Set the variant string (setter)
    *
    *  This method must not be used for items in the database to keep the database consistent.
    */
   void set_variant (const std::string &v) 
   {
     m_variant = v;
-  }
-
-  /**
-   *  @brief Gets the layout cell name
-   */
-  const std::string &layout_name () const
-  {
-    return m_layout_name;
-  }
-
-  /**
-   *  @brief Sets the layout cell string
-   *
-   *  This method must not be used for items in the database to keep the database consistent.
-   */
-  void set_layout_name (const std::string &s)
-  {
-    m_layout_name = s;
   }
 
   /**
@@ -1646,7 +1559,6 @@ private:
   id_type m_id;
   std::string m_name;
   std::string m_variant;
-  std::string m_layout_name;
   size_t m_num_items;
   size_t m_num_items_visited;
   References m_references;
@@ -2152,14 +2064,6 @@ public:
   }
 
   /**
-   *  @brief Get the reference to the categories collection (non-const version)
-   */
-  Categories &categories_non_const ()
-  {
-    return *mp_categories;
-  }
-
-  /**
    *  @brief Import categories
    *
    *  This method is provided for persistency application only. It should not be used otherwise.
@@ -2207,31 +2111,9 @@ public:
   }
 
   /**
-   *  @brief Get the category pointer for a category name (non-const version)
-   *
-   *  This method returns 0 if the category name is invalid.
-   */
-  Category *category_by_name_non_const (const std::string &name);
-
-  /**
-   *  @brief Get the category pointer for a category id (non-const version)
-   *
-   *  This method returns 0 if the category is invalid.
-   */
-  Category *category_by_id_non_const (id_type id);
-
-  /**
    *  @brief Access to the cell collection (const)
    */
   const Cells &cells () const
-  {
-    return m_cells;
-  }
-
-  /**
-   *  @brief Access to the cell collection
-   */
-  Cells &cells_non_const ()
   {
     return m_cells;
   }
@@ -2250,7 +2132,7 @@ public:
    */
   Cell *create_cell (const std::string &name)
   {
-    return create_cell (name, std::string (), std::string ());
+    return create_cell (name, std::string ());
   }
 
   /**
@@ -2259,11 +2141,8 @@ public:
    *  A cell with name name/variant combination must not exist already.
    *  If the variant string is empty, this method behaves the same as the 
    *  method without variant.
-   *
-   *  "layout_name" is the name of the cell in the layout. If empty, the layout
-   *  cell is assumed to be identical to "name".
    */
-  Cell *create_cell (const std::string &name, const std::string &variant, const std::string &layout_name);
+  Cell *create_cell (const std::string &name, const std::string &variant);
 
   /**
    *  @brief Get all variants registered for a given cell name (not qname!)
@@ -2291,20 +2170,6 @@ public:
   {
     return const_cast<Database *> (this)->cell_by_id_non_const (id);
   }
-
-  /**
-   *  @brief Get the cell pointer for a cell name or name:variant combination (non-const version)
-   *
-   *  This method returns 0 if the cell name or name:variant combination is invalid.
-   */
-  Cell *cell_by_qname_non_const (const std::string &qname);
-
-  /**
-   *  @brief Get the cell pointer for a cell id (non-const version)
-   *
-   *  This method returns 0 if the cell id is invalid.
-   */
-  Cell *cell_by_id_non_const (id_type id);
 
   /**
    *  @brief Report the number of items in total
@@ -2357,22 +2222,12 @@ public:
    */
   void remove_item_tag (const Item *item, id_type tag);
 
-  /**
-   *  @brief Sets the comment string of the item
-   */
-  void set_item_comment (const Item *item, const std::string &comment);
-
 #if defined(HAVE_QT)
   /**
    *  @brief Set the image of an item
    */
-  void set_item_image (const Item *item, const QImage &image);
+  void set_item_image (const Item *item, QImage *image);
 #endif
-
-  /**
-   *  @brief Set the image string of an item
-   */
-  void set_item_image_str (const Item *item, const std::string &image_str);
 
   /**
    *  @brief Set the multiplicity of an item
@@ -2383,14 +2238,6 @@ public:
    *  @brief Get the items collection (const version)
    */
   const Items &items () const
-  {
-    return *mp_items;
-  }
-
-  /**
-   *  @brief Get the items collection (non-const version)
-   */
-  Items &items_non_const ()
   {
     return *mp_items;
   }
@@ -2409,29 +2256,14 @@ public:
   std::pair<const_item_ref_iterator, const_item_ref_iterator> items_by_cell (id_type cell_id) const; 
 
   /**
-   *  @brief Get an iterator pair that delivers the non-const items (ItemRef) for a given cell
-   */
-  std::pair<item_ref_iterator, item_ref_iterator> items_by_cell (id_type cell_id);
-
-  /**
    *  @brief Get an iterator that delivers the const items (ItemRef) for a given category
    */
   std::pair<const_item_ref_iterator, const_item_ref_iterator> items_by_category (id_type category_id) const; 
 
   /**
-   *  @brief Get an iterator that delivers the non-const items (ItemRef) for a given category
-   */
-  std::pair<item_ref_iterator, item_ref_iterator> items_by_category (id_type category_id);
-
-  /**
    *  @brief Get an iterator that delivers the const items (ItemRef) for a given cell and category
    */
   std::pair<const_item_ref_iterator, const_item_ref_iterator> items_by_cell_and_category (id_type cell_id, id_type category_id) const; 
-
-  /**
-   *  @brief Get an iterator that delivers the non-const items (ItemRef) for a given cell and category
-   */
-  std::pair<item_ref_iterator, item_ref_iterator> items_by_cell_and_category (id_type cell_id, id_type category_id);
 
   /**
    *  @brief Returns true, if the database was modified
@@ -2455,38 +2287,11 @@ public:
   void save (const std::string &filename);
 
   /**
-   *  @brief Write the database to a file
-   *
-   *  This function is like "save", but does not update the file name attribute.
-   */
-  void write (const std::string &filename);
-
-  /**
    *  @brief Load the database from a file
    *
-   *  Note: This clears the existing database.
-   *  The argument intentionally is a copy, so we can call
-   *  "load (this->filename ())" for reloading.
+   *  @brief This clears the existing database.
    */
-  void load (std::string filename);
-
-  /**
-   *  @brief Applies the attributes from a different database
-   *
-   *  Attributes are waived flags, images etc.
-   *  The attributes are applied to markers with identical value(s), category and cell context.
-   */
-  void apply (const rdb::Database &other);
-
-  /**
-   *  @brief Scans a layout into this RDB
-   *
-   *  @param layout The layout to scan
-   *  @param cell_index The top cell to scan
-   *  @param layers_and_descriptions The layers and (optional) descriptions/names of the layer to scan
-   *  @param flat True, to perform a flat scan
-   */
-  void scan_layout (const db::Layout &layout, db::cell_index_type cell_index, const std::vector<std::pair<unsigned int, std::string> > &layers_and_descriptions, bool flat);
+  void load (const std::string &filename);
 
 private:
   std::string m_generator;
@@ -2521,14 +2326,110 @@ private:
   }
 
   /**
+   *  @brief Get the items collection (non-const version)
+   */
+  Items &items_non_const () 
+  {
+    return *mp_items;
+  }
+
+  /**
    *  @brief Get the reference to the tags collection (non-const version)
    */
   Tags &tags_non_const ()
   {
     return m_tags;
   }
+
+  /**
+   *  @brief Get the reference to the categories collection (non-const version)
+   */
+  Categories &categories_non_const ()
+  {
+    return *mp_categories;
+  }
+
+  /**
+   *  @brief Get the category pointer for a category name
+   *
+   *  This method returns 0 if the category name is invalid.
+   */
+  Category *category_by_name_non_const (const std::string &name);
+
+  /**
+   *  @brief Get the category pointer for a category id
+   *
+   *  This method returns 0 if the category is invalid.
+   */
+  Category *category_by_id_non_const (id_type id);
+
+  /**
+   *  @brief Access to the cell collection
+   */
+  Cells &cells_non_const ()
+  {
+    return m_cells;
+  }
+
+  /**
+   *  @brief Get the cell pointer for a cell name or name:variant combination (non-const version)
+   *
+   *  This method returns 0 if the cell name or name:variant combination is invalid.
+   */
+  Cell *cell_by_qname_non_const (const std::string &qname);
+
+  /**
+   *  @brief Get the cell pointer for a cell id (non-const version)
+   *
+   *  This method returns 0 if the cell id is invalid.
+   */
+  Cell *cell_by_id_non_const (id_type id);
 };
 
 }
 
+namespace tl
+{
+  /**
+   *  @brief Type traits for Cell
+   */
+  template <> struct type_traits<rdb::Cell> : public type_traits<void> {
+    typedef tl::false_tag has_copy_constructor;
+    typedef tl::false_tag has_default_constructor;
+  };
+
+  /**
+   *  @brief Type traits for Category
+   */
+  template <> struct type_traits<rdb::Category> : public type_traits<void> {
+    typedef tl::false_tag has_copy_constructor;
+    typedef tl::false_tag has_default_constructor;
+  };
+
+  /**
+   *  @brief Type traits for Categories
+   */
+  template <> struct type_traits<rdb::Categories> : public type_traits<void> {
+    typedef tl::false_tag has_copy_constructor;
+    typedef tl::false_tag has_default_constructor;
+  };
+
+  /**
+   *  @brief Type traits for Item
+   */
+  template <> struct type_traits<rdb::Item> : public type_traits<void> {
+    typedef tl::false_tag has_copy_constructor;
+    typedef tl::false_tag has_default_constructor;
+  };
+
+  /**
+   *  @brief Type traits for Database
+   */
+  template <> struct type_traits<rdb::Database> : public type_traits<void> {
+    typedef tl::false_tag has_copy_constructor;
+    typedef tl::false_tag has_default_constructor;
+  };
+}
+
 #endif
+

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -50,6 +50,7 @@
 #include <QWidget>
 #include "gsiQt.h"
 #include "gsiQtWidgetsCommon.h"
+#include "gsiDeclQtWidgetsTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -79,7 +80,7 @@ static void _init_f_drawComplexControl_c9027 (qt_gsi::GenericMethod *decl)
   decl->add_arg<const QStyleOptionComplex * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("p");
   decl->add_arg<QPainter * > (argspec_2);
-  static gsi::ArgSpecBase argspec_3 ("w", true, "nullptr");
+  static gsi::ArgSpecBase argspec_3 ("w", true, "0");
   decl->add_arg<const QWidget * > (argspec_3);
   decl->set_return<void > ();
 }
@@ -91,7 +92,7 @@ static void _call_f_drawComplexControl_c9027 (const qt_gsi::GenericMethod * /*de
   const qt_gsi::Converter<QStyle::ComplexControl>::target_type & arg1 = gsi::arg_reader<const qt_gsi::Converter<QStyle::ComplexControl>::target_type & >() (args, heap);
   const QStyleOptionComplex *arg2 = gsi::arg_reader<const QStyleOptionComplex * >() (args, heap);
   QPainter *arg3 = gsi::arg_reader<QPainter * >() (args, heap);
-  const QWidget *arg4 = args ? gsi::arg_reader<const QWidget * >() (args, heap) : gsi::arg_maker<const QWidget * >() (nullptr, heap);
+  const QWidget *arg4 = args ? gsi::arg_reader<const QWidget * >() (args, heap) : gsi::arg_maker<const QWidget * >() (0, heap);
   __SUPPRESS_UNUSED_WARNING(ret);
   ((QCommonStyle *)cls)->drawComplexControl (qt_gsi::QtToCppAdaptor<QStyle::ComplexControl>(arg1).cref(), arg2, arg3, arg4);
 }
@@ -108,7 +109,7 @@ static void _init_f_drawControl_c8285 (qt_gsi::GenericMethod *decl)
   decl->add_arg<const QStyleOption * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("p");
   decl->add_arg<QPainter * > (argspec_2);
-  static gsi::ArgSpecBase argspec_3 ("w", true, "nullptr");
+  static gsi::ArgSpecBase argspec_3 ("w", true, "0");
   decl->add_arg<const QWidget * > (argspec_3);
   decl->set_return<void > ();
 }
@@ -120,7 +121,7 @@ static void _call_f_drawControl_c8285 (const qt_gsi::GenericMethod * /*decl*/, v
   const qt_gsi::Converter<QStyle::ControlElement>::target_type & arg1 = gsi::arg_reader<const qt_gsi::Converter<QStyle::ControlElement>::target_type & >() (args, heap);
   const QStyleOption *arg2 = gsi::arg_reader<const QStyleOption * >() (args, heap);
   QPainter *arg3 = gsi::arg_reader<QPainter * >() (args, heap);
-  const QWidget *arg4 = args ? gsi::arg_reader<const QWidget * >() (args, heap) : gsi::arg_maker<const QWidget * >() (nullptr, heap);
+  const QWidget *arg4 = args ? gsi::arg_reader<const QWidget * >() (args, heap) : gsi::arg_maker<const QWidget * >() (0, heap);
   __SUPPRESS_UNUSED_WARNING(ret);
   ((QCommonStyle *)cls)->drawControl (qt_gsi::QtToCppAdaptor<QStyle::ControlElement>(arg1).cref(), arg2, arg3, arg4);
 }
@@ -137,7 +138,7 @@ static void _init_f_drawPrimitive_c8501 (qt_gsi::GenericMethod *decl)
   decl->add_arg<const QStyleOption * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("p");
   decl->add_arg<QPainter * > (argspec_2);
-  static gsi::ArgSpecBase argspec_3 ("w", true, "nullptr");
+  static gsi::ArgSpecBase argspec_3 ("w", true, "0");
   decl->add_arg<const QWidget * > (argspec_3);
   decl->set_return<void > ();
 }
@@ -149,7 +150,7 @@ static void _call_f_drawPrimitive_c8501 (const qt_gsi::GenericMethod * /*decl*/,
   const qt_gsi::Converter<QStyle::PrimitiveElement>::target_type & arg1 = gsi::arg_reader<const qt_gsi::Converter<QStyle::PrimitiveElement>::target_type & >() (args, heap);
   const QStyleOption *arg2 = gsi::arg_reader<const QStyleOption * >() (args, heap);
   QPainter *arg3 = gsi::arg_reader<QPainter * >() (args, heap);
-  const QWidget *arg4 = args ? gsi::arg_reader<const QWidget * >() (args, heap) : gsi::arg_maker<const QWidget * >() (nullptr, heap);
+  const QWidget *arg4 = args ? gsi::arg_reader<const QWidget * >() (args, heap) : gsi::arg_maker<const QWidget * >() (0, heap);
   __SUPPRESS_UNUSED_WARNING(ret);
   ((QCommonStyle *)cls)->drawPrimitive (qt_gsi::QtToCppAdaptor<QStyle::PrimitiveElement>(arg1).cref(), arg2, arg3, arg4);
 }
@@ -191,7 +192,7 @@ static void _init_f_hitTestComplexControl_c9517 (qt_gsi::GenericMethod *decl)
   decl->add_arg<const QStyleOptionComplex * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("pt");
   decl->add_arg<const QPoint & > (argspec_2);
-  static gsi::ArgSpecBase argspec_3 ("w", true, "nullptr");
+  static gsi::ArgSpecBase argspec_3 ("w", true, "0");
   decl->add_arg<const QWidget * > (argspec_3);
   decl->set_return<qt_gsi::Converter<QStyle::SubControl>::target_type > ();
 }
@@ -203,7 +204,7 @@ static void _call_f_hitTestComplexControl_c9517 (const qt_gsi::GenericMethod * /
   const qt_gsi::Converter<QStyle::ComplexControl>::target_type & arg1 = gsi::arg_reader<const qt_gsi::Converter<QStyle::ComplexControl>::target_type & >() (args, heap);
   const QStyleOptionComplex *arg2 = gsi::arg_reader<const QStyleOptionComplex * >() (args, heap);
   const QPoint &arg3 = gsi::arg_reader<const QPoint & >() (args, heap);
-  const QWidget *arg4 = args ? gsi::arg_reader<const QWidget * >() (args, heap) : gsi::arg_maker<const QWidget * >() (nullptr, heap);
+  const QWidget *arg4 = args ? gsi::arg_reader<const QWidget * >() (args, heap) : gsi::arg_maker<const QWidget * >() (0, heap);
   ret.write<qt_gsi::Converter<QStyle::SubControl>::target_type > ((qt_gsi::Converter<QStyle::SubControl>::target_type)qt_gsi::CppToQtAdaptor<QStyle::SubControl>(((QCommonStyle *)cls)->hitTestComplexControl (qt_gsi::QtToCppAdaptor<QStyle::ComplexControl>(arg1).cref(), arg2, arg3, arg4)));
 }
 
@@ -219,9 +220,9 @@ static void _init_f_layoutSpacing_c11697 (qt_gsi::GenericMethod *decl)
   decl->add_arg<const qt_gsi::Converter<QSizePolicy::ControlType>::target_type & > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("orientation");
   decl->add_arg<const qt_gsi::Converter<Qt::Orientation>::target_type & > (argspec_2);
-  static gsi::ArgSpecBase argspec_3 ("option", true, "nullptr");
+  static gsi::ArgSpecBase argspec_3 ("option", true, "0");
   decl->add_arg<const QStyleOption * > (argspec_3);
-  static gsi::ArgSpecBase argspec_4 ("widget", true, "nullptr");
+  static gsi::ArgSpecBase argspec_4 ("widget", true, "0");
   decl->add_arg<const QWidget * > (argspec_4);
   decl->set_return<int > ();
 }
@@ -233,8 +234,8 @@ static void _call_f_layoutSpacing_c11697 (const qt_gsi::GenericMethod * /*decl*/
   const qt_gsi::Converter<QSizePolicy::ControlType>::target_type & arg1 = gsi::arg_reader<const qt_gsi::Converter<QSizePolicy::ControlType>::target_type & >() (args, heap);
   const qt_gsi::Converter<QSizePolicy::ControlType>::target_type & arg2 = gsi::arg_reader<const qt_gsi::Converter<QSizePolicy::ControlType>::target_type & >() (args, heap);
   const qt_gsi::Converter<Qt::Orientation>::target_type & arg3 = gsi::arg_reader<const qt_gsi::Converter<Qt::Orientation>::target_type & >() (args, heap);
-  const QStyleOption *arg4 = args ? gsi::arg_reader<const QStyleOption * >() (args, heap) : gsi::arg_maker<const QStyleOption * >() (nullptr, heap);
-  const QWidget *arg5 = args ? gsi::arg_reader<const QWidget * >() (args, heap) : gsi::arg_maker<const QWidget * >() (nullptr, heap);
+  const QStyleOption *arg4 = args ? gsi::arg_reader<const QStyleOption * >() (args, heap) : gsi::arg_maker<const QStyleOption * >() (0, heap);
+  const QWidget *arg5 = args ? gsi::arg_reader<const QWidget * >() (args, heap) : gsi::arg_maker<const QWidget * >() (0, heap);
   ret.write<int > ((int)((QCommonStyle *)cls)->layoutSpacing (qt_gsi::QtToCppAdaptor<QSizePolicy::ControlType>(arg1).cref(), qt_gsi::QtToCppAdaptor<QSizePolicy::ControlType>(arg2).cref(), qt_gsi::QtToCppAdaptor<Qt::Orientation>(arg3).cref(), arg4, arg5));
 }
 
@@ -246,9 +247,9 @@ static void _init_f_pixelMetric_c6642 (qt_gsi::GenericMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("m");
   decl->add_arg<const qt_gsi::Converter<QStyle::PixelMetric>::target_type & > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("opt", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("opt", true, "0");
   decl->add_arg<const QStyleOption * > (argspec_1);
-  static gsi::ArgSpecBase argspec_2 ("widget", true, "nullptr");
+  static gsi::ArgSpecBase argspec_2 ("widget", true, "0");
   decl->add_arg<const QWidget * > (argspec_2);
   decl->set_return<int > ();
 }
@@ -258,8 +259,8 @@ static void _call_f_pixelMetric_c6642 (const qt_gsi::GenericMethod * /*decl*/, v
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const qt_gsi::Converter<QStyle::PixelMetric>::target_type & arg1 = gsi::arg_reader<const qt_gsi::Converter<QStyle::PixelMetric>::target_type & >() (args, heap);
-  const QStyleOption *arg2 = args ? gsi::arg_reader<const QStyleOption * >() (args, heap) : gsi::arg_maker<const QStyleOption * >() (nullptr, heap);
-  const QWidget *arg3 = args ? gsi::arg_reader<const QWidget * >() (args, heap) : gsi::arg_maker<const QWidget * >() (nullptr, heap);
+  const QStyleOption *arg2 = args ? gsi::arg_reader<const QStyleOption * >() (args, heap) : gsi::arg_maker<const QStyleOption * >() (0, heap);
+  const QWidget *arg3 = args ? gsi::arg_reader<const QWidget * >() (args, heap) : gsi::arg_maker<const QWidget * >() (0, heap);
   ret.write<int > ((int)((QCommonStyle *)cls)->pixelMetric (qt_gsi::QtToCppAdaptor<QStyle::PixelMetric>(arg1).cref(), arg2, arg3));
 }
 
@@ -335,7 +336,7 @@ static void _init_f_sizeFromContents_c8477 (qt_gsi::GenericMethod *decl)
   decl->add_arg<const QStyleOption * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("contentsSize");
   decl->add_arg<const QSize & > (argspec_2);
-  static gsi::ArgSpecBase argspec_3 ("widget", true, "nullptr");
+  static gsi::ArgSpecBase argspec_3 ("widget", true, "0");
   decl->add_arg<const QWidget * > (argspec_3);
   decl->set_return<QSize > ();
 }
@@ -347,7 +348,7 @@ static void _call_f_sizeFromContents_c8477 (const qt_gsi::GenericMethod * /*decl
   const qt_gsi::Converter<QStyle::ContentsType>::target_type & arg1 = gsi::arg_reader<const qt_gsi::Converter<QStyle::ContentsType>::target_type & >() (args, heap);
   const QStyleOption *arg2 = gsi::arg_reader<const QStyleOption * >() (args, heap);
   const QSize &arg3 = gsi::arg_reader<const QSize & >() (args, heap);
-  const QWidget *arg4 = args ? gsi::arg_reader<const QWidget * >() (args, heap) : gsi::arg_maker<const QWidget * >() (nullptr, heap);
+  const QWidget *arg4 = args ? gsi::arg_reader<const QWidget * >() (args, heap) : gsi::arg_maker<const QWidget * >() (0, heap);
   ret.write<QSize > ((QSize)((QCommonStyle *)cls)->sizeFromContents (qt_gsi::QtToCppAdaptor<QStyle::ContentsType>(arg1).cref(), arg2, arg3, arg4));
 }
 
@@ -359,9 +360,9 @@ static void _init_f_standardIcon_c6956 (qt_gsi::GenericMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("standardIcon");
   decl->add_arg<const qt_gsi::Converter<QStyle::StandardPixmap>::target_type & > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("opt", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("opt", true, "0");
   decl->add_arg<const QStyleOption * > (argspec_1);
-  static gsi::ArgSpecBase argspec_2 ("widget", true, "nullptr");
+  static gsi::ArgSpecBase argspec_2 ("widget", true, "0");
   decl->add_arg<const QWidget * > (argspec_2);
   decl->set_return<QIcon > ();
 }
@@ -371,8 +372,8 @@ static void _call_f_standardIcon_c6956 (const qt_gsi::GenericMethod * /*decl*/, 
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const qt_gsi::Converter<QStyle::StandardPixmap>::target_type & arg1 = gsi::arg_reader<const qt_gsi::Converter<QStyle::StandardPixmap>::target_type & >() (args, heap);
-  const QStyleOption *arg2 = args ? gsi::arg_reader<const QStyleOption * >() (args, heap) : gsi::arg_maker<const QStyleOption * >() (nullptr, heap);
-  const QWidget *arg3 = args ? gsi::arg_reader<const QWidget * >() (args, heap) : gsi::arg_maker<const QWidget * >() (nullptr, heap);
+  const QStyleOption *arg2 = args ? gsi::arg_reader<const QStyleOption * >() (args, heap) : gsi::arg_maker<const QStyleOption * >() (0, heap);
+  const QWidget *arg3 = args ? gsi::arg_reader<const QWidget * >() (args, heap) : gsi::arg_maker<const QWidget * >() (0, heap);
   ret.write<QIcon > ((QIcon)((QCommonStyle *)cls)->standardIcon (qt_gsi::QtToCppAdaptor<QStyle::StandardPixmap>(arg1).cref(), arg2, arg3));
 }
 
@@ -384,9 +385,9 @@ static void _init_f_standardPixmap_c6956 (qt_gsi::GenericMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("sp");
   decl->add_arg<const qt_gsi::Converter<QStyle::StandardPixmap>::target_type & > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("opt", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("opt", true, "0");
   decl->add_arg<const QStyleOption * > (argspec_1);
-  static gsi::ArgSpecBase argspec_2 ("widget", true, "nullptr");
+  static gsi::ArgSpecBase argspec_2 ("widget", true, "0");
   decl->add_arg<const QWidget * > (argspec_2);
   decl->set_return<QPixmap > ();
 }
@@ -396,8 +397,8 @@ static void _call_f_standardPixmap_c6956 (const qt_gsi::GenericMethod * /*decl*/
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const qt_gsi::Converter<QStyle::StandardPixmap>::target_type & arg1 = gsi::arg_reader<const qt_gsi::Converter<QStyle::StandardPixmap>::target_type & >() (args, heap);
-  const QStyleOption *arg2 = args ? gsi::arg_reader<const QStyleOption * >() (args, heap) : gsi::arg_maker<const QStyleOption * >() (nullptr, heap);
-  const QWidget *arg3 = args ? gsi::arg_reader<const QWidget * >() (args, heap) : gsi::arg_maker<const QWidget * >() (nullptr, heap);
+  const QStyleOption *arg2 = args ? gsi::arg_reader<const QStyleOption * >() (args, heap) : gsi::arg_maker<const QStyleOption * >() (0, heap);
+  const QWidget *arg3 = args ? gsi::arg_reader<const QWidget * >() (args, heap) : gsi::arg_maker<const QWidget * >() (0, heap);
   ret.write<QPixmap > ((QPixmap)((QCommonStyle *)cls)->standardPixmap (qt_gsi::QtToCppAdaptor<QStyle::StandardPixmap>(arg1).cref(), arg2, arg3));
 }
 
@@ -409,11 +410,11 @@ static void _init_f_styleHint_c8615 (qt_gsi::GenericMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("sh");
   decl->add_arg<const qt_gsi::Converter<QStyle::StyleHint>::target_type & > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("opt", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("opt", true, "0");
   decl->add_arg<const QStyleOption * > (argspec_1);
-  static gsi::ArgSpecBase argspec_2 ("w", true, "nullptr");
+  static gsi::ArgSpecBase argspec_2 ("w", true, "0");
   decl->add_arg<const QWidget * > (argspec_2);
-  static gsi::ArgSpecBase argspec_3 ("shret", true, "nullptr");
+  static gsi::ArgSpecBase argspec_3 ("shret", true, "0");
   decl->add_arg<QStyleHintReturn * > (argspec_3);
   decl->set_return<int > ();
 }
@@ -423,9 +424,9 @@ static void _call_f_styleHint_c8615 (const qt_gsi::GenericMethod * /*decl*/, voi
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const qt_gsi::Converter<QStyle::StyleHint>::target_type & arg1 = gsi::arg_reader<const qt_gsi::Converter<QStyle::StyleHint>::target_type & >() (args, heap);
-  const QStyleOption *arg2 = args ? gsi::arg_reader<const QStyleOption * >() (args, heap) : gsi::arg_maker<const QStyleOption * >() (nullptr, heap);
-  const QWidget *arg3 = args ? gsi::arg_reader<const QWidget * >() (args, heap) : gsi::arg_maker<const QWidget * >() (nullptr, heap);
-  QStyleHintReturn *arg4 = args ? gsi::arg_reader<QStyleHintReturn * >() (args, heap) : gsi::arg_maker<QStyleHintReturn * >() (nullptr, heap);
+  const QStyleOption *arg2 = args ? gsi::arg_reader<const QStyleOption * >() (args, heap) : gsi::arg_maker<const QStyleOption * >() (0, heap);
+  const QWidget *arg3 = args ? gsi::arg_reader<const QWidget * >() (args, heap) : gsi::arg_maker<const QWidget * >() (0, heap);
+  QStyleHintReturn *arg4 = args ? gsi::arg_reader<QStyleHintReturn * >() (args, heap) : gsi::arg_maker<QStyleHintReturn * >() (0, heap);
   ret.write<int > ((int)((QCommonStyle *)cls)->styleHint (qt_gsi::QtToCppAdaptor<QStyle::StyleHint>(arg1).cref(), arg2, arg3, arg4));
 }
 
@@ -441,7 +442,7 @@ static void _init_f_subControlRect_c9798 (qt_gsi::GenericMethod *decl)
   decl->add_arg<const QStyleOptionComplex * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("sc");
   decl->add_arg<const qt_gsi::Converter<QStyle::SubControl>::target_type & > (argspec_2);
-  static gsi::ArgSpecBase argspec_3 ("w", true, "nullptr");
+  static gsi::ArgSpecBase argspec_3 ("w", true, "0");
   decl->add_arg<const QWidget * > (argspec_3);
   decl->set_return<QRect > ();
 }
@@ -453,7 +454,7 @@ static void _call_f_subControlRect_c9798 (const qt_gsi::GenericMethod * /*decl*/
   const qt_gsi::Converter<QStyle::ComplexControl>::target_type & arg1 = gsi::arg_reader<const qt_gsi::Converter<QStyle::ComplexControl>::target_type & >() (args, heap);
   const QStyleOptionComplex *arg2 = gsi::arg_reader<const QStyleOptionComplex * >() (args, heap);
   const qt_gsi::Converter<QStyle::SubControl>::target_type & arg3 = gsi::arg_reader<const qt_gsi::Converter<QStyle::SubControl>::target_type & >() (args, heap);
-  const QWidget *arg4 = args ? gsi::arg_reader<const QWidget * >() (args, heap) : gsi::arg_maker<const QWidget * >() (nullptr, heap);
+  const QWidget *arg4 = args ? gsi::arg_reader<const QWidget * >() (args, heap) : gsi::arg_maker<const QWidget * >() (0, heap);
   ret.write<QRect > ((QRect)((QCommonStyle *)cls)->subControlRect (qt_gsi::QtToCppAdaptor<QStyle::ComplexControl>(arg1).cref(), arg2, qt_gsi::QtToCppAdaptor<QStyle::SubControl>(arg3).cref(), arg4));
 }
 
@@ -467,7 +468,7 @@ static void _init_f_subElementRect_c6528 (qt_gsi::GenericMethod *decl)
   decl->add_arg<const qt_gsi::Converter<QStyle::SubElement>::target_type & > (argspec_0);
   static gsi::ArgSpecBase argspec_1 ("opt");
   decl->add_arg<const QStyleOption * > (argspec_1);
-  static gsi::ArgSpecBase argspec_2 ("widget", true, "nullptr");
+  static gsi::ArgSpecBase argspec_2 ("widget", true, "0");
   decl->add_arg<const QWidget * > (argspec_2);
   decl->set_return<QRect > ();
 }
@@ -478,7 +479,7 @@ static void _call_f_subElementRect_c6528 (const qt_gsi::GenericMethod * /*decl*/
   tl::Heap heap;
   const qt_gsi::Converter<QStyle::SubElement>::target_type & arg1 = gsi::arg_reader<const qt_gsi::Converter<QStyle::SubElement>::target_type & >() (args, heap);
   const QStyleOption *arg2 = gsi::arg_reader<const QStyleOption * >() (args, heap);
-  const QWidget *arg3 = args ? gsi::arg_reader<const QWidget * >() (args, heap) : gsi::arg_maker<const QWidget * >() (nullptr, heap);
+  const QWidget *arg3 = args ? gsi::arg_reader<const QWidget * >() (args, heap) : gsi::arg_maker<const QWidget * >() (0, heap);
   ret.write<QRect > ((QRect)((QCommonStyle *)cls)->subElementRect (qt_gsi::QtToCppAdaptor<QStyle::SubElement>(arg1).cref(), arg2, arg3));
 }
 
@@ -530,7 +531,7 @@ static void _init_f_tr_4013 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("s");
   decl->add_arg<const char * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("c", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("c", true, "__null");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("n", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -542,7 +543,7 @@ static void _call_f_tr_4013 (const qt_gsi::GenericStaticMethod * /*decl*/, gsi::
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (__null, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QCommonStyle::tr (arg1, arg2, arg3));
 }
@@ -555,7 +556,7 @@ static void _init_f_trUtf8_4013 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("s");
   decl->add_arg<const char * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("c", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("c", true, "__null");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("n", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -567,7 +568,7 @@ static void _call_f_trUtf8_4013 (const qt_gsi::GenericStaticMethod * /*decl*/, g
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (__null, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QCommonStyle::trUtf8 (arg1, arg2, arg3));
 }
@@ -598,7 +599,6 @@ static gsi::Methods methods_QCommonStyle () {
   methods += new qt_gsi::GenericMethod ("unpolish", "@brief Method void QCommonStyle::unpolish(QWidget *widget)\nThis is a reimplementation of QStyle::unpolish", false, &_init_f_unpolish_1315, &_call_f_unpolish_1315);
   methods += new qt_gsi::GenericMethod ("unpolish", "@brief Method void QCommonStyle::unpolish(QApplication *application)\nThis is a reimplementation of QStyle::unpolish", false, &_init_f_unpolish_1843, &_call_f_unpolish_1843);
   methods += gsi::qt_signal<QObject * > ("destroyed(QObject *)", "destroyed", gsi::arg("arg1"), "@brief Signal declaration for QCommonStyle::destroyed(QObject *)\nYou can bind a procedure to this signal.");
-  methods += gsi::qt_signal<const QString & > ("objectNameChanged(const QString &)", "objectNameChanged", gsi::arg("objectName"), "@brief Signal declaration for QCommonStyle::objectNameChanged(const QString &objectName)\nYou can bind a procedure to this signal.");
   methods += new qt_gsi::GenericStaticMethod ("tr", "@brief Static method QString QCommonStyle::tr(const char *s, const char *c, int n)\nThis method is static and can be called without an instance.", &_init_f_tr_4013, &_call_f_tr_4013);
   methods += new qt_gsi::GenericStaticMethod ("trUtf8", "@brief Static method QString QCommonStyle::trUtf8(const char *s, const char *c, int n)\nThis method is static and can be called without an instance.", &_init_f_trUtf8_4013, &_call_f_trUtf8_4013);
   return methods;
@@ -728,33 +728,33 @@ public:
     }
   }
 
-  //  [adaptor impl] bool QCommonStyle::event(QEvent *event)
-  bool cbs_event_1217_0(QEvent *_event)
+  //  [adaptor impl] bool QCommonStyle::event(QEvent *)
+  bool cbs_event_1217_0(QEvent *arg1)
   {
-    return QCommonStyle::event(_event);
+    return QCommonStyle::event(arg1);
   }
 
-  virtual bool event(QEvent *_event)
+  virtual bool event(QEvent *arg1)
   {
     if (cb_event_1217_0.can_issue()) {
-      return cb_event_1217_0.issue<QCommonStyle_Adaptor, bool, QEvent *>(&QCommonStyle_Adaptor::cbs_event_1217_0, _event);
+      return cb_event_1217_0.issue<QCommonStyle_Adaptor, bool, QEvent *>(&QCommonStyle_Adaptor::cbs_event_1217_0, arg1);
     } else {
-      return QCommonStyle::event(_event);
+      return QCommonStyle::event(arg1);
     }
   }
 
-  //  [adaptor impl] bool QCommonStyle::eventFilter(QObject *watched, QEvent *event)
-  bool cbs_eventFilter_2411_0(QObject *watched, QEvent *event)
+  //  [adaptor impl] bool QCommonStyle::eventFilter(QObject *, QEvent *)
+  bool cbs_eventFilter_2411_0(QObject *arg1, QEvent *arg2)
   {
-    return QCommonStyle::eventFilter(watched, event);
+    return QCommonStyle::eventFilter(arg1, arg2);
   }
 
-  virtual bool eventFilter(QObject *watched, QEvent *event)
+  virtual bool eventFilter(QObject *arg1, QEvent *arg2)
   {
     if (cb_eventFilter_2411_0.can_issue()) {
-      return cb_eventFilter_2411_0.issue<QCommonStyle_Adaptor, bool, QObject *, QEvent *>(&QCommonStyle_Adaptor::cbs_eventFilter_2411_0, watched, event);
+      return cb_eventFilter_2411_0.issue<QCommonStyle_Adaptor, bool, QObject *, QEvent *>(&QCommonStyle_Adaptor::cbs_eventFilter_2411_0, arg1, arg2);
     } else {
-      return QCommonStyle::eventFilter(watched, event);
+      return QCommonStyle::eventFilter(arg1, arg2);
     }
   }
 
@@ -831,13 +831,6 @@ public:
     } else {
       return QCommonStyle::layoutSpacing(control1, control2, orientation, option, widget);
     }
-  }
-
-  //  [emitter impl] void QCommonStyle::objectNameChanged(const QString &objectName)
-  void emitter_QCommonStyle_objectNameChanged_4567(const QString &objectName)
-  {
-    __SUPPRESS_UNUSED_WARNING (objectName);
-    throw tl::Exception ("Can't emit private signal 'void QCommonStyle::objectNameChanged(const QString &objectName)'");
   }
 
   //  [adaptor impl] int QCommonStyle::pixelMetric(QStyle::PixelMetric m, const QStyleOption *opt, const QWidget *widget)
@@ -1035,33 +1028,33 @@ public:
     }
   }
 
-  //  [adaptor impl] void QCommonStyle::childEvent(QChildEvent *event)
-  void cbs_childEvent_1701_0(QChildEvent *event)
+  //  [adaptor impl] void QCommonStyle::childEvent(QChildEvent *)
+  void cbs_childEvent_1701_0(QChildEvent *arg1)
   {
-    QCommonStyle::childEvent(event);
+    QCommonStyle::childEvent(arg1);
   }
 
-  virtual void childEvent(QChildEvent *event)
+  virtual void childEvent(QChildEvent *arg1)
   {
     if (cb_childEvent_1701_0.can_issue()) {
-      cb_childEvent_1701_0.issue<QCommonStyle_Adaptor, QChildEvent *>(&QCommonStyle_Adaptor::cbs_childEvent_1701_0, event);
+      cb_childEvent_1701_0.issue<QCommonStyle_Adaptor, QChildEvent *>(&QCommonStyle_Adaptor::cbs_childEvent_1701_0, arg1);
     } else {
-      QCommonStyle::childEvent(event);
+      QCommonStyle::childEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QCommonStyle::customEvent(QEvent *event)
-  void cbs_customEvent_1217_0(QEvent *event)
+  //  [adaptor impl] void QCommonStyle::customEvent(QEvent *)
+  void cbs_customEvent_1217_0(QEvent *arg1)
   {
-    QCommonStyle::customEvent(event);
+    QCommonStyle::customEvent(arg1);
   }
 
-  virtual void customEvent(QEvent *event)
+  virtual void customEvent(QEvent *arg1)
   {
     if (cb_customEvent_1217_0.can_issue()) {
-      cb_customEvent_1217_0.issue<QCommonStyle_Adaptor, QEvent *>(&QCommonStyle_Adaptor::cbs_customEvent_1217_0, event);
+      cb_customEvent_1217_0.issue<QCommonStyle_Adaptor, QEvent *>(&QCommonStyle_Adaptor::cbs_customEvent_1217_0, arg1);
     } else {
-      QCommonStyle::customEvent(event);
+      QCommonStyle::customEvent(arg1);
     }
   }
 
@@ -1080,18 +1073,18 @@ public:
     }
   }
 
-  //  [adaptor impl] void QCommonStyle::timerEvent(QTimerEvent *event)
-  void cbs_timerEvent_1730_0(QTimerEvent *event)
+  //  [adaptor impl] void QCommonStyle::timerEvent(QTimerEvent *)
+  void cbs_timerEvent_1730_0(QTimerEvent *arg1)
   {
-    QCommonStyle::timerEvent(event);
+    QCommonStyle::timerEvent(arg1);
   }
 
-  virtual void timerEvent(QTimerEvent *event)
+  virtual void timerEvent(QTimerEvent *arg1)
   {
     if (cb_timerEvent_1730_0.can_issue()) {
-      cb_timerEvent_1730_0.issue<QCommonStyle_Adaptor, QTimerEvent *>(&QCommonStyle_Adaptor::cbs_timerEvent_1730_0, event);
+      cb_timerEvent_1730_0.issue<QCommonStyle_Adaptor, QTimerEvent *>(&QCommonStyle_Adaptor::cbs_timerEvent_1730_0, arg1);
     } else {
-      QCommonStyle::timerEvent(event);
+      QCommonStyle::timerEvent(arg1);
     }
   }
 
@@ -1142,11 +1135,11 @@ static void _call_ctor_QCommonStyle_Adaptor_0 (const qt_gsi::GenericStaticMethod
 }
 
 
-// void QCommonStyle::childEvent(QChildEvent *event)
+// void QCommonStyle::childEvent(QChildEvent *)
 
 static void _init_cbs_childEvent_1701_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QChildEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1166,11 +1159,11 @@ static void _set_callback_cbs_childEvent_1701_0 (void *cls, const gsi::Callback 
 }
 
 
-// void QCommonStyle::customEvent(QEvent *event)
+// void QCommonStyle::customEvent(QEvent *)
 
 static void _init_cbs_customEvent_1217_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1194,7 +1187,7 @@ static void _set_callback_cbs_customEvent_1217_0 (void *cls, const gsi::Callback
 
 static void _init_emitter_destroyed_1302 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("arg1", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("arg1", true, "0");
   decl->add_arg<QObject * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1203,7 +1196,7 @@ static void _call_emitter_destroyed_1302 (const qt_gsi::GenericMethod * /*decl*/
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (nullptr, heap);
+  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (0, heap);
   ((QCommonStyle_Adaptor *)cls)->emitter_QCommonStyle_destroyed_1302 (arg1);
 }
 
@@ -1406,11 +1399,11 @@ static void _set_callback_cbs_drawPrimitive_c8501_1 (void *cls, const gsi::Callb
 }
 
 
-// bool QCommonStyle::event(QEvent *event)
+// bool QCommonStyle::event(QEvent *)
 
 static void _init_cbs_event_1217_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QEvent * > (argspec_0);
   decl->set_return<bool > ();
 }
@@ -1429,13 +1422,13 @@ static void _set_callback_cbs_event_1217_0 (void *cls, const gsi::Callback &cb)
 }
 
 
-// bool QCommonStyle::eventFilter(QObject *watched, QEvent *event)
+// bool QCommonStyle::eventFilter(QObject *, QEvent *)
 
 static void _init_cbs_eventFilter_2411_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("watched");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QObject * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("event");
+  static gsi::ArgSpecBase argspec_1 ("arg2");
   decl->add_arg<QEvent * > (argspec_1);
   decl->set_return<bool > ();
 }
@@ -1630,24 +1623,6 @@ static void _call_cbs_layoutSpacing_c11697_2 (const qt_gsi::GenericMethod * /*de
 static void _set_callback_cbs_layoutSpacing_c11697_2 (void *cls, const gsi::Callback &cb)
 {
   ((QCommonStyle_Adaptor *)cls)->cb_layoutSpacing_c11697_2 = cb;
-}
-
-
-// emitter void QCommonStyle::objectNameChanged(const QString &objectName)
-
-static void _init_emitter_objectNameChanged_4567 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("objectName");
-  decl->add_arg<const QString & > (argspec_0);
-  decl->set_return<void > ();
-}
-
-static void _call_emitter_objectNameChanged_4567 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs & /*ret*/) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const QString &arg1 = gsi::arg_reader<const QString & >() (args, heap);
-  ((QCommonStyle_Adaptor *)cls)->emitter_QCommonStyle_objectNameChanged_4567 (arg1);
 }
 
 
@@ -2000,11 +1975,11 @@ static void _set_callback_cbs_subElementRect_c6528_1 (void *cls, const gsi::Call
 }
 
 
-// void QCommonStyle::timerEvent(QTimerEvent *event)
+// void QCommonStyle::timerEvent(QTimerEvent *)
 
 static void _init_cbs_timerEvent_1730_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QTimerEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -2080,70 +2055,69 @@ gsi::Class<QCommonStyle> &qtdecl_QCommonStyle ();
 static gsi::Methods methods_QCommonStyle_Adaptor () {
   gsi::Methods methods;
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QCommonStyle::QCommonStyle()\nThis method creates an object of class QCommonStyle.", &_init_ctor_QCommonStyle_Adaptor_0, &_call_ctor_QCommonStyle_Adaptor_0);
-  methods += new qt_gsi::GenericMethod ("*childEvent", "@brief Virtual method void QCommonStyle::childEvent(QChildEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0);
-  methods += new qt_gsi::GenericMethod ("*childEvent", "@hide", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0, &_set_callback_cbs_childEvent_1701_0);
-  methods += new qt_gsi::GenericMethod ("*customEvent", "@brief Virtual method void QCommonStyle::customEvent(QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*customEvent", "@hide", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0, &_set_callback_cbs_customEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*childEvent", "@hide", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0);
+  methods += new qt_gsi::GenericMethod ("*childEvent", "@brief Virtual method void QCommonStyle::childEvent(QChildEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0, &_set_callback_cbs_childEvent_1701_0);
+  methods += new qt_gsi::GenericMethod ("*customEvent", "@hide", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*customEvent", "@brief Virtual method void QCommonStyle::customEvent(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0, &_set_callback_cbs_customEvent_1217_0);
   methods += new qt_gsi::GenericMethod ("emit_destroyed", "@brief Emitter for signal void QCommonStyle::destroyed(QObject *)\nCall this method to emit this signal.", false, &_init_emitter_destroyed_1302, &_call_emitter_destroyed_1302);
-  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@brief Virtual method void QCommonStyle::disconnectNotify(const QMetaMethod &signal)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0);
-  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@hide", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0, &_set_callback_cbs_disconnectNotify_2394_0);
-  methods += new qt_gsi::GenericMethod ("drawComplexControl", "@brief Virtual method void QCommonStyle::drawComplexControl(QStyle::ComplexControl cc, const QStyleOptionComplex *opt, QPainter *p, const QWidget *w)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_drawComplexControl_c9027_1, &_call_cbs_drawComplexControl_c9027_1);
-  methods += new qt_gsi::GenericMethod ("drawComplexControl", "@hide", true, &_init_cbs_drawComplexControl_c9027_1, &_call_cbs_drawComplexControl_c9027_1, &_set_callback_cbs_drawComplexControl_c9027_1);
-  methods += new qt_gsi::GenericMethod ("drawControl", "@brief Virtual method void QCommonStyle::drawControl(QStyle::ControlElement element, const QStyleOption *opt, QPainter *p, const QWidget *w)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_drawControl_c8285_1, &_call_cbs_drawControl_c8285_1);
-  methods += new qt_gsi::GenericMethod ("drawControl", "@hide", true, &_init_cbs_drawControl_c8285_1, &_call_cbs_drawControl_c8285_1, &_set_callback_cbs_drawControl_c8285_1);
-  methods += new qt_gsi::GenericMethod ("drawItemPixmap", "@brief Virtual method void QCommonStyle::drawItemPixmap(QPainter *painter, const QRect &rect, int alignment, const QPixmap &pixmap)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_drawItemPixmap_c5678_0, &_call_cbs_drawItemPixmap_c5678_0);
-  methods += new qt_gsi::GenericMethod ("drawItemPixmap", "@hide", true, &_init_cbs_drawItemPixmap_c5678_0, &_call_cbs_drawItemPixmap_c5678_0, &_set_callback_cbs_drawItemPixmap_c5678_0);
-  methods += new qt_gsi::GenericMethod ("drawItemText", "@brief Virtual method void QCommonStyle::drawItemText(QPainter *painter, const QRect &rect, int flags, const QPalette &pal, bool enabled, const QString &text, QPalette::ColorRole textRole)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_drawItemText_c10604_1, &_call_cbs_drawItemText_c10604_1);
-  methods += new qt_gsi::GenericMethod ("drawItemText", "@hide", true, &_init_cbs_drawItemText_c10604_1, &_call_cbs_drawItemText_c10604_1, &_set_callback_cbs_drawItemText_c10604_1);
-  methods += new qt_gsi::GenericMethod ("drawPrimitive", "@brief Virtual method void QCommonStyle::drawPrimitive(QStyle::PrimitiveElement pe, const QStyleOption *opt, QPainter *p, const QWidget *w)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_drawPrimitive_c8501_1, &_call_cbs_drawPrimitive_c8501_1);
-  methods += new qt_gsi::GenericMethod ("drawPrimitive", "@hide", true, &_init_cbs_drawPrimitive_c8501_1, &_call_cbs_drawPrimitive_c8501_1, &_set_callback_cbs_drawPrimitive_c8501_1);
-  methods += new qt_gsi::GenericMethod ("event", "@brief Virtual method bool QCommonStyle::event(QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0);
-  methods += new qt_gsi::GenericMethod ("event", "@hide", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0, &_set_callback_cbs_event_1217_0);
-  methods += new qt_gsi::GenericMethod ("eventFilter", "@brief Virtual method bool QCommonStyle::eventFilter(QObject *watched, QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0);
-  methods += new qt_gsi::GenericMethod ("eventFilter", "@hide", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0, &_set_callback_cbs_eventFilter_2411_0);
-  methods += new qt_gsi::GenericMethod ("generatedIconPixmap", "@brief Virtual method QPixmap QCommonStyle::generatedIconPixmap(QIcon::Mode iconMode, const QPixmap &pixmap, const QStyleOption *opt)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_generatedIconPixmap_c5776_0, &_call_cbs_generatedIconPixmap_c5776_0);
-  methods += new qt_gsi::GenericMethod ("generatedIconPixmap", "@hide", true, &_init_cbs_generatedIconPixmap_c5776_0, &_call_cbs_generatedIconPixmap_c5776_0, &_set_callback_cbs_generatedIconPixmap_c5776_0);
-  methods += new qt_gsi::GenericMethod ("hitTestComplexControl", "@brief Virtual method QStyle::SubControl QCommonStyle::hitTestComplexControl(QStyle::ComplexControl cc, const QStyleOptionComplex *opt, const QPoint &pt, const QWidget *w)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_hitTestComplexControl_c9517_1, &_call_cbs_hitTestComplexControl_c9517_1);
-  methods += new qt_gsi::GenericMethod ("hitTestComplexControl", "@hide", true, &_init_cbs_hitTestComplexControl_c9517_1, &_call_cbs_hitTestComplexControl_c9517_1, &_set_callback_cbs_hitTestComplexControl_c9517_1);
+  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@hide", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0);
+  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@brief Virtual method void QCommonStyle::disconnectNotify(const QMetaMethod &signal)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0, &_set_callback_cbs_disconnectNotify_2394_0);
+  methods += new qt_gsi::GenericMethod ("drawComplexControl", "@hide", true, &_init_cbs_drawComplexControl_c9027_1, &_call_cbs_drawComplexControl_c9027_1);
+  methods += new qt_gsi::GenericMethod ("drawComplexControl", "@brief Virtual method void QCommonStyle::drawComplexControl(QStyle::ComplexControl cc, const QStyleOptionComplex *opt, QPainter *p, const QWidget *w)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_drawComplexControl_c9027_1, &_call_cbs_drawComplexControl_c9027_1, &_set_callback_cbs_drawComplexControl_c9027_1);
+  methods += new qt_gsi::GenericMethod ("drawControl", "@hide", true, &_init_cbs_drawControl_c8285_1, &_call_cbs_drawControl_c8285_1);
+  methods += new qt_gsi::GenericMethod ("drawControl", "@brief Virtual method void QCommonStyle::drawControl(QStyle::ControlElement element, const QStyleOption *opt, QPainter *p, const QWidget *w)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_drawControl_c8285_1, &_call_cbs_drawControl_c8285_1, &_set_callback_cbs_drawControl_c8285_1);
+  methods += new qt_gsi::GenericMethod ("drawItemPixmap", "@hide", true, &_init_cbs_drawItemPixmap_c5678_0, &_call_cbs_drawItemPixmap_c5678_0);
+  methods += new qt_gsi::GenericMethod ("drawItemPixmap", "@brief Virtual method void QCommonStyle::drawItemPixmap(QPainter *painter, const QRect &rect, int alignment, const QPixmap &pixmap)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_drawItemPixmap_c5678_0, &_call_cbs_drawItemPixmap_c5678_0, &_set_callback_cbs_drawItemPixmap_c5678_0);
+  methods += new qt_gsi::GenericMethod ("drawItemText", "@hide", true, &_init_cbs_drawItemText_c10604_1, &_call_cbs_drawItemText_c10604_1);
+  methods += new qt_gsi::GenericMethod ("drawItemText", "@brief Virtual method void QCommonStyle::drawItemText(QPainter *painter, const QRect &rect, int flags, const QPalette &pal, bool enabled, const QString &text, QPalette::ColorRole textRole)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_drawItemText_c10604_1, &_call_cbs_drawItemText_c10604_1, &_set_callback_cbs_drawItemText_c10604_1);
+  methods += new qt_gsi::GenericMethod ("drawPrimitive", "@hide", true, &_init_cbs_drawPrimitive_c8501_1, &_call_cbs_drawPrimitive_c8501_1);
+  methods += new qt_gsi::GenericMethod ("drawPrimitive", "@brief Virtual method void QCommonStyle::drawPrimitive(QStyle::PrimitiveElement pe, const QStyleOption *opt, QPainter *p, const QWidget *w)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_drawPrimitive_c8501_1, &_call_cbs_drawPrimitive_c8501_1, &_set_callback_cbs_drawPrimitive_c8501_1);
+  methods += new qt_gsi::GenericMethod ("event", "@hide", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0);
+  methods += new qt_gsi::GenericMethod ("event", "@brief Virtual method bool QCommonStyle::event(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0, &_set_callback_cbs_event_1217_0);
+  methods += new qt_gsi::GenericMethod ("eventFilter", "@hide", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0);
+  methods += new qt_gsi::GenericMethod ("eventFilter", "@brief Virtual method bool QCommonStyle::eventFilter(QObject *, QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0, &_set_callback_cbs_eventFilter_2411_0);
+  methods += new qt_gsi::GenericMethod ("generatedIconPixmap", "@hide", true, &_init_cbs_generatedIconPixmap_c5776_0, &_call_cbs_generatedIconPixmap_c5776_0);
+  methods += new qt_gsi::GenericMethod ("generatedIconPixmap", "@brief Virtual method QPixmap QCommonStyle::generatedIconPixmap(QIcon::Mode iconMode, const QPixmap &pixmap, const QStyleOption *opt)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_generatedIconPixmap_c5776_0, &_call_cbs_generatedIconPixmap_c5776_0, &_set_callback_cbs_generatedIconPixmap_c5776_0);
+  methods += new qt_gsi::GenericMethod ("hitTestComplexControl", "@hide", true, &_init_cbs_hitTestComplexControl_c9517_1, &_call_cbs_hitTestComplexControl_c9517_1);
+  methods += new qt_gsi::GenericMethod ("hitTestComplexControl", "@brief Virtual method QStyle::SubControl QCommonStyle::hitTestComplexControl(QStyle::ComplexControl cc, const QStyleOptionComplex *opt, const QPoint &pt, const QWidget *w)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_hitTestComplexControl_c9517_1, &_call_cbs_hitTestComplexControl_c9517_1, &_set_callback_cbs_hitTestComplexControl_c9517_1);
   methods += new qt_gsi::GenericMethod ("*isSignalConnected", "@brief Method bool QCommonStyle::isSignalConnected(const QMetaMethod &signal)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_isSignalConnected_c2394, &_call_fp_isSignalConnected_c2394);
-  methods += new qt_gsi::GenericMethod ("itemPixmapRect", "@brief Virtual method QRect QCommonStyle::itemPixmapRect(const QRect &r, int flags, const QPixmap &pixmap)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_itemPixmapRect_c4360_0, &_call_cbs_itemPixmapRect_c4360_0);
-  methods += new qt_gsi::GenericMethod ("itemPixmapRect", "@hide", true, &_init_cbs_itemPixmapRect_c4360_0, &_call_cbs_itemPixmapRect_c4360_0, &_set_callback_cbs_itemPixmapRect_c4360_0);
-  methods += new qt_gsi::GenericMethod ("itemTextRect", "@brief Virtual method QRect QCommonStyle::itemTextRect(const QFontMetrics &fm, const QRect &r, int flags, bool enabled, const QString &text)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_itemTextRect_c7544_0, &_call_cbs_itemTextRect_c7544_0);
-  methods += new qt_gsi::GenericMethod ("itemTextRect", "@hide", true, &_init_cbs_itemTextRect_c7544_0, &_call_cbs_itemTextRect_c7544_0, &_set_callback_cbs_itemTextRect_c7544_0);
-  methods += new qt_gsi::GenericMethod ("layoutSpacing", "@brief Virtual method int QCommonStyle::layoutSpacing(QSizePolicy::ControlType control1, QSizePolicy::ControlType control2, Qt::Orientation orientation, const QStyleOption *option, const QWidget *widget)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_layoutSpacing_c11697_2, &_call_cbs_layoutSpacing_c11697_2);
-  methods += new qt_gsi::GenericMethod ("layoutSpacing", "@hide", true, &_init_cbs_layoutSpacing_c11697_2, &_call_cbs_layoutSpacing_c11697_2, &_set_callback_cbs_layoutSpacing_c11697_2);
-  methods += new qt_gsi::GenericMethod ("emit_objectNameChanged", "@brief Emitter for signal void QCommonStyle::objectNameChanged(const QString &objectName)\nCall this method to emit this signal.", false, &_init_emitter_objectNameChanged_4567, &_call_emitter_objectNameChanged_4567);
-  methods += new qt_gsi::GenericMethod ("pixelMetric", "@brief Virtual method int QCommonStyle::pixelMetric(QStyle::PixelMetric m, const QStyleOption *opt, const QWidget *widget)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_pixelMetric_c6642_2, &_call_cbs_pixelMetric_c6642_2);
-  methods += new qt_gsi::GenericMethod ("pixelMetric", "@hide", true, &_init_cbs_pixelMetric_c6642_2, &_call_cbs_pixelMetric_c6642_2, &_set_callback_cbs_pixelMetric_c6642_2);
-  methods += new qt_gsi::GenericMethod ("polish", "@brief Virtual method void QCommonStyle::polish(QPalette &)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_polish_1418_0, &_call_cbs_polish_1418_0);
-  methods += new qt_gsi::GenericMethod ("polish", "@hide", false, &_init_cbs_polish_1418_0, &_call_cbs_polish_1418_0, &_set_callback_cbs_polish_1418_0);
-  methods += new qt_gsi::GenericMethod ("polish", "@brief Virtual method void QCommonStyle::polish(QApplication *app)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_polish_1843_0, &_call_cbs_polish_1843_0);
-  methods += new qt_gsi::GenericMethod ("polish", "@hide", false, &_init_cbs_polish_1843_0, &_call_cbs_polish_1843_0, &_set_callback_cbs_polish_1843_0);
-  methods += new qt_gsi::GenericMethod ("polish", "@brief Virtual method void QCommonStyle::polish(QWidget *widget)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_polish_1315_0, &_call_cbs_polish_1315_0);
-  methods += new qt_gsi::GenericMethod ("polish", "@hide", false, &_init_cbs_polish_1315_0, &_call_cbs_polish_1315_0, &_set_callback_cbs_polish_1315_0);
+  methods += new qt_gsi::GenericMethod ("itemPixmapRect", "@hide", true, &_init_cbs_itemPixmapRect_c4360_0, &_call_cbs_itemPixmapRect_c4360_0);
+  methods += new qt_gsi::GenericMethod ("itemPixmapRect", "@brief Virtual method QRect QCommonStyle::itemPixmapRect(const QRect &r, int flags, const QPixmap &pixmap)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_itemPixmapRect_c4360_0, &_call_cbs_itemPixmapRect_c4360_0, &_set_callback_cbs_itemPixmapRect_c4360_0);
+  methods += new qt_gsi::GenericMethod ("itemTextRect", "@hide", true, &_init_cbs_itemTextRect_c7544_0, &_call_cbs_itemTextRect_c7544_0);
+  methods += new qt_gsi::GenericMethod ("itemTextRect", "@brief Virtual method QRect QCommonStyle::itemTextRect(const QFontMetrics &fm, const QRect &r, int flags, bool enabled, const QString &text)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_itemTextRect_c7544_0, &_call_cbs_itemTextRect_c7544_0, &_set_callback_cbs_itemTextRect_c7544_0);
+  methods += new qt_gsi::GenericMethod ("layoutSpacing", "@hide", true, &_init_cbs_layoutSpacing_c11697_2, &_call_cbs_layoutSpacing_c11697_2);
+  methods += new qt_gsi::GenericMethod ("layoutSpacing", "@brief Virtual method int QCommonStyle::layoutSpacing(QSizePolicy::ControlType control1, QSizePolicy::ControlType control2, Qt::Orientation orientation, const QStyleOption *option, const QWidget *widget)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_layoutSpacing_c11697_2, &_call_cbs_layoutSpacing_c11697_2, &_set_callback_cbs_layoutSpacing_c11697_2);
+  methods += new qt_gsi::GenericMethod ("pixelMetric", "@hide", true, &_init_cbs_pixelMetric_c6642_2, &_call_cbs_pixelMetric_c6642_2);
+  methods += new qt_gsi::GenericMethod ("pixelMetric", "@brief Virtual method int QCommonStyle::pixelMetric(QStyle::PixelMetric m, const QStyleOption *opt, const QWidget *widget)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_pixelMetric_c6642_2, &_call_cbs_pixelMetric_c6642_2, &_set_callback_cbs_pixelMetric_c6642_2);
+  methods += new qt_gsi::GenericMethod ("polish", "@hide", false, &_init_cbs_polish_1418_0, &_call_cbs_polish_1418_0);
+  methods += new qt_gsi::GenericMethod ("polish", "@brief Virtual method void QCommonStyle::polish(QPalette &)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_polish_1418_0, &_call_cbs_polish_1418_0, &_set_callback_cbs_polish_1418_0);
+  methods += new qt_gsi::GenericMethod ("polish", "@hide", false, &_init_cbs_polish_1843_0, &_call_cbs_polish_1843_0);
+  methods += new qt_gsi::GenericMethod ("polish", "@brief Virtual method void QCommonStyle::polish(QApplication *app)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_polish_1843_0, &_call_cbs_polish_1843_0, &_set_callback_cbs_polish_1843_0);
+  methods += new qt_gsi::GenericMethod ("polish", "@hide", false, &_init_cbs_polish_1315_0, &_call_cbs_polish_1315_0);
+  methods += new qt_gsi::GenericMethod ("polish", "@brief Virtual method void QCommonStyle::polish(QWidget *widget)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_polish_1315_0, &_call_cbs_polish_1315_0, &_set_callback_cbs_polish_1315_0);
   methods += new qt_gsi::GenericMethod ("*receivers", "@brief Method int QCommonStyle::receivers(const char *signal)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_receivers_c1731, &_call_fp_receivers_c1731);
   methods += new qt_gsi::GenericMethod ("*sender", "@brief Method QObject *QCommonStyle::sender()\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_sender_c0, &_call_fp_sender_c0);
   methods += new qt_gsi::GenericMethod ("*senderSignalIndex", "@brief Method int QCommonStyle::senderSignalIndex()\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_senderSignalIndex_c0, &_call_fp_senderSignalIndex_c0);
-  methods += new qt_gsi::GenericMethod ("sizeFromContents", "@brief Virtual method QSize QCommonStyle::sizeFromContents(QStyle::ContentsType ct, const QStyleOption *opt, const QSize &contentsSize, const QWidget *widget)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_sizeFromContents_c8477_1, &_call_cbs_sizeFromContents_c8477_1);
-  methods += new qt_gsi::GenericMethod ("sizeFromContents", "@hide", true, &_init_cbs_sizeFromContents_c8477_1, &_call_cbs_sizeFromContents_c8477_1, &_set_callback_cbs_sizeFromContents_c8477_1);
-  methods += new qt_gsi::GenericMethod ("standardIcon", "@brief Virtual method QIcon QCommonStyle::standardIcon(QStyle::StandardPixmap standardIcon, const QStyleOption *opt, const QWidget *widget)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_standardIcon_c6956_2, &_call_cbs_standardIcon_c6956_2);
-  methods += new qt_gsi::GenericMethod ("standardIcon", "@hide", true, &_init_cbs_standardIcon_c6956_2, &_call_cbs_standardIcon_c6956_2, &_set_callback_cbs_standardIcon_c6956_2);
-  methods += new qt_gsi::GenericMethod ("standardPalette", "@brief Virtual method QPalette QCommonStyle::standardPalette()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_standardPalette_c0_0, &_call_cbs_standardPalette_c0_0);
-  methods += new qt_gsi::GenericMethod ("standardPalette", "@hide", true, &_init_cbs_standardPalette_c0_0, &_call_cbs_standardPalette_c0_0, &_set_callback_cbs_standardPalette_c0_0);
-  methods += new qt_gsi::GenericMethod ("standardPixmap", "@brief Virtual method QPixmap QCommonStyle::standardPixmap(QStyle::StandardPixmap sp, const QStyleOption *opt, const QWidget *widget)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_standardPixmap_c6956_2, &_call_cbs_standardPixmap_c6956_2);
-  methods += new qt_gsi::GenericMethod ("standardPixmap", "@hide", true, &_init_cbs_standardPixmap_c6956_2, &_call_cbs_standardPixmap_c6956_2, &_set_callback_cbs_standardPixmap_c6956_2);
-  methods += new qt_gsi::GenericMethod ("styleHint", "@brief Virtual method int QCommonStyle::styleHint(QStyle::StyleHint sh, const QStyleOption *opt, const QWidget *w, QStyleHintReturn *shret)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_styleHint_c8615_3, &_call_cbs_styleHint_c8615_3);
-  methods += new qt_gsi::GenericMethod ("styleHint", "@hide", true, &_init_cbs_styleHint_c8615_3, &_call_cbs_styleHint_c8615_3, &_set_callback_cbs_styleHint_c8615_3);
-  methods += new qt_gsi::GenericMethod ("subControlRect", "@brief Virtual method QRect QCommonStyle::subControlRect(QStyle::ComplexControl cc, const QStyleOptionComplex *opt, QStyle::SubControl sc, const QWidget *w)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_subControlRect_c9798_1, &_call_cbs_subControlRect_c9798_1);
-  methods += new qt_gsi::GenericMethod ("subControlRect", "@hide", true, &_init_cbs_subControlRect_c9798_1, &_call_cbs_subControlRect_c9798_1, &_set_callback_cbs_subControlRect_c9798_1);
-  methods += new qt_gsi::GenericMethod ("subElementRect", "@brief Virtual method QRect QCommonStyle::subElementRect(QStyle::SubElement r, const QStyleOption *opt, const QWidget *widget)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_subElementRect_c6528_1, &_call_cbs_subElementRect_c6528_1);
-  methods += new qt_gsi::GenericMethod ("subElementRect", "@hide", true, &_init_cbs_subElementRect_c6528_1, &_call_cbs_subElementRect_c6528_1, &_set_callback_cbs_subElementRect_c6528_1);
-  methods += new qt_gsi::GenericMethod ("*timerEvent", "@brief Virtual method void QCommonStyle::timerEvent(QTimerEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0);
-  methods += new qt_gsi::GenericMethod ("*timerEvent", "@hide", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0, &_set_callback_cbs_timerEvent_1730_0);
-  methods += new qt_gsi::GenericMethod ("unpolish", "@brief Virtual method void QCommonStyle::unpolish(QWidget *widget)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_unpolish_1315_0, &_call_cbs_unpolish_1315_0);
-  methods += new qt_gsi::GenericMethod ("unpolish", "@hide", false, &_init_cbs_unpolish_1315_0, &_call_cbs_unpolish_1315_0, &_set_callback_cbs_unpolish_1315_0);
-  methods += new qt_gsi::GenericMethod ("unpolish", "@brief Virtual method void QCommonStyle::unpolish(QApplication *application)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_unpolish_1843_0, &_call_cbs_unpolish_1843_0);
-  methods += new qt_gsi::GenericMethod ("unpolish", "@hide", false, &_init_cbs_unpolish_1843_0, &_call_cbs_unpolish_1843_0, &_set_callback_cbs_unpolish_1843_0);
+  methods += new qt_gsi::GenericMethod ("sizeFromContents", "@hide", true, &_init_cbs_sizeFromContents_c8477_1, &_call_cbs_sizeFromContents_c8477_1);
+  methods += new qt_gsi::GenericMethod ("sizeFromContents", "@brief Virtual method QSize QCommonStyle::sizeFromContents(QStyle::ContentsType ct, const QStyleOption *opt, const QSize &contentsSize, const QWidget *widget)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_sizeFromContents_c8477_1, &_call_cbs_sizeFromContents_c8477_1, &_set_callback_cbs_sizeFromContents_c8477_1);
+  methods += new qt_gsi::GenericMethod ("standardIcon", "@hide", true, &_init_cbs_standardIcon_c6956_2, &_call_cbs_standardIcon_c6956_2);
+  methods += new qt_gsi::GenericMethod ("standardIcon", "@brief Virtual method QIcon QCommonStyle::standardIcon(QStyle::StandardPixmap standardIcon, const QStyleOption *opt, const QWidget *widget)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_standardIcon_c6956_2, &_call_cbs_standardIcon_c6956_2, &_set_callback_cbs_standardIcon_c6956_2);
+  methods += new qt_gsi::GenericMethod ("standardPalette", "@hide", true, &_init_cbs_standardPalette_c0_0, &_call_cbs_standardPalette_c0_0);
+  methods += new qt_gsi::GenericMethod ("standardPalette", "@brief Virtual method QPalette QCommonStyle::standardPalette()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_standardPalette_c0_0, &_call_cbs_standardPalette_c0_0, &_set_callback_cbs_standardPalette_c0_0);
+  methods += new qt_gsi::GenericMethod ("standardPixmap", "@hide", true, &_init_cbs_standardPixmap_c6956_2, &_call_cbs_standardPixmap_c6956_2);
+  methods += new qt_gsi::GenericMethod ("standardPixmap", "@brief Virtual method QPixmap QCommonStyle::standardPixmap(QStyle::StandardPixmap sp, const QStyleOption *opt, const QWidget *widget)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_standardPixmap_c6956_2, &_call_cbs_standardPixmap_c6956_2, &_set_callback_cbs_standardPixmap_c6956_2);
+  methods += new qt_gsi::GenericMethod ("styleHint", "@hide", true, &_init_cbs_styleHint_c8615_3, &_call_cbs_styleHint_c8615_3);
+  methods += new qt_gsi::GenericMethod ("styleHint", "@brief Virtual method int QCommonStyle::styleHint(QStyle::StyleHint sh, const QStyleOption *opt, const QWidget *w, QStyleHintReturn *shret)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_styleHint_c8615_3, &_call_cbs_styleHint_c8615_3, &_set_callback_cbs_styleHint_c8615_3);
+  methods += new qt_gsi::GenericMethod ("subControlRect", "@hide", true, &_init_cbs_subControlRect_c9798_1, &_call_cbs_subControlRect_c9798_1);
+  methods += new qt_gsi::GenericMethod ("subControlRect", "@brief Virtual method QRect QCommonStyle::subControlRect(QStyle::ComplexControl cc, const QStyleOptionComplex *opt, QStyle::SubControl sc, const QWidget *w)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_subControlRect_c9798_1, &_call_cbs_subControlRect_c9798_1, &_set_callback_cbs_subControlRect_c9798_1);
+  methods += new qt_gsi::GenericMethod ("subElementRect", "@hide", true, &_init_cbs_subElementRect_c6528_1, &_call_cbs_subElementRect_c6528_1);
+  methods += new qt_gsi::GenericMethod ("subElementRect", "@brief Virtual method QRect QCommonStyle::subElementRect(QStyle::SubElement r, const QStyleOption *opt, const QWidget *widget)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_subElementRect_c6528_1, &_call_cbs_subElementRect_c6528_1, &_set_callback_cbs_subElementRect_c6528_1);
+  methods += new qt_gsi::GenericMethod ("*timerEvent", "@hide", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0);
+  methods += new qt_gsi::GenericMethod ("*timerEvent", "@brief Virtual method void QCommonStyle::timerEvent(QTimerEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0, &_set_callback_cbs_timerEvent_1730_0);
+  methods += new qt_gsi::GenericMethod ("unpolish", "@hide", false, &_init_cbs_unpolish_1315_0, &_call_cbs_unpolish_1315_0);
+  methods += new qt_gsi::GenericMethod ("unpolish", "@brief Virtual method void QCommonStyle::unpolish(QWidget *widget)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_unpolish_1315_0, &_call_cbs_unpolish_1315_0, &_set_callback_cbs_unpolish_1315_0);
+  methods += new qt_gsi::GenericMethod ("unpolish", "@hide", false, &_init_cbs_unpolish_1843_0, &_call_cbs_unpolish_1843_0);
+  methods += new qt_gsi::GenericMethod ("unpolish", "@brief Virtual method void QCommonStyle::unpolish(QApplication *application)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_unpolish_1843_0, &_call_cbs_unpolish_1843_0, &_set_callback_cbs_unpolish_1843_0);
   return methods;
 }
 

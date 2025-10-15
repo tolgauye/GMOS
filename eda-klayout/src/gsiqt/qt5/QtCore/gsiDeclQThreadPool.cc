@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -37,6 +37,7 @@
 #include <QTimerEvent>
 #include "gsiQt.h"
 #include "gsiQtCoreCommon.h"
+#include "gsiDeclQtCoreTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -208,41 +209,6 @@ static void _call_f_setMaxThreadCount_767 (const qt_gsi::GenericMethod * /*decl*
 }
 
 
-// void QThreadPool::setStackSize(unsigned int stackSize)
-
-
-static void _init_f_setStackSize_1772 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("stackSize");
-  decl->add_arg<unsigned int > (argspec_0);
-  decl->set_return<void > ();
-}
-
-static void _call_f_setStackSize_1772 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  unsigned int arg1 = gsi::arg_reader<unsigned int >() (args, heap);
-  __SUPPRESS_UNUSED_WARNING(ret);
-  ((QThreadPool *)cls)->setStackSize (arg1);
-}
-
-
-// unsigned int QThreadPool::stackSize()
-
-
-static void _init_f_stackSize_c0 (qt_gsi::GenericMethod *decl)
-{
-  decl->set_return<unsigned int > ();
-}
-
-static void _call_f_stackSize_c0 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  ret.write<unsigned int > ((unsigned int)((QThreadPool *)cls)->stackSize ());
-}
-
-
 // void QThreadPool::start(QRunnable *runnable, int priority)
 
 
@@ -282,25 +248,6 @@ static void _call_f_tryStart_1526 (const qt_gsi::GenericMethod * /*decl*/, void 
   tl::Heap heap;
   QRunnable *arg1 = gsi::arg_reader<QRunnable * >() (args, heap);
   ret.write<bool > ((bool)((QThreadPool *)cls)->tryStart (arg1));
-}
-
-
-// bool QThreadPool::tryTake(QRunnable *runnable)
-
-
-static void _init_f_tryTake_1526 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("runnable");
-  decl->add_arg<QRunnable * > (argspec_0);
-  decl->set_return<bool > ();
-}
-
-static void _call_f_tryTake_1526 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  QRunnable *arg1 = gsi::arg_reader<QRunnable * >() (args, heap);
-  ret.write<bool > ((bool)((QThreadPool *)cls)->tryTake (arg1));
 }
 
 
@@ -345,7 +292,7 @@ static void _init_f_tr_4013 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("s");
   decl->add_arg<const char * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("c", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("c", true, "__null");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("n", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -357,7 +304,7 @@ static void _call_f_tr_4013 (const qt_gsi::GenericStaticMethod * /*decl*/, gsi::
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (__null, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QThreadPool::tr (arg1, arg2, arg3));
 }
@@ -370,7 +317,7 @@ static void _init_f_trUtf8_4013 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("s");
   decl->add_arg<const char * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("c", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("c", true, "__null");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("n", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -382,7 +329,7 @@ static void _call_f_trUtf8_4013 (const qt_gsi::GenericStaticMethod * /*decl*/, g
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (__null, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QThreadPool::trUtf8 (arg1, arg2, arg3));
 }
@@ -403,14 +350,10 @@ static gsi::Methods methods_QThreadPool () {
   methods += new qt_gsi::GenericMethod ("reserveThread", "@brief Method void QThreadPool::reserveThread()\n", false, &_init_f_reserveThread_0, &_call_f_reserveThread_0);
   methods += new qt_gsi::GenericMethod ("setExpiryTimeout|expiryTimeout=", "@brief Method void QThreadPool::setExpiryTimeout(int expiryTimeout)\n", false, &_init_f_setExpiryTimeout_767, &_call_f_setExpiryTimeout_767);
   methods += new qt_gsi::GenericMethod ("setMaxThreadCount|maxThreadCount=", "@brief Method void QThreadPool::setMaxThreadCount(int maxThreadCount)\n", false, &_init_f_setMaxThreadCount_767, &_call_f_setMaxThreadCount_767);
-  methods += new qt_gsi::GenericMethod ("setStackSize|stackSize=", "@brief Method void QThreadPool::setStackSize(unsigned int stackSize)\n", false, &_init_f_setStackSize_1772, &_call_f_setStackSize_1772);
-  methods += new qt_gsi::GenericMethod (":stackSize", "@brief Method unsigned int QThreadPool::stackSize()\n", true, &_init_f_stackSize_c0, &_call_f_stackSize_c0);
   methods += new qt_gsi::GenericMethod ("start", "@brief Method void QThreadPool::start(QRunnable *runnable, int priority)\n", false, &_init_f_start_2185, &_call_f_start_2185);
   methods += new qt_gsi::GenericMethod ("tryStart", "@brief Method bool QThreadPool::tryStart(QRunnable *runnable)\n", false, &_init_f_tryStart_1526, &_call_f_tryStart_1526);
-  methods += new qt_gsi::GenericMethod ("tryTake", "@brief Method bool QThreadPool::tryTake(QRunnable *runnable)\n", false, &_init_f_tryTake_1526, &_call_f_tryTake_1526);
   methods += new qt_gsi::GenericMethod ("waitForDone", "@brief Method bool QThreadPool::waitForDone(int msecs)\n", false, &_init_f_waitForDone_767, &_call_f_waitForDone_767);
   methods += gsi::qt_signal<QObject * > ("destroyed(QObject *)", "destroyed", gsi::arg("arg1"), "@brief Signal declaration for QThreadPool::destroyed(QObject *)\nYou can bind a procedure to this signal.");
-  methods += gsi::qt_signal<const QString & > ("objectNameChanged(const QString &)", "objectNameChanged", gsi::arg("objectName"), "@brief Signal declaration for QThreadPool::objectNameChanged(const QString &objectName)\nYou can bind a procedure to this signal.");
   methods += new qt_gsi::GenericStaticMethod ("globalInstance", "@brief Static method QThreadPool *QThreadPool::globalInstance()\nThis method is static and can be called without an instance.", &_init_f_globalInstance_0, &_call_f_globalInstance_0);
   methods += new qt_gsi::GenericStaticMethod ("tr", "@brief Static method QString QThreadPool::tr(const char *s, const char *c, int n)\nThis method is static and can be called without an instance.", &_init_f_tr_4013, &_call_f_tr_4013);
   methods += new qt_gsi::GenericStaticMethod ("trUtf8", "@brief Static method QString QThreadPool::trUtf8(const char *s, const char *c, int n)\nThis method is static and can be called without an instance.", &_init_f_trUtf8_4013, &_call_f_trUtf8_4013);
@@ -472,70 +415,63 @@ public:
     emit QThreadPool::destroyed(arg1);
   }
 
-  //  [adaptor impl] bool QThreadPool::event(QEvent *event)
-  bool cbs_event_1217_0(QEvent *_event)
+  //  [adaptor impl] bool QThreadPool::event(QEvent *)
+  bool cbs_event_1217_0(QEvent *arg1)
   {
-    return QThreadPool::event(_event);
+    return QThreadPool::event(arg1);
   }
 
-  virtual bool event(QEvent *_event)
+  virtual bool event(QEvent *arg1)
   {
     if (cb_event_1217_0.can_issue()) {
-      return cb_event_1217_0.issue<QThreadPool_Adaptor, bool, QEvent *>(&QThreadPool_Adaptor::cbs_event_1217_0, _event);
+      return cb_event_1217_0.issue<QThreadPool_Adaptor, bool, QEvent *>(&QThreadPool_Adaptor::cbs_event_1217_0, arg1);
     } else {
-      return QThreadPool::event(_event);
+      return QThreadPool::event(arg1);
     }
   }
 
-  //  [adaptor impl] bool QThreadPool::eventFilter(QObject *watched, QEvent *event)
-  bool cbs_eventFilter_2411_0(QObject *watched, QEvent *event)
+  //  [adaptor impl] bool QThreadPool::eventFilter(QObject *, QEvent *)
+  bool cbs_eventFilter_2411_0(QObject *arg1, QEvent *arg2)
   {
-    return QThreadPool::eventFilter(watched, event);
+    return QThreadPool::eventFilter(arg1, arg2);
   }
 
-  virtual bool eventFilter(QObject *watched, QEvent *event)
+  virtual bool eventFilter(QObject *arg1, QEvent *arg2)
   {
     if (cb_eventFilter_2411_0.can_issue()) {
-      return cb_eventFilter_2411_0.issue<QThreadPool_Adaptor, bool, QObject *, QEvent *>(&QThreadPool_Adaptor::cbs_eventFilter_2411_0, watched, event);
+      return cb_eventFilter_2411_0.issue<QThreadPool_Adaptor, bool, QObject *, QEvent *>(&QThreadPool_Adaptor::cbs_eventFilter_2411_0, arg1, arg2);
     } else {
-      return QThreadPool::eventFilter(watched, event);
+      return QThreadPool::eventFilter(arg1, arg2);
     }
   }
 
-  //  [emitter impl] void QThreadPool::objectNameChanged(const QString &objectName)
-  void emitter_QThreadPool_objectNameChanged_4567(const QString &objectName)
+  //  [adaptor impl] void QThreadPool::childEvent(QChildEvent *)
+  void cbs_childEvent_1701_0(QChildEvent *arg1)
   {
-    __SUPPRESS_UNUSED_WARNING (objectName);
-    throw tl::Exception ("Can't emit private signal 'void QThreadPool::objectNameChanged(const QString &objectName)'");
+    QThreadPool::childEvent(arg1);
   }
 
-  //  [adaptor impl] void QThreadPool::childEvent(QChildEvent *event)
-  void cbs_childEvent_1701_0(QChildEvent *event)
-  {
-    QThreadPool::childEvent(event);
-  }
-
-  virtual void childEvent(QChildEvent *event)
+  virtual void childEvent(QChildEvent *arg1)
   {
     if (cb_childEvent_1701_0.can_issue()) {
-      cb_childEvent_1701_0.issue<QThreadPool_Adaptor, QChildEvent *>(&QThreadPool_Adaptor::cbs_childEvent_1701_0, event);
+      cb_childEvent_1701_0.issue<QThreadPool_Adaptor, QChildEvent *>(&QThreadPool_Adaptor::cbs_childEvent_1701_0, arg1);
     } else {
-      QThreadPool::childEvent(event);
+      QThreadPool::childEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QThreadPool::customEvent(QEvent *event)
-  void cbs_customEvent_1217_0(QEvent *event)
+  //  [adaptor impl] void QThreadPool::customEvent(QEvent *)
+  void cbs_customEvent_1217_0(QEvent *arg1)
   {
-    QThreadPool::customEvent(event);
+    QThreadPool::customEvent(arg1);
   }
 
-  virtual void customEvent(QEvent *event)
+  virtual void customEvent(QEvent *arg1)
   {
     if (cb_customEvent_1217_0.can_issue()) {
-      cb_customEvent_1217_0.issue<QThreadPool_Adaptor, QEvent *>(&QThreadPool_Adaptor::cbs_customEvent_1217_0, event);
+      cb_customEvent_1217_0.issue<QThreadPool_Adaptor, QEvent *>(&QThreadPool_Adaptor::cbs_customEvent_1217_0, arg1);
     } else {
-      QThreadPool::customEvent(event);
+      QThreadPool::customEvent(arg1);
     }
   }
 
@@ -554,18 +490,18 @@ public:
     }
   }
 
-  //  [adaptor impl] void QThreadPool::timerEvent(QTimerEvent *event)
-  void cbs_timerEvent_1730_0(QTimerEvent *event)
+  //  [adaptor impl] void QThreadPool::timerEvent(QTimerEvent *)
+  void cbs_timerEvent_1730_0(QTimerEvent *arg1)
   {
-    QThreadPool::timerEvent(event);
+    QThreadPool::timerEvent(arg1);
   }
 
-  virtual void timerEvent(QTimerEvent *event)
+  virtual void timerEvent(QTimerEvent *arg1)
   {
     if (cb_timerEvent_1730_0.can_issue()) {
-      cb_timerEvent_1730_0.issue<QThreadPool_Adaptor, QTimerEvent *>(&QThreadPool_Adaptor::cbs_timerEvent_1730_0, event);
+      cb_timerEvent_1730_0.issue<QThreadPool_Adaptor, QTimerEvent *>(&QThreadPool_Adaptor::cbs_timerEvent_1730_0, arg1);
     } else {
-      QThreadPool::timerEvent(event);
+      QThreadPool::timerEvent(arg1);
     }
   }
 
@@ -583,7 +519,7 @@ QThreadPool_Adaptor::~QThreadPool_Adaptor() { }
 
 static void _init_ctor_QThreadPool_Adaptor_1302 (qt_gsi::GenericStaticMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("parent", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("parent", true, "0");
   decl->add_arg<QObject * > (argspec_0);
   decl->set_return_new<QThreadPool_Adaptor> ();
 }
@@ -592,16 +528,16 @@ static void _call_ctor_QThreadPool_Adaptor_1302 (const qt_gsi::GenericStaticMeth
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (nullptr, heap);
+  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (0, heap);
   ret.write<QThreadPool_Adaptor *> (new QThreadPool_Adaptor (arg1));
 }
 
 
-// void QThreadPool::childEvent(QChildEvent *event)
+// void QThreadPool::childEvent(QChildEvent *)
 
 static void _init_cbs_childEvent_1701_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QChildEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -621,11 +557,11 @@ static void _set_callback_cbs_childEvent_1701_0 (void *cls, const gsi::Callback 
 }
 
 
-// void QThreadPool::customEvent(QEvent *event)
+// void QThreadPool::customEvent(QEvent *)
 
 static void _init_cbs_customEvent_1217_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -649,7 +585,7 @@ static void _set_callback_cbs_customEvent_1217_0 (void *cls, const gsi::Callback
 
 static void _init_emitter_destroyed_1302 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("arg1", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("arg1", true, "0");
   decl->add_arg<QObject * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -658,7 +594,7 @@ static void _call_emitter_destroyed_1302 (const qt_gsi::GenericMethod * /*decl*/
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (nullptr, heap);
+  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (0, heap);
   ((QThreadPool_Adaptor *)cls)->emitter_QThreadPool_destroyed_1302 (arg1);
 }
 
@@ -687,11 +623,11 @@ static void _set_callback_cbs_disconnectNotify_2394_0 (void *cls, const gsi::Cal
 }
 
 
-// bool QThreadPool::event(QEvent *event)
+// bool QThreadPool::event(QEvent *)
 
 static void _init_cbs_event_1217_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QEvent * > (argspec_0);
   decl->set_return<bool > ();
 }
@@ -710,13 +646,13 @@ static void _set_callback_cbs_event_1217_0 (void *cls, const gsi::Callback &cb)
 }
 
 
-// bool QThreadPool::eventFilter(QObject *watched, QEvent *event)
+// bool QThreadPool::eventFilter(QObject *, QEvent *)
 
 static void _init_cbs_eventFilter_2411_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("watched");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QObject * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("event");
+  static gsi::ArgSpecBase argspec_1 ("arg2");
   decl->add_arg<QEvent * > (argspec_1);
   decl->set_return<bool > ();
 }
@@ -751,24 +687,6 @@ static void _call_fp_isSignalConnected_c2394 (const qt_gsi::GenericMethod * /*de
   tl::Heap heap;
   const QMetaMethod &arg1 = gsi::arg_reader<const QMetaMethod & >() (args, heap);
   ret.write<bool > ((bool)((QThreadPool_Adaptor *)cls)->fp_QThreadPool_isSignalConnected_c2394 (arg1));
-}
-
-
-// emitter void QThreadPool::objectNameChanged(const QString &objectName)
-
-static void _init_emitter_objectNameChanged_4567 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("objectName");
-  decl->add_arg<const QString & > (argspec_0);
-  decl->set_return<void > ();
-}
-
-static void _call_emitter_objectNameChanged_4567 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs & /*ret*/) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const QString &arg1 = gsi::arg_reader<const QString & >() (args, heap);
-  ((QThreadPool_Adaptor *)cls)->emitter_QThreadPool_objectNameChanged_4567 (arg1);
 }
 
 
@@ -818,11 +736,11 @@ static void _call_fp_senderSignalIndex_c0 (const qt_gsi::GenericMethod * /*decl*
 }
 
 
-// void QThreadPool::timerEvent(QTimerEvent *event)
+// void QThreadPool::timerEvent(QTimerEvent *)
 
 static void _init_cbs_timerEvent_1730_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QTimerEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -850,24 +768,23 @@ gsi::Class<QThreadPool> &qtdecl_QThreadPool ();
 static gsi::Methods methods_QThreadPool_Adaptor () {
   gsi::Methods methods;
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QThreadPool::QThreadPool(QObject *parent)\nThis method creates an object of class QThreadPool.", &_init_ctor_QThreadPool_Adaptor_1302, &_call_ctor_QThreadPool_Adaptor_1302);
-  methods += new qt_gsi::GenericMethod ("*childEvent", "@brief Virtual method void QThreadPool::childEvent(QChildEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0);
-  methods += new qt_gsi::GenericMethod ("*childEvent", "@hide", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0, &_set_callback_cbs_childEvent_1701_0);
-  methods += new qt_gsi::GenericMethod ("*customEvent", "@brief Virtual method void QThreadPool::customEvent(QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*customEvent", "@hide", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0, &_set_callback_cbs_customEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*childEvent", "@hide", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0);
+  methods += new qt_gsi::GenericMethod ("*childEvent", "@brief Virtual method void QThreadPool::childEvent(QChildEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0, &_set_callback_cbs_childEvent_1701_0);
+  methods += new qt_gsi::GenericMethod ("*customEvent", "@hide", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*customEvent", "@brief Virtual method void QThreadPool::customEvent(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0, &_set_callback_cbs_customEvent_1217_0);
   methods += new qt_gsi::GenericMethod ("emit_destroyed", "@brief Emitter for signal void QThreadPool::destroyed(QObject *)\nCall this method to emit this signal.", false, &_init_emitter_destroyed_1302, &_call_emitter_destroyed_1302);
-  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@brief Virtual method void QThreadPool::disconnectNotify(const QMetaMethod &signal)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0);
-  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@hide", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0, &_set_callback_cbs_disconnectNotify_2394_0);
-  methods += new qt_gsi::GenericMethod ("event", "@brief Virtual method bool QThreadPool::event(QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0);
-  methods += new qt_gsi::GenericMethod ("event", "@hide", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0, &_set_callback_cbs_event_1217_0);
-  methods += new qt_gsi::GenericMethod ("eventFilter", "@brief Virtual method bool QThreadPool::eventFilter(QObject *watched, QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0);
-  methods += new qt_gsi::GenericMethod ("eventFilter", "@hide", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0, &_set_callback_cbs_eventFilter_2411_0);
+  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@hide", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0);
+  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@brief Virtual method void QThreadPool::disconnectNotify(const QMetaMethod &signal)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0, &_set_callback_cbs_disconnectNotify_2394_0);
+  methods += new qt_gsi::GenericMethod ("event", "@hide", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0);
+  methods += new qt_gsi::GenericMethod ("event", "@brief Virtual method bool QThreadPool::event(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0, &_set_callback_cbs_event_1217_0);
+  methods += new qt_gsi::GenericMethod ("eventFilter", "@hide", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0);
+  methods += new qt_gsi::GenericMethod ("eventFilter", "@brief Virtual method bool QThreadPool::eventFilter(QObject *, QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0, &_set_callback_cbs_eventFilter_2411_0);
   methods += new qt_gsi::GenericMethod ("*isSignalConnected", "@brief Method bool QThreadPool::isSignalConnected(const QMetaMethod &signal)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_isSignalConnected_c2394, &_call_fp_isSignalConnected_c2394);
-  methods += new qt_gsi::GenericMethod ("emit_objectNameChanged", "@brief Emitter for signal void QThreadPool::objectNameChanged(const QString &objectName)\nCall this method to emit this signal.", false, &_init_emitter_objectNameChanged_4567, &_call_emitter_objectNameChanged_4567);
   methods += new qt_gsi::GenericMethod ("*receivers", "@brief Method int QThreadPool::receivers(const char *signal)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_receivers_c1731, &_call_fp_receivers_c1731);
   methods += new qt_gsi::GenericMethod ("*sender", "@brief Method QObject *QThreadPool::sender()\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_sender_c0, &_call_fp_sender_c0);
   methods += new qt_gsi::GenericMethod ("*senderSignalIndex", "@brief Method int QThreadPool::senderSignalIndex()\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_senderSignalIndex_c0, &_call_fp_senderSignalIndex_c0);
-  methods += new qt_gsi::GenericMethod ("*timerEvent", "@brief Virtual method void QThreadPool::timerEvent(QTimerEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0);
-  methods += new qt_gsi::GenericMethod ("*timerEvent", "@hide", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0, &_set_callback_cbs_timerEvent_1730_0);
+  methods += new qt_gsi::GenericMethod ("*timerEvent", "@hide", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0);
+  methods += new qt_gsi::GenericMethod ("*timerEvent", "@brief Virtual method void QThreadPool::timerEvent(QTimerEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0, &_set_callback_cbs_timerEvent_1730_0);
   return methods;
 }
 

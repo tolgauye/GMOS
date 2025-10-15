@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
 #define HDR_layRedrawThreadWorker
 
 #include "dbLayout.h"
-#include "layLayoutViewBase.h"
+#include "layLayoutView.h"
 #include "tlThreadedWorkers.h"
 #include "tlTimer.h"
 
@@ -168,7 +168,7 @@ public:
   RedrawThreadWorker (RedrawThread *redraw_thread);
   virtual ~RedrawThreadWorker ();
 
-  void setup (LayoutViewBase *view, RedrawThreadCanvas *canvas, const std::vector<db::Box> &redraw_region, const db::DCplxTrans &vp_trans);
+  void setup (LayoutView *view, RedrawThreadCanvas *canvas, const std::vector<db::Box> &redraw_region, const db::DCplxTrans &vp_trans);
   void finish ();
 
 protected:
@@ -186,7 +186,7 @@ private:
   void draw_box_properties (bool drawing_context, db::cell_index_type ci, const db::CplxTrans &trans, const std::vector <db::Box> &redraw_regions, int level);
   void draw_box_properties (bool drawing_context, db::cell_index_type ci, const db::CplxTrans &trans, const std::vector <db::Box> &redraw_regions, int level, db::properties_id_type prop_id);
   void draw_box_properties (bool drawing_context, db::cell_index_type ci, const db::CplxTrans &trans, const db::Box &redraw_box, int level, db::properties_id_type prop_id);
-  void draw_cell (bool drawing_context, int level, const db::CplxTrans &trans, const db::Box &box, bool empty_cell, const std::string &txt);
+  void draw_cell (bool drawing_context, int level, const db::CplxTrans &trans, const db::Box &box, const std::string &txt);
   void draw_cell_properties (bool drawing_context, int level, const db::CplxTrans &trans, const db::Box &box, db::properties_id_type prop_id);
   void draw_cell_shapes (const db::CplxTrans &trans, const db::Cell &cell, const db::Box &vp, lay::CanvasPlane *fill, lay::CanvasPlane *frame, lay::CanvasPlane *vertex, lay::CanvasPlane *text);
   void test_snapshot (const UpdateSnapshotCallback *update_snapshot);
@@ -199,7 +199,6 @@ private:
   bool any_shapes (db::cell_index_type cell_index, unsigned int levels);
   bool any_text_shapes (db::cell_index_type cell_index, unsigned int levels);
   bool any_cell_box (db::cell_index_type cell_index, unsigned int levels);
-  bool need_draw_box (const db::Layout *layout, const db::Cell &cell, int level);
 
   RedrawThread *mp_redraw_thread;
   std::vector <db::Box> m_redraw_region;
@@ -222,7 +221,7 @@ private:
   double m_default_text_size;
   bool m_drop_small_cells;
   unsigned int m_drop_small_cells_value;
-  lay::LayoutViewBase::drop_small_cells_cond_type m_drop_small_cells_cond;
+  lay::LayoutView::drop_small_cells_cond_type m_drop_small_cells_cond;
   bool m_draw_array_border_instances;
   double m_abstract_mode_width;
   bool m_child_context_enabled;
@@ -232,8 +231,7 @@ private:
   std::set <std::pair <db::CplxTrans, db::cell_index_type>, lay::CellVariantCacheCompare> *mp_cell_var_cache;
   unsigned int m_cache_hits, m_cache_misses;
   std::set <std::pair <db::DCplxTrans, int> > m_box_variants;
-  std::vector <std::set <lay::LayoutViewBase::cell_index_type> > m_hidden_cells;
-  std::vector <std::set <lay::LayoutViewBase::cell_index_type> > m_ghost_cells;
+  std::vector <std::set <lay::LayoutView::cell_index_type> > m_hidden_cells;
   std::vector <lay::CellView> m_cellviews;
   const db::Layout *mp_layout;
   int m_cv_index;
@@ -246,7 +244,7 @@ private:
   std::vector<std::pair<unsigned int, lay::CanvasPlane *> > m_buffers;
   unsigned int m_test_count;
   tl::Clock m_clock;
-  std::unique_ptr<lay::Renderer> mp_renderer;
+  std::auto_ptr<lay::Renderer> mp_renderer;
 };
 
 }

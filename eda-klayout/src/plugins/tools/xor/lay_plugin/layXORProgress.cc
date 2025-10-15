@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -109,13 +109,8 @@ public:
     QFontMetrics fm (font ());
     m_line_height = std::max (fm.height (), m_pixmap_size + 4);
     m_font_height = fm.height () * 3 / 2;
- #if QT_VERSION >= 0x60000
-    m_first_column_width = fm.horizontalAdvance (QString::fromUtf8 ("LAYERNAME"));
-    m_column_width = m_pixmap_size + 4 + m_spacing + fm.horizontalAdvance (QString::fromUtf8 ("1.00G "));
-#else
     m_first_column_width = fm.width (QString::fromUtf8 ("LAYERNAME"));
     m_column_width = m_pixmap_size + 4 + m_spacing + fm.width (QString::fromUtf8 ("1.00G "));
-#endif
   }
 
   QSize sizeHint () const
@@ -202,13 +197,13 @@ public:
 
                 } else {
 
-                  int y2 = std::min (m_pixmap_size - 1, m_pixmap_size - 1 - (iy * m_pixmap_size + ny / 2) / ny);
-                  int y1 = std::max (0, m_pixmap_size - 1 - ((iy + 1) * m_pixmap_size + ny / 2) / ny);
-                  int x1 = std::max (0, (ix * m_pixmap_size + nx / 2) / nx);
-                  int x2 = std::min (m_pixmap_size - 1, ((ix + 1) * m_pixmap_size + nx / 2) / nx);
+                  int y2 = m_pixmap_size - 1 - (iy * m_pixmap_size + m_pixmap_size / 2) / ny;
+                  int y1 = m_pixmap_size - 1 - ((iy + 1) * m_pixmap_size + m_pixmap_size / 2) / ny;
+                  int x1 = (ix * m_pixmap_size + m_pixmap_size / 2) / nx;
+                  int x2 = ((ix + 1) * m_pixmap_size + m_pixmap_size / 2) / nx;
 
                   //  "draw" the field
-                  for (int y = y1; y <= y2; ++y) {
+                  for (int y = y1; y <= y2 && y >= 0 && y < m_pixmap_size; ++y) {
                     *((uint32_t *) img->scanLine (y)) &= (((1 << x1) - 1) | ~((1 << (x2 + 1)) - 1));
                   }
 
@@ -319,8 +314,8 @@ public:
         grad.setColorAt (0.0, QColor (248, 248, 248));
         grad.setColorAt (1.0, QColor (224, 224, 224));
         painter.setBrush (QBrush (grad));
-        painter.setPen (QPen (Qt::black, 1.0, Qt::SolidLine, Qt::SquareCap, Qt::MiterJoin));
-        painter.drawRect (QRectF (QPointF (x + 1, y - 1), QSizeF (m_pixmap_size + 2, m_pixmap_size + 2)));
+        painter.setPen (QPen (Qt::black));
+        painter.drawRect (QRect (QPoint (x, y - 2), QSize (m_pixmap_size + 3, m_pixmap_size + 3)));
 
         painter.setBackgroundMode (Qt::TransparentMode);
         painter.setPen (QColor (128, 255, 128));

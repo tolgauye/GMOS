@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -20,19 +20,13 @@
 
 */
 
-#if defined(HAVE_QT)
+
 
 #ifndef HDR_imgWidgets
 #define HDR_imgWidgets
 
-#include "layWidgets.h"
-#include "tlColor.h"
-#include "imgObject.h"
-
 #include <QObject>
 #include <QWidget>
-#include <QFrame>
-#include <QToolButton>
 #include <vector>
 
 class QMouseEvent;
@@ -43,34 +37,11 @@ namespace img
 {
 
 /**
- *  @brief A two-color widget
+ *  @brief A helper function to interpolate a color in the color bar at a given x
  *
- *  This widget has two color buttons and a "lock" checkbox which makes both colors identical
+ *  TODO: move this somewhere else.
  */
-class TwoColorWidget
-  : public QFrame
-{
-Q_OBJECT
-
-public:
-  TwoColorWidget (QWidget *parent);
-
-signals:
-  void color_changed (std::pair<QColor, QColor> c);
-
-public slots:
-  void set_color (std::pair<QColor, QColor> c);
-  void set_single_mode (bool f);
-
-private slots:
-  void lcolor_changed (QColor c);
-  void rcolor_changed (QColor c);
-  void lock_changed (bool checked);
-
-private:
-  lay::SimpleColorButton *mp_left, *mp_right;
-  QToolButton *mp_lock;
-};
+QColor interpolated_color (const std::vector<std::pair <double, QColor> > &nodes, double x);
 
 /**
  *  @brief A color bar widget
@@ -111,9 +82,9 @@ public:
     return m_selected >= 0;
   }
 
-  void set_nodes (const std::vector <std::pair <double, std::pair<tl::Color, tl::Color> > > &nodes);
+  void set_nodes (const std::vector <std::pair <double, QColor> > &nodes);
 
-  const std::vector <std::pair <double, std::pair<tl::Color, tl::Color> > > &nodes () const
+  const std::vector <std::pair <double, QColor> > &nodes () const
   {
     return m_nodes;
   }
@@ -121,18 +92,18 @@ public:
   void set_histogram (const std::vector <size_t> &histogram);
 
 public slots:
-  void set_current_color (std::pair<QColor, QColor> c);
+  void set_current_color (QColor c);
   void set_current_position (double x);
 
 signals:
   void color_mapping_changed ();
   void selection_changed ();
-  void selection_changed (std::pair<QColor, QColor> c);
+  void selection_changed (QColor c);
 
 private:
   bool m_dragging;
   int m_selected;
-  std::vector <std::pair <double, std::pair<tl::Color, tl::Color> > > m_nodes;
+  std::vector <std::pair <double, QColor> > m_nodes;
   std::vector <size_t> m_histogram;
 };
 
@@ -140,4 +111,3 @@ private:
 
 #endif
 
-#endif

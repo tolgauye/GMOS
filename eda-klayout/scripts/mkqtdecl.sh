@@ -7,21 +7,20 @@
 # framework is based on a C++ parser and a configuration file that specifies details
 # about the translation.
 #
-# By default, the script will take the Qt headers from /opt/qt/4.6.3, /opt/qt/5.5.1
-# and /opt/qt/6.2.1 for Qt4, Qt5 and Qt6 respectively.
+# By default, the script will take the Qt headers from /opt/qt/4.6.3 and /opt/qt/5.5.1
+# for Qt4 and Qt5 respectively.
 #
 # Call it from project level as
 #
 #   ./scripts/mkqtdecl.sh -update        # Qt4
 #   ./scripts/mkqtdecl.sh -update -qt5   # Qt5
-#   ./scripts/mkqtdecl.sh -update -qt6   # Qt6
 # 
 # For more options see 
 #
 #   ./scripts/mkqtdecl.sh -h
 #
 # 
-# Copyright (C) 2006-2025 Matthias Koefferlein
+# Copyright (C) 2006-2019 Matthias Koefferlein
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -43,19 +42,15 @@ update=0
 diff=0
 reuse=0
 qt="/opt/qt/4.6.3/include"
-qt5="/opt/qt/5.12.12/include"
-qt6="/opt/qt/6.2.1/include"
+qt5="/opt/qt/5.5.1/include"
 inst_dir_common=`pwd`/scripts/mkqtdecl_common
 inst_dir4=`pwd`/scripts/mkqtdecl4
 inst_dir5=`pwd`/scripts/mkqtdecl5
-inst_dir6=`pwd`/scripts/mkqtdecl6
 src_dir=`pwd`/src
 src_name4=gsiqt/qt4
 src_name5=gsiqt/qt5
-src_name6=gsiqt/qt6
-qt_mods4="QtCore QtGui QtDesigner QtNetwork QtSql QtXml QtUiTools"
-qt_mods5="QtCore QtGui QtWidgets QtDesigner QtNetwork QtPrintSupport QtSql QtSvg QtXml QtXmlPatterns QtMultimedia QtUiTools"
-qt_mods6="QtCore QtGui QtWidgets QtNetwork QtPrintSupport QtSql QtSvg QtXml QtMultimedia QtUiTools QtCore5Compat"
+qt_mods4="QtCore QtGui QtDesigner QtNetwork QtSql QtXml"
+qt_mods5="QtCore QtGui QtWidgets QtDesigner QtNetwork QtPrintSupport QtSql QtSvg QtXml QtXmlPatterns QtMultimedia"
 
 src_name=$src_name4
 inst_dir=$inst_dir4
@@ -78,7 +73,6 @@ while [ "$1" != "" ]; do
     echo "  mkqtdecl.sh -diff                   Show differences - don't produce and don't synchronize"
     echo "  mkqtdecl.sh -qt path_to_include     Use the specified include path"
     echo "  mkqtdecl.sh -qt5                    Use setup for Qt 5.x (use before -qt)"
-    echo "  mkqtdecl.sh -qt6                    Use setup for Qt 6.x (use before -qt)"
     echo "  mkqtdecl.sh -reuse                  Don't parse C++ container again"
     exit 0
     ;;
@@ -107,13 +101,6 @@ while [ "$1" != "" ]; do
     inst_dir="$inst_dir5"
     qt_mods="$qt_mods5"
     src_name="$src_name5"
-    ;;
-  -qt6)
-    qt="$qt6"
-    work_dir="mkqtdecl6.tmp"
-    inst_dir="$inst_dir6"
-    qt_mods="$qt_mods6"
-    src_name="$src_name6"
     ;;
   *)
     echo "*** ERROR: unknown command option $a"
@@ -183,7 +170,7 @@ if [ $update != 0 ]; then
 
   if [ $reuse == 0 ]; then
 
-    for d in $qt_mods; do
+    for d in Qt*; do
 
       echo "--------------------------------------------------------"
       echo "Parsing $d ..."
@@ -194,7 +181,7 @@ if [ $update != 0 ]; then
       echo "Running gcc preprocessor .."
       # By using -D_GCC_LIMITS_H_ we make the gcc not include constants such as ULONG_MAX which will 
       # remain as such. This way the generated code is more generic.
-      gcc -std=c++17 -I$qt -fPIC -D_GCC_LIMITS_H_ -E -o allofqt.x allofqt.cpp 
+      gcc -I$qt -fPIC -D_GCC_LIMITS_H_ -E -o allofqt.x allofqt.cpp 
 
       echo "Stripping hash lines .."
       egrep -v '^#' <allofqt.x >allofqt.e
@@ -238,7 +225,7 @@ else
   cd $work_dir 
 fi  
 
-for d in $qt_mods; do
+for d in Qt*; do
 
   echo "--------------------------------------------------------"
   echo "Processing $d ..."

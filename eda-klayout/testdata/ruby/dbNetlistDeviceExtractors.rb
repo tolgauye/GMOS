@@ -1,7 +1,7 @@
 # encoding: UTF-8
 
 # KLayout Layout Viewer
-# Copyright (C) 2006-2025 Matthias Koefferlein
+# Copyright (C) 2006-2019 Matthias Koefferlein
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ class DBNetlistExtractorTests_TestClass < TestBase
 
   def test_1_Error
   
-    err = RBA::LogEntryData::new
+    err = RBA::NetlistDeviceExtractorError::new
 
     err.message = "MSG"
     err.cell_name = "Cell"
@@ -71,118 +71,6 @@ class DBNetlistExtractorTests_TestClass < TestBase
 
     ex = RBA::DeviceExtractorCapacitorWithBulk::new
     assert_equal(ex.class, RBA::DeviceExtractorCapacitorWithBulk)
-
-  end
-
-  class MyClass < RBA::DeviceClass
-  end
-
-  class MyFactory < RBA::DeviceClassFactory
-    def create_class
-      MyClass.new
-    end
-  end
-
-  def test_3_Factory
-
-    ex = RBA::DeviceExtractorMOS3Transistor::new("myclass")
-    ex.test_initialize(RBA::Netlist::new)
-    assert_equal(ex.device_class.name, "myclass")
-    assert_equal(ex.device_class.class == MyClass, false)
-    assert_equal(ex.device_class.class == RBA::DeviceClassMOS3Transistor, true)
-
-    ex = RBA::DeviceExtractorMOS3Transistor::new("myclass", false, MyFactory.new)
-    ex.test_initialize(RBA::Netlist::new)
-    assert_equal(ex.device_class.name, "myclass")
-    assert_equal(ex.device_class.class == MyClass, true)
-
-    ex = RBA::DeviceExtractorMOS4Transistor::new("myclass")
-    ex.test_initialize(RBA::Netlist::new)
-    assert_equal(ex.device_class.name, "myclass")
-    assert_equal(ex.device_class.class == MyClass, false)
-    assert_equal(ex.device_class.class == RBA::DeviceClassMOS4Transistor, true)
-
-    ex = RBA::DeviceExtractorMOS4Transistor::new("myclass", false, MyFactory.new)
-    ex.test_initialize(RBA::Netlist::new)
-    assert_equal(ex.device_class.name, "myclass")
-    assert_equal(ex.device_class.class == MyClass, true)
-
-    ex = RBA::DeviceExtractorBJT3Transistor::new("myclass")
-    ex.test_initialize(RBA::Netlist::new)
-    assert_equal(ex.device_class.name, "myclass")
-    assert_equal(ex.device_class.class == MyClass, false)
-    assert_equal(ex.device_class.class == RBA::DeviceClassBJT3Transistor, true)
-
-    ex = RBA::DeviceExtractorBJT3Transistor::new("myclass", MyFactory.new)
-    ex.test_initialize(RBA::Netlist::new)
-    assert_equal(ex.device_class.name, "myclass")
-    assert_equal(ex.device_class.class == MyClass, true)
-
-    ex = RBA::DeviceExtractorBJT4Transistor::new("myclass")
-    ex.test_initialize(RBA::Netlist::new)
-    assert_equal(ex.device_class.name, "myclass")
-    assert_equal(ex.device_class.class == MyClass, false)
-    assert_equal(ex.device_class.class == RBA::DeviceClassBJT4Transistor, true)
-
-    ex = RBA::DeviceExtractorBJT4Transistor::new("myclass", MyFactory.new)
-    ex.test_initialize(RBA::Netlist::new)
-    assert_equal(ex.device_class.name, "myclass")
-    assert_equal(ex.device_class.class == MyClass, true)
-
-    ex = RBA::DeviceExtractorDiode::new("myclass")
-    ex.test_initialize(RBA::Netlist::new)
-    assert_equal(ex.device_class.name, "myclass")
-    assert_equal(ex.device_class.class == MyClass, false)
-    assert_equal(ex.device_class.class == RBA::DeviceClassDiode, true)
-
-    ex = RBA::DeviceExtractorDiode::new("myclass", MyFactory.new)
-    ex.test_initialize(RBA::Netlist::new)
-    assert_equal(ex.device_class.name, "myclass")
-    assert_equal(ex.device_class.class == MyClass, true)
-
-    ex = RBA::DeviceExtractorResistor::new("myclass", 1.0)
-    ex.test_initialize(RBA::Netlist::new)
-    assert_equal(ex.device_class.name, "myclass")
-    assert_equal(ex.device_class.class == MyClass, false)
-    assert_equal(ex.device_class.class == RBA::DeviceClassResistor, true)
-
-    ex = RBA::DeviceExtractorResistor::new("myclass", 1.0, MyFactory.new)
-    ex.test_initialize(RBA::Netlist::new)
-    assert_equal(ex.device_class.name, "myclass")
-    assert_equal(ex.device_class.class == MyClass, true)
-
-    ex = RBA::DeviceExtractorResistorWithBulk::new("myclass", 1.0)
-    ex.test_initialize(RBA::Netlist::new)
-    assert_equal(ex.device_class.name, "myclass")
-    assert_equal(ex.device_class.class == MyClass, false)
-    assert_equal(ex.device_class.class == RBA::DeviceClassResistorWithBulk, true)
-
-    ex = RBA::DeviceExtractorResistorWithBulk::new("myclass", 1.0, MyFactory.new)
-    ex.test_initialize(RBA::Netlist::new)
-    assert_equal(ex.device_class.name, "myclass")
-    assert_equal(ex.device_class.class == MyClass, true)
-
-    ex = RBA::DeviceExtractorCapacitor::new("myclass", 1.0)
-    ex.test_initialize(RBA::Netlist::new)
-    assert_equal(ex.device_class.name, "myclass")
-    assert_equal(ex.device_class.class == MyClass, false)
-    assert_equal(ex.device_class.class == RBA::DeviceClassCapacitor, true)
-
-    ex = RBA::DeviceExtractorCapacitor::new("myclass", 1.0, MyFactory.new)
-    ex.test_initialize(RBA::Netlist::new)
-    assert_equal(ex.device_class.name, "myclass")
-    assert_equal(ex.device_class.class == MyClass, true)
-
-    ex = RBA::DeviceExtractorCapacitorWithBulk::new("myclass", 1.0)
-    ex.test_initialize(RBA::Netlist::new)
-    assert_equal(ex.device_class.name, "myclass")
-    assert_equal(ex.device_class.class == MyClass, false)
-    assert_equal(ex.device_class.class == RBA::DeviceClassCapacitorWithBulk, true)
-
-    ex = RBA::DeviceExtractorCapacitorWithBulk::new("myclass", 1.0, MyFactory.new)
-    ex.test_initialize(RBA::Netlist::new)
-    assert_equal(ex.device_class.name, "myclass")
-    assert_equal(ex.device_class.class == MyClass, true)
 
   end
 

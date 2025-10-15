@@ -1,7 +1,7 @@
 # encoding: UTF-8
 
 # KLayout Layout Viewer
-# Copyright (C) 2006-2025 Matthias Koefferlein
+# Copyright (C) 2006-2019 Matthias Koefferlein
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -112,14 +112,6 @@ class SaveLayoutOptions_TestClass < TestBase
     assert_equal(opt.gds2_write_file_properties?, true)
     opt.gds2_write_file_properties = false
     assert_equal(opt.gds2_write_file_properties?, false)
-
-    assert_equal(opt.gds2_default_text_size.inspect, "nil")
-    opt.gds2_default_text_size = nil
-    assert_equal(opt.gds2_default_text_size.inspect, "nil")
-    opt.gds2_default_text_size = -1.0
-    assert_equal(opt.gds2_default_text_size.inspect, "nil")
-    opt.gds2_default_text_size = 1.0
-    assert_equal(opt.gds2_default_text_size, 1.0)
 
     opt.gds2_write_timestamps = true
     assert_equal(opt.gds2_write_timestamps?, true)

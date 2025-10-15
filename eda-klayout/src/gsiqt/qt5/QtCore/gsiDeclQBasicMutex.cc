@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@
 #include <QBasicMutex>
 #include "gsiQt.h"
 #include "gsiQtCoreCommon.h"
+#include "gsiDeclQtCoreTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -59,21 +60,6 @@ static void _init_f_isRecursive_0 (qt_gsi::GenericMethod *decl)
 }
 
 static void _call_f_isRecursive_0 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  ret.write<bool > ((bool)((QBasicMutex *)cls)->isRecursive ());
-}
-
-
-// bool QBasicMutex::isRecursive()
-
-
-static void _init_f_isRecursive_c0 (qt_gsi::GenericMethod *decl)
-{
-  decl->set_return<bool > ();
-}
-
-static void _call_f_isRecursive_c0 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
 {
   __SUPPRESS_UNUSED_WARNING(args);
   ret.write<bool > ((bool)((QBasicMutex *)cls)->isRecursive ());
@@ -111,21 +97,6 @@ static void _call_f_tryLock_0 (const qt_gsi::GenericMethod * /*decl*/, void *cls
 }
 
 
-// bool QBasicMutex::try_lock()
-
-
-static void _init_f_try_lock_0 (qt_gsi::GenericMethod *decl)
-{
-  decl->set_return<bool > ();
-}
-
-static void _call_f_try_lock_0 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  ret.write<bool > ((bool)((QBasicMutex *)cls)->try_lock ());
-}
-
-
 // void QBasicMutex::unlock()
 
 
@@ -150,10 +121,8 @@ static gsi::Methods methods_QBasicMutex () {
   gsi::Methods methods;
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QBasicMutex::QBasicMutex()\nThis method creates an object of class QBasicMutex.", &_init_ctor_QBasicMutex_0, &_call_ctor_QBasicMutex_0);
   methods += new qt_gsi::GenericMethod ("isRecursive?", "@brief Method bool QBasicMutex::isRecursive()\n", false, &_init_f_isRecursive_0, &_call_f_isRecursive_0);
-  methods += new qt_gsi::GenericMethod ("isRecursive?", "@brief Method bool QBasicMutex::isRecursive()\n", true, &_init_f_isRecursive_c0, &_call_f_isRecursive_c0);
   methods += new qt_gsi::GenericMethod ("lock", "@brief Method void QBasicMutex::lock()\n", false, &_init_f_lock_0, &_call_f_lock_0);
   methods += new qt_gsi::GenericMethod ("tryLock", "@brief Method bool QBasicMutex::tryLock()\n", false, &_init_f_tryLock_0, &_call_f_tryLock_0);
-  methods += new qt_gsi::GenericMethod ("try_lock", "@brief Method bool QBasicMutex::try_lock()\n", false, &_init_f_try_lock_0, &_call_f_try_lock_0);
   methods += new qt_gsi::GenericMethod ("unlock", "@brief Method void QBasicMutex::unlock()\n", false, &_init_f_unlock_0, &_call_f_unlock_0);
   return methods;
 }

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -35,6 +35,7 @@
 #include <QObject>
 #include "gsiQt.h"
 #include "gsiQtCoreCommon.h"
+#include "gsiDeclQtCoreTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -52,6 +53,44 @@ static void _call_ctor_QMetaObject_0 (const qt_gsi::GenericStaticMethod * /*decl
 {
   __SUPPRESS_UNUSED_WARNING(args);
   ret.write<QMetaObject *> (new QMetaObject ());
+}
+
+
+// QObject *QMetaObject::cast(QObject *obj)
+
+
+static void _init_f_cast_c1302 (qt_gsi::GenericMethod *decl)
+{
+  static gsi::ArgSpecBase argspec_0 ("obj");
+  decl->add_arg<QObject * > (argspec_0);
+  decl->set_return<QObject * > ();
+}
+
+static void _call_f_cast_c1302 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
+{
+  __SUPPRESS_UNUSED_WARNING(args);
+  tl::Heap heap;
+  QObject *arg1 = gsi::arg_reader<QObject * >() (args, heap);
+  ret.write<QObject * > ((QObject *)((QMetaObject *)cls)->cast (arg1));
+}
+
+
+// const QObject *QMetaObject::cast(const QObject *obj)
+
+
+static void _init_f_cast_c1997 (qt_gsi::GenericMethod *decl)
+{
+  static gsi::ArgSpecBase argspec_0 ("obj");
+  decl->add_arg<const QObject * > (argspec_0);
+  decl->set_return<const QObject * > ();
+}
+
+static void _call_f_cast_c1997 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
+{
+  __SUPPRESS_UNUSED_WARNING(args);
+  tl::Heap heap;
+  const QObject *arg1 = gsi::arg_reader<const QObject * >() (args, heap);
+  ret.write<const QObject * > ((const QObject *)((QMetaObject *)cls)->cast (arg1));
 }
 
 
@@ -335,25 +374,6 @@ static void _call_f_indexOfSlot_c1731 (const qt_gsi::GenericMethod * /*decl*/, v
 }
 
 
-// bool QMetaObject::inherits(const QMetaObject *metaObject)
-
-
-static void _init_f_inherits_c2388 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("metaObject");
-  decl->add_arg<const QMetaObject * > (argspec_0);
-  decl->set_return<bool > ();
-}
-
-static void _call_f_inherits_c2388 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const QMetaObject *arg1 = gsi::arg_reader<const QMetaObject * >() (args, heap);
-  ret.write<bool > ((bool)((QMetaObject *)cls)->inherits (arg1));
-}
-
-
 // QMetaMethod QMetaObject::method(int index)
 
 
@@ -566,7 +586,7 @@ static void _init_f_connect_6708 (qt_gsi::GenericStaticMethod *decl)
   decl->add_arg<int > (argspec_3);
   static gsi::ArgSpecBase argspec_4 ("type", true, "0");
   decl->add_arg<int > (argspec_4);
-  static gsi::ArgSpecBase argspec_5 ("types", true, "nullptr");
+  static gsi::ArgSpecBase argspec_5 ("types", true, "0");
   decl->add_arg<int * > (argspec_5);
   decl->set_return<QMetaObject::Connection > ();
 }
@@ -580,7 +600,7 @@ static void _call_f_connect_6708 (const qt_gsi::GenericStaticMethod * /*decl*/, 
   const QObject *arg3 = gsi::arg_reader<const QObject * >() (args, heap);
   int arg4 = gsi::arg_reader<int >() (args, heap);
   int arg5 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (0, heap);
-  int *arg6 = args ? gsi::arg_reader<int * >() (args, heap) : gsi::arg_maker<int * >() (nullptr, heap);
+  int *arg6 = args ? gsi::arg_reader<int * >() (args, heap) : gsi::arg_maker<int * >() (0, heap);
   ret.write<QMetaObject::Connection > ((QMetaObject::Connection)QMetaObject::connect (arg1, arg2, arg3, arg4, arg5, arg6));
 }
 
@@ -706,6 +726,8 @@ namespace gsi
 static gsi::Methods methods_QMetaObject () {
   gsi::Methods methods;
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QMetaObject::QMetaObject()\nThis method creates an object of class QMetaObject.", &_init_ctor_QMetaObject_0, &_call_ctor_QMetaObject_0);
+  methods += new qt_gsi::GenericMethod ("cast", "@brief Method QObject *QMetaObject::cast(QObject *obj)\n", true, &_init_f_cast_c1302, &_call_f_cast_c1302);
+  methods += new qt_gsi::GenericMethod ("cast", "@brief Method const QObject *QMetaObject::cast(const QObject *obj)\n", true, &_init_f_cast_c1997, &_call_f_cast_c1997);
   methods += new qt_gsi::GenericMethod ("classInfo", "@brief Method QMetaClassInfo QMetaObject::classInfo(int index)\n", true, &_init_f_classInfo_c767, &_call_f_classInfo_c767);
   methods += new qt_gsi::GenericMethod ("classInfoCount", "@brief Method int QMetaObject::classInfoCount()\n", true, &_init_f_classInfoCount_c0, &_call_f_classInfoCount_c0);
   methods += new qt_gsi::GenericMethod ("classInfoOffset", "@brief Method int QMetaObject::classInfoOffset()\n", true, &_init_f_classInfoOffset_c0, &_call_f_classInfoOffset_c0);
@@ -722,7 +744,6 @@ static gsi::Methods methods_QMetaObject () {
   methods += new qt_gsi::GenericMethod ("indexOfProperty", "@brief Method int QMetaObject::indexOfProperty(const char *name)\n", true, &_init_f_indexOfProperty_c1731, &_call_f_indexOfProperty_c1731);
   methods += new qt_gsi::GenericMethod ("indexOfSignal", "@brief Method int QMetaObject::indexOfSignal(const char *signal)\n", true, &_init_f_indexOfSignal_c1731, &_call_f_indexOfSignal_c1731);
   methods += new qt_gsi::GenericMethod ("indexOfSlot", "@brief Method int QMetaObject::indexOfSlot(const char *slot)\n", true, &_init_f_indexOfSlot_c1731, &_call_f_indexOfSlot_c1731);
-  methods += new qt_gsi::GenericMethod ("inherits", "@brief Method bool QMetaObject::inherits(const QMetaObject *metaObject)\n", true, &_init_f_inherits_c2388, &_call_f_inherits_c2388);
   methods += new qt_gsi::GenericMethod ("method", "@brief Method QMetaMethod QMetaObject::method(int index)\n", true, &_init_f_method_c767, &_call_f_method_c767);
   methods += new qt_gsi::GenericMethod ("methodCount", "@brief Method int QMetaObject::methodCount()\n", true, &_init_f_methodCount_c0, &_call_f_methodCount_c0);
   methods += new qt_gsi::GenericMethod ("methodOffset", "@brief Method int QMetaObject::methodOffset()\n", true, &_init_f_methodOffset_c0, &_call_f_methodOffset_c0);

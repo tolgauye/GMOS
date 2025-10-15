@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -24,14 +24,8 @@
 #include "tlStream.h"
 #include "tlLog.h"
 #include "tlInternational.h"
-#include "tlEnv.h"
-#include "tlGlobPattern.h"
 
 #include <cctype>
-#include <fstream>
-
-// Use this define to print debug output
-// #define FILE_UTILS_VERBOSE
 
 #if defined(_MSC_VER)
 
@@ -55,7 +49,6 @@
 #  include <dirent.h>
 #  include <libproc.h>
 #  include <dlfcn.h>
-#  include <pwd.h>
 
 #else
 
@@ -63,14 +56,6 @@
 #  include <unistd.h>
 #  include <dirent.h>
 #  include <dlfcn.h>
-#  include <pwd.h>
-
-#endif
-
-#if defined(__FreeBSD__)
-
-#include <sys/types.h>
-#include <sys/sysctl.h>
 
 #endif
 
@@ -255,6 +240,7 @@ static std::vector<std::string> split_filename (const std::string &fn)
     const char *cp0 = cp;
     ++cp;
     while (*cp && *cp != '.') {
+      //  backslash escaping (ineffective on Windows because that is a path separator)
       if (*cp == '\\' && cp[1]) {
         ++cp;
       }
@@ -294,11 +280,7 @@ std::string dirname (const std::string &s)
     parts.pop_back ();
   }
 
-  if (parts.empty ()) {
-    return is_part_with_separator (s) ? "" : ".";
-  } else {
-    return tl::join (parts, "");
-  }
+  return tl::join (parts, "");
 }
 
 std::string filename (const std::string &s)
@@ -316,17 +298,6 @@ std::string basename (const std::string &s)
   std::vector<std::string> fnp = split_filename (filename (s));
   if (fnp.size () > 0) {
     return fnp.front ();
-  } else {
-    return std::string ();
-  }
-}
-
-std::string complete_basename (const std::string &s)
-{
-  std::vector<std::string> fnp = split_filename (filename (s));
-  if (fnp.size () > 0) {
-    fnp.pop_back ();
-    return tl::join (fnp, ".");
   } else {
     return std::string ();
   }
@@ -381,7 +352,7 @@ std::vector<std::string> dir_entries (const std::string &s, bool with_files, boo
 
   struct _wfinddata_t fileinfo;
 
-  intptr_t h = _wfindfirst (tl::to_wstring (s + "\\*").c_str (), &fileinfo);
+  intptr_t h = _wfindfirst (tl::to_wstring (s + "\\*.*").c_str (), &fileinfo);
   if (h != -1) {
 
     do {
@@ -431,63 +402,6 @@ std::vector<std::string> dir_entries (const std::string &s, bool with_files, boo
   return ee;
 }
 
-static void glob_partial (const std::string &where, std::vector<std::string>::const_iterator pfrom, std::vector<std::string>::const_iterator pto, std::vector<std::string> &res)
-{
-  if (pfrom == pto) {
-    if (! is_dir (where)) {
-      res.push_back (where);
-    }
-    return;
-  }
-
-  auto p = where + *pfrom;
-  if (file_exists (p)) {
-    glob_partial (p, pfrom + 1, pto, res);
-    return;
-  }
-
-  if (tl::trimmed_part (*pfrom) == "**") {
-    if (pfrom + 1 == pto) {
-      //  a glob pattern can't be "**" without anything after that
-      return;
-    }
-    auto subdirs = dir_entries (where, false, true, true);
-    for (auto s = subdirs.begin (); s != subdirs.end (); ++s) {
-      glob_partial (combine_path (where, *s), pfrom, pto, res);
-    }
-    ++pfrom;
-  }
-
-#if defined(_WIN32)
-  if (where.empty ()) {
-    //  On Windows, we cannot iterate the drives
-    std::string root = *pfrom;
-    ++pfrom;
-    glob_partial (root, pfrom, pto, res);
-    return;
-  }
-#endif  
-
-  tl::GlobPattern glob (tl::trimmed_part (*pfrom));
-  ++pfrom;
-  auto entries = dir_entries (where, true, true, true);
-  for (auto e = entries.begin (); e != entries.end (); ++e) {
-    if (glob.match (*e)) {
-      glob_partial (combine_path (where, *e), pfrom, pto, res);
-    }
-  }
-}
-
-std::vector<std::string> glob_expand (const std::string &path)
-{
-  auto apath = absolute_file_path (path);
-  auto parts = split_path (apath);
-
-  std::vector<std::string> res;
-  glob_partial (std::string (), parts.begin (), parts.end (), res);
-  return res;
-}
-
 bool mkdir (const std::string &path)
 {
 #if defined(_WIN32)
@@ -512,9 +426,7 @@ bool mkpath (const std::string &p)
     front += parts[i++];
     if (! file_exists (front)) {
       if (! mkdir (front)) {
-#if defined(FILE_UTILS_VERBOSE)
         tl::error << tr ("Unable to create directory: ") << front;
-#endif
         return false;
       }
     }
@@ -523,27 +435,10 @@ bool mkpath (const std::string &p)
   return true;
 }
 
-bool rename_file (const std::string &path, const std::string &new_name)
-{
-  //  resolve relative names in new_name
-  std::string new_path = new_name;
-  if (! tl::is_absolute (new_path)) {
-    new_path = tl::combine_path (tl::dirname (path), new_name);
-  }
-
-#if defined(_WIN32)
-  return _wrename (tl::to_wstring (path).c_str (), tl::to_wstring (new_path).c_str ()) == 0;
-#else
-  return rename (tl::to_local (path).c_str (), tl::to_local (new_path).c_str ()) == 0;
-#endif
-}
-
 bool rm_file (const std::string &path)
 {
 #if defined(_WIN32)
-  std::wstring wpath = tl::to_wstring (path);
-  _wchmod (wpath.c_str (), _S_IREAD | _S_IWRITE);
-  return _wunlink (wpath.c_str ()) == 0;
+  return _wunlink (tl::to_wstring (path).c_str ()) == 0;
 #else
   return unlink (tl::to_local (path).c_str ()) == 0;
 #endif
@@ -579,17 +474,13 @@ bool rm_dir_recursive (const std::string &p)
   for (std::vector<std::string>::const_iterator e = entries.begin (); e != entries.end (); ++e) {
     std::string tc = tl::combine_path (path, *e);
     if (! rm_file (tc)) {
-#if defined(FILE_UTILS_VERBOSE)
       tl::error << tr ("Unable to remove file: ") << tc;
-#endif
       return false;
     }
   }
 
   if (! rm_dir (path)) {
-#if defined(FILE_UTILS_VERBOSE)
     tl::error << tr ("Unable to remove directory: ") << path;
-#endif
     return false;
   }
 
@@ -607,9 +498,7 @@ cp_dir_recursive (const std::string &source, const std::string &target)
   for (std::vector<std::string>::const_iterator e = entries.begin (); e != entries.end (); ++e) {
     std::string tc = tl::combine_path (path_to, *e);
     if (! mkpath (tc)) {
-#if defined(FILE_UTILS_VERBOSE)
       tl::error << tr ("Unable to create target directory: ") << tc;
-#endif
       return false;
     }
     if (! cp_dir_recursive (tl::combine_path (path, *e), tc)) {
@@ -632,58 +521,14 @@ cp_dir_recursive (const std::string &source, const std::string &target)
       is.copy_to (os);
 
     } catch (tl::Exception &ex) {
-#if defined(FILE_UTILS_VERBOSE)
       tl::error << tr ("Unable to copy file ") << tl::combine_path (path_to, *e) << tr (" to ") << tl::combine_path (path, *e)
                 << tr ("(Error ") << ex.msg () << ")";
-#endif
       return false;
     }
 
   }
 
   return true;
-}
-
-bool
-mv_dir_recursive (const std::string &source, const std::string &target)
-{
-  std::vector<std::string> entries;
-  std::string path = tl::absolute_file_path (source);
-  std::string path_to = tl::absolute_file_path (target);
-
-  bool error = false;
-
-  entries = dir_entries (path, false /*without_files*/, true /*with_dirs*/);
-  for (std::vector<std::string>::const_iterator e = entries.begin (); e != entries.end (); ++e) {
-    std::string tc = tl::combine_path (path_to, *e);
-    if (! mkpath (tc)) {
-#if defined(FILE_UTILS_VERBOSE)
-      tl::error << tr ("Unable to create target directory: ") << tc;
-#endif
-      error = true;
-    } else if (! mv_dir_recursive (tl::combine_path (path, *e), tc)) {
-      error = true;
-    }
-  }
-
-  entries = dir_entries (path, true /*with_files*/, false /*without_dirs*/);
-  for (std::vector<std::string>::const_iterator e = entries.begin (); e != entries.end (); ++e) {
-    if (! tl::rename_file (tl::combine_path (path, *e), tl::combine_path (path_to, *e))) {
-#if defined(FILE_UTILS_VERBOSE)
-      tl::error << tr ("Unable to move file from ") << tl::combine_path (path, *e) << tr (" to ") << tl::combine_path (path_to, *e);
-#endif
-      error = true;
-    }
-  }
-
-  if (! tl::rm_dir (path)) {
-#if defined(FILE_UTILS_VERBOSE)
-      tl::error << tr ("Unable to remove folder ") << path;
-#endif
-    error = true;
-  }
-
-  return ! error;
 }
 
 std::string absolute_path (const std::string &s)
@@ -723,18 +568,10 @@ std::string current_dir ()
 #endif
 }
 
-bool chdir (const std::string &path)
-{
-#if defined(_WIN32)
-  return _wchdir (tl::to_wstring (path).c_str ()) == 0;
-#else
-  return ::chdir (tl::to_local (path).c_str ()) == 0;
-#endif
-}
 
 static std::pair<std::string, bool> absolute_path_of_existing (const std::string &s)
 {
-#if defined(_WIN32)
+#if defined (_WIN32)
 
   wchar_t *fp = _wfullpath (NULL, tl::to_wstring (s).c_str (), 0);
   if (fp == NULL) {
@@ -762,11 +599,6 @@ static std::pair<std::string, bool> absolute_path_of_existing (const std::string
 
 bool is_absolute (const std::string &s)
 {
-  //  ~ paths are always absolute, because the home directory is
-  if (s.size () > 0 && s[0] == '~') {
-    return true;
-  }
-
   std::vector<std::string> parts = split_path (s);
   if (parts.size () > 1 && is_drive (parts [0])) {
     return is_part_with_separator (parts [1]);
@@ -779,11 +611,6 @@ bool is_absolute (const std::string &s)
 
 std::string absolute_file_path (const std::string &s)
 {
-  //  ~ paths are always absolute, because the home directory is
-  if (s.size () > 0 && s[0] == '~') {
-    return get_home_path () + std::string (s, 1);
-  }
-
   std::vector<std::string> parts = split_path (s);
   if (parts.empty ()) {
     return current_dir ();
@@ -969,41 +796,15 @@ bool is_same_file (const std::string &a, const std::string &b)
 #endif
 }
 
-std::string
-get_home_path ()
-{
-#if !defined(_WIN32)
-  if (tl::has_env ("HOME")) {
-    return tl::get_env ("HOME");
-  } else {
-    struct passwd *pwd = getpwuid (getuid ());
-    if (pwd) {
-      return std::string (pwd->pw_dir);
-    }
-  }
-  tl::warn << tl::to_string (tr ("Unable to get home directory (set HOME environment variable)"));
-#else
-  if (tl::has_env ("HOMEDRIVE") && tl::has_env ("HOMEPATH")) {
-    return tl::get_env ("HOMEDRIVE") + tl::get_env ("HOMEPATH");
-  } else if (tl::has_env ("HOMESHARE") && tl::has_env ("HOMEPATH")) {
-    return tl::get_env ("HOMESHARE") + tl::get_env ("HOMEPATH");
-  } else if (tl::has_env ("USERPROFILE")) {
-    return tl::get_env ("USERPROFILE");
-  }
-  tl::warn << tl::to_string (tr ("Unable to get home directory (no HOMEDRIVE/HOMEPATH, HOMESHARE/HOMEPATH or USERPROFILE environment variables)"));
-#endif
-  return std::string (".");
-}
-
 static std::string
-get_app_path_internal ()
+get_inst_path_internal ()
 {
-#if defined(_WIN32)
+#ifdef _WIN32
 
   wchar_t buffer[MAX_PATH];
   int len;
   if ((len = GetModuleFileNameW (NULL, buffer, MAX_PATH)) > 0) {
-    return tl::to_string (std::wstring (buffer));
+    return tl::absolute_path (tl::to_string (std::wstring (buffer)));
   }
 
 #elif __APPLE__
@@ -1012,24 +813,14 @@ get_app_path_internal ()
   int ret = proc_pidpath (getpid (), buffer, sizeof (buffer));
   if (ret > 0) {
     //  TODO: does this correctly translate paths? (MacOS uses UTF-8 encoding with D-like normalization)
-    return std::string (buffer);
+    return tl::absolute_path (buffer);
   }
-
-#elif defined (__FreeBSD__)
-
-  char path[PATH_MAX];
-  size_t len = PATH_MAX;
-  const int mib[4] = {CTL_KERN, KERN_PROC, KERN_PROC_PATHNAME, -1};
-  if (sysctl(&mib[0], 4, &path, &len, NULL, 0) == 0) {
-    return path;
-  }
-  return "";
 
 #else
 
   std::string pf = tl::sprintf ("/proc/%d/exe", getpid ());
   if (tl::file_exists (pf)) {
-    return pf;
+    return tl::absolute_path (pf);
   }
 
 #endif
@@ -1041,19 +832,9 @@ get_inst_path ()
 {
   static std::string s_inst_path;
   if (s_inst_path.empty ()) {
-    s_inst_path = tl::absolute_path (get_app_path_internal ());
+    s_inst_path = get_inst_path_internal ();
   }
   return s_inst_path;
-}
-
-std::string
-get_app_path ()
-{
-  static std::string s_app_path;
-  if (s_app_path.empty ()) {
-    s_app_path = get_app_path_internal ();
-  }
-  return s_app_path;
 }
 
 std::string
@@ -1087,109 +868,5 @@ get_module_path (void *addr)
 
 #endif
 }
-
-std::string
-tmpfile (const std::string &domain)
-{
-  std::string tmp = tl::get_env ("TMPDIR");
-  if (tmp.empty ()) {
-    tmp = tl::get_env ("TMP");
-  }
-  if (tmp.empty ()) {
-#if defined(_WIN32)
-    throw tl::Exception (tl::to_string (tr ("TMP and TMPDIR not set - cannot create temporary file")));
-#else
-    tmp = "/tmp";
-#endif
-  }
-
-  std::string templ = tl::combine_path (tmp, domain + "XXXXXX");
-  char *tmpstr = strdup (templ.c_str ());
-
-#if defined(_WIN32)
-  if (_mktemp_s (tmpstr, templ.size () + 1) != 0) {
-    free (tmpstr);
-    throw tl::Exception (tl::to_string (tr ("Unable to create temporary folder name in %s")), tmp);
-  }
-
-  //  for compatibility with Linux, create the file as an empty one
-  std::ofstream os (tmpstr);
-  if (os.bad ()) {
-    throw tl::Exception (tl::to_string (tr ("Unable to create temporary folder in %s")), tmp);
-  }
-  os.close ();
-#else
-  int fd = mkstemp (tmpstr);
-  if (fd < 0) {
-    free (tmpstr);
-    throw tl::Exception (tl::to_string (tr ("Unable to create temporary folder in %s")), tmp);
-  }
-  close (fd);
-#endif
-
-  std::string res = tmpstr;
-  free (tmpstr);
-  return res;
-}
-
-TemporaryFile::TemporaryFile (const std::string &domain)
-{
-  m_path = tmpfile (domain);
-}
-
-TemporaryFile::~TemporaryFile ()
-{
-  tl::rm_file (m_path);
-}
-
-std::string
-tmpdir (const std::string &domain)
-{
-  std::string tmp = tl::get_env ("TMPDIR");
-  if (tmp.empty ()) {
-    tmp = tl::get_env ("TMP");
-  }
-  if (tmp.empty ()) {
-#if defined(_WIN32)
-    throw tl::Exception (tl::to_string (tr ("TMP and TMPDIR not set - cannot create temporary file")));
-#else
-    tmp = "/tmp";
-#endif
-  }
-
-  std::string templ = tl::combine_path (tmp, domain + "XXXXXX");
-  char *tmpstr = strdup (templ.c_str ());
-
-#if defined(_WIN32)
-  if (_mktemp_s (tmpstr, templ.size () + 1) != 0) {
-    free (tmpstr);
-    throw tl::Exception (tl::to_string (tr ("Unable to create temporary folder name in %s")), tmp);
-  }
-  if (! tl::mkdir (tmpstr)) {
-    free (tmpstr);
-    throw tl::Exception (tl::to_string (tr ("Unable to create temporary folder in %s")), tmp);
-  }
-#else
-  if (mkdtemp (tmpstr) == NULL) {
-    free (tmpstr);
-    throw tl::Exception (tl::to_string (tr ("Unable to create temporary folder in %s")), tmp);
-  }
-#endif
-
-  std::string res = tmpstr;
-  free (tmpstr);
-  return res;
-}
-
-TemporaryDirectory::TemporaryDirectory (const std::string &domain)
-{
-  m_path = tmpdir (domain);
-}
-
-TemporaryDirectory::~TemporaryDirectory ()
-{
-  tl::rm_dir_recursive (m_path);
-}
-
 
 }

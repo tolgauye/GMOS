@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -26,7 +26,6 @@
 
 #include "ui_LogViewerDialog.h"
 #include "tlLog.h"
-#include "tlTimer.h"
 #include "layCommon.h"
 
 #include <QTimer>
@@ -90,12 +89,12 @@ protected:
   virtual void endl ();
   virtual void end ();
   virtual void begin ();
-  virtual void yield ();
 
 private:
   LogFile *mp_file;
   void (LogFile::*m_method)(const std::string &, bool);
   std::string m_text;
+  bool m_continued;
   int m_verbosity;
   QMutex m_lock;
 };
@@ -193,23 +192,6 @@ public slots:
     return m_log_receiver;
   }
 
-  /**
-   *  @brief Implementation of post-log action
-   */
-  void yield ();
-
-  /**
-   *  @brief Sets the maximum number of entries to show
-   *
-   *  Setting this value to 0 basically disables the log collection
-   */
-  void set_max_entries (size_t n);
-
-  /**
-   *  @brief Gets the maximum number of entries to show
-   */
-  size_t max_entries () const;
-
 private slots:
   void timeout ();
 
@@ -221,7 +203,6 @@ signals:
   void attention_changed (bool f);
 
 private:
-  tl::Clock m_last_yield;
   QTimer m_timer;
   mutable QMutex m_lock;
   LogReceiver m_error_receiver;

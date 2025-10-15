@@ -17,19 +17,5 @@ SOURCES += \
   gsiQtHelper.cc
 
 HEADERS += \
-  gsiDeclQtAllTypeTraits.h \
   gsiQt.h \
-  gsiQtBasicCommon.h \ \
-  gsiQtCoreExternals.h \
-  gsiQtDesignerExternals.h \
-  gsiQtGuiExternals.h \
-  gsiQtHelper.h \
-  gsiQtMultimediaExternals.h \
-  gsiQtNetworkExternals.h \
-  gsiQtPrintSupportExternals.h \
-  gsiQtSqlExternals.h \
-  gsiQtSvgExternals.h \
-  gsiQtUiToolsExternals.h \
-  gsiQtWidgetsExternals.h \
-  gsiQtXmlExternals.h \
-  gsiQtXmlPatternsExternals.h
+  gsiQtBasicCommon.h \

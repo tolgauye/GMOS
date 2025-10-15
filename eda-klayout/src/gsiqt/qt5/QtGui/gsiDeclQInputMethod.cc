@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -37,6 +37,7 @@
 #include <QTransform>
 #include "gsiQt.h"
 #include "gsiQtGuiCommon.h"
+#include "gsiDeclQtGuiTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -52,21 +53,6 @@ static void _init_smo (qt_gsi::GenericStaticMethod *decl)
 static void _call_smo (const qt_gsi::GenericStaticMethod *, gsi::SerialArgs &, gsi::SerialArgs &ret) 
 {
   ret.write<const QMetaObject &> (QInputMethod::staticMetaObject);
-}
-
-
-// QRectF QInputMethod::anchorRectangle()
-
-
-static void _init_f_anchorRectangle_c0 (qt_gsi::GenericMethod *decl)
-{
-  decl->set_return<QRectF > ();
-}
-
-static void _call_f_anchorRectangle_c0 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  ret.write<QRectF > ((QRectF)((QInputMethod *)cls)->anchorRectangle ());
 }
 
 
@@ -129,21 +115,6 @@ static void _call_f_inputDirection_c0 (const qt_gsi::GenericMethod * /*decl*/, v
 {
   __SUPPRESS_UNUSED_WARNING(args);
   ret.write<qt_gsi::Converter<Qt::LayoutDirection>::target_type > ((qt_gsi::Converter<Qt::LayoutDirection>::target_type)qt_gsi::CppToQtAdaptor<Qt::LayoutDirection>(((QInputMethod *)cls)->inputDirection ()));
-}
-
-
-// QRectF QInputMethod::inputItemClipRectangle()
-
-
-static void _init_f_inputItemClipRectangle_c0 (qt_gsi::GenericMethod *decl)
-{
-  decl->set_return<QRectF > ();
-}
-
-static void _call_f_inputItemClipRectangle_c0 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  ret.write<QRectF > ((QRectF)((QInputMethod *)cls)->inputItemClipRectangle ());
 }
 
 
@@ -401,7 +372,7 @@ static void _init_f_tr_4013 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("s");
   decl->add_arg<const char * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("c", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("c", true, "__null");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("n", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -413,7 +384,7 @@ static void _call_f_tr_4013 (const qt_gsi::GenericStaticMethod * /*decl*/, gsi::
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (__null, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QInputMethod::tr (arg1, arg2, arg3));
 }
@@ -426,7 +397,7 @@ static void _init_f_trUtf8_4013 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("s");
   decl->add_arg<const char * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("c", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("c", true, "__null");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("n", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -438,7 +409,7 @@ static void _call_f_trUtf8_4013 (const qt_gsi::GenericStaticMethod * /*decl*/, g
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (__null, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QInputMethod::trUtf8 (arg1, arg2, arg3));
 }
@@ -451,12 +422,10 @@ namespace gsi
 static gsi::Methods methods_QInputMethod () {
   gsi::Methods methods;
   methods += new qt_gsi::GenericStaticMethod ("staticMetaObject", "@brief Obtains the static MetaObject for this class.", &_init_smo, &_call_smo);
-  methods += new qt_gsi::GenericMethod (":anchorRectangle", "@brief Method QRectF QInputMethod::anchorRectangle()\n", true, &_init_f_anchorRectangle_c0, &_call_f_anchorRectangle_c0);
   methods += new qt_gsi::GenericMethod ("commit", "@brief Method void QInputMethod::commit()\n", false, &_init_f_commit_0, &_call_f_commit_0);
   methods += new qt_gsi::GenericMethod (":cursorRectangle", "@brief Method QRectF QInputMethod::cursorRectangle()\n", true, &_init_f_cursorRectangle_c0, &_call_f_cursorRectangle_c0);
   methods += new qt_gsi::GenericMethod ("hide", "@brief Method void QInputMethod::hide()\n", false, &_init_f_hide_0, &_call_f_hide_0);
   methods += new qt_gsi::GenericMethod (":inputDirection", "@brief Method Qt::LayoutDirection QInputMethod::inputDirection()\n", true, &_init_f_inputDirection_c0, &_call_f_inputDirection_c0);
-  methods += new qt_gsi::GenericMethod (":inputItemClipRectangle", "@brief Method QRectF QInputMethod::inputItemClipRectangle()\n", true, &_init_f_inputItemClipRectangle_c0, &_call_f_inputItemClipRectangle_c0);
   methods += new qt_gsi::GenericMethod (":inputItemRectangle", "@brief Method QRectF QInputMethod::inputItemRectangle()\n", true, &_init_f_inputItemRectangle_c0, &_call_f_inputItemRectangle_c0);
   methods += new qt_gsi::GenericMethod (":inputItemTransform", "@brief Method QTransform QInputMethod::inputItemTransform()\n", true, &_init_f_inputItemTransform_c0, &_call_f_inputItemTransform_c0);
   methods += new qt_gsi::GenericMethod ("invokeAction", "@brief Method void QInputMethod::invokeAction(QInputMethod::Action a, int cursorPosition)\n", false, &_init_f_invokeAction_3035, &_call_f_invokeAction_3035);
@@ -470,15 +439,12 @@ static gsi::Methods methods_QInputMethod () {
   methods += new qt_gsi::GenericMethod ("setVisible", "@brief Method void QInputMethod::setVisible(bool visible)\n", false, &_init_f_setVisible_864, &_call_f_setVisible_864);
   methods += new qt_gsi::GenericMethod ("show", "@brief Method void QInputMethod::show()\n", false, &_init_f_show_0, &_call_f_show_0);
   methods += new qt_gsi::GenericMethod ("update", "@brief Method void QInputMethod::update(QFlags<Qt::InputMethodQuery> queries)\n", false, &_init_f_update_3116, &_call_f_update_3116);
-  methods += gsi::qt_signal ("anchorRectangleChanged()", "anchorRectangleChanged", "@brief Signal declaration for QInputMethod::anchorRectangleChanged()\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal ("animatingChanged()", "animatingChanged", "@brief Signal declaration for QInputMethod::animatingChanged()\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal ("cursorRectangleChanged()", "cursorRectangleChanged", "@brief Signal declaration for QInputMethod::cursorRectangleChanged()\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<QObject * > ("destroyed(QObject *)", "destroyed", gsi::arg("arg1"), "@brief Signal declaration for QInputMethod::destroyed(QObject *)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<const qt_gsi::Converter<Qt::LayoutDirection>::target_type & > ("inputDirectionChanged(Qt::LayoutDirection)", "inputDirectionChanged", gsi::arg("newDirection"), "@brief Signal declaration for QInputMethod::inputDirectionChanged(Qt::LayoutDirection newDirection)\nYou can bind a procedure to this signal.");
-  methods += gsi::qt_signal ("inputItemClipRectangleChanged()", "inputItemClipRectangleChanged", "@brief Signal declaration for QInputMethod::inputItemClipRectangleChanged()\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal ("keyboardRectangleChanged()", "keyboardRectangleChanged", "@brief Signal declaration for QInputMethod::keyboardRectangleChanged()\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal ("localeChanged()", "localeChanged", "@brief Signal declaration for QInputMethod::localeChanged()\nYou can bind a procedure to this signal.");
-  methods += gsi::qt_signal<const QString & > ("objectNameChanged(const QString &)", "objectNameChanged", gsi::arg("objectName"), "@brief Signal declaration for QInputMethod::objectNameChanged(const QString &objectName)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal ("visibleChanged()", "visibleChanged", "@brief Signal declaration for QInputMethod::visibleChanged()\nYou can bind a procedure to this signal.");
   methods += new qt_gsi::GenericStaticMethod ("queryFocusObject", "@brief Static method QVariant QInputMethod::queryFocusObject(Qt::InputMethodQuery query, QVariant argument)\nThis method is static and can be called without an instance.", &_init_f_queryFocusObject_3554, &_call_f_queryFocusObject_3554);
   methods += new qt_gsi::GenericStaticMethod ("tr", "@brief Static method QString QInputMethod::tr(const char *s, const char *c, int n)\nThis method is static and can be called without an instance.", &_init_f_tr_4013, &_call_f_tr_4013);

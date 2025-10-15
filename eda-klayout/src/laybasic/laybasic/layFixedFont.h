@@ -3,8 +3,6 @@
 #ifndef HDR_layFixedFont
 #define HDR_layFixedFont
 
-#include "laybasicCommon.h"
-
 #include <stdint.h>
 
 namespace lay
@@ -14,7 +12,7 @@ namespace lay
  *  @brief A descriptor class for a fixed font
  */
 
-class LAYBASIC_PUBLIC FixedFont
+class FixedFont 
 {
 public:
   /**

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -30,7 +30,6 @@
 namespace db
 {
   LoadLayoutOptions::LoadLayoutOptions ()
-    : m_warn_level (1)
   {
     // .. nothing yet ..
   }
@@ -44,8 +43,6 @@ namespace db
   LoadLayoutOptions::operator= (const LoadLayoutOptions &d)
   {
     if (&d != this) {
-
-      m_warn_level = d.m_warn_level;
 
       release ();
       for (std::map <std::string, FormatSpecificReaderOptions *>::const_iterator o = d.m_options.begin (); o != d.m_options.end (); ++o) {
@@ -111,74 +108,32 @@ namespace db
   }
 
   void
-  LoadLayoutOptions::set_option_by_method (const std::string &method, const tl::Variant &value)
-  {
-    //  Utilizes the GSI binding to set the values
-    tl::Variant ref = tl::Variant::make_variant_ref (this);
-
-    tl::Extractor ex (method.c_str ());
-
-    while (! ex.at_end ()) {
-
-      std::string m;
-      ex.read_word (m, "_=");
-      if (! ex.at_end ()) {
-        ex.expect (".");
-      }
-
-      tl::Variant out;
-
-      std::vector<tl::Variant> args;
-      if (ex.at_end ()) {
-        args.push_back (value);
-      }
-      tl::ExpressionParserContext context;
-      ref.user_cls ()->eval_cls ()->execute (context, out, ref, m, args, 0);
-
-      ref = out;
-
-    }
-  }
-
-  tl::Variant
-  LoadLayoutOptions::get_option_by_method (const std::string &method)
-  {
-    //  Utilizes the GSI binding to set the values
-    tl::Variant ref = tl::Variant::make_variant_ref (this);
-
-    tl::Extractor ex (method.c_str ());
-
-    while (! ex.at_end ()) {
-
-      std::string m;
-      ex.read_word (m, "_=");
-      if (! ex.at_end ()) {
-        ex.expect (".");
-      }
-
-      tl::Variant out;
-
-      std::vector<tl::Variant> args;
-      tl::ExpressionParserContext context;
-      ref.user_cls ()->eval_cls ()->execute (context, out, ref, m, args, 0);
-
-      ref = out;
-
-    }
-
-    return ref;
-  }
-
-  void
   LoadLayoutOptions::set_option_by_name (const std::string &method, const tl::Variant &value)
   {
-    return set_option_by_method (method + "=", value);
+    //  Utilizes the GSI binding to set the values
+    tl::Variant options_ref = tl::Variant::make_variant_ref (this);
+    const tl::EvalClass *eval_cls = options_ref.user_cls ()->eval_cls ();
+    tl::ExpressionParserContext context;
+
+    tl::Variant out;
+    std::vector<tl::Variant> args;
+    args.push_back (value);
+    eval_cls->execute (context, out, options_ref, method + "=", args);
   }
 
   tl::Variant
   LoadLayoutOptions::get_option_by_name (const std::string &method)
   {
-    return get_option_by_method (method);
+    //  Utilizes the GSI binding to set the values
+    tl::Variant options_ref = tl::Variant::make_variant_ref (this);
+    const tl::EvalClass *eval_cls = options_ref.user_cls ()->eval_cls ();
+    tl::ExpressionParserContext context;
+
+    tl::Variant out;
+    std::vector<tl::Variant> args;
+    eval_cls->execute (context, out, options_ref, method, args);
+
+    return out;
   }
 }
 

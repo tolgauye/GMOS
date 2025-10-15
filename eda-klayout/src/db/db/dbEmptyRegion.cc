@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -67,20 +67,19 @@ EmptyRegion::add (const Region &other) const
 }
 
 RegionDelegate *
-EmptyRegion::xor_with (const Region &other, db::PropertyConstraint prop_constraint) const
+EmptyRegion::xor_with (const Region &other) const
 {
-  return or_with (other, prop_constraint);
+  return or_with (other);
 }
 
 RegionDelegate *
-EmptyRegion::or_with (const Region &other, db::PropertyConstraint /*prop_constraint*/) const
+EmptyRegion::or_with (const Region &other) const
 {
   if (other.empty ()) {
     return new EmptyRegion ();
   } else if (! other.strict_handling ()) {
     return other.delegate ()->clone ();
   } else {
-    //  TODO: implement prop_constraint
     return other.delegate ()->merged ();
   }
 }
@@ -98,67 +97,49 @@ EmptyRegion::processed_to_edge_pairs (const PolygonToEdgePairProcessorBase &) co
 }
 
 EdgePairsDelegate *
-EmptyRegion::cop_to_edge_pairs (db::CompoundRegionOperationNode &, db::PropertyConstraint)
-{
-  return new EmptyEdgePairs ();
-}
-
-RegionDelegate *
-EmptyRegion::cop_to_region (db::CompoundRegionOperationNode &, db::PropertyConstraint)
-{
-  return new EmptyRegion ();
-}
-
-EdgesDelegate *
-EmptyRegion::cop_to_edges (db::CompoundRegionOperationNode &, db::PropertyConstraint)
-{
-  return new EmptyEdges ();
-}
-
-EdgePairsDelegate *
-EmptyRegion::width_check (db::Coord, const RegionCheckOptions &) const
+EmptyRegion::width_check (db::Coord, bool, metrics_type, double, distance_type, distance_type) const
 {
   return new EmptyEdgePairs ();
 }
 
 EdgePairsDelegate *
-EmptyRegion::space_check (db::Coord, const RegionCheckOptions &) const
+EmptyRegion::space_check (db::Coord, bool, metrics_type, double, distance_type, distance_type) const
 {
   return new EmptyEdgePairs ();
 }
 
 EdgePairsDelegate *
-EmptyRegion::isolated_check (db::Coord, const RegionCheckOptions &) const
+EmptyRegion::isolated_check (db::Coord, bool, metrics_type, double, distance_type, distance_type) const
 {
   return new EmptyEdgePairs ();
 }
 
 EdgePairsDelegate *
-EmptyRegion::notch_check (db::Coord, const RegionCheckOptions &) const
+EmptyRegion::notch_check (db::Coord, bool, metrics_type, double, distance_type, distance_type) const
 {
   return new EmptyEdgePairs ();
 }
 
 EdgePairsDelegate *
-EmptyRegion::enclosing_check (const Region &, db::Coord, const RegionCheckOptions &) const
+EmptyRegion::enclosing_check (const Region &, db::Coord, bool, metrics_type, double, distance_type, distance_type) const
 {
   return new EmptyEdgePairs ();
 }
 
 EdgePairsDelegate *
-EmptyRegion::overlap_check (const Region &, db::Coord, const RegionCheckOptions &) const
+EmptyRegion::overlap_check (const Region &, db::Coord, bool, metrics_type, double, distance_type, distance_type) const
 {
   return new EmptyEdgePairs ();
 }
 
 EdgePairsDelegate *
-EmptyRegion::separation_check (const Region &, db::Coord, const RegionCheckOptions &) const
+EmptyRegion::separation_check (const Region &, db::Coord, bool , metrics_type, double, distance_type, distance_type) const
 {
   return new EmptyEdgePairs ();
 }
 
 EdgePairsDelegate *
-EmptyRegion::inside_check (const Region &, db::Coord, const RegionCheckOptions &) const
+EmptyRegion::inside_check (const Region &, db::Coord, bool, metrics_type, double, distance_type, distance_type) const
 {
   return new EmptyEdgePairs ();
 }
@@ -176,7 +157,7 @@ EmptyRegion::angle_check (double, double, bool) const
 }
 
 EdgesDelegate *
-EmptyRegion::edges (const EdgeFilterBase *, const PolygonToEdgeProcessorBase *) const
+EmptyRegion::edges (const EdgeFilterBase *) const
 {
   return new EmptyEdges ();
 }

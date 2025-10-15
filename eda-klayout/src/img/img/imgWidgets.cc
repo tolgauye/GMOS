@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -20,14 +20,12 @@
 
 */
 
-#if defined(HAVE_QT)
 
 #include "imgWidgets.h"
 
 #include <QPainter>
 #include <QMouseEvent>
 #include <QKeyEvent>
-#include <QHBoxLayout>
 
 #include <algorithm>
 #include <math.h>
@@ -45,91 +43,57 @@ const int min_bar_height = 4;
 const double min_value_interval = 1e-3;
 const double epsilon = 1e-6;
 
-// --------------------------------------------------------------------------------------------------------------------
-
-TwoColorWidget::TwoColorWidget (QWidget *parent)
-  : QFrame (parent)
+struct compare_first_of_node
 {
-  setLayout (new QHBoxLayout (this));
-
-  mp_left = new lay::SimpleColorButton (this);
-  layout ()->addWidget (mp_left);
-  mp_right = new lay::SimpleColorButton (this);
-  layout ()->addWidget (mp_right);
-  mp_lock = new QToolButton (this);
-  layout ()->addWidget (mp_lock);
-  mp_lock->setCheckable (true);
-  mp_lock->setAutoRaise (true);
-  mp_lock->setIconSize (QSize (16, 16));
-
-  QIcon icon;
-  icon.addFile (":/locked_16px.png", QSize (), QIcon::Normal, QIcon::On);
-  icon.addFile (":/unlocked_16px.png", QSize (), QIcon::Normal, QIcon::Off);
-  mp_lock->setIcon (icon);
-
-  connect (mp_left, SIGNAL (color_changed (QColor)), this, SLOT (lcolor_changed (QColor)));
-  connect (mp_right, SIGNAL (color_changed (QColor)), this, SLOT (rcolor_changed (QColor)));
-  connect (mp_lock, SIGNAL (clicked (bool)), this, SLOT (lock_changed (bool)));
-}
-
-void
-TwoColorWidget::set_color (std::pair<QColor, QColor> c)
-{
-  mp_left->set_color (c.first);
-  mp_right->set_color (c.second);
-  mp_lock->setChecked (c.first == c.second);
-  mp_right->setVisible (! mp_lock->isChecked ());
-}
-
-void
-TwoColorWidget::set_single_mode (bool f)
-{
-  mp_lock->setEnabled (! f);
-}
-
-void
-TwoColorWidget::lcolor_changed (QColor)
-{
-  if (mp_lock->isChecked ()) {
-    mp_right->set_color (mp_left->get_color ());
+  bool operator() (const std::pair <double, QColor> &a, const std::pair <double, QColor> &b) const
+  {
+    return a.first < b.first;
   }
-  emit color_changed (std::make_pair (mp_left->get_color (), mp_right->get_color ()));
-}
+};
 
-void
-TwoColorWidget::rcolor_changed (QColor)
+QColor
+interpolated_color (const std::vector<std::pair <double, QColor> > &nodes, double x)
 {
-  if (mp_lock->isChecked ()) {
-    mp_left->set_color (mp_right->get_color ());
-  }
-  emit color_changed (std::make_pair (mp_left->get_color (), mp_right->get_color ()));
-}
+  if (nodes.size () < 1) {
+    return QColor ();
+  } else if (nodes.size () < 2) {
+    return nodes[0].second;
+  } else {
 
-void
-TwoColorWidget::lock_changed (bool checked)
-{
-  if (checked) {
+    std::vector<std::pair<double, QColor> >::const_iterator p = std::lower_bound (nodes.begin (), nodes.end (), std::make_pair (x, QColor ()), compare_first_of_node ());
+    if (p == nodes.end ()) {
+      return nodes.back ().second;
+    } else if (p == nodes.begin ()) {
+      return nodes.front ().second;
+    } else {
 
-    QColor cl = mp_left->get_color ();
-    QColor cr = mp_right->get_color ();
+      double x1 = p[-1].first;
+      double x2 = p->first;
 
-    QColor ca ((cl.red () + cr.red ()) / 2, (cl.green () + cr.green ()) / 2, (cl.blue () + cr.blue ()) / 2);
-    set_color (std::make_pair (ca, ca));
+      int h1 = 0, s1 = 0, v1 = 0;
+      p[-1].second.getHsv (&h1, &s1, &v1);
 
-    emit color_changed (std::make_pair (mp_left->get_color (), mp_right->get_color ()));
+      int h2 = 0, s2 = 0, v2 = 0;
+      p->second.getHsv (&h2, &s2, &v2);
+
+      int h = int (0.5 + h1 + double(x - x1) * double (h2 - h1) / double(x2 - x1));
+      int s = int (0.5 + s1 + double(x - x1) * double (s2 - s1) / double(x2 - x1));
+      int v = int (0.5 + v1 + double(x - x1) * double (v2 - v1) / double(x2 - x1));
+
+      QColor r;
+      r.setHsv (h, s, v);
+      return r;
+
+    }
 
   }
-
-  mp_right->setVisible (! mp_lock->isChecked ());
 }
-
-// --------------------------------------------------------------------------------------------------------------------
 
 ColorBar::ColorBar (QWidget *parent)
   : QWidget (parent), m_dragging (false), m_selected (-1)
 {
-  m_nodes.push_back (std::make_pair (0.0, std::make_pair (tl::Color (0, 0, 0), tl::Color (0, 0, 0))));
-  m_nodes.push_back (std::make_pair (1.0, std::make_pair (tl::Color (255, 255, 255), tl::Color (255, 255, 255))));
+  m_nodes.push_back (std::make_pair (0.0, QColor (0, 0, 0)));
+  m_nodes.push_back (std::make_pair (1.0, QColor (255, 255, 255)));
 }
 
 ColorBar::~ColorBar ()
@@ -158,10 +122,10 @@ ColorBar::mouseMoveEvent (QMouseEvent *event)
 }
 
 void 
-ColorBar::set_current_color (std::pair<QColor, QColor> c)
+ColorBar::set_current_color (QColor c) 
 {
   if (has_selection ()) {
-    m_nodes [m_selected].second = std::make_pair (tl::Color (c.first.rgb ()), tl::Color (c.second.rgb ()));
+    m_nodes [m_selected].second = c;
     emit color_mapping_changed ();
     update ();
   }
@@ -210,40 +174,27 @@ ColorBar::keyPressEvent (QKeyEvent *event)
     m_nodes.erase (m_nodes.begin () + m_selected);
     m_selected = -1;
     emit selection_changed ();
-    emit selection_changed (std::make_pair (QColor (), QColor ()));
+    emit selection_changed (QColor ());
     update ();
   }
 }
 
-namespace
-{
-
-struct compare_first_of_node
-{
-  bool operator() (const std::pair <double, std::pair<tl::Color, tl::Color> > &a, const std::pair <double, std::pair<tl::Color, tl::Color> > &b) const
-  {
-    return a.first < b.first;
-  }
-};
-
-}
-
 void 
-ColorBar::set_nodes (const std::vector<std::pair<double, std::pair<tl::Color, tl::Color> > > &nodes)
+ColorBar::set_nodes (const std::vector <std::pair <double, QColor> > &nodes)
 {
   m_nodes = nodes;
 
   std::sort (m_nodes.begin (), m_nodes.end (), compare_first_of_node ());
 
   if (m_nodes.size () == 0 || fabs (m_nodes[0].first) > epsilon) {
-    m_nodes.insert (m_nodes.begin (), std::make_pair (0.0, std::make_pair (tl::Color (0, 0, 0), tl::Color (0, 0, 0))));
+    m_nodes.insert (m_nodes.begin (), std::make_pair (0.0, QColor (0, 0, 0)));
   } else {
     m_nodes[0].first = 0.0;
   }
 
-  std::vector <std::pair <double, std::pair<tl::Color, tl::Color> > >::iterator w = m_nodes.begin ();
-  std::vector <std::pair <double, std::pair<tl::Color, tl::Color> > >::const_iterator nn = m_nodes.begin ();
-  for (std::vector <std::pair <double, std::pair<tl::Color, tl::Color> > >::const_iterator n = m_nodes.begin () + 1; n != m_nodes.end (); ++n) {
+  std::vector <std::pair <double, QColor> >::iterator w = m_nodes.begin ();
+  std::vector <std::pair <double, QColor> >::const_iterator nn = m_nodes.begin ();
+  for (std::vector <std::pair <double, QColor> >::const_iterator n = m_nodes.begin () + 1; n != m_nodes.end (); ++n) {
     if (fabs (nn->first - n->first) > min_value_interval) {
       *w++ = *nn;
       nn = n;
@@ -256,7 +207,7 @@ ColorBar::set_nodes (const std::vector<std::pair<double, std::pair<tl::Color, tl
   if (m_nodes.back ().first > 1.0 - min_value_interval) {
     m_nodes.back ().first = 1.0;
   } else {
-    m_nodes.push_back (std::make_pair (1.0, std::make_pair (tl::Color (255, 255, 255), tl::Color (255, 255, 255))));
+    m_nodes.push_back (std::make_pair (1.0, QColor (255, 255, 255)));
   }
 
   m_selected = -1;
@@ -281,8 +232,8 @@ ColorBar::mousePressEvent (QMouseEvent *event)
     double xx = double (event->x () - xl) / double (xr - xl);
 
     double dmin = 100.0;
-    std::vector<std::pair<double, std::pair<tl::Color, tl::Color> > >::const_iterator pmin = m_nodes.end ();
-    for (std::vector<std::pair<double, std::pair<tl::Color, tl::Color> > >::const_iterator p = m_nodes.begin (); p != m_nodes.end (); ++p) {
+    std::vector<std::pair<double, QColor> >::const_iterator pmin = m_nodes.end ();
+    for (std::vector<std::pair<double, QColor> >::const_iterator p = m_nodes.begin (); p != m_nodes.end (); ++p) {
       double d = fabs (p->first - xx);
       if (d < 0.05 && d < dmin) {
         dmin = d;
@@ -291,16 +242,15 @@ ColorBar::mousePressEvent (QMouseEvent *event)
     }
 
     if (pmin != m_nodes.end ()) {
-      m_selected = int (std::distance (std::vector<std::pair<double, std::pair<tl::Color, tl::Color> > >::const_iterator (m_nodes.begin ()), pmin));
+      m_selected = int (std::distance (std::vector<std::pair<double, QColor> >::const_iterator (m_nodes.begin ()), pmin));
       emit selection_changed ();
-      std::pair<tl::Color, tl::Color> cp = m_nodes [m_selected].second;
-      emit selection_changed (std::make_pair (QColor (cp.first.rgb ()), QColor (cp.second.rgb ())));
+      emit selection_changed (m_nodes [m_selected].second);
       m_dragging = true;
       update ();
     } else {
       m_selected = -1;
       emit selection_changed ();
-      emit selection_changed (std::make_pair (QColor (), QColor ()));
+      emit selection_changed (QColor ());
       update ();
     }
 
@@ -328,14 +278,12 @@ ColorBar::mouseDoubleClickEvent (QMouseEvent *event)
 
     double xx = double (event->x () - xl) / double (xr - xl);
 
-    std::vector<std::pair<double, std::pair<tl::Color, tl::Color> > >::iterator p = std::lower_bound (m_nodes.begin (), m_nodes.end (), std::make_pair (xx, std::make_pair (tl::Color (), tl::Color ())), compare_first_of_node ());
+    std::vector<std::pair<double, QColor> >::iterator p = std::lower_bound (m_nodes.begin (), m_nodes.end (), std::make_pair (xx, QColor ()), compare_first_of_node ());
     if (p != m_nodes.begin () && p != m_nodes.end ()) {
       m_selected = int (std::distance (m_nodes.begin (), p));
-      tl::Color ci = interpolated_color (m_nodes, xx);
-      m_nodes.insert (p, std::make_pair (xx, std::make_pair (ci, ci)));
+      m_nodes.insert (p, std::make_pair (xx, interpolated_color (m_nodes, xx)));
       emit selection_changed ();
-      std::pair<tl::Color, tl::Color> cp = m_nodes [m_selected].second;
-      emit selection_changed (std::make_pair (QColor (cp.first.rgb ()), QColor (cp.second.rgb ())));
+      emit selection_changed (m_nodes [m_selected].second);
       emit color_mapping_changed ();
       update ();
     }
@@ -410,9 +358,9 @@ ColorBar::paintEvent (QPaintEvent *)
     if (xr != xl) {
       xx = double (x - xl) / double (xr - xl);
     }
-    tl::Color c = interpolated_color (m_nodes, xx);
+    QColor c = interpolated_color (m_nodes, xx);
 
-    painter.fillRect (x, yb - hbar, 1, hbar + 1, QBrush (QColor (c.rgb ())));
+    painter.fillRect (x, yb - hbar, 1, hbar + 1, QBrush (c));
 
   }
 
@@ -452,6 +400,4 @@ ColorBar::paintEvent (QPaintEvent *)
 }
 
 }
-
-#endif
 

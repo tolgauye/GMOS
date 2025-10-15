@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -38,6 +38,7 @@
 #include <QVideoFrame>
 #include "gsiQt.h"
 #include "gsiQtMultimediaCommon.h"
+#include "gsiDeclQtMultimediaTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -148,7 +149,7 @@ static void _init_f_tr_4013 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("s");
   decl->add_arg<const char * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("c", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("c", true, "__null");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("n", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -160,7 +161,7 @@ static void _call_f_tr_4013 (const qt_gsi::GenericStaticMethod * /*decl*/, gsi::
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (__null, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QCameraImageCaptureControl::tr (arg1, arg2, arg3));
 }
@@ -173,7 +174,7 @@ static void _init_f_trUtf8_4013 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("s");
   decl->add_arg<const char * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("c", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("c", true, "__null");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("n", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -185,7 +186,7 @@ static void _call_f_trUtf8_4013 (const qt_gsi::GenericStaticMethod * /*decl*/, g
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (__null, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QCameraImageCaptureControl::trUtf8 (arg1, arg2, arg3));
 }
@@ -204,13 +205,12 @@ static gsi::Methods methods_QCameraImageCaptureControl () {
   methods += new qt_gsi::GenericMethod ("setDriveMode|driveMode=", "@brief Method void QCameraImageCaptureControl::setDriveMode(QCameraImageCapture::DriveMode mode)\n", false, &_init_f_setDriveMode_3320, &_call_f_setDriveMode_3320);
   methods += gsi::qt_signal<QObject * > ("destroyed(QObject *)", "destroyed", gsi::arg("arg1"), "@brief Signal declaration for QCameraImageCaptureControl::destroyed(QObject *)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<int, int, const QString & > ("error(int, int, const QString &)", "error", gsi::arg("id"), gsi::arg("error"), gsi::arg("errorString"), "@brief Signal declaration for QCameraImageCaptureControl::error(int id, int error, const QString &errorString)\nYou can bind a procedure to this signal.");
-  methods += gsi::qt_signal<int, const QVideoFrame & > ("imageAvailable(int, const QVideoFrame &)", "imageAvailable", gsi::arg("requestId"), gsi::arg("buffer"), "@brief Signal declaration for QCameraImageCaptureControl::imageAvailable(int requestId, const QVideoFrame &buffer)\nYou can bind a procedure to this signal.");
-  methods += gsi::qt_signal<int, const QImage & > ("imageCaptured(int, const QImage &)", "imageCaptured", gsi::arg("requestId"), gsi::arg("preview"), "@brief Signal declaration for QCameraImageCaptureControl::imageCaptured(int requestId, const QImage &preview)\nYou can bind a procedure to this signal.");
-  methods += gsi::qt_signal<int > ("imageExposed(int)", "imageExposed", gsi::arg("requestId"), "@brief Signal declaration for QCameraImageCaptureControl::imageExposed(int requestId)\nYou can bind a procedure to this signal.");
+  methods += gsi::qt_signal<int, const QVideoFrame & > ("imageAvailable(int, const QVideoFrame &)", "imageAvailable", gsi::arg("id"), gsi::arg("buffer"), "@brief Signal declaration for QCameraImageCaptureControl::imageAvailable(int id, const QVideoFrame &buffer)\nYou can bind a procedure to this signal.");
+  methods += gsi::qt_signal<int, const QImage & > ("imageCaptured(int, const QImage &)", "imageCaptured", gsi::arg("id"), gsi::arg("preview"), "@brief Signal declaration for QCameraImageCaptureControl::imageCaptured(int id, const QImage &preview)\nYou can bind a procedure to this signal.");
+  methods += gsi::qt_signal<int > ("imageExposed(int)", "imageExposed", gsi::arg("id"), "@brief Signal declaration for QCameraImageCaptureControl::imageExposed(int id)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<int, const QString &, const QVariant & > ("imageMetadataAvailable(int, const QString &, const QVariant &)", "imageMetadataAvailable", gsi::arg("id"), gsi::arg("key"), gsi::arg("value"), "@brief Signal declaration for QCameraImageCaptureControl::imageMetadataAvailable(int id, const QString &key, const QVariant &value)\nYou can bind a procedure to this signal.");
-  methods += gsi::qt_signal<int, const QString & > ("imageSaved(int, const QString &)", "imageSaved", gsi::arg("requestId"), gsi::arg("fileName"), "@brief Signal declaration for QCameraImageCaptureControl::imageSaved(int requestId, const QString &fileName)\nYou can bind a procedure to this signal.");
-  methods += gsi::qt_signal<const QString & > ("objectNameChanged(const QString &)", "objectNameChanged", gsi::arg("objectName"), "@brief Signal declaration for QCameraImageCaptureControl::objectNameChanged(const QString &objectName)\nYou can bind a procedure to this signal.");
-  methods += gsi::qt_signal<bool > ("readyForCaptureChanged(bool)", "readyForCaptureChanged", gsi::arg("ready"), "@brief Signal declaration for QCameraImageCaptureControl::readyForCaptureChanged(bool ready)\nYou can bind a procedure to this signal.");
+  methods += gsi::qt_signal<int, const QString & > ("imageSaved(int, const QString &)", "imageSaved", gsi::arg("id"), gsi::arg("fileName"), "@brief Signal declaration for QCameraImageCaptureControl::imageSaved(int id, const QString &fileName)\nYou can bind a procedure to this signal.");
+  methods += gsi::qt_signal<bool > ("readyForCaptureChanged(bool)", "readyForCaptureChanged", gsi::arg("arg1"), "@brief Signal declaration for QCameraImageCaptureControl::readyForCaptureChanged(bool)\nYou can bind a procedure to this signal.");
   methods += new qt_gsi::GenericStaticMethod ("tr", "@brief Static method QString QCameraImageCaptureControl::tr(const char *s, const char *c, int n)\nThis method is static and can be called without an instance.", &_init_f_tr_4013, &_call_f_tr_4013);
   methods += new qt_gsi::GenericStaticMethod ("trUtf8", "@brief Static method QString QCameraImageCaptureControl::trUtf8(const char *s, const char *c, int n)\nThis method is static and can be called without an instance.", &_init_f_trUtf8_4013, &_call_f_trUtf8_4013);
   return methods;
@@ -317,52 +317,52 @@ public:
     emit QCameraImageCaptureControl::error(id, _error, errorString);
   }
 
-  //  [adaptor impl] bool QCameraImageCaptureControl::event(QEvent *event)
-  bool cbs_event_1217_0(QEvent *_event)
+  //  [adaptor impl] bool QCameraImageCaptureControl::event(QEvent *)
+  bool cbs_event_1217_0(QEvent *arg1)
   {
-    return QCameraImageCaptureControl::event(_event);
+    return QCameraImageCaptureControl::event(arg1);
   }
 
-  virtual bool event(QEvent *_event)
+  virtual bool event(QEvent *arg1)
   {
     if (cb_event_1217_0.can_issue()) {
-      return cb_event_1217_0.issue<QCameraImageCaptureControl_Adaptor, bool, QEvent *>(&QCameraImageCaptureControl_Adaptor::cbs_event_1217_0, _event);
+      return cb_event_1217_0.issue<QCameraImageCaptureControl_Adaptor, bool, QEvent *>(&QCameraImageCaptureControl_Adaptor::cbs_event_1217_0, arg1);
     } else {
-      return QCameraImageCaptureControl::event(_event);
+      return QCameraImageCaptureControl::event(arg1);
     }
   }
 
-  //  [adaptor impl] bool QCameraImageCaptureControl::eventFilter(QObject *watched, QEvent *event)
-  bool cbs_eventFilter_2411_0(QObject *watched, QEvent *event)
+  //  [adaptor impl] bool QCameraImageCaptureControl::eventFilter(QObject *, QEvent *)
+  bool cbs_eventFilter_2411_0(QObject *arg1, QEvent *arg2)
   {
-    return QCameraImageCaptureControl::eventFilter(watched, event);
+    return QCameraImageCaptureControl::eventFilter(arg1, arg2);
   }
 
-  virtual bool eventFilter(QObject *watched, QEvent *event)
+  virtual bool eventFilter(QObject *arg1, QEvent *arg2)
   {
     if (cb_eventFilter_2411_0.can_issue()) {
-      return cb_eventFilter_2411_0.issue<QCameraImageCaptureControl_Adaptor, bool, QObject *, QEvent *>(&QCameraImageCaptureControl_Adaptor::cbs_eventFilter_2411_0, watched, event);
+      return cb_eventFilter_2411_0.issue<QCameraImageCaptureControl_Adaptor, bool, QObject *, QEvent *>(&QCameraImageCaptureControl_Adaptor::cbs_eventFilter_2411_0, arg1, arg2);
     } else {
-      return QCameraImageCaptureControl::eventFilter(watched, event);
+      return QCameraImageCaptureControl::eventFilter(arg1, arg2);
     }
   }
 
-  //  [emitter impl] void QCameraImageCaptureControl::imageAvailable(int requestId, const QVideoFrame &buffer)
-  void emitter_QCameraImageCaptureControl_imageAvailable_3047(int requestId, const QVideoFrame &buffer)
+  //  [emitter impl] void QCameraImageCaptureControl::imageAvailable(int id, const QVideoFrame &buffer)
+  void emitter_QCameraImageCaptureControl_imageAvailable_3047(int id, const QVideoFrame &buffer)
   {
-    emit QCameraImageCaptureControl::imageAvailable(requestId, buffer);
+    emit QCameraImageCaptureControl::imageAvailable(id, buffer);
   }
 
-  //  [emitter impl] void QCameraImageCaptureControl::imageCaptured(int requestId, const QImage &preview)
-  void emitter_QCameraImageCaptureControl_imageCaptured_2536(int requestId, const QImage &preview)
+  //  [emitter impl] void QCameraImageCaptureControl::imageCaptured(int id, const QImage &preview)
+  void emitter_QCameraImageCaptureControl_imageCaptured_2536(int id, const QImage &preview)
   {
-    emit QCameraImageCaptureControl::imageCaptured(requestId, preview);
+    emit QCameraImageCaptureControl::imageCaptured(id, preview);
   }
 
-  //  [emitter impl] void QCameraImageCaptureControl::imageExposed(int requestId)
-  void emitter_QCameraImageCaptureControl_imageExposed_767(int requestId)
+  //  [emitter impl] void QCameraImageCaptureControl::imageExposed(int id)
+  void emitter_QCameraImageCaptureControl_imageExposed_767(int id)
   {
-    emit QCameraImageCaptureControl::imageExposed(requestId);
+    emit QCameraImageCaptureControl::imageExposed(id);
   }
 
   //  [emitter impl] void QCameraImageCaptureControl::imageMetadataAvailable(int id, const QString &key, const QVariant &value)
@@ -371,10 +371,10 @@ public:
     emit QCameraImageCaptureControl::imageMetadataAvailable(id, key, value);
   }
 
-  //  [emitter impl] void QCameraImageCaptureControl::imageSaved(int requestId, const QString &fileName)
-  void emitter_QCameraImageCaptureControl_imageSaved_2684(int requestId, const QString &fileName)
+  //  [emitter impl] void QCameraImageCaptureControl::imageSaved(int id, const QString &fileName)
+  void emitter_QCameraImageCaptureControl_imageSaved_2684(int id, const QString &fileName)
   {
-    emit QCameraImageCaptureControl::imageSaved(requestId, fileName);
+    emit QCameraImageCaptureControl::imageSaved(id, fileName);
   }
 
   //  [adaptor impl] bool QCameraImageCaptureControl::isReadyForCapture()
@@ -392,17 +392,10 @@ public:
     }
   }
 
-  //  [emitter impl] void QCameraImageCaptureControl::objectNameChanged(const QString &objectName)
-  void emitter_QCameraImageCaptureControl_objectNameChanged_4567(const QString &objectName)
+  //  [emitter impl] void QCameraImageCaptureControl::readyForCaptureChanged(bool)
+  void emitter_QCameraImageCaptureControl_readyForCaptureChanged_864(bool arg1)
   {
-    __SUPPRESS_UNUSED_WARNING (objectName);
-    throw tl::Exception ("Can't emit private signal 'void QCameraImageCaptureControl::objectNameChanged(const QString &objectName)'");
-  }
-
-  //  [emitter impl] void QCameraImageCaptureControl::readyForCaptureChanged(bool ready)
-  void emitter_QCameraImageCaptureControl_readyForCaptureChanged_864(bool ready)
-  {
-    emit QCameraImageCaptureControl::readyForCaptureChanged(ready);
+    emit QCameraImageCaptureControl::readyForCaptureChanged(arg1);
   }
 
   //  [adaptor impl] void QCameraImageCaptureControl::setDriveMode(QCameraImageCapture::DriveMode mode)
@@ -421,33 +414,33 @@ public:
     }
   }
 
-  //  [adaptor impl] void QCameraImageCaptureControl::childEvent(QChildEvent *event)
-  void cbs_childEvent_1701_0(QChildEvent *event)
+  //  [adaptor impl] void QCameraImageCaptureControl::childEvent(QChildEvent *)
+  void cbs_childEvent_1701_0(QChildEvent *arg1)
   {
-    QCameraImageCaptureControl::childEvent(event);
+    QCameraImageCaptureControl::childEvent(arg1);
   }
 
-  virtual void childEvent(QChildEvent *event)
+  virtual void childEvent(QChildEvent *arg1)
   {
     if (cb_childEvent_1701_0.can_issue()) {
-      cb_childEvent_1701_0.issue<QCameraImageCaptureControl_Adaptor, QChildEvent *>(&QCameraImageCaptureControl_Adaptor::cbs_childEvent_1701_0, event);
+      cb_childEvent_1701_0.issue<QCameraImageCaptureControl_Adaptor, QChildEvent *>(&QCameraImageCaptureControl_Adaptor::cbs_childEvent_1701_0, arg1);
     } else {
-      QCameraImageCaptureControl::childEvent(event);
+      QCameraImageCaptureControl::childEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QCameraImageCaptureControl::customEvent(QEvent *event)
-  void cbs_customEvent_1217_0(QEvent *event)
+  //  [adaptor impl] void QCameraImageCaptureControl::customEvent(QEvent *)
+  void cbs_customEvent_1217_0(QEvent *arg1)
   {
-    QCameraImageCaptureControl::customEvent(event);
+    QCameraImageCaptureControl::customEvent(arg1);
   }
 
-  virtual void customEvent(QEvent *event)
+  virtual void customEvent(QEvent *arg1)
   {
     if (cb_customEvent_1217_0.can_issue()) {
-      cb_customEvent_1217_0.issue<QCameraImageCaptureControl_Adaptor, QEvent *>(&QCameraImageCaptureControl_Adaptor::cbs_customEvent_1217_0, event);
+      cb_customEvent_1217_0.issue<QCameraImageCaptureControl_Adaptor, QEvent *>(&QCameraImageCaptureControl_Adaptor::cbs_customEvent_1217_0, arg1);
     } else {
-      QCameraImageCaptureControl::customEvent(event);
+      QCameraImageCaptureControl::customEvent(arg1);
     }
   }
 
@@ -466,18 +459,18 @@ public:
     }
   }
 
-  //  [adaptor impl] void QCameraImageCaptureControl::timerEvent(QTimerEvent *event)
-  void cbs_timerEvent_1730_0(QTimerEvent *event)
+  //  [adaptor impl] void QCameraImageCaptureControl::timerEvent(QTimerEvent *)
+  void cbs_timerEvent_1730_0(QTimerEvent *arg1)
   {
-    QCameraImageCaptureControl::timerEvent(event);
+    QCameraImageCaptureControl::timerEvent(arg1);
   }
 
-  virtual void timerEvent(QTimerEvent *event)
+  virtual void timerEvent(QTimerEvent *arg1)
   {
     if (cb_timerEvent_1730_0.can_issue()) {
-      cb_timerEvent_1730_0.issue<QCameraImageCaptureControl_Adaptor, QTimerEvent *>(&QCameraImageCaptureControl_Adaptor::cbs_timerEvent_1730_0, event);
+      cb_timerEvent_1730_0.issue<QCameraImageCaptureControl_Adaptor, QTimerEvent *>(&QCameraImageCaptureControl_Adaptor::cbs_timerEvent_1730_0, arg1);
     } else {
-      QCameraImageCaptureControl::timerEvent(event);
+      QCameraImageCaptureControl::timerEvent(arg1);
     }
   }
 
@@ -553,11 +546,11 @@ static void _set_callback_cbs_capture_2025_0 (void *cls, const gsi::Callback &cb
 }
 
 
-// void QCameraImageCaptureControl::childEvent(QChildEvent *event)
+// void QCameraImageCaptureControl::childEvent(QChildEvent *)
 
 static void _init_cbs_childEvent_1701_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QChildEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -577,11 +570,11 @@ static void _set_callback_cbs_childEvent_1701_0 (void *cls, const gsi::Callback 
 }
 
 
-// void QCameraImageCaptureControl::customEvent(QEvent *event)
+// void QCameraImageCaptureControl::customEvent(QEvent *)
 
 static void _init_cbs_customEvent_1217_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -605,7 +598,7 @@ static void _set_callback_cbs_customEvent_1217_0 (void *cls, const gsi::Callback
 
 static void _init_emitter_destroyed_1302 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("arg1", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("arg1", true, "0");
   decl->add_arg<QObject * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -614,7 +607,7 @@ static void _call_emitter_destroyed_1302 (const qt_gsi::GenericMethod * /*decl*/
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (nullptr, heap);
+  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (0, heap);
   ((QCameraImageCaptureControl_Adaptor *)cls)->emitter_QCameraImageCaptureControl_destroyed_1302 (arg1);
 }
 
@@ -686,11 +679,11 @@ static void _call_emitter_error_3343 (const qt_gsi::GenericMethod * /*decl*/, vo
 }
 
 
-// bool QCameraImageCaptureControl::event(QEvent *event)
+// bool QCameraImageCaptureControl::event(QEvent *)
 
 static void _init_cbs_event_1217_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QEvent * > (argspec_0);
   decl->set_return<bool > ();
 }
@@ -709,13 +702,13 @@ static void _set_callback_cbs_event_1217_0 (void *cls, const gsi::Callback &cb)
 }
 
 
-// bool QCameraImageCaptureControl::eventFilter(QObject *watched, QEvent *event)
+// bool QCameraImageCaptureControl::eventFilter(QObject *, QEvent *)
 
 static void _init_cbs_eventFilter_2411_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("watched");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QObject * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("event");
+  static gsi::ArgSpecBase argspec_1 ("arg2");
   decl->add_arg<QEvent * > (argspec_1);
   decl->set_return<bool > ();
 }
@@ -735,11 +728,11 @@ static void _set_callback_cbs_eventFilter_2411_0 (void *cls, const gsi::Callback
 }
 
 
-// emitter void QCameraImageCaptureControl::imageAvailable(int requestId, const QVideoFrame &buffer)
+// emitter void QCameraImageCaptureControl::imageAvailable(int id, const QVideoFrame &buffer)
 
 static void _init_emitter_imageAvailable_3047 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("requestId");
+  static gsi::ArgSpecBase argspec_0 ("id");
   decl->add_arg<int > (argspec_0);
   static gsi::ArgSpecBase argspec_1 ("buffer");
   decl->add_arg<const QVideoFrame & > (argspec_1);
@@ -756,11 +749,11 @@ static void _call_emitter_imageAvailable_3047 (const qt_gsi::GenericMethod * /*d
 }
 
 
-// emitter void QCameraImageCaptureControl::imageCaptured(int requestId, const QImage &preview)
+// emitter void QCameraImageCaptureControl::imageCaptured(int id, const QImage &preview)
 
 static void _init_emitter_imageCaptured_2536 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("requestId");
+  static gsi::ArgSpecBase argspec_0 ("id");
   decl->add_arg<int > (argspec_0);
   static gsi::ArgSpecBase argspec_1 ("preview");
   decl->add_arg<const QImage & > (argspec_1);
@@ -777,11 +770,11 @@ static void _call_emitter_imageCaptured_2536 (const qt_gsi::GenericMethod * /*de
 }
 
 
-// emitter void QCameraImageCaptureControl::imageExposed(int requestId)
+// emitter void QCameraImageCaptureControl::imageExposed(int id)
 
 static void _init_emitter_imageExposed_767 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("requestId");
+  static gsi::ArgSpecBase argspec_0 ("id");
   decl->add_arg<int > (argspec_0);
   decl->set_return<void > ();
 }
@@ -819,11 +812,11 @@ static void _call_emitter_imageMetadataAvailable_4695 (const qt_gsi::GenericMeth
 }
 
 
-// emitter void QCameraImageCaptureControl::imageSaved(int requestId, const QString &fileName)
+// emitter void QCameraImageCaptureControl::imageSaved(int id, const QString &fileName)
 
 static void _init_emitter_imageSaved_2684 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("requestId");
+  static gsi::ArgSpecBase argspec_0 ("id");
   decl->add_arg<int > (argspec_0);
   static gsi::ArgSpecBase argspec_1 ("fileName");
   decl->add_arg<const QString & > (argspec_1);
@@ -877,29 +870,11 @@ static void _call_fp_isSignalConnected_c2394 (const qt_gsi::GenericMethod * /*de
 }
 
 
-// emitter void QCameraImageCaptureControl::objectNameChanged(const QString &objectName)
-
-static void _init_emitter_objectNameChanged_4567 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("objectName");
-  decl->add_arg<const QString & > (argspec_0);
-  decl->set_return<void > ();
-}
-
-static void _call_emitter_objectNameChanged_4567 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs & /*ret*/) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const QString &arg1 = gsi::arg_reader<const QString & >() (args, heap);
-  ((QCameraImageCaptureControl_Adaptor *)cls)->emitter_QCameraImageCaptureControl_objectNameChanged_4567 (arg1);
-}
-
-
-// emitter void QCameraImageCaptureControl::readyForCaptureChanged(bool ready)
+// emitter void QCameraImageCaptureControl::readyForCaptureChanged(bool)
 
 static void _init_emitter_readyForCaptureChanged_864 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("ready");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<bool > (argspec_0);
   decl->set_return<void > ();
 }
@@ -983,11 +958,11 @@ static void _set_callback_cbs_setDriveMode_3320_0 (void *cls, const gsi::Callbac
 }
 
 
-// void QCameraImageCaptureControl::timerEvent(QTimerEvent *event)
+// void QCameraImageCaptureControl::timerEvent(QTimerEvent *)
 
 static void _init_cbs_timerEvent_1730_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QTimerEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1015,41 +990,40 @@ gsi::Class<QCameraImageCaptureControl> &qtdecl_QCameraImageCaptureControl ();
 static gsi::Methods methods_QCameraImageCaptureControl_Adaptor () {
   gsi::Methods methods;
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QCameraImageCaptureControl::QCameraImageCaptureControl()\nThis method creates an object of class QCameraImageCaptureControl.", &_init_ctor_QCameraImageCaptureControl_Adaptor_0, &_call_ctor_QCameraImageCaptureControl_Adaptor_0);
-  methods += new qt_gsi::GenericMethod ("cancelCapture", "@brief Virtual method void QCameraImageCaptureControl::cancelCapture()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_cancelCapture_0_0, &_call_cbs_cancelCapture_0_0);
-  methods += new qt_gsi::GenericMethod ("cancelCapture", "@hide", false, &_init_cbs_cancelCapture_0_0, &_call_cbs_cancelCapture_0_0, &_set_callback_cbs_cancelCapture_0_0);
-  methods += new qt_gsi::GenericMethod ("capture", "@brief Virtual method int QCameraImageCaptureControl::capture(const QString &fileName)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_capture_2025_0, &_call_cbs_capture_2025_0);
-  methods += new qt_gsi::GenericMethod ("capture", "@hide", false, &_init_cbs_capture_2025_0, &_call_cbs_capture_2025_0, &_set_callback_cbs_capture_2025_0);
-  methods += new qt_gsi::GenericMethod ("*childEvent", "@brief Virtual method void QCameraImageCaptureControl::childEvent(QChildEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0);
-  methods += new qt_gsi::GenericMethod ("*childEvent", "@hide", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0, &_set_callback_cbs_childEvent_1701_0);
-  methods += new qt_gsi::GenericMethod ("*customEvent", "@brief Virtual method void QCameraImageCaptureControl::customEvent(QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*customEvent", "@hide", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0, &_set_callback_cbs_customEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("cancelCapture", "@hide", false, &_init_cbs_cancelCapture_0_0, &_call_cbs_cancelCapture_0_0);
+  methods += new qt_gsi::GenericMethod ("cancelCapture", "@brief Virtual method void QCameraImageCaptureControl::cancelCapture()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_cancelCapture_0_0, &_call_cbs_cancelCapture_0_0, &_set_callback_cbs_cancelCapture_0_0);
+  methods += new qt_gsi::GenericMethod ("capture", "@hide", false, &_init_cbs_capture_2025_0, &_call_cbs_capture_2025_0);
+  methods += new qt_gsi::GenericMethod ("capture", "@brief Virtual method int QCameraImageCaptureControl::capture(const QString &fileName)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_capture_2025_0, &_call_cbs_capture_2025_0, &_set_callback_cbs_capture_2025_0);
+  methods += new qt_gsi::GenericMethod ("*childEvent", "@hide", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0);
+  methods += new qt_gsi::GenericMethod ("*childEvent", "@brief Virtual method void QCameraImageCaptureControl::childEvent(QChildEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0, &_set_callback_cbs_childEvent_1701_0);
+  methods += new qt_gsi::GenericMethod ("*customEvent", "@hide", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*customEvent", "@brief Virtual method void QCameraImageCaptureControl::customEvent(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0, &_set_callback_cbs_customEvent_1217_0);
   methods += new qt_gsi::GenericMethod ("emit_destroyed", "@brief Emitter for signal void QCameraImageCaptureControl::destroyed(QObject *)\nCall this method to emit this signal.", false, &_init_emitter_destroyed_1302, &_call_emitter_destroyed_1302);
-  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@brief Virtual method void QCameraImageCaptureControl::disconnectNotify(const QMetaMethod &signal)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0);
-  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@hide", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0, &_set_callback_cbs_disconnectNotify_2394_0);
-  methods += new qt_gsi::GenericMethod ("driveMode", "@brief Virtual method QCameraImageCapture::DriveMode QCameraImageCaptureControl::driveMode()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_driveMode_c0_0, &_call_cbs_driveMode_c0_0);
-  methods += new qt_gsi::GenericMethod ("driveMode", "@hide", true, &_init_cbs_driveMode_c0_0, &_call_cbs_driveMode_c0_0, &_set_callback_cbs_driveMode_c0_0);
+  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@hide", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0);
+  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@brief Virtual method void QCameraImageCaptureControl::disconnectNotify(const QMetaMethod &signal)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0, &_set_callback_cbs_disconnectNotify_2394_0);
+  methods += new qt_gsi::GenericMethod ("driveMode", "@hide", true, &_init_cbs_driveMode_c0_0, &_call_cbs_driveMode_c0_0);
+  methods += new qt_gsi::GenericMethod ("driveMode", "@brief Virtual method QCameraImageCapture::DriveMode QCameraImageCaptureControl::driveMode()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_driveMode_c0_0, &_call_cbs_driveMode_c0_0, &_set_callback_cbs_driveMode_c0_0);
   methods += new qt_gsi::GenericMethod ("emit_error", "@brief Emitter for signal void QCameraImageCaptureControl::error(int id, int error, const QString &errorString)\nCall this method to emit this signal.", false, &_init_emitter_error_3343, &_call_emitter_error_3343);
-  methods += new qt_gsi::GenericMethod ("event", "@brief Virtual method bool QCameraImageCaptureControl::event(QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0);
-  methods += new qt_gsi::GenericMethod ("event", "@hide", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0, &_set_callback_cbs_event_1217_0);
-  methods += new qt_gsi::GenericMethod ("eventFilter", "@brief Virtual method bool QCameraImageCaptureControl::eventFilter(QObject *watched, QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0);
-  methods += new qt_gsi::GenericMethod ("eventFilter", "@hide", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0, &_set_callback_cbs_eventFilter_2411_0);
-  methods += new qt_gsi::GenericMethod ("emit_imageAvailable", "@brief Emitter for signal void QCameraImageCaptureControl::imageAvailable(int requestId, const QVideoFrame &buffer)\nCall this method to emit this signal.", false, &_init_emitter_imageAvailable_3047, &_call_emitter_imageAvailable_3047);
-  methods += new qt_gsi::GenericMethod ("emit_imageCaptured", "@brief Emitter for signal void QCameraImageCaptureControl::imageCaptured(int requestId, const QImage &preview)\nCall this method to emit this signal.", false, &_init_emitter_imageCaptured_2536, &_call_emitter_imageCaptured_2536);
-  methods += new qt_gsi::GenericMethod ("emit_imageExposed", "@brief Emitter for signal void QCameraImageCaptureControl::imageExposed(int requestId)\nCall this method to emit this signal.", false, &_init_emitter_imageExposed_767, &_call_emitter_imageExposed_767);
+  methods += new qt_gsi::GenericMethod ("event", "@hide", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0);
+  methods += new qt_gsi::GenericMethod ("event", "@brief Virtual method bool QCameraImageCaptureControl::event(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0, &_set_callback_cbs_event_1217_0);
+  methods += new qt_gsi::GenericMethod ("eventFilter", "@hide", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0);
+  methods += new qt_gsi::GenericMethod ("eventFilter", "@brief Virtual method bool QCameraImageCaptureControl::eventFilter(QObject *, QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0, &_set_callback_cbs_eventFilter_2411_0);
+  methods += new qt_gsi::GenericMethod ("emit_imageAvailable", "@brief Emitter for signal void QCameraImageCaptureControl::imageAvailable(int id, const QVideoFrame &buffer)\nCall this method to emit this signal.", false, &_init_emitter_imageAvailable_3047, &_call_emitter_imageAvailable_3047);
+  methods += new qt_gsi::GenericMethod ("emit_imageCaptured", "@brief Emitter for signal void QCameraImageCaptureControl::imageCaptured(int id, const QImage &preview)\nCall this method to emit this signal.", false, &_init_emitter_imageCaptured_2536, &_call_emitter_imageCaptured_2536);
+  methods += new qt_gsi::GenericMethod ("emit_imageExposed", "@brief Emitter for signal void QCameraImageCaptureControl::imageExposed(int id)\nCall this method to emit this signal.", false, &_init_emitter_imageExposed_767, &_call_emitter_imageExposed_767);
   methods += new qt_gsi::GenericMethod ("emit_imageMetadataAvailable", "@brief Emitter for signal void QCameraImageCaptureControl::imageMetadataAvailable(int id, const QString &key, const QVariant &value)\nCall this method to emit this signal.", false, &_init_emitter_imageMetadataAvailable_4695, &_call_emitter_imageMetadataAvailable_4695);
-  methods += new qt_gsi::GenericMethod ("emit_imageSaved", "@brief Emitter for signal void QCameraImageCaptureControl::imageSaved(int requestId, const QString &fileName)\nCall this method to emit this signal.", false, &_init_emitter_imageSaved_2684, &_call_emitter_imageSaved_2684);
-  methods += new qt_gsi::GenericMethod ("isReadyForCapture", "@brief Virtual method bool QCameraImageCaptureControl::isReadyForCapture()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_isReadyForCapture_c0_0, &_call_cbs_isReadyForCapture_c0_0);
-  methods += new qt_gsi::GenericMethod ("isReadyForCapture", "@hide", true, &_init_cbs_isReadyForCapture_c0_0, &_call_cbs_isReadyForCapture_c0_0, &_set_callback_cbs_isReadyForCapture_c0_0);
+  methods += new qt_gsi::GenericMethod ("emit_imageSaved", "@brief Emitter for signal void QCameraImageCaptureControl::imageSaved(int id, const QString &fileName)\nCall this method to emit this signal.", false, &_init_emitter_imageSaved_2684, &_call_emitter_imageSaved_2684);
+  methods += new qt_gsi::GenericMethod ("isReadyForCapture", "@hide", true, &_init_cbs_isReadyForCapture_c0_0, &_call_cbs_isReadyForCapture_c0_0);
+  methods += new qt_gsi::GenericMethod ("isReadyForCapture", "@brief Virtual method bool QCameraImageCaptureControl::isReadyForCapture()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_isReadyForCapture_c0_0, &_call_cbs_isReadyForCapture_c0_0, &_set_callback_cbs_isReadyForCapture_c0_0);
   methods += new qt_gsi::GenericMethod ("*isSignalConnected", "@brief Method bool QCameraImageCaptureControl::isSignalConnected(const QMetaMethod &signal)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_isSignalConnected_c2394, &_call_fp_isSignalConnected_c2394);
-  methods += new qt_gsi::GenericMethod ("emit_objectNameChanged", "@brief Emitter for signal void QCameraImageCaptureControl::objectNameChanged(const QString &objectName)\nCall this method to emit this signal.", false, &_init_emitter_objectNameChanged_4567, &_call_emitter_objectNameChanged_4567);
-  methods += new qt_gsi::GenericMethod ("emit_readyForCaptureChanged", "@brief Emitter for signal void QCameraImageCaptureControl::readyForCaptureChanged(bool ready)\nCall this method to emit this signal.", false, &_init_emitter_readyForCaptureChanged_864, &_call_emitter_readyForCaptureChanged_864);
+  methods += new qt_gsi::GenericMethod ("emit_readyForCaptureChanged", "@brief Emitter for signal void QCameraImageCaptureControl::readyForCaptureChanged(bool)\nCall this method to emit this signal.", false, &_init_emitter_readyForCaptureChanged_864, &_call_emitter_readyForCaptureChanged_864);
   methods += new qt_gsi::GenericMethod ("*receivers", "@brief Method int QCameraImageCaptureControl::receivers(const char *signal)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_receivers_c1731, &_call_fp_receivers_c1731);
   methods += new qt_gsi::GenericMethod ("*sender", "@brief Method QObject *QCameraImageCaptureControl::sender()\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_sender_c0, &_call_fp_sender_c0);
   methods += new qt_gsi::GenericMethod ("*senderSignalIndex", "@brief Method int QCameraImageCaptureControl::senderSignalIndex()\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_senderSignalIndex_c0, &_call_fp_senderSignalIndex_c0);
-  methods += new qt_gsi::GenericMethod ("setDriveMode", "@brief Virtual method void QCameraImageCaptureControl::setDriveMode(QCameraImageCapture::DriveMode mode)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setDriveMode_3320_0, &_call_cbs_setDriveMode_3320_0);
-  methods += new qt_gsi::GenericMethod ("setDriveMode", "@hide", false, &_init_cbs_setDriveMode_3320_0, &_call_cbs_setDriveMode_3320_0, &_set_callback_cbs_setDriveMode_3320_0);
-  methods += new qt_gsi::GenericMethod ("*timerEvent", "@brief Virtual method void QCameraImageCaptureControl::timerEvent(QTimerEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0);
-  methods += new qt_gsi::GenericMethod ("*timerEvent", "@hide", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0, &_set_callback_cbs_timerEvent_1730_0);
+  methods += new qt_gsi::GenericMethod ("setDriveMode", "@hide", false, &_init_cbs_setDriveMode_3320_0, &_call_cbs_setDriveMode_3320_0);
+  methods += new qt_gsi::GenericMethod ("setDriveMode", "@brief Virtual method void QCameraImageCaptureControl::setDriveMode(QCameraImageCapture::DriveMode mode)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setDriveMode_3320_0, &_call_cbs_setDriveMode_3320_0, &_set_callback_cbs_setDriveMode_3320_0);
+  methods += new qt_gsi::GenericMethod ("*timerEvent", "@hide", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0);
+  methods += new qt_gsi::GenericMethod ("*timerEvent", "@brief Virtual method void QCameraImageCaptureControl::timerEvent(QTimerEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0, &_set_callback_cbs_timerEvent_1730_0);
   return methods;
 }
 

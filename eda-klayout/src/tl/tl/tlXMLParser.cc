@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -75,7 +75,7 @@ public:
     mp_progress->set_unit (1024 * 1024);
   }
 
-  int read (char *data, size_t n)
+  size_t read (char *data, size_t n)
   {
     try {
 
@@ -88,7 +88,11 @@ public:
         *data++ = *rd;
       }
 
-      return int (n0 - n);
+      if (n0 == n) {
+        return -1;
+      } else {
+        return n0 - n;
+      }
 
     } catch (tl::Exception &ex) {
       m_error = ex.msg ();
@@ -113,9 +117,9 @@ public:
   }
 
 private:
-  std::unique_ptr<tl::InputStream> mp_stream_holder;
+  std::auto_ptr<tl::InputStream> mp_stream_holder;
   tl::InputStream *mp_stream;
-  std::unique_ptr<tl::AbsoluteProgress> mp_progress;
+  std::auto_ptr<tl::AbsoluteProgress> mp_progress;
   bool m_has_error;
   std::string m_error;
 };
@@ -275,24 +279,27 @@ public:
     XML_SetElementHandler (mp_parser, start_element_handler, end_element_handler);
     XML_SetCharacterDataHandler (mp_parser, cdata_handler);
 
-    const int chunk = 65536;
+    const size_t chunk = 65536;
     char buffer [chunk];
 
-    int n;
+    size_t n;
 
     do {
 
-      n = source.source ()->read (buffer, chunk);
-      if (n < 0) {
-        break;
-      }
+      try {
 
-      XML_Status status = XML_Parse (mp_parser, buffer, n, n < chunk /*is final*/);
-      if (status == XML_STATUS_ERROR) {
-        m_has_error = true;
-        m_error = XML_ErrorString (XML_GetErrorCode (mp_parser));
-        m_error_line = XML_GetErrorLineNumber (mp_parser);
-        m_error_column = XML_GetErrorColumnNumber (mp_parser);
+        n = source.source ()->read (buffer, chunk);
+
+        XML_Status status = XML_Parse (mp_parser, buffer, int (n), n < chunk /*is final*/);
+        if (status == XML_STATUS_ERROR) {
+          m_has_error = true;
+          m_error = XML_ErrorString (XML_GetErrorCode (mp_parser));
+          m_error_line = XML_GetErrorLineNumber (mp_parser);
+          m_error_column = XML_GetErrorColumnNumber (mp_parser);
+        }
+
+      } catch (tl::Exception &ex) {
+        error (ex);
       }
 
     } while (n == chunk && !m_has_error);
@@ -336,7 +343,7 @@ void end_element_handler (void *user_data, const XML_Char *name)
 void cdata_handler (void *user_data, const XML_Char *s, int len)
 {
   XMLParserPrivateData *d = reinterpret_cast<XMLParserPrivateData *> (user_data);
-  d->cdata (std::string (s, size_t (len)));
+  d->cdata (std::string (s, 0, size_t (len)));
 }
 
 
@@ -387,26 +394,18 @@ class SAXHandler
 public:
   SAXHandler (XMLStructureHandler *sh);
 
-  virtual bool characters (const QString &ch);
-  virtual bool endElement (const QString &namespaceURI, const QString &localName, const QString &qName);
-  virtual bool startElement (const QString &namespaceURI, const QString &localName, const QString &qName, const QXmlAttributes &atts);
-  virtual bool error (const QXmlParseException &exception);
-  virtual bool fatalError (const QXmlParseException &exception);
-  virtual bool warning (const QXmlParseException &exception);
-  virtual QString errorString () const;
+  bool characters (const QString &ch);
+  bool endElement (const QString &namespaceURI, const QString &localName, const QString &qName);
+  bool startElement (const QString &namespaceURI, const QString &localName, const QString &qName, const QXmlAttributes &atts);
+  bool error (const QXmlParseException &exception);
+  bool fatalError (const QXmlParseException &exception);
+  bool warning (const QXmlParseException &exception);
 
   void setDocumentLocator (QXmlLocator *locator);
-
-  const tl::XMLLocatedException *exception () const
-  {
-    return m_error.get ();
-  }
 
 private:
   QXmlLocator *mp_locator;
   XMLStructureHandler *mp_struct_handler;
-  std::unique_ptr<tl::XMLLocatedException> m_error;
-  std::string m_error_string;
 };
 
 // --------------------------------------------------------------------------------------------------------
@@ -434,11 +433,9 @@ SAXHandler::startElement (const QString &qs_uri, const QString &qs_lname, const 
   try {
     mp_struct_handler->start_element (uri, lname, qname);
   } catch (tl::XMLException &ex) {
-    m_error_string = ex.raw_msg ();
-    return false;
+    throw tl::XMLLocatedException (ex.raw_msg (), mp_locator->lineNumber (), mp_locator->columnNumber ());
   } catch (tl::Exception &ex) {
-    m_error_string = ex.msg ();
-    return false;
+    throw tl::XMLLocatedException (ex.msg (), mp_locator->lineNumber (), mp_locator->columnNumber ());
   }
 
   //  successful
@@ -455,11 +452,9 @@ SAXHandler::endElement (const QString &qs_uri, const QString &qs_lname, const QS
   try {
     mp_struct_handler->end_element (uri, lname, qname);
   } catch (tl::XMLException &ex) {
-    m_error_string = ex.raw_msg ();
-    return false;
+    throw tl::XMLLocatedException (ex.raw_msg (), mp_locator->lineNumber (), mp_locator->columnNumber ());
   } catch (tl::Exception &ex) {
-    m_error_string = ex.msg ();
-    return false;
+    throw tl::XMLLocatedException (ex.msg (), mp_locator->lineNumber (), mp_locator->columnNumber ());
   }
 
   //  successful
@@ -472,38 +467,25 @@ SAXHandler::characters (const QString &t)
   try {
     mp_struct_handler->characters (tl::to_string (t));
   } catch (tl::XMLException &ex) {
-    m_error_string = ex.raw_msg ();
-    return false;
+    throw tl::XMLLocatedException (ex.raw_msg (), mp_locator->lineNumber (), mp_locator->columnNumber ());
   } catch (tl::Exception &ex) {
-    m_error_string = ex.msg ();
-    return false;
+    throw tl::XMLLocatedException (ex.msg (), mp_locator->lineNumber (), mp_locator->columnNumber ());
   }
 
   //  successful
   return true;
 }
 
-QString
-SAXHandler::errorString () const
-{
-  return tl::to_qstring (m_error_string);
-}
-
-
 bool
 SAXHandler::error (const QXmlParseException &ex)
 {
-  m_error.reset (new tl::XMLLocatedException (tl::to_string (ex.message ()), ex.lineNumber (), ex.columnNumber ()));
-  //  stop reading
-  return false;
+  throw tl::XMLLocatedException (tl::to_string (ex.message ()), ex.lineNumber (), ex.columnNumber ());
 }
 
 bool
 SAXHandler::fatalError (const QXmlParseException &ex)
 {
-  m_error.reset (new tl::XMLLocatedException (tl::to_string (ex.message ()), ex.lineNumber (), ex.columnNumber ()));
-  //  stop reading
-  return false;
+  throw tl::XMLLocatedException (tl::to_string (ex.message ()), ex.lineNumber (), ex.columnNumber ());
 }
 
 bool
@@ -685,7 +667,7 @@ public:
 
 private:
   tl::InputStream *mp_stream;
-  std::unique_ptr<tl::InputStream> mp_stream_holder;
+  std::auto_ptr<tl::InputStream> mp_stream_holder;
   tl::AbsoluteProgress *mp_progress;
   bool m_has_error;
 };
@@ -714,7 +696,7 @@ public:
   }
 
 private:
-  std::unique_ptr<StreamIODevice> mp_io;
+  std::auto_ptr<StreamIODevice> mp_io;
 };
 
 // --------------------------------------------------------------------
@@ -783,10 +765,7 @@ XMLParser::parse (XMLSource &source, XMLStructureHandler &struct_handler)
   mp_data->setContentHandler (&handler);
   mp_data->setErrorHandler (&handler);
 
-  bool result = mp_data->parse (source.source (), false /*=not incremental*/);
-  if (! result && handler.exception ()) {
-    throw tl::XMLLocatedException (*handler.exception ());
-  }
+  mp_data->parse (source.source (), false /*=not incremental*/);
 }
 
 bool

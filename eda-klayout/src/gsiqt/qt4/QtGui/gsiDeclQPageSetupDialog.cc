@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -33,6 +33,7 @@
 #include <QWidget>
 #include "gsiQt.h"
 #include "gsiQtGuiCommon.h"
+#include "gsiDeclQtGuiTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -500,8 +501,8 @@ static gsi::Methods methods_QPageSetupDialog_Adaptor () {
   gsi::Methods methods;
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QPageSetupDialog::QPageSetupDialog(QPrinter *printer, QWidget *parent)\nThis method creates an object of class QPageSetupDialog.", &_init_ctor_QPageSetupDialog_Adaptor_2650, &_call_ctor_QPageSetupDialog_Adaptor_2650);
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QPageSetupDialog::QPageSetupDialog(QWidget *parent)\nThis method creates an object of class QPageSetupDialog.", &_init_ctor_QPageSetupDialog_Adaptor_1315, &_call_ctor_QPageSetupDialog_Adaptor_1315);
-  methods += new qt_gsi::GenericMethod ("exec", "@brief Virtual method int QPageSetupDialog::exec()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_exec_0_0, &_call_cbs_exec_0_0);
-  methods += new qt_gsi::GenericMethod ("exec", "@hide", false, &_init_cbs_exec_0_0, &_call_cbs_exec_0_0, &_set_callback_cbs_exec_0_0);
+  methods += new qt_gsi::GenericMethod ("exec", "@hide", false, &_init_cbs_exec_0_0, &_call_cbs_exec_0_0);
+  methods += new qt_gsi::GenericMethod ("exec", "@brief Virtual method int QPageSetupDialog::exec()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_exec_0_0, &_call_cbs_exec_0_0, &_set_callback_cbs_exec_0_0);
   return methods;
 }
 

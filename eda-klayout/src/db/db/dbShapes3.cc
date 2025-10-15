@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -45,22 +45,7 @@ iterator_from_shape (const db::layer<Sh, db::unstable_layer_tag> &layer, const d
 {
   //  compute the iterator by some pointer arithmetics assuming that layer uses an contiguous container
   //  in unstable mode ...
-  return layer.begin () + (shape.basic_ptr (typename Sh::tag ()) - layer.begin ().operator-> ());
-}
-
-template <class Sh>
-inline bool
-iterator_from_shape_is_valid (const db::layer<Sh, db::stable_layer_tag> &layer, const db::Shape &shape)
-{
-  typename db::layer<Sh, db::stable_layer_tag>::iterator iter = shape.basic_iter (typename Sh::tag ());
-  return iter.vector () == layer.begin ().vector () && iter.is_valid ();
-}
-
-template <class Sh>
-inline bool
-iterator_from_shape_is_valid (const db::layer<Sh, db::unstable_layer_tag> &layer, const db::Shape &shape)
-{
-  return layer.size () > size_t (shape.basic_ptr (typename Sh::tag ()) - layer.begin ().operator-> ());
+  return layer.begin () + (shape.basic_ptr (typename Sh::tag ()) - &*layer.begin ());
 }
 
 // -------------------------------------------------------------------------------
@@ -134,8 +119,6 @@ template DB_PUBLIC layer<db::Shape::edge_type, db::stable_layer_tag> &Shapes::ge
 template DB_PUBLIC layer<db::object_with_properties<db::Shape::edge_type>, db::stable_layer_tag> &Shapes::get_layer<db::object_with_properties<db::Shape::edge_type>, db::stable_layer_tag> ();
 template DB_PUBLIC layer<db::Shape::edge_pair_type, db::stable_layer_tag> &Shapes::get_layer<db::Shape::edge_pair_type, db::stable_layer_tag> ();
 template DB_PUBLIC layer<db::object_with_properties<db::Shape::edge_pair_type>, db::stable_layer_tag> &Shapes::get_layer<db::object_with_properties<db::Shape::edge_pair_type>, db::stable_layer_tag> ();
-template DB_PUBLIC layer<db::Shape::point_type, db::stable_layer_tag> &Shapes::get_layer<db::Shape::point_type, db::stable_layer_tag> ();
-template DB_PUBLIC layer<db::object_with_properties<db::Shape::point_type>, db::stable_layer_tag> &Shapes::get_layer<db::object_with_properties<db::Shape::point_type>, db::stable_layer_tag> ();
 template DB_PUBLIC layer<db::Shape::text_type, db::stable_layer_tag> &Shapes::get_layer<db::Shape::text_type, db::stable_layer_tag> ();
 template DB_PUBLIC layer<db::object_with_properties<db::Shape::text_type>, db::stable_layer_tag> &Shapes::get_layer<db::object_with_properties<db::Shape::text_type>, db::stable_layer_tag> ();
 template DB_PUBLIC layer<db::Shape::text_ref_type, db::stable_layer_tag> &Shapes::get_layer<db::Shape::text_ref_type, db::stable_layer_tag> ();
@@ -152,7 +135,6 @@ template DB_PUBLIC layer<db::Shape::short_box_array_type, db::stable_layer_tag> 
 template DB_PUBLIC layer<db::object_with_properties<db::Shape::short_box_array_type>, db::stable_layer_tag> &Shapes::get_layer<db::object_with_properties<db::Shape::short_box_array_type>, db::stable_layer_tag> ();
 template DB_PUBLIC layer<db::Shape::user_object_type, db::stable_layer_tag> &Shapes::get_layer<db::Shape::user_object_type, db::stable_layer_tag> ();
 template DB_PUBLIC layer<db::object_with_properties<db::Shape::user_object_type>, db::stable_layer_tag> &Shapes::get_layer<db::object_with_properties<db::Shape::user_object_type>, db::stable_layer_tag> ();
-
 template DB_PUBLIC layer<db::Shape::polygon_type, db::unstable_layer_tag> &Shapes::get_layer<db::Shape::polygon_type, db::unstable_layer_tag> ();
 template DB_PUBLIC layer<db::object_with_properties<db::Shape::polygon_type>, db::unstable_layer_tag> &Shapes::get_layer<db::object_with_properties<db::Shape::polygon_type>, db::unstable_layer_tag> ();
 template DB_PUBLIC layer<db::Shape::simple_polygon_type, db::unstable_layer_tag> &Shapes::get_layer<db::Shape::simple_polygon_type, db::unstable_layer_tag> ();
@@ -175,8 +157,6 @@ template DB_PUBLIC layer<db::Shape::edge_type, db::unstable_layer_tag> &Shapes::
 template DB_PUBLIC layer<db::object_with_properties<db::Shape::edge_type>, db::unstable_layer_tag> &Shapes::get_layer<db::object_with_properties<db::Shape::edge_type>, db::unstable_layer_tag> ();
 template DB_PUBLIC layer<db::Shape::edge_pair_type, db::unstable_layer_tag> &Shapes::get_layer<db::Shape::edge_pair_type, db::unstable_layer_tag> ();
 template DB_PUBLIC layer<db::object_with_properties<db::Shape::edge_pair_type>, db::unstable_layer_tag> &Shapes::get_layer<db::object_with_properties<db::Shape::edge_pair_type>, db::unstable_layer_tag> ();
-template DB_PUBLIC layer<db::Shape::point_type, db::unstable_layer_tag> &Shapes::get_layer<db::Shape::point_type, db::unstable_layer_tag> ();
-template DB_PUBLIC layer<db::object_with_properties<db::Shape::point_type>, db::unstable_layer_tag> &Shapes::get_layer<db::object_with_properties<db::Shape::point_type>, db::unstable_layer_tag> ();
 template DB_PUBLIC layer<db::Shape::text_type, db::unstable_layer_tag> &Shapes::get_layer<db::Shape::text_type, db::unstable_layer_tag> ();
 template DB_PUBLIC layer<db::object_with_properties<db::Shape::text_type>, db::unstable_layer_tag> &Shapes::get_layer<db::object_with_properties<db::Shape::text_type>, db::unstable_layer_tag> ();
 template DB_PUBLIC layer<db::Shape::text_ref_type, db::unstable_layer_tag> &Shapes::get_layer<db::Shape::text_ref_type, db::unstable_layer_tag> ();
@@ -216,8 +196,6 @@ template DB_PUBLIC const layer<db::Shape::edge_type, db::stable_layer_tag> &Shap
 template DB_PUBLIC const layer<db::object_with_properties<db::Shape::edge_type>, db::stable_layer_tag> &Shapes::get_layer<db::object_with_properties<db::Shape::edge_type>, db::stable_layer_tag> () const;
 template DB_PUBLIC const layer<db::Shape::edge_pair_type, db::stable_layer_tag> &Shapes::get_layer<db::Shape::edge_pair_type, db::stable_layer_tag> () const;
 template DB_PUBLIC const layer<db::object_with_properties<db::Shape::edge_pair_type>, db::stable_layer_tag> &Shapes::get_layer<db::object_with_properties<db::Shape::edge_pair_type>, db::stable_layer_tag> () const;
-template DB_PUBLIC const layer<db::Shape::point_type, db::stable_layer_tag> &Shapes::get_layer<db::Shape::point_type, db::stable_layer_tag> () const;
-template DB_PUBLIC const layer<db::object_with_properties<db::Shape::point_type>, db::stable_layer_tag> &Shapes::get_layer<db::object_with_properties<db::Shape::point_type>, db::stable_layer_tag> () const;
 template DB_PUBLIC const layer<db::Shape::text_type, db::stable_layer_tag> &Shapes::get_layer<db::Shape::text_type, db::stable_layer_tag> () const;
 template DB_PUBLIC const layer<db::object_with_properties<db::Shape::text_type>, db::stable_layer_tag> &Shapes::get_layer<db::object_with_properties<db::Shape::text_type>, db::stable_layer_tag> () const;
 template DB_PUBLIC const layer<db::Shape::text_ref_type, db::stable_layer_tag> &Shapes::get_layer<db::Shape::text_ref_type, db::stable_layer_tag> () const;
@@ -234,7 +212,6 @@ template DB_PUBLIC const layer<db::Shape::short_box_array_type, db::stable_layer
 template DB_PUBLIC const layer<db::object_with_properties<db::Shape::short_box_array_type>, db::stable_layer_tag> &Shapes::get_layer<db::object_with_properties<db::Shape::short_box_array_type>, db::stable_layer_tag> () const;
 template DB_PUBLIC const layer<db::Shape::user_object_type, db::stable_layer_tag> &Shapes::get_layer<db::Shape::user_object_type, db::stable_layer_tag> () const;
 template DB_PUBLIC const layer<db::object_with_properties<db::Shape::user_object_type>, db::stable_layer_tag> &Shapes::get_layer<db::object_with_properties<db::Shape::user_object_type>, db::stable_layer_tag> () const;
-
 template DB_PUBLIC const layer<db::Shape::polygon_type, db::unstable_layer_tag> &Shapes::get_layer<db::Shape::polygon_type, db::unstable_layer_tag> () const;
 template DB_PUBLIC const layer<db::object_with_properties<db::Shape::polygon_type>, db::unstable_layer_tag> &Shapes::get_layer<db::object_with_properties<db::Shape::polygon_type>, db::unstable_layer_tag> () const;
 template DB_PUBLIC const layer<db::Shape::simple_polygon_type, db::unstable_layer_tag> &Shapes::get_layer<db::Shape::simple_polygon_type, db::unstable_layer_tag> () const;
@@ -257,8 +234,6 @@ template DB_PUBLIC const layer<db::Shape::edge_type, db::unstable_layer_tag> &Sh
 template DB_PUBLIC const layer<db::object_with_properties<db::Shape::edge_type>, db::unstable_layer_tag> &Shapes::get_layer<db::object_with_properties<db::Shape::edge_type>, db::unstable_layer_tag> () const;
 template DB_PUBLIC const layer<db::Shape::edge_pair_type, db::unstable_layer_tag> &Shapes::get_layer<db::Shape::edge_pair_type, db::unstable_layer_tag> () const;
 template DB_PUBLIC const layer<db::object_with_properties<db::Shape::edge_pair_type>, db::unstable_layer_tag> &Shapes::get_layer<db::object_with_properties<db::Shape::edge_pair_type>, db::unstable_layer_tag> () const;
-template DB_PUBLIC const layer<db::Shape::point_type, db::unstable_layer_tag> &Shapes::get_layer<db::Shape::point_type, db::unstable_layer_tag> () const;
-template DB_PUBLIC const layer<db::object_with_properties<db::Shape::point_type>, db::unstable_layer_tag> &Shapes::get_layer<db::object_with_properties<db::Shape::point_type>, db::unstable_layer_tag> () const;
 template DB_PUBLIC const layer<db::Shape::text_type, db::unstable_layer_tag> &Shapes::get_layer<db::Shape::text_type, db::unstable_layer_tag> () const;
 template DB_PUBLIC const layer<db::object_with_properties<db::Shape::text_type>, db::unstable_layer_tag> &Shapes::get_layer<db::object_with_properties<db::Shape::text_type>, db::unstable_layer_tag> () const;
 template DB_PUBLIC const layer<db::Shape::text_ref_type, db::unstable_layer_tag> &Shapes::get_layer<db::Shape::text_ref_type, db::unstable_layer_tag> () const;
@@ -282,21 +257,13 @@ bool
 Shapes::is_valid_shape_by_tag (Tag /*tag*/, const shape_type &shape) const
 {
   if (! is_editable ()) {
-    if (! shape.has_prop_id ()) {
-      typedef typename Tag::object_type s_type;
-      return iterator_from_shape_is_valid (get_layer<s_type, db::unstable_layer_tag> (), shape);
-    } else {
-      typedef db::object_with_properties<typename Tag::object_type> swp_type;
-      return iterator_from_shape_is_valid (get_layer<swp_type, db::unstable_layer_tag> (), shape);
-    }
+    throw tl::Exception (tl::to_string (tr ("Function 'is_valid' is permitted only in editable mode")));
+  }
+  if (! shape.has_prop_id ()) {
+    return iterator_from_shape (get_layer<typename Tag::object_type, db::stable_layer_tag> (), shape).is_valid ();
   } else {
-    if (! shape.has_prop_id ()) {
-      typedef typename Tag::object_type s_type;
-      return iterator_from_shape_is_valid (get_layer<s_type, db::stable_layer_tag> (), shape);
-    } else {
-      typedef db::object_with_properties<typename Tag::object_type> swp_type;
-      return iterator_from_shape_is_valid (get_layer<swp_type, db::stable_layer_tag> (), shape);
-    }
+    typedef db::object_with_properties<typename Tag::object_type> swp_type;
+    return iterator_from_shape (get_layer<swp_type, db::stable_layer_tag> (), shape).is_valid ();
   }
 }
 
@@ -325,8 +292,6 @@ Shapes::is_valid (const Shapes::shape_type &shape) const
     return is_valid_shape_by_tag (shape_type::edge_type::tag (), shape);
   case shape_type::EdgePair:
     return is_valid_shape_by_tag (shape_type::edge_pair_type::tag (), shape);
-  case shape_type::Point:
-    return is_valid_shape_by_tag (shape_type::point_type::tag (), shape);
   case shape_type::Path:
     return is_valid_shape_by_tag (shape_type::path_type::tag (), shape);
   case shape_type::PathRef:
@@ -379,7 +344,6 @@ Shapes::erase_shape_by_tag_ws (Tag /*tag*/, StableTag /*stable_tag*/, const shap
     db::layer<typename Tag::object_type, StableTag> &l = get_layer<typename Tag::object_type, StableTag> ();
     typename db::layer<typename Tag::object_type, StableTag>::iterator i = iterator_from_shape (l, shape);
     if (manager () && manager ()->transacting ()) {
-      check_is_editable_for_undo_redo ();
       db::layer_op<typename Tag::object_type, StableTag>::queue_or_append (manager (), this, false /*not insert*/, *i);
     }
     invalidate_state ();  //  HINT: must come before the change is done!
@@ -392,7 +356,6 @@ Shapes::erase_shape_by_tag_ws (Tag /*tag*/, StableTag /*stable_tag*/, const shap
     db::layer<swp_type, StableTag> &l = get_layer<swp_type, StableTag> ();
     typename db::layer<swp_type, StableTag>::iterator i = iterator_from_shape (l, shape);
     if (manager () && manager ()->transacting ()) {
-      check_is_editable_for_undo_redo ();
       db::layer_op<swp_type, StableTag>::queue_or_append (manager (), this, false /*not insert*/, *i);
     }
     invalidate_state ();  //  HINT: must come before the change is done!
@@ -490,9 +453,6 @@ Shapes::erase_shape (const Shapes::shape_type &shape)
   case shape_type::EdgePair:
     erase_shape_by_tag (shape_type::edge_pair_type::tag (), shape);
     break;
-  case shape_type::Point:
-    erase_shape_by_tag (shape_type::point_type::tag (), shape);
-    break;
   case shape_type::Path:
     erase_shape_by_tag (shape_type::path_type::tag (), shape);
     break;
@@ -585,9 +545,6 @@ Shapes::erase_shapes (const std::vector<Shapes::shape_type> &shapes)
     case shape_type::Edge:
       erase_shapes_by_tag (shape_type::edge_type::tag (), s, snext);
       break;
-    case shape_type::Point:
-      erase_shapes_by_tag (shape_type::point_type::tag (), s, snext);
-      break;
     case shape_type::EdgePair:
       erase_shapes_by_tag (shape_type::edge_pair_type::tag (), s, snext);
       break;
@@ -642,5 +599,6 @@ Shapes::erase_shapes (const std::vector<Shapes::shape_type> &shapes)
 
   }
 }
+
 
 }

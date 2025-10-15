@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -34,11 +34,6 @@
 #include <string>
 #include <map>
 
-namespace tl
-{
-  class InputHttpStreamCallback;
-}
-
 namespace lay
 {
 
@@ -57,7 +52,6 @@ public:
 
   bool is_confirmed () const  { return m_confirmed; }
   bool is_cancelled () const  { return m_cancelled; }
-  bool is_aborted () const  { return m_aborted; }
 
   void start ();
   void separator ();
@@ -71,11 +65,10 @@ public:
 private slots:
   void confirm_pressed ()     { m_confirmed = true; }
   void cancel_pressed ()      { m_cancelled = true; }
-  void abort_pressed ()       { m_aborted = true; }
   void close_pressed ()       { hide (); }
 
 private:
-  bool m_confirmed, m_cancelled, m_aborted;
+  bool m_confirmed, m_cancelled;
   lay::LogFile m_file;
   std::map<std::string, QTreeWidgetItem *> m_items_by_name;
 
@@ -102,22 +95,6 @@ public:
    *  @brief Default constructor
    */
   SaltDownloadManager ();
-
-  /**
-   *  @brief Gets a flag indicating whether to always download package information
-   */
-  bool always_download_package_information () const
-  {
-    return m_always_download_package_information;
-  }
-
-  /**
-   *  @brief Sets a flag indicating whether to always download package information
-   */
-  void set_always_download_package_information (bool f)
-  {
-    m_always_download_package_information = f;
-  }
 
   /**
    *  @brief Registers an URL (with version) for download in the given target directory
@@ -192,7 +169,6 @@ private:
   };
 
   std::vector<Descriptor> m_registry;
-  bool m_always_download_package_information;
 
   bool needs_iteration ();
   void fetch_missing (const lay::Salt &salt, const lay::Salt &salt_mine, tl::AbsoluteProgress &progress);

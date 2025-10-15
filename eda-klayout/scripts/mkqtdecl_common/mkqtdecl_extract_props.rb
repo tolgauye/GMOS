@@ -1,6 +1,6 @@
 
 # 
-# Copyright (C) 2006-2025 Matthias Koefferlein
+# Copyright (C) 2006-2019 Matthias Koefferlein
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,9 +29,7 @@ RBA::Class::each_class do |cls|
   classes[cls.name] = true
 end
 
-output = $output ? File.open($output, "w") : stdout
-
-output.puts "# Properties from Qt meta objects:"
+puts "# Properties from Qt meta objects:"
 
 setters_sig = {}
 getters_sig = {}
@@ -51,30 +49,18 @@ RBA::Class::each_class do |cls|
 
       c = cls.name.sub(/_Native$/, "")
 
-      signal_names = {} 
-      (0..(mo.methodCount-1)).each do |i|
-        mm = mo.method(i)
-        if mm.methodType == RBA::QMetaMethod::Signal 
-          signal_names[mm.methodSignature.sub(/\(.*/, "")] = true
-        end
-      end
-
       valid_sig = {} 
       (0..(mo.propertyCount-1)).each do |i|
         pr = mo.property(i)
-        if signal_names[pr.name]
-          # ignore properties that clash with signal names (e.g. QCamera::flashReady)
-          next
-        end
         ucname = pr.name[0..0].upcase + pr.name[1..-1]
         if pr.isReadable
-          output.puts "property_reader(\"#{c}\", /::(#{pr.name}|is#{ucname}|has#{ucname})\\s*\\(/, \"#{pr.name}\")"
+          puts "property_reader(\"#{c}\", /::(#{pr.name}|is#{ucname}|has#{ucname})\\s*\\(/, \"#{pr.name}\")"
           getters_sig["#{cls.name}##{pr.name}"] = true
           getters_sig["#{cls.name}#is#{ucname}"] = true
           getters_sig["#{cls.name}#has#{ucname}"] = true
         end
         if pr.isWritable
-          output.puts "property_writer(\"#{c}\", /::set#{ucname}\\s*\\(/, \"#{pr.name}\")"
+          puts "property_writer(\"#{c}\", /::set#{ucname}\\s*\\(/, \"#{pr.name}\")"
           setters_sig["#{cls.name}#set#{ucname}"] = true
         end
       end
@@ -85,8 +71,8 @@ RBA::Class::each_class do |cls|
 
 end
 
-output.puts ""
-output.puts "# Synthetic properties"
+puts ""
+puts "# Synthetic properties"
 
 # strip const and references from types
 def normalize_type(s)
@@ -161,11 +147,11 @@ RBA::Class::each_class do |cls|
         getter_type = normalize_type(g[2].ret_type.to_s)
 
         if setter_type == getter_type
-          output.puts "# Property #{pn} (#{setter_type})"
+          puts "# Property #{pn} (#{setter_type})"
           gc = g[1].name.sub(/_Native$/, "")
           sc = s[1].name.sub(/_Native$/, "")
-          output.puts "property_reader(\"#{gc}\", /::#{g[0].name}\\s*\\(/, \"#{pn}\")"
-          output.puts "property_writer(\"#{sc}\", /::#{s[0].name}\\s*\\(/, \"#{pn}\")"
+          puts "property_reader(\"#{gc}\", /::#{g[0].name}\\s*\\(/, \"#{pn}\")"
+          puts "property_writer(\"#{sc}\", /::#{s[0].name}\\s*\\(/, \"#{pn}\")"
         end
 
       end
@@ -173,9 +159,5 @@ RBA::Class::each_class do |cls|
 
   end
 
-end
-
-if $output
-  output.close
 end
 

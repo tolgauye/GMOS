@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -37,6 +37,7 @@
 #include <QWindow>
 #include "gsiQt.h"
 #include "gsiQtWidgetsCommon.h"
+#include "gsiDeclQtWidgetsTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -449,12 +450,6 @@ gsi::Class<QAccessibleWidget> decl_QAccessibleWidget (qtdecl_QAccessibleObject (
   methods_QAccessibleWidget (),
   "@qt\n@brief Binding of QAccessibleWidget");
 
-
-//  Additional base classes
-
-gsi::Class<QAccessibleActionInterface> &qtdecl_QAccessibleActionInterface ();
-
-gsi::ClassExt<QAccessibleWidget> base_class_QAccessibleActionInterface_in_QAccessibleWidget (qtdecl_QAccessibleActionInterface ());
 
 GSI_QTWIDGETS_PUBLIC gsi::Class<QAccessibleWidget> &qtdecl_QAccessibleWidget () { return decl_QAccessibleWidget; }
 

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -22,60 +22,20 @@
 
 
 #include "layPlugin.h"
-#include "layConverters.h"
-#include "layDispatcher.h"
 #include "layAbstractMenu.h"
-#include "tlColor.h"
-#include "tlLog.h"
-#if defined(HAVE_QT)
-#  include "layConfigurationDialog.h"
-#endif
+#include "layAbstractMenuProvider.h"
+#include "layConverters.h"
+#include "layConfigurationDialog.h"
+#include "antConfigPage.h"
 #include "antConfig.h"
-#if defined(HAVE_QT)
-#  include "antConfigPage.h"
-#endif
 #include "antPlugin.h"
 
-#if defined(HAVE_QT)
-#  include <QApplication>
-#endif
+#include <QApplication>
 
 namespace ant
 {
 
 static PluginDeclaration *sp_instance = 0;
-
-static std::vector<ant::Template> make_standard_templates ()
-{
-  std::vector<ant::Template> templates;
-
-  templates.push_back (ant::Template (tl::to_string (tr ("Ruler")), "$X", "$Y", "$D", ant::Object::STY_ruler, ant::Object::OL_diag, true, lay::AC_Global, "_ruler"));
-
-  templates.push_back (ant::Template (tl::to_string (tr ("Multi-ruler")), "$X", "$Y", "$D", ant::Object::STY_ruler, ant::Object::OL_diag, true, lay::AC_Global, "_multi_ruler"));
-  templates.back ().set_mode (ant::Template::RulerMultiSegment);
-
-  templates.push_back (ant::Template (tl::to_string (tr ("Cross")), "", "", "$U,$V", ant::Object::STY_cross_both, ant::Object::OL_diag, true, lay::AC_Global, "_cross"));
-  templates.back ().set_mode (ant::Template::RulerSingleClick);
-
-  templates.push_back (ant::Template (tl::to_string (tr ("Measure")), "$X", "$Y", "$D", ant::Object::STY_ruler, ant::Object::OL_diag, true, lay::AC_Global, "_measure"));
-  templates.back ().set_mode (ant::Template::RulerAutoMetric);
-
-  templates.push_back (ant::Template (tl::to_string (tr ("Measure edge")), "$X", "$Y", "$D", ant::Object::STY_ruler, ant::Object::OL_diag, true, lay::AC_Global, "_measure_edge"));
-  templates.back ().set_mode (ant::Template::RulerAutoMetricEdge);
-
-  templates.push_back (ant::Template (tl::to_string (tr ("Angle")), "", "", "$(sprintf('%.5g',G))°", ant::Object::STY_line, ant::Object::OL_angle, true, lay::AC_Any, "_angle"));
-  templates.back ().set_mode (ant::Template::RulerThreeClicks);
-
-  templates.push_back (ant::Template (tl::to_string (tr ("Radius")), "", "", "R=$D", ant::Object::STY_arrow_end, ant::Object::OL_radius, true, lay::AC_Any, "_radius"));
-  templates.back ().set_mode (ant::Template::RulerThreeClicks);
-  templates.back ().set_main_position (ant::Object::POS_center);
-
-  templates.push_back (ant::Template (tl::to_string (tr ("Ellipse")), "W=$(abs(X))", "H=$(abs(Y))", "", ant::Object::STY_line, ant::Object::OL_ellipse, true, lay::AC_Any, std::string ()));
-
-  templates.push_back (ant::Template (tl::to_string (tr ("Box")), "W=$(abs(X))", "H=$(abs(Y))", "", ant::Object::STY_line, ant::Object::OL_box, true, lay::AC_Any, std::string ()));
-
-  return templates;
-}
 
 PluginDeclaration::PluginDeclaration ()
   : m_current_template (0), 
@@ -100,40 +60,38 @@ PluginDeclaration::get_options (std::vector < std::pair<std::string, std::string
 {
   options.push_back (std::pair<std::string, std::string> (cfg_max_number_of_rulers, "-1"));
   options.push_back (std::pair<std::string, std::string> (cfg_ruler_snap_range, "8"));
-  options.push_back (std::pair<std::string, std::string> (cfg_ruler_color, lay::ColorConverter ().to_string (tl::Color ())));
+  options.push_back (std::pair<std::string, std::string> (cfg_ruler_color, lay::ColorConverter ().to_string (QColor ())));
   options.push_back (std::pair<std::string, std::string> (cfg_ruler_halo, "true"));
   options.push_back (std::pair<std::string, std::string> (cfg_ruler_snap_mode, ACConverter ().to_string (lay::AC_Any)));
   options.push_back (std::pair<std::string, std::string> (cfg_ruler_obj_snap, tl::to_string (true)));
   options.push_back (std::pair<std::string, std::string> (cfg_ruler_grid_snap, tl::to_string (false)));
-  options.push_back (std::pair<std::string, std::string> (cfg_ruler_templates, std::string ()));
+  options.push_back (std::pair<std::string, std::string> (cfg_ruler_templates, ""));
   options.push_back (std::pair<std::string, std::string> (cfg_current_ruler_template, "0"));
   //  grid-micron is not configured here since some other entity is supposed to do this.
 }
 
-#if defined(HAVE_QT)
 std::vector<std::pair <std::string, lay::ConfigPage *> > 
 PluginDeclaration::config_pages (QWidget *parent) const 
 {
   std::vector<std::pair <std::string, lay::ConfigPage *> > pages;
-  pages.push_back (std::make_pair (tl::to_string (tr ("Rulers And Annotations|Snapping")), new ant::ConfigPage (parent)));
-  pages.push_back (std::make_pair (tl::to_string (tr ("Rulers And Annotations|Appearance")), new ant::ConfigPage2 (parent)));
-  pages.push_back (std::make_pair (tl::to_string (tr ("Rulers And Annotations|Angle")), new ant::ConfigPage3 (parent)));
-  pages.push_back (std::make_pair (tl::to_string (tr ("Rulers And Annotations|Templates")), new ant::ConfigPage4 (parent)));
+  pages.push_back (std::make_pair (tl::to_string (QObject::tr ("Rulers And Annotations|Snapping")), new ant::ConfigPage (parent)));
+  pages.push_back (std::make_pair (tl::to_string (QObject::tr ("Rulers And Annotations|Appearance")), new ant::ConfigPage2 (parent)));
+  pages.push_back (std::make_pair (tl::to_string (QObject::tr ("Rulers And Annotations|Angle")), new ant::ConfigPage3 (parent)));
+  pages.push_back (std::make_pair (tl::to_string (QObject::tr ("Rulers And Annotations|Templates")), new ant::ConfigPage4 (parent)));
   return pages;
 }
-#endif
 
 void 
 PluginDeclaration::get_menu_entries (std::vector<lay::MenuEntry> &menu_entries) const
 {
   lay::PluginDeclaration::get_menu_entries (menu_entries);
-  menu_entries.push_back (lay::separator ("rulers_group", "edit_menu.end"));
-  menu_entries.push_back (lay::menu_item ("ant::clear_all_rulers", "clear_all_rulers:edit", "edit_menu.end", tl::to_string (tr ("Clear All Rulers And Annotations(Ctrl+K)"))));
-  menu_entries.push_back (lay::menu_item ("ant::configure", "configure_rulers", "edit_menu.end", tl::to_string (tr ("Ruler And Annotation Setup"))));
+  menu_entries.push_back (lay::MenuEntry ("rulers_group", "edit_menu.end"));
+  menu_entries.push_back (lay::MenuEntry ("ant::clear_all_rulers", "clear_all_rulers:edit", "edit_menu.end", tl::to_string (QObject::tr ("Clear All Rulers And Annotations(Ctrl+K)"))));
+  menu_entries.push_back (lay::MenuEntry ("ant::configure", "configure_rulers", "edit_menu.end", tl::to_string (QObject::tr ("Ruler And Annotation Setup"))));
 }
 
 lay::Plugin *
-PluginDeclaration::create_plugin (db::Manager *manager, lay::Dispatcher *, lay::LayoutViewBase *view) const
+PluginDeclaration::create_plugin (db::Manager *manager, lay::PluginRoot *, lay::LayoutView *view) const
 {
   return new ant::Service (manager, view);
 }
@@ -143,11 +101,9 @@ PluginDeclaration::menu_activated (const std::string &symbol) const
 {
   if (symbol == "ant::configure") {
 
-#if defined(HAVE_QT)
-    lay::ConfigurationDialog config_dialog (QApplication::activeWindow (), lay::Dispatcher::instance (), "ant::Plugin");
+    lay::ConfigurationDialog config_dialog (QApplication::activeWindow (), lay::PluginRoot::instance (), "ant::Plugin");
     config_dialog.exec ();
-#endif
-
+    
     return true;
 
   } else {
@@ -158,14 +114,14 @@ PluginDeclaration::menu_activated (const std::string &symbol) const
 bool 
 PluginDeclaration::implements_editable (std::string &title) const
 {
-  title = tl::to_string (tr ("Rulers And Annotations"));
+  title = tl::to_string (QObject::tr ("Rulers And Annotations"));
   return true;
 }
 
 bool 
 PluginDeclaration::implements_mouse_mode (std::string &title) const
 {
-  title = "ruler:ruler_mode_group:ruler_templates_group\t" + tl::to_string (tr ("Ruler{Add rulers and annotations}")) + "<:ruler_24px.png>";
+  title = "ruler:ruler_mode_group:ruler_templates_group\t" + tl::to_string (QObject::tr ("Ruler{Add rulers and annotations}")) + "<:ruler.png>";
   return true;
 }
 
@@ -194,134 +150,106 @@ PluginDeclaration::configure (const std::string &name, const std::string &value)
 void 
 PluginDeclaration::config_finalize ()
 {
+  if (!lay::AbstractMenuProvider::instance ()) {
+    return;
+  }
+
   if (m_templates_updated) {
 
     update_menu ();
+    m_templates_updated = false;
+    m_current_template_updated = false;
 
   } else if (m_current_template_updated) {
 
     update_current_template ();
+    m_current_template_updated = false;
 
   }
 }
 
 void 
-PluginDeclaration::initialized (lay::Dispatcher *root)
+PluginDeclaration::initialized (lay::PluginRoot *root)
 {
   //  Check if we already have templates (initial setup)
-  //  NOTE: this is not done by using a default value for the configuration item but dynamically.
-  //  This provides a migration path from earlier versions (not having templates) to recent ones.
-  std::map<std::string, const ant::Template *> cat_names;
-  for (auto i = m_templates.begin (); i != m_templates.end (); ++i) {
-    if (i->category ().find ("_") == 0) {
-      cat_names.insert (std::make_pair (i->category (), i.operator-> ()));
-    }
+  bool any_templates = false;
+  for (std::vector<ant::Template>::iterator i = m_templates.begin (); ! any_templates && i != m_templates.end (); ++i) {
+    any_templates = ! i->category ().empty ();
   }
 
-  bool any_missing = false;
-  auto std_templates = make_standard_templates ();
-  for (auto t = std_templates.begin (); ! any_missing && t != std_templates.end (); ++t) {
-    if (! t->category ().empty () &&
-        (cat_names.find (t->category ()) == cat_names.end () || cat_names.find (t->category ())->second->version () != ant::Template::current_version ())) {
-      any_missing = true;
-    }
-  }
+  if (! any_templates) {
 
-  if (cat_names.empty ()) {
+    //  This is the migration path from <= 0.24 to 0.25: clear all templates unless we
+    //  have categorized ones there. Those can't be deleted, so we know we have a 0.25
+    //  setup if there are some
+    m_templates.clear ();
 
-    //  full initial configuration
-    if (tl::verbosity () >= 20) {
-      tl::info << "Resetting annotation templates";
-    }
-    root->config_set (cfg_ruler_templates, ant::TemplatesConverter ().to_string (make_standard_templates ()));
-    root->config_end ();
+    //  Set up the templates we want to see (plus some non-categorized templates)
 
-  } else if (any_missing) {
+    m_templates.push_back (ant::Template (tl::to_string (QObject::tr ("Ruler")), "$X", "$Y", "$D", ant::Object::STY_ruler, ant::Object::OL_diag, true, lay::AC_Global, "_ruler"));
 
-    //  some standard templates are missing - add them now (migration path for later versions)
-    decltype (m_templates) new_templates;
-    for (auto t = std_templates.begin (); t != std_templates.end (); ++t) {
-      if (! t->category ().empty ()) {
-        auto tt = cat_names.find (t->category ());
-        if (tt != cat_names.end () && tt->second->version () == ant::Template::current_version ()) {
-          new_templates.push_back (*tt->second);
-        } else {
-          if (tl::verbosity () >= 20) {
-            tl::info << "Resetting annotation template: " << t->title ();
-          }
-          new_templates.push_back (*t);
-        }
-      }
-    }
-    for (auto i = m_templates.begin (); i != m_templates.end (); ++i) {
-      if (i->category ().empty ()) {
-        new_templates.push_back (*i);
-      }
-    }
+    m_templates.push_back (ant::Template (tl::to_string (QObject::tr ("Cross")), "", "", "$U,$V", ant::Object::STY_cross_both, ant::Object::OL_diag, true, lay::AC_Global, "_cross"));
+    m_templates.back ().set_mode (ant::Template::RulerSingleClick);
 
-    //  upgrade
-    for (auto i = new_templates.begin (); i != new_templates.end (); ++i) {
-      i->version (ant::Template::current_version ());
-    }
+    m_templates.push_back (ant::Template (tl::to_string (QObject::tr ("Measure")), "$X", "$Y", "$D", ant::Object::STY_ruler, ant::Object::OL_diag, true, lay::AC_Global, "_measure"));
+    m_templates.back ().set_mode (ant::Template::RulerAutoMetric);
 
-    root->config_set (cfg_ruler_templates, ant::TemplatesConverter ().to_string (new_templates));
+    m_templates.push_back (ant::Template (tl::to_string (QObject::tr ("Ellipse")), "W=$(abs(X))", "H=$(abs(Y))", "", ant::Object::STY_line, ant::Object::OL_ellipse, true, lay::AC_Global, std::string ()));
+
+    m_templates.push_back (ant::Template (tl::to_string (QObject::tr ("Box")), "W=$(abs(X))", "H=$(abs(Y))", "", ant::Object::STY_line, ant::Object::OL_box, true, lay::AC_Global, std::string ()));
+
+    root->config_set (cfg_ruler_templates, ant::TemplatesConverter ().to_string (m_templates));
     root->config_end ();
 
   }
 }
 
 void 
-PluginDeclaration::uninitialize (lay::Dispatcher *)
+PluginDeclaration::uninitialize (lay::PluginRoot *)
 {
+  for (std::vector<lay::Action *>::iterator a = m_actions.begin (); a != m_actions.end (); ++a) {
+    delete *a;
+  }
   m_actions.clear ();
 }
 
 void 
 PluginDeclaration::update_current_template ()
 {
-  lay::Dispatcher *mp = lay::Dispatcher::instance ();
-  if (! mp || ! mp->has_ui ()) {
-    return;
-  }
+  lay::AbstractMenuProvider *mp = lay::AbstractMenuProvider::instance ();
 
-  std::vector<std::string> menu_entries = mp->menu ()->group ("ruler_mode_group");
-  for (std::vector<std::string>::const_iterator m = menu_entries.begin (); m != menu_entries.end (); ++m) {
-    lay::Action *action = mp->menu ()->action (*m);
-    if (m_current_template >= 0 && m_current_template < int (m_templates.size ())) {
-      action->set_title (m_templates [m_current_template].title ());
-    } else {
-      action->set_title (std::string ());
+  if (m_current_template >= 0 && m_current_template < int (m_templates.size ())) {
+
+    std::vector<std::string> menu_entries = mp->menu ()->group ("ruler_mode_group");
+    for (std::vector<std::string>::const_iterator m = menu_entries.begin (); m != menu_entries.end (); ++m) {
+      lay::Action action = mp->menu ()->action (*m);
+      action.set_title (m_templates [m_current_template].title ());
     }
-  }
-
-  if (m_templates.size () > 1) {
-    tl::weak_collection<lay::ConfigureAction>::iterator it = m_actions.begin ();
-    int index = 0;
-    for (std::vector<Template>::const_iterator tt = m_templates.begin (); tt != m_templates.end () && it != m_actions.end (); ++tt, ++it, ++index) {
-      if (it.operator -> ()) {
-        it->set_checked (index == m_current_template);
+    
+    if (m_templates.size () > 1) {
+      int it = 0;
+      for (std::vector<Template>::const_iterator tt = m_templates.begin (); tt != m_templates.end () && it < int (m_actions.size ()); ++tt, ++it) {
+        m_actions[it]->set_checked (it == m_current_template);
       }
     }
-  }
 
-  m_current_template_updated = false;
+  }
 }
 
 void 
 PluginDeclaration::update_menu ()
 {
-  lay::Dispatcher *mp = lay::Dispatcher::instance ();
-  if (! mp || ! mp->has_ui ()) {
-    return;
-  }
+  lay::AbstractMenuProvider *mp = lay::AbstractMenuProvider::instance ();
 
-  std::vector<std::string> menu_entries = mp->menu ()->group ("ruler_mode_group");
-  for (std::vector<std::string>::const_iterator m = menu_entries.begin (); m != menu_entries.end (); ++m) {
-    lay::Action *action = mp->menu ()->action (*m);
-    if (m_current_template >= 0 && m_current_template < int (m_templates.size ())) {
-      action->set_title (m_templates [m_current_template].title ());
-    } else {
-      action->set_title (std::string ());
+  if (m_current_template < 0 || m_current_template >= int (m_templates.size ())) {
+    m_current_template = 0;
+  }
+    
+  if (m_current_template >= 0 && m_current_template < int (m_templates.size ())) {
+    std::vector<std::string> menu_entries = mp->menu ()->group ("ruler_mode_group");
+    for (std::vector<std::string>::const_iterator m = menu_entries.begin (); m != menu_entries.end (); ++m) {
+      lay::Action action = mp->menu ()->action (*m);
+      action.set_title (m_templates [m_current_template].title ());
     }
   }
   
@@ -333,27 +261,27 @@ PluginDeclaration::update_menu ()
     }
   }
     
+  for (std::vector<lay::Action *>::iterator a = m_actions.begin (); a != m_actions.end (); ++a) {
+    delete *a;
+  }
   m_actions.clear ();
 
   if (m_templates.size () > 1) {
     int it = 0;
     for (std::vector<Template>::const_iterator tt = m_templates.begin (); tt != m_templates.end (); ++tt, ++it) {
-      lay::ConfigureAction *action = new lay::ConfigureAction (tt->title (), cfg_current_ruler_template, tl::to_string (it));
-      m_actions.push_back (action);
-      action->set_checkable (true);
-      action->set_checked (it == m_current_template);
+      m_actions.push_back (mp->create_config_action (tt->title (), cfg_current_ruler_template, tl::to_string (it)));
+      m_actions.back ()->set_checkable (true);
+      m_actions.back ()->set_checked (it == m_current_template);
       for (std::vector<std::string>::const_iterator t = tmpl_group.begin (); t != tmpl_group.end (); ++t) {
-        mp->menu ()->insert_item (*t + ".end", "ruler_template_" + tl::to_string (it), action);
+        mp->menu ()->insert_item (*t + ".end", "ruler_template_" + tl::to_string (it), *m_actions.back ());
       }
     }
   }
-
-  m_templates_updated = false;
-  m_current_template_updated = false;
+    
 }
 
 void
-PluginDeclaration::register_annotation_template (const ant::Template &t, lay::Plugin *plugin)
+PluginDeclaration::register_annotation_template (const ant::Template &t)
 {
   if (t.category ().empty ()) {
     return;
@@ -366,38 +294,8 @@ PluginDeclaration::register_annotation_template (const ant::Template &t, lay::Pl
   }
 
   m_templates.push_back (t);
-
-  if (! plugin) {
-    plugin = lay::Dispatcher::instance ();
-  }
-  if (plugin) {
-    plugin->config_set (cfg_ruler_templates, ant::TemplatesConverter ().to_string (m_templates));
-    plugin->config_end ();
-  }
-}
-
-void
-PluginDeclaration::unregister_annotation_template (const std::string &category, lay::Plugin *plugin)
-{
-  std::vector<ant::Template> tpl;
-
-  if (! category.empty ()) {
-    for (auto i = m_templates.begin (); i != m_templates.end (); ++i) {
-      if (i->category () != category) {
-        tpl.push_back (*i);
-      }
-    }
-  }
-
-  m_templates.swap (tpl);
-
-  if (! plugin) {
-    plugin = lay::Dispatcher::instance ();
-  }
-  if (plugin) {
-    plugin->config_set (cfg_ruler_templates, ant::TemplatesConverter ().to_string (m_templates));
-    plugin->config_end ();
-  }
+  lay::PluginRoot::instance ()->config_set (cfg_ruler_templates, ant::TemplatesConverter ().to_string (m_templates));
+  lay::PluginRoot::instance ()->config_end ();
 }
 
 static tl::RegisteredClass<lay::PluginDeclaration> config_decl (new ant::PluginDeclaration (), 3000, "ant::Plugin");

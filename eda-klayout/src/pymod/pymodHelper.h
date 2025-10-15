@@ -3,7 +3,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -27,14 +27,13 @@
  *  Use this helper file this way:
  *
  *  #include "pymodHelper.h"
- *  DEFINE_PYMOD(klayout.mymod, "mymod", "KLayout Test module klayout.mymod")
+ *  DEFINE_PYMOD(mymod, "mymod", "KLayout Test module klayout.mymod")
  */
 
 #include <Python.h>
 
 #include "pyaModule.h"
 #include "pyaUtils.h"
-#include "pya.h"
 
 #include "gsi.h"
 #include "gsiExpression.h"
@@ -42,7 +41,7 @@
 static PyObject *
 module_init (const char *pymod_name, const char *mod_name, const char *mod_description)
 {
-  std::unique_ptr<pya::PythonModule> module (new pya::PythonModule ());
+  static pya::PythonModule module;
 
   PYA_TRY
   
@@ -51,18 +50,13 @@ module_init (const char *pymod_name, const char *mod_name, const char *mod_descr
     //  required for the tiling processor for example
     gsi::initialize_expressions ();
 
-    module->init (pymod_name, mod_description);
-    module->make_classes (mod_name);
+    module.init (pymod_name, mod_description);
+    module.make_classes (mod_name);
 
-    PyObject *mod_object = module->take_module ();
-
-    tl_assert (pya::PythonInterpreter::instance () != 0);
-    pya::PythonInterpreter::instance ()->register_module (module.release ());
-
-    return mod_object;
+    return module.take_module ();
 
   PYA_CATCH_ANYWHERE
-
+  
   return 0;
 }
 

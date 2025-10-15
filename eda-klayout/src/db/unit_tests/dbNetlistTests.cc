@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -208,80 +208,10 @@ static std::string parents2string (const db::Circuit *c)
   return res;
 }
 
-static std::string td2string_nc (db::Netlist *nl)
-{
-  std::string res;
-  for (db::Netlist::top_down_circuit_iterator r = nl->begin_top_down (); r != nl->end_top_down (); ++r) {
-    if (!res.empty ()) {
-      res += ",";
-    }
-    res += r->name ();
-  }
-  return res;
-}
-
 static std::string td2string (const db::Netlist *nl)
 {
   std::string res;
   for (db::Netlist::const_top_down_circuit_iterator r = nl->begin_top_down (); r != nl->end_top_down (); ++r) {
-    if (!res.empty ()) {
-      res += ",";
-    }
-    res += r->name ();
-  }
-  return res;
-}
-
-static std::string tcs2string_nc (db::Netlist *nl)
-{
-  std::string res;
-  std::vector<db::Circuit *> tops = nl->top_circuits ();
-  for (auto i = tops.begin (); i != tops.end (); ++i) {
-    if (!res.empty ()) {
-      res += ",";
-    }
-    res += (*i)->name ();
-  }
-  return res;
-}
-
-static std::string tcs2string (const db::Netlist *nl)
-{
-  std::string res;
-  std::vector<const db::Circuit *> tops = nl->top_circuits ();
-  for (auto i = tops.begin (); i != tops.end (); ++i) {
-    if (!res.empty ()) {
-      res += ",";
-    }
-    res += (*i)->name ();
-  }
-  return res;
-}
-
-static std::string tc2string_nc (db::Netlist *nl)
-{
-  const db::Circuit *tc = nl->top_circuit ();
-  if (!tc) {
-    return "(nil)";
-  } else {
-    return tc->name ();
-  }
-}
-
-static std::string tc2string (const db::Netlist *nl)
-{
-  const db::Circuit *tc = nl->top_circuit ();
-  if (!tc) {
-    return "(nil)";
-  } else {
-    return tc->name ();
-  }
-}
-
-static std::string bu2string_nc (db::Netlist *nl)
-{
-  std::string res;
-  for (db::Netlist::bottom_up_circuit_iterator r = nl->begin_bottom_up (); r != nl->end_bottom_up (); ++r) {
     if (!res.empty ()) {
       res += ",";
     }
@@ -460,7 +390,7 @@ TEST(4_CircuitDevices)
   dc2.add_parameter_definition (db::DeviceParameterDefinition ("U", "", 2.0));
   dc2.add_parameter_definition (db::DeviceParameterDefinition ("V", "", 1.0));
 
-  std::unique_ptr<db::Circuit> c (new db::Circuit ());
+  std::auto_ptr<db::Circuit> c (new db::Circuit ());
   c->set_name ("c");
 
   EXPECT_EQ (netlist2 (*c),
@@ -605,7 +535,7 @@ TEST(4_CircuitDevices)
 
 TEST(4_NetlistSubcircuits)
 {
-  std::unique_ptr<db::Netlist> nl (new db::Netlist ());
+  std::auto_ptr<db::Netlist> nl (new db::Netlist ());
 
   db::DeviceClass *dc = new db::DeviceClass ();
   dc->set_name ("dc2");
@@ -613,7 +543,7 @@ TEST(4_NetlistSubcircuits)
   dc->add_terminal_definition (db::DeviceTerminalDefinition ("B", ""));
   nl->add_device_class (dc);
 
-  std::unique_ptr<db::Netlist> nldup (new db::Netlist ());
+  std::auto_ptr<db::Netlist> nldup (new db::Netlist ());
   nldup->add_device_class (dc->clone ());
 
   db::DeviceAbstract *dm = new db::DeviceAbstract ();
@@ -1071,7 +1001,7 @@ TEST(10_NetPinRefBasics)
 
 TEST(11_NetlistCircuitRefs)
 {
-  std::unique_ptr<db::Netlist> nl (new db::Netlist ());
+  std::auto_ptr<db::Netlist> nl (new db::Netlist ());
 
   db::Circuit *c1 = new db::Circuit ();
   c1->set_name ("c1");
@@ -1106,48 +1036,24 @@ TEST(11_NetlistCircuitRefs)
 
 TEST(12_NetlistTopology)
 {
-  std::unique_ptr<db::Netlist> nl (new db::Netlist ());
+  std::auto_ptr<db::Netlist> nl (new db::Netlist ());
   EXPECT_EQ (nl->top_circuit_count (), size_t (0));
-  EXPECT_EQ (tcs2string (nl.get ()), "");
-  EXPECT_EQ (tcs2string_nc (nl.get ()), "");
-  EXPECT_EQ (tc2string (nl.get ()), "(nil)");
-  EXPECT_EQ (tc2string_nc (nl.get ()), "(nil)");
 
   db::Circuit *c1 = new db::Circuit ();
   c1->set_name ("c1");
   nl->add_circuit (c1);
   EXPECT_EQ (nl->top_circuit_count (), size_t (1));
   EXPECT_EQ (td2string (nl.get ()), "c1");
-  EXPECT_EQ (td2string_nc (nl.get ()), "c1");
-  EXPECT_EQ (tcs2string (nl.get ()), "c1");
-  EXPECT_EQ (tcs2string_nc (nl.get ()), "c1");
-  EXPECT_EQ (tc2string (nl.get ()), "c1");
-  EXPECT_EQ (tc2string_nc (nl.get ()), "c1");
   EXPECT_EQ (bu2string (nl.get ()), "c1");
-  EXPECT_EQ (bu2string_nc (nl.get ()), "c1");
 
   db::Circuit *c2 = new db::Circuit ();
   c2->set_name ("c2");
   nl->add_circuit (c2);
   EXPECT_EQ (nl->top_circuit_count (), size_t (2));
   EXPECT_EQ (td2string (nl.get ()), "c2,c1");
-  EXPECT_EQ (td2string_nc (nl.get ()), "c2,c1");
-  EXPECT_EQ (tcs2string (nl.get ()), "c2,c1");
-  EXPECT_EQ (tcs2string_nc (nl.get ()), "c2,c1");
-  try {
-    tc2string (nl.get ());
-    EXPECT_EQ (true, false);
-  } catch (...) {
-  }
-  try {
-    tc2string_nc (nl.get ());
-    EXPECT_EQ (true, false);
-  } catch (...) {
-  }
   EXPECT_EQ (bu2string (nl.get ()), "c1,c2");
-  EXPECT_EQ (bu2string_nc (nl.get ()), "c1,c2");
 
-  std::unique_ptr<db::NetlistLocker> locker (new db::NetlistLocker (nl.get ()));
+  std::auto_ptr<db::NetlistLocker> locker (new db::NetlistLocker (nl.get ()));
 
   db::Circuit *c3 = new db::Circuit ();
   c3->set_name ("c3");
@@ -1431,96 +1337,9 @@ TEST(21_FlattenSubCircuit2)
     "  device NMOS $1 (S=$1,G=$3,D=$2) (L=0.25,W=0.95,AS=0,AD=0,PS=0,PD=0);\n"
     "end;\n"
   );
-
-
 }
 
-TEST(22_FlattenSubCircuitPinsJoinNets)
-{
-  db::Netlist nl;
-
-  db::DeviceClass *dc;
-
-  dc = new db::DeviceClassMOS3Transistor ();
-  dc->set_name ("NMOS");
-  nl.add_device_class (dc);
-
-  dc = new db::DeviceClassMOS3Transistor ();
-  dc->set_name ("PMOS");
-  nl.add_device_class (dc);
-
-  nl.from_string (
-    "circuit RINGO (IN=IN,OSC=OSC,VSS=VSS,VDD=VDD);\n"
-    "  subcircuit INV2 INV2_SC1 (IN=$I8,$2=FB,OUT=OSC,$4=VSS,$5=VDD);\n"
-    "  subcircuit INV2 INV2_SC2 (IN=FB,$2=(null),OUT=$I8,$4=VSS,$5=VDD);\n"
-    "end;\n"
-    "circuit INV2 (IN=IN,$2=$2,OUT=OUT,$4=$4,$5=$5);\n"
-    "  subcircuit PTRANS SC1 ($1=$5,$2=$2,$3=IN);\n"
-    "  subcircuit NTRANS SC2 ($1=$4,$2=$2,$3=IN);\n"
-    "  subcircuit PTRANS SC3 ($1=$5,$2=OUT,$3=$2);\n"
-    "  subcircuit NTRANS SC4 ($1=$4,$2=OUT,$3=$2);\n"
-    "end;\n"
-    "circuit PTRANS ($1=$1,$2=$2,$3=$1);\n"
-    "  device PMOS $1 (S=$1,D=$2,G=$1) (L=0.25,W=0.95);\n"
-    "end;\n"
-    "circuit NTRANS ($1=$1,$2=$2,$3=$2);\n"
-    "  device NMOS $1 (S=$1,D=$2,G=$2) (L=0.25,W=0.95);\n"
-    "end;\n"
-  );
-
-  db::Netlist nl2;
-
-  nl2 = nl;
-  nl2.flatten_circuit (nl2.circuit_by_name ("PTRANS"));
-
-  EXPECT_EQ (nl2.to_string (),
-    "circuit RINGO (IN=IN,OSC=OSC,VSS=VSS,VDD='FB,VDD');\n"
-    "  subcircuit INV2 INV2_SC1 (OUT=OSC,$2=VSS,IN='FB,VDD');\n"
-    "  subcircuit INV2 INV2_SC2 (OUT='FB,VDD',$2=VSS,IN='FB,VDD');\n"
-    "end;\n"
-    "circuit INV2 (OUT=OUT,$2=$4,IN=IN);\n"
-    "  device PMOS $1 (S=IN,G=IN,D=IN) (L=0.25,W=0.95,AS=0,AD=0,PS=0,PD=0);\n"
-    "  device PMOS $2 (S=IN,G=IN,D=OUT) (L=0.25,W=0.95,AS=0,AD=0,PS=0,PD=0);\n"
-    "  subcircuit NTRANS SC2 ($1=$4,$2=IN,$3=IN);\n"
-    "  subcircuit NTRANS SC4 ($1=$4,$2=OUT,$3=IN);\n"
-    "end;\n"
-    "circuit NTRANS ($1=$1,$2=$2,$3=$2);\n"
-    "  device NMOS $1 (S=$1,G=$2,D=$2) (L=0.25,W=0.95,AS=0,AD=0,PS=0,PD=0);\n"
-    "end;\n"
-  );
-
-  nl2.flatten_circuit (nl2.circuit_by_name ("NTRANS"));
-
-  EXPECT_EQ (nl2.to_string (),
-    "circuit RINGO (IN=IN,'OSC,VDD'='FB,OSC,VDD',VSS=VSS);\n"
-    "  subcircuit INV2 INV2_SC1 ('IN,OUT'='FB,OSC,VDD',$2=VSS);\n"
-    "  subcircuit INV2 INV2_SC2 ('IN,OUT'='FB,OSC,VDD',$2=VSS);\n"
-    "end;\n"
-    "circuit INV2 ('IN,OUT'='IN,OUT',$2=$4);\n"
-    "  device PMOS $1 (S='IN,OUT',G='IN,OUT',D='IN,OUT') (L=0.25,W=0.95,AS=0,AD=0,PS=0,PD=0);\n"
-    "  device PMOS $2 (S='IN,OUT',G='IN,OUT',D='IN,OUT') (L=0.25,W=0.95,AS=0,AD=0,PS=0,PD=0);\n"
-    "  device NMOS $3 (S=$4,G='IN,OUT',D='IN,OUT') (L=0.25,W=0.95,AS=0,AD=0,PS=0,PD=0);\n"
-    "  device NMOS $4 (S=$4,G='IN,OUT',D='IN,OUT') (L=0.25,W=0.95,AS=0,AD=0,PS=0,PD=0);\n"
-    "end;\n"
-  );
-
-  nl2.flatten_circuit (nl2.circuit_by_name ("INV2"));
-
-  EXPECT_EQ (nl2.to_string (),
-    "circuit RINGO (IN=IN,'OSC,VDD'='FB,OSC,VDD',VSS=VSS);\n"
-    "  device PMOS $1 (S='FB,OSC,VDD',G='FB,OSC,VDD',D='FB,OSC,VDD') (L=0.25,W=0.95,AS=0,AD=0,PS=0,PD=0);\n"
-    "  device PMOS $2 (S='FB,OSC,VDD',G='FB,OSC,VDD',D='FB,OSC,VDD') (L=0.25,W=0.95,AS=0,AD=0,PS=0,PD=0);\n"
-    "  device NMOS $3 (S=VSS,G='FB,OSC,VDD',D='FB,OSC,VDD') (L=0.25,W=0.95,AS=0,AD=0,PS=0,PD=0);\n"
-    "  device NMOS $4 (S=VSS,G='FB,OSC,VDD',D='FB,OSC,VDD') (L=0.25,W=0.95,AS=0,AD=0,PS=0,PD=0);\n"
-    "  device PMOS $5 (S='FB,OSC,VDD',G='FB,OSC,VDD',D='FB,OSC,VDD') (L=0.25,W=0.95,AS=0,AD=0,PS=0,PD=0);\n"
-    "  device PMOS $6 (S='FB,OSC,VDD',G='FB,OSC,VDD',D='FB,OSC,VDD') (L=0.25,W=0.95,AS=0,AD=0,PS=0,PD=0);\n"
-    "  device NMOS $7 (S=VSS,G='FB,OSC,VDD',D='FB,OSC,VDD') (L=0.25,W=0.95,AS=0,AD=0,PS=0,PD=0);\n"
-    "  device NMOS $8 (S=VSS,G='FB,OSC,VDD',D='FB,OSC,VDD') (L=0.25,W=0.95,AS=0,AD=0,PS=0,PD=0);\n"
-    "end;\n"
-  );
-}
-
-TEST(23_BlankCircuit)
+TEST(22_BlankCircuit)
 {
   db::Netlist nl;
 
@@ -1620,7 +1439,7 @@ TEST(23_BlankCircuit)
   );
 }
 
-TEST(24_NetlistObject)
+TEST(23_NetlistObject)
 {
   db::NetlistObject nlo;
   nlo.set_property (1, "hello");
@@ -1705,340 +1524,4 @@ TEST(24_NetlistObject)
   EXPECT_EQ (pin3.property (1).to_string (), "nil");
   pin3 = pin2;
   EXPECT_EQ (pin3.property (1).to_string (), "hello");
-}
-
-TEST(25_JoinNets)
-{
-  db::Netlist nl;
-  db::Circuit *c;
-
-  db::DeviceClass *dc;
-
-  dc = new db::DeviceClassMOS3Transistor ();
-  dc->set_name ("NMOS");
-  nl.add_device_class (dc);
-
-  dc = new db::DeviceClassMOS3Transistor ();
-  dc->set_name ("PMOS");
-  nl.add_device_class (dc);
-
-  nl.from_string (
-    "circuit INV2 (IN=IN,$2=$2,OUT=OUT,$4=$4,$5=$5);\n"
-    "  subcircuit PTRANS SC1 ($1=$5,$2=$2,$3=IN);\n"
-    "  subcircuit NTRANS SC2 ($1=$4,$2=$2,$3=IN);\n"
-    "  subcircuit PTRANS SC3 ($1=$5,$2=OUT,$3=$2);\n"
-    "  subcircuit NTRANS SC4 ($1=$4,$2=OUT,$3=$2);\n"
-    "end;\n"
-    "circuit PTRANS ($1=$1,$2=$2,$3=$3);\n"
-    "  device PMOS $1 (S=$1,D=$2,G=$3) (L=0.25,W=0.95);\n"
-    "end;\n"
-    "circuit NTRANS ($1=$1,$2=$2,$3=$3);\n"
-    "  device NMOS $1 (S=$1,D=$2,G=$3) (L=0.25,W=0.95);\n"
-    "end;\n"
-  );
-
-  c = nl.circuit_by_name ("INV2");
-  c->join_nets (c->net_by_name ("IN"), c->net_by_name ("OUT"));
-
-  EXPECT_EQ (nl.to_string (),
-    "circuit INV2 ('IN,OUT'='IN,OUT',$2=$2,$3=$4,$4=$5);\n"
-    "  subcircuit PTRANS SC1 ($1=$5,$2=$2,$3='IN,OUT');\n"
-    "  subcircuit NTRANS SC2 ($1=$4,$2=$2,$3='IN,OUT');\n"
-    "  subcircuit PTRANS SC3 ($1=$5,$2='IN,OUT',$3=$2);\n"
-    "  subcircuit NTRANS SC4 ($1=$4,$2='IN,OUT',$3=$2);\n"
-    "end;\n"
-    "circuit PTRANS ($1=$1,$2=$2,$3=$3);\n"
-    "  device PMOS $1 (S=$1,G=$3,D=$2) (L=0.25,W=0.95,AS=0,AD=0,PS=0,PD=0);\n"
-    "end;\n"
-    "circuit NTRANS ($1=$1,$2=$2,$3=$3);\n"
-    "  device NMOS $1 (S=$1,G=$3,D=$2) (L=0.25,W=0.95,AS=0,AD=0,PS=0,PD=0);\n"
-    "end;\n"
-  );
-}
-
-TEST(26_JoinNets)
-{
-  db::Netlist nl;
-  db::Circuit *c;
-
-  db::DeviceClass *dc;
-
-  dc = new db::DeviceClassMOS3Transistor ();
-  dc->set_name ("NMOS");
-  nl.add_device_class (dc);
-
-  dc = new db::DeviceClassMOS3Transistor ();
-  dc->set_name ("PMOS");
-  nl.add_device_class (dc);
-
-  nl.from_string (
-    "circuit INV2 (IN=IN,$2=$2,OUT=OUT,$4=$4,$5=$5);\n"
-    "  device PMOS $1 (S=$5,G=IN,D=$2) (L=0.25,W=0.95,AS=0,AD=0,PS=0,PD=0);\n"
-    "  device PMOS $2 (S=$5,G=$2,D=OUT) (L=0.25,W=0.95,AS=0,AD=0,PS=0,PD=0);\n"
-    "  device NMOS $3 (S=$4,G=IN,D=$2) (L=0.25,W=0.95,AS=0,AD=0,PS=0,PD=0);\n"
-    "  device NMOS $4 (S=$4,G=$2,D=OUT) (L=0.25,W=0.95,AS=0,AD=0,PS=0,PD=0);\n"
-    "end;\n"
-  );
-
-  c = nl.circuit_by_name ("INV2");
-  c->join_nets (c->net_by_name ("IN"), c->net_by_name ("OUT"));
-
-  EXPECT_EQ (nl.to_string (),
-    "circuit INV2 ('IN,OUT'='IN,OUT',$2=$2,$3=$4,$4=$5);\n"
-    "  device PMOS $1 (S=$5,G='IN,OUT',D=$2) (L=0.25,W=0.95,AS=0,AD=0,PS=0,PD=0);\n"
-    "  device PMOS $2 (S=$5,G=$2,D='IN,OUT') (L=0.25,W=0.95,AS=0,AD=0,PS=0,PD=0);\n"
-    "  device NMOS $3 (S=$4,G='IN,OUT',D=$2) (L=0.25,W=0.95,AS=0,AD=0,PS=0,PD=0);\n"
-    "  device NMOS $4 (S=$4,G=$2,D='IN,OUT') (L=0.25,W=0.95,AS=0,AD=0,PS=0,PD=0);\n"
-    "end;\n"
-  );
-}
-
-//  Issue #1832 - small caps are not combined properly
-TEST(27_CombineSmallC)
-{
-  db::Netlist nl;
-
-  db::Circuit *circuit = new db::Circuit ();
-  circuit->set_name ("TOP");
-  nl.add_circuit (circuit);
-
-  db::DeviceClass *device = new db::DeviceClassCapacitor ();
-  device->set_name ("model_name");
-  nl.add_device_class (device);
-
-  db::Net *n1 = new db::Net ("n1");
-  circuit->add_net (n1);
-
-  db::Net *n2 = new db::Net ("n2");
-  circuit->add_net (n2);
-
-  db::Net *n3 = new db::Net ("n3");
-  circuit->add_net (n3);
-
-  auto p1 = circuit->add_pin ("p1");
-  auto p2 = circuit->add_pin ("p2");
-
-  circuit->connect_pin (p1.id (), n1);
-  circuit->connect_pin (p2.id (), n3);
-
-  db::Device *c1 = new db::Device (device, "c1");
-  circuit->add_device (c1);
-  c1->set_parameter_value (db::DeviceClassCapacitor::param_id_C, 1e-15);
-
-  db::Device *c2 = new db::Device (device, "c2");
-  circuit->add_device (c2);
-  c2->set_parameter_value (db::DeviceClassCapacitor::param_id_C, 2e-15);
-
-  db::Device *c3 = new db::Device (device, "c3");
-  circuit->add_device (c3);
-  c3->set_parameter_value (db::DeviceClassCapacitor::param_id_C, 3e-15);
-
-  c1->connect_terminal (db::DeviceClassCapacitor::terminal_id_A, n1);
-  c1->connect_terminal (db::DeviceClassCapacitor::terminal_id_B, n2);
-
-  c2->connect_terminal (db::DeviceClassCapacitor::terminal_id_A, n2);
-  c2->connect_terminal (db::DeviceClassCapacitor::terminal_id_B, n3);
-
-  c3->connect_terminal (db::DeviceClassCapacitor::terminal_id_A, n1);
-  c3->connect_terminal (db::DeviceClassCapacitor::terminal_id_B, n3);
-
-  EXPECT_EQ (nl.to_string (),
-    "circuit TOP (p1=n1,p2=n3);\n"
-    "  device model_name c1 (A=n1,B=n2) (C=1e-15,A=0,P=0);\n"
-    "  device model_name c2 (A=n2,B=n3) (C=2e-15,A=0,P=0);\n"
-    "  device model_name c3 (A=n1,B=n3) (C=3e-15,A=0,P=0);\n"
-    "end;\n"
-  );
-
-  nl.combine_devices ();
-
-  EXPECT_EQ (nl.to_string (),
-    "circuit TOP (p1=n1,p2=n3);\n"
-    "  device model_name c1 (A=n1,B=n3) (C=3.66666666667e-15,A=0,P=0);\n"
-    "end;\n"
-  );
-}
-
-TEST(27_CombineSmallR)
-{
-  db::Netlist nl;
-
-  db::Circuit *circuit = new db::Circuit ();
-  circuit->set_name ("TOP");
-  nl.add_circuit (circuit);
-
-  db::DeviceClass *device = new db::DeviceClassResistor ();
-  device->set_name ("model_name");
-  nl.add_device_class (device);
-
-  db::Net *n1 = new db::Net ("n1");
-  circuit->add_net (n1);
-
-  db::Net *n2 = new db::Net ("n2");
-  circuit->add_net (n2);
-
-  db::Net *n3 = new db::Net ("n3");
-  circuit->add_net (n3);
-
-  auto p1 = circuit->add_pin ("p1");
-  auto p2 = circuit->add_pin ("p2");
-
-  circuit->connect_pin (p1.id (), n1);
-  circuit->connect_pin (p2.id (), n3);
-
-  db::Device *c1 = new db::Device (device, "c1");
-  circuit->add_device (c1);
-  c1->set_parameter_value (db::DeviceClassResistor::param_id_R, 1e-15);
-
-  db::Device *c2 = new db::Device (device, "c2");
-  circuit->add_device (c2);
-  c2->set_parameter_value (db::DeviceClassResistor::param_id_R, 2e-15);
-
-  db::Device *c3 = new db::Device (device, "c3");
-  circuit->add_device (c3);
-  c3->set_parameter_value (db::DeviceClassResistor::param_id_R, 3e-15);
-
-  c1->connect_terminal (db::DeviceClassResistor::terminal_id_A, n1);
-  c1->connect_terminal (db::DeviceClassResistor::terminal_id_B, n2);
-
-  c2->connect_terminal (db::DeviceClassResistor::terminal_id_A, n2);
-  c2->connect_terminal (db::DeviceClassResistor::terminal_id_B, n3);
-
-  c3->connect_terminal (db::DeviceClassResistor::terminal_id_A, n1);
-  c3->connect_terminal (db::DeviceClassResistor::terminal_id_B, n3);
-
-  EXPECT_EQ (nl.to_string (),
-    "circuit TOP (p1=n1,p2=n3);\n"
-    "  device model_name c1 (A=n1,B=n2) (R=1e-15,L=0,W=0,A=0,P=0);\n"
-    "  device model_name c2 (A=n2,B=n3) (R=2e-15,L=0,W=0,A=0,P=0);\n"
-    "  device model_name c3 (A=n1,B=n3) (R=3e-15,L=0,W=0,A=0,P=0);\n"
-    "end;\n"
-  );
-
-  nl.combine_devices ();
-
-  EXPECT_EQ (nl.to_string (),
-    "circuit TOP (p1=n1,p2=n3);\n"
-    "  device model_name c1 (A=n1,B=n3) (R=1.5e-15,L=0,W=0,A=0,P=0);\n"
-    "end;\n"
-  );
-}
-
-TEST(27_CombineSmallL)
-{
-  db::Netlist nl;
-
-  db::Circuit *circuit = new db::Circuit ();
-  circuit->set_name ("TOP");
-  nl.add_circuit (circuit);
-
-  db::DeviceClass *device = new db::DeviceClassInductor ();
-  device->set_name ("model_name");
-  nl.add_device_class (device);
-
-  db::Net *n1 = new db::Net ("n1");
-  circuit->add_net (n1);
-
-  db::Net *n2 = new db::Net ("n2");
-  circuit->add_net (n2);
-
-  db::Net *n3 = new db::Net ("n3");
-  circuit->add_net (n3);
-
-  auto p1 = circuit->add_pin ("p1");
-  auto p2 = circuit->add_pin ("p2");
-
-  circuit->connect_pin (p1.id (), n1);
-  circuit->connect_pin (p2.id (), n3);
-
-  db::Device *c1 = new db::Device (device, "c1");
-  circuit->add_device (c1);
-  c1->set_parameter_value (db::DeviceClassInductor::param_id_L, 1e-15);
-
-  db::Device *c2 = new db::Device (device, "c2");
-  circuit->add_device (c2);
-  c2->set_parameter_value (db::DeviceClassInductor::param_id_L, 2e-15);
-
-  db::Device *c3 = new db::Device (device, "c3");
-  circuit->add_device (c3);
-  c3->set_parameter_value (db::DeviceClassInductor::param_id_L, 3e-15);
-
-  c1->connect_terminal (db::DeviceClassInductor::terminal_id_A, n1);
-  c1->connect_terminal (db::DeviceClassInductor::terminal_id_B, n2);
-
-  c2->connect_terminal (db::DeviceClassInductor::terminal_id_A, n2);
-  c2->connect_terminal (db::DeviceClassInductor::terminal_id_B, n3);
-
-  c3->connect_terminal (db::DeviceClassInductor::terminal_id_A, n1);
-  c3->connect_terminal (db::DeviceClassInductor::terminal_id_B, n3);
-
-  EXPECT_EQ (nl.to_string (),
-    "circuit TOP (p1=n1,p2=n3);\n"
-    "  device model_name c1 (A=n1,B=n2) (L=1e-15);\n"
-    "  device model_name c2 (A=n2,B=n3) (L=2e-15);\n"
-    "  device model_name c3 (A=n1,B=n3) (L=3e-15);\n"
-    "end;\n"
-  );
-
-  nl.combine_devices ();
-
-  EXPECT_EQ (nl.to_string (),
-    "circuit TOP (p1=n1,p2=n3);\n"
-    "  device model_name c1 (A=n1,B=n3) (L=1.5e-15);\n"
-    "end;\n"
-  );
-}
-
-TEST(28_EliminateShortedDevices)
-{
-  db::Netlist nl;
-
-  db::Circuit *circuit = new db::Circuit ();
-  circuit->set_name ("TOP");
-  nl.add_circuit (circuit);
-
-  db::DeviceClass *device = new db::DeviceClassCapacitor ();
-  device->set_name ("model_name");
-  nl.add_device_class (device);
-
-  db::Net *n1 = new db::Net ("n1");
-  circuit->add_net (n1);
-
-  db::Net *n2 = new db::Net ("n2");
-  circuit->add_net (n2);
-
-  auto p1 = circuit->add_pin ("p1");
-  auto p2 = circuit->add_pin ("p2");
-
-  circuit->connect_pin (p1.id (), n1);
-  circuit->connect_pin (p2.id (), n2);
-
-  db::Device *c1 = new db::Device (device, "c1");
-  circuit->add_device (c1);
-  c1->set_parameter_value (db::DeviceClassInductor::param_id_L, 1e-15);
-
-  db::Device *c2 = new db::Device (device, "c2");
-  circuit->add_device (c2);
-  c2->set_parameter_value (db::DeviceClassInductor::param_id_L, 2e-15);
-
-  c1->connect_terminal (db::DeviceClassInductor::terminal_id_A, n1);
-  c1->connect_terminal (db::DeviceClassInductor::terminal_id_B, n1);
-
-  c2->connect_terminal (db::DeviceClassInductor::terminal_id_A, n1);
-  c2->connect_terminal (db::DeviceClassInductor::terminal_id_B, n2);
-
-  EXPECT_EQ (nl.to_string (),
-    "circuit TOP (p1=n1,p2=n2);\n"
-    "  device model_name c1 (A=n1,B=n1) (C=1e-15,A=0,P=0);\n"
-    "  device model_name c2 (A=n1,B=n2) (C=2e-15,A=0,P=0);\n"
-    "end;\n"
-  );
-
-  nl.purge_devices ();
-
-  EXPECT_EQ (nl.to_string (),
-    "circuit TOP (p1=n1,p2=n2);\n"
-    "  device model_name c2 (A=n1,B=n2) (C=2e-15,A=0,P=0);\n"
-    "end;\n"
-  );
 }

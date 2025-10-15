@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -28,8 +28,6 @@
 
 #include <string>
 #include <list>
-#include <map>
-#include <set>
 
 #include "tlProgress.h"
 #include "tlObject.h"
@@ -70,13 +68,19 @@ public:
   virtual void yield (tl::Progress *progress);
   virtual bool eventFilter (QObject *dest, QEvent *event);
 
+  void signal_break ();
   void set_progress_bar (lay::ProgressBar *pb);
 
+  bool is_busy () const
+  {
+    return !mp_objects.empty ();
+  }
+
 private:
+  tl::list<tl::Progress> mp_objects;
+  tl::Clock m_start_time;
   lay::ProgressBar *mp_pb;
   bool m_pw_visible;
-  std::map<tl::Progress *, tl::Clock> m_queued;
-  std::set<tl::Progress *> m_active;
 
   void process_events ();
   void update_and_yield ();

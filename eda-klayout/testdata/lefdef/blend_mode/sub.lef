@@ -1,4 +1,0 @@
-MACRO sub
-  SIZE .1 BY .1 ;
-END sub
-END LIBRARY

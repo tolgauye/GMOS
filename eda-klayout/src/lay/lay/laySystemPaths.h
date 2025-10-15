@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -46,7 +46,7 @@ LAY_PUBLIC std::string get_appdata_path ();
  *  This is a path (in the sense of a search path - i.e. multiple paths)
  *  where KLayout (and derived applications) looks for configuration files.
  *  The path is created from the appdata and inst path by default. It can
- *  be overridden by the KLAYOUT_PATH environment variable.
+ *  be overridden by the KLAYOUT_PATH enviroment variable.
  */
 LAY_PUBLIC std::vector<std::string> get_klayout_path ();
 

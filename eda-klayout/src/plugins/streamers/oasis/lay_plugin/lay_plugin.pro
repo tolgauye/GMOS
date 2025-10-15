@@ -22,4 +22,3 @@ SOURCES = \
 
 FORMS = \
   OASISWriterOptionPage.ui \
-

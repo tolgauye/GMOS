@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -54,9 +54,9 @@ public:
    */
   TechnologyController ();
 
-  void initialize (lay::Dispatcher *root);
-  void initialized (lay::Dispatcher *root);
-  void uninitialize (lay::Dispatcher *root);
+  void initialize (lay::PluginRoot *root);
+  void initialized (lay::PluginRoot *root);
+  void uninitialize (lay::PluginRoot *root);
 
   void get_options (std::vector < std::pair<std::string, std::string> > &options) const;
   void get_menu_entries (std::vector<lay::MenuEntry> &menu_entries) const;
@@ -125,27 +125,27 @@ private slots:
   void sync_with_external_sources ();
 
 private:
-  std::vector <lay::Action *> m_tech_actions;
+  tl::stable_vector <lay::Action> m_tech_actions;
   std::string m_current_technology;
   bool m_configure_enabled;
   bool m_current_technology_updated;
   bool m_technologies_configured;
   lay::TechSetupDialog *mp_editor;
   lay::MainWindow *mp_mw;
-  lay::Dispatcher *mp_dispatcher;
+  lay::PluginRoot *mp_plugin_root;
   std::vector<std::string> m_paths;
   std::vector<db::Technology> m_temp_tech;
   db::Technology *mp_active_technology;
 
   void update_active_technology ();
-  void view_changed ();
+  void connect_events ();
   void technologies_changed ();
   void technology_changed (db::Technology *);
   bool configure (const std::string &name, const std::string &value);
   void config_finalize ();
   bool menu_activated (const std::string &symbol) const;
-  void update_current_technology (Dispatcher *dispatcher);
-  void update_menu (lay::Dispatcher *dispatcher);
+  void update_current_technology ();
+  void update_menu ();
   void replace_technologies (const db::Technologies &technologies);
 };
 

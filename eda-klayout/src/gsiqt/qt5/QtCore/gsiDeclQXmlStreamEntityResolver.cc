@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@
 #include <QXmlStreamEntityResolver>
 #include "gsiQt.h"
 #include "gsiQtCoreCommon.h"
+#include "gsiDeclQtCoreTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -214,10 +215,10 @@ gsi::Class<QXmlStreamEntityResolver> &qtdecl_QXmlStreamEntityResolver ();
 static gsi::Methods methods_QXmlStreamEntityResolver_Adaptor () {
   gsi::Methods methods;
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QXmlStreamEntityResolver::QXmlStreamEntityResolver()\nThis method creates an object of class QXmlStreamEntityResolver.", &_init_ctor_QXmlStreamEntityResolver_Adaptor_0, &_call_ctor_QXmlStreamEntityResolver_Adaptor_0);
-  methods += new qt_gsi::GenericMethod ("resolveEntity", "@brief Virtual method QString QXmlStreamEntityResolver::resolveEntity(const QString &publicId, const QString &systemId)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_resolveEntity_3942_0, &_call_cbs_resolveEntity_3942_0);
-  methods += new qt_gsi::GenericMethod ("resolveEntity", "@hide", false, &_init_cbs_resolveEntity_3942_0, &_call_cbs_resolveEntity_3942_0, &_set_callback_cbs_resolveEntity_3942_0);
-  methods += new qt_gsi::GenericMethod ("resolveUndeclaredEntity", "@brief Virtual method QString QXmlStreamEntityResolver::resolveUndeclaredEntity(const QString &name)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_resolveUndeclaredEntity_2025_0, &_call_cbs_resolveUndeclaredEntity_2025_0);
-  methods += new qt_gsi::GenericMethod ("resolveUndeclaredEntity", "@hide", false, &_init_cbs_resolveUndeclaredEntity_2025_0, &_call_cbs_resolveUndeclaredEntity_2025_0, &_set_callback_cbs_resolveUndeclaredEntity_2025_0);
+  methods += new qt_gsi::GenericMethod ("resolveEntity", "@hide", false, &_init_cbs_resolveEntity_3942_0, &_call_cbs_resolveEntity_3942_0);
+  methods += new qt_gsi::GenericMethod ("resolveEntity", "@brief Virtual method QString QXmlStreamEntityResolver::resolveEntity(const QString &publicId, const QString &systemId)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_resolveEntity_3942_0, &_call_cbs_resolveEntity_3942_0, &_set_callback_cbs_resolveEntity_3942_0);
+  methods += new qt_gsi::GenericMethod ("resolveUndeclaredEntity", "@hide", false, &_init_cbs_resolveUndeclaredEntity_2025_0, &_call_cbs_resolveUndeclaredEntity_2025_0);
+  methods += new qt_gsi::GenericMethod ("resolveUndeclaredEntity", "@brief Virtual method QString QXmlStreamEntityResolver::resolveUndeclaredEntity(const QString &name)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_resolveUndeclaredEntity_2025_0, &_call_cbs_resolveUndeclaredEntity_2025_0, &_set_callback_cbs_resolveUndeclaredEntity_2025_0);
   return methods;
 }
 

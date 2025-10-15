@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -26,7 +26,6 @@
 
 #include "lymCommon.h"
 
-#include "tlRecipe.h"
 #include "gsiObject.h"
 #include "tlClassRegistry.h"
 
@@ -64,11 +63,11 @@ public:
   }
 
   /**
-   *  @brief Creates the executable for a macro
+   *  @brief Executes the macro 
    *
-   *  The caller will delete the returned object.
+   *  This method must be reimplemented to provide the actual execution of the macro.
    */
-  virtual tl::Executable *executable (const lym::Macro *macro) const;
+  virtual void execute (const lym::Macro *macro) const;
 
   /**
    *  @brief Returns the storage scheme
@@ -138,18 +137,6 @@ public:
   {
     //  .. nothing yet ..
   }
-
-  /**
-   *  @brief Provides generic include file expansion
-   *
-   *  This method takes a given macro and substitutes include statements of the form '# %include ...' by the
-   *  content of the respective file. Recursive include is supported.
-   *  The return value of this method is a two-element array with two strings: the first one is a path string which
-   *  holds the encoded information for translating back path/line number information into the original paths and
-   *  line numbers. This first string needs to be passed to the actual script interpreter as the 'file path'. The
-   *  second component of the returned array is the text of the macro with the include files substituted.
-   */
-  virtual std::pair<std::string, std::string> include_expansion (const lym::Macro *macro);
 
   /**
    *  @brief Runs the script for the DSL interpreter with the given name

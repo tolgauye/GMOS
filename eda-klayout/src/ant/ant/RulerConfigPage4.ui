@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>745</width>
-    <height>438</height>
+    <width>668</width>
+    <height>410</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -89,8 +89,8 @@
             <string>...</string>
            </property>
            <property name="icon">
-            <iconset resource="../../icons/icons.qrc">
-             <normaloff>:/up_16px.png</normaloff>:/up_16px.png</iconset>
+            <iconset resource="../../lay/lay/layResources.qrc">
+             <normaloff>:/up.png</normaloff>:/up.png</iconset>
            </property>
           </widget>
          </item>
@@ -103,8 +103,8 @@
             <string>...</string>
            </property>
            <property name="icon">
-            <iconset resource="../../icons/icons.qrc">
-             <normaloff>:/add_16px.png</normaloff>:/add_16px.png</iconset>
+            <iconset resource="../../lay/lay/layResources.qrc">
+             <normaloff>:/add.png</normaloff>:/add.png</iconset>
            </property>
           </widget>
          </item>
@@ -117,8 +117,8 @@
             <string>...</string>
            </property>
            <property name="icon">
-            <iconset resource="../../icons/icons.qrc">
-             <normaloff>:/del_16px.png</normaloff>:/del_16px.png</iconset>
+            <iconset resource="../../lay/lay/layResources.qrc">
+             <normaloff>:/del.png</normaloff>:/del.png</iconset>
            </property>
           </widget>
          </item>
@@ -131,8 +131,8 @@
             <string>...</string>
            </property>
            <property name="icon">
-            <iconset resource="../../icons/icons.qrc">
-             <normaloff>:/down_16px.png</normaloff>:/down_16px.png</iconset>
+            <iconset resource="../../lay/lay/layResources.qrc">
+             <normaloff>:/down.png</normaloff>:/down.png</iconset>
            </property>
           </widget>
          </item>
@@ -574,16 +574,6 @@
              <string>Ellipse</string>
             </property>
            </item>
-           <item>
-            <property name="text">
-             <string>Angle measurement</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>Radius measurement</string>
-            </property>
-           </item>
           </widget>
          </item>
          <item row="7" column="0">
@@ -843,21 +833,6 @@
              <string>Auto measure (points will be set automatically)</string>
             </property>
            </item>
-           <item>
-            <property name="text">
-             <string>Auto measure along edge (points will be set automatically)</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>Angle or radius measurement (three mouse clicks)</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>Multi-segment (finish with double click)</string>
-            </property>
-           </item>
           </widget>
          </item>
          <item row="9" column="0">
@@ -891,7 +866,7 @@
   <tabstop>t_snap_cbx</tabstop>
  </tabstops>
  <resources>
-  <include location="../../icons/icons.qrc"/>
+  <include location="../../lay/lay/layResources.qrc"/>
  </resources>
  <connections/>
 </ui>

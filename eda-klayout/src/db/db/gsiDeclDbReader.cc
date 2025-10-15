@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -36,23 +36,17 @@ namespace gsi
   static bool
   lm_is_mapped (const db::LayerMap *layer_map, const db::LayerProperties &lp)
   {
-    return layer_map->is_mapped (lp);
+    return layer_map->logical (lp).first;
   }
 
   static int 
   lm_logical (const db::LayerMap *layer_map, const db::LayerProperties &lp)
   {
-    std::set<unsigned int> lm = layer_map->logical (lp);
-    return lm.empty () ? -1 : int (*lm.begin ());
+    std::pair<bool, unsigned int> lm = layer_map->logical (lp);
+    return lm.first ? int (lm.second) : -1;
   }
 
-  static std::set<unsigned int>
-  lm_logicals (const db::LayerMap *layer_map, const db::LayerProperties &lp)
-  {
-    return layer_map->logical (lp);
-  }
-
-  static db::LayerProperties
+  static db::LayerProperties 
   lm_mapping (const db::LayerMap *layer_map, unsigned int l)
   {
     return layer_map->mapping (l);
@@ -83,97 +77,35 @@ namespace gsi
   }
 
   static void
-  lm_map_string (db::LayerMap *layer_map, std::string &s, int l)
+  lm_map_string (db::LayerMap *layer_map, std::string &s, unsigned int l)
   {
-    if (l < 0) {
-      layer_map->map_expr (s, layer_map->next_index ());
-    } else {
-      layer_map->map_expr (s, (unsigned int) l);
-    }
-  }
-
-  static void
-  lm_mmap (db::LayerMap *layer_map, const db::LayerProperties &lp, unsigned int l)
-  {
-    layer_map->mmap (lp, l);
-  }
-
-  static void
-  lm_mmap_with_target (db::LayerMap *layer_map, const db::LayerProperties &lp, unsigned int l, const db::LayerProperties &t)
-  {
-    layer_map->mmap (lp, l, t);
-  }
-
-  static void
-  lm_mmap_interval (db::LayerMap *layer_map, const db::LayerProperties &lp1, const db::LayerProperties &lp2, unsigned int l)
-  {
-    layer_map->mmap (ldpair_from_lp (lp1), ldpair_from_lp (lp2), l);
-  }
-
-  static void
-  lm_mmap_interval_with_target (db::LayerMap *layer_map, const db::LayerProperties &lp1, const db::LayerProperties &lp2, unsigned int l, const db::LayerProperties &t)
-  {
-    layer_map->mmap (ldpair_from_lp (lp1), ldpair_from_lp (lp2), l, t);
-  }
-
-  static void
-  lm_mmap_string (db::LayerMap *layer_map, std::string &s, int l)
-  {
-    if (l < 0) {
-      layer_map->mmap_expr (s, layer_map->next_index ());
-    } else {
-      layer_map->mmap_expr (s, (unsigned int) l);
-    }
-  }
-
-  static void
-  lm_unmap (db::LayerMap *layer_map, const db::LayerProperties &lp)
-  {
-    layer_map->unmap (lp);
-  }
-
-  static void
-  lm_unmap_interval (db::LayerMap *layer_map, const db::LayerProperties &lp1, const db::LayerProperties &lp2)
-  {
-    layer_map->unmap (ldpair_from_lp (lp1), ldpair_from_lp (lp2));
-  }
-
-  static void
-  lm_unmap_string (db::LayerMap *layer_map, std::string &s)
-  {
-    layer_map->unmap_expr (s);
+    layer_map->map_expr (s, l);
   }
 
   Class<db::LayerMap> decl_LayerMap ("db", "LayerMap",
-    gsi::method_ext ("is_mapped?", &lm_is_mapped, gsi::arg ("layer"),
+    gsi::method_ext ("is_mapped?", &lm_is_mapped, 
       "@brief Check, if a given physical layer is mapped\n"
+      "@args layer\n"
       "@param layer The physical layer specified with an \\LayerInfo object.\n"
       "@return True, if the layer is mapped."
     ) +
-    gsi::method_ext ("#logical", &lm_logical, gsi::arg ("layer"),
+    gsi::method_ext ("logical", &lm_logical, 
       "@brief Returns the logical layer (the layer index in the layout object) for a given physical layer.n"
+      "@args layer\n"
       "@param layer The physical layer specified with an \\LayerInfo object.\n"
       "@return The logical layer index or -1 if the layer is not mapped."
-      "\n"
-      "This method is deprecated with version 0.27 as in this version, layers can be mapped to multiple targets which "
-      "this method can't capture. Use \\logicals instead.\n"
     ) +
-    gsi::method_ext ("logicals", &lm_logicals, gsi::arg ("layer"),
-      "@brief Returns the logical layers for a given physical layer.n"
-      "@param layer The physical layer specified with an \\LayerInfo object.\n"
-      "@return This list of logical layers this physical layer as mapped to or empty if there is no mapping."
-      "\n"
-      "This method has been introduced in version 0.27.\n"
-    ) +
-    gsi::method ("mapping_str", &db::LayerMap::mapping_str, gsi::arg ("log_layer"),
+    gsi::method ("mapping_str", &db::LayerMap::mapping_str, 
       "@brief Returns the mapping string for a given logical layer\n"
+      "@args log_layer\n"
       "@param log_layer The logical layer for which the mapping is requested.\n"
       "@return A string describing the mapping."
       "\n"
       "The mapping string is compatible with the string that the \"map\" method accepts.\n"
     ) +
-    gsi::method_ext ("mapping", &lm_mapping, gsi::arg ("log_layer"),
+    gsi::method_ext ("mapping", &lm_mapping, 
       "@brief Returns the mapped physical (or target if one is specified) layer for a given logical layer\n"
+      "@args log_layer\n"
       "@param log_layer The logical layer for which the mapping is requested.\n"
       "@return A \\LayerInfo object which is the physical layer mapped to the logical layer."
       "\n"
@@ -181,16 +113,18 @@ namespace gsi
       "to one logical layer. This method will return a single one of\n"
       "them. It will return the one with the lowest layer and datatype.\n"
     ) +
-    gsi::method_ext ("map", &lm_map, gsi::arg ("phys_layer"), gsi::arg ("log_layer"),
+    gsi::method_ext ("map", &lm_map, 
       "@brief Maps a physical layer to a logical one\n"
+      "@args phys_layer,log_layer\n"
       "@param phys_layer The physical layer (a \\LayerInfo object).\n"
       "@param log_layer The logical layer to which the physical layer is mapped.\n"
       "\n"
       "In general, there may be more than one physical layer mapped\n"
       "to one logical layer. This method will add the given physical layer to the mapping for the logical layer.\n"
     ) +
-    gsi::method_ext ("map", &lm_map_with_target, gsi::arg ("phys_layer"), gsi::arg ("log_layer"), gsi::arg ("target_layer"),
+    gsi::method_ext ("map", &lm_map_with_target, 
       "@brief Maps a physical layer to a logical one with a target layer\n"
+      "@args phys_layer,log_layer,target_layer\n"
       "@param phys_layer The physical layer (a \\LayerInfo object).\n"
       "@param log_layer The logical layer to which the physical layer is mapped.\n"
       "@param target_layer The properties of the layer that will be created unless it already exists.\n"
@@ -200,8 +134,9 @@ namespace gsi
       "\n"
       "This method has been added in version 0.20.\n"
     ) +
-    gsi::method_ext ("map", &lm_map_interval, gsi::arg ("pl_start"), gsi::arg ("pl_stop"), gsi::arg ("log_layer"),
+    gsi::method_ext ("map", &lm_map_interval, 
       "@brief Maps a physical layer interval to a logical one\n"
+      "@args pl_start,pl_stop,log_layer\n"
       "@param pl_start The first physical layer (a \\LayerInfo object).\n"
       "@param pl_stop The last physical layer (a \\LayerInfo object).\n"
       "@param log_layer The logical layer to which the physical layers are mapped.\n"
@@ -210,8 +145,9 @@ namespace gsi
       "given logical layer. l1 and d1 are given by the pl_start argument, while l2 and d2 are given by "
       "the pl_stop argument."
     ) +
-    gsi::method_ext ("map", &lm_map_interval_with_target, gsi::arg ("pl_start"), gsi::arg ("pl_stop"), gsi::arg ("log_layer"), gsi::arg ("layer_properties"),
+    gsi::method_ext ("map", &lm_map_interval_with_target, 
       "@brief Maps a physical layer interval to a logical one with a target layer\n"
+      "@args pl_start,pl_stop,log_layer\n"
       "@param pl_start The first physical layer (a \\LayerInfo object).\n"
       "@param pl_stop The last physical layer (a \\LayerInfo object).\n"
       "@param log_layer The logical layer to which the physical layers are mapped.\n"
@@ -223,8 +159,9 @@ namespace gsi
       "\n"
       "This method has been added in version 0.20.\n"
     ) +
-    gsi::method_ext ("map", &lm_map_string, gsi::arg ("map_expr"), gsi::arg ("log_layer", -1),
+    gsi::method_ext ("map", &lm_map_string, 
       "@brief Maps a physical layer given by a string to a logical one\n"
+      "@args map_expr,log_layer\n"
       "@param map_expr The string describing the physical layer to map.\n"
       "@param log_layer The logical layer to which the physical layers are mapped.\n"
       "\n"
@@ -234,92 +171,15 @@ namespace gsi
       "separated by a hyphen. Examples are: \"1/2\", \"1-5/0\", \"1,2,5/0\",\n"
       "\"1/5;5/6\".\n"
       "\n"
-      "layer/datatype wildcards can be specified with \"*\". When \"*\" is used\n"
-      "for the upper limit, it is equivalent to \"all layer above\". When used\n"
-      "alone, it is equivalent to \"all layers\". Examples: \"1 / *\", \"* / 10-*\"\n"
+      "A target layer can be specified with the \":<target>\" notation where "
+      "the target is a valid layer specification string (i.e. \"1/0\").\n"
       "\n"
-      "Named layers are specified simply by specifying the name, if\n"
-      "necessary in single or double quotes (if the name begins with a digit or\n"
-      "contains non-word characters). layer/datatype and name descriptions can\n"
-      "be mixed, i.e. \"AA;1/5\" (meaning: name \"AA\" or layer 1/datatype 5).\n"
-      "\n"
-      "A target layer can be specified with the \":<target>\" notation, where\n"
-      "target is a valid string for a LayerProperties() object.\n"
-      "\n"
-      "A target can include relative layer/datatype specifications and wildcards.\n"
-      "For example, \"1-10/0: *+1/0\" will add 1 to the original layer number.\n"
-      "\"1-10/0-50: * / *\" will use the original layers.\n"
-      "\n"
-      "If the logical layer is negative or omitted, the method will select the next available one.\n"
-      "\n"
-      "Target mapping has been added in version 0.20. The logical layer is optional since version 0.28.\n"
-    ) +
-    gsi::method_ext ("mmap", &lm_mmap, gsi::arg ("phys_layer"), gsi::arg ("log_layer"),
-      "@brief Maps a physical layer to a logical one and adds to existing mappings\n"
-      "\n"
-      "This method acts like the corresponding 'map' method, but adds the logical layer to the receivers of the "
-      "given physical one. Hence this method implements 1:n mapping capabilities.\n"
-      "For backward compatibility, 'map' still substitutes mapping.\n"
-      "\n"
-      "Multi-mapping has been added in version 0.27.\n"
-    ) +
-    gsi::method_ext ("mmap", &lm_mmap_with_target, gsi::arg ("phys_layer"), gsi::arg ("log_layer"), gsi::arg ("target_layer"),
-      "@brief Maps a physical layer to a logical one, adds to existing mappings and specifies a target layer\n"
-      "\n"
-      "This method acts like the corresponding 'map' method, but adds the logical layer to the receivers of the "
-      "given physical one. Hence this method implements 1:n mapping capabilities.\n"
-      "For backward compatibility, 'map' still substitutes mapping.\n"
-      "\n"
-      "Multi-mapping has been added in version 0.27.\n"
-    ) +
-    gsi::method_ext ("mmap", &lm_mmap_interval, gsi::arg ("pl_start"), gsi::arg ("pl_stop"), gsi::arg ("log_layer"),
-      "@brief Maps a physical layer from the given interval to a logical one and adds to existing mappings\n"
-      "\n"
-      "This method acts like the corresponding 'map' method, but adds the logical layer to the receivers of the "
-      "given physical one. Hence this method implements 1:n mapping capabilities.\n"
-      "For backward compatibility, 'map' still substitutes mapping.\n"
-      "\n"
-      "Multi-mapping has been added in version 0.27.\n"
-    ) +
-    gsi::method_ext ("mmap", &lm_mmap_interval_with_target, gsi::arg ("pl_start"), gsi::arg ("pl_stop"), gsi::arg ("log_layer"), gsi::arg ("layer_properties"),
-      "@brief Maps a physical layer from the given interval to a logical one, adds to existing mappings and specifies a target layer\n"
-      "\n"
-      "This method acts like the corresponding 'map' method, but adds the logical layer to the receivers of the "
-      "given physical one. Hence this method implements 1:n mapping capabilities.\n"
-      "For backward compatibility, 'map' still substitutes mapping.\n"
-      "\n"
-      "Multi-mapping has been added in version 0.27.\n"
-    ) +
-    gsi::method_ext ("mmap", &lm_mmap_string, gsi::arg ("map_expr"), gsi::arg ("log_layer", -1),
-      "@brief Maps a physical layer given by an expression to a logical one and adds to existing mappings\n"
-      "\n"
-      "This method acts like the corresponding 'map' method, but adds the logical layer to the receivers of the "
-      "given physical one. Hence this method implements 1:n mapping capabilities.\n"
-      "For backward compatibility, 'map' still substitutes mapping.\n"
-      "\n"
-      "If the logical layer is negative or omitted, the method will select the next available one.\n"
-      "\n"
-      "Multi-mapping has been added in version 0.27. The logical layer is optional since version 0.28.\n"
-    ) +
-    gsi::method_ext ("unmap", &lm_unmap, gsi::arg ("phys_layer"),
-      "@brief Unmaps the given layer\n"
-      "Unmapping will remove the specific layer from the mapping. This method allows generating "
-      "'mapping holes' by first mapping a range and then unmapping parts of it.\n"
-      "\n"
-      "This method has been introduced in version 0.27."
-    ) +
-    gsi::method_ext ("unmap", &lm_unmap_interval, gsi::arg ("pl_start"), gsi::arg ("pl_stop"),
-      "@brief Unmaps the layers from the given interval\n"
-      "This method has been introduced in version 0.27."
-    ) +
-    gsi::method_ext ("unmap", &lm_unmap_string, gsi::arg ("expr"),
-      "@brief Unmaps the layers from the given expression\n"
-      "This method has been introduced in version 0.27."
+      "Target mapping has been added in version 0.20.\n"
     ) +
     gsi::method ("clear", &db::LayerMap::clear, 
       "@brief Clears the map\n"
     ) +
-    gsi::method ("from_string", &db::LayerMap::from_string_file_format, gsi::arg ("s"),
+    gsi::method ("from_string", &db::LayerMap::from_string_file_format,
       "@brief Creates a layer map from the given string\n"
       "The format of the string is that used in layer mapping files: one mapping entry "
       "per line, comments are allowed using '#' or '//'. The format of each line is that "
@@ -359,9 +219,9 @@ namespace gsi
     "\n"
     "@code"
     "lm = RBA::LayerMap::new\n"
-    "lm.map(\"1/0-255 : ONE (1/0)\")\n"
-    "lm.map(\"2/0-255 : TWO (2/0)\")\n"
-    "lm.map(\"3/0-255 : THREE (3/0)\")\n"
+    "lm.map(\"1/0-255 : ONE (1/0)\", 0)\n"
+    "lm.map(\"2/0-255 : TWO (2/0)\", 1)\n"
+    "lm.map(\"3/0-255 : THREE (3/0)\", 2)\n"
     "\n"
     "# read the layout using the layer map\n"
     "lo = RBA::LoadLayoutOptions::new\n"
@@ -370,46 +230,12 @@ namespace gsi
     "ly.read(\"input.gds\", lo)\n"
     "@/code\n"
     "\n"
-    "1:n mapping is supported: a physical layer can be mapped to multiple logical layers using 'mmap' instead of 'map'. When using this variant, "
-    "mapping acts additive.\n"
-    "The following example will map layer 1, datatypes 0 to 255 to logical layer 0, and layer 1, datatype 17 to logical layers "
-    "0 plus 1:"
-    "\n"
-    "@code"
-    "lm = RBA::LayerMap::new\n"
-    "lm.map(\"1/0-255\", 0)   # (can be 'mmap' too)\n"
-    "lm.mmap(\"1/17\", 1)\n"
-    "@/code\n"
-    "\n"
-    "'unmapping' allows removing a mapping. This allows creating 'holes' in mapping ranges. The following example maps "
-    "layer 1, datatypes 0 to 16 and 18 to 255 to logical layer 0:"
-    "\n"
-    "@code"
-    "lm = RBA::LayerMap::new\n"
-    "lm.map(\"1/0-255\", 0)\n"
-    "lm.unmap(\"1/17\")\n"
-    "@/code\n"
-    "\n"
-    "The LayerMap class has been introduced in version 0.18. Target layer have been introduced in version 0.20. "
-    "1:n mapping and unmapping has been introduced in version 0.27."
+    "The LayerMap class has been introduced in version 0.18."
   );
 
   //  NOTE: the contribution comes from format specific extensions.
   Class<db::LoadLayoutOptions> decl_LoadLayoutOptions ("db", "LoadLayoutOptions",
-    gsi::method ("warn_level=", &db::LoadLayoutOptions::set_warn_level, gsi::arg ("level"),
-      "@brief Sets the warning level.\n"
-      "The warning level is a reader-specific setting which enables or disables warnings\n"
-      "on specific levels. Level 0 is always \"warnings off\". The default level is 1\n"
-      "which means \"reasonable warnings emitted\".\n"
-      "\n"
-      "This attribute has been added in version 0.28."
-    ) +
-    gsi::method ("warn_level", &db::LoadLayoutOptions::warn_level,
-      "@brief Sets the warning level.\n"
-      "See \\warn_level= for details about this attribute.\n"
-      "\n"
-      "This attribute has been added in version 0.28."
-    ),
+    gsi::Methods (),
     "@brief Layout reader options\n"
     "\n"
     "This object describes various layer reader options used for loading layouts.\n"
@@ -433,29 +259,12 @@ namespace gsi
     return reader.read (*layout, options);
   }
 
-  static db::LayerMap
-  load_bytes (db::Layout *layout, const std::vector<char> &bytes)
-  {
-    tl::InputMemoryStream byte_stream (bytes.data (), bytes.size ());
-    tl::InputStream stream (byte_stream);
-    db::Reader reader (stream);
-    return reader.read (*layout);
-  }
-
-  static db::LayerMap
-  load_bytes_with_options (db::Layout *layout, const std::vector<char> &bytes, const db::LoadLayoutOptions &options)
-  {
-    tl::InputMemoryStream byte_stream (bytes.data (), bytes.size ());
-    tl::InputStream stream (byte_stream);
-    db::Reader reader (stream);
-    return reader.read (*layout, options);
-  }
-
   //  extend the layout class by two reader methods
   static
   gsi::ClassExt<db::Layout> layout_reader_decl (
-    gsi::method_ext ("read", &load_without_options, gsi::arg ("filename"),
+    gsi::method_ext ("read", &load_without_options,
       "@brief Load the layout from the given file\n"
+      "@args filename\n"
       "The format of the file is determined automatically and automatic unzipping is provided. "
       "No particular options can be specified.\n"
       "@param filename The name of the file to load.\n"
@@ -463,8 +272,9 @@ namespace gsi
       "\n"
       "This method has been added in version 0.18."
     ) +
-    gsi::method_ext ("read", &load_with_options, gsi::arg ("filename"), gsi::arg ("options"),
+    gsi::method_ext ("read", &load_with_options,
       "@brief Load the layout from the given file with options\n"
+      "@args filename,options\n"
       "The format of the file is determined automatically and automatic unzipping is provided. "
       "In this version, some reader options can be specified. "
       "@param filename The name of the file to load.\n"
@@ -472,29 +282,9 @@ namespace gsi
       "@return A layer map that contains the mapping used by the reader including the layers that have been created."
       "\n"
       "This method has been added in version 0.18."
-    ) +
-    gsi::method_ext ("read_bytes", &load_bytes, gsi::arg ("bytes"),
-      "@brief Load the layout from the given bytes array\n"
-      "The format of the file is determined automatically and automatic unzipping is provided. "
-      "A function that creates a byte string is \\write_bytes.\n"
-      "\n"
-      "@param bytes The data to load.\n"
-      "@return A layer map that contains the mapping used by the reader including the layers that have been created."
-      "\n"
-      "This method has been added in version 0.29.9."
-    ) +
-    gsi::method_ext ("read_bytes", &load_bytes_with_options, gsi::arg ("bytes"), gsi::arg ("options"),
-      "@brief Load the layout from the given bytes array with options\n"
-      "The format of the file is determined automatically and automatic unzipping is provided. "
-      "In this version, some reader options can be specified. A function that creates a byte string is \\write_bytes.\n"
-      "\n"
-      "@param bytes The data to load.\n"
-      "@param options The options object specifying further options for the reader.\n"
-      "@return A layer map that contains the mapping used by the reader including the layers that have been created."
-      "\n"
-      "This method has been added in version 0.29.9."
     ),
     ""
   );
 
 }
+

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -136,7 +136,6 @@ protected:
   virtual void endl () = 0;
   virtual void end () = 0;
   virtual void begin () = 0;
-  virtual void yield () = 0;
 
   tl::Mutex m_lock;
 
@@ -154,7 +153,6 @@ private:
 
   bool m_no_endl;
   bool m_active;
-  bool m_in_yield;
 };
 
 /**
@@ -267,7 +265,6 @@ protected:
   virtual void endl ();
   virtual void end ();
   virtual void begin ();
-  virtual void yield ();
 
 private:
   tl::weak_collection<tl::Channel> m_channels;

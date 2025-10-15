@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -53,9 +53,9 @@ namespace lay
 // -----------------------------------------------------------------------------------
 //  NetTracerDialog implementation
 
-NetTracerDialog::NetTracerDialog (lay::Dispatcher *root, LayoutViewBase *view)
+NetTracerDialog::NetTracerDialog (lay::PluginRoot *root, lay::LayoutView *view)
   : lay::Browser (root, view, "net_tracer_dialog"),
-    lay::ViewService (view->canvas ()), 
+    lay::ViewService (view->view_object_widget ()), 
     m_cv_index (0), 
     m_net_index (1),
     m_window (lay::NTFitNet),
@@ -68,8 +68,7 @@ NetTracerDialog::NetTracerDialog (lay::Dispatcher *root, LayoutViewBase *view)
     m_marker_intensity (0),
     m_auto_color_enabled (false),
     m_auto_color_index (0),
-    m_mouse_state (0),
-    mp_view (view)
+    m_mouse_state (0)
 {
   mp_export_file_dialog = new lay::FileDialog (this, tl::to_string (QObject::tr ("Export Net")), tl::to_string (QObject::tr ("KLayout net files (*.lyn);;All files (*)")));
 
@@ -92,78 +91,13 @@ NetTracerDialog::NetTracerDialog (lay::Dispatcher *root, LayoutViewBase *view)
 
   view->layer_list_changed_event.add (this, &NetTracerDialog::layer_list_changed);
 
-  attach_events ();
   update_info ();
-  update_list_of_stacks ();
 }
 
 NetTracerDialog::~NetTracerDialog ()
 {
   clear_markers ();
   clear_nets ();
-}
-
-void
-NetTracerDialog::attach_events ()
-{
-  detach_from_all_events ();
-
-  mp_view->layer_list_changed_event.add (this, &NetTracerDialog::layer_list_changed);
-
-  db::Technologies::instance ()->technology_changed_event.add (this, &NetTracerDialog::update_list_of_stacks_with_technology);
-  db::Technologies::instance ()->technologies_changed_event.add (this, &NetTracerDialog::update_list_of_stacks);
-
-  mp_view->cellviews_changed_event.add (this, &NetTracerDialog::update_list_of_stacks);
-  mp_view->apply_technology_event.add (this, &NetTracerDialog::update_list_of_stacks_with_cellview);
-}
-
-void
-NetTracerDialog::update_list_of_stacks_with_technology (db::Technology *)
-{
-  update_list_of_stacks ();
-}
-
-void
-NetTracerDialog::update_list_of_stacks_with_cellview (int)
-{
-  update_list_of_stacks ();
-}
-
-void
-NetTracerDialog::update_list_of_stacks ()
-{
-  QString current_name = stack_selector->currentText ();
-
-  std::set<QString> names;
-  for (unsigned int cvi = 0; cvi < mp_view->cellviews (); ++cvi) {
-    const db::Technology *tech = mp_view->cellview (cvi)->technology ();
-    if (tech) {
-      const db::NetTracerTechnologyComponent *tech_component = dynamic_cast <const db::NetTracerTechnologyComponent *> (tech->component_by_name (db::net_tracer_component_name ()));
-      if (tech_component) {
-        for (auto d = tech_component->begin (); d != tech_component->end (); ++d) {
-          names.insert (tl::to_qstring (d->name ()));
-        }
-      }
-    }
-  }
-
-  stack_selector->clear ();
-
-  int current_index = 0;
-  int i = 0;
-  for (auto n = names.begin (); n != names.end (); ++n, ++i) {
-    if (n->isEmpty ()) {
-      stack_selector->addItem (tr ("(default)"), QVariant (*n));
-    } else {
-      stack_selector->addItem (*n, QVariant (*n));
-    }
-    if (*n == current_name) {
-      current_index = i;
-    }
-  }
-
-  stack_selector->setVisible (stack_selector->count () >= 2);
-  stack_selector->setCurrentIndex (current_index);
 }
 
 void
@@ -235,7 +169,7 @@ NetTracerDialog::mouse_click_event (const db::DPoint &p, unsigned int buttons, b
       //  prepare for the net tracing 
       clear_markers ();
 
-      double l = double (view ()->search_range ()) / ui ()->mouse_event_trans ().mag ();
+      double l = double (view ()->search_range ()) / widget ()->mouse_event_trans ().mag ();
 
       db::DBox start_search_box = db::DBox (p, p).enlarged (db::DVector (l, l));
 
@@ -253,7 +187,7 @@ NetTracerDialog::mouse_click_event (const db::DPoint &p, unsigned int buttons, b
         //  do auto coloring
         if (m_auto_color_enabled) {
           if (m_auto_color_index < int (m_auto_colors.colors ())) {
-            mp_nets.back ()->set_color (m_auto_colors.color_by_index (m_auto_color_index));
+            mp_nets.back ()->set_color (QColor (m_auto_colors.color_by_index (m_auto_color_index)));
           }
           ++m_auto_color_index;
           if (m_auto_color_index >= int (m_auto_colors.colors ())) {
@@ -348,36 +282,6 @@ END_PROTECTED
 }
 
 bool
-NetTracerDialog::get_net_tracer_setup_from_tech (const std::string &tech_name, const std::string &stack_name, const db::Layout &layout, db::NetTracerData &data)
-{
-  //  fetch the net tracer data from the technology and apply to the current layout
-  const db::Technology *tech = db::Technologies::instance ()->technology_by_name (tech_name);
-  if (! tech) {
-    return false;
-  }
-
-  const db::NetTracerTechnologyComponent *tech_component = dynamic_cast <const db::NetTracerTechnologyComponent *> (tech->component_by_name (db::net_tracer_component_name ()));
-  if (! tech_component) {
-    return false;
-  }
-
-  const db::NetTracerConnectivity *connectivity = 0;
-  for (auto d = tech_component->begin (); d != tech_component->end () && ! connectivity; ++d) {
-    if (d->name () == stack_name) {
-      connectivity = d.operator-> ();
-    }
-  }
-
-  if (! connectivity) {
-    return false;
-  }
-
-  //  Set up the net tracer environment
-  data = connectivity->get_tracer_data (layout);
-  return true;
-}
-
-bool
 NetTracerDialog::get_net_tracer_setup (const lay::CellView &cv, db::NetTracerData &data)
 {
   //  fetch the net tracer data from the technology and apply to the current layout
@@ -385,11 +289,15 @@ NetTracerDialog::get_net_tracer_setup (const lay::CellView &cv, db::NetTracerDat
   if (! tech) {
     return false;
   }
+  const db::NetTracerTechnologyComponent *tech_component = dynamic_cast <const db::NetTracerTechnologyComponent *> (tech->component_by_name (db::net_tracer_component_name ()));
+  if (! tech_component) {
+    return false;
+  }
 
-  const std::string &tech_name = tech->name ();
-  std::string stack_name = tl::to_string (stack_selector->itemData (stack_selector->currentIndex ()).toString ());
+  //  Set up the net tracer environment
+  data = tech_component->get_tracer_data (cv->layout ());
 
-  return get_net_tracer_setup_from_tech (tech_name, stack_name, cv->layout (), data);
+  return true;
 }
 
 db::NetTracerNet *
@@ -486,13 +394,16 @@ NetTracerDialog::do_trace (const db::DBox &start_search_box, const db::DBox &sto
   }
 
   db::NetTracer net_tracer;
-  net_tracer.set_trace_depth (get_trace_depth ());
 
   //  and trace
-  if (trace_path) {
-    net_tracer.trace (cv->layout (), *cv.cell (), start_point, start_layer, stop_point, stop_layer, tracer_data);
-  } else {
-    net_tracer.trace (cv->layout (), *cv.cell (), start_point, start_layer, tracer_data);
+  try {
+    if (trace_path) {
+      net_tracer.trace (cv->layout (), *cv.cell (), start_point, start_layer, stop_point, stop_layer, tracer_data);
+    } else {
+      net_tracer.trace (cv->layout (), *cv.cell (), start_point, start_layer, tracer_data);
+    }
+  } catch (tl::BreakException &) {
+    //  just keep the found shapes on break (user abort)
   }
 
   if (net_tracer.begin () == net_tracer.end ()) {
@@ -522,18 +433,8 @@ NetTracerDialog::configure (const std::string &name, const std::string &value)
 
     need_update = true;
 
-  } else if (name == cfg_nt_trace_depth) {
-      
-    unsigned int n = 0;
-    tl::from_string (value, n);
-    if (n > 0) {
-      depth_le->setText (tl::to_qstring (tl::to_string (n)));
-    } else {
-      depth_le->setText (QString ());
-    }
-
   } else if (name == cfg_nt_marker_cycle_colors) {
-
+      
     m_auto_colors.from_string (value, true);
 
   } else if (name == cfg_nt_marker_cycle_colors_enabled) {
@@ -568,7 +469,7 @@ NetTracerDialog::configure (const std::string &name, const std::string &value)
 
   } else if (name == cfg_nt_marker_color) {
 
-    tl::Color color;
+    QColor color;
     if (! value.empty ()) {
       lay::ColorConverter ().from_string (value, color);
     }
@@ -636,7 +537,6 @@ NetTracerDialog::configure (const std::string &name, const std::string &value)
     update_highlights ();
     adjust_view ();
     update_info ();
-    update_list_of_stacks ();
   }
 
   return taken;
@@ -665,16 +565,11 @@ NetTracerDialog::menu_activated (const std::string &symbol)
 
     const lay::CellView &cv = view ()->cellview (view ()->active_cellview_index ());
     if (cv.is_valid ()) {
-
       db::RecursiveShapeIterator si (cv->layout (), *cv.cell (), std::vector<unsigned int> ());
-      std::unique_ptr <db::LayoutToNetlist> l2ndb (new db::LayoutToNetlist (si));
+      std::auto_ptr <db::LayoutToNetlist> l2ndb (new db::LayoutToNetlist (si));
       trace_all_nets (l2ndb.get (), cv, flat);
-
-      if (l2ndb->netlist ()) {
-        unsigned int l2ndb_index = view ()->add_l2ndb (l2ndb.release ());
-        view ()->open_l2ndb_browser (l2ndb_index, view ()->index_of_cellview (&cv));
-      }
-
+      unsigned int l2ndb_index = view ()->add_l2ndb (l2ndb.release ());
+      view ()->open_l2ndb_browser (l2ndb_index, view ()->index_of_cellview (&cv));
     }
 
   } else {
@@ -683,10 +578,9 @@ NetTracerDialog::menu_activated (const std::string &symbol)
 }
 
 void 
-NetTracerDialog::net_color_changed (QColor qc)
+NetTracerDialog::net_color_changed (QColor color)
 {
   bool changed = false;
-  tl::Color color (qc);
 
   QList<QListWidgetItem *> selected_items = net_list->selectedItems ();
   for (QList<QListWidgetItem *>::const_iterator item = selected_items.begin (); item != selected_items.end (); ++item) {
@@ -923,7 +817,7 @@ NetTracerDialog::update_info ()
             db::coord_traits<db::Coord>::area_type area = 0;
             db::coord_traits<db::Coord>::perimeter_type perimeter = 0;
 
-            //  Despite merging, a multitude of separate non-touching polygons can exist.
+            //  Despite merging, a multitude of seperate non-touching polygons can exist.
             for (std::vector <db::Polygon>::iterator j = merged.begin (); j != merged.end (); ++j) {
               //  Sum area 
               area += j->area ();
@@ -1150,17 +1044,15 @@ NetTracerDialog::update_info ()
   //  determine and set the common net color
 
   if (selected_items.size () != 1) {
-
     net_color->set_color (QColor ());
     net_color->setEnabled (false);
-
   } else {
 
     QColor nc;
 
     int item_index = net_list->row (*selected_items.begin ());
     if (item_index >= 0 && item_index < int (mp_nets.size ())) {
-      nc = mp_nets [item_index]->color ().to_qc ();
+      nc = mp_nets [item_index]->color ();
     }
 
     net_color->set_color (nc);
@@ -1193,12 +1085,12 @@ NetTracerDialog::update_list ()
 
     item->setData (Qt::DisplayRole, tl::to_qstring (mp_nets [i]->name ()));
 
-    if (mp_nets [i]->color ().is_valid ()) {
+    if (mp_nets [i]->color ().isValid ()) {
 
       QPixmap pxmp (icon_size);
       QPainter pxpainter (&pxmp);
       pxpainter.setPen (QPen (text_color));
-      pxpainter.setBrush (QBrush (mp_nets [i]->color ().to_qc ()));
+      pxpainter.setBrush (QBrush (mp_nets [i]->color ()));
       QRect r (0, 0, pxmp.width () - 1, pxmp.height () - 1);
       pxpainter.drawRect (r);
 
@@ -1221,11 +1113,10 @@ void
 NetTracerDialog::trace_path_button_clicked ()
 {
 BEGIN_PROTECTED
-  commit ();
   net_list->setCurrentItem (0);
   m_mouse_state = 2;
   view ()->message (tl::to_string (QObject::tr ("Click on the first point in the net")));
-  ui ()->grab_mouse (this, false);
+  widget ()->grab_mouse (this, false);
 END_PROTECTED
 }
 
@@ -1233,11 +1124,10 @@ void
 NetTracerDialog::trace_net_button_clicked ()
 {
 BEGIN_PROTECTED
-  commit ();
   net_list->setCurrentItem (0);
   m_mouse_state = 1;
   view ()->message (tl::to_string (QObject::tr ("Click on a point in the net")));
-  ui ()->grab_mouse (this, false);
+  widget ()->grab_mouse (this, false);
 END_PROTECTED
 }
 
@@ -1260,7 +1150,7 @@ NetTracerDialog::release_mouse ()
   add2_pb->setChecked (false);
   m_mouse_state = 0;
   view ()->message ();
-  ui ()->ungrab_mouse (this);
+  widget ()->ungrab_mouse (this);
 }
 
 void
@@ -1337,10 +1227,9 @@ BEGIN_PROTECTED
   db::Technology tech = *db::Technologies::instance ()->technology_by_name (tech_name);
 
   //  call the dialog and if successful, install the new technology
-  lay::TechComponentSetupDialog dialog (isVisible () ? this : parentWidget (), &tech, db::net_tracer_component_name ());
+  lay::TechComponentSetupDialog dialog (this, &tech, db::net_tracer_component_name ());
   if (dialog.exec ()) {
     *db::Technologies::instance ()->technology_by_name (tech.name ()) = tech;
-    update_list_of_stacks ();
   }
 
 END_PROTECTED
@@ -1522,35 +1411,9 @@ BEGIN_PROTECTED
 END_PROTECTED
 }
 
-size_t
-NetTracerDialog::get_trace_depth()
-{
-  double n = 0.0;
-  try {
-    QString depth = depth_le->text ().trimmed ();
-    if (! depth.isEmpty ()) {
-      tl::from_string_ext (tl::to_string (depth), n);
-      if (n < 0 || n > double (std::numeric_limits<size_t>::max ())) {
-        n = 0.0;
-      }
-    }
-  } catch (...) {
-    //  .. nothing yet ..
-  }
-
-  return (size_t) n;
-}
-
-void
-NetTracerDialog::commit ()
-{
-  root ()->config_set (cfg_nt_trace_depth, tl::to_string (get_trace_depth ()));
-}
-
 void  
 NetTracerDialog::deactivated ()
 {
-  commit ();
   clear_markers ();
   release_mouse ();
 }
@@ -1697,7 +1560,7 @@ NetTracerDialog::update_highlights ()
 
       std::map <unsigned int, unsigned int> llmap;
 
-      tl::Color net_color = mp_nets [item_index]->color ();
+      QColor net_color = mp_nets [item_index]->color ();
 
       //  Create markers for the shapes 
       for (db::NetTracerNet::iterator net_shape = mp_nets [item_index]->begin (); net_shape != mp_nets [item_index]->end () && n_marker < m_max_marker_count; ++net_shape) {
@@ -1741,7 +1604,7 @@ NetTracerDialog::update_highlights ()
             mp_markers.back ()->set_line_width (original->width (true));
             mp_markers.back ()->set_vertex_size (1);
             mp_markers.back ()->set_dither_pattern (original->dither_pattern (true));
-            if (! view ()->background_color ().to_mono ()) {
+            if (view ()->background_color ().green () < 128) {
               mp_markers.back ()->set_color (original->eff_fill_color_brighter (true, (m_marker_intensity * 255) / 100));
               mp_markers.back ()->set_frame_color (original->eff_frame_color_brighter (true, (m_marker_intensity * 255) / 100));
             } else {
@@ -1750,10 +1613,10 @@ NetTracerDialog::update_highlights ()
             }
           }
 
-          if (net_color.is_valid ()) {
+          if (net_color.isValid ()) {
             mp_markers.back ()->set_color (net_color);
             mp_markers.back ()->set_frame_color (net_color);
-          } else if (m_marker_color.is_valid ()) {
+          } else if (m_marker_color.isValid ()) {
             mp_markers.back ()->set_color (m_marker_color);
             mp_markers.back ()->set_frame_color (m_marker_color);
           }
@@ -1799,84 +1662,14 @@ NetTracerDialog::clear_markers ()
 void
 NetTracerDialog::trace_all_nets (db::LayoutToNetlist *l2ndb, const lay::CellView &cv, bool flat)
 {
-  const db::Technology *tech = cv->technology ();
-  if (! tech) {
-    return;
-  }
-
-  static std::string current_stack;
-
-  QStringList stacks;
-  std::vector<std::string> raw_stacks;
-  int current = 0;
-
-  const db::NetTracerTechnologyComponent *tech_component = dynamic_cast <const db::NetTracerTechnologyComponent *> (tech->component_by_name (db::net_tracer_component_name ()));
-  if (tech_component) {
-    for (auto d = tech_component->begin (); d != tech_component->end (); ++d) {
-      raw_stacks.push_back (d->name ());
-      if (d->name () == current_stack) {
-        current = stacks.size ();
-      }
-      if (d->name ().empty ()) {
-        stacks.push_back (tr ("(default)"));
-      } else {
-        stacks.push_back (tl::to_qstring (d->name ()));
-      }
-    }
-  }
-
-  if (raw_stacks.empty ()) {
-    return;
-  }
-
-  current_stack = raw_stacks.front ();
-
-  if (stacks.size () >= 2) {
-    bool ok = true;
-    QString sel = QInputDialog::getItem (parentWidget (), tr ("Select Stack for Net Tracing (All Nets)"), tr ("Stack"), stacks, current, false, &ok);
-    if (! ok) {
-      return;
-    }
-    current = stacks.indexOf (sel);
-    if (current < 0) {
-      return;
-    }
-    current_stack = raw_stacks [current];
-  }
-
   db::NetTracerData tracer_data;
-  if (! get_net_tracer_setup_from_tech (tech->name (), current_stack, cv->layout (), tracer_data)) {
+  if (! get_net_tracer_setup (cv, tracer_data)) {
     return;
   }
 
   tracer_data.configure_l2n (*l2ndb);
 
-  std::string description = flat ? tl::to_string (tr ("Flat nets")) : tl::to_string (tr ("Hierarchical nets"));
-  std::string name = flat ? "Flat_Nets" : "Hierarchical_Nets";
-  if (! tech->name ().empty ()) {
-    description += ", ";
-    description += tl::to_string (tr ("Technology"));
-    description += ": ";
-    description += tech->name ();
-    name += "_";
-    name += tech->name ();
-  }
-  if (! current_stack.empty ()) {
-    description += ", ";
-    description += tl::to_string (tr ("Stack"));
-    description += ": ";
-    description += current_stack;
-    name += "_";
-    name += current_stack;
-  }
-  l2ndb->set_description (description);
-  l2ndb->set_name (name);
-
-  l2ndb->clear_join_nets ();
-  l2ndb->clear_join_net_names ();
-
-  l2ndb->set_include_floating_subcircuits (true);
-  l2ndb->extract_netlist ();
+  l2ndb->extract_netlist (std::string (), flat /*include floating subcircuits for netlist to flatten*/);
 
   if (flat) {
     l2ndb->netlist ()->flatten ();

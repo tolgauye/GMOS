@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -31,7 +31,6 @@
 
 #include "layMainWindow.h"
 #include "layApplication.h"
-#include "layPluginConfigPage.h"
 #include "tlExceptions.h"
 #include "tlLog.h"
 #include "dbHershey.h"
@@ -41,9 +40,9 @@ namespace lay
 
 // -------------------------------------------------------------
 
-SettingsForm::SettingsForm (QWidget *parent, lay::Dispatcher *dispatcher, const char *name)
+SettingsForm::SettingsForm (QWidget *parent, lay::PluginRoot *plugin_root, const char *name)
   : QDialog (parent), Ui::SettingsForm (),
-    mp_dispatcher (dispatcher), m_finalize_recursion (false)
+    mp_plugin_root (plugin_root), m_finalize_recursion (false)
 { 
   setObjectName (QString::fromUtf8 (name));
 
@@ -98,7 +97,7 @@ SettingsForm::SettingsForm (QWidget *parent, lay::Dispatcher *dispatcher, const 
       if (config_page->layout () == 0) {
         tl::warn << "No layout in configuration page " << p->first;
       } else {
-        config_page->layout ()->setContentsMargins (0, 0, 0, 0);
+        config_page->layout ()->setMargin (0);
       }
 
       m_config_pages.push_back (config_page);
@@ -238,7 +237,7 @@ SettingsForm::setup ()
 
   //  setup the custom config pages
   for (std::vector <lay::ConfigPage *>::iterator cp = m_config_pages.begin (); cp != m_config_pages.end (); ++cp) {
-    (*cp)->setup (mp_dispatcher);
+    (*cp)->setup (mp_plugin_root);
   }
 }
 
@@ -247,14 +246,14 @@ SettingsForm::commit ()
 {
   //  commit the custom config pages
   for (std::vector <lay::ConfigPage *>::iterator cp = m_config_pages.begin (); cp != m_config_pages.end (); ++cp) {
-    (*cp)->commit (mp_dispatcher);
+    (*cp)->commit (mp_plugin_root);
   }
 
   m_finalize_recursion = true;
   try {
     //  config_end will make the main window call setup on the settings form. 
     //  the recursion sentinel takes care of that.
-    mp_dispatcher->config_end ();
+    mp_plugin_root->config_end ();
     m_finalize_recursion = false;
   } catch (...) {
     m_finalize_recursion = false;

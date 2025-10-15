@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -28,7 +28,6 @@
 #include <QObject>
 
 #include "layPlugin.h"
-#include "layPluginConfigPage.h"
 
 #include <map>
 
@@ -60,8 +59,8 @@ public:
   MainConfigPage (QWidget *parent);
   ~MainConfigPage ();
 
-  virtual void setup (lay::Dispatcher *root);
-  virtual void commit (lay::Dispatcher *root);
+  virtual void setup (lay::PluginRoot *root);
+  virtual void commit (lay::PluginRoot *root);
 
 private:
   Ui::MainConfigPage *mp_ui;
@@ -76,8 +75,8 @@ public:
   MainConfigPage2 (QWidget *parent);
   ~MainConfigPage2 ();
 
-  virtual void setup (lay::Dispatcher *root);
-  virtual void commit (lay::Dispatcher *root);
+  virtual void setup (lay::PluginRoot *root);
+  virtual void commit (lay::PluginRoot *root);
 
 private:
   Ui::MainConfigPage2 *mp_ui;
@@ -92,8 +91,8 @@ public:
   MainConfigPage3 (QWidget *parent);
   ~MainConfigPage3 ();
 
-  virtual void setup (lay::Dispatcher *root);
-  virtual void commit (lay::Dispatcher *root);
+  virtual void setup (lay::PluginRoot *root);
+  virtual void commit (lay::PluginRoot *root);
 
 private:
   Ui::MainConfigPage3 *mp_ui;
@@ -108,8 +107,8 @@ public:
   MainConfigPage4 (QWidget *parent);
   ~MainConfigPage4 ();
 
-  virtual void setup (lay::Dispatcher *root);
-  virtual void commit (lay::Dispatcher *root);
+  virtual void setup (lay::PluginRoot *root);
+  virtual void commit (lay::PluginRoot *root);
 
 private:
   Ui::MainConfigPage4 *mp_ui;
@@ -124,8 +123,8 @@ public:
   MainConfigPage5 (QWidget *parent);
   ~MainConfigPage5 ();
 
-  virtual void setup (lay::Dispatcher *root);
-  virtual void commit (lay::Dispatcher *root);
+  virtual void setup (lay::PluginRoot *root);
+  virtual void commit (lay::PluginRoot *root);
 
 private:
   Ui::MainConfigPage5 *mp_ui;
@@ -140,8 +139,8 @@ public:
   MainConfigPage6 (QWidget *parent);
   ~MainConfigPage6 ();
 
-  virtual void setup (lay::Dispatcher *root);
-  virtual void commit (lay::Dispatcher *root);
+  virtual void setup (lay::PluginRoot *root);
+  virtual void commit (lay::PluginRoot *root);
 
 private:
   Ui::MainConfigPage6 *mp_ui;
@@ -156,8 +155,8 @@ public:
   MainConfigPage7 (QWidget *parent);
   ~MainConfigPage7 ();
 
-  virtual void setup (lay::Dispatcher *root);
-  virtual void commit (lay::Dispatcher *root);
+  virtual void setup (lay::PluginRoot *root);
+  virtual void commit (lay::PluginRoot *root);
 
 private:
   Ui::MainConfigPage7 *mp_ui;
@@ -172,8 +171,8 @@ public:
   CustomizeMenuConfigPage (QWidget *parent);
   ~CustomizeMenuConfigPage ();
 
-  virtual void setup (lay::Dispatcher *root);
-  virtual void commit (lay::Dispatcher *root);
+  virtual void setup (lay::PluginRoot *root);
+  virtual void commit (lay::PluginRoot *root);
 
 private slots:
   void current_changed (QTreeWidgetItem *current, QTreeWidgetItem *previous);
@@ -190,7 +189,6 @@ private:
   std::map<std::string, QTreeWidgetItem *> m_item_for_path;
   std::map<QAction *, std::vector<std::string> > m_paths_for_action;
   bool m_enable_event;
-  lay::Dispatcher *mp_dispatcher;
 
   void apply (const std::vector<std::pair<std::string, std::string> > &bindings, const std::vector<std::pair<std::string, bool> > &menu_items_hidden);
   void update_list_item (QTreeWidgetItem *item);

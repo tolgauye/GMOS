@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -258,6 +258,10 @@ public:
 
   kd_n_it (size_type step, const it_type &begin, difference_type index)
     : m_begin (begin), m_step (step), m_index (index)
+  { }
+
+  kd_n_it (const kd_n_it &i)
+    : m_begin (i.m_begin), m_step (i.m_step), m_index (i.m_index)
   { }
 
   kd_n_it (size_type step, const kd_n_it &i)
@@ -543,9 +547,9 @@ public:
    *  @brief search initiation
    *
    *  The model used in the search follows the usual begin..end 
-   *  iterator semantics. However, begin and end are asymmetric:
+   *  iterator semantics. However, begin and end are assymmetric:
    *  While "sel_begin" creates, initializes and delivers a iterator
-   *  which walks through the tree skipping irrelevant items, the
+   *  which walks through the tree skipping irrelvant items, the
    *  "sel_end" methods just delivers a "token" which is matched by
    *  the iterators comparison operator against the "done" state.
    *  

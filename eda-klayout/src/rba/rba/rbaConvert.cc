@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -28,8 +28,6 @@
 #include "rbaInternal.h"
 
 #include "gsiDecl.h"
-
-#include <ruby/encoding.h>
 
 namespace rba
 {
@@ -122,17 +120,9 @@ tl::Variant ruby2c<tl::Variant> (VALUE rval)
     }
 
   } else if (TYPE (rval) == T_STRING) {
-
-    //  UTF-8 encoded strings are taken to be string, others are byte strings
-    //  At least this ensures consistency for a full Ruby-C++ turnaround cycle.
-    if (rb_enc_from_index (rb_enc_get_index (rval)) == rb_utf8_encoding ()) {
-      return tl::Variant (ruby2c<std::string> (rval));
-    } else {
-      return tl::Variant (ruby2c<std::vector<char> > (rval));
-    }
-
+    return tl::Variant (ruby2c<const char *> (rval));
   } else {
-    return tl::Variant (ruby2c<std::string> (rba_safe_obj_as_string (rval)));
+    return tl::Variant (ruby2c<const char *> (rba_safe_obj_as_string (rval)));
   }
 }
 
@@ -153,7 +143,7 @@ VALUE object_to_ruby (void *obj, Proxy *self, const gsi::ArgType &atype)
  *  @brief Correct constness if a reference is const and a non-const reference is required
  *  HINT: this is a workaround for the fact that unlike C++, Ruby does not have const or non-const
  *  references. Since a reference is identical with the object it points to, there are only const or non-const
- *  objects. We deliver const objects first, but if a non-const version is requested, the
+ *  objects. We deliver const objects first, but if a non-const version is requestes, the
  *  object turns into a non-const one. This may be confusing but provides a certain level
  *  of "constness", at least until there is another non-const reference for that object.
  */
@@ -214,7 +204,7 @@ object_to_ruby (void *obj, Proxy *self, const gsi::ClassBase *cls, bool pass_obj
 
   }
 
-  if (! pass_obj && prefer_copy && ! clsact->adapted_type_info () && ! clsact->is_managed () && clsact->can_copy () && clsact->can_default_create ()) {
+  if (! pass_obj && prefer_copy && ! clsact->adapted_type_info () && ! clsact->is_managed () && clsact->can_copy ()) {
 
     //  We copy objects passed by const reference if they are not managed.
     //  Such objects are often exposed internals. First we can't
@@ -223,7 +213,7 @@ object_to_ruby (void *obj, Proxy *self, const gsi::ClassBase *cls, bool pass_obj
     //  of the exposed property. Hence copying is safer.
 
     //  create a instance and copy the value
-    ret = rb_obj_alloc (ruby_cls (clsact, false));
+    ret = rb_obj_alloc (ruby_cls (clsact));
     Proxy *p = 0;
     Data_Get_Struct (ret, Proxy, p);
     clsact->assign (p->obj (), obj);
@@ -234,7 +224,7 @@ object_to_ruby (void *obj, Proxy *self, const gsi::ClassBase *cls, bool pass_obj
     //  a Ruby object. If it already has, we simply return a reference to this.
     ret = rba_data->self ();
 
-#if HAVE_RUBY_VERSION_CODE >= 20200 && HAVE_RUBY_VERSION_CODE < 30000
+#if HAVE_RUBY_VERSION_CODE >= 20200
     //  Mark the returned object - the original one may have been already
     //  scheduled for sweeping. This happens at least for Ruby 2.3 which
     //  has a two-phase GC (mark and sweep in separate steps). If by chance
@@ -253,7 +243,7 @@ object_to_ruby (void *obj, Proxy *self, const gsi::ClassBase *cls, bool pass_obj
     //  TODO: we will create a fresh object here, delete it again and link the
     //  reference to the existing object to the Ruby object. This is not quite
     //  efficient - we should avoid creating and deleting a dummy object first.
-    ret = rb_obj_alloc (ruby_cls (clsact, false));
+    ret = rb_obj_alloc (ruby_cls (clsact));
     Proxy *p = 0;
     Data_Get_Struct (ret, Proxy, p);
     p->set (obj, pass_obj, is_const /*const*/, can_destroy /*can_destroy*/, ret);
@@ -271,9 +261,7 @@ VALUE c2ruby<tl::Variant> (const tl::Variant &c)
   } else if (c.is_bool ()) {
     return c2ruby<bool> (c.to_bool ());
   } else if (c.is_a_string ()) {
-    return c2ruby<std::string> (c.to_stdstring ());
-  } else if (c.is_a_bytearray ()) {
-    return c2ruby<std::vector<char> > (c.to_bytearray ());
+    return c2ruby<std::string> (c.to_string ());
   } else if (c.is_long () || c.is_char ()) {
     return c2ruby<long> (c.to_long ());
   } else if (c.is_ulong ()) {
@@ -297,13 +285,8 @@ VALUE c2ruby<tl::Variant> (const tl::Variant &c)
   } else if (c.is_user ()) {
     const gsi::ClassBase *cls = c.gsi_cls ();
     if (cls) {
-      if (! c.user_is_ref () && cls->is_managed ()) {
-        void *obj = c.user_unshare ();
-        return object_to_ruby (obj, 0, c.user_cls ()->gsi_cls (), true, c.user_is_const (), false, false);
-      } else {
-        void *obj = const_cast<void *> (c.to_user ());
-        return object_to_ruby (obj, 0, c.user_cls ()->gsi_cls (), false, false, true, false);
-      }
+      void *obj = const_cast<void *> (c.to_user ());
+      return object_to_ruby (obj, 0, c.user_cls ()->gsi_cls (), false, false, true, false);
     } else {
       //  not a known type -> return nil
       return Qnil;

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -29,13 +29,9 @@
 #include "dbEdge.h"
 #include "dbEdgePairs.h"
 #include "dbEdgePairRelations.h"
-#include "dbShapeCollection.h"
-#include "dbShapeCollectionUtils.h"
-#include "dbGenericShapeIterator.h"
-#include "dbHash.h"
+#include "tlUniqueId.h"
 
 #include <list>
-#include <unordered_set>
 
 namespace db {
 
@@ -45,8 +41,6 @@ namespace db {
 class DB_PUBLIC EdgeFilterBase
 {
 public:
-  typedef db::Edge shape_type;
-
   /**
    *  @brief Constructor
    */
@@ -56,15 +50,9 @@ public:
 
   /**
    *  @brief Filters the edge
-   *  If this method returns true, the edge is kept. Otherwise it's discarded.
+   *  If this method returns true, the polygon is kept. Otherwise it's discarded.
    */
-  virtual bool selected (const db::Edge &edge, db::properties_id_type prop_id) const = 0;
-
-  /**
-   *  @brief Filters the edge set
-   *  If this method returns true, the edges are kept. Otherwise they are discarded.
-   */
-  virtual bool selected_set (const std::unordered_set<db::EdgeWithProperties> &edge) const = 0;
+  virtual bool selected (const db::Edge &edge) const = 0;
 
   /**
    *  @brief Returns the transformation reducer for building cell variants
@@ -140,9 +128,32 @@ public:
   virtual bool wants_variants () const = 0;
 };
 
-typedef shape_collection_processor<db::Edge, db::Edge> EdgeProcessorBase;
-typedef shape_collection_processor<db::Edge, db::Polygon> EdgeToPolygonProcessorBase;
-typedef shape_collection_processor<db::Edge, db::EdgePair> EdgeToEdgePairProcessorBase;
+/**
+ *  @brief A edge processor base class
+ */
+class DB_PUBLIC EdgeProcessorBase
+  : public edge_processor<db::Edge>
+{
+  //  .. nothing yet ..
+};
+
+/**
+ *  @brief An edge-to-polygon processor base class
+ */
+class DB_PUBLIC EdgeToPolygonProcessorBase
+  : public edge_processor<db::Polygon>
+{
+  //  .. nothing yet ..
+};
+
+/**
+ *  @brief An edge-to-edge pair processor base class
+ */
+class DB_PUBLIC EdgeToEdgePairProcessorBase
+  : public edge_processor<db::EdgePair>
+{
+  //  .. nothing yet ..
+};
 
 class RecursiveShapeIterator;
 class EdgeFilterBase;
@@ -152,13 +163,25 @@ class RegionDelegate;
 /**
  *  @brief The edge set iterator delegate
  */
-typedef db::generic_shape_iterator_delegate_base <db::Edge> EdgesIteratorDelegate;
+class DB_PUBLIC EdgesIteratorDelegate
+{
+public:
+  EdgesIteratorDelegate () { }
+  virtual ~EdgesIteratorDelegate () { }
+
+  typedef db::Edge value_type;
+
+  virtual bool at_end () const = 0;
+  virtual void increment () = 0;
+  virtual const value_type *get () const = 0;
+  virtual EdgesIteratorDelegate *clone () const = 0;
+};
 
 /**
  *  @brief The delegate for the actual edge set implementation
  */
 class DB_PUBLIC EdgesDelegate
-  : public ShapeCollectionDelegateBase
+  : public tl::UniqueId
 {
 public:
   typedef db::Coord coord_type;
@@ -177,12 +200,6 @@ public:
   EdgesDelegate &operator= (const EdgesDelegate &other);
 
   virtual EdgesDelegate *clone () const = 0;
-
-  EdgesDelegate *remove_properties (bool remove = true)
-  {
-    ShapeCollectionDelegateBase::remove_properties (remove);
-    return this;
-  }
 
   void set_base_verbosity (int vb);
   int base_verbosity () const
@@ -215,22 +232,20 @@ public:
 
   virtual bool empty () const = 0;
   virtual bool is_merged () const = 0;
-  virtual size_t count () const = 0;
-  virtual size_t hier_count () const = 0;
+  virtual size_t size () const = 0;
 
   virtual distance_type length (const db::Box &box) const = 0;
   virtual Box bbox () const = 0;
 
-  virtual EdgePairsDelegate *width_check (db::Coord d, const db::EdgesCheckOptions &options) const = 0;
-  virtual EdgePairsDelegate *space_check (db::Coord d, const db::EdgesCheckOptions &options) const = 0;
-  virtual EdgePairsDelegate *enclosing_check (const Edges &other, db::Coord d, const db::EdgesCheckOptions &options) const = 0;
-  virtual EdgePairsDelegate *overlap_check (const Edges &other, db::Coord d, const db::EdgesCheckOptions &options) const = 0;
-  virtual EdgePairsDelegate *separation_check (const Edges &other, db::Coord d, const db::EdgesCheckOptions &options) const = 0;
-  virtual EdgePairsDelegate *inside_check (const Edges &other, db::Coord d, const db::EdgesCheckOptions &options) const = 0;
+  virtual EdgePairsDelegate *width_check (db::Coord d, bool whole_edges, metrics_type metrics, double ignore_angle, distance_type min_projection, distance_type max_projection) const = 0;
+  virtual EdgePairsDelegate *space_check (db::Coord d, bool whole_edges, metrics_type metrics, double ignore_angle, distance_type min_projection, distance_type max_projection) const = 0;
+  virtual EdgePairsDelegate *enclosing_check (const Edges &other, db::Coord d, bool whole_edges, metrics_type metrics, double ignore_angle, distance_type min_projection, distance_type max_projection) const = 0;
+  virtual EdgePairsDelegate *overlap_check (const Edges &other, db::Coord d, bool whole_edges, metrics_type metrics, double ignore_angle, distance_type min_projection, distance_type max_projection) const = 0;
+  virtual EdgePairsDelegate *separation_check (const Edges &other, db::Coord d, bool whole_edges, metrics_type metrics, double ignore_angle, distance_type min_projection, distance_type max_projection) const = 0;
+  virtual EdgePairsDelegate *inside_check (const Edges &other, db::Coord d, bool whole_edges, metrics_type metrics, double ignore_angle, distance_type min_projection, distance_type max_projection) const = 0;
 
   virtual EdgesDelegate *filter_in_place (const EdgeFilterBase &filter) = 0;
   virtual EdgesDelegate *filtered (const EdgeFilterBase &filter) const = 0;
-  virtual std::pair<EdgesDelegate *, EdgesDelegate *> filtered_pair (const EdgeFilterBase &filter) const = 0;
   virtual EdgesDelegate *process_in_place (const EdgeProcessorBase &filter) = 0;
   virtual EdgesDelegate *processed (const EdgeProcessorBase &filter) const = 0;
   virtual EdgePairsDelegate *processed_to_edge_pairs (const EdgeToEdgePairProcessorBase &filter) const = 0;
@@ -240,11 +255,9 @@ public:
   virtual EdgesDelegate *merged () const = 0;
 
   virtual EdgesDelegate *and_with (const Edges &other) const = 0;
-  virtual EdgesDelegate *not_with (const Edges &other) const = 0;
-  virtual std::pair<EdgesDelegate *, EdgesDelegate *> andnot_with (const Edges &) const = 0;
   virtual EdgesDelegate *and_with (const Region &other) const = 0;
+  virtual EdgesDelegate *not_with (const Edges &other) const = 0;
   virtual EdgesDelegate *not_with (const Region &other) const = 0;
-  virtual std::pair<EdgesDelegate *, EdgesDelegate *> andnot_with (const Region &) const = 0;
   virtual EdgesDelegate *xor_with (const Edges &other) const = 0;
   virtual EdgesDelegate *or_with (const Edges &other) const = 0;
   virtual EdgesDelegate *add_in_place (const Edges &other) = 0;
@@ -255,39 +268,20 @@ public:
 
   virtual EdgesDelegate *inside_part (const Region &other) const = 0;
   virtual EdgesDelegate *outside_part (const Region &other) const = 0;
-  virtual std::pair<EdgesDelegate *, EdgesDelegate *> inside_outside_part_pair (const Region &other) const = 0;
   virtual RegionDelegate *pull_interacting (const Region &) const = 0;
   virtual EdgesDelegate *pull_interacting (const Edges &) const = 0;
-  virtual EdgesDelegate *selected_interacting (const Region &other, size_t min_count, size_t max_count) const = 0;
-  virtual EdgesDelegate *selected_not_interacting (const Region &other, size_t min_count, size_t max_count) const = 0;
-  virtual EdgesDelegate *selected_interacting (const Edges &other, size_t min_count, size_t max_count) const = 0;
-  virtual EdgesDelegate *selected_not_interacting (const Edges &other, size_t min_count, size_t max_count) const = 0;
-  virtual std::pair<EdgesDelegate *, EdgesDelegate *> selected_interacting_pair (const Region &other, size_t min_count, size_t max_count) const = 0;
-  virtual std::pair<EdgesDelegate *, EdgesDelegate *> selected_interacting_pair (const Edges &other, size_t min_count, size_t max_count) const = 0;
-
-  virtual EdgesDelegate *selected_outside (const Region &other) const = 0;
-  virtual EdgesDelegate *selected_not_outside (const Region &other) const = 0;
-  virtual std::pair<EdgesDelegate *, EdgesDelegate *> selected_outside_pair (const Region &other) const = 0;
-  virtual EdgesDelegate *selected_inside (const Region &other) const = 0;
-  virtual EdgesDelegate *selected_not_inside (const Region &other) const = 0;
-  virtual std::pair<EdgesDelegate *, EdgesDelegate *> selected_inside_pair (const Region &other) const = 0;
-  virtual EdgesDelegate *selected_outside (const Edges &other) const = 0;
-  virtual EdgesDelegate *selected_not_outside (const Edges &other) const = 0;
-  virtual std::pair<EdgesDelegate *, EdgesDelegate *> selected_outside_pair (const Edges &other) const = 0;
-  virtual EdgesDelegate *selected_inside (const Edges &other) const = 0;
-  virtual EdgesDelegate *selected_not_inside (const Edges &other) const = 0;
-  virtual std::pair<EdgesDelegate *, EdgesDelegate *> selected_inside_pair (const Edges &other) const = 0;
+  virtual EdgesDelegate *selected_interacting (const Region &other) const = 0;
+  virtual EdgesDelegate *selected_not_interacting (const Region &other) const = 0;
+  virtual EdgesDelegate *selected_interacting (const Edges &other) const = 0;
+  virtual EdgesDelegate *selected_not_interacting (const Edges &other) const = 0;
 
   virtual EdgesDelegate *in (const Edges &other, bool invert) const = 0;
-  virtual std::pair<EdgesDelegate *, EdgesDelegate *> in_and_out (const Edges &) const = 0;
 
   virtual const db::Edge *nth (size_t n) const = 0;
-  virtual db::properties_id_type nth_prop_id (size_t n) const = 0;
   virtual bool has_valid_edges () const = 0;
   virtual bool has_valid_merged_edges () const = 0;
 
   virtual const db::RecursiveShapeIterator *iter () const = 0;
-  virtual void apply_property_translator (const db::PropertiesTranslator &pt) = 0;
 
   virtual bool equals (const Edges &other) const = 0;
   virtual bool less (const Edges &other) const = 0;

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -32,6 +32,7 @@
 #include <QTextEncoder>
 #include "gsiQt.h"
 #include "gsiQtCoreCommon.h"
+#include "gsiDeclQtCoreTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -205,7 +206,7 @@ static void _init_f_toUnicode_c5465 (qt_gsi::GenericMethod *decl)
   decl->add_arg<const char * > (argspec_0);
   static gsi::ArgSpecBase argspec_1 ("length");
   decl->add_arg<int > (argspec_1);
-  static gsi::ArgSpecBase argspec_2 ("state", true, "nullptr");
+  static gsi::ArgSpecBase argspec_2 ("state", true, "0");
   decl->add_arg<QTextCodec::ConverterState * > (argspec_2);
   decl->set_return<QString > ();
 }
@@ -216,7 +217,7 @@ static void _call_f_toUnicode_c5465 (const qt_gsi::GenericMethod * /*decl*/, voi
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
   int arg2 = gsi::arg_reader<int >() (args, heap);
-  QTextCodec::ConverterState *arg3 = args ? gsi::arg_reader<QTextCodec::ConverterState * >() (args, heap) : gsi::arg_maker<QTextCodec::ConverterState * >() (nullptr, heap);
+  QTextCodec::ConverterState *arg3 = args ? gsi::arg_reader<QTextCodec::ConverterState * >() (args, heap) : gsi::arg_maker<QTextCodec::ConverterState * >() (0, heap);
   ret.write<QString > ((QString)((QTextCodec *)cls)->toUnicode (arg1, arg2, arg3));
 }
 
@@ -682,16 +683,16 @@ gsi::Class<QTextCodec> &qtdecl_QTextCodec ();
 static gsi::Methods methods_QTextCodec_Adaptor () {
   gsi::Methods methods;
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QTextCodec::QTextCodec()\nThis method creates an object of class QTextCodec.", &_init_ctor_QTextCodec_Adaptor_0, &_call_ctor_QTextCodec_Adaptor_0);
-  methods += new qt_gsi::GenericMethod ("aliases", "@brief Virtual method QList<QByteArray> QTextCodec::aliases()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_aliases_c0_0, &_call_cbs_aliases_c0_0);
-  methods += new qt_gsi::GenericMethod ("aliases", "@hide", true, &_init_cbs_aliases_c0_0, &_call_cbs_aliases_c0_0, &_set_callback_cbs_aliases_c0_0);
-  methods += new qt_gsi::GenericMethod ("*convertFromUnicode", "@brief Virtual method QByteArray QTextCodec::convertFromUnicode(const QChar *in, int length, QTextCodec::ConverterState *state)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_convertFromUnicode_c5514_0, &_call_cbs_convertFromUnicode_c5514_0);
-  methods += new qt_gsi::GenericMethod ("*convertFromUnicode", "@hide", true, &_init_cbs_convertFromUnicode_c5514_0, &_call_cbs_convertFromUnicode_c5514_0, &_set_callback_cbs_convertFromUnicode_c5514_0);
-  methods += new qt_gsi::GenericMethod ("*convertToUnicode", "@brief Virtual method QString QTextCodec::convertToUnicode(const char *in, int length, QTextCodec::ConverterState *state)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_convertToUnicode_c5465_0, &_call_cbs_convertToUnicode_c5465_0);
-  methods += new qt_gsi::GenericMethod ("*convertToUnicode", "@hide", true, &_init_cbs_convertToUnicode_c5465_0, &_call_cbs_convertToUnicode_c5465_0, &_set_callback_cbs_convertToUnicode_c5465_0);
-  methods += new qt_gsi::GenericMethod ("mibEnum", "@brief Virtual method int QTextCodec::mibEnum()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_mibEnum_c0_0, &_call_cbs_mibEnum_c0_0);
-  methods += new qt_gsi::GenericMethod ("mibEnum", "@hide", true, &_init_cbs_mibEnum_c0_0, &_call_cbs_mibEnum_c0_0, &_set_callback_cbs_mibEnum_c0_0);
-  methods += new qt_gsi::GenericMethod ("name", "@brief Virtual method QByteArray QTextCodec::name()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_name_c0_0, &_call_cbs_name_c0_0);
-  methods += new qt_gsi::GenericMethod ("name", "@hide", true, &_init_cbs_name_c0_0, &_call_cbs_name_c0_0, &_set_callback_cbs_name_c0_0);
+  methods += new qt_gsi::GenericMethod ("aliases", "@hide", true, &_init_cbs_aliases_c0_0, &_call_cbs_aliases_c0_0);
+  methods += new qt_gsi::GenericMethod ("aliases", "@brief Virtual method QList<QByteArray> QTextCodec::aliases()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_aliases_c0_0, &_call_cbs_aliases_c0_0, &_set_callback_cbs_aliases_c0_0);
+  methods += new qt_gsi::GenericMethod ("*convertFromUnicode", "@hide", true, &_init_cbs_convertFromUnicode_c5514_0, &_call_cbs_convertFromUnicode_c5514_0);
+  methods += new qt_gsi::GenericMethod ("*convertFromUnicode", "@brief Virtual method QByteArray QTextCodec::convertFromUnicode(const QChar *in, int length, QTextCodec::ConverterState *state)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_convertFromUnicode_c5514_0, &_call_cbs_convertFromUnicode_c5514_0, &_set_callback_cbs_convertFromUnicode_c5514_0);
+  methods += new qt_gsi::GenericMethod ("*convertToUnicode", "@hide", true, &_init_cbs_convertToUnicode_c5465_0, &_call_cbs_convertToUnicode_c5465_0);
+  methods += new qt_gsi::GenericMethod ("*convertToUnicode", "@brief Virtual method QString QTextCodec::convertToUnicode(const char *in, int length, QTextCodec::ConverterState *state)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_convertToUnicode_c5465_0, &_call_cbs_convertToUnicode_c5465_0, &_set_callback_cbs_convertToUnicode_c5465_0);
+  methods += new qt_gsi::GenericMethod ("mibEnum", "@hide", true, &_init_cbs_mibEnum_c0_0, &_call_cbs_mibEnum_c0_0);
+  methods += new qt_gsi::GenericMethod ("mibEnum", "@brief Virtual method int QTextCodec::mibEnum()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_mibEnum_c0_0, &_call_cbs_mibEnum_c0_0, &_set_callback_cbs_mibEnum_c0_0);
+  methods += new qt_gsi::GenericMethod ("name", "@hide", true, &_init_cbs_name_c0_0, &_call_cbs_name_c0_0);
+  methods += new qt_gsi::GenericMethod ("name", "@brief Virtual method QByteArray QTextCodec::name()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_name_c0_0, &_call_cbs_name_c0_0, &_set_callback_cbs_name_c0_0);
   return methods;
 }
 

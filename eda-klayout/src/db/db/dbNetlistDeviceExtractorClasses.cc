@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -30,8 +30,8 @@ namespace db
 // ---------------------------------------------------------------------------------
 //  NetlistDeviceExtractorMOS3Transistor implementation
 
-NetlistDeviceExtractorMOS3Transistor::NetlistDeviceExtractorMOS3Transistor (const std::string &name, bool strict, db::DeviceClassFactory *factory)
-  : db::NetlistDeviceExtractorImplBase (name, factory ? factory : new db::device_class_factory<DeviceClassMOS3Transistor> ()),
+NetlistDeviceExtractorMOS3Transistor::NetlistDeviceExtractorMOS3Transistor (const std::string &name, bool strict)
+  : db::NetlistDeviceExtractor (name),
     m_strict (strict)
 {
   //  .. nothing yet ..
@@ -66,7 +66,7 @@ void NetlistDeviceExtractorMOS3Transistor::setup ()
 
   }
 
-  db::DeviceClass *cls = make_class ();
+  db::DeviceClass *cls = new db::DeviceClassMOS3Transistor ();
   cls->set_strict (m_strict);
   register_device_class (cls);
 }
@@ -136,66 +136,44 @@ void NetlistDeviceExtractorMOS3Transistor::extract_devices (const std::vector<db
       rdiff2gate.set_base_verbosity (rdiff.base_verbosity ());
 
       if (rdiff2gate.empty ()) {
-        warn (tl::to_string (tr ("Gate shape touches no diffusion - ignored")), *p);
+        error (tl::to_string (tr ("Gate shape touches no diffusion - ignored")), *p);
       } else {
 
-        if (rdiff2gate.count () != 2) {
-          warn (tl::sprintf (tl::to_string (tr ("Expected two polygons on diff interacting with one gate shape (found %d) - gate shape ignored")), int (rdiff2gate.count ())), *p);
+        if (rdiff2gate.size () != 2) {
+          error (tl::sprintf (tl::to_string (tr ("Expected two polygons on diff interacting with one gate shape (found %d) - gate shape ignored")), int (rdiff2gate.size ())), *p);
           continue;
         }
 
-        //  normalize the diffusion polygons so that the S/D assignment is more predictable
-        std::vector<db::Polygon> diffpoly;
-        diffpoly.reserve (2);
-        for (db::Region::const_iterator d2g = rdiff2gate.begin (); ! d2g.at_end (); ++d2g) {
-          diffpoly.push_back (*d2g);
-        }
-        std::sort (diffpoly.begin (), diffpoly.end ());
-
-        std::vector<db::Edges::length_type> widths;
-        for (std::vector<db::Polygon>::const_iterator d2g = diffpoly.begin (); d2g != diffpoly.end (); ++d2g) {
-
-          db::Edges edges (rgate.edges () & db::Edges (*d2g));
-          db::Edges::length_type l = edges.length ();
-          if (l == 0) {
-            warn (tl::to_string (tr ("Vanishing edges for interaction gate/diff (corner interaction) - gate shape ignored")));
-          } else {
-            widths.push_back (l);
-          }
-
-        }
-
-        if (widths.size () != 2) {
+        db::Edges edges (rgate.edges () & rdiff2gate.edges ());
+        if (edges.size () != 2) {
+          error (tl::sprintf (tl::to_string (tr ("Expected two edges interacting gate/diff (found %d) - width and length may be incorrect")), int (edges.size ())), *p);
           continue;
         }
 
-        //  Computation of the gate length and width - this scheme is compatible with
-        //  non-rectangular gates and circular gates. The computation is based on the
-        //  relationship: A(gate) = L(gate) * W(gate). W(gate) is determined from the
-        //  accumulated edge lengths (average of left and right length).
-        double param_w = sdbu () * (widths[0] + widths[1]) * 0.5;
-        double param_l = sdbu () * sdbu () * double (rgate.area ()) / param_w;
+        if (! p->is_box ()) {
+          error (tl::to_string (tr ("Gate shape is not a box - width and length may be incorrect")), *p);
+        }
 
         db::Device *device = create_device ();
 
         device->set_trans (db::DCplxTrans ((p->box ().center () - db::Point ()) * dbu ()));
 
-        device->set_parameter_value (db::DeviceClassMOS3Transistor::param_id_W, param_w);
-        device->set_parameter_value (db::DeviceClassMOS3Transistor::param_id_L, param_l);
+        device->set_parameter_value (db::DeviceClassMOS3Transistor::param_id_W, sdbu () * edges.length () * 0.5);
+        device->set_parameter_value (db::DeviceClassMOS3Transistor::param_id_L, sdbu () * (p->perimeter () - edges.length ()) * 0.5);
 
         int diff_index = 0;
-        for (std::vector<db::Polygon>::const_iterator d2g = diffpoly.begin (); d2g != diffpoly.end () && diff_index < 2; ++d2g, ++diff_index) {
+        for (db::Region::const_iterator d = rdiff2gate.begin (); !d.at_end () && diff_index < 2; ++d, ++diff_index) {
 
           //  count the number of gate shapes attached to this shape and distribute the area of the
           //  diffusion region to the number of gates
-          size_t n = rgates.selected_interacting (db::Region (*d2g)).count ();
+          size_t n = rgates.selected_interacting (db::Region (*d)).size ();
           tl_assert (n > 0);
 
-          device->set_parameter_value (diff_index == 0 ? db::DeviceClassMOS3Transistor::param_id_AS : db::DeviceClassMOS3Transistor::param_id_AD, sdbu () * sdbu () * d2g->area () / double (n));
-          device->set_parameter_value (diff_index == 0 ? db::DeviceClassMOS3Transistor::param_id_PS : db::DeviceClassMOS3Transistor::param_id_PD, sdbu () * d2g->perimeter () / double (n));
+          device->set_parameter_value (diff_index == 0 ? db::DeviceClassMOS3Transistor::param_id_AS : db::DeviceClassMOS3Transistor::param_id_AD, sdbu () * sdbu () * d->area () / double (n));
+          device->set_parameter_value (diff_index == 0 ? db::DeviceClassMOS3Transistor::param_id_PS : db::DeviceClassMOS3Transistor::param_id_PD, sdbu () * d->perimeter () / double (n));
 
           unsigned int sd_index = diff_index == 0 ? source_terminal_geometry_index : drain_terminal_geometry_index;
-          define_terminal (device, diff_index == 0 ? db::DeviceClassMOS3Transistor::terminal_id_S : db::DeviceClassMOS3Transistor::terminal_id_D, sd_index, *d2g);
+          define_terminal (device, diff_index == 0 ? db::DeviceClassMOS3Transistor::terminal_id_S : db::DeviceClassMOS3Transistor::terminal_id_D, sd_index, *d);
 
         }
 
@@ -237,54 +215,39 @@ void NetlistDeviceExtractorMOS3Transistor::extract_devices (const std::vector<db
       ddiff2gate.set_base_verbosity (ddiff.base_verbosity ());
 
       if (sdiff2gate.empty () && ddiff2gate.empty ()) {
-        warn (tl::to_string (tr ("Gate shape touches no diffusion - ignored")), *p);
+        error (tl::to_string (tr ("Gate shape touches no diffusion - ignored")), *p);
       } else if (sdiff2gate.empty () || ddiff2gate.empty ()) {
-        warn (tl::to_string (tr ("Gate shape touches a single diffusion only - ignored")), *p);
+        error (tl::to_string (tr ("Gate shape touches a single diffusion only - ignored")), *p);
       } else {
 
-        if (sdiff2gate.count () != 1) {
-          warn (tl::sprintf (tl::to_string (tr ("Expected one polygons on source diff interacting with one gate shape (found %d) - gate shape ignored")), int (sdiff2gate.count ())), *p);
+        if (sdiff2gate.size () != 1) {
+          error (tl::sprintf (tl::to_string (tr ("Expected one polygons on source diff interacting with one gate shape (found %d) - gate shape ignored")), int (sdiff2gate.size ())), *p);
           continue;
         }
 
-        if (ddiff2gate.count () != 1) {
-          warn (tl::sprintf (tl::to_string (tr ("Expected one polygons on drain diff interacting with one gate shape (found %d) - gate shape ignored")), int (ddiff2gate.count ())), *p);
+        if (ddiff2gate.size () != 1) {
+          error (tl::sprintf (tl::to_string (tr ("Expected one polygons on drain diff interacting with one gate shape (found %d) - gate shape ignored")), int (ddiff2gate.size ())), *p);
           continue;
         }
 
-        db::Edges::length_type sdwidth = 0, ddwidth = 0;
+        db::Region diff2gate = sdiff2gate + ddiff2gate;
 
-        {
-          db::Edges edges (rgate.edges () & sdiff2gate.edges ());
-          sdwidth = edges.length ();
-          if (sdwidth == 0) {
-            warn (tl::to_string (tr ("Vanishing edges for interaction gate/source diff (corner interaction) - gate shape ignored")));
-            continue;
-          }
+        db::Edges edges (rgate.edges () & diff2gate.edges ());
+        if (edges.size () != 2) {
+          error (tl::sprintf (tl::to_string (tr ("Expected two edges interacting gate/diff (found %d) - width and length may be incorrect")), int (edges.size ())), *p);
+          continue;
         }
 
-        {
-          db::Edges edges (rgate.edges () & ddiff2gate.edges ());
-          ddwidth = edges.length ();
-          if (ddwidth == 0) {
-            warn (tl::to_string (tr ("Vanishing edges for interaction gate/drain diff (corner interaction) - gate shape ignored")));
-            continue;
-          }
+        if (! p->is_box ()) {
+          error (tl::to_string (tr ("Gate shape is not a box - width and length may be incorrect")), *p);
         }
-
-        //  Computation of the gate length and width - this scheme is compatible with
-        //  non-rectangular gates and circular gates. The computation is based on the
-        //  relationship: A(gate) = L(gate) * W(gate). W(gate) is determined from the
-        //  accumulated edge lengths (average of left and right length).
-        double param_w = sdbu () * (sdwidth + ddwidth) * 0.5;
-        double param_l = sdbu () * sdbu () * double (rgate.area ()) / param_w;
 
         db::Device *device = create_device ();
 
         device->set_trans (db::DCplxTrans ((p->box ().center () - db::Point ()) * dbu ()));
 
-        device->set_parameter_value (db::DeviceClassMOS3Transistor::param_id_W, param_w);
-        device->set_parameter_value (db::DeviceClassMOS3Transistor::param_id_L, param_l);
+        device->set_parameter_value (db::DeviceClassMOS3Transistor::param_id_W, sdbu () * edges.length () * 0.5);
+        device->set_parameter_value (db::DeviceClassMOS3Transistor::param_id_L, sdbu () * (p->perimeter () - edges.length ()) * 0.5);
 
         for (int diff_index = 0; diff_index < 2; ++diff_index) {
 
@@ -292,7 +255,7 @@ void NetlistDeviceExtractorMOS3Transistor::extract_devices (const std::vector<db
 
           //  count the number of gate shapes attached to this shape and distribute the area of the
           //  diffusion region to the number of gates
-          size_t n = rgates.selected_interacting (*diff).count ();
+          size_t n = rgates.selected_interacting (*diff).size ();
           tl_assert (n > 0);
 
           device->set_parameter_value (diff_index == 0 ? db::DeviceClassMOS3Transistor::param_id_AS : db::DeviceClassMOS3Transistor::param_id_AD, sdbu () * sdbu () * diff->area () / double (n));
@@ -309,7 +272,6 @@ void NetlistDeviceExtractorMOS3Transistor::extract_devices (const std::vector<db
         modify_device (*p, layer_geometry, device);
 
         //  output the device for debugging
-        db::Region diff2gate = sdiff2gate + ddiff2gate;
         device_out (device, diff2gate, rgate);
 
       }
@@ -322,8 +284,8 @@ void NetlistDeviceExtractorMOS3Transistor::extract_devices (const std::vector<db
 // ---------------------------------------------------------------------------------
 //  NetlistDeviceExtractorMOS4Transistor implementation
 
-NetlistDeviceExtractorMOS4Transistor::NetlistDeviceExtractorMOS4Transistor (const std::string &name, bool strict, db::DeviceClassFactory *factory)
-  : NetlistDeviceExtractorMOS3Transistor (name, strict, factory ? factory : new db::device_class_factory<db::DeviceClassMOS4Transistor> ())
+NetlistDeviceExtractorMOS4Transistor::NetlistDeviceExtractorMOS4Transistor (const std::string &name, bool strict)
+  : NetlistDeviceExtractorMOS3Transistor (name, strict)
 {
   //  .. nothing yet ..
 }
@@ -367,7 +329,7 @@ void NetlistDeviceExtractorMOS4Transistor::setup ()
 
   }
 
-  db::DeviceClass *cls = make_class ();
+  db::DeviceClass *cls = new db::DeviceClassMOS4Transistor ();
   cls->set_strict (is_strict ());
   register_device_class (cls);
 }
@@ -383,8 +345,8 @@ void NetlistDeviceExtractorMOS4Transistor::modify_device (const db::Polygon &rga
 // ---------------------------------------------------------------------------------
 //  NetlistDeviceExtractorResistor implementation
 
-NetlistDeviceExtractorResistor::NetlistDeviceExtractorResistor (const std::string &name, double sheet_rho, db::DeviceClassFactory *factory)
-  : db::NetlistDeviceExtractorImplBase (name, factory ? factory : new db::device_class_factory<db::DeviceClassResistor> ()), m_sheet_rho (sheet_rho)
+NetlistDeviceExtractorResistor::NetlistDeviceExtractorResistor (const std::string &name, double sheet_rho)
+  : db::NetlistDeviceExtractor (name), m_sheet_rho (sheet_rho)
 {
   //  .. nothing yet ..
 }
@@ -396,7 +358,7 @@ void NetlistDeviceExtractorResistor::setup ()
   define_layer ("tA", 1, "A terminal output");    // #2 -> C
   define_layer ("tB", 1, "B terminal output");    // #3 -> C
 
-  register_device_class (make_class ());
+  register_device_class (new db::DeviceClassResistor ());
 }
 
 db::Connectivity NetlistDeviceExtractorResistor::get_connectivity (const db::Layout & /*layout*/, const std::vector<unsigned int> &layers) const
@@ -437,8 +399,8 @@ void NetlistDeviceExtractorResistor::extract_devices (const std::vector<db::Regi
     db::Region rres (*p);
     db::Region contacts_per_res = contact_wo_res.selected_interacting (rres);
 
-    if (contacts_per_res.count () != 2) {
-      warn (tl::sprintf (tl::to_string (tr ("Expected two polygons on contacts interacting with one resistor shape (found %d) - resistor shape ignored")), int (contacts_per_res.count ())), *p);
+    if (contacts_per_res.size () != 2) {
+      error (tl::sprintf (tl::to_string (tr ("Expected two polygons on contacts interacting with one resistor shape (found %d) - resistor shape ignored")), int (contacts_per_res.size ())), *p);
       continue;
     }
 
@@ -454,30 +416,22 @@ void NetlistDeviceExtractorResistor::extract_devices (const std::vector<db::Regi
     db::Edges eperp = rres.edges ();
     eperp &= contacts_per_res.edges ();
 
-    db::Coord length2 = eparallel.length ();
-    db::Coord width2 = eperp.length ();
+    db::Coord length = eparallel.length ();
+    db::Coord width = eperp.length ();
 
-    if (width2 < 1) {
-      warn (tl::to_string (tr ("Invalid contact geometry - resistor shape ignored")), *p);
+    if (width < 1) {
+      error (tl::to_string (tr ("Invalid contact geometry - resistor shape ignored")), *p);
       continue;
     }
 
-    device->set_parameter_value (db::DeviceClassResistor::param_id_R, m_sheet_rho * double (length2) / double (width2));
-    device->set_parameter_value (db::DeviceClassResistor::param_id_L, sdbu () * 0.5 * length2);
-    device->set_parameter_value (db::DeviceClassResistor::param_id_W, sdbu () * 0.5 * width2);
+    device->set_parameter_value (db::DeviceClassResistor::param_id_R, m_sheet_rho * double (length) / double (width));
+    device->set_parameter_value (db::DeviceClassResistor::param_id_L, sdbu () * length);
+    device->set_parameter_value (db::DeviceClassResistor::param_id_W, sdbu () * width);
     device->set_parameter_value (db::DeviceClassResistor::param_id_A, sdbu () * sdbu () * p->area ());
     device->set_parameter_value (db::DeviceClassResistor::param_id_P, sdbu () * p->perimeter ());
 
-    //  collect and normalize the contact polygons (gives better reproducibility)
-    std::vector<db::Polygon> contact_poly;
-    contact_poly.reserve (2);
-    for (db::Region::const_iterator d = contacts_per_res.begin (); !d.at_end (); ++d) {
-      contact_poly.push_back (*d);
-    }
-    std::sort (contact_poly.begin (), contact_poly.end ());
-
     int cont_index = 0;
-    for (std::vector<db::Polygon>::const_iterator d = contact_poly.begin (); d != contact_poly.end () && cont_index < 2; ++d, ++cont_index) {
+    for (db::Region::const_iterator d = contacts_per_res.begin (); !d.at_end () && cont_index < 2; ++d, ++cont_index) {
       size_t terminal_geometry_index = cont_index == 0 ? a_terminal_geometry_index : b_terminal_geometry_index;
       define_terminal (device, cont_index == 0 ? db::DeviceClassResistor::terminal_id_A : db::DeviceClassResistor::terminal_id_B, terminal_geometry_index, *d);
     }
@@ -494,8 +448,8 @@ void NetlistDeviceExtractorResistor::extract_devices (const std::vector<db::Regi
 // ---------------------------------------------------------------------------------
 //  NetlistDeviceExtractorResistorWithBulk implementation
 
-NetlistDeviceExtractorResistorWithBulk::NetlistDeviceExtractorResistorWithBulk (const std::string &name, double sheet_rho, db::DeviceClassFactory *factory)
-  : NetlistDeviceExtractorResistor (name, sheet_rho, factory ? factory : new db::device_class_factory<db::DeviceClassResistorWithBulk> ())
+NetlistDeviceExtractorResistorWithBulk::NetlistDeviceExtractorResistorWithBulk (const std::string &name, double sheet_rho)
+  : NetlistDeviceExtractorResistor (name, sheet_rho)
 {
   //  .. nothing yet ..
 }
@@ -509,7 +463,7 @@ void NetlistDeviceExtractorResistorWithBulk::setup ()
   define_layer ("W", "Well/Bulk");                // #4
   define_layer ("tW", 4, "W terminal output");    // #5 -> W
 
-  register_device_class (make_class ());
+  register_device_class (new db::DeviceClassResistorWithBulk ());
 }
 
 void NetlistDeviceExtractorResistorWithBulk::modify_device (const db::Polygon &res, const std::vector<db::Region> & /*layer_geometry*/, db::Device *device)
@@ -521,8 +475,8 @@ void NetlistDeviceExtractorResistorWithBulk::modify_device (const db::Polygon &r
 // ---------------------------------------------------------------------------------
 //  NetlistDeviceExtractorCapacitor implementation
 
-NetlistDeviceExtractorCapacitor::NetlistDeviceExtractorCapacitor (const std::string &name, double area_cap, db::DeviceClassFactory *factory)
-  : db::NetlistDeviceExtractorImplBase (name, factory ? factory : new db::device_class_factory<db::DeviceClassCapacitor> ()), m_area_cap (area_cap)
+NetlistDeviceExtractorCapacitor::NetlistDeviceExtractorCapacitor (const std::string &name, double area_cap)
+  : db::NetlistDeviceExtractor (name), m_area_cap (area_cap)
 {
   //  .. nothing yet ..
 }
@@ -534,7 +488,7 @@ void NetlistDeviceExtractorCapacitor::setup ()
   define_layer ("tA", 0, "A terminal output");      // #2 -> P1
   define_layer ("tB", 1, "B terminal output");      // #3 -> P2
 
-  register_device_class (make_class ());
+  register_device_class (new db::DeviceClassCapacitor ());
 }
 
 db::Connectivity NetlistDeviceExtractorCapacitor::get_connectivity (const db::Layout & /*layout*/, const std::vector<unsigned int> &layers) const
@@ -596,8 +550,8 @@ void NetlistDeviceExtractorCapacitor::extract_devices (const std::vector<db::Reg
 // ---------------------------------------------------------------------------------
 //  NetlistDeviceExtractorCapacitorWithBulk implementation
 
-NetlistDeviceExtractorCapacitorWithBulk::NetlistDeviceExtractorCapacitorWithBulk (const std::string &name, double area_cap, db::DeviceClassFactory *factory)
-  : NetlistDeviceExtractorCapacitor (name, area_cap, factory ? factory : new db::device_class_factory<db::DeviceClassCapacitorWithBulk> ())
+NetlistDeviceExtractorCapacitorWithBulk::NetlistDeviceExtractorCapacitorWithBulk (const std::string &name, double area_cap)
+  : NetlistDeviceExtractorCapacitor (name, area_cap)
 {
   //  .. nothing yet ..
 }
@@ -611,7 +565,7 @@ void NetlistDeviceExtractorCapacitorWithBulk::setup ()
   define_layer ("W", "Well/Bulk");                  // #4
   define_layer ("tW", 4, "W terminal output");      // #5 -> W
 
-  register_device_class (make_class ());
+  register_device_class (new db::DeviceClassCapacitorWithBulk ());
 }
 
 void NetlistDeviceExtractorCapacitorWithBulk::modify_device (const db::Polygon &cap, const std::vector<db::Region> & /*layer_geometry*/, db::Device *device)
@@ -623,8 +577,8 @@ void NetlistDeviceExtractorCapacitorWithBulk::modify_device (const db::Polygon &
 // ---------------------------------------------------------------------------------
 //  NetlistDeviceExtractorBJT3Transistor implementation
 
-NetlistDeviceExtractorBJT3Transistor::NetlistDeviceExtractorBJT3Transistor (const std::string &name, db::DeviceClassFactory *factory)
-  : db::NetlistDeviceExtractorImplBase (name, factory ? factory : new db::device_class_factory<db::DeviceClassBJT3Transistor> ())
+NetlistDeviceExtractorBJT3Transistor::NetlistDeviceExtractorBJT3Transistor (const std::string &name)
+  : db::NetlistDeviceExtractor (name)
 {
   //  .. nothing yet ..
 }
@@ -640,7 +594,7 @@ void NetlistDeviceExtractorBJT3Transistor::setup ()
   define_layer ("tB", 1, "Base terminal output");                       // #4 -> B
   define_layer ("tE", 2, "Emitter terminal output");                    // #5 -> E
 
-  register_device_class (make_class ());
+  register_device_class (new db::DeviceClassBJT3Transistor ());
 }
 
 db::Connectivity NetlistDeviceExtractorBJT3Transistor::get_connectivity (const db::Layout & /*layout*/, const std::vector<unsigned int> &layers) const
@@ -681,7 +635,7 @@ void NetlistDeviceExtractorBJT3Transistor::extract_devices (const std::vector<db
     db::Region remitter2base = rbase & remitters;
 
     if (remitter2base.empty ()) {
-      warn (tl::to_string (tr ("Base shape without emitters - ignored")), *p);
+      error (tl::to_string (tr ("Base shape without emitters - ignored")), *p);
     } else {
 
       //  collectors inside base
@@ -694,15 +648,12 @@ void NetlistDeviceExtractorBJT3Transistor::extract_devices (const std::vector<db
         rcollector = rbase;
       } else if ((rbase - rcollector2base).empty ()) {
         //  vertical transistor: collector entirely covers base -> collector terminal is collector outside base
-        rcollector = rcollectors.selected_interacting (rbase) - rbase;
+        rcollector = rcollector2base - rbase;
       } else {
         //  lateral transistor: base is reduced by collector area
         rcollector = rcollector2base;
         rbase -= rcollector2base;
       }
-
-      //  TODO: rbase - rcollector2base above could basically split a base region into different
-      //  subregions potentially forming one transistor each.
 
       //  this is what is the true base contact
       rbase -= remitter2base;
@@ -753,8 +704,8 @@ void NetlistDeviceExtractorBJT3Transistor::extract_devices (const std::vector<db
 // ---------------------------------------------------------------------------------
 //  NetlistDeviceExtractorBJT4Transistor implementation
 
-NetlistDeviceExtractorBJT4Transistor::NetlistDeviceExtractorBJT4Transistor (const std::string &name, db::DeviceClassFactory *factory)
-  : NetlistDeviceExtractorBJT3Transistor (name, factory ? factory : new db::device_class_factory<db::DeviceClassBJT4Transistor> ())
+NetlistDeviceExtractorBJT4Transistor::NetlistDeviceExtractorBJT4Transistor (const std::string &name)
+  : NetlistDeviceExtractorBJT3Transistor (name)
 {
   //  .. nothing yet ..
 }
@@ -775,7 +726,7 @@ void NetlistDeviceExtractorBJT4Transistor::setup ()
 
   define_layer ("tS", 6, "Substrate (bulk) terminal output");           // #7 -> S
 
-  register_device_class (make_class ());
+  register_device_class (new db::DeviceClassBJT4Transistor ());
 }
 
 void NetlistDeviceExtractorBJT4Transistor::modify_device (const db::Polygon &emitter, const std::vector<db::Region> & /*layer_geometry*/, db::Device *device)
@@ -787,8 +738,8 @@ void NetlistDeviceExtractorBJT4Transistor::modify_device (const db::Polygon &emi
 // ---------------------------------------------------------------------------------
 //  NetlistDeviceExtractorDiode implementation
 
-NetlistDeviceExtractorDiode::NetlistDeviceExtractorDiode (const std::string &name, db::DeviceClassFactory *factory)
-  : db::NetlistDeviceExtractorImplBase (name, factory ? factory : new db::device_class_factory<db::DeviceClassDiode> ())
+NetlistDeviceExtractorDiode::NetlistDeviceExtractorDiode (const std::string &name)
+  : db::NetlistDeviceExtractor (name)
 {
   //  .. nothing yet ..
 }
@@ -800,7 +751,7 @@ void NetlistDeviceExtractorDiode::setup ()
   define_layer ("tA", 0, "A terminal output");      // #2 -> P
   define_layer ("tC", 1, "C terminal output");      // #3 -> N
 
-  register_device_class (make_class ());
+  register_device_class (new db::DeviceClassDiode ());
 }
 
 db::Connectivity NetlistDeviceExtractorDiode::get_connectivity (const db::Layout & /*layout*/, const std::vector<unsigned int> &layers) const

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -30,14 +30,14 @@ namespace tl
 
 void handle_event_exception (tl::Exception &ex)
 {
-  //  Exceptions have unpredictable side effects for events so we just log
+  //  Exceptions have unpredicable side effects for events so we just log
   //  them here.
   tl::warn << ex.msg ();
 }
 
 void handle_event_exception (std::exception &ex)
 {
-  //  Exceptions have unpredictable side effects for events so we just log
+  //  Exceptions have unpredicable side effects for events so we just log
   //  them here.
   tl::warn << ex.what ();
 }

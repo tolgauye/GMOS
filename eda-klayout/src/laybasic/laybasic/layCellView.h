@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -30,23 +30,20 @@
 #include <vector>
 
 #include "tlObject.h"
+#include "tlFileSystemWatcher.h"
+#include "layTechnology.h"
 #include "dbLayout.h"
 #include "dbMetaInfo.h"
 #include "dbReader.h"
 #include "dbSaveLayoutOptions.h"
 #include "dbLoadLayoutOptions.h"
 #include "dbInstElement.h"
-#include "dbTechnology.h"
 #include "gsi.h"
-
-#if defined(HAVE_QT)
-#  include "tlFileSystemWatcher.h"
-#endif
 
 namespace lay 
 {
 
-class LayoutViewBase;
+class LayoutView;
 
 /**
  *  @brief A layout handle
@@ -118,7 +115,10 @@ public:
    *
    *  An empty name indicates the default technology should be used.
    */
-  const std::string &tech_name () const;
+  const std::string &tech_name () const
+  {
+    return m_tech_name;
+  }
 
   /**
    *  @brief Applies the given technology
@@ -143,14 +143,6 @@ public:
    *  @return 0, if there is no layout object with this name. Otherwise a pointer to its handle
    */
   static LayoutHandle *find (const std::string &name);
-
-  /**
-   *  @brief Finds a handle by layout object
-   *
-   *  @param layout The Layout object bound to the handle
-   *  @return 0, if there is no layout object with this name. Otherwise a pointer to its handle
-   */
-  static LayoutHandle *find_layout (const db::Layout *layout);
 
   /**
    *  @brief Gets the names of all registered layout objects
@@ -223,7 +215,7 @@ public:
    *  Save the layout under the given file name and with the given options.
    *  If update is true, this method updates the cell view's filename, title, save options and dirty flag.
    */
-  void save_as (const std::string &filename, tl::OutputStream::OutputStreamMode om, const db::SaveLayoutOptions &options, bool update = true, int keep_backups = 0);
+  void save_as (const std::string &filename, tl::OutputStream::OutputStreamMode om, const db::SaveLayoutOptions &options, bool update = true);
 
   /**
    *  @brief Sets the save options and a flag indicating whether they are valid
@@ -298,39 +290,24 @@ public:
    */
   void layout_changed ();
 
-#if defined(HAVE_QT)
   /**
    *  @brief Gets the file system watcher that delivers events when one of the layouts gets updated
    */
   static tl::FileSystemWatcher &file_watcher ();
-#endif
-
-  /**
-   *  @brief Removes a file from the watcher
-   */
-  static void remove_file_from_watcher (const std::string &path);
-
-  /**
-   *  @brief Adds a file to the watcher
-   */
-  static void add_file_to_watcher (const std::string &path);
 
 private:
   db::Layout *mp_layout;
   int m_ref_count;
   std::string m_name;
   std::string m_filename;
+  std::string m_tech_name;
   bool m_dirty;
   db::SaveLayoutOptions m_save_options;
   bool m_save_options_valid;
   db::LoadLayoutOptions m_load_options;
 
-  void on_technology_changed ();
-
   static std::map <std::string, LayoutHandle *> ms_dict;
-#if defined(HAVE_QT)
   static tl::FileSystemWatcher *mp_file_watcher;
-#endif
 };
 
 /**
@@ -548,11 +525,6 @@ public:
   db::ICplxTrans context_trans () const;
 
   /**
-   *  @brief Retrive the accumulated transformation induced by the context part of the path as a micron-unit transformation
-   */
-  db::DCplxTrans context_dtrans () const;
-
-  /**
    *  @brief Deep copy of the cellview
    *
    *  This method performs a deep copy on the cellview.
@@ -599,7 +571,7 @@ public:
    *  @param cv The reference to the target cellview
    *  @param view The reference to the layout view
    */
-  CellViewRef (lay::CellView *cv, lay::LayoutViewBase *view);
+  CellViewRef (lay::CellView *cv, lay::LayoutView *view);
 
   /**
    *  @brief Gets the cellview index of this reference
@@ -608,9 +580,9 @@ public:
   int index () const;
 
   /**
-   *  @brief Gets the LayoutViewBase the reference is pointing to
+   *  @brief Gets the LayoutView the reference is pointing to
    */
-  lay::LayoutViewBase *view ();
+  lay::LayoutView *view ();
 
   /**
    *  @brief Equality: Gives true, if the cellviews are identical
@@ -760,14 +732,9 @@ public:
    */
   db::ICplxTrans context_trans () const;
 
-  /**
-   *  @brief Retrive the accumulated transformation induced by the context part of the path in micron units
-   */
-  db::DCplxTrans context_dtrans() const;
-
 private:
   tl::weak_ptr<lay::CellView> mp_cv;
-  tl::weak_ptr<lay::LayoutViewBase> mp_view;
+  tl::weak_ptr<lay::LayoutView> mp_view;
 };
 
 }

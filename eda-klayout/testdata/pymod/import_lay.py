@@ -1,5 +1,5 @@
 # KLayout Layout Viewer
-# Copyright (C) 2006-2025 Matthias Koefferlein
+# Copyright (C) 2006-2019 Matthias Koefferlein
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,50 +15,29 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-import testprep
-import klayout.db as db
+
+import klayout.QtCore
+import klayout.QtGui
+if not "QApplication" in klayout.QtGui.__all__:
+  import klayout.QtWidgets  # Qt5
 import klayout.lay as lay
 import unittest
 import sys
-
-def can_create_layoutview():
-  if not "MainWindow" in lay.__dict__:
-    return True  # Qt-less
-  elif not "Application" in lay.__dict__:
-    return False  # cannot instantiate Application
-  elif lay.__dict__["Application"].instance() is None:
-    return False  # Application is not present
-  else:
-    return True
 
 # Tests the basic abilities of the module
 
 class BasicTest(unittest.TestCase):
 
   def test_1(self):
-
-    if not can_create_layoutview():
-      print("Skipped test as LayoutView cannot be instantiated")
-      return
-
-    lv = lay.LayoutView()
-    lv.resize(800, 600)
-    lv.zoom_box(db.DBox(-42, -17, 142, 117))
-    bx = lv.box()
-    self.assertEqual(str(bx), "(-42.09,-19.09;141.91,118.91)")
+    self.assertEqual("Annotation" in lay.__all__, True)
 
   def test_2(self):
-
-    p = lay.LayerPropertiesNode()
-    p.name = "u"
-    self.assertEqual(p.name, "u")
-
-  def test_3(self):
-
-    # smoke test (issue #2154)
-    x = lay.Cursor.Arrow
-    x = lay.ButtonState.ShiftKey
-    x = lay.KeyCode.Escape
+    # Some smoke test
+    ant = lay.Annotation()
+    ant.style = lay.Annotation.StyleRuler
+    self.assertEqual(str(ant.style), str(lay.Annotation.StyleRuler))
+    ant.fmt_x = "abc"
+    self.assertEqual(ant.fmt_x, "abc")
 
 # run unit tests
 if __name__ == '__main__':

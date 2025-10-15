@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -25,9 +25,10 @@
 
 #ifdef HAVE_RUBY
 
+#include "rbaUtils.h"
+
 #include "gsiTypes.h"
 
-#include "rbaUtils.h"
 #include <ruby.h>
 
 namespace rba
@@ -182,12 +183,6 @@ inline bool test_type<gsi::StringType> (VALUE rval, bool /*loose*/)
 }
 
 template <>
-inline bool test_type<gsi::ByteArrayType> (VALUE rval, bool /*loose*/)
-{
-  return TYPE (rval) == T_STRING;
-}
-
-template <>
 inline bool test_type<gsi::VariantType> (VALUE /*rval*/, bool /*loose*/)
 {
   //  assume we can translate everything into a variant
@@ -294,7 +289,7 @@ inline unsigned long long ruby2c<unsigned long long> (VALUE rval)
 template <>
 inline __int128 ruby2c<__int128> (VALUE rval)
 {
-  // TODO: this is pretty simplistic
+  // TOOD: this is pretty simplistic
   return rba_safe_num2dbl (rval);
 }
 #endif
@@ -316,15 +311,6 @@ inline std::string ruby2c<std::string> (VALUE rval)
 {
   VALUE str = rba_safe_string_value (rval);
   return std::string (RSTRING_PTR(str), RSTRING_LEN(str));
-}
-
-template <>
-inline std::vector<char> ruby2c<std::vector<char> > (VALUE rval)
-{
-  VALUE str = rba_safe_string_value (rval);
-  char *cp = RSTRING_PTR(str);
-  size_t sz = RSTRING_LEN(str);
-  return std::vector<char> (cp, cp + sz);
 }
 
 #if defined(HAVE_QT)
@@ -441,7 +427,7 @@ inline VALUE c2ruby<unsigned long long> (const unsigned long long &c)
 template <>
 inline VALUE c2ruby<__int128> (const __int128 &c)
 {
-  // TODO: this is pretty simplistic
+  // TOOD: this is pretty simplistic
   return rb_float_new (double (c));
 }
 #endif
@@ -461,13 +447,7 @@ inline VALUE c2ruby<float> (const float &c)
 template <>
 inline VALUE c2ruby<std::string> (const std::string &c)
 {
-  return rb_utf8_str_new (c.c_str (), long (c.size ()));
-}
-
-template <>
-inline VALUE c2ruby<std::vector<char> > (const std::vector<char> &c)
-{
-  return rb_str_new (&c.front (), c.size ());
+  return rb_str_new (c.c_str (), long (c.size ()));
 }
 
 #if defined(HAVE_QT)
@@ -488,7 +468,7 @@ inline VALUE c2ruby<QString> (const QString &qs)
     return Qnil;
   } else {
     std::string c (tl::to_string (qs));
-    return rb_utf8_str_new (c.c_str (), long (c.size ()));
+    return rb_str_new (c.c_str (), long (c.size ()));
   }
 }
 #endif
@@ -507,9 +487,9 @@ inline VALUE c2ruby<const char *> (const char * const & s)
 {
   if (! s) {
     static const char null_string[] = "(null)";
-    return rb_utf8_str_new (null_string, sizeof (null_string) - 1);
+    return rb_str_new (null_string, sizeof (null_string) - 1);
   } else {
-    return rb_utf8_str_new (s, long (strlen (s)));
+    return rb_str_new (s, long (strlen (s)));
   }
 }
 

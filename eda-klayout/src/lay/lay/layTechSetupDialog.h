@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -98,7 +98,7 @@ private:
   Ui::TechMacrosPage *mp_ui;
   std::string m_cat, m_cat_desc;
   std::vector<std::pair<QLabel *, QString> > m_original_labels;
-  std::unique_ptr<lym::MacroCollection> mp_collection;
+  std::auto_ptr<lym::MacroCollection> mp_collection;
   std::string m_current_path;
 
 private slots:
@@ -149,7 +149,7 @@ public:
   TechSetupDialog (QWidget *parent);
   ~TechSetupDialog ();
 
-  int exec_dialog (db::Technologies &technologies);
+  int exec (db::Technologies &technologies);
 
 protected slots:
   void current_tech_changed (QTreeWidgetItem *current, QTreeWidgetItem *previous);

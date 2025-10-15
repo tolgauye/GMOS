@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -63,7 +63,7 @@ public:
   void emit_comment (const std::string &comment) const;
   std::string format_name (const std::string &s) const;
   std::string format_terminals (const db::Device &dev, size_t max_terminals = std::numeric_limits<size_t>::max ()) const;
-  std::string format_params (const db::Device &dev, size_t without_id = std::numeric_limits<size_t>::max (), bool only_primary = false) const;
+  std::string format_params (const db::Device &dev, size_t without_id = std::numeric_limits<size_t>::max ()) const;
 
 private:
   friend class NetlistSpiceWriter;

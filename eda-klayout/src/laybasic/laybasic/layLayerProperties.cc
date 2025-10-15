@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
 
 
 #include "layLayerProperties.h"
-#include "layLayoutViewBase.h"
+#include "layLayoutView.h"
 #include "layConverters.h"
 #include "tlXMLParser.h"
 #include "tlException.h"
@@ -48,8 +48,8 @@ namespace lay
  *  All channels are scaled the same way in order not to change the
  *  color but the brightness alone.
  */
-tl::color_t
-LayerProperties::brighter (tl::color_t in, int x)
+color_t 
+LayerProperties::brighter (color_t in, int x)
 {
   //  shortcut for no correction
   if (x == 0) {
@@ -78,8 +78,7 @@ LayerProperties::brighter (tl::color_t in, int x)
 }
 
 LayerProperties::LayerProperties ()
-  : m_gen_id (0),
-    m_frame_color (0),
+  : m_frame_color (0), 
     m_frame_color_real (0), 
     m_fill_color (0),
     m_fill_color_real (0),
@@ -118,7 +117,6 @@ LayerProperties::LayerProperties ()
 
 LayerProperties::LayerProperties (const LayerProperties &d)
   : gsi::ObjectBase (d), 
-    m_gen_id (0),
     m_frame_color (0), 
     m_frame_color_real (0), 
     m_fill_color (0),
@@ -161,7 +159,6 @@ LayerProperties::operator= (const LayerProperties &d)
 {
   if (&d != this) {
 
-    refresh ();
     d.ensure_realized ();
 
     int flags = 0;
@@ -248,25 +245,25 @@ LayerProperties::is_visual () const
   return valid (true) && visible (true) && (layer_index () >= 0 || is_cell_box_layer ());
 }
 
-tl::color_t
+color_t 
 LayerProperties::eff_frame_color (bool real) const
 {
   return brighter (frame_color (real) & 0xffffff, frame_brightness (real));
 }
 
-tl::color_t
+color_t 
 LayerProperties::eff_fill_color (bool real) const
 {
   return brighter (fill_color (real) & 0xffffff, fill_brightness (real));
 }
 
-tl::color_t
+color_t 
 LayerProperties::eff_frame_color_brighter (bool real, int plus_brightness) const
 {
   return brighter (frame_color (real) & 0xffffff, frame_brightness (real) + plus_brightness);
 }
 
-tl::color_t
+color_t 
 LayerProperties::eff_fill_color_brighter (bool real, int plus_brightness) const
 {
   return brighter (fill_color (real) & 0xffffff, fill_brightness (real) + plus_brightness);
@@ -278,12 +275,12 @@ LayerProperties::merge_visual (const LayerProperties *d) const
   if (!d || !d->has_frame_color (true)) {
     m_frame_color_real = m_frame_color;
   } else {
-    m_frame_color_real = d->m_frame_color_real;
+    m_frame_color_real = d->m_frame_color;
   }
   if (!d || !d->has_fill_color (true)) {
     m_fill_color_real = m_fill_color;
   } else {
-    m_fill_color_real = d->m_fill_color_real;
+    m_fill_color_real = d->m_fill_color;
   }
 
   m_frame_brightness_real = m_frame_brightness;
@@ -336,21 +333,13 @@ LayerProperties::merge_source (const LayerProperties *d) const
 void
 LayerProperties::ensure_realized () const
 {
-  refresh ();
-  if (m_realize_needed_source) {
-    realize_source ();
-    m_realize_needed_source = false;
-  }
-  if (m_realize_needed_visual) {
-    realize_visual ();
-    m_realize_needed_visual = false;
-  }
+  ensure_source_realized ();
+  ensure_visual_realized ();
 }
 
 void
 LayerProperties::ensure_source_realized () const
 {
-  refresh ();
   if (m_realize_needed_source) {
     realize_source ();
     m_realize_needed_source = false;
@@ -360,7 +349,6 @@ LayerProperties::ensure_source_realized () const
 void
 LayerProperties::ensure_visual_realized () const
 {
-  refresh ();
   if (m_realize_needed_visual) {
     realize_visual ();
     m_realize_needed_visual = false;
@@ -404,7 +392,7 @@ class LayerSourceEval
   : public tl::Eval
 {
 public:
-  LayerSourceEval (const lay::LayerProperties &lp, const lay::LayoutViewBase *view, bool real)
+  LayerSourceEval (const lay::LayerProperties &lp, const lay::LayoutView *view, bool real)
     : m_lp (lp), mp_view (view), m_real (real)
   { 
     // .. nothing yet ..
@@ -415,14 +403,14 @@ public:
     return m_lp.source (m_real);
   }
 
-  const lay::LayoutViewBase *view () const
+  const lay::LayoutView *view () const
   {
     return mp_view;
   }
 
 private:
   const lay::LayerProperties &m_lp;
-  const lay::LayoutViewBase *mp_view;
+  const lay::LayoutView *mp_view;
   bool m_real;
 };
 
@@ -436,10 +424,10 @@ public:
     // .. nothing yet ..
   }
 
-  void execute (const tl::ExpressionParserContext &context, tl::Variant &out, const std::vector <tl::Variant> &vv, const std::map<std::string, tl::Variant> * /*kwargs*/) const
+  void execute (const tl::ExpressionParserContext &context, tl::Variant &out, const std::vector <tl::Variant> &vv) const
   {
     if (vv.size () != 0) {
-      throw tl::EvalError (tl::to_string (tr ("Layer source function must not have arguments")), context);
+      throw tl::EvalError (tl::to_string (QObject::tr ("Layer source function must not have arguments")), context);
     }
 
     out = tl::Variant ();
@@ -480,10 +468,8 @@ private:
 };
 
 std::string
-LayerProperties::display_string (const lay::LayoutViewBase *view, bool real, bool always_show_source) const
+LayerProperties::display_string (const lay::LayoutView *view, bool real, bool always_show_source) const
 {
-  refresh ();
-
   try {
 
     std::string ret;
@@ -530,7 +516,6 @@ LayerProperties::display_string (const lay::LayoutViewBase *view, bool real, boo
 void
 LayerProperties::set_xfill (bool xf)
 {
-  refresh ();
   if (xf != m_xfill) {
     m_xfill = xf;
     need_realize (nr_visual);
@@ -546,7 +531,6 @@ LayerProperties::set_source (const std::string &s)
 void 
 LayerProperties::set_source (const lay::ParsedLayerSource &s)
 {
-  refresh ();
   if (m_source != s) {
     m_source = s;
     need_realize (nr_source);
@@ -571,18 +555,8 @@ LayerProperties::realize_source () const
 }
 
 void
-LayerProperties::touch ()
-{
-  if (++m_gen_id == 0) {
-    ++m_gen_id;
-  }
-}
-
-void
 LayerProperties::need_realize (unsigned int flags, bool /*force*/)
 {
-  touch ();
-
   if ((flags & nr_source) != 0) {
     m_realize_needed_source = true;
   }
@@ -591,14 +565,8 @@ LayerProperties::need_realize (unsigned int flags, bool /*force*/)
   }
 }
 
-void
-LayerProperties::expanded_state_changed ()
-{
-  //  .. no effect ..
-}
-
 void 
-LayerProperties::do_realize (const LayoutViewBase *view) const
+LayerProperties::do_realize (const LayoutView *view) const
 {
   m_layer_index = -1;
   m_cellview_index = -1;
@@ -623,7 +591,7 @@ LayerProperties::do_realize (const LayoutViewBase *view) const
 
       //  retrieve the property selector, if one is present
       if (! m_source_real.property_selector ().is_null ()) {
-        m_inv_prop_set = m_source_real.property_selector ().matching (m_prop_set);
+        m_inv_prop_set = m_source_real.property_selector ().matching (cv->layout ().properties_repository (), m_prop_set);
       }
 
       //  compute the effective transformation in database units
@@ -635,7 +603,11 @@ LayerProperties::do_realize (const LayoutViewBase *view) const
 
         //  lookup the layer with the given name/layer/datatype
         if (m_layer_index < 0 && ! m_source_real.is_wildcard_layer ()) {
-          m_layer_index = cv->layout ().get_layer_maybe (m_source_real.layer_props ());
+          for (unsigned int i = 0; i < cv->layout ().layers () && m_layer_index < 0; ++i) {
+            if (cv->layout ().is_valid_layer (i) && m_source_real.match (cv->layout ().get_properties (i))) {
+              m_layer_index = int (i);
+            }
+          }
         }
 
       }
@@ -657,7 +629,7 @@ static unsigned int s_unique_id = 0;
 
 LayerPropertiesNode::LayerPropertiesNode ()
   : LayerProperties (),
-    m_list_index (0), m_expanded (false)
+    m_list_index (0)
 {
   m_id = ++s_unique_id;
 }
@@ -669,7 +641,7 @@ LayerPropertiesNode::~LayerPropertiesNode ()
 
 LayerPropertiesNode::LayerPropertiesNode (const LayerProperties &d)
   : LayerProperties (d),
-    m_list_index (0), m_expanded (false)
+    m_list_index (0)
 {
   m_id = ++s_unique_id;
 }
@@ -677,11 +649,10 @@ LayerPropertiesNode::LayerPropertiesNode (const LayerProperties &d)
 LayerPropertiesNode::LayerPropertiesNode (const LayerPropertiesNode &d)
   : LayerProperties (d), tl::Object (),
     m_list_index (0),
-    m_expanded (d.m_expanded),
     m_children (d.m_children),
     m_id (d.m_id)
 {
-  for (iterator c = m_children.begin (); c != m_children.end (); ++c) {
+  for (iterator c = begin_children (); c != end_children (); ++c) {
     c->set_parent (this);
   }
 }
@@ -691,15 +662,14 @@ LayerPropertiesNode::operator= (const LayerPropertiesNode &d)
 {
   if (&d != this) {
 
-    LayerProperties::operator= (d);
-
     m_children = d.m_children;
-    m_expanded = d.m_expanded;
     m_id = d.m_id;
 
-    for (iterator c = m_children.begin (); c != m_children.end (); ++c) {
+    for (iterator c = begin_children (); c != end_children (); ++c) {
       c->set_parent (this);
     }
+
+    LayerProperties::operator= (d);
 
     need_realize (nr_hierarchy, true);
 
@@ -713,21 +683,13 @@ LayerPropertiesNode::operator== (const LayerPropertiesNode &d) const
   if (! LayerProperties::operator== (d)) {
     return false;
   }
-  return m_children == d.m_children && m_expanded == d.m_expanded;
+  return m_children == d.m_children;
 }
 
-LayoutViewBase *LayerPropertiesNode::view() const
+LayoutView *
+LayerPropertiesNode::view () const
 {
-  return const_cast<lay::LayoutViewBase *> (mp_view.get ());
-}
-
-void
-LayerPropertiesNode::set_expanded (bool ex)
-{
-  if (expanded () != ex) {
-    m_expanded = ex;
-    expanded_state_changed ();
-  }
+  return const_cast<lay::LayoutView *> (mp_view.get ());
 }
 
 unsigned int
@@ -758,29 +720,13 @@ LayerPropertiesNode::realize_source () const
 }
 
 void
-LayerPropertiesNode::expanded_state_changed ()
-{
-  touch ();
-}
-
-void
 LayerPropertiesNode::need_realize (unsigned int flags, bool force)
 {
-  LayerProperties::need_realize (flags);
-
   if ((flags & (nr_visual + nr_source)) != 0 && (force || ! realize_needed_visual () || ! realize_needed_source ())) {
-    for (iterator c = m_children.begin (); c != m_children.end (); ++c) {
+    LayerProperties::need_realize (flags);
+    for (iterator c = begin_children (); c != end_children (); ++c) {
       c->need_realize (flags, force);
     }
-  }
-
-  //  Propagate the status change to the parents on hierarchy change.
-  //  This is important to make any references to parent nodes aware of this
-  //  change.
-  LayerPropertiesNode *p = const_cast<LayerPropertiesNode *> (parent ());
-  while (p) {
-    p->touch ();
-    p = const_cast<LayerPropertiesNode *> (p->parent ());
   }
 }
 
@@ -790,29 +736,7 @@ LayerPropertiesNode::set_parent (const LayerPropertiesNode *parent)
   mp_parent.reset (const_cast<LayerPropertiesNode *>(parent));
 }
 
-db::DBox
-LayerPropertiesNode::overall_bbox () const
-{
-  tl_assert (mp_view);
-  lay::CellView cv = mp_view->cellview (cellview_index ());
-
-  if (! cv.is_valid ()) {
-
-    return db::DBox ();
-
-  } else {
-
-    db::DBox b;
-    double dbu = cv->layout ().dbu ();
-    for (std::vector<db::DCplxTrans>::const_iterator t = trans ().begin (); t != trans ().end (); ++t) {
-      b += (*t * db::CplxTrans (dbu) * cv.context_trans ()) * cv.cell ()->bbox_with_empty ();
-    }
-    return b;
-
-  }
-}
-
-db::DBox
+db::DBox 
 LayerPropertiesNode::bbox () const
 {
   tl_assert (mp_view);
@@ -824,7 +748,12 @@ LayerPropertiesNode::bbox () const
 
   } else if (is_cell_box_layer ()) {
 
-    return overall_bbox ();
+    db::DBox b;
+    double dbu = cv->layout ().dbu ();
+    for (std::vector<db::DCplxTrans>::const_iterator t = trans ().begin (); t != trans ().end (); ++t) {
+      b += (*t * db::CplxTrans (dbu) * cv.context_trans ()) * cv.cell ()->bbox ();
+    }
+    return b;
 
   } else {
 
@@ -839,23 +768,22 @@ LayerPropertiesNode::bbox () const
 }
 
 void 
-LayerPropertiesNode::attach_view (LayoutViewBase *view, unsigned int list_index)
+LayerPropertiesNode::attach_view (LayoutView *view, unsigned int list_index)
 {
   mp_view.reset (view);
   m_list_index = list_index;
 
-  for (iterator c = m_children.begin (); c != m_children.end (); ++c) {
+  for (iterator c = begin_children (); c != end_children (); ++c) {
     c->attach_view (view, list_index);
   }
   //  Attachment of a view is a strong indication that something significant changed - 
-  //  recompute the source specifications on next request.
+  //  recompute the source specfications on next request
   m_realize_needed_source = true;
 }
 
 LayerPropertiesNode &
 LayerPropertiesNode::insert_child (const iterator &iter, const LayerPropertiesNode &child)
 {
-  refresh ();
   iterator i = m_children.insert (iter, child);
   i->set_parent (this);
   need_realize (nr_hierarchy, true);
@@ -865,7 +793,6 @@ LayerPropertiesNode::insert_child (const iterator &iter, const LayerPropertiesNo
 void 
 LayerPropertiesNode::erase_child (const iterator &iter)
 {
-  refresh ();
   m_children.erase (iter);
   need_realize (nr_hierarchy, true);
 }
@@ -873,7 +800,6 @@ LayerPropertiesNode::erase_child (const iterator &iter)
 void 
 LayerPropertiesNode::add_child (const LayerPropertiesNode &child)
 {
-  refresh ();
   m_children.push_back (child);
   m_children.back ().set_parent (this);
   need_realize (nr_hierarchy, true);
@@ -1123,6 +1049,7 @@ LayerPropertiesConstIterator::parent_obj () const
   size_t uint = m_uint;
   LayerPropertiesList::const_iterator iter = m_list->begin_const ();
   size_t n = ((m_list->end_const () - m_list->begin_const ()) + 2);
+  size_t f = 1;
   const LayerPropertiesNode *ret = 0;
 
   while (uint > n) {
@@ -1131,6 +1058,7 @@ LayerPropertiesConstIterator::parent_obj () const
     tl_assert (rem < n - 1);
     ret = &iter[rem - 1];
     uint /= n;
+    f *= n;
     n = ((ret->end_children () - ret->begin_children ()) + 2);
     iter = ret->begin_children ();
   }
@@ -1167,12 +1095,14 @@ LayerPropertiesConstIterator::set_obj () const
     size_t uint = m_uint;
     LayerPropertiesList::const_iterator iter = m_list->begin_const ();
     size_t n = ((m_list->end_const () - m_list->begin_const ()) + 2);
+    size_t f = 1;
 
     while (uint > n) {
       size_t rem = uint % n;
       tl_assert (rem > 0);
       tl_assert (rem < n - 1);
       uint /= n;
+      f *= n;
       n = ((iter[rem - 1].end_children () - iter[rem - 1].begin_children ()) + 2);
       iter = iter[rem - 1].begin_children ();
     }
@@ -1370,7 +1300,7 @@ static LayerPropertiesNode expand_wildcard_layout (const LayerPropertiesNode &so
 }
 
 static std::vector<LayerPropertiesNode> 
-expand_wildcard_layers (const LayerPropertiesNode &lp, const LayerPropertiesList &current_props, lay::LayoutViewBase *view, unsigned int list_index)
+expand_wildcard_layers (const LayerPropertiesNode &lp, const LayerPropertiesList &current_props, lay::LayoutView *view, unsigned int list_index)
 {
   std::vector<LayerPropertiesNode> new_props;
 
@@ -1681,21 +1611,21 @@ LayerPropertiesList::back () const
 struct UIntColorConverter 
   : private ColorConverter
 {
-  std::string to_string (const tl::color_t &c) const
+  std::string to_string (const color_t &c) const
   {
     if (c == 0) {
       return "";
     } else {
-      return ColorConverter::to_string (tl::Color (c | 0xff000000));
+      return ColorConverter::to_string (QColor (c & 0xffffff));
     }
   }
 
-  void from_string (const std::string &s, tl::color_t &c) const
+  void from_string (const std::string &s, color_t &c) const
   {
     if (s.empty ()) {
       c = 0;
     } else {
-      tl::Color qc;
+      QColor qc;
       ColorConverter::from_string (s, qc);
       c = qc.rgb () | 0xff000000;
     }
@@ -1803,9 +1733,8 @@ struct LineStyleIndexConverter
 static const tl::XMLElementList layer_element = tl::XMLElementList (
   //  HINT: these make_member calls want to be qualified: otherwise an internal error
   //  was observed ..
-  tl::make_member<bool, LayerPropertiesNode>         (&LayerPropertiesNode::expanded,             &LayerPropertiesNode::set_expanded,         "expanded") +
-  tl::make_member<tl::color_t, LayerPropertiesNode>  (&LayerPropertiesNode::frame_color_loc,      &LayerPropertiesNode::set_frame_color_code, "frame-color",        UIntColorConverter ()) +
-  tl::make_member<tl::color_t, LayerPropertiesNode>  (&LayerPropertiesNode::fill_color_loc,       &LayerPropertiesNode::set_fill_color_code,  "fill-color",         UIntColorConverter ()) +
+  tl::make_member<lay::color_t, LayerPropertiesNode> (&LayerPropertiesNode::frame_color_loc,      &LayerPropertiesNode::set_frame_color_code, "frame-color",        UIntColorConverter ()) + 
+  tl::make_member<lay::color_t, LayerPropertiesNode> (&LayerPropertiesNode::fill_color_loc,       &LayerPropertiesNode::set_fill_color_code,  "fill-color",         UIntColorConverter ()) + 
   tl::make_member<int, LayerPropertiesNode>          (&LayerPropertiesNode::frame_brightness_loc, &LayerPropertiesNode::set_frame_brightness, "frame-brightness") + 
   tl::make_member<int, LayerPropertiesNode>          (&LayerPropertiesNode::fill_brightness_loc,  &LayerPropertiesNode::set_fill_brightness,  "fill-brightness") + 
   tl::make_member<int, LayerPropertiesNode>          (&LayerPropertiesNode::dither_pattern_loc,   &LayerPropertiesNode::set_dither_pattern,   "dither-pattern",     DitherPatternIndexConverter ()) + 
@@ -1875,15 +1804,10 @@ LayerPropertiesList::load (tl::XMLSource &stream, std::vector <lay::LayerPropert
     lay::LayerPropertiesList properties_list;
     layer_prop_list_structure.parse (stream, properties_list); 
     properties_lists.push_back (properties_list);
-  } catch (tl::Exception &ex) {
-    try {
-      // "new" way
-      stream.reset ();
-      layer_prop_lists_structure.parse (stream, properties_lists);
-    } catch (tl::Exception &) {
-      //  the first exception is likely to be the root cause, so let's rather throw this one
-      throw ex;
-    }
+  } catch (...) {
+    // "new" way
+    stream.reset ();
+    layer_prop_lists_structure.parse (stream, properties_lists); 
   }
 }
   
@@ -1894,7 +1818,7 @@ LayerPropertiesList::save (tl::OutputStream &os, const std::vector <lay::LayerPr
 }
   
 void 
-LayerPropertiesList::attach_view (lay::LayoutViewBase *view, unsigned int list_index)
+LayerPropertiesList::attach_view (lay::LayoutView *view, unsigned int list_index)
 {
   mp_view.reset (view);
   m_list_index = list_index;
@@ -1906,10 +1830,10 @@ LayerPropertiesList::attach_view (lay::LayoutViewBase *view, unsigned int list_i
   }
 }
 
-lay::LayoutViewBase *
+lay::LayoutView *
 LayerPropertiesList::view () const
 {
-  return const_cast<lay::LayoutViewBase *> (mp_view.get ());
+  return const_cast<lay::LayoutView *> (mp_view.get ());
 }
 
 unsigned int
@@ -1987,7 +1911,7 @@ LayerPropertiesList::erase (const LayerPropertiesIterator &iter)
 //  LayerPropertiesNodeRef implementation
 
 LayerPropertiesNodeRef::LayerPropertiesNodeRef (LayerPropertiesNode *node)
-  : m_iter (node), m_synched_gen_id (0)
+  : m_iter (node)
 {
   if (node) {
 
@@ -2005,7 +1929,7 @@ LayerPropertiesNodeRef::LayerPropertiesNodeRef (LayerPropertiesNode *node)
 }
 
 LayerPropertiesNodeRef::LayerPropertiesNodeRef (const LayerPropertiesConstIterator &iter)
-  : m_iter (iter), m_synched_gen_id (0)
+  : m_iter (iter)
 {
   if (!iter.at_end () && !iter.is_null ()) {
 
@@ -2025,13 +1949,12 @@ LayerPropertiesNodeRef::LayerPropertiesNodeRef (const LayerPropertiesConstIterat
 }
 
 LayerPropertiesNodeRef::LayerPropertiesNodeRef ()
-  : m_synched_gen_id (0)
 {
   //  .. nothing yet ..
 }
 
 LayerPropertiesNodeRef::LayerPropertiesNodeRef (const LayerPropertiesNodeRef &other)
-  : LayerPropertiesNode (other), m_iter (other.m_iter), mp_node (other.mp_node), m_synched_gen_id (0)
+  : LayerPropertiesNode (other), m_iter (other.m_iter), mp_node (other.mp_node)
 {
   attach_view (other.view (), other.list_index ());
   set_parent (other.parent ());
@@ -2040,8 +1963,6 @@ LayerPropertiesNodeRef::LayerPropertiesNodeRef (const LayerPropertiesNodeRef &ot
 LayerPropertiesNodeRef &LayerPropertiesNodeRef::operator= (const LayerPropertiesNodeRef &other)
 {
   if (this != &other) {
-
-    m_synched_gen_id = other.gen_id ();
 
     mp_node = other.mp_node;
     m_iter = other.m_iter;
@@ -2060,8 +1981,6 @@ LayerPropertiesNodeRef::erase ()
 {
   if (is_valid ()) {
     view ()->delete_layer ((unsigned int) list_index (), m_iter);
-    //  detach from everthing
-    *this = LayerPropertiesNodeRef ();
   }
 }
 
@@ -2090,39 +2009,12 @@ LayerPropertiesNodeRef::need_realize (unsigned int flags, bool force)
       view ()->replace_layer_node ((unsigned int) list_index (), m_iter, *this);
     }
 
-    //  we're in sync now
-    m_synched_gen_id = mp_node->gen_id ();
-
   } else if (mp_node) {
 
     //  fallback mode is to use the target node directly.
     *mp_node = *this;
-    m_synched_gen_id = mp_node->gen_id ();
 
   }
-}
-
-void
-LayerPropertiesNodeRef::expanded_state_changed ()
-{
-  LayerPropertiesNode::expanded_state_changed ();
-
-  if (is_valid ()) {
-    view ()->set_layer_node_expanded (m_iter, expanded ());
-  }
-}
-
-void
-LayerPropertiesNodeRef::refresh () const
-{
-  if (! mp_node.get () || m_synched_gen_id == mp_node->gen_id ()) {
-    return;
-  }
-
-  LayerPropertiesNodeRef *non_const_this = const_cast<LayerPropertiesNodeRef *> (this);
-
-  non_const_this->m_synched_gen_id = mp_node->gen_id ();
-  non_const_this->LayerPropertiesNode::operator= (*mp_node);
 }
 
 } // namespace lay

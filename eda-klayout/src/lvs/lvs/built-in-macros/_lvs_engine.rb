@@ -26,11 +26,6 @@ module LVS
       super
     end
 
-    # avoids lengthy error messages
-    def inspect
-      "LVSEngine(...)"
-    end
-
     # %LVS%
     # @name netter
     # @brief Creates a new netter object
@@ -95,34 +90,9 @@ module LVS
  
     # %LVS%
     # @name compare
-    # @brief Compares the extracted netlist vs. the schematic netlist
+    # @brief Compares the extracted netlist vs. the schematic
     # @synopsis compare
     # See \Netter#compare for a description of that function.
- 
-    # %LVS%
-    # @name no_lvs_hints
-    # @brief Disables LVS hints
-    # @synopsis no_lvs_hints
-    # See \Netter#no_lvs_hints for a description of that feature.
-
-    # %LVS%
-    # @name join_symmetric_nets
-    # @brief Joins symmetric nets of selected circuits on the extracted netlist
-    # @synopsis join_symmetric_nets(circuit_filter)
-    # See \Netter#join_symmetric_nets for a description of that function.
- 
-    # %LVS%
-    # @name split_gates
-    # @brief Implements the "split gates" feature for the given device and circuits
-    # @synopsis split_gates(device_name)
-    # @synopsis split_gates(device_name, circuit_filter)
-    # See \Netter#split_gates for a description of that function.
- 
-    # %LVS%
-    # @name blank_circuit
-    # @brief Removes the content from the given circuits (blackboxing)
-    # @synopsis blank_circuit(circuit_filter)
-    # See \Netter#blank_circuit for a description of that function.
  
     # %LVS%
     # @name align
@@ -133,18 +103,9 @@ module LVS
     # %LVS%
     # @name same_nets
     # @brief Establishes an equivalence between the nets
-    # @synopsis same_nets(circuit_pattern, net_pattern)
-    # @synopsis same_nets(circuit_pattern, net_a, net_b)
+    # @synopsis same_nets(circuit, net_a, net_b)
     # @synopsis same_nets(circuit_a, net_a, circuit_b, net_b)
     # See \Netter#same_nets for a description of that function.
- 
-    # %LVS%
-    # @name same_nets!
-    # @brief Establishes an equivalence between the nets (must match)
-    # @synopsis same_nets!(circuit_pattern, net_pattern)
-    # @synopsis same_nets!(circuit_pattern, net_a, net_b)
-    # @synopsis same_nets!(circuit_a, net_a, circuit_b, net_b)
-    # See \Netter#same_nets! for a description of that function.
  
     # %LVS%
     # @name same_circuits
@@ -188,53 +149,7 @@ module LVS
     # @synopsis max_depth(n)
     # See \Netter#max_depth for a description of that function.
 
-    # %LVS%
-    # @name consider_net_names
-    # @brief Indicates whether the netlist comparer shall use net names
-    # @synopsis consider_net_names(f)
-    # See \Netter#consider_net_names for a description of that function.
-
-    # %LVS%
-    # @name tolerance
-    # @brief Specifies compare tolerances for certain device parameters
-    # @synopsis tolerance(device_class_name, parameter_name, absolute_tolerance [, relative_tolerance])
-    # @synopsis tolerance(device_class_name, parameter_name [, :absolute => absolute_tolerance] [, :relative => relative_tolerance])
-    # See \Netter#tolerance for a description of that function.
-
-    # %LVS%
-    # @name ignore_parameter
-    # @brief Specifies whether to ignore a parameter from a given device class for the compare
-    # @synopsis ignore_parameter(device_class_name, parameter_name)
-    # See \Netter#ignore_parameter for a description of that function.
-
-    # %LVS%
-    # @name enable_parameter
-    # @brief Specifies whether to enable a parameter from a given device class for netlisting and default compare
-    # @synopsis enable_parameter(device_class_name, parameter_name)
-    # See \Netter#enable_parameter for a description of that function.
-
-    # %LVS%
-    # @name disable_parameter
-    # @brief Specifies whether to disable a parameter from a given device class for netlisting and default compare
-    # @synopsis disable_parameter(device_class_name, parameter_name)
-    # See \Netter#disable_parameter for a description of that function.
-
-    # %LVS%
-    # @name lvs_data
-    # @brief Gets the RBA::LayoutVsSchematic object after compare was used
-    # @synopsis lvs_data
-    # See \Netter#lvs_data for a description of that function.
-
-    # %LVS%
-    # @name flag_missing_ports
-    # @brief Checks if all top level ports are properly labelled
-    # @synopsis flag_missing_ports
-    # See \Netter#flag_missing_ports for a description of that function.
-
-    %w(schematic compare split_gates join_symmetric_nets tolerance ignore_parameter enable_parameter disable_parameter 
-       blank_circuit align same_nets same_nets! same_circuits same_device_classes equivalent_pins 
-       min_caps max_res max_depth max_branch_complexity consider_net_names lvs_data no_lvs_hints
-       flag_missing_ports).each do |f|
+    %w(schematic compare align same_nets same_circuits same_device_classes equivalent_pins min_caps max_res max_depth max_branch_complexity).each do |f|
       eval <<"CODE"
         def #{f}(*args)
           _netter.#{f}(*args)

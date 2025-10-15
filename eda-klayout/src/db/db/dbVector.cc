@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,6 @@
 
 
 #include "dbVector.h"
-#include "dbPoint.h"
 
 // ----------------------------------------------------------------
 //  Implementation of the custom extractors
@@ -53,15 +52,6 @@ namespace {
       ex.error (tl::to_string (tr ("Expected a vector specification")));
     }
   }
-
-}
-
-namespace db
-{
-
-//  instantiations
-template class vector<Coord>;
-template class vector<DCoord>;
 
 }
 

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -203,7 +203,7 @@ public:
   typedef lay::AnnotationShapes::iterator obj_iterator;
   enum MoveMode { move_none, move_selected, move_landmark, move_l, move_r, move_t, move_b, move_lr, move_tr, move_ll, move_tl, move_all };
 
-  Service (db::Manager *manager, lay::LayoutViewBase *view);
+  Service (db::Manager *manager, lay::LayoutView *view);
 
   ~Service ();
 
@@ -275,34 +275,19 @@ public:
   virtual void paste ();
 
   /**
-   *  @brief Indicates if any objects are selected
-   */
-  virtual bool has_selection ();
-
-  /**
-   *  @brief Indicates how many objects are selected
+   *  @brief Tell the number of selected objects
    */
   virtual size_t selection_size ();
 
-  /**
-   *  @brief Indicates if any objects are selected in transient mode
-   */
-  virtual bool has_transient_selection ();
-
-  /**
+  /** 
    *  @brief point selection proximity predicate
    */
   virtual double click_proximity (const db::DPoint &pos, lay::Editable::SelectionMode mode);
 
   /**
-   *  @brief Gets the catch distance for single click
+   *  @brief Gets the catch distance
    */
   virtual double catch_distance ();
-
-  /**
-   *  @brief Gets the catch distance for box
-   */
-  virtual double catch_distance_box ();
 
   /**
    *  @brief "select" operation
@@ -369,27 +354,20 @@ public:
    */
   virtual void transform (const db::DCplxTrans &trans);
 
-#if defined(HAVE_QT)
   /**
    *  @brief Create the properties page
    */
-  virtual std::vector<lay::PropertiesPage *> properties_pages (db::Manager *manager, QWidget *parent);
-#endif
+  virtual lay::PropertiesPage *properties_page (db::Manager *manager, QWidget *parent);
 
   /**
-   *  @brief Gets the selection for the properties page
+   *  @brief Get the selection for the properties page
    */
   void get_selection (std::vector <obj_iterator> &selection) const;
 
   /**
-   *  @brief Sets the selection for the properties page
-   */
-  void set_selection (const std::vector <obj_iterator> &selection);
-
-  /**
    *  @brief Direct access to the selection 
    */
-  const std::set<obj_iterator> &selection () const
+  const std::map<obj_iterator, unsigned int> &selection () const
   {
     return m_selected;
   }
@@ -439,29 +417,11 @@ public:
   /**
    *  @brief Access to the view object
    */
-  lay::LayoutViewBase *view () const
+  lay::LayoutView *view () const
   {
     return mp_view;
   }
-
-  /**
-   *  @brief Shows or hides the images
-   */
-  void show_images (bool f);
-
-  /**
-   *  @brief Returns a value indicating whether images are shown or hidden
-   */
-  bool images_visible () const
-  {
-    return m_images_visible;
-  }
   
-  /**
-   *  @brief Returns a value indicating whether the given image is visible
-   */
-  bool image_is_visible (const img::Object *image);
-
   /**
    *  @brief Implement the menu response function
    */
@@ -492,14 +452,15 @@ public:
 
 private:
   //  The layout view that the image service is attached to
-  lay::LayoutViewBase *mp_view;
+  lay::LayoutView *mp_view;
 
   //  The view objects representing the selection and the moved images in move mode
   std::vector<View *> m_selected_image_views;
+  //  The present views - only used for issueing a proper
   //  The selection
-  std::set<obj_iterator> m_selected;
+  std::map<obj_iterator, unsigned int> m_selected;
   //  The previous selection
-  std::set<obj_iterator> m_previous_selection;
+  std::map<obj_iterator, unsigned int> m_previous_selection;
   //  The reference point in move mode
   db::DPoint m_p1;
   //  The image object representing the image being moved as it was before it was moved
@@ -515,12 +476,7 @@ private:
   //  The index of the landmark being moved
   size_t m_moved_landmark;
   //  Flag indicating that we want to keep the selection after the landmark was moved
-  bool m_keep_selection_for_move;
-  //  Flag indicating whether images are visible
-  bool m_images_visible;
-  //  The visibility cache for the layer bindings
-  bool m_visibility_cache_valid;
-  std::map<const img::Object *, bool> m_visibility_cache;
+  bool m_keep_selection_for_landmark;
 
   void show_message ();
 
@@ -549,11 +505,6 @@ private:
    *  Used as implementation for "copy" and "cut"
    */
   void copy_selected ();
-
-  /**
-   *  @brief Finds an image object from the given point
-   */
-  const db::DUserObject *find_image (const db::DPoint &p, const db::DBox &search_box, double l, double &dmin, const std::set<img::Service::obj_iterator> *exclude = 0);
 
   /**
    *  @brief Update m_selected_image_views to reflect the selection
@@ -586,27 +537,6 @@ private:
    *  @brief Event handler for changes in the annotations
    */
   void annotations_changed ();
-
-  /**
-   *  @brief Event handler for changes in the layer visibility
-   */
-  void layer_list_changed (int)
-  {
-    layer_visibilty_changed ();
-  }
-
-  /**
-   *  @brief Event handler for a change of the current layer list
-   */
-  void current_layer_list_changed (int)
-  {
-    layer_visibilty_changed ();
-  }
-
-  /**
-   *  @brief Common handler for a potential change in layer visibility
-   */
-  void layer_visibilty_changed ();
 };
 
 }

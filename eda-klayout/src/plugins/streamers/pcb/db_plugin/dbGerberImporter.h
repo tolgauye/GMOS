@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -53,7 +53,7 @@ namespace db
 struct GerberMetaData
 {
   /**
-   *  @brief Identifies the function of the layer
+   *  @brief Identfies the function of the layer
    */
   enum Function
   {
@@ -69,7 +69,7 @@ struct GerberMetaData
   };
 
   /**
-   *  @brief Identifies the position of the layer
+   *  @brief Identfies the position of the layer
    */
   enum Position
   {
@@ -184,7 +184,7 @@ public:
   /**
    *  @brief Constructor
    */
-  GerberFileReader (int warn_level);
+  GerberFileReader ();
 
   /**
    *  @brief Destructor
@@ -405,7 +405,7 @@ protected:
   /**
    *  @brief Issue a warning
    */
-  void warn (const std::string &warning, int warn_level = 1);
+  void warn (const std::string &warning);
 
   /**
    *  @brief Issue a non-fatal error
@@ -445,7 +445,7 @@ protected:
    *  @brief Flush the stored data to the output
    *  This method is similar to collect(), but writes the data to the layout.
    */
-  void flush (const std::string &net_name = std::string ());
+  void flush ();
 
   /**
    *  @brief Collects the data taken so far into the given region
@@ -501,7 +501,7 @@ protected:
   /**
    *  @brief This method updates the progress counter
    *
-   *  This method should be called regularly
+   *  This method should be called regularily
    */
   void progress_checkpoint ();
 
@@ -597,7 +597,6 @@ private:
   tl::TextInputStream *mp_stream;
   tl::AbsoluteProgress m_progress;
   std::list<GraphicsState> m_graphics_stack;
-  int m_warn_level;
 
   void process_clear_polygons ();
   void swap_graphics_state (GraphicsState &state);
@@ -776,7 +775,7 @@ public:
   /**
    *  @brief Default constructor
    */
-  GerberImporter (int warn_level = 1);
+  GerberImporter ();
 
   /**
    *  @brief Scans the given file and extracts the metadata from it
@@ -1044,7 +1043,6 @@ private:
   bool m_invert_negative_layers;
   double m_border;
   int m_circle_points;
-  int m_warn_level;
   std::string m_format_string;
   std::string m_layer_styles;
   std::string m_dir;

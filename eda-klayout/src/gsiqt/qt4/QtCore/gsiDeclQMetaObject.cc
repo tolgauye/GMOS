@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -35,6 +35,7 @@
 #include <QObject>
 #include "gsiQt.h"
 #include "gsiQtCoreCommon.h"
+#include "gsiDeclQtCoreTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -52,6 +53,25 @@ static void _call_ctor_QMetaObject_0 (const qt_gsi::GenericStaticMethod * /*decl
 {
   __SUPPRESS_UNUSED_WARNING(args);
   ret.write<QMetaObject *> (new QMetaObject ());
+}
+
+
+// QObject *QMetaObject::cast(QObject *obj)
+
+
+static void _init_f_cast_c1302 (qt_gsi::GenericMethod *decl)
+{
+  static gsi::ArgSpecBase argspec_0 ("obj");
+  decl->add_arg<QObject * > (argspec_0);
+  decl->set_return<QObject * > ();
+}
+
+static void _call_f_cast_c1302 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
+{
+  __SUPPRESS_UNUSED_WARNING(args);
+  tl::Heap heap;
+  QObject *arg1 = gsi::arg_reader<QObject * >() (args, heap);
+  ret.write<QObject * > ((QObject *)((QMetaObject *)cls)->cast (arg1));
 }
 
 
@@ -734,6 +754,7 @@ namespace gsi
 static gsi::Methods methods_QMetaObject () {
   gsi::Methods methods;
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QMetaObject::QMetaObject()\nThis method creates an object of class QMetaObject.", &_init_ctor_QMetaObject_0, &_call_ctor_QMetaObject_0);
+  methods += new qt_gsi::GenericMethod ("cast", "@brief Method QObject *QMetaObject::cast(QObject *obj)\n", true, &_init_f_cast_c1302, &_call_f_cast_c1302);
   methods += new qt_gsi::GenericMethod ("classInfo", "@brief Method QMetaClassInfo QMetaObject::classInfo(int index)\n", true, &_init_f_classInfo_c767, &_call_f_classInfo_c767);
   methods += new qt_gsi::GenericMethod ("classInfoCount", "@brief Method int QMetaObject::classInfoCount()\n", true, &_init_f_classInfoCount_c0, &_call_f_classInfoCount_c0);
   methods += new qt_gsi::GenericMethod ("classInfoOffset", "@brief Method int QMetaObject::classInfoOffset()\n", true, &_init_f_classInfoOffset_c0, &_call_f_classInfoOffset_c0);

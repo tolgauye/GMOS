@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -35,6 +35,7 @@
 #include <QThread>
 #include "gsiQt.h"
 #include "gsiQtMultimediaCommon.h"
+#include "gsiDeclQtMultimediaTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -518,7 +519,7 @@ static void _call_f_spotMeteringPoint_c0 (const qt_gsi::GenericMethod * /*decl*/
 
 static void _init_f_supportedApertures_c1050 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("continuous", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("continuous", true, "0");
   decl->add_arg<bool * > (argspec_0);
   decl->set_return<QList<qreal> > ();
 }
@@ -527,7 +528,7 @@ static void _call_f_supportedApertures_c1050 (const qt_gsi::GenericMethod * /*de
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  bool *arg1 = args ? gsi::arg_reader<bool * >() (args, heap) : gsi::arg_maker<bool * >() (nullptr, heap);
+  bool *arg1 = args ? gsi::arg_reader<bool * >() (args, heap) : gsi::arg_maker<bool * >() (0, heap);
   ret.write<QList<qreal> > ((QList<qreal>)((QCameraExposure *)cls)->supportedApertures (arg1));
 }
 
@@ -537,7 +538,7 @@ static void _call_f_supportedApertures_c1050 (const qt_gsi::GenericMethod * /*de
 
 static void _init_f_supportedIsoSensitivities_c1050 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("continuous", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("continuous", true, "0");
   decl->add_arg<bool * > (argspec_0);
   decl->set_return<QList<int> > ();
 }
@@ -546,7 +547,7 @@ static void _call_f_supportedIsoSensitivities_c1050 (const qt_gsi::GenericMethod
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  bool *arg1 = args ? gsi::arg_reader<bool * >() (args, heap) : gsi::arg_maker<bool * >() (nullptr, heap);
+  bool *arg1 = args ? gsi::arg_reader<bool * >() (args, heap) : gsi::arg_maker<bool * >() (0, heap);
   ret.write<QList<int> > ((QList<int>)((QCameraExposure *)cls)->supportedIsoSensitivities (arg1));
 }
 
@@ -556,7 +557,7 @@ static void _call_f_supportedIsoSensitivities_c1050 (const qt_gsi::GenericMethod
 
 static void _init_f_supportedShutterSpeeds_c1050 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("continuous", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("continuous", true, "0");
   decl->add_arg<bool * > (argspec_0);
   decl->set_return<QList<qreal> > ();
 }
@@ -565,7 +566,7 @@ static void _call_f_supportedShutterSpeeds_c1050 (const qt_gsi::GenericMethod * 
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  bool *arg1 = args ? gsi::arg_reader<bool * >() (args, heap) : gsi::arg_maker<bool * >() (nullptr, heap);
+  bool *arg1 = args ? gsi::arg_reader<bool * >() (args, heap) : gsi::arg_maker<bool * >() (0, heap);
   ret.write<QList<qreal> > ((QList<qreal>)((QCameraExposure *)cls)->supportedShutterSpeeds (arg1));
 }
 
@@ -577,7 +578,7 @@ static void _init_f_tr_4013 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("s");
   decl->add_arg<const char * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("c", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("c", true, "__null");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("n", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -589,7 +590,7 @@ static void _call_f_tr_4013 (const qt_gsi::GenericStaticMethod * /*decl*/, gsi::
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (__null, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QCameraExposure::tr (arg1, arg2, arg3));
 }
@@ -602,7 +603,7 @@ static void _init_f_trUtf8_4013 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("s");
   decl->add_arg<const char * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("c", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("c", true, "__null");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("n", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -614,7 +615,7 @@ static void _call_f_trUtf8_4013 (const qt_gsi::GenericStaticMethod * /*decl*/, g
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (__null, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QCameraExposure::trUtf8 (arg1, arg2, arg3));
 }
@@ -634,7 +635,7 @@ static gsi::Methods methods_QCameraExposure () {
   methods += new qt_gsi::GenericMethod ("isAvailable?", "@brief Method bool QCameraExposure::isAvailable()\n", true, &_init_f_isAvailable_c0, &_call_f_isAvailable_c0);
   methods += new qt_gsi::GenericMethod ("isExposureModeSupported?", "@brief Method bool QCameraExposure::isExposureModeSupported(QCameraExposure::ExposureMode mode)\n", true, &_init_f_isExposureModeSupported_c3325, &_call_f_isExposureModeSupported_c3325);
   methods += new qt_gsi::GenericMethod ("isFlashModeSupported?", "@brief Method bool QCameraExposure::isFlashModeSupported(QFlags<QCameraExposure::FlashMode> mode)\n", true, &_init_f_isFlashModeSupported_c3656, &_call_f_isFlashModeSupported_c3656);
-  methods += new qt_gsi::GenericMethod ("isFlashReady?", "@brief Method bool QCameraExposure::isFlashReady()\n", true, &_init_f_isFlashReady_c0, &_call_f_isFlashReady_c0);
+  methods += new qt_gsi::GenericMethod ("isFlashReady?|:flashReady", "@brief Method bool QCameraExposure::isFlashReady()\n", true, &_init_f_isFlashReady_c0, &_call_f_isFlashReady_c0);
   methods += new qt_gsi::GenericMethod ("isMeteringModeSupported?", "@brief Method bool QCameraExposure::isMeteringModeSupported(QCameraExposure::MeteringMode mode)\n", true, &_init_f_isMeteringModeSupported_c3293, &_call_f_isMeteringModeSupported_c3293);
   methods += new qt_gsi::GenericMethod (":isoSensitivity", "@brief Method int QCameraExposure::isoSensitivity()\n", true, &_init_f_isoSensitivity_c0, &_call_f_isoSensitivity_c0);
   methods += new qt_gsi::GenericMethod (":meteringMode", "@brief Method QCameraExposure::MeteringMode QCameraExposure::meteringMode()\n", true, &_init_f_meteringMode_c0, &_call_f_meteringMode_c0);
@@ -663,8 +664,7 @@ static gsi::Methods methods_QCameraExposure () {
   methods += gsi::qt_signal<double > ("exposureCompensationChanged(double)", "exposureCompensationChanged", gsi::arg("arg1"), "@brief Signal declaration for QCameraExposure::exposureCompensationChanged(double)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<bool > ("flashReady(bool)", "flashReady_sig", gsi::arg("arg1"), "@brief Signal declaration for QCameraExposure::flashReady(bool)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<int > ("isoSensitivityChanged(int)", "isoSensitivityChanged", gsi::arg("arg1"), "@brief Signal declaration for QCameraExposure::isoSensitivityChanged(int)\nYou can bind a procedure to this signal.");
-  methods += gsi::qt_signal<const QString & > ("objectNameChanged(const QString &)", "objectNameChanged", gsi::arg("objectName"), "@brief Signal declaration for QCameraExposure::objectNameChanged(const QString &objectName)\nYou can bind a procedure to this signal.");
-  methods += gsi::qt_signal<double > ("shutterSpeedChanged(double)", "shutterSpeedChanged", gsi::arg("speed"), "@brief Signal declaration for QCameraExposure::shutterSpeedChanged(double speed)\nYou can bind a procedure to this signal.");
+  methods += gsi::qt_signal<double > ("shutterSpeedChanged(double)", "shutterSpeedChanged", gsi::arg("arg1"), "@brief Signal declaration for QCameraExposure::shutterSpeedChanged(double)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal ("shutterSpeedRangeChanged()", "shutterSpeedRangeChanged", "@brief Signal declaration for QCameraExposure::shutterSpeedRangeChanged()\nYou can bind a procedure to this signal.");
   methods += new qt_gsi::GenericStaticMethod ("tr", "@brief Static method QString QCameraExposure::tr(const char *s, const char *c, int n)\nThis method is static and can be called without an instance.", &_init_f_tr_4013, &_call_f_tr_4013);
   methods += new qt_gsi::GenericStaticMethod ("trUtf8", "@brief Static method QString QCameraExposure::trUtf8(const char *s, const char *c, int n)\nThis method is static and can be called without an instance.", &_init_f_trUtf8_4013, &_call_f_trUtf8_4013);

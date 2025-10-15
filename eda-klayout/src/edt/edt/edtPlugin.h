@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -24,40 +24,42 @@
 #ifndef HDR_edtPlugin
 #define HDR_edtPlugin
 
-#include "edtCommon.h"
 #include "layPlugin.h"
 
 #include <vector>
 
 namespace lay
 {
-  class Dispatcher;
-  class EditorOptionsPage;
-  class LayoutViewBase;
+  class PluginRoot;
 }
 
 namespace edt
 {
+  class EditorOptionsPage;
+
   /**
    *  @brief A helper class for plugin declarations for editor services
    */
   class PluginDeclarationBase
     : public lay::PluginDeclaration
   {
-    //  .. nothing yet ..
+  public:
+    virtual void get_editor_options_pages (std::vector<edt::EditorOptionsPage *> &, lay::PluginRoot *) const = 0;
   };
 
   /**
-   * @brief Returns a value indicating whether polygons are enabled in the "Select" menu
+   *  @brief Show the editor options dialog
+   *
+   *  This dialog is a global resource which is managed by the main plugin declaration
    */
-  bool polygons_enabled ();
+  void show_editor_options_dialog ();
 
-  //  other types ...
-  bool paths_enabled ();
-  bool boxes_enabled ();
-  bool points_enabled ();
-  bool texts_enabled ();
-  bool instances_enabled ();
+  /**
+   *  @brief Activate or deactivate a certain service
+   *
+   *  This will show or hide the editor properties pages for the respective service.
+   */
+  void activate_service (const lay::PluginDeclaration *pd, bool active);
 }
 
 #endif

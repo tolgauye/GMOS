@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -26,7 +26,6 @@
 #include "gsiExpression.h"
 #include "gsiSignals.h"
 #include "gsiInspector.h"
-#include "gsiVariantArgs.h"
 #include "tlString.h"
 #include "tlInternational.h"
 #include "tlException.h"
@@ -36,7 +35,6 @@
 #include "tlExpression.h"
 #include "tlFileUtils.h"
 #include "tlStream.h"
-#include "tlEnv.h"
 
 #include "rba.h"
 #include "rbaInspector.h"
@@ -79,129 +77,71 @@ namespace rba
 // -------------------------------------------------------------------
 //  RubyStackTraceProvider definition and implementation
 
-RubyStackTraceProvider::RubyStackTraceProvider (const std::string &scope)
-  : m_scope (scope)
-{ }
-
-std::vector<tl::BacktraceElement>
-RubyStackTraceProvider::stack_trace () const
+class RBA_PUBLIC RubyStackTraceProvider
+  : public gsi::StackTraceProvider
 {
-  std::vector<tl::BacktraceElement> bt;
-  bt.push_back (tl::BacktraceElement (rb_sourcefile (), rb_sourceline ()));
-  static ID id_caller = rb_intern ("caller");
-  rba_get_backtrace_from_array (rb_funcall (rb_mKernel, id_caller, 0), bt, 0);
-  return bt;
-}
+public:
+  RubyStackTraceProvider (const std::string &scope)
+    : m_scope (scope) 
+  { }
 
-size_t
-RubyStackTraceProvider::scope_index () const
-{
-  if (! m_scope.empty ()) {
-    return RubyStackTraceProvider::scope_index (stack_trace (), m_scope);
-  } else {
-    return 0;
+  virtual std::vector<tl::BacktraceElement> stack_trace () const 
+  {
+    std::vector<tl::BacktraceElement> bt;
+    bt.push_back (tl::BacktraceElement (rb_sourcefile (), rb_sourceline ()));
+    rba_get_backtrace_from_array (rb_funcall (rb_mKernel, rb_intern ("caller"), 0), bt, 0);
+    return bt;
   }
-}
 
-size_t
-RubyStackTraceProvider::scope_index (const std::vector<tl::BacktraceElement> &bt, const std::string &scope)
-{
-  if (! scope.empty ()) {
-
-    static int consider_scope = -1;
-
-    //  disable scoped debugging (e.g. DRC script lines) if $KLAYOUT_RBA_DEBUG_SCOPE is set.
-    if (consider_scope < 0) {
-      consider_scope = tl::app_flag ("rba-debug-scope") ? 0 : 1;
-    }
-    if (! consider_scope) {
-      return 0;
-    }
-
-    for (size_t i = 0; i < bt.size (); ++i) {
-      if (bt[i].file == scope) {
-        return i;
+  virtual size_t scope_index () const
+  {
+    if (! m_scope.empty ()) {
+      std::vector<tl::BacktraceElement> bt = stack_trace ();
+      for (size_t i = 0; i < bt.size (); ++i) {
+        if (bt[i].file == m_scope) {
+          return i;
+        }
       }
     }
+    return 0;
   }
-  return 0;
-}
 
-int
-RubyStackTraceProvider::stack_depth () const
-{
-  //  NOTE: this implementation will provide an "internal stack depth".
-  //  It's not exactly the same than the length of the stack_trace vector length.
-  //  But the purpose is a relative compare, so efficiency is not sacrificed here
-  //  for unnecessary consistency.
-  int d = 1;
-  static ID id_caller = rb_intern ("caller");
-  VALUE backtrace = rb_funcall (rb_mKernel, id_caller, 0);
-  if (TYPE (backtrace) == T_ARRAY) {
-    d += RARRAY_LEN(backtrace);
+  virtual int stack_depth () const
+  {
+    //  NOTE: this implementation will provide an "internal stack depth".
+    //  It's not exactly the same than the length of the stack_trace vector length.
+    //  But the purpose is a relative compare, so efficiency is not sacrificed here
+    //  for unnecessary consistency.
+    int d = 1;
+    VALUE backtrace = rb_funcall (rb_mKernel, rb_intern ("caller"), 0);
+    if (TYPE (backtrace) == T_ARRAY) {
+      d += RARRAY_LEN(backtrace);
+    }
+    return d;
   }
-  return d;
-}
 
-//  we could use this for ruby >= 1.9.3
+  //  we could use this for ruby >= 1.9.3
 #if 0
-static int
-RubyStackTraceProvider::count_stack_levels(void *arg, VALUE file, int line, VALUE method)
-{
-  *(int *)arg += 1;
-  return 0;
-}
+  static int
+  count_stack_levels(void *arg, VALUE file, int line, VALUE method)
+  {
+    *(int *)arg += 1;
+    return 0;
+  }
 
-extern "C" int
-RubyStackTraceProvider::rb_backtrace_each (int (*iter)(void *arg, VALUE file, int line, VALUE method), void *arg);
+  extern "C" int rb_backtrace_each (int (*iter)(void *arg, VALUE file, int line, VALUE method), void *arg);
 
-virtual int
-RubyStackTraceProvider::stack_depth ()
-{
-  int l = 0;
-  rb_backtrace_each(count_stack_levels, &l);
-  return l;
-}
+  virutal int stack_depth ()
+  {
+    int l = 0;
+    rb_backtrace_each(count_stack_levels, &l);
+    return l;
+  }
 #endif
 
-// -------------------------------------------------------------------
-
-static inline int
-num_args (const gsi::MethodBase *m)
-{
-  return int (m->end_arguments () - m->begin_arguments ());
-}
-
-static VALUE
-get_kwarg (const gsi::ArgType &atype, VALUE kwargs)
-{
-  if (kwargs != Qnil) {
-    return rb_hash_lookup2 (kwargs, ID2SYM (rb_intern (atype.spec ()->name ().c_str ())), Qundef);
-  } else {
-    return Qundef;
-  }
-}
-
-static int get_kwargs_keys (VALUE key, VALUE, VALUE arg)
-{
-  std::set<std::string> *names = reinterpret_cast<std::set<std::string> *> (arg);
-  names->insert (ruby2c<std::string> (rba_safe_obj_as_string (key)));
-
-  return ST_CONTINUE;
-}
-
-static std::set<std::string>
-invalid_kwnames (const gsi::MethodBase *meth, VALUE kwargs)
-{
-  std::set<std::string> invalid_names;
-  rb_hash_foreach (kwargs, (int (*)(...)) &get_kwargs_keys, (VALUE) &invalid_names);
-
-  for (gsi::MethodBase::argument_iterator a = meth->begin_arguments (); a != meth->end_arguments (); ++a) {
-    invalid_names.erase (a->spec ()->name ());
-  }
-
-  return invalid_names;
-}
+private:
+  const std::string &m_scope;
+};
 
 // -------------------------------------------------------------------
 //  The lookup table for the method overload resolution
@@ -317,19 +257,15 @@ public:
     return m_methods.end ();
   }
 
-  const gsi::MethodBase *get_variant (int argc, VALUE *argv, VALUE kwargs, bool block_given, bool is_ctor, bool is_static, bool is_const) const
+  const gsi::MethodBase *get_variant (int argc, VALUE *argv, bool block_given, bool is_ctor, bool is_static, bool is_const) const
   {
     //  caching can't work for arrays or hashes - in this case, give up
 
-    bool nocache = (kwargs != Qnil);
-
-    for (int i = 0; i < argc && ! nocache; ++i) {
+    for (int i = 0; i < argc; ++i) {
       int t = TYPE (argv[i]);
-      nocache = (t == T_ARRAY || t == T_HASH);
-    }
-
-    if (nocache) {
-      return find_variant (argc, argv, kwargs, block_given, is_ctor, is_static, is_const);
+      if (t == T_ARRAY || t == T_HASH) {
+        return find_variant (argc, argv, block_given, is_ctor, is_static, is_const);
+      }
     }
 
     //  try to find the variant in the cache
@@ -340,117 +276,13 @@ public:
       return v->second;
     }
 
-    const gsi::MethodBase *meth = find_variant (argc, argv, kwargs, block_given, is_ctor, is_static, is_const);
+    const gsi::MethodBase *meth = find_variant (argc, argv, block_given, is_ctor, is_static, is_const);
     m_variants[key] = meth;
     return meth;
   }
 
 private:
-
-  static bool
-  compatible_with_args (const gsi::MethodBase *m, int argc, VALUE kwargs, std::string *why_not = 0)
-  {
-    int nargs = num_args (m);
-    int nkwargs = kwargs == Qnil ? 0 : RHASH_SIZE (kwargs);
-
-    if (argc > nargs) {
-      if (why_not) {
-        *why_not = tl::sprintf (tl::to_string (tr ("%d argument(s) expected, but %d given")), nargs, argc);
-      }
-      return false;
-    } else if (argc == nargs) {
-      //  no more arguments to consider
-      if (nkwargs > 0) {
-        if (why_not) {
-          *why_not = tl::to_string (tr ("all arguments given, but additional keyword arguments specified"));
-        }
-        return false;
-      } else {
-        return true;
-      }
-    }
-
-    if (kwargs != Qnil) {
-
-      int kwargs_taken = 0;
-
-      while (argc < nargs) {
-        const gsi::ArgType &atype = m->begin_arguments () [argc];
-        VALUE rb_arg = rb_hash_lookup2 (kwargs, ID2SYM (rb_intern (atype.spec ()->name ().c_str ())), Qnil);
-        if (rb_arg == Qnil) {
-          if (! atype.spec ()->has_default ()) {
-            if (why_not) {
-              *why_not = tl::sprintf (tl::to_string (tr ("no argument specified for '%s' (neither positional or keyword)")), atype.spec ()->name ());
-            }
-            return false;
-          }
-        } else {
-          ++kwargs_taken;
-        }
-        ++argc;
-      }
-
-      if (kwargs_taken != nkwargs) {
-        if (why_not) {
-          std::set<std::string> invalid_names = invalid_kwnames (m, kwargs);
-          if (invalid_names.size () > 1) {
-            std::string names_str = tl::join (invalid_names.begin (), invalid_names.end (), ", ");
-            *why_not = tl::to_string (tr ("unknown keyword parameters: ")) + names_str;
-          } else if (invalid_names.size () == 1) {
-            *why_not = tl::to_string (tr ("unknown keyword parameter: ")) + *invalid_names.begin ();
-          }
-        }
-        return false;
-      } else {
-        return true;
-      }
-
-    } else {
-
-      while (argc < nargs) {
-        const gsi::ArgType &atype = m->begin_arguments () [argc];
-        if (! atype.spec ()->has_default ()) {
-          if (why_not) {
-            if (argc < nargs - 1 && ! m->begin_arguments () [argc + 1].spec ()->has_default ()) {
-              *why_not = tl::sprintf (tl::to_string (tr ("no value given for argument #%d and following")), argc + 1);
-            } else {
-              *why_not = tl::sprintf (tl::to_string (tr ("no value given for argument #%d")), argc + 1);
-            }
-          }
-          return false;
-        }
-        ++argc;
-      }
-
-      return true;
-
-    }
-  }
-
-  static std::string
-  describe_overload (const gsi::MethodBase *m, int argc, VALUE kwargs)
-  {
-    std::string res = m->to_string ();
-    std::string why_not;
-    if (compatible_with_args (m, argc, kwargs, &why_not)) {
-      res += " " + tl::to_string (tr ("[match candidate]"));
-    } else if (! why_not.empty ()) {
-      res += " [" + why_not + "]";
-    }
-    return res;
-  }
-
-  std::string
-  describe_overloads (int argc, VALUE kwargs) const
-  {
-    std::string res;
-    for (auto m = begin (); m != end (); ++m) {
-      res += std::string ("  ") + describe_overload (*m, argc, kwargs) + "\n";
-    }
-    return res;
-  }
-
-  const gsi::MethodBase *find_variant (int argc, VALUE *argv, VALUE kwargs, bool block_given, bool is_ctor, bool is_static, bool is_const) const
+  const gsi::MethodBase *find_variant (int argc, VALUE *argv, bool block_given, bool is_ctor, bool is_static, bool is_const) const
   {
     //  get number of candidates by argument count
     const gsi::MethodBase *meth = 0;
@@ -482,7 +314,7 @@ private:
 
         //  ignore callbacks
 
-      } else if (compatible_with_args (*m, argc, kwargs)) {
+      } else if ((*m)->compatible_with_num_args (argc)) {
 
         ++candidates;
         meth = *m;
@@ -492,7 +324,7 @@ private:
     }
 
     //  no method found, but the ctor was requested - implement that method as replacement for the default "initialize"
-    if (! meth && argc == 0 && is_ctor && kwargs == Qnil) {
+    if (! meth && argc == 0 && is_ctor) {
       return 0;
     }
 
@@ -514,7 +346,7 @@ private:
         nargs_s += tl::to_string (*na);
       }
 
-      throw tl::Exception (tl::to_string (tr ("Can't match arguments. Variants are:\n")) + describe_overloads (argc, kwargs));
+      throw tl::Exception (tl::sprintf (tl::to_string (tr ("Invalid number of arguments (got %d, expected %s)")), argc, nargs_s));
 
     }
 
@@ -531,18 +363,13 @@ private:
         if (! (*m)->is_callback () && ! (*m)->is_signal ()) {
 
           //  check arguments (count and type)
-          bool is_valid = compatible_with_args (*m, argc, kwargs);
+          bool is_valid = (*m)->compatible_with_num_args (argc);
           int sc = 0;
-          int i = 0;
-          for (gsi::MethodBase::argument_iterator a = (*m)->begin_arguments (); is_valid && a != (*m)->end_arguments (); ++a, ++i) {
-            VALUE arg = i >= argc ? get_kwarg (*a, kwargs) : argv[i];
-            if (arg == Qundef) {
-              is_valid = a->spec ()->has_default ();
-            } else if (test_arg (*a, arg, false /*strict*/, false /*with object substitution*/)) {
-              sc += 100;
-            } else if (test_arg (*a, arg, true /*loose*/, false /*with object substitution*/)) {
+          VALUE *av = argv;
+          for (gsi::MethodBase::argument_iterator a = (*m)->begin_arguments (); is_valid && av < argv + argc && a != (*m)->end_arguments (); ++a, ++av) {
+            if (test_arg (*a, *av, false /*strict*/)) {
               ++sc;
-            } else if (test_arg (*a, arg, true /*loose*/, true /*with object substitution*/)) {
+            } else if (test_arg (*a, *av, true /*loose*/)) {
               //  non-scoring match
             } else {
               is_valid = false;
@@ -567,17 +394,12 @@ private:
 
           if (is_valid) {
 
-            //  otherwise take the candidate with the better score or the least number of arguments (faster)
-            if (candidates > 0) {
-              if (sc > score || (sc == score && num_args (meth) > num_args (*m))) {
-                candidates = 1;
-                meth = *m;
-                score = sc;
-              } else if (sc == score && num_args (meth) == num_args (*m)) {
-                ++candidates;
-                meth = *m;
-              }
-            } else {
+            //  otherwise take the candidate with the better score
+            if (candidates > 0 && sc > score) {
+              candidates = 1;
+              meth = *m;
+              score = sc;
+            } else if (candidates == 0 || sc == score) {
               ++candidates;
               meth = *m;
               score = sc;
@@ -592,11 +414,11 @@ private:
     }
 
     if (! meth) {
-      throw tl::Exception (tl::to_string (tr ("No overload with matching arguments. Variants are:\n")) + describe_overloads (argc, kwargs));
+      throw tl::Exception (tl::to_string (tr ("No overload with matching arguments")));
     }
 
     if (candidates > 1) {
-      throw tl::Exception (tl::to_string (tr ("Ambiguous overload variants - multiple method declarations match arguments. Variants are:\n")) + describe_overloads (argc, kwargs));
+      throw tl::Exception (tl::to_string (tr ("Ambiguous overload variants - multiple method declarations match arguments")));
     }
 
     if (is_const && ! meth->is_const ()) {
@@ -833,97 +655,50 @@ struct RubyInterpreterPrivateData
 // -------------------------------------------------------------------
 //  Ruby API 
 
-static void
-handle_exception (VALUE exc, bool first_chance)
-{
-  if (! first_chance) {
-    //  Re-raise the exception without blocking in the debugger
-    block_exceptions (true);
-  }
-
-  rb_exc_raise (exc);
-}
-
-static void
-handle_exception (const std::string &where, std::exception &ex)
-{
-  VALUE error_msg = rb_str_new2 ((std::string(ex.what ()) + tl::to_string (tr (" in ")) + where).c_str ());
-  VALUE args [1];
-  args [0] = error_msg;
-  VALUE exc = rb_class_new_instance(1, args, rb_eRuntimeError);
-  handle_exception (exc, true);
-}
-
-static void
-handle_exception (const std::string &where, tl::ExitException &ex)
-{
-  VALUE error_msg = rb_str_new2 ((ex.msg () + tl::to_string (tr (" in ")) + where).c_str ());
-  VALUE args [2];
-  args [0] = INT2NUM (ex.status ());
-  args [1] = error_msg;
-  VALUE exc = rb_class_new_instance (2, args, rb_eSystemExit);
-  handle_exception (exc, ex.first_chance ());
-}
-
-static void
-handle_exception (const std::string & /*where*/, rba::RubyError &ex)
-{
-  handle_exception (ex.exc (), ex.first_chance ());
-}
-
-static void
-handle_exception (rba::RubyContinueException &ex)
-{
-  rb_jump_tag (ex.state ());
-}
-
-static void
-handle_exception (const std::string &where, tl::Exception &ex)
-{
-  VALUE error_msg = rb_str_new2 ((ex.msg () + tl::to_string (tr (" in ")) + where).c_str ()); \
-  VALUE args [1];
-  args [0] = error_msg;
-  VALUE exc = rb_class_new_instance(1, args, rb_eRuntimeError);
-  handle_exception (exc, ex.first_chance ());
-}
-
-static void
-handle_exception (const std::string &where)
-{
-  VALUE error_msg = rb_str_new2 ((tl::to_string (tr ("Unspecific exception in ")) + where).c_str ()); \
-  VALUE args [1];
-  args [0] = error_msg;
-  VALUE exc = rb_class_new_instance(1, args, rb_eRuntimeError);
-  handle_exception (exc, true);
-}
-
 #define RBA_TRY \
-  try {
+  VALUE __error_msg = Qnil; \
+  int __estatus = 0; \
+  VALUE __exc = Qnil; \
+  VALUE __eclass = Qnil; \
+  { \
+    try { 
 
 #define RBA_CATCH(where) \
-  } catch (std::exception &ex) { \
-    handle_exception ((where), ex); \
-  } catch (tl::ExitException &ex) { \
-    handle_exception ((where), ex); \
-  } catch (rba::RubyContinueException &ex) { \
-    handle_exception (ex); \
-  } catch (rba::RubyError &ex) { \
-    handle_exception ((where), ex); \
-  } catch (tl::Exception &ex) { \
-    handle_exception ((where), ex); \
-  } catch (...) { \
-    handle_exception ((where)); \
+    } catch (std::exception &ex) { \
+      __eclass = rb_eRuntimeError; \
+      __error_msg = rb_str_new2 ((std::string(ex.what ()) + tl::to_string (tr (" in ")) + (where)).c_str ()); \
+    } catch (tl::ExitException &ex) { \
+      __estatus = ex.status (); \
+      __eclass = rb_eSystemExit; \
+      __error_msg = rb_str_new2 ((ex.msg () + tl::to_string (tr (" in ")) + (where)).c_str ()); \
+    } catch (rba::RubyError &ex) { \
+      __eclass = rb_eRuntimeError; \
+      __exc = ex.exc (); \
+    } catch (tl::Exception &ex) { \
+      __eclass = rb_eRuntimeError; \
+      __error_msg = rb_str_new2 ((ex.msg () + tl::to_string (tr (" in ")) + (where)).c_str ()); \
+    } catch (...) { \
+      __eclass = rb_eRuntimeError; \
+      __error_msg = rb_str_new2 ((tl::to_string (tr ("Unspecific exception in ")) + (where)).c_str ()); \
+    } \
+  } \
+  if (__exc != Qnil) { \
+    /* Reraise the exception without blocking in the debugger */ \
+    /* TODO: should not access private data */ \
+    RubyInterpreter::instance ()->d->block_exceptions = true; \
+    rb_exc_raise (__exc); \
+  } else if (__eclass == rb_eSystemExit) { \
+    /* HINT: we do the rb_raise outside any destructor code - sometimes this longjmp seems not to work properly */ \
+    VALUE args [2]; \
+    args [0] = INT2NUM (__estatus); \
+    args [1] = __error_msg; \
+    rb_exc_raise (rb_class_new_instance(2, args, __eclass)); \
+  } else if (__eclass != Qnil) { \
+    /* HINT: we do the rb_raise outside any destructor code - sometimes this longjmp seems not to work properly */ \
+    VALUE args [1]; \
+    args [0] = __error_msg; \
+    rb_exc_raise (rb_class_new_instance(1, args, __eclass)); \
   }
-
-static void free_proxy (void *p)
-{
-  delete ((Proxy *) p);
-}
-
-static void mark_proxy (void *p)
-{
-  ((Proxy *) p)->mark ();
-}
 
 static VALUE
 destroy (VALUE self)
@@ -984,37 +759,6 @@ is_const (VALUE self)
 }
 
 static VALUE
-to_const (VALUE self)
-{
-  Proxy *p = 0;
-  Data_Get_Struct (self, Proxy, p);
-  if (! p->const_ref ()) {
-    //  promote to const object
-    //  NOTE: there is only ONE instance we're going to change this instance
-    //  to const here. This has a global effect and this is the reason why this
-    //  method is not public. It is provided for testing purposes mainly.
-    p->set_const_ref (true);
-  }
-
-  return self;
-}
-
-static VALUE
-const_cast_ (VALUE self)
-{
-  Proxy *p = 0;
-  Data_Get_Struct (self, Proxy, p);
-  if (p->const_ref ()) {
-    //  promote to non-const object
-    //  NOTE: this is a global change of constness and will affect all references
-    //  that exist for this object.
-    p->set_const_ref (false);
-  }
-
-  return self;
-}
-
-static VALUE
 assign (VALUE self, VALUE src)
 {
   //  Compare if the classes are identical
@@ -1067,18 +811,12 @@ special_method_impl (const gsi::MethodBase *meth, int argc, VALUE *argv, VALUE s
   } else if (smt == gsi::MethodBase::IsConst) {
     tl_assert (!ctor);
     return is_const (self);
-  } else if (smt == gsi::MethodBase::ToConst) {
-    tl_assert (!ctor);
-    return to_const (self);
-  } else if (smt == gsi::MethodBase::ConstCast) {
-    tl_assert (!ctor);
-    return const_cast_ (self);
   } else if (smt == gsi::MethodBase::Destroyed) {
     tl_assert (!ctor);
     return destroyed (self);
   } else if (smt == gsi::MethodBase::Assign) {
 
-    //  this is either assign or dup in disguise
+    //  this is either assign or dup in diguise
     tl_assert (argc == 1);
     return assign (self, argv [0]);
 
@@ -1090,6 +828,16 @@ special_method_impl (const gsi::MethodBase *meth, int argc, VALUE *argv, VALUE s
   } else {
     return Qnil;
   }
+}
+
+static void free_proxy (void *p)
+{
+  delete ((Proxy *) p);
+}
+
+static void mark_proxy (void *p)
+{
+  ((Proxy *) p)->mark ();
 }
 
 static VALUE alloc_proxy (VALUE klass)
@@ -1137,109 +885,6 @@ method_name_from_id (int mid, VALUE self)
   return cls_decl->name () + "::" + mt->name (mid);
 }
 
-static gsi::ArgType create_void_type ()
-{
-  gsi::ArgType at;
-  at.init<void> ();
-  return at;
-}
-
-static gsi::ArgType s_void_type = create_void_type ();
-
-void
-push_args (gsi::SerialArgs &arglist, const gsi::MethodBase *meth, VALUE *argv, int argc, VALUE kwargs, tl::Heap &heap)
-{
-  int iarg = 0;
-  int kwargs_taken = 0;
-  int nkwargs = kwargs == Qnil ? 0 : int (RHASH_SIZE (kwargs));
-
-  try {
-
-    for (gsi::MethodBase::argument_iterator a = meth->begin_arguments (); a != meth->end_arguments (); ++a, ++iarg) {
-
-      VALUE arg = iarg >= argc ? get_kwarg (*a, kwargs) : argv[iarg];
-      if (arg == Qundef) {
-        if (a->spec ()->has_default ()) {
-          if (kwargs_taken == nkwargs) {
-            //  leave it to the consumer to establish the default values (that is faster)
-            break;
-          }
-          //  Note: we will use the default value variant for longer, so push it to the heap (#1793)
-          tl::Variant *def_value = new tl::Variant (a->spec ()->default_value ());
-          heap.push (def_value);
-          gsi::push_arg (arglist, *a, *def_value, &heap);
-        } else {
-          throw tl::Exception (tl::to_string (tr ("No argument provided (positional or keyword) and no default value available")));
-        }
-      } else {
-        if (iarg >= argc) {
-          ++kwargs_taken;
-        }
-        push_arg (*a, arglist, arg, heap);
-      }
-
-    }
-
-    if (kwargs_taken != nkwargs) {
-
-      //  check if there are any left-over keyword parameters with unknown names
-
-      std::set<std::string> invalid_names;
-      rb_hash_foreach (kwargs, (int (*)(...)) &get_kwargs_keys, (VALUE) &invalid_names);
-
-      for (gsi::MethodBase::argument_iterator a = meth->begin_arguments (); a != meth->end_arguments (); ++a) {
-        invalid_names.erase (a->spec ()->name ());
-      }
-
-      if (invalid_names.size () > 1) {
-        std::string names_str = tl::join (invalid_names.begin (), invalid_names.end (), ", ");
-        throw tl::Exception (tl::to_string (tr ("Unknown keyword parameters: ")) + names_str);
-      } else if (invalid_names.size () == 1) {
-        throw tl::Exception (tl::to_string (tr ("Unknown keyword parameter: ")) + *invalid_names.begin ());
-      }
-
-    }
-
-  } catch (tl::Exception &ex) {
-
-    //  In case of an error upon write, pop the arguments to clean them up.
-    //  Without this, there is a risk to keep dead objects on the stack.
-    for (gsi::MethodBase::argument_iterator a = meth->begin_arguments (); a != meth->end_arguments () && arglist; ++a) {
-      pull_arg (*a, 0, arglist, heap);
-    }
-
-    if (iarg < num_args (meth)) {
-
-      const gsi::ArgSpecBase *arg_spec = meth->begin_arguments () [iarg].spec ();
-
-      std::string msg;
-      if (arg_spec && ! arg_spec->name ().empty ()) {
-        msg = tl::sprintf (tl::to_string (tr ("%s for argument #%d ('%s')")), ex.basic_msg (), iarg + 1, arg_spec->name ());
-      } else {
-        msg = tl::sprintf (tl::to_string (tr ("%s for argument #%d")), ex.basic_msg (), iarg + 1);
-      }
-
-      tl::Exception new_ex (msg);
-      new_ex.set_first_chance (ex.first_chance ());
-      throw new_ex;
-
-    } else {
-      throw;
-    }
-
-  } catch (...) {
-
-    //  In case of an error upon write, pop the arguments to clean them up.
-    //  Without this, there is a risk to keep dead objects on the stack.
-    for (gsi::MethodBase::argument_iterator a = meth->begin_arguments (); a != meth->end_arguments () && arglist; ++a) {
-      pull_arg (*a, 0, arglist, heap);
-    }
-
-    throw;
-
-  }
-}
-
 VALUE
 method_adaptor (int mid, int argc, VALUE *argv, VALUE self, bool ctor)
 {
@@ -1251,10 +896,6 @@ method_adaptor (int mid, int argc, VALUE *argv, VALUE self, bool ctor)
 
     const gsi::ClassBase *cls_decl;
     Proxy *p = 0;
-
-    //  this prevents side effects of callbacks raised from within the called functions -
-    //  if these trigger the GC, self is protected from destruction herein.
-    GCLocker gc_locker (self);
 
     if (TYPE (self) == T_CLASS) {
       //  we have a static method
@@ -1278,37 +919,7 @@ method_adaptor (int mid, int argc, VALUE *argv, VALUE self, bool ctor)
 
     }
 
-    //  Check for keyword arguments ..
-
-    VALUE kwargs = Qnil;
-    bool check_last = true;
-#if HAVE_RUBY_VERSION_CODE>=20700
-    check_last = rb_keyword_given_p ();
-#endif
-
-    //  This is a heuristics to distinguish methods that are potential candidates for
-    //  accepting a keyword argument. Problem is that Ruby confuses function calls with
-    //  keyword arguments with arguments that take a single hash argument.
-    //  We accept only methods here as candidates that do not have a last argument which
-    //  is a map.
-    //  For compatibility we do this check also for Ruby >=2.7 which supports rb_keyword_given_p.
-    if (check_last) {
-      const MethodTableEntry &e = mt->entry (mid);
-      for (auto m = e.begin (); m != e.end () && check_last; ++m) {
-        auto a = (*m)->end_arguments ();
-        if (a != (*m)->begin_arguments () && (--a)->type () == gsi::T_map) {
-          check_last = false;
-        }
-      }
-    }
-
-    if (check_last && argc > 0 && RB_TYPE_P (argv[argc - 1], T_HASH)) {
-      kwargs = argv[--argc];
-    }
-
-    //  Identify the matching variant
-
-    const gsi::MethodBase *meth = mt->entry (mid).get_variant (argc, argv, kwargs, rb_block_given_p (), ctor, p == 0, p != 0 && p->const_ref ());
+    const gsi::MethodBase *meth = mt->entry (mid).get_variant (argc, argv, rb_block_given_p (), ctor, p == 0, p != 0 && p->const_ref ());
 
     if (! meth) {
 
@@ -1316,21 +927,11 @@ method_adaptor (int mid, int argc, VALUE *argv, VALUE self, bool ctor)
 
     } else if (meth->smt () != gsi::MethodBase::None) {
 
-      if (kwargs != Qnil && RHASH_SIZE (kwargs) > 0) {
-        throw tl::Exception (tl::to_string (tr ("Keyword arguments not permitted")));
-      }
-
       ret = special_method_impl (meth, argc, argv, self, ctor);
 
     } else if (meth->is_signal ()) {
 
-      if (kwargs != Qnil && RHASH_SIZE (kwargs) > 0) {
-        throw tl::Exception (tl::to_string (tr ("Keyword arguments not permitted on events")));
-      }
-
       if (p) {
-
-        static ID id_set = rb_intern ("set");
 
         VALUE signal_handler = p->signal_handler (meth);
 
@@ -1338,10 +939,10 @@ method_adaptor (int mid, int argc, VALUE *argv, VALUE self, bool ctor)
 
           VALUE proc = rb_block_proc ();
           RB_GC_GUARD (proc);
-          ret = rba_funcall2_checked (signal_handler, id_set, 1, &proc);
+          ret = rba_funcall2_checked (signal_handler, rb_intern ("set"), 1, &proc);
 
         } else if (argc > 0) {
-          ret = rba_funcall2_checked (signal_handler, id_set, argc, argv);
+          ret = rba_funcall2_checked (signal_handler, rb_intern ("set"), argc, argv);
         } else {
           ret = signal_handler;
         }
@@ -1359,8 +960,28 @@ method_adaptor (int mid, int argc, VALUE *argv, VALUE self, bool ctor)
 
       {
         gsi::SerialArgs arglist (meth->argsize ());
-        push_args (arglist, meth, argv, argc, kwargs, heap);
+
+        try {
+
+          VALUE *av = argv;
+          for (gsi::MethodBase::argument_iterator a = meth->begin_arguments (); a != meth->end_arguments () && av < argv + argc; ++a, ++av) {
+            push_arg (*a, arglist, *av, heap);
+          }
+
+        } catch (...) {
+
+          //  In case of an error upon write, pop the arguments to clean them up.
+          //  Without this, there is a risk to keep dead objects on the stack.
+          for (gsi::MethodBase::argument_iterator a = meth->begin_arguments (); a != meth->end_arguments () && arglist; ++a) {
+            pop_arg (*a, 0, arglist, heap);
+          }
+
+          throw;
+
+        }
+
         meth->call (0, arglist, retlist);
+
       }
 
       void *obj = retlist.read<void *> (heap);
@@ -1368,41 +989,6 @@ method_adaptor (int mid, int argc, VALUE *argv, VALUE self, bool ctor)
         p->reset ();
       } else {
         p->set (obj, true, false, true, self);
-      }
-
-    } else if (meth->ret_type ().is_iter () && ! rb_block_given_p ()) {
-
-      //  calling an iterator method without block -> deliver an enumerator using "to_enum"
-
-      if (kwargs != Qnil && RHASH_SIZE (kwargs) > 0) {
-        throw tl::Exception (tl::to_string (tr ("Keyword arguments not permitted on enumerators")));
-      }
-
-      static ID id_to_enum = rb_intern ("to_enum");
-
-      VALUE method_sym = ID2SYM (rb_intern (meth->primary_name ().c_str ()));
-
-      if (argc == 0) {
-        ret = rba_funcall2_checked (self, id_to_enum, 1, &method_sym);
-      } else {
-#if 0
-	//  this solution does not work on MSVC2017 for unknown reasons and 
-	//  makes the application segfault even without being called
-        std::vector<VALUE> new_args;
-        new_args.reserve (size_t (argc + 1));
-        new_args.push_back (method_sym);
-        new_args.insert (new_args.end (), argv, argv + argc);
-        ret = rba_funcall2_checked (self, id_to_enum, argc + 1, new_args.begin ().operator-> ());
-#else
-	VALUE new_args[16];
-	tl_assert (argc + 1 <= int (sizeof(new_args) / sizeof(new_args[0])));
-	VALUE *a = &new_args[0];
-	*a++ = method_sym;
-	for (int i = 0; i < argc; ++i) {
-	  *a++ = argv[i];
-	}
-        ret = rba_funcall2_checked (self, id_to_enum, argc + 1, &new_args[0]);
-#endif
       }
 
     } else {
@@ -1417,41 +1003,60 @@ method_adaptor (int mid, int argc, VALUE *argv, VALUE self, bool ctor)
 
       {
         gsi::SerialArgs arglist (meth->argsize ());
-        push_args (arglist, meth, argv, argc, kwargs, heap);
+
+        try {
+
+          VALUE *av = argv;
+          for (gsi::MethodBase::argument_iterator a = meth->begin_arguments (); a != meth->end_arguments () && av < argv + argc; ++a, ++av) {
+            push_arg (*a, arglist, *av, heap);
+          }
+
+        } catch (...) {
+
+          //  In case of an error upon write, pop the arguments to clean them up.
+          //  Without this, there is a risk to keep dead objects on the stack.
+          for (gsi::MethodBase::argument_iterator a = meth->begin_arguments (); a != meth->end_arguments () && arglist; ++a) {
+            pop_arg (*a, 0, arglist, heap);
+          }
+
+          throw;
+
+        }
+
         meth->call (obj, arglist, retlist);
+
       }
 
       if (meth->ret_type ().is_iter ()) {
 
         ret = Qnil;
 
-        std::unique_ptr<gsi::IterAdaptorAbstractBase> iter ((gsi::IterAdaptorAbstractBase *) retlist.read<void *> (heap));
+        std::auto_ptr<gsi::IterAdaptorAbstractBase> iter ((gsi::IterAdaptorAbstractBase *) retlist.read<void *> (heap));
         if (iter.get ()) {
 
-          gsi::SerialArgs rr (iter->serial_size ());
-          while (! iter->at_end ()) {
+          try {
 
-            rr.reset ();
-            iter->get (rr);
+            gsi::SerialArgs rr (iter->serial_size ());
+            while (! iter->at_end ()) {
 
-            VALUE value = pull_arg (meth->ret_type (), p, rr, heap);
-            rba_yield_checked (value);
+              rr.reset ();
+              iter->get (rr);
 
-            iter->inc ();
+              VALUE value = pop_arg (meth->ret_type (), p, rr, heap);
+              rba_yield_checked (value);
 
+              iter->inc ();
+
+            }
+
+          } catch (tl::CancelException) {
+            //  break encountered
           }
 
         }
 
-      } else if (meth->ret_type () == s_void_type) {
-
-        //  simple, yet magical :)
-        return self;
-
       } else {
-
-        ret = pull_arg (meth->ret_type (), p, retlist, heap);
-
+        ret = pop_arg (meth->ret_type (), p, retlist, heap);
       }
 
     }
@@ -1839,123 +1444,60 @@ struct RubyConstDescriptor
 extern "C" void ruby_prog_init();
 
 static void
-rba_add_path (const std::string &path, bool prepend)
+rba_add_path (const std::string &path)
 {
   VALUE pv = rb_gv_get ("$:");
   if (pv != Qnil && TYPE (pv) == T_ARRAY) {
-    if (prepend) {
-      rb_ary_unshift (pv, rb_str_new (path.c_str (), long (path.size ())));
-    } else {
-      rb_ary_push (pv, rb_str_new (path.c_str (), long (path.size ())));
-    }
+    rb_ary_push (pv, rb_str_new (path.c_str (), long (path.size ())));
   }
 }
 
-static std::string
-ruby_name (const std::string &n)
+static void
+rba_init (RubyInterpreterPrivateData *d)
 {
-  if (n == "*!") {
-    //  non-commutative multiplication
-    return "*";
-  } else {
-    return n;
-  }
-}
+  VALUE module = rb_define_module ("RBA");
 
-namespace
-{
+  //  initialize the locked object vault as a fast replacement for rb_gc_register_address/rb_gc_unregister_address.
+  rba::make_locked_object_vault (module);
 
-class RubyClassGenerator
-{
-public:
-  RubyClassGenerator (VALUE module)
-    : m_module (module)
-  {
-    //  .. nothing yet ..
-  }
+  //  save all constants for later (we cannot declare them while we are still producing classes
+  //  because of the enum representative classes and enum constants are important)
+  std::vector <RubyConstDescriptor> constants;
 
-  //  needs to be called before for each extension before the classes are made
-  void register_extension (const gsi::ClassBase *cls)
-  {
-    if (cls->name ().empty ()) {
-      //  got an extension
-      tl_assert (cls->parent ());
-      m_extensions_for [cls->parent ()->declaration ()].push_back (cls->declaration ());
-    }
-  }
+  std::list<const gsi::ClassBase *> sorted_classes = gsi::ClassBase::classes_in_definition_order ();
+  for (std::list<const gsi::ClassBase *>::const_iterator c = sorted_classes.begin (); c != sorted_classes.end (); ++c) {
 
-  VALUE make_class (const gsi::ClassBase *cls, bool as_static, VALUE parent_class = (VALUE) 0, const gsi::ClassBase *parent = 0)
-  {
-    if (is_registered (cls, as_static)) {
-      return ruby_cls (cls, as_static);
+    //  we might encounter a child class which is a reference to a top-level class (e.g.
+    //  duplication of enums into child classes). In this case we create a constant inside the
+    //  target class.
+    if ((*c)->declaration () != *c) {
+      tl_assert ((*c)->parent () != 0);  //  top-level classes should be merged
+      rb_define_const (ruby_cls ((*c)->parent ()->declaration ()), (*c)->name ().c_str (), ruby_cls ((*c)->declaration ()));
+      continue;
     }
 
     VALUE super = rb_cObject;
-    if (cls->base () != 0) {
-      super = make_class (cls->base (), as_static);
+    if ((*c)->base () != 0) {
+      tl_assert (is_registered ((*c)->base ()));
+      super = ruby_cls ((*c)->base ());
     }
 
     VALUE klass;
-    if (as_static) {
-
-      if (tl::verbosity () >= 20) {
-        tl::log << tl::to_string (tr ("Registering class as Ruby module: ")) << cls->name ();
-      }
-
-      std::string mixin_name = cls->name () + "_Mixin";
-
-      if (parent) {
-        klass = rb_define_module_under (parent_class, mixin_name.c_str ());
-      } else {
-        klass = rb_define_module_under (m_module, mixin_name.c_str ());
-      }
-
-      //  if the base class is an extension (mixin), we cannot use it as superclass because it's a module
-      if (cls->base () != 0) {
-        rb_include_module (klass, super);
-      }
-
+    if ((*c)->parent ()) {
+      tl_assert (is_registered ((*c)->parent ()->declaration ()));
+      VALUE parent_class = ruby_cls ((*c)->parent ()->declaration ());
+      klass = rb_define_class_under (parent_class, (*c)->name ().c_str (), super);
     } else {
-
-      if (parent) {
-        klass = rb_define_class_under (parent_class, cls->name ().c_str (), super);
-      } else {
-        klass = rb_define_class_under (m_module, cls->name ().c_str (), super);
-      }
-
-      rb_define_alloc_func (klass, alloc_proxy);
-
+      klass = rb_define_class_under (module, (*c)->name ().c_str (), super);
     }
 
-    register_class (klass, cls, as_static);
+    register_class (klass, *c);
 
-    //  mix-in unnamed extensions
+    rb_define_alloc_func (klass, alloc_proxy);
 
-    auto exts = m_extensions_for.find (cls);
-    if (exts != m_extensions_for.end ()) {
-      for (auto ie = exts->second.begin (); ie != exts->second.end (); ++ie) {
-        VALUE ext_module = make_class (*ie, true);
-        rb_include_module (klass, ext_module);
-        rb_extend_object (klass, ext_module);
-      }
-    }
+    MethodTable *mt = MethodTable::method_table_by_class (*c, true /*force init*/);
 
-    //  produce the child classes
-
-    for (auto cc = cls->begin_child_classes (); cc != cls->end_child_classes (); ++cc) {
-      if (! cc->name ().empty ()) {
-        if (! is_registered (cc->declaration (), false)) {
-          make_class (cc->declaration (), false, klass, cls);
-        } else {
-          VALUE child_class = ruby_cls (cc->declaration (), false);
-          rb_define_const (klass, cc->name ().c_str (), child_class);
-        }
-      }
-    }
-
-    MethodTable *mt = MethodTable::method_table_by_class (cls, true /*force init*/);
-
-    for (auto m = (cls)->begin_methods (); m != (cls)->end_methods (); ++m) {
+    for (gsi::ClassBase::method_iterator m = (*c)->begin_methods (); m != (*c)->end_methods (); ++m) {
 
       if (! (*m)->is_callback ()) {
 
@@ -1971,14 +1513,14 @@ public:
 
           if (! drop_method) {
 
-            for (auto syn = (*m)->begin_synonyms (); syn != (*m)->end_synonyms (); ++syn) {
+            for (gsi::MethodBase::synonym_iterator syn = (*m)->begin_synonyms (); syn != (*m)->end_synonyms (); ++syn) {
               if (syn->is_predicate) {
                 mt->add_method (syn->name, *m);
                 mt->add_method (syn->name + "?", *m);
               } else if (syn->is_setter) {
                 mt->add_method (syn->name + "=", *m);
               } else {
-                mt->add_method (ruby_name (syn->name), *m);
+                mt->add_method (syn->name, *m);
               }
             }
 
@@ -1986,17 +1528,17 @@ public:
 
         } else {
 
-          for (auto syn = (*m)->begin_synonyms (); syn != (*m)->end_synonyms (); ++syn) {
+          for (gsi::MethodBase::synonym_iterator syn = (*m)->begin_synonyms (); syn != (*m)->end_synonyms (); ++syn) {
 
             if (isupper (syn->name [0]) && (*m)->begin_arguments () == (*m)->end_arguments ()) {
 
               //  Static const methods are constants.
               //  Methods without arguments which start with a capital letter are treated as constants
               //  for backward compatibility
-              m_constants.push_back (RubyConstDescriptor ());
-              m_constants.back ().klass = klass;
-              m_constants.back ().meth = *m;
-              m_constants.back ().name = (*m)->begin_synonyms ()->name;
+              constants.push_back (RubyConstDescriptor ());
+              constants.back ().klass = klass;
+              constants.back ().meth = *m;
+              constants.back ().name = (*m)->begin_synonyms ()->name;
 
             } else if ((*m)->ret_type ().type () == gsi::T_object && (*m)->ret_type ().pass_obj () && syn->name == "new") {
 
@@ -2015,7 +1557,7 @@ public:
 
             } else {
 
-              mt->add_method (ruby_name (syn->name), *m);
+              mt->add_method (syn->name, *m);
 
             }
           }
@@ -2029,149 +1571,96 @@ public:
     //  clean up the method table
     mt->finish ();
 
-    //  NOTE: extensions can't carry methods - this is due to the method numbering scheme
-    //  which can only handle direct base classes. So only constants are carried forward.
-    if (! as_static) {
+    //  Hint: we need to do static methods before the non-static ones because
+    //  rb_define_module_function creates an private instance method.
+    //  If we do the non-static methods afterwards we will make it a public once again.
+    //  The order of the names will be "name(non-static), name(static), ..." because
+    //  the static flag is the second member of the key (string, bool) pair.
+    for (size_t mid = mt->bottom_mid (); mid < mt->top_mid (); ++mid) {
 
-      //  Hint: we need to do static methods before the non-static ones because
-      //  rb_define_module_function creates an private instance method.
-      //  If we do the non-static methods afterwards we will make it a public once again.
-      //  The order of the names will be "name(non-static), name(static), ..." because
-      //  the static flag is the second member of the key (string, bool) pair.
-      for (size_t mid = mt->bottom_mid (); mid < mt->top_mid (); ++mid) {
+      if (mt->is_static (mid)) {
 
-        if (mt->is_static (mid)) {
+        tl_assert (mid < size_t (sizeof (method_adaptors) / sizeof (method_adaptors [0])));
 
-          tl_assert (mid < size_t (sizeof (method_adaptors) / sizeof (method_adaptors [0])));
-
-          /* Note: Ruby does not support static protected functions, hence we have them (i.e. QThread::usleep).
-           *       Do we silently create public ones from them:
-          if (mt->is_protected (mid)) {
-            tl::warn << "static '" << mt->name (mid) << "' method cannot be protected in class " << c->name ();
-          }
-          */
-
-          rb_define_module_function (klass, mt->name (mid).c_str (), (ruby_func) method_adaptors[mid], -1);
-
+        /* Note: Ruby does not support static protected functions, hence we have them (i.e. QThread::usleep).
+         *       Do we silently create public ones from them:
+        if (mt->is_protected (mid)) {
+          tl::warn << "static '" << mt->name (mid) << "' method cannot be protected in class " << c->name ();
         }
+        */
 
-      }
-
-      for (size_t mid = mt->bottom_mid (); mid < mt->top_mid (); ++mid) {
-
-        if (mt->is_ctor (mid)) {
-
-          tl_assert (mid < size_t (sizeof (method_adaptors_ctor) / sizeof (method_adaptors_ctor [0])));
-
-          if (! mt->is_protected (mid)) {
-            rb_define_method (klass, mt->name (mid).c_str (), (ruby_func) method_adaptors_ctor[mid], -1);
-          } else {
-            //  a protected constructor needs to be provided in both protected and non-protected mode
-            rb_define_method (klass, mt->name (mid).c_str (), (ruby_func) method_adaptors_ctor[mid], -1);
-            rb_define_protected_method (klass, mt->name (mid).c_str (), (ruby_func) method_adaptors_ctor[mid], -1);
-          }
-
-        } else if (! mt->is_static (mid)) {
-
-          tl_assert (mid < size_t (sizeof (method_adaptors) / sizeof (method_adaptors [0])));
-
-          if (! mt->is_protected (mid)) {
-            rb_define_method (klass, mt->name (mid).c_str (), (ruby_func) method_adaptors[mid], -1);
-          } else {
-            rb_define_protected_method (klass, mt->name (mid).c_str (), (ruby_func) method_adaptors[mid], -1);
-          }
-
-        }
-
-        if (mt->is_signal (mid)) {
-
-          //  We alias the signal name to an assignment, so the following can be done:
-          //    x = object with signal "signal"
-          //    x.signal = proc
-          //  this will basically map to
-          //    x.signal(proc)
-          //  which will make proc the only receiver for the signal
-          rb_define_alias (klass, (mt->name (mid) + "=").c_str (), mt->name (mid).c_str ());
-
-        }
-
-        if (mt->name (mid) == "to_s") {
-    #if HAVE_RUBY_VERSION_CODE>=20000 && defined(GSI_ALIAS_INSPECT)
-        //  Ruby 2.x does no longer alias "inspect" to "to_s" automatically, so we have to do this:
-          rb_define_alias (klass, "inspect", "to_s");
-    #endif
-        } else if (mt->name (mid) == "==") {
-          rb_define_alias (klass, "eql?", "==");
-        }
+        rb_define_module_function (klass, mt->name (mid).c_str (), (ruby_func) method_adaptors[mid], -1);
 
       }
 
     }
 
-    return klass;
-  }
+    for (size_t mid = mt->bottom_mid (); mid < mt->top_mid (); ++mid) {
 
-  void make_constants ()
-  {
-    for (auto c = m_constants.begin (); c != m_constants.end (); ++c) {
+      if (mt->is_ctor (mid)) {
 
-      try {
+        tl_assert (mid < size_t (sizeof (method_adaptors_ctor) / sizeof (method_adaptors_ctor [0])));
 
-        gsi::SerialArgs retlist (c->meth->retsize ());
-        gsi::SerialArgs arglist (c->meth->argsize ());
-        c->meth->call (0, arglist, retlist);
-        tl::Heap heap;
-        VALUE ret = pull_arg (c->meth->ret_type (), 0, retlist, heap);
-        rb_define_const (c->klass, c->name.c_str (), ret);
+        if (! mt->is_protected (mid)) {
+          rb_define_method (klass, mt->name (mid).c_str (), (ruby_func) method_adaptors_ctor[mid], -1);
+        } else {
+          //  a protected constructor needs to be provided in both protected and non-protected mode
+          rb_define_method (klass, mt->name (mid).c_str (), (ruby_func) method_adaptors_ctor[mid], -1);
+          rb_define_protected_method (klass, mt->name (mid).c_str (), (ruby_func) method_adaptors_ctor[mid], -1);
+        }
 
-      } catch (tl::Exception &ex) {
-        tl::warn << "Got exception '" << ex.msg () << "' while defining constant " << c->name;
+      } else if (! mt->is_static (mid)) {
+
+        tl_assert (mid < size_t (sizeof (method_adaptors) / sizeof (method_adaptors [0])));
+
+        if (! mt->is_protected (mid)) {
+          rb_define_method (klass, mt->name (mid).c_str (), (ruby_func) method_adaptors[mid], -1);
+        } else {
+          rb_define_protected_method (klass, mt->name (mid).c_str (), (ruby_func) method_adaptors[mid], -1);
+        }
+
+      }
+
+      if (mt->is_signal (mid)) {
+        //  We alias the signal name to an assignment, so the following can be done:
+        //    x = object with signal "signal"
+        //    x.signal = proc
+        //  this will basically map to
+       //    x.signal(proc)
+        //  which will make proc the only receiver for the signal
+        rb_define_alias (klass, (mt->name (mid) + "=").c_str (), mt->name (mid).c_str ());
+      }
+
+      if (mt->name (mid) == "to_s") {
+#if HAVE_RUBY_VERSION_CODE>=20000
+      //  Ruby 2.x does no longer alias "inspect" to "to_s" automatically, so we have to do this:
+        rb_define_alias (klass, "inspect", "to_s");
+#endif
+      } else if (mt->name (mid) == "==") {
+        rb_define_alias (klass, "eql?", "==");
       }
 
     }
-  }
 
-private:
-  VALUE m_module;
-  std::vector <RubyConstDescriptor> m_constants;
-  std::map<const gsi::ClassBase *, std::vector<const gsi::ClassBase *> > m_extensions_for;
-  std::set<const gsi::ClassBase *> m_extensions;
-};
-
-}
-
-static void
-rba_init (RubyInterpreterPrivateData *d)
-{
-  VALUE module = rb_define_module ("RBA");
-
-  //  initialize the locked object vault as a fast replacement for rb_gc_register_address/rb_gc_unregister_address.
-  rba::make_locked_object_vault (module);
-
-  //  save all constants for later (we cannot declare them while we are still producing classes
-  //  because of the enum representative classes and enum constants are important)
-  std::vector <RubyConstDescriptor> constants;
-
-  std::list<const gsi::ClassBase *> sorted_classes = gsi::ClassBase::classes_in_definition_order ();
-
-  RubyClassGenerator gen (module);
-
-  //  first pass: register the extensions
-  for (auto c = sorted_classes.begin (); c != sorted_classes.end (); ++c) {
-    if ((*c)->declaration () != *c) {
-      gen.register_extension (*c);
-    }
-  }
-
-  //  second pass: make the classes
-  for (auto c = sorted_classes.begin (); c != sorted_classes.end (); ++c) {
-    if ((*c)->declaration () == *c) {
-      gen.make_class (*c, false);
-    }
   }
 
   //  now make the constants
-  gen.make_constants ();
+  for (std::vector <RubyConstDescriptor>::const_iterator c = constants.begin (); c != constants.end (); ++c) {
+
+    try {
+
+      gsi::SerialArgs retlist (c->meth->retsize ());
+      gsi::SerialArgs arglist (c->meth->argsize ());
+      c->meth->call (0, arglist, retlist);
+      tl::Heap heap;
+      VALUE ret = pop_arg (c->meth->ret_type (), 0, retlist, heap);
+      rb_define_const (c->klass, c->name.c_str (), ret);
+
+    } catch (tl::Exception &ex) {
+      tl::warn << "Got exception '" << ex.msg () << "' while defining constant " << c->name;
+    }
+
+  }
 
   //  define a signal representative class RBASignal
   SignalHandler::define_class (module, "RBASignal");
@@ -2200,8 +1689,7 @@ rba_init (RubyInterpreterPrivateData *d)
 }
 
 RubyInterpreter::RubyInterpreter ()
-  : gsi::Interpreter (0, "rba"),
-    d (new RubyInterpreterPrivateData ())
+  : d (new RubyInterpreterPrivateData ())
 {
   tl::SelfTimer timer (tl::verbosity () >= 21, "Initializing Ruby");
 
@@ -2327,7 +1815,7 @@ RubyInterpreter::initialize (int &main_argc, char **main_argv, int (*main_func) 
 
             if (v.is_list ()) {
               for (tl::Variant::iterator i = v.begin (); i != v.end (); ++i) {
-                rba_add_path (i->to_string (), false);
+                rba_add_path (i->to_string ());
               }
             }
 
@@ -2424,9 +1912,9 @@ RubyInterpreter::remove_package_location (const std::string & /*package_path*/)
 }
 
 void
-RubyInterpreter::add_path (const std::string &path, bool prepend)
+RubyInterpreter::add_path (const std::string &path)
 {
-  rba_add_path (path, prepend);
+  rba_add_path (path);
 }
 
 void
@@ -2443,7 +1931,7 @@ RubyInterpreter::require (const std::string &filename_utf8)
   RUBY_END_EXEC
 
   if (error) {
-    rba_check_error (error);
+    rba_check_error ();
   }
 }
 
@@ -2452,7 +1940,7 @@ RubyInterpreter::load_file (const std::string &filename_utf8)
 {
   std::string fl (rb_cstring_from_utf8 (filename_utf8));
 
-  ruby_script (fl.c_str ());
+  rb_set_progname (rb_str_new (fl.c_str (), long (fl.size ())));
 
   rb_set_errinfo (Qnil);
   int error = 0;
@@ -2464,7 +1952,7 @@ RubyInterpreter::load_file (const std::string &filename_utf8)
   RUBY_END_EXEC
 
   if (error) {
-    rba_check_error (error);
+    rba_check_error ();
   }
 }
 
@@ -2500,9 +1988,9 @@ RubyInterpreter::eval_string_and_print (const char *expr, const char *file, int 
 }
 
 void
-RubyInterpreter::define_variable (const std::string &name, const tl::Variant &value)
+RubyInterpreter::define_variable (const std::string &name, const std::string &value)
 {
-  rb_gv_set (name.c_str (), c2ruby (value));
+  rb_gv_set (name.c_str (), rb_str_new (value.c_str (), long (value.size ())));
 }
 
 gsi::Inspector *
@@ -2559,18 +2047,6 @@ RubyInterpreter::remove_console (gsi::Console *console)
     }
 
   }
-}
-
-void
-RubyInterpreter::block_exceptions (bool f)
-{
-  d->block_exceptions = f;
-}
-
-bool
-RubyInterpreter::exceptions_blocked ()
-{
-  return d->block_exceptions;
 }
 
 static size_t
@@ -2777,11 +2253,9 @@ RubyInterpreter::begin_exec ()
 {
   d->exit_on_next = false;
   d->block_exceptions = false;
-  if (d->current_exec_level++ == 0) {
-    d->file_id_map.clear ();
-    if (d->current_exec_handler) {
-      d->current_exec_handler->start_exec (this);
-    }
+  d->file_id_map.clear ();
+  if (d->current_exec_level++ == 0 && d->current_exec_handler) {
+    d->current_exec_handler->start_exec (this);
   }
 }
 

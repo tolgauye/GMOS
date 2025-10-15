@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -29,9 +29,9 @@
 
 #include <QLibraryInfo>
 #include <QDate>
-#include <QVersionNumber>
 #include "gsiQt.h"
 #include "gsiQtCoreCommon.h"
+#include "gsiDeclQtCoreTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -150,21 +150,6 @@ static void _call_f_platformPluginArguments_2025 (const qt_gsi::GenericStaticMet
 }
 
 
-// static QVersionNumber QLibraryInfo::version()
-
-
-static void _init_f_version_0 (qt_gsi::GenericStaticMethod *decl)
-{
-  decl->set_return<QVersionNumber > ();
-}
-
-static void _call_f_version_0 (const qt_gsi::GenericStaticMethod * /*decl*/, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  ret.write<QVersionNumber > ((QVersionNumber)QLibraryInfo::version ());
-}
-
-
 
 namespace gsi
 {
@@ -178,7 +163,6 @@ static gsi::Methods methods_QLibraryInfo () {
   methods += new qt_gsi::GenericStaticMethod ("licensee", "@brief Static method QString QLibraryInfo::licensee()\nThis method is static and can be called without an instance.", &_init_f_licensee_0, &_call_f_licensee_0);
   methods += new qt_gsi::GenericStaticMethod ("location", "@brief Static method QString QLibraryInfo::location(QLibraryInfo::LibraryLocation)\nThis method is static and can be called without an instance.", &_init_f_location_3304, &_call_f_location_3304);
   methods += new qt_gsi::GenericStaticMethod ("platformPluginArguments", "@brief Static method QStringList QLibraryInfo::platformPluginArguments(const QString &platformName)\nThis method is static and can be called without an instance.", &_init_f_platformPluginArguments_2025, &_call_f_platformPluginArguments_2025);
-  methods += new qt_gsi::GenericStaticMethod ("version", "@brief Static method QVersionNumber QLibraryInfo::version()\nThis method is static and can be called without an instance.", &_init_f_version_0, &_call_f_version_0);
   return methods;
 }
 

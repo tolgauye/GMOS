@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -49,13 +49,8 @@ namespace {
 
 //  TODO: thread-safe? Unlikely that multiple threads access this member -
 //  we do a initial scan and after this no more write access here.
-static std::vector<const ClassBase *> *sp_classes = 0;
-typedef std::map<const ClassBase *, size_t> class_to_index_map_t;
-static class_to_index_map_t *sp_class_to_index = 0;
-typedef std::map<const std::type_info *, size_t> ti_to_class_map_t;
-static ti_to_class_map_t *sp_ti_to_class_index = 0;
-typedef std::map<std::string, const ClassBase *> tname_to_class_map_t;
-static tname_to_class_map_t *sp_tname_to_class = 0;
+typedef std::map<const std::type_info *, const ClassBase *, type_info_compare> ti_to_class_map_t;
+static ti_to_class_map_t *sp_ti_to_class = 0;
 
 ClassBase::ClassBase (const std::string &doc, const Methods &mm, bool do_register)
   : m_initialized (false), mp_base (0), mp_parent (0), m_doc (doc), m_methods (mm)
@@ -69,21 +64,9 @@ ClassBase::ClassBase (const std::string &doc, const Methods &mm, bool do_registe
     mp_new_class_collection->push_back (this);
 
     //  invalidate the "typeinfo to class" map
-    if (sp_classes) {
-      delete sp_classes;
-      sp_classes = 0;
-    }
-    if (sp_class_to_index) {
-      delete sp_class_to_index;
-      sp_class_to_index = 0;
-    }
-    if (sp_ti_to_class_index) {
-      delete sp_ti_to_class_index;
-      sp_ti_to_class_index = 0;
-    }
-    if (sp_tname_to_class) {
-      delete sp_tname_to_class;
-      sp_tname_to_class = 0;
+    if (sp_ti_to_class) {
+      delete sp_ti_to_class;
+      sp_ti_to_class = 0;
     }
 
   }
@@ -354,48 +337,6 @@ sm_is_const (const char *name)
 }
 
 static SpecialMethod *
-sm_to_const (const char *name, const gsi::ClassBase *cls)
-{
-  SpecialMethod *sm = new SpecialMethod (name,
-    tl::to_string (tr ("@hide")),  //  provided for test purposes mainly
-    true,    //  const
-    false,   //  non-static
-    MethodBase::ToConst);
-
-  gsi::ArgType ret;
-  ret.set_is_cptr (true);
-  ret.set_type (gsi::T_object);
-  ret.set_pass_obj (false);
-  ret.set_cls (cls);
-  sm->set_return (ret);
-
-  return sm;
-}
-
-static SpecialMethod *
-sm_const_cast (const char *name, const gsi::ClassBase *cls)
-{
-  SpecialMethod *sm = new SpecialMethod (name,
-    tl::to_string (tr ("@brief Returns a non-const reference to self.\n"
-                       "Basically, this method allows turning a const object reference to a non-const one. "
-                       "This method is provided as last resort to remove the constness from an object. Usually there is a good reason for a const object reference, so using this method may have undesired side effects.\n"
-                       "\n"
-                       "This method has been introduced in version 0.29.6.")),
-    true,    //  const
-    false,   //  non-static
-    MethodBase::ConstCast);
-
-  gsi::ArgType ret;
-  ret.set_is_ptr (true);
-  ret.set_type (gsi::T_object);
-  ret.set_pass_obj (false);
-  ret.set_cls (cls);
-  sm->set_return (ret);
-
-  return sm;
-}
-
-static SpecialMethod *
 sm_destroyed (const char *name)
 {
   SpecialMethod *sm = new SpecialMethod (name,
@@ -435,13 +376,12 @@ static SpecialMethod *
 sm_assign (const char *name, const gsi::ClassBase *cls)
 {
   SpecialMethod *sm = new SpecialMethod (name,
-    tl::to_string (tr ("@brief Assigns another object to self")),
+    tl::to_string (tr ("@brief Assigns another object to self\n@args other")),
     false,   //  non-const
     false,   //  non-static
     MethodBase::Assign);
 
   gsi::ArgType a;
-  a.init<void> (new gsi::ArgSpecBase ("other"));
   a.set_is_cref (true);
   a.set_type (gsi::T_object);
   a.set_cls (cls);
@@ -473,53 +413,6 @@ static const std::set<std::pair<std::string, bool> > &name_map_for_class (const 
 
   return cc->second;
 }
-
-#if defined(HAVE_DEBUG)
-static std::string type_signature (const gsi::ArgType &t)
-{
-  gsi::ArgType tr (t);
-  tr.set_is_ptr (false);
-  tr.set_is_ref (false);
-  tr.set_is_cptr (false);
-  tr.set_is_cref (false);
-  return tr.to_string ();
-}
-
-static std::string signature (const gsi::MethodBase *m, const gsi::MethodBase::MethodSynonym &s)
-{
-  std::string res;
-
-  if (m->is_static ()) {
-    res += "static ";
-  }
-
-  res += type_signature (m->ret_type ());
-  res += " ";
-  res += s.name;
-  if (s.is_predicate) {
-    res += "?";
-  }
-  if (s.is_setter) {
-    res += "=";
-  }
-
-  res += "(";
-  for (gsi::MethodBase::argument_iterator a = m->begin_arguments (); a != m->end_arguments (); ++a) {
-    if (a != m->begin_arguments ()) {
-      res += ", ";
-    }
-    res += type_signature (*a);
-  }
-
-  res += ")";
-
-  if (m->is_const ()) {
-    res += " const";
-  }
-
-  return res;
-}
-#endif
 
 void
 ClassBase::merge_declarations ()
@@ -640,9 +533,6 @@ ClassBase::merge_declarations ()
       non_const_decl->add_method (sm_is_const ("_is_const_object?"));
     }
 
-    non_const_decl->add_method (sm_to_const ("_to_const_object", &*c));
-    non_const_decl->add_method (sm_const_cast ("_const_cast", &*c));
-
   }
 
   //  finally merge the new classes into the existing ones
@@ -666,64 +556,16 @@ ClassBase::merge_declarations ()
     //  lym::ExternalClass)
     tl_assert (! c->declaration () || c->declaration () == &*c);
   }
-
-#if defined(HAVE_DEBUG)
-  //  do a sanity check
-  for (gsi::ClassBase::class_iterator c = gsi::ClassBase::begin_classes (); c != gsi::ClassBase::end_classes (); ++c) {
-
-    std::map<std::string, int> method_counts;
-
-    for (gsi::ClassBase::method_iterator m = c->begin_methods (); m != c->end_methods (); ++m) {
-      if (! (*m)->is_callback ()) {
-        for (gsi::MethodBase::synonym_iterator s = (*m)->begin_synonyms (); s != (*m)->end_synonyms (); ++s) {
-          method_counts [signature (*m, *s)] += 1;
-        }
-      }
-      //  try to obtain the default values to find potential binding issues
-      for (gsi::MethodBase::argument_iterator a = (*m)->begin_arguments (); a != (*m)->end_arguments (); ++a) {
-        if (a->spec ()) {
-          try {
-            a->spec ()->default_value ();
-          } catch (tl::Exception &ex) {
-            tl::warn << "Method " << signature (*m, *(*m)->begin_synonyms ()) << ": error obtaining default value for argument '" << a->spec ()->name () << "': " << ex.msg ();
-          }
-        }
-      }
-    }
-
-    for (std::map<std::string, int>::const_iterator mc = method_counts.begin (); mc != method_counts.end (); ++mc) {
-      if (mc->second > 1) {
-        tl::warn << "Ambiguous method declarations in class " << c->name () << " for method " << mc->first;
-      }
-    }
-
-  }
-#endif
-
 }
 
 static void collect_classes (const gsi::ClassBase *cls, std::list<const gsi::ClassBase *> &unsorted_classes)
 {
   unsorted_classes.push_back (cls);
 
-  for (auto cc = cls->begin_child_classes (); cc != cls->end_child_classes (); ++cc) {
+  for (tl::weak_collection<gsi::ClassBase>::const_iterator cc = cls->begin_child_classes (); cc != cls->end_child_classes (); ++cc) {
+    tl_assert (cc->declaration () != 0);
     collect_classes (cc.operator-> (), unsorted_classes);
   }
-}
-
-static bool all_parts_available (const gsi::ClassBase *cls, const std::set<const gsi::ClassBase *> &taken)
-{
-  if (cls->declaration () && cls->declaration () != cls && taken.find (cls->declaration ()) == taken.end ()) {
-    return false;
-  }
-
-  for (auto cc = cls->begin_child_classes (); cc != cls->end_child_classes (); ++cc) {
-    if (! all_parts_available (cc.operator-> (), taken)) {
-      return false;
-    }
-  }
-
-  return true;
 }
 
 std::list<const gsi::ClassBase *>
@@ -757,8 +599,9 @@ ClassBase::classes_in_definition_order (const char *mod_name)
         continue;
       }
 
-      if (! all_parts_available (*c, taken)) {
+      if ((*c)->declaration () != *c && taken.find ((*c)->declaration ()) == taken.end ()) {
         //  can't produce this class yet - it's a reference to another class which is not produced yet.
+        tl_assert ((*c)->declaration () != 0);
         more_classes.push_back (*c);
         continue;
       }
@@ -788,8 +631,8 @@ ClassBase::classes_in_definition_order (const char *mod_name)
         //  don't handle classes twice
         if (taken.find (*c) != taken.end ()) {
           //  not considered.
-        } else if ((*c)->declaration () && (*c)->declaration () != *c && taken.find ((*c)->declaration ()) == taken.end ()) {
-          //  can't produce this class yet - it refers to a class which is not available.
+        } else if ((*c)->declaration () != *c && taken.find ((*c)->declaration ()) == taken.end ()) {
+          //  can't produce this class yet - it's a child of a parent that is not produced yet.
           tl::error << tl::sprintf ("class %s.%s refers to another class (%s.%s) which is not available", (*c)->module (), (*c)->name (), (*c)->declaration ()->module (), (*c)->declaration ()->name ());
         } else if ((*c)->parent () != 0 && taken.find ((*c)->parent ()) == taken.end ()) {
           //  can't produce this class yet - it's a child of a parent that is not produced yet.
@@ -896,7 +739,7 @@ bool has_class (const std::string &name)
 
 static void add_class_to_map (const gsi::ClassBase *c)
 {
-  if (c->declaration () != c || ! c->binds ()) {
+  if (c->declaration () != c) {
     //  only consider non-extensions
     return;
   }
@@ -906,60 +749,36 @@ static void add_class_to_map (const gsi::ClassBase *c)
     ti = &c->type ();
   }
 
-  if (! sp_classes) {
-    sp_classes = new std::vector<const ClassBase *> ();
-  }
-  if (! sp_class_to_index) {
-    sp_class_to_index = new class_to_index_map_t ();
-  }
-  if (! sp_ti_to_class_index) {
-    sp_ti_to_class_index = new ti_to_class_map_t ();
-  }
-  if (! sp_tname_to_class) {
-    sp_tname_to_class = new tname_to_class_map_t ();
+  if (! sp_ti_to_class) {
+    sp_ti_to_class = new ti_to_class_map_t ();
   }
 
-  auto c2i = sp_class_to_index->insert (std::make_pair (c, sp_classes->size ())).first;
-  if (c2i->second >= sp_classes->size ()) {
-    sp_classes->push_back (c);
-  }
-
-  if (!sp_ti_to_class_index->insert (std::make_pair (ti, c2i->second)).second) {
+  if (ti && c->is_of_type (*ti) && !sp_ti_to_class->insert (std::make_pair (ti, c)).second) {
     //  Duplicate registration of this class
     tl::error << "Duplicate registration of class " << c->name () << " (type " << ti->name () << ")";
     tl_assert (false);
-  } else {
-    sp_tname_to_class->insert (std::make_pair (std::string (ti->name ()), c));
   }
 }
 
 const ClassBase *class_by_typeinfo_no_assert (const std::type_info &ti)
 {
-  if (! sp_ti_to_class_index || sp_ti_to_class_index->empty ()) {
-    for (auto c = gsi::ClassBase::begin_classes (); c != gsi::ClassBase::end_classes (); ++c) {
+  if (! sp_ti_to_class || sp_ti_to_class->empty ()) {
+    for (gsi::ClassBase::class_iterator c = gsi::ClassBase::begin_classes (); c != gsi::ClassBase::end_classes (); ++c) {
       add_class_to_map (c.operator-> ());
     }
-    for (auto c = gsi::ClassBase::begin_new_classes (); c != gsi::ClassBase::end_new_classes (); ++c) {
+    for (gsi::ClassBase::class_iterator c = gsi::ClassBase::begin_new_classes (); c != gsi::ClassBase::end_new_classes (); ++c) {
       add_class_to_map (c.operator-> ());
     }
   }
 
-  if (! sp_ti_to_class_index) {
+  if (! sp_ti_to_class) {
     return 0;
   } else {
-    auto c = sp_ti_to_class_index->find (&ti);
-    if (c != sp_ti_to_class_index->end ()) {
-      return sp_classes->operator[] (c->second);
+    std::map<const std::type_info *, const ClassBase *, type_info_compare>::const_iterator c = sp_ti_to_class->find (&ti);
+    if (c != sp_ti_to_class->end ()) {
+      return c->second;
     } else {
-      //  try name lookup
-      auto cn = sp_tname_to_class->find (std::string (ti.name ()));
-      if (cn != sp_tname_to_class->end ()) {
-        //  we can use this typeinfo as alias
-        sp_ti_to_class_index->insert (std::make_pair (&ti, sp_class_to_index->operator[] (cn->second)));
-        return cn->second;
-      } else {
-        return 0;
-      }
+      return 0;
     }
   }
 }
@@ -980,3 +799,4 @@ bool has_class (const std::type_info &ti)
 }
 
 }
+

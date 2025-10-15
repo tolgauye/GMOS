@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -31,6 +31,7 @@
 #include <QIODevice>
 #include "gsiQt.h"
 #include "gsiQtCoreCommon.h"
+#include "gsiDeclQtCoreTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -112,25 +113,25 @@
     return v;
   }
 
-  static qt_gsi::Converter<QChar>::target_type f_QDataStream_read_qchar(QDataStream *s)
+  static qt_gsi::Converter<class QChar>::target_type f_QDataStream_read_qchar(QDataStream *s)
   {
-    QChar v = QChar (0);
+    QChar v = 0;
     *s >> v;
-    return qt_gsi::Converter<QChar>::toc (v);
+    return qt_gsi::Converter<class QChar>::toc (v);
   }
 
-  static qt_gsi::Converter<QList<int> >::target_type f_QDataStream_read_int_list(QDataStream *s)
+  static qt_gsi::Converter<class QList<int> >::target_type f_QDataStream_read_int_list(QDataStream *s)
   {
     QList<int> v;
     *s >> v;
-    return qt_gsi::Converter<QList<int> >::toc (v);
+    return qt_gsi::Converter<class QList<int> >::toc (v);
   }
 
-  static qt_gsi::Converter<QVector<int> >::target_type f_QDataStream_read_int_vector(QDataStream *s)
+  static qt_gsi::Converter<class QVector<int> >::target_type f_QDataStream_read_int_vector(QDataStream *s)
   {
     QVector<int> v;
     *s >> v;
-    return qt_gsi::Converter<QVector<int> >::toc (v);
+    return qt_gsi::Converter<class QVector<int> >::toc (v);
   }
 
   static QString f_QDataStream_read_string(QDataStream *s)
@@ -213,21 +214,21 @@
     return s;
   }
 
-  static QDataStream *f_QDataStream_put_qchar(QDataStream *s, const qt_gsi::Converter<QChar>::target_type &v)
+  static QDataStream *f_QDataStream_put_qchar(QDataStream *s, const qt_gsi::Converter<class QChar>::target_type &v)
   {
-    *s << qt_gsi::Converter<QChar>::toq (v);
+    *s << qt_gsi::Converter<class QChar>::toq (v);
     return s;
   }
 
-  static QDataStream *f_QDataStream_put_int_list(QDataStream *s, const qt_gsi::Converter<QList<int> >::target_type &v)
+  static QDataStream *f_QDataStream_put_int_list(QDataStream *s, const qt_gsi::Converter<class QList<int> >::target_type &v)
   {
-    *s << qt_gsi::Converter<QList<int> >::toq (v);
+    *s << qt_gsi::Converter<class QList<int> >::toq (v);
     return s;
   }
 
-  static QDataStream *f_QDataStream_put_int_vector(QDataStream *s, const qt_gsi::Converter<QVector<int> >::target_type &v)
+  static QDataStream *f_QDataStream_put_int_vector(QDataStream *s, const qt_gsi::Converter<class QVector<int> >::target_type &v)
   {
-    *s << qt_gsi::Converter<QVector<int> >::toq (v);
+    *s << qt_gsi::Converter<class QVector<int> >::toq (v);
     return s;
   }
 

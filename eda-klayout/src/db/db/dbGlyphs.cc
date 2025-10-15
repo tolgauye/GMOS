@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -147,11 +147,20 @@ TextGenerator::text_as_region (const std::string &t, double target_dbu, double m
   return region;
 }
 
+#if defined(HAVE_QT)
 void
 TextGenerator::load_from_resource (const std::string &name)
 {
-  load_from_file (name);
+  QResource res (tl::to_qstring (name));
+  if (res.size () == 0) {
+    throw tl::Exception (tl::to_string (tr ("Unable to load font resource from ")) + name);
+  }
+
+  QByteArray data = qUncompress (QByteArray ((const char *) res.data (), int (res.size ())));
+
+  load_from_data (data.constData (), data.size (), tl::to_string (QFileInfo (tl::to_qstring (name)).baseName ()), name);
 }
+#endif
 
 void
 TextGenerator::load_from_data (const char *data, size_t ndata, const std::string &name, const std::string &description)
@@ -165,9 +174,9 @@ TextGenerator::load_from_data (const char *data, size_t ndata, const std::string
   m_description = description;
   m_name = name;
 
-  std::pair<bool, unsigned int> l1 = map.first_logical (db::LDPair (1, 0));
-  std::pair<bool, unsigned int> l2 = map.first_logical (db::LDPair (2, 0));
-  std::pair<bool, unsigned int> l3 = map.first_logical (db::LDPair (3, 0));
+  std::pair<bool, unsigned int> l1 = map.logical (db::LDPair (1, 0));
+  std::pair<bool, unsigned int> l2 = map.logical (db::LDPair (2, 0));
+  std::pair<bool, unsigned int> l3 = map.logical (db::LDPair (3, 0));
 
   if (l1.first && l2.first) {
     read_from_layout (layout, l1.second, l2.second, l3.second);
@@ -184,9 +193,9 @@ TextGenerator::load_from_file (const std::string &filename)
 
   m_description = filename;
 
-  std::pair<bool, unsigned int> l1 = map.first_logical (db::LDPair (1, 0));
-  std::pair<bool, unsigned int> l2 = map.first_logical (db::LDPair (2, 0));
-  std::pair<bool, unsigned int> l3 = map.first_logical (db::LDPair (3, 0));
+  std::pair<bool, unsigned int> l1 = map.logical (db::LDPair (1, 0));
+  std::pair<bool, unsigned int> l2 = map.logical (db::LDPair (2, 0));
+  std::pair<bool, unsigned int> l3 = map.logical (db::LDPair (3, 0));
 
   if (l1.first && l2.first) {
     read_from_layout (layout, l1.second, l2.second, l3.second);
@@ -313,12 +322,6 @@ TextGenerator::set_font_paths (const std::vector<std::string> &paths)
   s_font_paths = paths;
   s_fonts.clear ();
   s_fonts_loaded = false;
-}
-
-std::vector<std::string>
-TextGenerator::font_paths ()
-{
-  return s_font_paths;
 }
 
 const std::vector<TextGenerator> &

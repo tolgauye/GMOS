@@ -1,5 +1,0 @@
-* netlist
-
-* cell TOP1
-.SUBCKT TOP1
-.ENDS TOP1

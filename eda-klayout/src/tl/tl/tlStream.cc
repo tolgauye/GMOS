@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -32,8 +32,6 @@
 #include <zlib.h>
 #ifdef _WIN32 
 #  include <io.h>
-#else
-#  include <unistd.h>
 #endif
 
 #include "tlStream.h"
@@ -41,13 +39,10 @@
 #include "tlDeflate.h"
 #include "tlAssert.h"
 #include "tlFileUtils.h"
-#include "tlLog.h"
-#include "tlResources.h"
-#include "tlBase64.h"
+
 #include "tlException.h"
 #include "tlString.h"
 #include "tlUri.h"
-#include "tlHttpStream.h"
 
 #if defined(HAVE_QT)
 #  include <QByteArray>
@@ -142,164 +137,10 @@ public:
 };
 
 // ---------------------------------------------------------------
-//  inflating_input_stream implementation
-
-/**
- *  @brief A wrapper that adds generic .gz support
- */
-template <class Base>
-inflating_input_stream<Base>::inflating_input_stream (Base *delegate)
-  : m_inflating_stream (delegate), m_is_compressed (false), mp_delegate (delegate)
-{
-  enter_inflate ();
-}
-
-template <class Base>
-size_t
-inflating_input_stream<Base>::read (char *b, size_t n)
-{
-  //  TODO: this is somewhat inefficient, but we only use it for pipe and HTTP streams
-  size_t i = 0;
-  while (i < n) {
-
-    if (m_is_compressed || m_inflating_stream.blen () == 0) {
-
-      const char *read = m_inflating_stream.get (1);
-      if (! read) {
-        break;
-      }
-      *b++ = *read;
-      i += 1;
-
-    } else {
-
-      size_t nn = std::min (n - i, m_inflating_stream.blen ());
-      const char *read = m_inflating_stream.get (nn);
-      tl_assert (read != 0);
-      memcpy (b, read, nn);
-      b += nn;
-      i += nn;
-
-    }
-
-  }
-  return i;
-}
-
-template <class Base>
-void
-inflating_input_stream<Base>::enter_inflate ()
-{
-  //  identify and skip header for .gz file
-  if (auto_detect_gz ()) {
-    m_is_compressed = true;
-    m_inflating_stream.inflate (true /* stop after inflated block */);
-  } else {
-    m_inflating_stream.unget (m_inflating_stream.pos ());
-  }
-}
-
-template <class Base>
-bool
-inflating_input_stream<Base>::auto_detect_gz ()
-{
-  std::string header = m_inflating_stream.read_all (10);
-  if (header.size () < 10) {
-    return false;
-  }
-
-  const unsigned char *header_data = (const unsigned char *) header.c_str ();
-  unsigned char flags = header_data[3];
-  if (header_data[0] != 0x1f || header_data[1] != 0x8b || header_data[2] != 0x08 || (flags & 0xe0) != 0) {
-    return false;
-  }
-
-  //  .gz signature found
-
-  bool has_fhcrc = (flags & 0x02) != 0;
-  bool has_extra = (flags & 0x04) != 0;
-  bool has_fname = (flags & 0x08) != 0;
-  bool has_comment = (flags & 0x10) != 0;
-
-  if (has_extra) {
-    const unsigned char *xlen = (const unsigned char *) m_inflating_stream.get (2);
-    if (! xlen) {
-      throw tl::Exception (tl::to_string (tr ("Corrupt .gz header - missing XLEN field")));
-    }
-    const char *xdata = m_inflating_stream.get (size_t (xlen[0]) + (size_t (xlen[1]) << 8));
-    if (! xdata) {
-      throw tl::Exception (tl::to_string (tr ("Corrupt .gz header - missing EXTRA data")));
-    }
-  }
-
-  if (has_fname) {
-    const char *c;
-    while ((c = m_inflating_stream.get (1)) != 0 && *c)
-      ;
-    if (! c) {
-      throw tl::Exception (tl::to_string (tr ("Corrupt .gz header - missing FNAME data trailing zero byte")));
-    }
-  }
-
-  if (has_comment) {
-    const char *c;
-    while ((c = m_inflating_stream.get (1)) != 0 && *c)
-      ;
-    if (! c) {
-      throw tl::Exception (tl::to_string (tr ("Corrupt .gz header - missing COMMENT data trailing zero byte")));
-    }
-  }
-
-  if (has_fhcrc) {
-    const char *crc16 = m_inflating_stream.get (2);
-    if (! crc16) {
-      throw tl::Exception (tl::to_string (tr ("Corrupt .gz header - missing CRC16 data")));
-    }
-  }
-
-  return true;
-}
-
-//  explicit instantiations
-template class inflating_input_stream<tl::InputPipe>;
-template class inflating_input_stream<tl::InputHttpStream>;
-
-// ---------------------------------------------------------------
 //  InputStream implementation
 
-namespace {
-
-/**
- *  @brief A dummy delegate to provide for the case of raw data stashed inside the stream itself
- */
-class RawDataDelegate
-  : public InputStreamBase
-{
-public:
-  RawDataDelegate (const std::string &source)
-    : m_source (source)
-  { }
-
-  virtual size_t read (char *, size_t)
-  {
-    return 0;
-  }
-
-  virtual void reset () { }
-  virtual void close () { }
-
-  virtual std::string source () const { return m_source; }
-  virtual std::string absolute_path () const { return m_source; }
-  virtual std::string filename () const { return m_source; }
-
-public:
-  std::string m_source;
-};
-
-}
-
 InputStream::InputStream (InputStreamBase &delegate)
-  : m_pos (0), mp_bptr (0), mp_delegate (&delegate), m_owns_delegate (false), mp_inflate (0), m_inflate_always (false), m_stop_after_inflate (false)
+  : m_pos (0), mp_bptr (0), mp_delegate (&delegate), m_owns_delegate (false), mp_inflate (0)
 { 
   m_bcap = 4096; // initial buffer capacity
   m_blen = 0;
@@ -307,7 +148,7 @@ InputStream::InputStream (InputStreamBase &delegate)
 }
 
 InputStream::InputStream (InputStreamBase *delegate)
-  : m_pos (0), mp_bptr (0), mp_delegate (delegate), m_owns_delegate (true), mp_inflate (0), m_inflate_always (false), m_stop_after_inflate (false)
+  : m_pos (0), mp_bptr (0), mp_delegate (delegate), m_owns_delegate (true), mp_inflate (0)
 {
   m_bcap = 4096; // initial buffer capacity
   m_blen = 0;
@@ -315,87 +156,50 @@ InputStream::InputStream (InputStreamBase *delegate)
 }
 
 InputStream::InputStream (const std::string &abstract_path)
-  : m_pos (0), mp_bptr (0), mp_delegate (0), m_owns_delegate (false), mp_inflate (0), m_inflate_always (false), m_stop_after_inflate (false)
+  : m_pos (0), mp_bptr (0), mp_delegate (0), m_owns_delegate (false), mp_inflate (0)
 { 
   m_bcap = 4096; // initial buffer capacity
   m_blen = 0;
   mp_buffer = 0;
 
-  bool needs_inflate = false;
-
   tl::Extractor ex (abstract_path.c_str ());
 
+#if defined(HAVE_QT)
   if (ex.test (":")) {
 
-#if defined(HAVE_QT)
-
     QResource res (tl::to_qstring (abstract_path));
-    if (res.size () == 0) {
-      throw tl::Exception (tl::to_string (tr ("Resource not found: ")) + abstract_path);
+    if (res.size () > 0) {
+
+      QByteArray data;
+      if (res.isCompressed ()) {
+        data = qUncompress ((const unsigned char *)res.data (), (int)res.size ());
+      } else {
+        data = QByteArray ((const char *)res.data (), (int)res.size ());
+      }
+
+      mp_buffer = new char[data.size ()];
+      memcpy (mp_buffer, data.constData (), data.size ());
+
+      mp_bptr = mp_buffer;
+      m_bcap = data.size ();
+      m_blen = m_bcap;
+
     }
 
-    QByteArray data;
-#if QT_VERSION >= 0x60000
-    if (res.compressionAlgorithm () == QResource::ZlibCompression) {
-#else
-    if (res.isCompressed ()) {
+  } else
 #endif
-      data = qUncompress ((const unsigned char *)res.data (), (int)res.size ());
-    } else {
-      data = QByteArray ((const char *)res.data (), (int)res.size ());
-    }
-
-    mp_buffer = new char[data.size ()];
-    memcpy (mp_buffer, data.constData (), data.size ());
-
-    mp_bptr = mp_buffer;
-    m_bcap = data.size ();
-    m_blen = m_bcap;
-
-    mp_delegate = new RawDataDelegate (abstract_path);
-
-#else
-
-    std::pair<tl::InputStreamBase *, bool> rr = tl::get_resource_reader (ex.get ());
-    if (! rr.first) {
-      throw tl::Exception (tl::to_string (tr ("Resource not found: ")) + abstract_path);
-    }
-
-    mp_delegate = rr.first;
-    needs_inflate = rr.second;
-
-#endif
-
-  } else if (ex.test ("data:")) {
-
-    std::vector<unsigned char> data = tl::from_base64 (ex.get ());
-
-    char *data_ptr = new char [data.size ()];
-    memcpy (data_ptr, data.begin ().operator-> (), data.size ());
-    mp_delegate = new InputMemoryStream (data_ptr, data.size (), true);
-
-  } else if (ex.test ("pipe:")) {
-
-    mp_delegate = new InflatingInputPipe (ex.get ());
-
-  } else {
-
-    tl::URI uri (abstract_path);
-
-    if (uri.scheme () == "http" || uri.scheme () == "https") {
 #if defined(HAVE_CURL) || defined(HAVE_QT)
-      mp_delegate = new InflatingInputHttpStream (abstract_path);
-#else
-      throw tl::Exception (tl::to_string (tr ("HTTP support not enabled - HTTP/HTTPS paths are not available")));
+  if (ex.test ("http:") || ex.test ("https:")) {
+    mp_delegate = new InputHttpStream (abstract_path);
+  } else
 #endif
-    } else if (uri.scheme () == "file") {
-      mp_delegate = new InputZLibFile (uri.path ());
-    } else if (! uri.scheme ().empty ()) {
-      throw tl::Exception (tl::to_string (tr ("URI scheme not supported: ")) + uri.scheme ());
-    } else {
-      mp_delegate = new InputZLibFile (abstract_path);
-    }
-
+  if (ex.test ("pipe:")) {
+    mp_delegate = new InputPipe (ex.get ());
+  } else if (ex.test ("file:")) {
+    tl::URI uri (abstract_path);
+    mp_delegate = new InputZLibFile (uri.path ());
+  } else {
+    mp_delegate = new InputZLibFile (abstract_path);
   }
 
   if (! mp_buffer) {
@@ -403,9 +207,30 @@ InputStream::InputStream (const std::string &abstract_path)
   }
 
   m_owns_delegate = true;
+}
 
-  if (needs_inflate) {
-    inflate_always ();
+std::string InputStream::absolute_path (const std::string &abstract_path)
+{
+  //  TODO: align this implementation with InputStream ctor
+
+  tl::Extractor ex (abstract_path.c_str ());
+#if defined(HAVE_QT)
+  if (ex.test (":")) {
+    return abstract_path;
+  } else
+#endif
+#if defined(HAVE_CURL) || defined(HAVE_QT)
+  if (ex.test ("http:") || ex.test ("https:")) {
+    return abstract_path;
+  } else
+#endif
+  if (ex.test ("pipe:")) {
+    return abstract_path;
+  } else if (ex.test ("file:")) {
+    tl::URI uri (abstract_path);
+    return tl::absolute_path (uri.path ());
+  } else {
+    return tl::absolute_file_path (abstract_path);
   }
 }
 
@@ -418,131 +243,14 @@ InputStream::~InputStream ()
   if (mp_inflate) {
     delete mp_inflate;
     mp_inflate = 0;
-  }
+  } 
   if (mp_buffer) {
     delete[] mp_buffer;
     mp_buffer = 0;
   }
 }
 
-std::string InputStream::absolute_file_path (const std::string &abstract_path)
-{
-  //  TODO: align this implementation with InputStream ctor
-
-  tl::Extractor ex (abstract_path.c_str ());
-  if (ex.test (":")) {
-    return abstract_path;
-  } else if (ex.test ("http:") || ex.test ("https:") || ex.test ("pipe:") || ex.test ("data:")) {
-    return abstract_path;
-  } else if (ex.test ("file:")) {
-    tl::URI uri (abstract_path);
-    return tl::absolute_file_path (uri.path ());
-  } else {
-    return tl::absolute_file_path (abstract_path);
-  }
-}
-
-bool InputStream::is_absolute (const std::string &abstract_path)
-{
-  //  TODO: align this implementation with InputStream ctor
-
-  tl::Extractor ex (abstract_path.c_str ());
-  if (ex.test (":")) {
-    return true;
-  } else if (ex.test ("http:") || ex.test ("https:") || ex.test ("pipe:") || ex.test ("data:")) {
-    return true;
-  } else if (ex.test ("file:")) {
-    tl::URI uri (abstract_path);
-    return tl::is_absolute (uri.path ());
-  } else {
-    return tl::is_absolute (abstract_path);
-  }
-}
-
-bool InputStream::is_file_path (const std::string &abstract_path)
-{
-  tl::Extractor ex (abstract_path.c_str ());
-  if (ex.test (":")) {
-    return false;
-  } else if (ex.test ("http:") || ex.test ("https:") || ex.test ("pipe:") || ex.test ("data:")) {
-    return false;
-  } else {
-    return true;
-  }
-}
-
-std::string InputStream::as_file_path (const std::string &abstract_path)
-{
-  tl::Extractor ex (abstract_path.c_str ());
-  if (ex.test (":")) {
-    return std::string ();
-  } else if (ex.test ("http:") || ex.test ("https:") || ex.test ("pipe:") || ex.test ("data:")) {
-    return std::string ();
-  } else if (ex.test ("file:")) {
-    tl::URI uri (abstract_path);
-    return uri.path ();
-  } else {
-    return abstract_path;
-  }
-}
-
-std::string InputStream::combine (const std::string &path1, const std::string &path2)
-{
-  if (is_absolute (path2)) {
-    return path2;
-  }
-
-  tl::Extractor ex (path1);
-  if (ex.test (":")) {
-    return path1 + "/" + path2;
-  } else if (ex.test ("pipe:") || ex.test ("data:")) {
-    //  ignore un-combinable first parts
-    return path2;
-  }
-
-  tl::URI uri1 (path1);
-  tl::URI uri2 (path2);
-
-  if (uri1.scheme ().empty ()) {
-    if (uri2.scheme ().empty ()) {
-      return tl::combine_path (path1, path2);
-    } else {
-      return tl::combine_path (path1, uri2.path ());
-    }
-  } else {
-    if (uri2.scheme ().empty ()) {
-      uri1.set_path (uri1.path () + "/" + tl::replaced (path2, "\\", "/"));
-    } else {
-      uri1.set_path (uri1.path () + "/" + uri2.path ());
-    }
-    return uri1.to_abstract_path ();
-  }
-}
-
-std::string InputStream::relative_path (const std::string &path1, const std::string &path2)
-{
-  //  TODO: align this implementation with InputStream ctor
-
-  tl::Extractor ex (path2);
-  if (ex.test (":")) {
-    return path2;
-  } else if (ex.test ("pipe:") || ex.test ("data:")) {
-    return path2;
-  }
-
-  tl::URI uri1 (path1);
-  tl::URI uri2 (path2);
-
-  //  NOTE: only file schemes are supported as of now
-  if ((uri1.scheme ().empty () || uri1.scheme () == "file") &&
-      (uri2.scheme ().empty () || uri2.scheme () == "file")) {
-    return tl::relative_path (uri1.path (), uri2.path ());
-  }
-
-  return path2;
-}
-
-const char *
+const char * 
 InputStream::get (size_t n, bool bypass_inflate)
 {
   //  if deflating, employ the deflate filter to get the data
@@ -553,18 +261,11 @@ InputStream::get (size_t n, bool bypass_inflate)
       tl_assert (r != 0);  //  since deflate did not report at_end()
       return r;
 
-    } else if (m_stop_after_inflate) {
-
-      //  report EOF after the inflator has finished
-      return 0;
-
     } else {
-
       delete mp_inflate;
       mp_inflate = 0;
-
     }
-  }
+  } 
 
   if (m_blen < n) {
 
@@ -607,16 +308,9 @@ InputStream::get (size_t n, bool bypass_inflate)
 void
 InputStream::unget (size_t n)
 {
-  if (n == 0) {
-    return;
-  }
-
   if (mp_inflate) {
-    //  TODO: this will not work if mp_inflate just got destroyed
-    //  (no unget into previous compressed block)
     mp_inflate->unget (n);
   } else {
-    tl_assert (mp_buffer + n <= mp_bptr);
     mp_bptr -= n;
     m_blen += n;
     m_pos -= n;
@@ -627,36 +321,16 @@ std::string
 InputStream::read_all (size_t max_count) 
 {
   std::string str;
-
-  if (mp_inflate) {
-
-    //  Inflate is special - it does not have a guaranteed byte delivery, so we have to go the
-    //  hard way and pick the file byte by byte
-    while (max_count > 0) {
-      const char *b = get (1);
-      if (b) {
-        str += *b;
-        --max_count;
-      } else {
-        break;
-      }
+  while (max_count > 0) {
+    size_t n = std::min (max_count, std::max (size_t (1), m_blen));
+    const char *b = get (n);
+    if (b) {
+      str += std::string (b, n);
+      max_count -= n;
+    } else {
+      break;
     }
-
-  } else {
-
-    while (max_count > 0) {
-      size_t n = std::min (max_count, std::max (size_t (1), m_blen));
-      const char *b = get (n);
-      if (b) {
-        str += std::string (b, n);
-        max_count -= n;
-      } else {
-        break;
-      }
-    }
-
-  }
-
+  } 
   return str;
 }
 
@@ -664,34 +338,15 @@ std::string
 InputStream::read_all () 
 {
   std::string str;
-
-  if (mp_inflate) {
-
-    //  Inflate is special - it does not have a guaranteed byte delivery, so we have to go the
-    //  hard way and pick the file byte by byte
-    while (true) {
-      const char *b = get (1);
-      if (b) {
-        str += *b;
-      } else {
-        break;
-      }
+  while (true) {
+    size_t n = std::max (size_t (1), m_blen);
+    const char *b = get (n);
+    if (b) {
+      str += std::string (b, n);
+    } else {
+      break;
     }
-
-  } else {
-
-    while (true) {
-      size_t n = std::max (size_t (1), m_blen);
-      const char *b = get (n);
-      if (b) {
-        str += std::string (b, n);
-      } else {
-        break;
-      }
-    }
-
-  }
-
+  } 
   return str;
 }
 
@@ -706,18 +361,10 @@ void InputStream::copy_to (tl::OutputStream &os)
 }
 
 void
-InputStream::inflate (bool stop_after)
+InputStream::inflate ()
 {
   tl_assert (mp_inflate == 0);
   mp_inflate = new tl::InflateFilter (*this);
-  m_stop_after_inflate = stop_after;
-}
-
-void
-InputStream::inflate_always ()
-{
-  m_inflate_always = true;
-  reset ();
 }
 
 void
@@ -747,8 +394,6 @@ InputStream::reset ()
 
   } else {
 
-    tl_assert (mp_delegate != 0);
-
     mp_delegate->reset ();
     m_pos = 0;
 
@@ -761,10 +406,6 @@ InputStream::reset ()
     m_blen = 0;
     mp_buffer = new char [m_bcap];
 
-  }
-
-  if (m_inflate_always) {
-    inflate ();
   }
 }
 
@@ -808,26 +449,18 @@ TextInputStream::read_all (size_t max_count)
 const std::string &
 TextInputStream::get_line ()
 {
-  size_t line = m_next_line;
+  m_line = m_next_line;
   m_line_buffer.clear ();
 
   while (! at_end ()) {
     char c = get_char ();
-    if (c == '\n') {
-      //  set at_end if there is nothing after this terminal LF -> this will avoid
-      //  emitting an empty dummy line as the last one
-      if (peek_char () == 0) {
-        m_at_end = true;
-      }
-      break;
-    } else if (c == 0) {
+    if (c == '\n' || c == 0) {
       break;
     } else {
       m_line_buffer += c;
     }
   }
 
-  m_line = line;
   return m_line_buffer;
 }
 
@@ -856,6 +489,7 @@ TextInputStream::peek_char ()
     m_line = m_next_line;
     const char *c = m_stream.get (1);
     if (c == 0) {
+      m_at_end = true;
       return 0;
     } else if (*c != '\r' && *c) {
       char cc = *c;
@@ -897,15 +531,15 @@ TextInputStream::reset ()
 InputFile::InputFile (const std::string &path)
   : m_fd (-1)
 {
-  m_source = tl::absolute_file_path (path);;
+  m_source = path;
 #if defined(_WIN32)
-  int fd = _wopen (tl::to_wstring (m_source).c_str (), _O_BINARY | _O_RDONLY | _O_SEQUENTIAL);
+  int fd = _wopen (tl::to_wstring (path).c_str (), _O_BINARY | _O_RDONLY | _O_SEQUENTIAL);
   if (fd < 0) {
     throw FileOpenErrorException (m_source, errno);
   }
   m_fd = fd;
 #else
-  int fd = open (m_source.c_str (), O_RDONLY);
+  int fd = open (path.c_str (), O_RDONLY);
   if (fd < 0) {
     throw FileOpenErrorException (m_source, errno);
   }
@@ -979,19 +613,17 @@ InputZLibFile::InputZLibFile (const std::string &path)
   : mp_d (new ZLibFilePrivate ())
 {
   m_source = path;
-  std::string source = tl::absolute_file_path (path);
-
 #if defined(_WIN32)
-  int fd = _wopen (tl::to_wstring (source).c_str (), _O_BINARY | _O_RDONLY | _O_SEQUENTIAL);
+  int fd = _wopen (tl::to_wstring (path).c_str (), _O_BINARY | _O_RDONLY | _O_SEQUENTIAL);
   if (fd < 0) {
-    throw FileOpenErrorException (source, errno);
+    throw FileOpenErrorException (m_source, errno);
   }
   mp_d->zs = gzdopen (fd, "rb");
 #else
-  mp_d->zs = gzopen (tl::string_to_system (source).c_str (), "rb");
+  mp_d->zs = gzopen (tl::string_to_system (path).c_str (), "rb");
 #endif
   if (mp_d->zs == NULL) {
-    throw FileOpenErrorException (source, errno);
+    throw FileOpenErrorException (m_source, errno);
   }
 }
 
@@ -1060,15 +692,7 @@ OutputStream::OutputStream (OutputStreamBase &delegate, bool as_text)
   mp_buffer = new char[m_buffer_capacity];
 }
 
-OutputStream::OutputStream (OutputStreamBase *delegate, bool as_text)
-  : m_pos (0), mp_delegate (delegate), m_owns_delegate (true), m_as_text (as_text)
-{
-  m_buffer_capacity = 16384;
-  m_buffer_pos = 0;
-  mp_buffer = new char[m_buffer_capacity];
-}
-
-OutputStream::OutputStreamMode
+OutputStream::OutputStreamMode 
 OutputStream::output_mode_from_filename (const std::string &abstract_path, OutputStream::OutputStreamMode om)
 {
   if (om == OM_Auto) {
@@ -1083,16 +707,16 @@ OutputStream::output_mode_from_filename (const std::string &abstract_path, Outpu
 }
 
 static
-OutputStreamBase *create_file_stream (const std::string &path, OutputStream::OutputStreamMode om, int keep_backups)
+OutputStreamBase *create_file_stream (const std::string &path, OutputStream::OutputStreamMode om)
 {
   if (om == OutputStream::OM_Zlib) {
-    return new OutputZLibFile (path, keep_backups);
+    return new OutputZLibFile (path);
   } else {
-    return new OutputFile (path, keep_backups);
+    return new OutputFile (path);
   }
 }
 
-OutputStream::OutputStream (const std::string &abstract_path, OutputStreamMode om, bool as_text, int keep_backups)
+OutputStream::OutputStream (const std::string &abstract_path, OutputStreamMode om, bool as_text)
   : m_pos (0), mp_delegate (0), m_owns_delegate (false), m_as_text (as_text), m_path (abstract_path)
 {
   //  Determine output mode
@@ -1104,9 +728,9 @@ OutputStream::OutputStream (const std::string &abstract_path, OutputStreamMode o
   } else if (ex.test ("pipe:")) {
     mp_delegate = new OutputPipe (ex.get ());
   } else if (ex.test ("file:")) {
-    mp_delegate = create_file_stream (ex.get (), om, keep_backups);
+    mp_delegate = create_file_stream (ex.get (), om);
   } else {
-    mp_delegate = create_file_stream (abstract_path, om, keep_backups);
+    mp_delegate = create_file_stream (abstract_path, om);
   }
 
   m_owns_delegate = true;
@@ -1118,42 +742,21 @@ OutputStream::OutputStream (const std::string &abstract_path, OutputStreamMode o
 
 OutputStream::~OutputStream ()
 {
-  try {
-    close ();
-  } catch (...) {
-    //  no recursive exceptions
-  }
+  close ();
 }
 
 void
 OutputStream::close ()
 {
-  try {
+  flush ();
 
-    flush ();
-
-    if (mp_delegate && m_owns_delegate) {
-      delete mp_delegate;
-      mp_delegate = 0;
-    }
-    if (mp_buffer) {
-      delete[] mp_buffer;
-      mp_buffer = 0;
-    }
-
-  } catch (...) {
-
-    if (mp_delegate && m_owns_delegate) {
-      delete mp_delegate;
-      mp_delegate = 0;
-    }
-    if (mp_buffer) {
-      delete[] mp_buffer;
-      mp_buffer = 0;
-    }
-
-    throw;
-
+  if (mp_delegate && m_owns_delegate) {
+    delete mp_delegate;
+    mp_delegate = 0;
+  }
+  if (mp_buffer) {
+    delete[] mp_buffer;
+    mp_buffer = 0;
   }
 }
 
@@ -1265,134 +868,22 @@ OutputStream::seek (size_t pos)
 }
 
 // ---------------------------------------------------------------
-//  OutputFileBase implementation
-
-OutputFileBase::OutputFileBase (const std::string &p, int keep_backups)
-  : m_keep_backups (keep_backups), m_path (tl::absolute_file_path (p)), m_has_error (false)
-{
-  if (p.empty ()) {
-    throw tl::Exception (tl::to_string (tr ("Path cannot be an empty string")));
-  }
-
-  if (tl::file_exists (m_path)) {
-
-    if (tl::is_dir (m_path)) {
-
-      throw tl::Exception (tl::to_string (tr ("Path exists and is a directory: '%s'")), m_path);
-
-    } else {
-
-      m_backup_path = m_path + ".~backup";
-      if (tl::file_exists (m_backup_path)) {
-        if (! tl::rm_file (m_backup_path)) {
-          tl::warn << tl::sprintf (tl::to_string (tr ("Could not create backup file: unable to remove existing file '%s'")), m_backup_path);
-          m_backup_path = std::string ();
-        }
-      }
-      if (! m_backup_path.empty ()) {
-        if (! tl::rename_file (m_path, tl::filename (m_backup_path))) {
-          tl::warn << tl::sprintf (tl::to_string (tr ("Could not create backup file: unable to rename original file '%s' to backup file")), m_path, m_backup_path);
-          m_backup_path = std::string ();
-        }
-      }
-
-    }
-
-  }
-}
-
-OutputFileBase::~OutputFileBase ()
-{
-  if (! m_backup_path.empty ()) {
-
-    if (m_has_error) {
-
-      if (! tl::rm_file (m_path)) {
-        tl::warn << tl::sprintf (tl::to_string (tr ("Could not restore backup file: unable to remove file '%s'")), m_path);
-      } else if (! tl::rename_file (m_backup_path, m_path)) {
-        tl::warn << tl::sprintf (tl::to_string (tr ("Could not restore backup file: unable to rename file '%s' back to '%s'")), m_backup_path, m_path);
-      }
-
-    } else {
-
-      if (m_keep_backups == 0) {
-
-        if (! tl::rm_file (m_backup_path)) {
-          tl::warn << tl::sprintf (tl::to_string (tr ("Could not remove backup file '%s'")), m_backup_path);
-        }
-
-      } else {
-
-        //  shuffle backup files
-        int n = 1;
-        for ( ; m_keep_backups < 0 || n < m_keep_backups; ++n) {
-          std::string p = m_path + "." + tl::to_string (n);
-          if (! tl::file_exists (p)) {
-            break;
-          }
-        }
-
-        while (n > 0) {
-          std::string p = m_path + "." + tl::to_string (n);
-          std::string pprev = n > 1 ? (m_path + "." + tl::to_string (n - 1)) : m_backup_path;
-          if (tl::file_exists (p)) {
-            if (! tl::rm_file (p)) {
-              tl::warn << tl::sprintf (tl::to_string (tr ("Error shuffling backup files: unable to remove file '%s'")), p);
-            }
-          }
-          if (! tl::rename_file (pprev, p)) {
-            tl::warn << tl::sprintf (tl::to_string (tr ("Error shuffling backup files: unable to rename file '%s' to '%s'")), pprev, p);
-          }
-          --n;
-        }
-
-      }
-
-    }
-  }
-}
-
-void OutputFileBase::seek (size_t s)
-{
-  try {
-    seek_file (s);
-  } catch (...) {
-    reject ();
-    throw;
-  }
-}
-
-void OutputFileBase::write (const char *b, size_t n)
-{
-  try {
-    write_file (b, n);
-  } catch (...) {
-    reject ();
-    throw;
-  }
-}
-
-void OutputFileBase::reject ()
-{
-  m_has_error = true;
-}
-
-// ---------------------------------------------------------------
 //  OutputFile implementation
 
-OutputFile::OutputFile (const std::string &p, int keep_backups)
-  : OutputFileBase (p, keep_backups), m_fd (-1)
+OutputFile::OutputFile (const std::string &path)
+  : m_fd (-1)
 {
+  m_source = path;
 #if defined(_WIN32)
-  int fd = _wopen (tl::to_wstring (path ()).c_str (), _O_CREAT | _O_TRUNC | _O_BINARY | _O_WRONLY | _O_SEQUENTIAL, _S_IREAD | _S_IWRITE );
+  int fd = _wopen (tl::to_wstring (path).c_str (), _O_CREAT | _O_TRUNC | _O_BINARY | _O_WRONLY | _O_SEQUENTIAL, _S_IREAD | _S_IWRITE );
   if (fd < 0) {
-    throw FileOpenErrorException (path (), errno);
+    throw FileOpenErrorException (m_source, errno);
   }
   m_fd = fd;
 #else
-  int fd = open (path ().c_str (), O_WRONLY | O_CREAT | O_TRUNC, 0666);
+  int fd = open (path.c_str (), O_WRONLY | O_CREAT | O_TRUNC, 0666);
   if (fd < 0) {
-    throw FileOpenErrorException (path (), errno);
+    throw FileOpenErrorException (m_source, errno);
   }
   m_fd = fd;
 #endif
@@ -1407,11 +898,11 @@ OutputFile::~OutputFile ()
     close (m_fd);
 #endif
     m_fd = -1;
-  }
+  }  
 }
 
-void
-OutputFile::seek_file (size_t s)
+void 
+OutputFile::seek (size_t s)
 {
   tl_assert (m_fd >= 0);
 #if defined(_WIN64)
@@ -1423,8 +914,8 @@ OutputFile::seek_file (size_t s)
 #endif
 }
 
-void
-OutputFile::write_file (const char *b, size_t n)
+void 
+OutputFile::write (const char *b, size_t n)
 {
   tl_assert (m_fd >= 0);
 #if defined(_WIN32)
@@ -1433,27 +924,28 @@ OutputFile::write_file (const char *b, size_t n)
   ptrdiff_t ret = ::write (m_fd, b, (unsigned int) n);
 #endif
   if (ret < 0) {
-    throw FileWriteErrorException (path (), errno);
+    throw FileWriteErrorException (m_source, errno);
   }
 }
 
 // ---------------------------------------------------------------
 //  OutputZLibFile implementation
 
-OutputZLibFile::OutputZLibFile (const std::string &p, int keep_backups)
-  : OutputFileBase (p, keep_backups), mp_d (new ZLibFilePrivate ())
+OutputZLibFile::OutputZLibFile (const std::string &path)
+  : mp_d (new ZLibFilePrivate ())
 {
+  m_source = path;
 #if defined(_WIN32)
-  FILE *file = _wfopen (tl::to_wstring (path ()).c_str (), L"wb");
+  FILE *file = _wfopen (tl::to_wstring (path).c_str (), L"wb");
   if (file == NULL) {
-    throw FileOpenErrorException (path (), errno);
+    throw FileOpenErrorException (m_source, errno);
   }
   mp_d->zs = gzdopen (_fileno (file), "wb");
 #else
-  mp_d->zs = gzopen (tl::string_to_system (path ()).c_str (), "wb");
+  mp_d->zs = gzopen (tl::string_to_system (path).c_str (), "wb");
 #endif
   if (mp_d->zs == NULL) {
-    throw FileOpenErrorException (path (), errno);
+    throw FileOpenErrorException (m_source, errno);
   }
 }
 
@@ -1468,7 +960,7 @@ OutputZLibFile::~OutputZLibFile ()
 }
 
 void 
-OutputZLibFile::write_file (const char *b, size_t n)
+OutputZLibFile::write (const char *b, size_t n)
 {
   tl_assert (mp_d->zs != NULL);
   int ret = gzwrite (mp_d->zs, (char *) b, (unsigned int) n);
@@ -1476,9 +968,9 @@ OutputZLibFile::write_file (const char *b, size_t n)
     int gz_err = 0;
     const char *em = gzerror (mp_d->zs, &gz_err);
     if (gz_err == Z_ERRNO) {
-      throw FileWriteErrorException (path (), errno);
+      throw FileWriteErrorException (m_source, errno);
     } else {
-      throw ZLibWriteErrorException (path (), em);
+      throw ZLibWriteErrorException (m_source, em);
     }
   }
 }
@@ -1527,7 +1019,7 @@ InputPipe::read (char *b, size_t n)
   size_t ret = fread (b, 1, n, m_file);
   if (ret < n) {
     if (ferror (m_file)) {
-      throw FilePReadErrorException (m_source, errno);
+      throw FilePReadErrorException (m_source, ferror (m_file));
     }
   }
 
@@ -1557,7 +1049,7 @@ OutputPipe::OutputPipe (const std::string &path)
 OutputPipe::~OutputPipe ()
 {
   if (m_file != NULL) {
-    _pclose (m_file);
+    fclose (m_file);
     m_file = NULL;
   }
 }
@@ -1569,7 +1061,7 @@ OutputPipe::write (const char *b, size_t n)
   size_t ret = fwrite (b, 1, n, m_file);
   if (ret < n) {
     if (ferror (m_file)) {
-      throw FilePWriteErrorException (m_source, errno);
+      throw FilePWriteErrorException (m_source, ferror (m_file));
     }
   }
 }
@@ -1579,11 +1071,11 @@ OutputPipe::write (const char *b, size_t n)
 // ---------------------------------------------------------------
 //  InputPipe delegate implementation
 
-InputPipe::InputPipe (const std::string &source)
+InputPipe::InputPipe (const std::string &path)
   : m_file (NULL)
 {
-  m_source = source;
-  m_file = popen (tl::string_to_system (source).c_str (), "r");
+  m_source = path;
+  m_file = popen (tl::string_to_system (path).c_str (), "r");
   if (m_file == NULL) {
     throw FilePOpenErrorException (m_source, errno);
   }
@@ -1614,22 +1106,10 @@ size_t
 InputPipe::read (char *b, size_t n)
 {
   tl_assert (m_file != NULL);
-
-  bool retry = true;
-  size_t ret = 0;
-
-  while (retry) {
-    retry = false;
-    ret = fread (b, 1, n, m_file);
-    if (ret < n) {
-      if (ferror (m_file)) {
-        if (errno != EINTR) {
-          throw FilePReadErrorException (m_source, errno);
-        } else if (ret == 0) {
-          retry = true;
-          clearerr (m_file);
-        }
-      }
+  size_t ret = fread (b, 1, n, m_file);
+  if (ret < n) {
+    if (ferror (m_file)) {
+      throw FilePReadErrorException (m_source, ferror (m_file));
     }
   }
 
@@ -1658,7 +1138,7 @@ OutputPipe::OutputPipe (const std::string &path)
 OutputPipe::~OutputPipe ()
 {
   if (m_file != NULL) {
-    pclose (m_file);
+    fclose (m_file);
     m_file = NULL;
   }  
 }
@@ -1667,11 +1147,10 @@ void
 OutputPipe::write (const char *b, size_t n)
 {
   tl_assert (m_file != NULL);
-
   size_t ret = fwrite (b, 1, n, m_file);
   if (ret < n) {
-    if (ferror (m_file) && errno != EINTR) {
-      throw FilePReadErrorException (m_source, errno);
+    if (ferror (m_file)) {
+      throw FilePWriteErrorException (m_source, ferror (m_file));
     }
   }
 }

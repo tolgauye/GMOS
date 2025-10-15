@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -34,21 +34,6 @@ namespace tl
 
 static DeferredMethodScheduler *s_inst = 0;
 
-// -----------------------------------------------------------------------------------
-
-/**
- *  @brief A default scheduler which is used for example in non-Qt environments
- */
-class DefaultDeferredMethodScheduler
-  : public DeferredMethodScheduler
-{
-public:
-  DefaultDeferredMethodScheduler () : DeferredMethodScheduler () { }
-  void queue_event() {}
-};
-
-// -----------------------------------------------------------------------------------
-
 DeferredMethodScheduler::DeferredMethodScheduler ()
   : m_disabled (0), m_scheduled (false)
 {
@@ -70,33 +55,7 @@ DeferredMethodScheduler::instance ()
     new DeferredMethodSchedulerQt ();
   }
 #endif
-  if (! s_inst) {
-    new DefaultDeferredMethodScheduler ();
-  }
   return s_inst;
-}
-
-void
-DeferredMethodScheduler::enable (bool en)
-{
-  if (instance ()) {
-    instance ()->do_enable (en);
-  }
-}
-
-void
-DeferredMethodScheduler::execute ()
-{
-  if (instance ()) {
-    while (instance ()->do_execute ())
-      ;
-  }
-}
-
-bool
-DeferredMethodScheduler::is_disabled () const
-{
-  return m_disabled;
 }
 
 void 
@@ -126,12 +85,6 @@ DeferredMethodScheduler::unqueue (DeferredMethodBase *method)
     }
     m = mm;
   }
-  for (std::list<DeferredMethodBase *>::iterator m = m_executing.begin (); m != m_executing.end (); ++m) {
-    if (*m == method) {
-      m_unqueued.insert (method);
-      break;
-    }
-  }
 }
 
 void 
@@ -146,56 +99,22 @@ DeferredMethodScheduler::do_enable (bool en)
   }
 }
 
-bool
+void
 DeferredMethodScheduler::do_execute ()
 {
+  std::list<DeferredMethodBase *> methods;
+
   m_lock.lock ();
-
-  if (m_disabled) {
-    m_lock.unlock ();
-    return false;
-  }
-
-  bool any_pending = false;
-
-  m_executing.clear ();
-  m_unqueued.clear ();
-  m_executing.swap (m_methods);
+  methods.swap (m_methods);
   m_scheduled = false;
   m_lock.unlock ();
 
   //  do the execution outside the locked range to avoid deadlocks if the method's execution
   //  schedules another call.
-  for (std::list<DeferredMethodBase *>::iterator m = m_executing.begin (); m != m_executing.end (); ++m) {
-
-    bool still_valid;
-
-    m_lock.lock ();
-    //  during execution a method may be unqueued - make sure this is not executed
-    still_valid = (m_unqueued.find (*m) == m_unqueued.end ());
-    m_lock.unlock ();
-
-    if (still_valid) {
-
-      (*m)->m_scheduled = false;
-      (*m)->execute ();
-
-      //  execute() may have triggered another do_execute which we should consider here and stop:
-      if (m_executing.empty ()) {
-        break;
-      }
-
-    }
-
+  for (std::list<DeferredMethodBase *>::iterator m = methods.begin (); m != methods.end (); ++m) {
+    (*m)->m_scheduled = false;
+    (*m)->execute ();
   }
-
-  m_lock.lock ();
-  m_unqueued.clear ();
-  m_executing.clear ();
-  any_pending = !m_methods.empty ();
-  m_lock.unlock ();
-
-  return any_pending;
 }
 
 }

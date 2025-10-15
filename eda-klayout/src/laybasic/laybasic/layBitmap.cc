@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -33,15 +33,13 @@ Bitmap::Bitmap ()
 {
   init (0, 0);
   m_resolution = 1.0;
-  m_font_resolution = 1.0;
 }
 
-Bitmap::Bitmap (unsigned int w, unsigned int h, double r, double rf)
+Bitmap::Bitmap (unsigned int w, unsigned int h, double r)
   : m_empty_scanline (0)
 {
   init (w, h);
   m_resolution = r;
-  m_font_resolution = rf;
 }
 
 Bitmap::Bitmap (const Bitmap &d)
@@ -62,7 +60,6 @@ Bitmap::operator= (const Bitmap &d)
     }
 
     m_resolution = d.m_resolution;
-    m_font_resolution = d.m_font_resolution;
 
     for (unsigned int i = 0; i < m_height; ++i) {
       if (! d.m_scanlines.empty () && d.m_scanlines [i] != 0) {
@@ -293,14 +290,16 @@ Bitmap::fill_pattern (int y, int x, const uint32_t *pp, unsigned int stride, uns
 
     while (n > 0 && y >= 0) {
 
-      for (unsigned int s = 0; s < stride; ++s, pp++) {
-
-        uint32_t p = *pp;
+      for (unsigned int s = 0; s < stride; ++s) {
 
         int x1 = x + s * 32;
-        if (x1 <= -32 || x1 >= m_width) {
-          continue;
-        } else if (x1 < 0) {
+
+        uint32_t p = *pp++;
+
+        if (x1 < 0) {
+          if (x1 <= -32) {
+            return;
+          }
           p >>= (unsigned int)-x1;
           x1 = 0;
         }
@@ -381,38 +380,7 @@ Bitmap::fill (unsigned int y, unsigned int x1, unsigned int x2)
   }
 }
 
-void
-Bitmap::clear (unsigned int y, unsigned int x1, unsigned int x2)
-{
-  unsigned int b1 = x1 / 32;
-
-  uint32_t *sl = scanline (y);
-  sl += b1;
-
-  unsigned int b = x2 / 32 - b1;
-  if (b == 0) {
-
-    *sl &= ~masks [x2 % 32] | masks [x1 % 32];
-
-  } else if (b > 0) {
-
-    *sl++ &= masks [x1 % 32];
-    while (b > 1) {
-      *sl++ = 0;
-      b--;
-    }
-
-    unsigned int m = masks [x2 % 32];
-    //  Hint: if x2==width and width%32==0, sl must not be accessed. This is guaranteed by
-    //  checking if m != 0.
-    if (m) {
-      *sl &= ~m;
-    }
-
-  }
-}
-
-struct PosCompareF
+struct PosCompareF 
 {
   bool operator() (const RenderEdge &a, const RenderEdge &b) const
   {
@@ -792,21 +760,51 @@ Bitmap::render_contour (std::vector<lay::RenderEdge> &edges)
   }
 }
 
+static unsigned char next_char_latin1_from_utf8 (const char *&cp, const char *cpf = 0)
+{
+  unsigned char c = *cp;
+  if ((c & 0xe0) == 0xc0) {
+    if ((cp[1] & 0xc0) == 0x80 && (! cpf || cpf > cp + 1)) {
+      unsigned int x = ((unsigned int) ((unsigned char) c & 0x1f) << 6) | (unsigned int) (cp[1] & 0x3f);
+      cp += 1;
+      if (x < 255) {
+        c = x;
+      } else {
+        c = '?';
+      }
+    } else {
+      c = '?';
+    }
+  } else if ((c & 0xf0) == 0xe0) {
+    if ((cp[1] & 0xc0) == 0x80 && (cp[2] & 0xc0) == 0x80 && (! cpf || cpf > cp + 2)) {
+      cp += 2;
+    }
+    c = '?';
+  } else if ((c & 0xf8) == 0xf0) {
+    if ((cp[1] & 0xc0) == 0x80 && (cp[2] & 0xc0) == 0x80 && (cp[3] & 0xc0) == 0x80 && (! cpf || cpf > cp + 3)) {
+      cp += 3;
+    }
+    c = '?';
+  } 
+  return c;
+}
+
 void
 Bitmap::render_text (const lay::RenderText &text)
 {
   if (text.font == db::DefaultFont) {
 
-    const lay::FixedFont &ff = lay::FixedFont::get_font (m_font_resolution);
+    const lay::FixedFont &ff = lay::FixedFont::get_font (m_resolution);
 
     //  count the lines and max. characters per line
 
     unsigned int lines = 1;
-    for (const char *cp = text.text.c_str (); *cp; ) {
-      if (tl::skip_newline (cp)) {
+    for (const char *cp = text.text.c_str (); *cp; ++cp) {
+      if (*cp == '\012' || *cp == '\015') {
+        if (*cp == '\015' && cp[1] == '\012') {
+          ++cp;
+        }
         ++lines;
-      } else {
-        ++cp;
       }
     }
 
@@ -829,9 +827,10 @@ Bitmap::render_text (const lay::RenderText &text)
 
       unsigned int length = 0;
       const char *cp = cp1; 
-      while (*cp && !tl::is_newline (*cp)) {
-        tl::utf32_from_utf8 (cp);
+      while (*cp && *cp != '\012' && *cp != '\015') {
+        next_char_latin1_from_utf8 (cp);
         ++length;
+        ++cp; 
       }
 
       double xx;
@@ -848,15 +847,13 @@ Bitmap::render_text (const lay::RenderText &text)
 
       if (y > -0.5 && y < double (height () + ff.height () - 1) - 0.5) {
 
-        while (cp1 != cp) {
+        for ( ; cp1 != cp; ++cp1) {
 
-          uint32_t c = tl::utf32_from_utf8 (cp1, cp);
-          if (c < uint32_t (ff.first_char ()) || c >= uint32_t (ff.n_chars ()) + ff.first_char ()) {
-            //  NOTE: '?' needs to be a valid character always
-            c = uint32_t ('?');
-          }
+          unsigned char c = next_char_latin1_from_utf8 (cp1, cp);
 
-          if (xx > -100.0 && xx < double (width ())) {
+          size_t cc = c; // to suppress a compiler warning ..
+          if (c >= ff.first_char () && cc < size_t (ff.n_chars ()) + size_t (ff.first_char ())
+              && xx > -100.0 && xx < double (width ())) {
             fill_pattern (int (y + 0.5), int (floor (xx)), ff.data () + (c - ff.first_char ()) * ff.height () * ff.stride (), ff.stride (), ff.height ());
           }
 
@@ -869,7 +866,11 @@ Bitmap::render_text (const lay::RenderText &text)
       }
 
       //  next line
-      if (tl::skip_newline (cp1)) {
+      if (*cp1 == '\012' || *cp1 == '\015') {
+        if (*cp1 == '\015' && cp1[1] == '\012') {
+          ++cp1;
+        }
+        ++cp1;
         y -= double (ff.line_height ());
       }
 
@@ -878,7 +879,7 @@ Bitmap::render_text (const lay::RenderText &text)
   } else {
    
     //  Create a sub-renderer so we do not need to clear *this
-    lay::BitmapRenderer hr (m_width, m_height, m_resolution, m_font_resolution);
+    lay::BitmapRenderer hr (m_width, m_height, m_resolution);
 
     db::DHershey ht (text.text, text.font);
     hr.reserve_edges (ht.count_edges ());

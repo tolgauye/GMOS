@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -57,6 +57,7 @@
 #include <QTransform>
 #include "gsiQt.h"
 #include "gsiQtGuiCommon.h"
+#include "gsiDeclQtGuiTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -1740,7 +1741,7 @@ static void _init_f_drawPixmapFragments_10038 (qt_gsi::GenericMethod *decl)
   decl->add_arg<int > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("pixmap");
   decl->add_arg<const QPixmap & > (argspec_2);
-  static gsi::ArgSpecBase argspec_3 ("hints", true, "QPainter::PixmapFragmentHints()");
+  static gsi::ArgSpecBase argspec_3 ("hints", true, "0");
   decl->add_arg<QFlags<QPainter::PixmapFragmentHint> > (argspec_3);
   decl->set_return<void > ();
 }
@@ -1752,7 +1753,7 @@ static void _call_f_drawPixmapFragments_10038 (const qt_gsi::GenericMethod * /*d
   const QPainter::PixmapFragment *arg1 = gsi::arg_reader<const QPainter::PixmapFragment * >() (args, heap);
   int arg2 = gsi::arg_reader<int >() (args, heap);
   const QPixmap &arg3 = gsi::arg_reader<const QPixmap & >() (args, heap);
-  QFlags<QPainter::PixmapFragmentHint> arg4 = args ? gsi::arg_reader<QFlags<QPainter::PixmapFragmentHint> >() (args, heap) : gsi::arg_maker<QFlags<QPainter::PixmapFragmentHint> >() (QPainter::PixmapFragmentHints(), heap);
+  QFlags<QPainter::PixmapFragmentHint> arg4 = args ? gsi::arg_reader<QFlags<QPainter::PixmapFragmentHint> >() (args, heap) : gsi::arg_maker<QFlags<QPainter::PixmapFragmentHint> >() (0, heap);
   __SUPPRESS_UNUSED_WARNING(ret);
   ((QPainter *)cls)->drawPixmapFragments (arg1, arg2, arg3, arg4);
 }
@@ -2423,7 +2424,7 @@ static void _init_f_drawText_5501 (qt_gsi::GenericMethod *decl)
   decl->add_arg<int > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("text");
   decl->add_arg<const QString & > (argspec_2);
-  static gsi::ArgSpecBase argspec_3 ("br", true, "nullptr");
+  static gsi::ArgSpecBase argspec_3 ("br", true, "0");
   decl->add_arg<QRectF * > (argspec_3);
   decl->set_return<void > ();
 }
@@ -2435,7 +2436,7 @@ static void _call_f_drawText_5501 (const qt_gsi::GenericMethod * /*decl*/, void 
   const QRectF &arg1 = gsi::arg_reader<const QRectF & >() (args, heap);
   int arg2 = gsi::arg_reader<int >() (args, heap);
   const QString &arg3 = gsi::arg_reader<const QString & >() (args, heap);
-  QRectF *arg4 = args ? gsi::arg_reader<QRectF * >() (args, heap) : gsi::arg_maker<QRectF * >() (nullptr, heap);
+  QRectF *arg4 = args ? gsi::arg_reader<QRectF * >() (args, heap) : gsi::arg_maker<QRectF * >() (0, heap);
   __SUPPRESS_UNUSED_WARNING(ret);
   ((QPainter *)cls)->drawText (arg1, arg2, arg3, arg4);
 }
@@ -2452,7 +2453,7 @@ static void _init_f_drawText_5361 (qt_gsi::GenericMethod *decl)
   decl->add_arg<int > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("text");
   decl->add_arg<const QString & > (argspec_2);
-  static gsi::ArgSpecBase argspec_3 ("br", true, "nullptr");
+  static gsi::ArgSpecBase argspec_3 ("br", true, "0");
   decl->add_arg<QRect * > (argspec_3);
   decl->set_return<void > ();
 }
@@ -2464,7 +2465,7 @@ static void _call_f_drawText_5361 (const qt_gsi::GenericMethod * /*decl*/, void 
   const QRect &arg1 = gsi::arg_reader<const QRect & >() (args, heap);
   int arg2 = gsi::arg_reader<int >() (args, heap);
   const QString &arg3 = gsi::arg_reader<const QString & >() (args, heap);
-  QRect *arg4 = args ? gsi::arg_reader<QRect * >() (args, heap) : gsi::arg_maker<QRect * >() (nullptr, heap);
+  QRect *arg4 = args ? gsi::arg_reader<QRect * >() (args, heap) : gsi::arg_maker<QRect * >() (0, heap);
   __SUPPRESS_UNUSED_WARNING(ret);
   ((QPainter *)cls)->drawText (arg1, arg2, arg3, arg4);
 }
@@ -2487,7 +2488,7 @@ static void _init_f_drawText_6313 (qt_gsi::GenericMethod *decl)
   decl->add_arg<int > (argspec_4);
   static gsi::ArgSpecBase argspec_5 ("text");
   decl->add_arg<const QString & > (argspec_5);
-  static gsi::ArgSpecBase argspec_6 ("br", true, "nullptr");
+  static gsi::ArgSpecBase argspec_6 ("br", true, "0");
   decl->add_arg<QRect * > (argspec_6);
   decl->set_return<void > ();
 }
@@ -2502,7 +2503,7 @@ static void _call_f_drawText_6313 (const qt_gsi::GenericMethod * /*decl*/, void 
   int arg4 = gsi::arg_reader<int >() (args, heap);
   int arg5 = gsi::arg_reader<int >() (args, heap);
   const QString &arg6 = gsi::arg_reader<const QString & >() (args, heap);
-  QRect *arg7 = args ? gsi::arg_reader<QRect * >() (args, heap) : gsi::arg_maker<QRect * >() (nullptr, heap);
+  QRect *arg7 = args ? gsi::arg_reader<QRect * >() (args, heap) : gsi::arg_maker<QRect * >() (0, heap);
   __SUPPRESS_UNUSED_WARNING(ret);
   ((QPainter *)cls)->drawText (arg1, arg2, arg3, arg4, arg5, arg6, arg7);
 }
@@ -3128,84 +3129,6 @@ static void _call_f_fillRect_3548 (const qt_gsi::GenericMethod * /*decl*/, void 
   const qt_gsi::Converter<Qt::BrushStyle>::target_type & arg2 = gsi::arg_reader<const qt_gsi::Converter<Qt::BrushStyle>::target_type & >() (args, heap);
   __SUPPRESS_UNUSED_WARNING(ret);
   ((QPainter *)cls)->fillRect (arg1, qt_gsi::QtToCppAdaptor<Qt::BrushStyle>(arg2).cref());
-}
-
-
-// void QPainter::fillRect(int x, int y, int w, int h, QGradient::Preset preset)
-
-
-static void _init_f_fillRect_4710 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("x");
-  decl->add_arg<int > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("y");
-  decl->add_arg<int > (argspec_1);
-  static gsi::ArgSpecBase argspec_2 ("w");
-  decl->add_arg<int > (argspec_2);
-  static gsi::ArgSpecBase argspec_3 ("h");
-  decl->add_arg<int > (argspec_3);
-  static gsi::ArgSpecBase argspec_4 ("preset");
-  decl->add_arg<const qt_gsi::Converter<QGradient::Preset>::target_type & > (argspec_4);
-  decl->set_return<void > ();
-}
-
-static void _call_f_fillRect_4710 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  int arg1 = gsi::arg_reader<int >() (args, heap);
-  int arg2 = gsi::arg_reader<int >() (args, heap);
-  int arg3 = gsi::arg_reader<int >() (args, heap);
-  int arg4 = gsi::arg_reader<int >() (args, heap);
-  const qt_gsi::Converter<QGradient::Preset>::target_type & arg5 = gsi::arg_reader<const qt_gsi::Converter<QGradient::Preset>::target_type & >() (args, heap);
-  __SUPPRESS_UNUSED_WARNING(ret);
-  ((QPainter *)cls)->fillRect (arg1, arg2, arg3, arg4, qt_gsi::QtToCppAdaptor<QGradient::Preset>(arg5).cref());
-}
-
-
-// void QPainter::fillRect(const QRect &r, QGradient::Preset preset)
-
-
-static void _init_f_fillRect_3758 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("r");
-  decl->add_arg<const QRect & > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("preset");
-  decl->add_arg<const qt_gsi::Converter<QGradient::Preset>::target_type & > (argspec_1);
-  decl->set_return<void > ();
-}
-
-static void _call_f_fillRect_3758 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const QRect &arg1 = gsi::arg_reader<const QRect & >() (args, heap);
-  const qt_gsi::Converter<QGradient::Preset>::target_type & arg2 = gsi::arg_reader<const qt_gsi::Converter<QGradient::Preset>::target_type & >() (args, heap);
-  __SUPPRESS_UNUSED_WARNING(ret);
-  ((QPainter *)cls)->fillRect (arg1, qt_gsi::QtToCppAdaptor<QGradient::Preset>(arg2).cref());
-}
-
-
-// void QPainter::fillRect(const QRectF &r, QGradient::Preset preset)
-
-
-static void _init_f_fillRect_3828 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("r");
-  decl->add_arg<const QRectF & > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("preset");
-  decl->add_arg<const qt_gsi::Converter<QGradient::Preset>::target_type & > (argspec_1);
-  decl->set_return<void > ();
-}
-
-static void _call_f_fillRect_3828 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const QRectF &arg1 = gsi::arg_reader<const QRectF & >() (args, heap);
-  const qt_gsi::Converter<QGradient::Preset>::target_type & arg2 = gsi::arg_reader<const qt_gsi::Converter<QGradient::Preset>::target_type & >() (args, heap);
-  __SUPPRESS_UNUSED_WARNING(ret);
-  ((QPainter *)cls)->fillRect (arg1, qt_gsi::QtToCppAdaptor<QGradient::Preset>(arg2).cref());
 }
 
 
@@ -4479,7 +4402,7 @@ static void _init_f_redirected_3615 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("device");
   decl->add_arg<const QPaintDevice * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("offset", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("offset", true, "0");
   decl->add_arg<QPoint * > (argspec_1);
   decl->set_return<QPaintDevice * > ();
 }
@@ -4489,7 +4412,7 @@ static void _call_f_redirected_3615 (const qt_gsi::GenericStaticMethod * /*decl*
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const QPaintDevice *arg1 = gsi::arg_reader<const QPaintDevice * >() (args, heap);
-  QPoint *arg2 = args ? gsi::arg_reader<QPoint * >() (args, heap) : gsi::arg_maker<QPoint * >() (nullptr, heap);
+  QPoint *arg2 = args ? gsi::arg_reader<QPoint * >() (args, heap) : gsi::arg_maker<QPoint * >() (0, heap);
   ret.write<QPaintDevice * > ((QPaintDevice *)QPainter::redirected (arg1, arg2));
 }
 
@@ -4673,9 +4596,6 @@ static gsi::Methods methods_QPainter () {
   methods += new qt_gsi::GenericMethod ("fillRect", "@brief Method void QPainter::fillRect(int x, int y, int w, int h, Qt::BrushStyle style)\n", false, &_init_f_fillRect_4430, &_call_f_fillRect_4430);
   methods += new qt_gsi::GenericMethod ("fillRect", "@brief Method void QPainter::fillRect(const QRect &r, Qt::BrushStyle style)\n", false, &_init_f_fillRect_3478, &_call_f_fillRect_3478);
   methods += new qt_gsi::GenericMethod ("fillRect", "@brief Method void QPainter::fillRect(const QRectF &r, Qt::BrushStyle style)\n", false, &_init_f_fillRect_3548, &_call_f_fillRect_3548);
-  methods += new qt_gsi::GenericMethod ("fillRect", "@brief Method void QPainter::fillRect(int x, int y, int w, int h, QGradient::Preset preset)\n", false, &_init_f_fillRect_4710, &_call_f_fillRect_4710);
-  methods += new qt_gsi::GenericMethod ("fillRect", "@brief Method void QPainter::fillRect(const QRect &r, QGradient::Preset preset)\n", false, &_init_f_fillRect_3758, &_call_f_fillRect_3758);
-  methods += new qt_gsi::GenericMethod ("fillRect", "@brief Method void QPainter::fillRect(const QRectF &r, QGradient::Preset preset)\n", false, &_init_f_fillRect_3828, &_call_f_fillRect_3828);
   methods += new qt_gsi::GenericMethod (":font", "@brief Method const QFont &QPainter::font()\n", true, &_init_f_font_c0, &_call_f_font_c0);
   methods += new qt_gsi::GenericMethod ("fontInfo", "@brief Method QFontInfo QPainter::fontInfo()\n", true, &_init_f_fontInfo_c0, &_call_f_fontInfo_c0);
   methods += new qt_gsi::GenericMethod ("fontMetrics", "@brief Method QFontMetrics QPainter::fontMetrics()\n", true, &_init_f_fontMetrics_c0, &_call_f_fontMetrics_c0);

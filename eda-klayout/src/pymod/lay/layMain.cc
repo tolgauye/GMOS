@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -22,5 +22,10 @@
 
 #include "../pymodHelper.h"
 
-#include "layMain.h"
-DEFINE_PYMOD(laycore, "lay", "KLayout core module 'lay'")
+//  to force linking of the lay module
+#include "../../lay/lay/layForceLink.h"
+
+//  NOTE: img, ant, edt and rdb don't need to be force-linked
+//  as they are hard-linked by lay
+
+DEFINE_PYMOD(lay, "lay", "KLayout core module 'lay'")

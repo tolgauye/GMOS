@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -50,12 +50,9 @@ public:
 
   bool equal_impl (void *, void *) const;
   bool less_impl (void *, void *) const;
-  tl::Variant to_variant_impl (void *) const;
   std::string to_string_impl (void *) const;
-  int to_int_impl (void *) const;
-  double to_double_impl (void *) const;
 
-  virtual void execute (const tl::ExpressionParserContext &context, tl::Variant &out, tl::Variant &object, const std::string &method, const std::vector<tl::Variant> &args, const std::map<std::string, tl::Variant> *kwargs) const;
+  virtual void execute (const tl::ExpressionParserContext &context, tl::Variant &out, tl::Variant &object, const std::string &method, const std::vector<tl::Variant> &args) const;
 
   void initialize (const gsi::ClassBase *cls, const tl::VariantUserClassBase *self, const tl::VariantUserClassBase *object_cls, bool is_const);
 
@@ -64,7 +61,7 @@ private:
   const tl::VariantUserClassBase *mp_self, *mp_object_cls;
   bool m_is_const;
 
-  virtual void execute_gsi (const tl::ExpressionParserContext &context, tl::Variant &out, tl::Variant &object, const std::string &method, const std::vector<tl::Variant> &args, const std::map<std::string, tl::Variant> *kwargs = 0) const;
+  virtual void execute_gsi (const tl::ExpressionParserContext &context, tl::Variant &out, tl::Variant &object, const std::string &method, const std::vector<tl::Variant> &args) const;
 
   bool has_method (const std::string &method) const;
 };

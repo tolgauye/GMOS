@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -48,6 +48,19 @@ public:
   virtual ~NetlistWriter () { }
 
   virtual void write (tl::OutputStream &stream, const db::Netlist &netlist, const std::string &description = std::string ()) = 0;
+};
+
+}
+
+namespace tl
+{
+
+template <>
+struct type_traits<db::NetlistWriter>
+  : public tl::type_traits<void>
+{
+  typedef tl::false_tag has_default_constructor;
+  typedef tl::false_tag has_copy_constructor;
 };
 
 }

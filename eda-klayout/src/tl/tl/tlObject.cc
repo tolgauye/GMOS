@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -227,11 +227,6 @@ const Object *WeakOrSharedPtr::get () const
   return mp_t;
 }
 
-void WeakOrSharedPtr::unshare ()
-{
-  m_is_shared = false;
-}
-
 void WeakOrSharedPtr::reset_object ()
 {
   tl::MutexLocker locker (&lock ());
@@ -249,10 +244,6 @@ void WeakOrSharedPtr::reset_object ()
 
 void WeakOrSharedPtr::reset (Object *t, bool is_shared, bool is_event)
 {
-  if (t == mp_t) {
-    return;
-  }
-
   Object *to_delete = 0;
 
   {

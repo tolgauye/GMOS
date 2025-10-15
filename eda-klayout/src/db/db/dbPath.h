@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -224,6 +224,7 @@ public:
   typedef typename coord_traits::area_type area_type; 
   typedef object_tag< path<C> > tag;
   typedef tl::vector<point_type> pointlist_type;
+  typedef typename tl::type_traits<pointlist_type>::relocate_requirements relocate_requirements;
   typedef db::path_point_iterator<path <C>, db::unit_trans<C> > iterator;
 
   /**
@@ -295,22 +296,6 @@ public:
   }
 
   /**
-   *  @brief Compatibility with path_ref
-   */
-  path<C> instantiate () const
-  {
-    return *this;
-  }
-
-  /**
-   *  @brief Compatibility with path_ref
-   */
-  void instantiate (path<C> &p) const
-  {
-    p = *this;
-  }
-
-  /**
    *  @brief The (dummy) translation operator
    */
   void translate (const path<C> &d, db::generic_repository<C> &, db::ArrayRepository &)
@@ -374,7 +359,7 @@ public:
   }
 
   /**
-   *  @brief Fuzzy equality test
+   *  @brief Fuzzy qquality test
    */
   bool equal (const path<C> &b) const
   {
@@ -629,16 +614,6 @@ public:
     }
 
     return res;
-  }
-
-  /**
-   *  @brief Returns the scaled path
-   */
-  db::path<db::DCoord>
-  scaled (double s) const
-  {
-    db::complex_trans<C, db::DCoord> ct (s);
-    return this->transformed (ct);
   }
 
   /**
@@ -954,10 +929,11 @@ operator* (const Tr &t, const path<typename Tr::coord_type> &p)
  *  @return The scaled path
  */
 template <class C>
-inline path<db::DCoord>
+inline path<double>
 operator* (const path<C> &p, double s)
 {
-  return p.scaled (s);
+  db::complex_trans<C, double> ct (s);
+  return ct * p;
 }
 
 /**
@@ -1025,8 +1001,9 @@ struct path_ref
    *
    *  The path pointer passed is assumed to reside in a proper repository.
    */
-  path_ref (const path_type *p, const Trans &t)
-    : shape_ref<Path, Trans> (p, t)
+  template <class TransIn>
+  path_ref (const path_type *p, const TransIn &t)
+    : shape_ref<Path, Trans> (p, Trans (t))
   {
     // .. nothing yet ..
   }
@@ -1039,6 +1016,19 @@ struct path_ref
    */
   path_ref (const path_ref &ref, repository_type &rep)
     : shape_ref<Path, Trans> (ref, rep)
+  {
+    // .. nothing yet ..
+  }
+
+  /**
+   *  @brief The transformation translation constructor
+   *  
+   *  This constructor allows one to copy a path reference with a certain transformation
+   *  to one with another transformation
+   */
+  template <class TransIn>
+  path_ref (const path_ref<Path, TransIn> &ref)
+    : shape_ref<Path, Trans> (ref.ptr (), Trans (ref.trans ()))
   {
     // .. nothing yet ..
   }
@@ -1075,18 +1065,9 @@ struct path_ref
   template <class TargetTrans>
   path_ref<Path, TargetTrans> transformed (const TargetTrans &t) const
   {
-    path_ref<Path, TargetTrans> pref (this->ptr (), this->trans ());
+    path_ref<Path, TargetTrans> pref (*this);
     pref.transform (t);
     return pref;
-  }
-
-  /**
-   *  @brief A dummy implementation of the "scaled" function for API compatibility
-   */
-  path_ref<Path, Trans> scaled (double) const
-  {
-    tl_assert (false); // not implemented
-    return *this;
   }
 };
 
@@ -1128,7 +1109,7 @@ typedef path_ref<Path, UnitTrans> PathPtr;
 typedef path_ref<DPath, DUnitTrans> DPathPtr;
 
 /**
- *  @brief Rounds the path by smoothing the corners with a circle approximation
+ *  @brief Rounds the path by smooting the corners with a circle approximation
  *  @param input The input path
  *  @param rad The radius applied to all corners
  *  @param npoints The number of points per full circle used for the circle approximation
@@ -1138,7 +1119,7 @@ typedef path_ref<DPath, DUnitTrans> DPathPtr;
 DB_PUBLIC DPath round_path_corners (const DPath &input, double rad, int npoints, double accuracy);
 
 /**
- *  @brief Rounds the path by smoothing the corners with a circle approximation
+ *  @brief Rounds the path by smooting the corners with a circle approximation
  *  @param input The input path
  *  @param rad The radius applied to all corners
  *  @param npoints The number of points per full circle used for the circle approximation
@@ -1151,6 +1132,20 @@ Path round_path_corners (const Path &input, int rad, int npoints);
 
 namespace tl 
 {
+  /**
+   *  @brief The type traits for the path type
+   */
+  template <class C>
+  struct type_traits <db::path<C> > : public type_traits<void> 
+  {
+    typedef typename db::path<C>::relocate_requirements relocate_requirements;
+    typedef true_tag has_efficient_swap;
+    typedef true_tag supports_extractor;
+    typedef true_tag supports_to_string;
+    typedef true_tag has_less_operator;
+    typedef true_tag has_equal_operator;
+  };
+
   /**
    *  @brief Special extractors for the paths
    */

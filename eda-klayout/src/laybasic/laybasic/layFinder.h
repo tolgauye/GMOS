@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@
 #include <vector>
 
 #include "tlVector.h"
-#include "layLayoutViewBase.h"
+#include "layLayoutView.h"
 #include "dbBoxConvert.h"
 #include "dbLayout.h"
 #include "dbBox.h"
@@ -43,8 +43,6 @@ namespace tl
 
 namespace lay
 {
-
-class TextInfo;
 
 /**
  *  @brief A generic finder class
@@ -60,41 +58,12 @@ public:
    *
    *  The point_mode is true, if the finder is supposed to operate in "point mode".
    *  In point mode, the center of the search region is the reference point. In 
-   *  non-point mode, every relevant found inside the search region will be
-   *  recorded (also see point_mode method).
+   *  non-point mode, every relevant found inside the search region should be 
+   *  recorded. 
    *  The base class implementation just stores this flag and provides a read
    *  accessor with the point_mode () method.
    */
   Finder (bool point_mode, bool top_level_sel);
-
-  /**
-   *  @brief Gets a flag indicating whether point mode is enabled
-   *  If point mode is enabled in the constructor, the first will check for objects overlapping the
-   *  point (rather than being inside the box) and by default select a single object only.
-   *  See also "set_catch_all".
-   */
-  bool point_mode () const
-  {
-    return m_point_mode;
-  }
-
-  /**
-   *  @brief Gets a flag indicating the capture all founds even in point mode
-   */
-  bool catch_all () const
-  {
-    return m_catch_all;
-  }
-
-  /**
-   *  @brief Sets a flag indicating the capture all founds even in point mode
-   *  By default, in point mode only the closest found is returned. To catch all
-   *  founds in point mode too, set this flag to true.
-   */
-  void set_catch_all (bool f)
-  {
-    m_catch_all = f;
-  }
 
   /**
    *  @brief Destructor (just provided to please the compiler)
@@ -118,6 +87,11 @@ protected:
     return m_layers;
   }
 
+  bool point_mode () const
+  {
+    return m_point_mode;
+  }
+
   const std::vector<db::InstElement> &path () const
   {
     return m_path;
@@ -138,7 +112,7 @@ protected:
     return m_max_level;
   }
 
-  lay::LayoutViewBase *view () const
+  lay::LayoutView *view () const
   {
     return mp_view;
   }
@@ -154,17 +128,8 @@ protected:
    *  are used). For each matching cell, the "visit_cell" method is called. A 
    *  path of instantiations up to the top cell is maintained and accessible by
    *  the path() accessor.
-   *
-   *  @param view The layout view to run the scan on
-   *  @param cv_index The cell view to run the scan on
-   *  @param trans A set of visual transformations applied to the display (layer properties transformations) in micron space
-   *  @param region The hit region which the object is checked against
-   *  @param scan_region The region where the object is looked up (can be bigger than the hit region for visual label box detection)
-   *  @param min_level The minimum hierarchy level to check
-   *  @param max_level The maximum hierarchy level to check
-   *  @param layers A set of layers to check
    */
-  void start (LayoutViewBase *view, unsigned int cv_index, const std::vector<db::DCplxTrans> &trans, const db::DBox &region, const db::DBox &scan_region, int min_level, int max_level, const std::vector<int> &layers = std::vector<int> ());
+  void start (lay::LayoutView *view, const lay::CellView &cv, unsigned int cv_index, const std::vector<db::ICplxTrans> &trans, const db::Box &region, int min_level, int max_level, const std::vector<int> &layers = std::vector<int> ());
 
   /**
    *  @brief Provide a basic edge test facility
@@ -174,28 +139,14 @@ protected:
    *  is less than the one stored in "distance" or "match" is false. If the 
    *  distance is updated, match is set to true.
    *
-   *  "trans" is the transformation to be applied to the edge before the test.
-   *
-   *  If "points" is true, only points are tested, otherwise edges are tested.
-   *
    *  This method returns a mask indicating which point of the edge was matching.
-   *  Bit 0 of this mask indicates the first point is matching, bit 1 indicates the
+   *  Bit 0 of this mask indicates the first point is matching, bit 1 indictates the
    *  second point is matching.
    */
-  unsigned int test_edge (const db::ICplxTrans &trans, const db::Edge &edge, bool points, double &distance, bool &match);
-
-  /**
-   *  @brief Tests an edge in point mode and edge mode (later)
-   */
-  void test_edge (const db::ICplxTrans &trans, const db::Edge &edge, double &distance, bool &match);
-
-  /**
-   *  @brief Is called "frequently", so the finder can stop after a number of tries and not waste time
-   */
-  virtual void checkpoint () = 0;
+  unsigned int test_edge (const db::Edge &edge, double &distance, bool &match);
 
 private:
-  void do_find (const db::Cell &cell, int level, const db::DCplxTrans &vp, const db::ICplxTrans &t);
+  void do_find (const db::Cell &cell, int level, const db::ICplxTrans &t);
 
   /**
    *  @brief Visitor sugar function
@@ -204,22 +155,20 @@ private:
    *  cell. It may use the "closer" method to determine if something is closer
    *  to whatever.
    */
-  virtual void visit_cell (const db::Cell &cell, const db::Box &hit_box, const db::Box &scan_box, const db::DCplxTrans &vp, const db::ICplxTrans &t, int level) = 0;
+  virtual void visit_cell (const db::Cell &cell, const db::Box &search_box, const db::ICplxTrans &t, int level) = 0;
 
   int m_min_level, m_max_level;
   std::vector<db::InstElement> m_path;
   const db::Layout *mp_layout;
-  lay::LayoutViewBase *mp_view;
+  lay::LayoutView *mp_view;
   unsigned int m_cv_index;
   db::Box m_region;
-  db::Box m_scan_region;
   std::vector<int> m_layers;
   double m_distance;
   bool m_point_mode;
-  bool m_catch_all;
   bool m_top_level_sel;
-  db::box_convert <db::CellInst, false> m_box_convert;
-  db::box_convert <db::Cell, false> m_cell_box_convert;
+  db::box_convert <db::CellInst> m_box_convert;
+  db::box_convert <db::Cell> m_cell_box_convert;
 };
 
 /**
@@ -236,19 +185,10 @@ public:
   typedef std::vector<lay::ObjectInstPath> founds_vector_type;
   typedef founds_vector_type::const_iterator iterator;
 
-  /**
-   *  @brief Creates a shape finder object
-   *
-   *  @param point_mode If true, selects "point mode", where shapes are found relative to the (point-like) bounding box
-   *  @param top_level_sel If true, selects only top level objects
-   *  @param flags The shape types to look for
-   *  @param excludes Objects (by instance path) to exclude
-   *  @param capture_all_shapes Only valid in point mode. If true, all shapes are found. Otherwise only those which are not overlapping the view port entirely.
-   */
-  ShapeFinder (bool point_mode, bool top_level_sel, db::ShapeIterator::flags_type flags, const std::set<lay::ObjectInstPath> *excludes = 0, bool capture_all_shapes = false);
+  ShapeFinder (bool point_mode, bool top_level_sel, db::ShapeIterator::flags_type flags, const std::set<lay::ObjectInstPath> *excludes = 0);
 
-  bool find (LayoutViewBase *view, const lay::LayerProperties &lprops, const db::DBox &region_mu);
-  bool find (LayoutViewBase *view, const db::DBox &region_mu);
+  bool find (lay::LayoutView *view, const lay::LayerProperties &lprops, const db::DBox &region_mu);
+  bool find (lay::LayoutView *view, const db::DBox &region_mu);
 
   iterator begin () const
   {
@@ -266,12 +206,7 @@ protected:
     return m_flags;
   }
 
-  const lay::TextInfo *text_info () const
-  {
-    return mp_text_info;
-  }
-
-  unsigned int cv_index () const
+  unsigned int cv_index () const 
   {
     return m_cv_index;
   }
@@ -296,18 +231,17 @@ protected:
     m_tries = n;
   }
 
-  virtual void checkpoint ();
+  void checkpoint ();
 
 private:
-  virtual void visit_cell (const db::Cell &cell, const db::Box &hit_box, const db::Box &scan_box, const db::DCplxTrans &vp, const db::ICplxTrans &t, int level);
-
-  bool find_internal (LayoutViewBase *view,
-                      unsigned int cv_index,
-                      const std::set<db::properties_id_type> *prop_sel,
-                      bool inv_prop_sel,
+  virtual void visit_cell (const db::Cell &cell, const db::Box &search_box, const db::ICplxTrans &t, int /*level*/);
+  bool find_internal (lay::LayoutView *view, 
+                      unsigned int cv_index, 
+                      const std::set<db::properties_id_type> *prop_sel, 
+                      bool inv_prop_sel, 
                       const lay::HierarchyLevelSelection &hier_sel,
                       const std::vector<db::DCplxTrans> &trans_mu,
-                      const std::vector<int> &layers,
+                      const std::vector<int> &layers, 
                       const db::DBox &region_mu);
 
   const std::set<lay::ObjectInstPath> *mp_excludes;
@@ -315,14 +249,12 @@ private:
   db::ShapeIterator::flags_type m_flags;
   unsigned int m_cv_index;
   db::cell_index_type m_topcell;
-  const lay::TextInfo *mp_text_info;
   const std::set<db::properties_id_type> *mp_prop_sel;
   bool m_inv_prop_sel;
   int m_tries;
   tl::AbsoluteProgress *mp_progress;
   std::vector<int> m_context_layers;
   std::map<db::cell_index_type, bool> m_cells_with_context;
-  bool m_capture_all_shapes;
 };
 
 /**
@@ -341,8 +273,8 @@ public:
 
   InstFinder (bool point_mode, bool top_level_sel, bool full_arrays, bool enclose_inst = true, const std::set<lay::ObjectInstPath> *excludes = 0, bool visible_layers = false);
 
-  bool find (LayoutViewBase *view, unsigned int cv_index, const db::DCplxTrans &trans, const db::DBox &region_mu);
-  bool find (LayoutViewBase *view, const db::DBox &region_mu);
+  bool find (lay::LayoutView *view, unsigned int cv_index, const db::DCplxTrans &trans, const db::DBox &region_mu);
+  bool find (lay::LayoutView *view, const db::DBox &region_mu);
  
   iterator begin () const
   {
@@ -354,12 +286,9 @@ public:
     return m_founds.end ();
   }
 
-  virtual void checkpoint ();
-
 private:
-  virtual void visit_cell (const db::Cell &cell, const db::Box &hit_box, const db::Box &scan_box, const db::DCplxTrans &vp, const db::ICplxTrans &t, int level);
-
-  bool find_internal (LayoutViewBase *view, unsigned int cv_index, const db::DCplxTrans &trans_mu, const db::DBox &region_mu);
+  virtual void visit_cell (const db::Cell &cell, const db::Box &search_box, const db::ICplxTrans &t, int level);
+  bool find_internal (lay::LayoutView *view, unsigned int cv_index, const db::DCplxTrans &trans_mu, const db::DBox &region_mu);
 
   unsigned int m_cv_index;
   db::cell_index_type m_topcell;
@@ -370,7 +299,7 @@ private:
   bool m_enclose_insts;
   bool m_visible_layers;
   std::vector<int> m_visible_layer_indexes;
-  LayoutViewBase *mp_view;
+  lay::LayoutView *mp_view;
   tl::AbsoluteProgress *mp_progress;
 };
 

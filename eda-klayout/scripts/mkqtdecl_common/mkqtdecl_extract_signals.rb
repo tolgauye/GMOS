@@ -1,6 +1,6 @@
 
 # 
-# Copyright (C) 2006-2025 Matthias Koefferlein
+# Copyright (C) 2006-2019 Matthias Koefferlein
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,13 +29,11 @@ RBA::Class::each_class do |cls|
   classes[cls.name] = true
 end
 
-output = $output ? File.open($output, "w") : stdout
-
 RBA::Class::each_class do |cls|
 
   if cls.name =~ /^Q/ && (cls.name =~ /_Native$/ || !classes[cls.name + "_Native"])
 
-    b = cls
+    b = cls.base
     while b && b.name != "QObject_Native"
       b = b.base
     end
@@ -162,9 +160,9 @@ RBA::Class::each_class do |cls|
               match += ".*int"
             end
           end
-          output.puts "event(\"#{c}\", /#{match}/, \"#{s}\")"
+          puts "event(\"#{c}\", /#{match}/, \"#{s}\")"
           if renamed
-            output.puts "rename(\"#{c}\", /#{match}/, \"#{renamed}\")"
+            puts "rename(\"#{c}\", /#{match}/, \"#{renamed}\")"
           end
         end
       end
@@ -174,6 +172,4 @@ RBA::Class::each_class do |cls|
 
 end
 
-if $output
-  output.close
-end
+

@@ -6,8 +6,7 @@ TARGET = dxf_tests
 include($$PWD/../../../../lib_ut.pri)
 
 SOURCES = \
-  dbDXFReaderTests.cc \
-  dbDXFWriterTests.cc
+  dbDXFReader.cc \
 
 INCLUDEPATH += $$LAY_INC $$TL_INC $$DB_INC $$GSI_INC $$PWD/../db_plugin $$PWD/../../../common
 DEPENDPATH += $$LAY_INC $$TL_INC $$DB_INC $$GSI_INC $$PWD/../db_plugin $$PWD/../../../common

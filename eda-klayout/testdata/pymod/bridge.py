@@ -1,5 +1,5 @@
 # KLayout Layout Viewer
-# Copyright (C) 2006-2025 Matthias Koefferlein
+# Copyright (C) 2006-2019 Matthias Koefferlein
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-import testprep
+
 import klayout.db as db
 import bridge_mod as bridge
 import unittest
@@ -34,7 +34,7 @@ class BridgeTest(unittest.TestCase):
     p = db.DSimplePolygon(db.DBox(1,2,3,4))
     a = bridge.p2a(p)
     pp = bridge.a2p(a)
-    self.assertEqual(str(pp), "(1,2;1,4;3,4;3,2)")
+    self.assertEqual(repr(pp), "(1,2;1,4;3,4;3,2)")
     self.assertEqual(type(pp).__name__, "DSimplePolygon")
 
 # run unit tests

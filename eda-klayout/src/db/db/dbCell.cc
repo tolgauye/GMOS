@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -26,9 +26,6 @@
 #include "dbManager.h"
 #include "dbBox.h"
 #include "dbPCellVariant.h"
-#include "dbLayoutUtils.h"
-#include "dbLayerMapping.h"
-#include "dbCellMapping.h"
 
 #include <limits>
 
@@ -92,11 +89,10 @@ Cell::box_type Cell::ms_empty_box = Cell::box_type ();
 
 Cell::Cell (cell_index_type ci, db::Layout &l) 
   : db::Object (l.manager ()), 
-    m_cell_index (ci), mp_layout (&l), m_instances (this), m_prop_id (0), m_hier_levels (0),
-    m_bbox_needs_update (false), m_locked (false), m_ghost_cell (false),
+    m_cell_index (ci), mp_layout (&l), m_instances (this), m_prop_id (0), m_hier_levels (0), m_bbox_needs_update (false), m_ghost_cell (false), 
     mp_last (0), mp_next (0)
 {
-  m_bbox_with_empty = box_type (box_type::point_type (), box_type::point_type ());
+  //  .. nothing yet 
 }
 
 Cell::Cell (const Cell &d)
@@ -125,10 +121,8 @@ Cell::operator= (const Cell &d)
     }
 
     m_ghost_cell = d.m_ghost_cell;
-    m_locked = d.m_locked;
     m_instances = d.m_instances;
     m_bbox = d.m_bbox;
-    m_bbox_with_empty = d.m_bbox_with_empty;
     m_bboxes = d.m_bboxes;
     m_hier_levels = d.m_hier_levels;
     m_prop_id = d.m_prop_id;
@@ -140,7 +134,6 @@ Cell::operator= (const Cell &d)
 
 Cell::~Cell ()
 {
-  m_locked = false;
   clear_shapes ();
 }
 
@@ -183,25 +176,10 @@ Cell::empty () const
 void 
 Cell::clear (unsigned int index)
 {
-  check_locked ();
-
   shapes_map::iterator s = m_shapes_map.find(index);
   if (s != m_shapes_map.end() && ! s->second.empty ()) {
     mp_layout->invalidate_bboxes (index);  //  HINT: must come before the change is done!
     s->second.clear ();
-    m_bbox_needs_update = true;
-  }
-}
-
-void
-Cell::clear (unsigned int index, unsigned int types)
-{
-  check_locked ();
-
-  shapes_map::iterator s = m_shapes_map.find(index);
-  if (s != m_shapes_map.end() && ! s->second.empty ()) {
-    mp_layout->invalidate_bboxes (index);  //  HINT: must come before the change is done!
-    s->second.clear (types);
     m_bbox_needs_update = true;
   }
 }
@@ -248,8 +226,6 @@ Cell::index_of_shapes (const Cell::shapes_type *shapes) const
 void
 Cell::clear_shapes ()
 {
-  check_locked ();
-
   mp_layout->invalidate_bboxes (std::numeric_limits<unsigned int>::max ());  //  HINT: must come before the change is done!
   clear_shapes_no_invalidate ();
 }
@@ -283,10 +259,6 @@ Cell::update_bbox (unsigned int layers)
   box_type org_bbox = m_bbox;
   m_bbox = box_type ();
 
-  //  determine the bounding box with empty cells
-  box_type org_bbox_with_empty = m_bbox_with_empty;
-  m_bbox_with_empty = box_type ();
-
   //  save the original boxes for simple compare
   box_map org_bboxes;
   org_bboxes.swap (m_bboxes);
@@ -318,30 +290,24 @@ Cell::update_bbox (unsigned int layers)
         m_bbox += lbox;
         box_map::iterator b = m_bboxes.find (l);
         if (b == m_bboxes.end ()) {
-          m_bboxes.insert (std::make_pair (l, lbox));
+            m_bboxes.insert (std::make_pair (l, lbox));
         } else {
-          b->second += lbox;
+            b->second += lbox;
         }
       }
 
     }
-
-    db::box_convert <cell_inst_type, false> bc_we (*mp_layout);
-    m_bbox_with_empty += o1_inst->bbox_from_raw_bbox (raw_box, bc_we);
     
   }
-
-  box_type sbox_all;
 
   //  update the bboxes of the shapes lists
   for (shapes_map::iterator s = m_shapes_map.begin (); s != m_shapes_map.end (); ++s) {
 
-    s->second.reset_bbox_dirty ();
-
+    s->second.update_bbox ();
     box_type sbox (s->second.bbox ());
 
     if (! sbox.empty ()) {
-      sbox_all += sbox;
+      m_bbox += sbox;
       box_map::iterator b = m_bboxes.find (s->first);
       if (b == m_bboxes.end ()) {
          m_bboxes.insert (std::make_pair (s->first, sbox));
@@ -352,59 +318,39 @@ Cell::update_bbox (unsigned int layers)
    
   }
 
-  //  combine shapes in all-layer boxes
-  m_bbox += sbox_all;
-  m_bbox_with_empty += sbox_all;
-
-  //  no empty box
-  if (m_bbox_with_empty.empty ()) {
-    m_bbox_with_empty = box_type (box_type::point_type (), box_type::point_type ());
-  }
-
   //  reset "dirty child instances" flag
   m_bbox_needs_update = false;
 
   //  return true, if anything has changed with the box 
-  return (org_bbox != m_bbox || org_bbox_with_empty != m_bbox_with_empty || org_bboxes != m_bboxes);
+  return (org_bbox != m_bbox || org_bboxes != m_bboxes);
+
 }
 
 void
 Cell::copy (unsigned int src, unsigned int dest)
 {
-  check_locked ();
-
   if (src != dest) {
-    shapes (dest).insert (shapes (src));
+    db::Shapes &dest_shapes = shapes (dest);
+    db::Cell::shape_iterator src_shape = begin (src, db::Shapes::shape_iterator::All);
+    while (! src_shape.at_end ()) {
+      dest_shapes.insert (*src_shape);
+      ++src_shape;
+    }
   } else {
     //  When duplicating the layer, first create a copy to avoid problems with non-stable containers
     //  Hint: using the assignment and not the copy ctor does not copy the db::Manager association.
     db::Shapes shape_copy;
     shape_copy = shapes (src);
-    shapes (dest).insert (shape_copy);
-  }
-}
-
-void
-Cell::copy (unsigned int src, unsigned int dest, unsigned int types)
-{
-  check_locked ();
-
-  if (src != dest) {
-    shapes (dest).insert (shapes (src), types);
-  } else {
-    //  When duplicating the layer, first create a copy to avoid problems with non-stable containers
-    //  Hint: using the assignment and not the copy ctor does not copy the db::Manager association.
-    db::Shapes shape_copy;
-    shape_copy.insert (shapes (src), types);
-    shapes (dest).insert (shape_copy);
+    db::Shapes &dest_shapes = shapes (dest);
+    for (db::Cell::shape_iterator src_shape = shape_copy.begin (db::Shapes::shape_iterator::All); ! src_shape.at_end (); ++src_shape) {
+      dest_shapes.insert (*src_shape);
+    }
   }
 }
 
 void
 Cell::move (unsigned int src, unsigned int dest)
 {
-  check_locked ();
-
   if (src != dest) {
     copy (src, dest);
     clear (src);
@@ -412,21 +358,8 @@ Cell::move (unsigned int src, unsigned int dest)
 }
 
 void
-Cell::move (unsigned int src, unsigned int dest, unsigned int types)
-{
-  check_locked ();
-
-  if (src != dest) {
-    copy (src, dest, types);
-    clear (src, types);
-  }
-}
-
-void
 Cell::swap (unsigned int i1, unsigned int i2)
 {
-  check_locked ();
-
   if (i1 != i2) {
 
     if (manager () && manager ()->transacting ()) {
@@ -453,18 +386,8 @@ Cell::prop_id (db::properties_id_type id)
     if (manager () && manager ()->transacting ()) {
       manager ()->queue (this, new SetCellPropId (m_prop_id, id));
     }
-    if (layout ()) {
-      layout ()->invalidate_prop_ids ();
-    }
     m_prop_id = id;
   }
-}
-
-const Cell::box_type &
-Cell::bbox_with_empty () const
-{
-  mp_layout->update ();
-  return m_bbox_with_empty;
 }
 
 const Cell::box_type &
@@ -569,41 +492,6 @@ Cell::hierarchy_levels () const
   return m_hier_levels;
 }
 
-static bool
-has_shapes_touching_impl (const db::Cell &cell, unsigned int layer, const db::Box &box)
-{
-  if (! cell.shapes (layer).begin_touching (box, db::ShapeIterator::All).at_end ()) {
-    return true;
-  }
-
-  for (db::Cell::touching_iterator i = cell.begin_touching (box); ! i.at_end (); ++i) {
-
-    for (db::CellInstArray::iterator ia = i->cell_inst ().begin_touching (box, db::box_convert<db::CellInst> (*cell.layout (), layer)); ! ia.at_end (); ++ia) {
-
-      db::Box cbox;
-      if (i->is_complex ()) {
-        cbox = i->complex_trans (*ia).inverted () * box;
-      } else {
-        cbox = (*ia).inverted () * box;
-      }
-
-      if (has_shapes_touching_impl (cell.layout ()->cell (i->cell_index ()), layer, cbox)) {
-        return true;
-      }
-
-    }
-
-  }
-
-  return false;
-}
-
-bool
-Cell::has_shapes_touching (unsigned int layer, const db::Box &box) const
-{
-  return has_shapes_touching_impl (*this, layer, box);
-}
-
 void 
 Cell::collect_caller_cells (std::set<cell_index_type> &callers) const
 {
@@ -615,7 +503,7 @@ Cell::collect_caller_cells (std::set<cell_index_type> &callers, const std::set<c
 {
   if (levels != 0) {
     for (parent_cell_iterator cc = begin_parent_cells (); cc != end_parent_cells (); ++cc) {
-      if (cone.find (*cc) != cone.end () && callers.find (*cc) == callers.end () && mp_layout->is_valid_cell_index (*cc)) {
+      if (cone.find (*cc) != cone.end () && callers.find (*cc) == callers.end ()) { 
         callers.insert (*cc);
         mp_layout->cell (*cc).collect_caller_cells (callers, levels < 0 ? levels : levels - 1);
       }
@@ -628,7 +516,7 @@ Cell::collect_caller_cells (std::set<cell_index_type> &callers, int levels) cons
 {
   if (levels != 0) {
     for (parent_cell_iterator cc = begin_parent_cells (); cc != end_parent_cells (); ++cc) {
-      if (callers.find (*cc) == callers.end () && mp_layout->is_valid_cell_index (*cc)) {
+      if (callers.find (*cc) == callers.end ()) { 
         callers.insert (*cc);
         mp_layout->cell (*cc).collect_caller_cells (callers, levels < 0 ? levels : levels - 1);
       }
@@ -647,7 +535,7 @@ Cell::collect_called_cells (std::set<cell_index_type> &called, int levels) const
 {
   if (levels != 0) {
     for (child_cell_iterator cc = begin_child_cells (); ! cc.at_end (); ++cc) {
-      if (called.find (*cc) == called.end () && mp_layout->is_valid_cell_index (*cc)) {
+      if (called.find (*cc) == called.end ()) { 
         called.insert (*cc);
         mp_layout->cell (*cc).collect_called_cells (called, levels < 0 ? levels : levels - 1);
       }
@@ -707,7 +595,15 @@ Cell::mem_stat (MemStatistics *stat, MemStatistics::purpose_t purpose, int cat, 
   }
   db::mem_stat (stat, purpose, cat, m_bboxes, true, (void *) this);
   db::mem_stat (stat, MemStatistics::Instances, cat, m_instances, true, (void *) this);
-  db::mem_stat (stat, MemStatistics::ShapesInfo, cat, m_shapes_map, true, (void *) this);
+
+  //  iterate the shapes separately so we can use the layer for the category
+  for (shapes_map::const_iterator i = m_shapes_map.begin (); i != m_shapes_map.end (); ++i) {
+    db::mem_stat (stat, MemStatistics::ShapesInfo, (int) i->first, i->first, false, (void *) this);
+    db::mem_stat (stat, MemStatistics::ShapesInfo, (int) i->first, i->second, false, (void *) this);
+#ifdef __GNUCC__
+    stat->add (std::_Rb_tree_node_base, (void *) &i->first, sizeof (std::_Rb_tree_node_base), sizeof (std::_Rb_tree_node_base), (void *) &v, purpose, cat);
+#endif
+  }
 }
 
 void 
@@ -747,7 +643,7 @@ Cell::clear_parent_insts (size_t sz)
 void 
 Cell::sort_child_insts ()
 {
-  m_instances.sort_child_insts (false);
+  m_instances.sort_child_insts ();
 }
 
 std::pair<bool, db::pcell_id_type> 
@@ -777,7 +673,6 @@ Cell::get_pcell_parameters (const instance_type &ref) const
 Cell::instance_type 
 Cell::change_pcell_parameters (const instance_type &ref, const std::vector<tl::Variant> &new_parameters)
 {
-  tl_assert (mp_layout != 0);
   cell_index_type new_cell_index = mp_layout->get_pcell_variant_cell (ref.cell_index (), new_parameters);
   if (new_cell_index != ref.cell_index ()) {
 
@@ -791,65 +686,10 @@ Cell::change_pcell_parameters (const instance_type &ref, const std::vector<tl::V
   }
 }
 
-Cell::instance_type
-Cell::change_pcell_parameters (const instance_type &ref, const std::map<std::string, tl::Variant> &map)
-{
-  tl_assert (mp_layout != 0);
-
-  const db::PCellDeclaration *pcd = pcell_declaration_of_inst (ref);
-  if (! pcd) {
-    return Cell::instance_type ();
-  }
-
-  const std::vector<db::PCellParameterDeclaration> &pcp = pcd->parameter_declarations ();
-
-  std::vector<tl::Variant> p = get_pcell_parameters (ref);
-  bool needs_update = false;
-
-  for (size_t i = 0; i < pcp.size () && i < p.size (); ++i) {
-    std::map<std::string, tl::Variant>::const_iterator pm = map.find (pcp [i].get_name ());
-    if (pm != map.end () && p [i] != pm->second) {
-      p [i] = pm->second;
-      needs_update = true;
-    }
-  }
-
-  if (needs_update) {
-    return change_pcell_parameters (ref, p);
-  } else {
-    return ref;
-  }
-
-}
-
-const db::PCellDeclaration *
-Cell::pcell_declaration_of_inst (const db::Cell::instance_type &ref) const
-{
-  tl_assert (mp_layout != 0);
-  return mp_layout->cell (ref.cell_index ()).pcell_declaration ();
-}
-
-const db::PCellDeclaration *
-Cell::pcell_declaration () const
-{
-  tl_assert (mp_layout != 0);
-  std::pair<bool, db::pcell_id_type> pc = mp_layout->is_pcell_instance (cell_index ());
-  if (pc.first) {
-    db::Library *lib = mp_layout->defining_library (cell_index ()).first;
-    if (lib) {
-      return lib->layout ().pcell_declaration (pc.second);
-    } else {
-      return mp_layout->pcell_declaration (pc.second);
-    }
-  } else {
-    return 0;
-  }
-}
-
 void 
-Cell::sort_inst_tree (bool force)
+Cell::sort_inst_tree ()
 {
-  m_instances.sort_inst_tree (mp_layout, force);
+  m_instances.sort_inst_tree (mp_layout);
 
   //  update the number of hierarchy levels
   m_hier_levels = count_hier_levels ();
@@ -884,341 +724,6 @@ Cell::set_name (const std::string &name)
 {
   tl_assert (layout () != 0);
   layout ()->rename_cell (cell_index (), name.c_str ());
-}
-
-void
-Cell::check_locked () const
-{
-  if (m_locked) {
-    throw tl::Exception (tl::to_string (tr ("Cell '%s' cannot be modified as it is locked")), get_basic_name ());
-  }
-}
-
-void
-Cell::copy_shapes (const db::Cell &source_cell, const db::LayerMapping &layer_mapping)
-{
-  if (this == &source_cell) {
-    throw tl::Exception (tl::to_string (tr ("Cannot copy shapes within the same cell")));
-  }
-
-  db::Layout *target_layout = layout ();
-  if (! target_layout) {
-    throw tl::Exception (tl::to_string (tr ("Cell does not reside in a layout")));
-  }
-  const db::Layout *source_layout = source_cell.layout ();
-  if (! source_layout) {
-    throw tl::Exception (tl::to_string (tr ("Source cell does not reside in a layout")));
-  }
-
-  check_locked ();
-
-  if (target_layout != source_layout) {
-    db::ICplxTrans trans (source_layout->dbu () / target_layout->dbu ());
-    for (std::map<unsigned int, unsigned int>::const_iterator lm = layer_mapping.begin (); lm != layer_mapping.end (); ++lm) {
-      shapes (lm->second).insert_transformed (source_cell.shapes (lm->first), trans);
-    }
-  } else {
-    for (std::map<unsigned int, unsigned int>::const_iterator lm = layer_mapping.begin (); lm != layer_mapping.end (); ++lm) {
-      shapes (lm->second).insert (source_cell.shapes (lm->first));
-    }
-  }
-}
-
-void
-Cell::copy_shapes (const db::Cell &source_cell)
-{
-  if (this == &source_cell) {
-    throw tl::Exception (tl::to_string (tr ("Cannot copy shapes within the same cell")));
-  }
-  db::Layout *target_layout = layout ();
-  if (! target_layout) {
-    throw tl::Exception (tl::to_string (tr ("Cell does not reside in a layout")));
-  }
-
-  check_locked ();
-
-  if (target_layout != source_cell.layout ()) {
-    if (! source_cell.layout ()) {
-      throw tl::Exception (tl::to_string (tr ("Source cell does not reside in a layout")));
-    }
-    db::LayerMapping lm;
-    lm.create_full (*target_layout, *source_cell.layout ());
-    this->copy_shapes (source_cell, lm);
-  } else {
-    for (db::Layout::layer_iterator l = target_layout->begin_layers (); l != target_layout->end_layers (); ++l) {
-      shapes ((*l).first).insert (source_cell.shapes ((*l).first));
-    }
-  }
-}
-
-void
-Cell::copy_instances (const db::Cell &source_cell)
-{
-  if (this == &source_cell) {
-    throw tl::Exception (tl::to_string (tr ("Cannot copy instances within the same cell")));
-  }
-  if (layout () != source_cell.layout ()) {
-    throw tl::Exception (tl::to_string (tr ("Cells do not reside in the same layout")));
-  }
-
-  check_locked ();
-
-  for (db::Cell::const_iterator i = source_cell.begin (); ! i.at_end (); ++i) {
-    insert (*i);
-  }
-}
-
-std::vector<db::cell_index_type>
-Cell::copy_tree (const db::Cell &source_cell)
-{
-  if (this == &source_cell) {
-    throw tl::Exception (tl::to_string (tr ("Cannot copy shapes within the same cell")));
-  }
-
-  db::Layout *target_layout = layout ();
-  if (! target_layout) {
-    throw tl::Exception (tl::to_string (tr ("Cell does not reside in a layout")));
-  }
-  const db::Layout *source_layout = source_cell.layout ();
-  if (! source_layout) {
-    throw tl::Exception (tl::to_string (tr ("Source cell does not reside in a layout")));
-  }
-
-  check_locked ();
-
-  db::ICplxTrans trans (source_layout->dbu () / target_layout->dbu ());
-
-  db::CellMapping cm;
-  std::vector <db::cell_index_type> new_cells = cm.create_single_mapping_full (*target_layout, cell_index (), *source_layout, source_cell.cell_index ());
-
-  db::LayerMapping lm;
-  lm.create_full (*target_layout, *source_cell.layout ());
-
-  std::vector <db::cell_index_type> source_cells;
-  source_cells.push_back (source_cell.cell_index ());
-  db::copy_shapes (*target_layout, *source_layout, trans, source_cells, cm.table (), lm.table ());
-
-  return new_cells;
-}
-
-void
-Cell::copy_tree_shapes (const db::Cell &source_cell, const db::CellMapping &cm)
-{
-  if (this == &source_cell) {
-    throw tl::Exception (tl::to_string (tr ("Cannot copy shapes within the same cell")));
-  }
-
-  db::Layout *target_layout = layout ();
-  if (! target_layout) {
-    throw tl::Exception (tl::to_string (tr ("Cell does not reside in a layout")));
-  }
-  const db::Layout *source_layout = source_cell.layout ();
-  if (! source_layout) {
-    throw tl::Exception (tl::to_string (tr ("Source cell does not reside in a layout")));
-  }
-
-  check_locked ();
-
-  db::ICplxTrans trans (source_layout->dbu () / target_layout->dbu ());
-
-  db::LayerMapping lm;
-  lm.create_full (*target_layout, *source_cell.layout ());
-
-  std::vector <db::cell_index_type> source_cells;
-  source_cells.push_back (source_cell.cell_index ());
-  db::copy_shapes (*target_layout, *source_layout, trans, source_cells, cm.table (), lm.table ());
-}
-
-void
-Cell::copy_tree_shapes (const db::Cell &source_cell, const db::CellMapping &cm, const db::LayerMapping &lm)
-{
-  if (this == &source_cell) {
-    throw tl::Exception (tl::to_string (tr ("Cannot copy shapes within the same cell")));
-  }
-
-  db::Layout *target_layout = layout ();
-  if (! target_layout) {
-    throw tl::Exception (tl::to_string (tr ("Cell does not reside in a layout")));
-  }
-  const db::Layout *source_layout = source_cell.layout ();
-  if (! source_layout) {
-    throw tl::Exception (tl::to_string (tr ("Source cell does not reside in a layout")));
-  }
-
-  check_locked ();
-
-  db::ICplxTrans trans (source_layout->dbu () / target_layout->dbu ());
-
-  std::vector <db::cell_index_type> source_cells;
-  source_cells.push_back (source_cell.cell_index ());
-  db::copy_shapes (*target_layout, *source_layout, trans, source_cells, cm.table (), lm.table ());
-}
-
-void
-Cell::move_shapes (db::Cell &source_cell, const db::LayerMapping &layer_mapping)
-{
-  if (this == &source_cell) {
-    throw tl::Exception (tl::to_string (tr ("Cannot move shapes within the same cell")));
-  }
-
-  db::Layout *target_layout = layout ();
-  if (! target_layout) {
-    throw tl::Exception (tl::to_string (tr ("Cell does not reside in a layout")));
-  }
-  db::Layout *source_layout = source_cell.layout ();
-  if (! source_layout) {
-    throw tl::Exception (tl::to_string (tr ("Source cell does not reside in a layout")));
-  }
-
-  check_locked ();
-
-  if (target_layout != source_layout) {
-    db::ICplxTrans trans (source_layout->dbu () / target_layout->dbu ());
-    for (std::map<unsigned int, unsigned int>::const_iterator lm = layer_mapping.begin (); lm != layer_mapping.end (); ++lm) {
-      shapes (lm->second).insert_transformed (source_cell.shapes (lm->first), trans);
-      source_cell.shapes (lm->first).clear ();
-    }
-  } else {
-    for (std::map<unsigned int, unsigned int>::const_iterator lm = layer_mapping.begin (); lm != layer_mapping.end (); ++lm) {
-      shapes (lm->second).insert (source_cell.shapes (lm->first));
-      source_cell.shapes (lm->first).clear ();
-    }
-  }
-}
-
-void
-Cell::move_shapes (db::Cell &source_cell)
-{
-  if (this == &source_cell) {
-    throw tl::Exception (tl::to_string (tr ("Cannot move shapes within the same cell")));
-  }
-  db::Layout *target_layout = layout ();
-  if (! target_layout) {
-    throw tl::Exception (tl::to_string (tr ("Cell does not reside in a layout")));
-  }
-
-  check_locked ();
-
-  if (target_layout != source_cell.layout ()) {
-    if (! source_cell.layout ()) {
-      throw tl::Exception (tl::to_string (tr ("Source cell does not reside in a layout")));
-    }
-    db::LayerMapping lm;
-    lm.create_full (*target_layout, *source_cell.layout ());
-    move_shapes (source_cell, lm);
-  } else {
-    for (db::Layout::layer_iterator l = target_layout->begin_layers (); l != target_layout->end_layers (); ++l) {
-      shapes ((*l).first).insert (source_cell.shapes ((*l).first));
-      source_cell.shapes ((*l).first).clear ();
-    }
-  }
-}
-
-void
-Cell::move_instances (db::Cell &source_cell)
-{
-  if (this == &source_cell) {
-    throw tl::Exception (tl::to_string (tr ("Cannot move instances within the same cell")));
-  }
-  if (layout () != source_cell.layout ()) {
-    throw tl::Exception (tl::to_string (tr ("Cells do not reside in the same layout")));
-  }
-
-  check_locked ();
-
-  for (db::Cell::const_iterator i = source_cell.begin (); ! i.at_end (); ++i) {
-    insert (*i);
-  }
-
-  source_cell.clear_insts ();
-}
-
-std::vector<db::cell_index_type>
-Cell::move_tree (db::Cell &source_cell)
-{
-  if (this == &source_cell) {
-    throw tl::Exception (tl::to_string (tr ("Cannot move shapes within the same cell")));
-  }
-
-  db::Layout *target_layout = layout ();
-  if (! target_layout) {
-    throw tl::Exception (tl::to_string (tr ("Cell does not reside in a layout")));
-  }
-  db::Layout *source_layout = source_cell.layout ();
-  if (! source_layout) {
-    throw tl::Exception (tl::to_string (tr ("Source cell does not reside in a layout")));
-  }
-
-  check_locked ();
-
-  db::ICplxTrans trans (source_layout->dbu () / target_layout->dbu ());
-
-  db::CellMapping cm;
-  std::vector <db::cell_index_type> new_cells = cm.create_single_mapping_full (*target_layout, cell_index (), *source_layout, source_cell.cell_index ());
-
-  db::LayerMapping lm;
-  lm.create_full (*target_layout, *source_cell.layout ());
-
-  std::vector <db::cell_index_type> source_cells;
-  source_cells.push_back (source_cell.cell_index ());
-  db::move_shapes (*target_layout, *source_layout, trans, source_cells, cm.table (), lm.table ());
-
-  source_layout->prune_subcells (source_cell.cell_index ());
-
-  return new_cells;
-}
-
-void
-Cell::move_tree_shapes (db::Cell &source_cell, const db::CellMapping &cm)
-{
-  if (this == &source_cell) {
-    throw tl::Exception (tl::to_string (tr ("Cannot move shapes within the same cell")));
-  }
-
-  db::Layout *target_layout = layout ();
-  if (! target_layout) {
-    throw tl::Exception (tl::to_string (tr ("Cell does not reside in a layout")));
-  }
-  db::Layout *source_layout = source_cell.layout ();
-  if (! source_layout) {
-    throw tl::Exception (tl::to_string (tr ("Source cell does not reside in a layout")));
-  }
-
-  check_locked ();
-
-  db::ICplxTrans trans (source_layout->dbu () / target_layout->dbu ());
-
-  db::LayerMapping lm;
-  lm.create_full (*target_layout, *source_cell.layout ());
-
-  std::vector <db::cell_index_type> source_cells;
-  source_cells.push_back (source_cell.cell_index ());
-  db::move_shapes (*target_layout, *source_layout, trans, source_cells, cm.table (), lm.table ());
-}
-
-void
-Cell::move_tree_shapes (db::Cell &source_cell, const db::CellMapping &cm, const db::LayerMapping &lm)
-{
-  if (this == &source_cell) {
-    throw tl::Exception (tl::to_string (tr ("Cannot move shapes within the same cell")));
-  }
-
-  db::Layout *target_layout = layout ();
-  if (! target_layout) {
-    throw tl::Exception (tl::to_string (tr ("Cell does not reside in a layout")));
-  }
-  db::Layout *source_layout = source_cell.layout ();
-  if (! source_layout) {
-    throw tl::Exception (tl::to_string (tr ("Source cell does not reside in a layout")));
-  }
-
-  check_locked ();
-
-  db::ICplxTrans trans (source_layout->dbu () / target_layout->dbu ());
-
-  std::vector <db::cell_index_type> source_cells;
-  source_cells.push_back (source_cell.cell_index ());
-  db::move_shapes (*target_layout, *source_layout, trans, source_cells, cm.table (), lm.table ());
 }
 
 }

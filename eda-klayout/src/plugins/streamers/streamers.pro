@@ -6,3 +6,4 @@ SUBDIR_LIST = $$files($$PWD/*)
 SUBDIR_LIST -= $$PWD/streamers.pro
 
 SUBDIRS = $$SUBDIR_LIST
+

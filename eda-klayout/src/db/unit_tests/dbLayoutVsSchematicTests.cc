@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -76,7 +76,8 @@ TEST(1_BasicFlow)
     options.get_options<db::CommonReaderOptions> ().layer_map = lmap;
     options.get_options<db::CommonReaderOptions> ().create_other_layers = false;
 
-    std::string fn (tl::testdata ());
+    std::string fn (tl::testsrc ());
+    fn = tl::combine_path (fn, "testdata");
     fn = tl::combine_path (fn, "algo");
     fn = tl::combine_path (fn, "lvs_test_1.gds");
 
@@ -88,20 +89,20 @@ TEST(1_BasicFlow)
   db::Cell &tc = ly.cell (*ly.begin_top_down ());
   db::LayoutVsSchematic lvs (db::RecursiveShapeIterator (ly, tc, std::set<unsigned int> ()));
 
-  std::unique_ptr<db::Region> rbulk (lvs.make_layer ("bulk"));
-  std::unique_ptr<db::Region> rnwell (lvs.make_layer (nwell, "nwell"));
-  std::unique_ptr<db::Region> ractive (lvs.make_layer (active, "active"));
-  std::unique_ptr<db::Region> rpplus (lvs.make_layer (pplus, "pplus"));
-  std::unique_ptr<db::Region> rnplus (lvs.make_layer (nplus, "nplus"));
-  std::unique_ptr<db::Region> rpoly (lvs.make_polygon_layer (poly, "poly"));
-  std::unique_ptr<db::Region> rpoly_lbl (lvs.make_layer (poly_lbl, "poly_lbl"));
-  std::unique_ptr<db::Region> rdiff_cont (lvs.make_polygon_layer (diff_cont, "diff_cont"));
-  std::unique_ptr<db::Region> rpoly_cont (lvs.make_polygon_layer (poly_cont, "poly_cont"));
-  std::unique_ptr<db::Region> rmetal1 (lvs.make_polygon_layer (metal1, "metal1"));
-  std::unique_ptr<db::Region> rmetal1_lbl (lvs.make_layer (metal1_lbl, "metal1_lbl"));
-  std::unique_ptr<db::Region> rvia1 (lvs.make_polygon_layer (via1, "via1"));
-  std::unique_ptr<db::Region> rmetal2 (lvs.make_polygon_layer (metal2, "metal2"));
-  std::unique_ptr<db::Region> rmetal2_lbl (lvs.make_layer (metal2_lbl, "metal2_lbl"));
+  std::auto_ptr<db::Region> rbulk (lvs.make_layer ("bulk"));
+  std::auto_ptr<db::Region> rnwell (lvs.make_layer (nwell, "nwell"));
+  std::auto_ptr<db::Region> ractive (lvs.make_layer (active, "active"));
+  std::auto_ptr<db::Region> rpplus (lvs.make_layer (pplus, "pplus"));
+  std::auto_ptr<db::Region> rnplus (lvs.make_layer (nplus, "nplus"));
+  std::auto_ptr<db::Region> rpoly (lvs.make_polygon_layer (poly, "poly"));
+  std::auto_ptr<db::Region> rpoly_lbl (lvs.make_text_layer (poly_lbl, "poly_lbl"));
+  std::auto_ptr<db::Region> rdiff_cont (lvs.make_polygon_layer (diff_cont, "diff_cont"));
+  std::auto_ptr<db::Region> rpoly_cont (lvs.make_polygon_layer (poly_cont, "poly_cont"));
+  std::auto_ptr<db::Region> rmetal1 (lvs.make_polygon_layer (metal1, "metal1"));
+  std::auto_ptr<db::Region> rmetal1_lbl (lvs.make_text_layer (metal1_lbl, "metal1_lbl"));
+  std::auto_ptr<db::Region> rvia1 (lvs.make_polygon_layer (via1, "via1"));
+  std::auto_ptr<db::Region> rmetal2 (lvs.make_polygon_layer (metal2, "metal2"));
+  std::auto_ptr<db::Region> rmetal2_lbl (lvs.make_text_layer (metal2_lbl, "metal2_lbl"));
 
   //  derived regions
 
@@ -209,11 +210,12 @@ TEST(1_BasicFlow)
   {
     db::NetlistSpiceReader reader;
 
-    std::string fn (tl::testdata ());
+    std::string fn (tl::testsrc ());
+    fn = tl::combine_path (fn, "testdata");
     fn = tl::combine_path (fn, "algo");
     fn = tl::combine_path (fn, "lvs_test_1.spi");
 
-    std::unique_ptr<db::Netlist> netlist (new db::Netlist ());
+    std::auto_ptr<db::Netlist> netlist (new db::Netlist ());
     tl::InputStream stream (fn);
     reader.read (stream, *netlist);
     lvs.set_reference_netlist (netlist.release ());
@@ -230,7 +232,7 @@ TEST(1_BasicFlow)
   std::string path = tmp_file ("tmp_lvstest1.lvsdb");
   lvs.save (path, false);
 
-  std::string au_path = tl::combine_path (tl::combine_path (tl::testdata (), "algo"), "lvs_test1_au.lvsdb");
+  std::string au_path = tl::combine_path (tl::combine_path (tl::combine_path (tl::testsrc (), "testdata"), "algo"), "lvs_test1_au.lvsdb");
 
   compare_lvsdbs (_this, path, au_path);
 
@@ -242,7 +244,7 @@ TEST(1_BasicFlow)
   lvs2.load (path);
   lvs2.save (path2, false);
 
-  std::string au_path2 = tl::combine_path (tl::combine_path (tl::testdata (), "algo"), "lvs_test1b_au.lvsdb");
+  std::string au_path2 = tl::combine_path (tl::combine_path (tl::combine_path (tl::testsrc (), "testdata"), "algo"), "lvs_test1b_au.lvsdb");
 
   compare_lvsdbs (_this, path2, au_path2);
 }
@@ -272,7 +274,8 @@ TEST(2_FlowWithErrors)
     options.get_options<db::CommonReaderOptions> ().layer_map = lmap;
     options.get_options<db::CommonReaderOptions> ().create_other_layers = false;
 
-    std::string fn (tl::testdata ());
+    std::string fn (tl::testsrc ());
+    fn = tl::combine_path (fn, "testdata");
     fn = tl::combine_path (fn, "algo");
     fn = tl::combine_path (fn, "lvs_test_1.gds");
 
@@ -284,20 +287,20 @@ TEST(2_FlowWithErrors)
   db::Cell &tc = ly.cell (*ly.begin_top_down ());
   db::LayoutVsSchematic lvs (db::RecursiveShapeIterator (ly, tc, std::set<unsigned int> ()));
 
-  std::unique_ptr<db::Region> rbulk (lvs.make_layer ("bulk"));
-  std::unique_ptr<db::Region> rnwell (lvs.make_layer (nwell, "nwell"));
-  std::unique_ptr<db::Region> ractive (lvs.make_layer (active, "active"));
-  std::unique_ptr<db::Region> rpplus (lvs.make_layer (pplus, "pplus"));
-  std::unique_ptr<db::Region> rnplus (lvs.make_layer (nplus, "nplus"));
-  std::unique_ptr<db::Region> rpoly (lvs.make_polygon_layer (poly, "poly"));
-  std::unique_ptr<db::Region> rpoly_lbl (lvs.make_layer (poly_lbl, "poly_lbl"));
-  std::unique_ptr<db::Region> rdiff_cont (lvs.make_polygon_layer (diff_cont, "diff_cont"));
-  std::unique_ptr<db::Region> rpoly_cont (lvs.make_polygon_layer (poly_cont, "poly_cont"));
-  std::unique_ptr<db::Region> rmetal1 (lvs.make_polygon_layer (metal1, "metal1"));
-  std::unique_ptr<db::Region> rmetal1_lbl (lvs.make_layer (metal1_lbl, "metal1_lbl"));
-  std::unique_ptr<db::Region> rvia1 (lvs.make_polygon_layer (via1, "via1"));
-  std::unique_ptr<db::Region> rmetal2 (lvs.make_polygon_layer (metal2, "metal2"));
-  std::unique_ptr<db::Region> rmetal2_lbl (lvs.make_layer (metal2_lbl, "metal2_lbl"));
+  std::auto_ptr<db::Region> rbulk (lvs.make_layer ("bulk"));
+  std::auto_ptr<db::Region> rnwell (lvs.make_layer (nwell, "nwell"));
+  std::auto_ptr<db::Region> ractive (lvs.make_layer (active, "active"));
+  std::auto_ptr<db::Region> rpplus (lvs.make_layer (pplus, "pplus"));
+  std::auto_ptr<db::Region> rnplus (lvs.make_layer (nplus, "nplus"));
+  std::auto_ptr<db::Region> rpoly (lvs.make_polygon_layer (poly, "poly"));
+  std::auto_ptr<db::Region> rpoly_lbl (lvs.make_text_layer (poly_lbl, "poly_lbl"));
+  std::auto_ptr<db::Region> rdiff_cont (lvs.make_polygon_layer (diff_cont, "diff_cont"));
+  std::auto_ptr<db::Region> rpoly_cont (lvs.make_polygon_layer (poly_cont, "poly_cont"));
+  std::auto_ptr<db::Region> rmetal1 (lvs.make_polygon_layer (metal1, "metal1"));
+  std::auto_ptr<db::Region> rmetal1_lbl (lvs.make_text_layer (metal1_lbl, "metal1_lbl"));
+  std::auto_ptr<db::Region> rvia1 (lvs.make_polygon_layer (via1, "via1"));
+  std::auto_ptr<db::Region> rmetal2 (lvs.make_polygon_layer (metal2, "metal2"));
+  std::auto_ptr<db::Region> rmetal2_lbl (lvs.make_text_layer (metal2_lbl, "metal2_lbl"));
 
   //  derived regions
 
@@ -405,11 +408,12 @@ TEST(2_FlowWithErrors)
   {
     db::NetlistSpiceReader reader;
 
-    std::string fn (tl::testdata ());
+    std::string fn (tl::testsrc ());
+    fn = tl::combine_path (fn, "testdata");
     fn = tl::combine_path (fn, "algo");
     fn = tl::combine_path (fn, "lvs_test_2.spi");
 
-    std::unique_ptr<db::Netlist> netlist (new db::Netlist ());
+    std::auto_ptr<db::Netlist> netlist (new db::Netlist ());
     tl::InputStream stream (fn);
     reader.read (stream, *netlist);
     lvs.set_reference_netlist (netlist.release ());
@@ -426,7 +430,7 @@ TEST(2_FlowWithErrors)
   std::string path = tmp_file ("tmp_lvstest2.lvsdb");
   lvs.save (path, false);
 
-  std::string au_path = tl::combine_path (tl::combine_path (tl::testdata (), "algo"), "lvs_test2_au.lvsdb");
+  std::string au_path = tl::combine_path (tl::combine_path (tl::combine_path (tl::testsrc (), "testdata"), "algo"), "lvs_test2_au.lvsdb");
 
   compare_lvsdbs (_this, path, au_path);
 
@@ -438,24 +442,8 @@ TEST(2_FlowWithErrors)
   lvs2.load (path);
   lvs2.save (path2, false);
 
-  std::string au_path2 = tl::combine_path (tl::combine_path (tl::testdata (), "algo"), "lvs_test2b_au.lvsdb");
+  std::string au_path2 = tl::combine_path (tl::combine_path (tl::combine_path (tl::testsrc (), "testdata"), "algo"), "lvs_test2b_au.lvsdb");
 
   compare_lvsdbs (_this, path2, au_path2);
 }
 
-TEST(3_ReaderFuture)
-{
-  db::LayoutVsSchematic lvs;
-
-  std::string in_path = tl::combine_path (tl::combine_path (tl::testdata (), "algo"), "lvs_test3.lvsdb");
-  lvs.load (in_path);
-
-  //  verify against the input
-
-  std::string path = tmp_file ("tmp.txt");
-  lvs.save (path, false);
-
-  std::string au_path = tl::combine_path (tl::combine_path (tl::testdata (), "algo"), "lvs_test3_au.lvsdb");
-
-  compare_text_files (path, au_path);
-}

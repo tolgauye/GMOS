@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -42,18 +42,14 @@ LibraryProxy::LibraryProxy (db::cell_index_type ci, db::Layout &layout, lib_id_t
 
 LibraryProxy::~LibraryProxy ()
 {
-  try {
-    if (layout ()) {
-      layout ()->unregister_lib_proxy (this);
+  if (layout ()) {
+    layout ()->unregister_lib_proxy (this);
+  }
+  if (db::LibraryManager::initialized ()) {
+    db::Library *lib = db::LibraryManager::instance ().lib (m_lib_id);
+    if (lib) {
+      lib->unregister_proxy (this, layout ());
     }
-    if (db::LibraryManager::initialized ()) {
-      db::Library *lib = db::LibraryManager::instance ().lib (m_lib_id);
-      if (lib) {
-        lib->unregister_proxy (this, layout ());
-      }
-    }
-  } catch (...) {
-    //  ignore exceptions (may happen due to broken PCell instantiations)
   }
 }
 
@@ -89,8 +85,6 @@ void
 LibraryProxy::remap (lib_id_type lib_id, cell_index_type lib_cell_index)
 {
   if (lib_id == m_lib_id && m_library_cell_index == lib_cell_index) {
-    //  we trigger an update in any case to implement the library's "refresh"
-    update ();
     return;
   }
 
@@ -105,6 +99,8 @@ LibraryProxy::remap (lib_id_type lib_id, cell_index_type lib_cell_index)
   m_lib_id = lib_id;
   m_library_cell_index = lib_cell_index;
 
+  //  It's important to register at the new library, but the old library is about to the deleted, so we don't unregister.
+  //  That does not disturb the old library iterating over the layouts.
   db::Library *lib = db::LibraryManager::instance ().lib (m_lib_id);
   if (lib) {
     lib->register_proxy (this, layout ());
@@ -132,7 +128,6 @@ LibraryProxy::get_layer_indices (db::Layout &layout, db::ImportLayerMapping *lay
 
   Library *lib = LibraryManager::instance ().lib (lib_id ());
   tl_assert (lib != 0);
-  tl_assert (lib->layout ().is_valid_cell_index (library_cell_index ()));
 
   const db::Cell &cell = lib->layout ().cell (library_cell_index ());
 
@@ -159,11 +154,6 @@ LibraryProxy::get_layer_indices (db::Layout &layout, db::ImportLayerMapping *lay
 
         //  map guiding shape layer
         m_layer_indices.push_back ((int) layout.guiding_shape_layer ());
-
-      } else if (i == lib->layout ().error_layer ()) {
-
-        //  map guiding shape layer
-        m_layer_indices.push_back ((int) layout.error_layer ());
 
       } else if (! lib->layout ().is_valid_layer (i) || cell.bbox (i).empty ()) {
 
@@ -225,16 +215,18 @@ LibraryProxy::update (db::ImportLayerMapping *layer_mapping)
   clear_shapes ();
   clear_insts ();
 
+  PropertyMapper prop_id_map (*layout (), lib->layout ());
+
   for (unsigned int l = 0; l < lib->layout ().layers (); ++l) {
     if (layer_indices [l] >= 0) {
-      shapes ((unsigned int) layer_indices [l]).assign_transformed (source_cell.shapes (l), tr);
+      shapes ((unsigned int) layer_indices [l]).assign_transformed (source_cell.shapes (l), tr, prop_id_map);
     }
   }
 
   LibraryCellIndexMapper cell_index_mapper (*layout (), lib);
 
   for (Cell::const_iterator inst = source_cell.begin (); !inst.at_end (); ++inst) {
-    db::Instance new_inst = insert (*inst, cell_index_mapper);
+    db::Instance new_inst = insert (*inst, cell_index_mapper, prop_id_map);
     if (need_transform) {
       replace (new_inst, new_inst.cell_inst ().transformed_into (tr));
     }
@@ -246,12 +238,7 @@ LibraryProxy::get_basic_name () const
 {
   Library *lib = LibraryManager::instance ().lib (lib_id ());
   if (lib) {
-    if (! lib->layout ().is_valid_cell_index (library_cell_index ())) {
-      return "<defunct>";
-    } else {
-      const db::Cell &lib_cell = lib->layout ().cell (library_cell_index ());
-      return lib_cell.get_basic_name ();
-    }
+    return lib->layout ().cell (library_cell_index ()).get_basic_name ();
   } else {
     return Cell::get_basic_name ();
   }
@@ -262,12 +249,7 @@ LibraryProxy::get_display_name () const
 {
   Library *lib = LibraryManager::instance ().lib (lib_id ());
   if (lib) {
-    if (! lib->layout ().is_valid_cell_index (library_cell_index ())) {
-      return lib->get_name () + "." + "<defunct>";
-    } else {
-      const db::Cell &lib_cell = lib->layout ().cell (library_cell_index ());
-      return lib->get_name () + "." + lib_cell.get_display_name ();
-    }
+    return lib->get_name () + "." + lib->layout ().cell (library_cell_index ()).get_display_name ();
   } else {
     return Cell::get_display_name ();
   }
@@ -278,12 +260,7 @@ LibraryProxy::get_qualified_name () const
 {
   Library *lib = LibraryManager::instance ().lib (lib_id ());
   if (lib) {
-    if (! lib->layout ().is_valid_cell_index (library_cell_index ())) {
-      return lib->get_name () + "." + "<defunct>";
-    } else {
-      const db::Cell &lib_cell = lib->layout ().cell (library_cell_index ());
-      return lib->get_name () + "." + lib_cell.get_qualified_name ();
-    }
+    return lib->get_name () + "." + lib->layout ().cell (library_cell_index ()).get_qualified_name ();
   } else {
     return Cell::get_qualified_name ();
   }

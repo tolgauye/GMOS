@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -30,7 +30,6 @@
 #include "dbRegion.h"
 #include "dbEdgePairs.h"
 #include "dbEdges.h"
-#include "dbLayoutUtils.h"
 
 namespace gsi
 {
@@ -109,47 +108,47 @@ static gsi::layout_locking_iterator1<db::Shapes::shape_iterator> begin (const db
   return gsi::layout_locking_iterator1<db::Shapes::shape_iterator> (s->layout (), s->begin (flags));
 }
 
-static gsi::layout_locking_iterator1<db::Shapes::shape_iterator> begin_all (const db::Shapes *s)
+static gsi::layout_locking_iterator1<db::Shapes::shape_iterator>begin_all (const db::Shapes *s)
 {
   return gsi::layout_locking_iterator1<db::Shapes::shape_iterator> (s->layout (), s->begin (db::ShapeIterator::All));
 }
 
-static gsi::layout_locking_iterator1<db::Shapes::shape_iterator> begin_overlapping (const db::Shapes *s, unsigned int flags, const db::Box &region)
+static gsi::layout_locking_iterator1<db::Shapes::shape_iterator>begin_overlapping (const db::Shapes *s, unsigned int flags, const db::Box &region)
 {
   return gsi::layout_locking_iterator1<db::Shapes::shape_iterator> (s->layout (), s->begin_overlapping (region, flags));
 }
 
-static gsi::layout_locking_iterator1<db::Shapes::shape_iterator> begin_doverlapping (const db::Shapes *s, unsigned int flags, const db::DBox &region)
+static gsi::layout_locking_iterator1<db::Shapes::shape_iterator>begin_doverlapping (const db::Shapes *s, unsigned int flags, const db::DBox &region)
 {
   return gsi::layout_locking_iterator1<db::Shapes::shape_iterator> (s->layout (), s->begin_overlapping (db::CplxTrans (shapes_dbu (s)).inverted () * region, flags));
 }
 
-static gsi::layout_locking_iterator1<db::Shapes::shape_iterator> begin_overlapping_all (const db::Shapes *s, const db::Box &region)
+static gsi::layout_locking_iterator1<db::Shapes::shape_iterator>begin_overlapping_all (const db::Shapes *s, const db::Box &region)
 {
   return gsi::layout_locking_iterator1<db::Shapes::shape_iterator> (s->layout (), s->begin_overlapping (region, db::ShapeIterator::All));
 }
 
-static gsi::layout_locking_iterator1<db::Shapes::shape_iterator> begin_doverlapping_all (const db::Shapes *s, const db::DBox &region)
+static gsi::layout_locking_iterator1<db::Shapes::shape_iterator>begin_doverlapping_all (const db::Shapes *s, const db::DBox &region)
 {
   return gsi::layout_locking_iterator1<db::Shapes::shape_iterator> (s->layout (), s->begin_overlapping (db::CplxTrans (shapes_dbu (s)).inverted () * region, db::ShapeIterator::All));
 }
 
-static gsi::layout_locking_iterator1<db::Shapes::shape_iterator> begin_touching (const db::Shapes *s, unsigned int flags, const db::Box &region)
+static gsi::layout_locking_iterator1<db::Shapes::shape_iterator>begin_touching (const db::Shapes *s, unsigned int flags, const db::Box &region)
 {
   return gsi::layout_locking_iterator1<db::Shapes::shape_iterator> (s->layout (), s->begin_touching (region, flags));
 }
 
-static gsi::layout_locking_iterator1<db::Shapes::shape_iterator> begin_dtouching (const db::Shapes *s, unsigned int flags, const db::DBox &region)
+static gsi::layout_locking_iterator1<db::Shapes::shape_iterator>begin_dtouching (const db::Shapes *s, unsigned int flags, const db::DBox &region)
 {
   return gsi::layout_locking_iterator1<db::Shapes::shape_iterator> (s->layout (), s->begin_touching (db::CplxTrans (shapes_dbu (s)).inverted () * region, flags));
 }
 
-static gsi::layout_locking_iterator1<db::Shapes::shape_iterator> begin_touching_all (const db::Shapes *s, const db::Box &region)
+static gsi::layout_locking_iterator1<db::Shapes::shape_iterator>begin_touching_all (const db::Shapes *s, const db::Box &region)
 {
   return gsi::layout_locking_iterator1<db::Shapes::shape_iterator> (s->layout (), s->begin_touching (region, db::ShapeIterator::All));
 }
 
-static gsi::layout_locking_iterator1<db::Shapes::shape_iterator> begin_dtouching_all (const db::Shapes *s, const db::DBox &region)
+static gsi::layout_locking_iterator1<db::Shapes::shape_iterator>begin_dtouching_all (const db::Shapes *s, const db::DBox &region)
 {
   return gsi::layout_locking_iterator1<db::Shapes::shape_iterator> (s->layout (), s->begin_touching (db::CplxTrans (shapes_dbu (s)).inverted () * region, db::ShapeIterator::All));
 }
@@ -223,417 +222,218 @@ static db::Shape insert_shape_with_dcplx_trans (db::Shapes *s, const db::Shape &
   return s->insert (shape, dbu_trans.inverted () * trans * dbu_trans, pm);
 }
 
-namespace {
-
-/**
- *  @brief Provides protection against inserting shapes into a target that is also source
- *
- *  The strategy is to use an temporary Shapes container if needed.
- */
-class ProtectedShapes
-{
-public:
-  ProtectedShapes (db::Shapes *target, const db::RecursiveShapeIterator &src)
-    : mp_target (target), mp_tmp_shapes ()
-  {
-    if (target == src.shapes () || target->layout () == src.layout ()) {
-      mp_tmp_shapes.reset (new db::Shapes ());
-    }
-  }
-
-  ProtectedShapes (db::Shapes *target, const db::Shapes &src)
-    : mp_target (target), mp_tmp_shapes ()
-  {
-    if (target == &src || target->layout () == src.layout ()) {
-      mp_tmp_shapes.reset (new db::Shapes ());
-    }
-  }
-
-  ProtectedShapes (db::Shapes *target, const db::Region &src)
-    : mp_target (target), mp_tmp_shapes ()
-  {
-    auto iter = src.begin_iter ();
-    if (target == iter.first.shapes () || target->layout () == iter.first.layout ()) {
-      mp_tmp_shapes.reset (new db::Shapes ());
-    }
-  }
-
-  ProtectedShapes (db::Shapes *target, const db::Texts &src)
-    : mp_target (target), mp_tmp_shapes ()
-  {
-    auto iter = src.begin_iter ();
-    if (target == iter.first.shapes () || target->layout () == iter.first.layout ()) {
-      mp_tmp_shapes.reset (new db::Shapes ());
-    }
-  }
-
-  ProtectedShapes (db::Shapes *target, const db::Edges &src)
-    : mp_target (target), mp_tmp_shapes ()
-  {
-    auto iter = src.begin_iter ();
-    if (target == iter.first.shapes () || target->layout () == iter.first.layout ()) {
-      mp_tmp_shapes.reset (new db::Shapes ());
-    }
-  }
-
-  ProtectedShapes (db::Shapes *target, const db::EdgePairs &src)
-    : mp_target (target), mp_tmp_shapes ()
-  {
-    auto iter = src.begin_iter ();
-    if (target == iter.first.shapes () || target->layout () == iter.first.layout ()) {
-      mp_tmp_shapes.reset (new db::Shapes ());
-    }
-  }
-
-  ~ProtectedShapes ()
-  {
-    if (mp_tmp_shapes.get ()) {
-      mp_target->insert (*mp_tmp_shapes.get ());
-    }
-  }
-
-  db::Shapes *operator-> () const
-  {
-    if (mp_tmp_shapes.get ()) {
-      return mp_tmp_shapes.get ();
-    } else {
-      return mp_target;
-    }
-  }
-
-private:
-  db::Shapes *mp_target;
-  std::unique_ptr<db::Shapes> mp_tmp_shapes;
-};
-
-}
-
 static void insert_iter (db::Shapes *sh, const db::RecursiveShapeIterator &r)
 {
-  ProtectedShapes ps (sh, r);
+  //  NOTE: if the source (r) is from the same layout than the shapes live in, we better
+  //  lock the layout against updates while inserting
+  db::LayoutLocker locker (sh->layout ());
   for (db::RecursiveShapeIterator i = r; !i.at_end (); ++i) {
     tl::ident_map<db::properties_id_type> pm;
-    ps->insert (*i, i.trans (), pm);
+    sh->insert (*i, i.trans (), pm);
   }
 }
 
 static void insert_iter_with_trans (db::Shapes *sh, const db::RecursiveShapeIterator &r, const db::ICplxTrans &trans)
 {
-  ProtectedShapes ps (sh, r);
+  //  NOTE: if the source (r) is from the same layout than the shapes live in, we better
+  //  lock the layout against updates while inserting
+  db::LayoutLocker locker (sh->layout ());
   for (db::RecursiveShapeIterator i = r; !i.at_end (); ++i) {
     tl::ident_map<db::properties_id_type> pm;
-    ps->insert (*i, trans * i.trans (), pm);
+    sh->insert (*i, trans * i.trans (), pm);
   }
 }
 
 static void insert_shapes (db::Shapes *sh, const db::Shapes &s)
 {
-  ProtectedShapes ps (sh, s);
-  ps->insert (s);
+  //  NOTE: if the source (r) is from the same layout than the shapes live in, we better
+  //  lock the layout against updates while inserting
+  db::LayoutLocker locker (sh->layout ());
+  for (db::Shapes::shape_iterator i = s.begin (db::ShapeIterator::All); !i.at_end(); ++i) {
+    sh->insert (*i);
+  }
 }
 
 static void insert_shapes_with_flags (db::Shapes *sh, const db::Shapes &s, unsigned int flags)
 {
-  ProtectedShapes ps (sh, s);
-  ps->insert (s, flags);
+  //  NOTE: if the source (r) is from the same layout than the shapes live in, we better
+  //  lock the layout against updates while inserting
+  db::LayoutLocker locker (sh->layout ());
+  for (db::Shapes::shape_iterator i = s.begin (flags); !i.at_end(); ++i) {
+    sh->insert (*i);
+  }
 }
 
 static void insert_shapes_with_trans (db::Shapes *sh, const db::Shapes &s, const db::ICplxTrans &trans)
 {
-  ProtectedShapes ps (sh, s);
+  //  NOTE: if the source (r) is from the same layout than the shapes live in, we better
+  //  lock the layout against updates while inserting
+  db::LayoutLocker locker (sh->layout ());
   for (db::Shapes::shape_iterator i = s.begin (db::ShapeIterator::All); !i.at_end(); ++i) {
     tl::ident_map<db::properties_id_type> pm;
-    ps->insert (*i, trans, pm);
+    sh->insert (*i, trans, pm);
   }
 }
 
 static void insert_shapes_with_flag_and_trans (db::Shapes *sh, const db::Shapes &s, unsigned int flags, const db::ICplxTrans &trans)
 {
-  ProtectedShapes ps (sh, s);
+  //  NOTE: if the source (r) is from the same layout than the shapes live in, we better
+  //  lock the layout against updates while inserting
+  db::LayoutLocker locker (sh->layout ());
   for (db::Shapes::shape_iterator i = s.begin (flags); !i.at_end(); ++i) {
     tl::ident_map<db::properties_id_type> pm;
-    ps->insert (*i, trans, pm);
+    sh->insert (*i, trans, pm);
   }
 }
 
 static void insert_region (db::Shapes *sh, const db::Region &r)
 {
-  ProtectedShapes ps (sh, r);
+  //  NOTE: if the source (r) is from the same layout than the shapes live in, we better
+  //  lock the layout against updates while inserting
+  db::LayoutLocker locker (sh->layout ());
   for (db::Region::const_iterator s = r.begin (); ! s.at_end (); ++s) {
-    if (s.prop_id () != 0) {
-      ps->insert (db::PolygonWithProperties (*s, s.prop_id ()));
-    } else {
-      ps->insert (*s);
-    }
+    sh->insert (*s);
   }
 }
 
 static void insert_region_with_trans (db::Shapes *sh, const db::Region &r, const db::ICplxTrans &trans)
 {
-  ProtectedShapes ps (sh, r);
+  //  NOTE: if the source (r) is from the same layout than the shapes live in, we better
+  //  lock the layout against updates while inserting
+  db::LayoutLocker locker (sh->layout ());
   for (db::Region::const_iterator s = r.begin (); ! s.at_end (); ++s) {
-    if (s.prop_id () != 0) {
-      ps->insert (db::PolygonWithProperties (s->transformed (trans), s.prop_id ()));
-    } else {
-      ps->insert (s->transformed (trans));
-    }
+    sh->insert (s->transformed (trans));
   }
 }
 
 static void insert_region_with_dtrans (db::Shapes *sh, const db::Region &r, const db::DCplxTrans &trans)
 {
-  ProtectedShapes ps (sh, r);
   db::CplxTrans dbu_trans (shapes_dbu (sh));
   db::ICplxTrans itrans = dbu_trans.inverted () * trans * dbu_trans;
   for (db::Region::const_iterator s = r.begin (); ! s.at_end (); ++s) {
-    if (s.prop_id () != 0) {
-      ps->insert (db::PolygonWithProperties (s->transformed (itrans), s.prop_id ()));
-    } else {
-      ps->insert (s->transformed (itrans));
-    }
+    sh->insert (s->transformed (itrans));
   }
 }
 
 static void insert_edges (db::Shapes *sh, const db::Edges &r)
 {
-  ProtectedShapes ps (sh, r);
   for (db::Edges::const_iterator s = r.begin (); ! s.at_end (); ++s) {
-    if (s.prop_id () != 0) {
-      ps->insert (db::EdgeWithProperties (*s, s.prop_id ()));
-    } else {
-      ps->insert (*s);
-    }
+    sh->insert (*s);
   }
 }
 
 static void insert_edges_with_trans (db::Shapes *sh, const db::Edges &r, const db::ICplxTrans &trans)
 {
-  ProtectedShapes ps (sh, r);
   for (db::Edges::const_iterator s = r.begin (); ! s.at_end (); ++s) {
-    if (s.prop_id () != 0) {
-      ps->insert (db::EdgeWithProperties (s->transformed (trans), s.prop_id ()));
-    } else {
-      ps->insert (s->transformed (trans));
-    }
+    sh->insert (s->transformed (trans));
   }
 }
 
 static void insert_edges_with_dtrans (db::Shapes *sh, const db::Edges &r, const db::DCplxTrans &trans)
 {
-  ProtectedShapes ps (sh, r);
   db::CplxTrans dbu_trans (shapes_dbu (sh));
   db::ICplxTrans itrans = dbu_trans.inverted () * trans * dbu_trans;
   for (db::Edges::const_iterator s = r.begin (); ! s.at_end (); ++s) {
-    if (s.prop_id () != 0) {
-      ps->insert (db::EdgeWithProperties (s->transformed (itrans), s.prop_id ()));
-    } else {
-      ps->insert (s->transformed (itrans));
-    }
+    sh->insert (s->transformed (itrans));
   }
 }
 
 static void insert_edge_pairs_as_polygons (db::Shapes *sh, const db::EdgePairs &r, db::Coord e)
 {
-  ProtectedShapes ps (sh, r);
   for (db::EdgePairs::const_iterator s = r.begin (); ! s.at_end (); ++s) {
-    if (s.prop_id () != 0) {
-      ps->insert (db::SimplePolygonWithProperties (s->normalized ().to_simple_polygon (e), s.prop_id ()));
-    } else {
-      ps->insert (s->normalized ().to_simple_polygon (e));
-    }
+    sh->insert (s->normalized ().to_simple_polygon (e));
   }
 }
 
 static void insert_edge_pairs_as_polygons_d (db::Shapes *sh, const db::EdgePairs &r, db::DCoord de)
 {
-  ProtectedShapes ps (sh, r);
   db::Coord e = db::coord_traits<db::Coord>::rounded (de / shapes_dbu (sh));
   for (db::EdgePairs::const_iterator s = r.begin (); ! s.at_end (); ++s) {
-    if (s.prop_id () != 0) {
-      ps->insert (db::SimplePolygonWithProperties (s->normalized ().to_simple_polygon (e), s.prop_id ()));
-    } else {
-      ps->insert (s->normalized ().to_simple_polygon (e));
-    }
+    sh->insert (s->normalized ().to_simple_polygon (e));
   }
 }
 
 static void insert_edge_pairs_as_polygons_with_trans (db::Shapes *sh, const db::EdgePairs &r, const db::ICplxTrans &trans, db::Coord e)
 {
-  ProtectedShapes ps (sh, r);
   for (db::EdgePairs::const_iterator s = r.begin (); ! s.at_end (); ++s) {
-    if (s.prop_id () != 0) {
-      ps->insert (db::SimplePolygonWithProperties (s->normalized ().to_simple_polygon (e).transformed (trans), s.prop_id ()));
-    } else {
-      ps->insert (s->normalized ().to_simple_polygon (e).transformed (trans));
-    }
+    sh->insert (s->normalized ().to_simple_polygon (e).transformed (trans));
   }
 }
 
 static void insert_edge_pairs_as_polygons_with_dtrans (db::Shapes *sh, const db::EdgePairs &r, const db::DCplxTrans &trans, db::DCoord de)
 {
-  ProtectedShapes ps (sh, r);
   db::Coord e = db::coord_traits<db::Coord>::rounded (de / shapes_dbu (sh));
   db::CplxTrans dbu_trans (shapes_dbu (sh));
   db::ICplxTrans itrans = dbu_trans.inverted () * trans * dbu_trans;
   for (db::EdgePairs::const_iterator s = r.begin (); ! s.at_end (); ++s) {
-    if (s.prop_id () != 0) {
-      ps->insert (db::SimplePolygonWithProperties (s->normalized ().to_simple_polygon (e).transformed (itrans), s.prop_id ()));
-    } else {
-      ps->insert (s->normalized ().to_simple_polygon (e).transformed (itrans));
-    }
+    sh->insert (s->normalized ().to_simple_polygon (e).transformed (itrans));
   }
 }
 
 static void insert_edge_pairs_as_edges (db::Shapes *sh, const db::EdgePairs &r)
 {
-  ProtectedShapes ps (sh, r);
   for (db::EdgePairs::const_iterator s = r.begin (); ! s.at_end (); ++s) {
-    if (s.prop_id () != 0) {
-      ps->insert (db::EdgeWithProperties (s->first (), s.prop_id ()));
-      ps->insert (db::EdgeWithProperties (s->second (), s.prop_id ()));
-    } else {
-      ps->insert (s->first ());
-      ps->insert (s->second ());
-    }
+    sh->insert (s->first ());
+    sh->insert (s->second ());
   }
 }
 
 static void insert_edge_pairs_as_edges_with_trans (db::Shapes *sh, const db::EdgePairs &r, const db::ICplxTrans &trans)
 {
-  ProtectedShapes ps (sh, r);
   for (db::EdgePairs::const_iterator s = r.begin (); ! s.at_end (); ++s) {
-    if (s.prop_id () != 0) {
-      ps->insert (db::EdgeWithProperties (s->first ().transformed (trans), s.prop_id ()));
-      ps->insert (db::EdgeWithProperties (s->second ().transformed (trans), s.prop_id ()));
-    } else {
-      ps->insert (s->first ().transformed (trans));
-      ps->insert (s->second ().transformed (trans));
-    }
+    sh->insert (s->first ().transformed (trans));
+    sh->insert (s->second ().transformed (trans));
   }
 }
 
 static void insert_edge_pairs_as_edges_with_dtrans (db::Shapes *sh, const db::EdgePairs &r, const db::DCplxTrans &trans)
 {
-  ProtectedShapes ps (sh, r);
   db::CplxTrans dbu_trans (shapes_dbu (sh));
   db::ICplxTrans itrans = dbu_trans.inverted () * trans * dbu_trans;
   for (db::EdgePairs::const_iterator s = r.begin (); ! s.at_end (); ++s) {
-    if (s.prop_id () != 0) {
-      ps->insert (db::EdgeWithProperties (s->first ().transformed (itrans), s.prop_id ()));
-      ps->insert (db::EdgeWithProperties (s->second ().transformed (itrans), s.prop_id ()));
-    } else {
-      ps->insert (s->first ().transformed (itrans));
-      ps->insert (s->second ().transformed (itrans));
-    }
+    sh->insert (s->first ().transformed (itrans));
+    sh->insert (s->second ().transformed (itrans));
   }
 }
 
 static void insert_edge_pairs (db::Shapes *sh, const db::EdgePairs &r)
 {
-  ProtectedShapes ps (sh, r);
   for (db::EdgePairs::const_iterator s = r.begin (); ! s.at_end (); ++s) {
-    if (s.prop_id () != 0) {
-      ps->insert (db::EdgePairWithProperties (*s, s.prop_id ()));
-    } else {
-      ps->insert (*s);
-    }
+    sh->insert (*s);
   }
 }
 
 static void insert_edge_pairs_with_trans (db::Shapes *sh, const db::EdgePairs &r, const db::ICplxTrans &trans)
 {
-  ProtectedShapes ps (sh, r);
   for (db::EdgePairs::const_iterator s = r.begin (); ! s.at_end (); ++s) {
-    if (s.prop_id () != 0) {
-      ps->insert (db::EdgePairWithProperties (s->transformed (trans), s.prop_id ()));
-    } else {
-      ps->insert (s->transformed (trans));
-    }
+    sh->insert (s->transformed (trans));
   }
 }
 
 static void insert_edge_pairs_with_dtrans (db::Shapes *sh, const db::EdgePairs &r, const db::DCplxTrans &trans)
 {
-  ProtectedShapes ps (sh, r);
   db::CplxTrans dbu_trans (shapes_dbu (sh));
   db::ICplxTrans itrans = dbu_trans.inverted () * trans * dbu_trans;
   for (db::EdgePairs::const_iterator s = r.begin (); ! s.at_end (); ++s) {
-    if (s.prop_id () != 0) {
-      ps->insert (db::EdgePairWithProperties (s->transformed (itrans), s.prop_id ()));
-    } else {
-      ps->insert (s->transformed (itrans));
-    }
+    sh->insert (s->transformed (itrans));
   }
-}
-
-static void insert_texts (db::Shapes *sh, const db::Texts &r)
-{
-  ProtectedShapes ps (sh, r);
-  for (db::Texts::const_iterator s = r.begin (); ! s.at_end (); ++s) {
-    if (s.prop_id () != 0) {
-      ps->insert (db::TextWithProperties (*s, s.prop_id ()));
-    } else {
-      ps->insert (*s);
-    }
-  }
-}
-
-static void insert_texts_with_trans (db::Shapes *sh, const db::Texts &r, const db::ICplxTrans &trans)
-{
-  ProtectedShapes ps (sh, r);
-  for (db::Texts::const_iterator s = r.begin (); ! s.at_end (); ++s) {
-    if (s.prop_id () != 0) {
-      ps->insert (db::TextWithProperties (s->transformed (trans), s.prop_id ()));
-    } else {
-      ps->insert (s->transformed (trans));
-    }
-  }
-}
-
-static void insert_texts_with_dtrans (db::Shapes *sh, const db::Texts &r, const db::DCplxTrans &trans)
-{
-  ProtectedShapes ps (sh, r);
-  db::CplxTrans dbu_trans (shapes_dbu (sh));
-  db::ICplxTrans itrans = dbu_trans.inverted () * trans * dbu_trans;
-  for (db::Texts::const_iterator s = r.begin (); ! s.at_end (); ++s) {
-    if (s.prop_id () != 0) {
-      ps->insert (db::TextWithProperties (s->transformed (itrans), s.prop_id ()));
-    } else {
-      ps->insert (s->transformed (itrans));
-    }
-  }
-}
-
-static db::Layout *layout (db::Shapes *sh)
-{
-  if (sh->cell ()) {
-    return sh->cell ()->layout ();
-  } else {
-    return 0;
-  }
-}
-
-static void break_polygons (db::Shapes *sh, size_t max_vertex_count, double max_area_ratio)
-{
-  db::break_polygons (*sh, max_vertex_count, max_area_ratio);
 }
 
 static unsigned int s_all ()                 { return db::ShapeIterator::All; }
 static unsigned int s_all_with_properties () { return db::ShapeIterator::AllWithProperties; }
 static unsigned int s_properties ()          { return db::ShapeIterator::Properties; }
 static unsigned int s_polygons ()            { return db::ShapeIterator::Polygons; }
-static unsigned int s_regions ()             { return db::ShapeIterator::Regions; }
 static unsigned int s_boxes ()               { return db::ShapeIterator::Boxes; }
 static unsigned int s_edges ()               { return db::ShapeIterator::Edges; }
 static unsigned int s_edge_pairs ()          { return db::ShapeIterator::EdgePairs; }
-static unsigned int s_points ()              { return db::ShapeIterator::Points; }
 static unsigned int s_paths ()               { return db::ShapeIterator::Paths; }
 static unsigned int s_texts ()               { return db::ShapeIterator::Texts; }
 static unsigned int s_user_objects ()        { return db::ShapeIterator::UserObjects; }
 
 Class<db::Shapes> decl_Shapes ("db", "Shapes",
-  gsi::method ("insert", (db::Shape (db::Shapes::*)(const db::Shape &)) &db::Shapes::insert, gsi::arg ("shape"),
+  gsi::method ("insert", (db::Shape (db::Shapes::*)(const db::Shape &)) &db::Shapes::insert,
     "@brief Inserts a shape from a shape reference into the shapes list\n"
+    "@args shape\n"
     "@return A reference (a \\Shape object) to the newly created shape\n"
     "This method has been introduced in version 0.16.\n"
   ) +
@@ -800,7 +600,7 @@ Class<db::Shapes> decl_Shapes ("db", "Shapes",
     "@param edges The edge pairs to insert\n"
     "@param trans The transformation to apply (displacement in micrometer units)\n"
     "\n"
-    "This method inserts all edge pairs from the edge pair collection into this shape container.\n"
+    "This method inserts all edge pairs from the edge collection into this shape container.\n"
     "Before an edge pair is inserted, the given transformation is applied.\n"
     "\n"
     "This method has been introduced in version 0.26.\n"
@@ -883,34 +683,6 @@ Class<db::Shapes> decl_Shapes ("db", "Shapes",
     "\n"
     "This method has been introduced in version 0.25.\n"
   ) +
-  gsi::method_ext ("insert", &insert_texts, gsi::arg ("texts"),
-    "@brief Inserts the texts from the text collection into this shape container\n"
-    "@param texts The texts to insert\n"
-    "\n"
-    "This method inserts all texts from the text collection into this shape container.\n"
-    "\n"
-    "This method has been introduced in version 0.27.\n"
-  ) +
-  gsi::method_ext ("insert", &insert_texts_with_trans, gsi::arg ("texts"), gsi::arg ("trans"),
-    "@brief Inserts the texts from the text collection into this shape container with a transformation\n"
-    "@param edges The texts to insert\n"
-    "@param trans The transformation to apply\n"
-    "\n"
-    "This method inserts all texts from the text collection into this shape container.\n"
-    "Before an text is inserted, the given transformation is applied.\n"
-    "\n"
-    "This method has been introduced in version 0.27.\n"
-  ) +
-  gsi::method_ext ("insert", &insert_texts_with_dtrans, gsi::arg ("texts"), gsi::arg ("trans"),
-    "@brief Inserts the texts from the text collection into this shape container with a transformation (given in micrometer units)\n"
-    "@param edges The text to insert\n"
-    "@param trans The transformation to apply (displacement in micrometer units)\n"
-    "\n"
-    "This method inserts all texts from the text collection into this shape container.\n"
-    "Before an text is inserted, the given transformation is applied.\n"
-    "\n"
-    "This method has been introduced in version 0.27.\n"
-  ) +
   gsi::method_ext ("transform", &transform_shapes, gsi::arg ("trans"),
     "@brief Transforms all shapes with the given transformation\n"
     "This method will invalidate all references to shapes inside this collection.\n\n"
@@ -935,8 +707,9 @@ Class<db::Shapes> decl_Shapes ("db", "Shapes",
     "\n"
     "It has been introduced in version 0.25.\n"
   ) +
-  gsi::method ("transform", (db::Shape (db::Shapes::*)(const db::Shape &, const db::Trans &)) &db::Shapes::transform, gsi::arg ("shape"), gsi::arg ("trans"),
+  gsi::method ("transform", (db::Shape (db::Shapes::*)(const db::Shape &, const db::Trans &)) &db::Shapes::transform,
     "@brief Transforms the shape given by the reference with the given transformation\n"
+    "@args shape, trans\n"
     "@return A reference (a \\Shape object) to the new shape\n"
     "The original shape may be deleted and re-inserted by this method. Therefore, a new reference is returned.\n"
     "It is permitted in editable mode only.\n"
@@ -968,27 +741,10 @@ Class<db::Shapes> decl_Shapes ("db", "Shapes",
     "\n"
     "This method has been introduced in version 0.25.\n"
   ) +
-  gsi::method_ext ("break_polygons", &break_polygons, gsi::arg ("max_vertex_count"), gsi::arg ("max_area_ratio", 0.0),
-    "@brief Breaks the polygons of the shape container into smaller ones\n"
-    "\n"
-    "There are two criteria for splitting a polygon: a polygon is split into parts with less then "
-    "'max_vertex_count' points and an bounding box-to-polygon area ratio less than 'max_area_ratio'. "
-    "The area ratio is supposed to render polygons whose bounding box is a better approximation. "
-    "This applies for example to 'L' shape polygons.\n"
-    "\n"
-    "Using a value of 0 for either limit means that the respective limit isn't checked. "
-    "Breaking happens by cutting the polygons into parts at 'good' locations. The "
-    "algorithm does not have a specific goal to minimize the number of parts for example. "
-    "The only goal is to achieve parts within the given limits.\n"
-    "\n"
-    "Breaking also applies to paths if their polygon representation satisfies the breaking criterion. "
-    "In that case, paths are converted to polygons and broken into smaller parts.\n"
-    "\n"
-    "This method has been introduced in version 0.29.5."
-  ) +
-  gsi::method_ext ("replace", &replace<db::Box>, gsi::arg ("shape"), gsi::arg ("box"),
+  gsi::method_ext ("replace", &replace<db::Box>,
     "@brief Replaces the given shape with a box\n"
     "@return A reference to the new shape (a \\Shape object)\n"
+    "@args shape,box\n"
     "\n"
     "This method has been introduced with version 0.16. It replaces the given shape with the "
     "object specified. It does not change the property Id. To change the property Id, "
@@ -1006,9 +762,10 @@ Class<db::Shapes> decl_Shapes ("db", "Shapes",
     "\n"
     "This variant has been introduced in version 0.25."
   ) +
-  gsi::method_ext ("replace", &replace<db::Path>, gsi::arg ("shape"), gsi::arg ("path"),
+  gsi::method_ext ("replace", &replace<db::Path>,
     "@brief Replaces the given shape with a path\n"
     "@return A reference to the new shape (a \\Shape object)\n"
+    "@args shape,path\n"
     "\n"
     "This method has been introduced with version 0.16. It replaces the given shape with the "
     "object specified. It does not change the property Id. To change the property Id, "
@@ -1066,28 +823,10 @@ Class<db::Shapes> decl_Shapes ("db", "Shapes",
     "\n"
     "This variant has been introduced in version 0.26.\n"
   ) +
-  gsi::method_ext ("replace", &replace<db::Point>, gsi::arg ("shape"), gsi::arg ("point"),
-    "@brief Replaces the given shape with an point object\n"
-    "\n"
-    "This method replaces the given shape with the "
-    "object specified. It does not change the property Id. To change the property Id, "
-    "use the \\replace_prop_id method. To replace a shape and discard the property Id, erase the "
-    "shape and insert a new shape."
-    "\n"
-    "This variant has been introduced in version 0.28."
-  ) +
-  gsi::method_ext ("replace", &dreplace<db::DPoint>, gsi::arg ("shape"), gsi::arg ("point"),
-    "@brief Replaces the given shape with an point given in micrometer units\n"
-    "@return A reference to the new shape (a \\Shape object)\n"
-    "\n"
-    "This method behaves like the \\replace version with an \\Point argument, except that it will "
-    "internally translate the point from micrometer to database units.\n"
-    "\n"
-    "This variant has been introduced in version 0.28."
-  ) +
-  gsi::method_ext ("replace", &replace<db::Text>, gsi::arg ("shape"), gsi::arg ("text"),
+  gsi::method_ext ("replace", &replace<db::Text>,
     "@brief Replaces the given shape with a text object\n"
     "@return A reference to the new shape (a \\Shape object)\n"
+    "@args shape,text\n"
     "\n"
     "This method has been introduced with version 0.16. It replaces the given shape with the "
     "object specified. It does not change the property Id. To change the property Id, "
@@ -1105,9 +844,10 @@ Class<db::Shapes> decl_Shapes ("db", "Shapes",
     "\n"
     "This variant has been introduced in version 0.25."
   ) +
-  gsi::method_ext ("replace", &replace<db::SimplePolygon>, gsi::arg ("shape"), gsi::arg ("simple_polygon"),
+  gsi::method_ext ("replace", &replace<db::SimplePolygon>,
     "@brief Replaces the given shape with a simple polygon\n"
     "@return A reference to the new shape (a \\Shape object)\n"
+    "@args shape,simple_polygon\n"
     "\n"
     "This method has been introduced with version 0.16. It replaces the given shape with the "
     "object specified. It does not change the property Id. To change the property Id, "
@@ -1125,9 +865,10 @@ Class<db::Shapes> decl_Shapes ("db", "Shapes",
     "\n"
     "This variant has been introduced in version 0.25."
   ) +
-  gsi::method_ext ("replace", &replace<db::Polygon>, gsi::arg ("shape"), gsi::arg ("polygon"),
+  gsi::method_ext ("replace", &replace<db::Polygon>,
     "@brief Replaces the given shape with a polygon\n"
     "@return A reference to the new shape (a \\Shape object)\n"
+    "@args shape,polygon\n"
     "\n"
     "This method has been introduced with version 0.16. It replaces the given shape with the "
     "object specified. It does not change the property Id. To change the property Id, "
@@ -1145,9 +886,10 @@ Class<db::Shapes> decl_Shapes ("db", "Shapes",
     "\n"
     "This variant has been introduced in version 0.25."
   ) +
-  gsi::method_ext ("insert|#insert_box", &insert<db::Box>, gsi::arg ("box"),
+  gsi::method_ext ("insert|#insert_box", &insert<db::Box>,
     "@brief Inserts a box into the shapes list\n"
     "@return A reference to the new shape (a \\Shape object)\n"
+    "@args box\n"
     "\n"
     "Starting with version 0.16, this method returns a reference to the newly created shape\n"
   ) +
@@ -1159,9 +901,10 @@ Class<db::Shapes> decl_Shapes ("db", "Shapes",
     "\n"
     "This variant has been introduced in version 0.25."
   ) +
-  gsi::method_ext ("insert|#insert_path", &insert<db::Path>, gsi::arg ("path"),
+  gsi::method_ext ("insert|#insert_path", &insert<db::Path>,
     "@brief Inserts a path into the shapes list\n"
     "@return A reference to the new shape (a \\Shape object)\n"
+    "@args path\n"
     "\n"
     "Starting with version 0.16, this method returns a reference to the newly created shape\n"
   ) +
@@ -1199,22 +942,10 @@ Class<db::Shapes> decl_Shapes ("db", "Shapes",
     "\n"
     "This variant has been introduced in version 0.26."
   ) +
-  gsi::method_ext ("insert|#insert_point", &insert<db::Point>, gsi::arg ("point"),
-    "@brief Inserts an point into the shapes list\n"
-    "\n"
-    "This variant has been introduced in version 0.28.\n"
-  ) +
-  gsi::method_ext ("insert", &dinsert<db::DPoint>, gsi::arg ("point"),
-    "@brief Inserts a micrometer-unit point into the shapes list\n"
-    "@return A reference to the new shape (a \\Shape object)\n"
-    "This method behaves like the \\insert version with a \\Point argument, except that it will "
-    "internally translate the point from micrometer to database units.\n"
-    "\n"
-    "This variant has been introduced in version 0.28.\n"
-  ) +
-  gsi::method_ext ("insert|#insert_text", &insert<db::Text>, gsi::arg ("text"),
+  gsi::method_ext ("insert|#insert_text", &insert<db::Text>,
     "@brief Inserts a text into the shapes list\n"
     "@return A reference to the new shape (a \\Shape object)\n"
+    "@args text\n"
     "\n"
     "Starting with version 0.16, this method returns a reference to the newly created shape\n"
   ) +
@@ -1226,9 +957,10 @@ Class<db::Shapes> decl_Shapes ("db", "Shapes",
     "\n"
     "This variant has been introduced in version 0.25."
   ) +
-  gsi::method_ext ("insert|#insert_simple_polygon", &insert<db::SimplePolygon>, gsi::arg ("simple_polygon"),
+  gsi::method_ext ("insert|#insert_simple_polygon", &insert<db::SimplePolygon>,
     "@brief Inserts a simple polygon into the shapes list\n"
     "@return A reference to the new shape (a \\Shape object)\n"
+    "@args simple_polygon\n"
     "\n"
     "Starting with version 0.16, this method returns a reference to the newly created shape\n"
   ) +
@@ -1240,9 +972,10 @@ Class<db::Shapes> decl_Shapes ("db", "Shapes",
     "\n"
     "This variant has been introduced in version 0.25."
   ) +
-  gsi::method_ext ("insert|#insert_polygon", &insert<db::Polygon>, gsi::arg ("polygon"),
+  gsi::method_ext ("insert|#insert_polygon", &insert<db::Polygon>,
     "@brief Inserts a polygon into the shapes list\n"
     "@return A reference to the new shape (a \\Shape object)\n"
+    "@args polygon\n"
     "\n"
     "Starting with version 0.16, this method returns a reference to the newly created shape\n"
   ) +
@@ -1254,8 +987,9 @@ Class<db::Shapes> decl_Shapes ("db", "Shapes",
     "\n"
     "This variant has been introduced in version 0.25."
   ) +
-  gsi::method_ext ("insert|#insert_box_with_properties", &insert_with_properties<db::Box>, gsi::arg ("box"), gsi::arg ("property_id"),
+  gsi::method_ext ("insert|#insert_box_with_properties", &insert_with_properties<db::Box>,
     "@brief Inserts a box with properties into the shapes list\n"
+    "@args box, property_id\n"
     "@return A reference to the new shape (a \\Shape object)\n"
     "The property Id must be obtained from the \\Layout object's property_id method which "
     "associates a property set with a property Id."
@@ -1270,8 +1004,9 @@ Class<db::Shapes> decl_Shapes ("db", "Shapes",
     "\n"
     "This variant has been introduced in version 0.25."
   ) +
-  gsi::method_ext ("insert|#insert_path_with_properties", &insert_with_properties<db::Path>, gsi::arg ("path"), gsi::arg ("property_id"),
+  gsi::method_ext ("insert|#insert_path_with_properties", &insert_with_properties<db::Path>,
     "@brief Inserts a path with properties into the shapes list\n"
+    "@args path, property_id\n"
     "@return A reference to the new shape (a \\Shape object)\n"
     "The property Id must be obtained from the \\Layout object's property_id method which "
     "associates a property set with a property Id."
@@ -1318,8 +1053,9 @@ Class<db::Shapes> decl_Shapes ("db", "Shapes",
     "\n"
     "This variant has been introduced in version 0.26."
   ) +
-  gsi::method_ext ("insert|#insert_text_with_properties", &insert_with_properties<db::Text>, gsi::arg ("text"), gsi::arg ("property_id"),
+  gsi::method_ext ("insert|#insert_text_with_properties", &insert_with_properties<db::Text>,
     "@brief Inserts a text with properties into the shapes list\n"
+    "@args text, property_id\n"
     "@return A reference to the new shape (a \\Shape object)\n"
     "The property Id must be obtained from the \\Layout object's property_id method which "
     "associates a property set with a property Id."
@@ -1334,8 +1070,9 @@ Class<db::Shapes> decl_Shapes ("db", "Shapes",
     "\n"
     "This variant has been introduced in version 0.25."
   ) +
-  gsi::method_ext ("insert|#insert_simple_polygon_with_properties", &insert_with_properties<db::SimplePolygon>, gsi::arg ("simple_polygon"), gsi::arg ("property_id"),
+  gsi::method_ext ("insert|#insert_simple_polygon_with_properties", &insert_with_properties<db::SimplePolygon>,
     "@brief Inserts a simple polygon with properties into the shapes list\n"
+    "@args simple_polygon, property_id\n"
     "@return A reference to the new shape (a \\Shape object)\n"
     "The property Id must be obtained from the \\Layout object's property_id method which "
     "associates a property set with a property Id."
@@ -1350,8 +1087,9 @@ Class<db::Shapes> decl_Shapes ("db", "Shapes",
     "\n"
     "This variant has been introduced in version 0.25."
   ) +
-  gsi::method_ext ("insert|#insert_polygon_with_properties", &insert_with_properties<db::Polygon>, gsi::arg ("polygon"), gsi::arg ("property_id"),
+  gsi::method_ext ("insert|#insert_polygon_with_properties", &insert_with_properties<db::Polygon>,
     "@brief Inserts a polygon with properties into the shapes list\n"
+    "@args polygon, property_id\n"
     "@return A reference to the new shape (a \\Shape object)\n"
     "The property Id must be obtained from the \\Layout object's property_id method which "
     "associates a property set with a property Id."
@@ -1366,120 +1104,9 @@ Class<db::Shapes> decl_Shapes ("db", "Shapes",
     "\n"
     "This variant has been introduced in version 0.25."
   ) +
-  gsi::method_ext ("insert", &insert<db::BoxWithProperties>, gsi::arg ("box"),
-    "@brief Inserts a box with properties into the shapes list\n"
-    "@return A reference to the new shape (a \\Shape object)\n"
-    "The property Id must be obtained from the \\Layout object's property_id method which "
-    "associates a property set with a property Id."
-    "\n"
-    "This variant has been introduced in version 0.30."
-  ) +
-  gsi::method_ext ("insert", &dinsert<db::DBoxWithProperties>, gsi::arg ("box"),
-    "@brief Inserts a micrometer-unit box with properties into the shapes list\n"
-    "@return A reference to the new shape (a \\Shape object)\n"
-    "This method behaves like the \\insert version with a \\BoxWithProperties argument, except that it will "
-    "internally translate the box from micrometer to database units.\n"
-    "\n"
-    "This variant has been introduced in version 0.30."
-  ) +
-  gsi::method_ext ("insert", &insert<db::PathWithProperties>, gsi::arg ("path"),
-    "@brief Inserts a path with properties into the shapes list\n"
-    "@return A reference to the new shape (a \\Shape object)\n"
-    "The property Id must be obtained from the \\Layout object's property_id method which "
-    "associates a property set with a property Id."
-    "\n"
-    "This variant has been introduced in version 0.30."
-  ) +
-  gsi::method_ext ("insert", &dinsert<db::DPathWithProperties>, gsi::arg ("path"),
-    "@brief Inserts a micrometer-unit path with properties into the shapes list\n"
-    "@return A reference to the new shape (a \\Shape object)\n"
-    "This method behaves like the \\insert version with a \\PathWithProperties argument, except that it will "
-    "internally translate the path from micrometer to database units.\n"
-    "\n"
-    "This variant has been introduced in version 0.30."
-  ) +
-  gsi::method_ext ("insert", &insert<db::EdgeWithProperties>, gsi::arg ("edge"),
-    "@brief Inserts an edge with properties into the shapes list\n"
-    "@return A reference to the new shape (a \\Shape object)\n"
-    "The property Id must be obtained from the \\Layout object's property_id method which "
-    "associates a property set with a property Id."
-    "\n"
-    "This variant has been introduced in version 0.30."
-  ) +
-  gsi::method_ext ("insert", &dinsert<db::DEdgeWithProperties>, gsi::arg ("edge"),
-    "@brief Inserts a micrometer-unit edge with properties into the shapes list\n"
-    "@return A reference to the new shape (a \\Shape object)\n"
-    "This method behaves like the \\insert version with a \\EdgeWithProperties argument, except that it will "
-    "internally translate the edge from micrometer to database units.\n"
-    "\n"
-    "This variant has been introduced in version 0.30."
-  ) +
-  gsi::method_ext ("insert", &insert<db::EdgePairWithProperties>, gsi::arg ("edge_pair"),
-    "@brief Inserts an edge pair with properties into the shapes list\n"
-    "@return A reference to the new shape (a \\Shape object)\n"
-    "The property Id must be obtained from the \\Layout object's property_id method which "
-    "associates a property set with a property Id."
-    "\n"
-    "This variant has been introduced in version 0.30."
-  ) +
-  gsi::method_ext ("insert", &dinsert<db::DEdgePairWithProperties>, gsi::arg ("edge_pair"),
-    "@brief Inserts a micrometer-unit edge pair with properties into the shapes list\n"
-    "@return A reference to the new shape (a \\Shape object)\n"
-    "This method behaves like the \\insert version with a \\EdgePairWithProperties argument, except that it will "
-    "internally translate the edge pair from micrometer to database units.\n"
-    "\n"
-    "This variant has been introduced in version 0.30."
-  ) +
-  gsi::method_ext ("insert", &insert<db::TextWithProperties>, gsi::arg ("text"),
-    "@brief Inserts a text with properties into the shapes list\n"
-    "@return A reference to the new shape (a \\Shape object)\n"
-    "The property Id must be obtained from the \\Layout object's property_id method which "
-    "associates a property set with a property Id."
-    "\n"
-    "This variant has been introduced in version 0.30."
-  ) +
-  gsi::method_ext ("insert", &dinsert<db::DTextWithProperties>, gsi::arg ("text"),
-    "@brief Inserts a micrometer-unit text with properties into the shapes list\n"
-    "@return A reference to the new shape (a \\Shape object)\n"
-    "This method behaves like the \\insert version with a \\TextWithProperties argument, except that it will "
-    "internally translate the text from micrometer to database units.\n"
-    "\n"
-    "This variant has been introduced in version 0.30."
-  ) +
-  gsi::method_ext ("insert", &insert<db::SimplePolygonWithProperties>, gsi::arg ("simple_polygon"),
-    "@brief Inserts a simple polygon with properties into the shapes list\n"
-    "@return A reference to the new shape (a \\Shape object)\n"
-    "The property Id must be obtained from the \\Layout object's property_id method which "
-    "associates a property set with a property Id."
-    "\n"
-    "This variant has been introduced in version 0.30."
-  ) +
-  gsi::method_ext ("insert", &dinsert<db::DSimplePolygonWithProperties>, gsi::arg ("simple_polygon"),
-    "@brief Inserts a micrometer-unit simple polygon with properties into the shapes list\n"
-    "@return A reference to the new shape (a \\Shape object)\n"
-    "This method behaves like the \\insert version with a \\SimplePolygonWithProperties argument, except that it will "
-    "internally translate the simple polygon from micrometer to database units.\n"
-    "\n"
-    "This variant has been introduced in version 0.30."
-  ) +
-  gsi::method_ext ("insert", &insert<db::PolygonWithProperties>, gsi::arg ("polygon"),
-    "@brief Inserts a polygon with properties into the shapes list\n"
-    "@return A reference to the new shape (a \\Shape object)\n"
-    "The property Id must be obtained from the \\Layout object's property_id method which "
-    "associates a property set with a property Id."
-    "\n"
-    "This variant has been introduced in version 0.30."
-  ) +
-  gsi::method_ext ("insert", &dinsert<db::DPolygonWithProperties>, gsi::arg ("polygon"),
-    "@brief Inserts a micrometer-unit polygon with properties into the shapes list\n"
-    "@return A reference to the new shape (a \\Shape object)\n"
-    "This method behaves like the \\insert version with a \\PolygonWithProperties argument, except that it will "
-    "internally translate the polygon from micrometer to database units.\n"
-    "\n"
-    "This variant has been introduced in version 0.30."
-  ) +
-  gsi::iterator_ext ("each", &begin, gsi::arg ("flags"),
+  gsi::iterator_ext ("each", &begin,
     "@brief Gets all shapes\n"
+    "@args flags\n"
     "\n"
     "@param flags An \"or\"-ed combination of the S... constants\n"
   ) +
@@ -1488,8 +1115,9 @@ Class<db::Shapes> decl_Shapes ("db", "Shapes",
     "\n"
     "This call is equivalent to each(SAll). This convenience method has been introduced in version 0.16\n"
   ) +
-  gsi::iterator_ext ("each_touching", &begin_touching, gsi::arg ("flags"), gsi::arg ("region"),
+  gsi::iterator_ext ("each_touching", &begin_touching,
     "@brief Gets all shapes that touch the search box (region)\n"
+    "@args flags,region\n"
     "This method was introduced in version 0.16\n"
     "\n"
     "@param flags An \"or\"-ed combination of the S... constants\n"
@@ -1502,8 +1130,9 @@ Class<db::Shapes> decl_Shapes ("db", "Shapes",
     "\n"
     "This method was introduced in version 0.25\n"
   ) +
-  gsi::iterator_ext ("each_touching", &begin_touching_all, gsi::arg ("region"),
+  gsi::iterator_ext ("each_touching", &begin_touching_all,
     "@brief Gets all shapes that touch the search box (region)\n"
+    "@args region\n"
     "@param region The rectangular search region\n"
     "\n"
     "This call is equivalent to each_touching(SAll,region). This convenience method has been introduced in version 0.16\n"
@@ -1515,8 +1144,9 @@ Class<db::Shapes> decl_Shapes ("db", "Shapes",
     "\n"
     "This method was introduced in version 0.25\n"
   ) +
-  gsi::iterator_ext ("each_overlapping", &begin_overlapping, gsi::arg ("flags"), gsi::arg ("region"),
+  gsi::iterator_ext ("each_overlapping", &begin_overlapping,
     "@brief Gets all shapes that overlap the search box (region)\n"
+    "@args flags,region\n"
     "This method was introduced in version 0.16\n"
     "\n"
     "@param flags An \"or\"-ed combination of the S... constants\n"
@@ -1529,8 +1159,9 @@ Class<db::Shapes> decl_Shapes ("db", "Shapes",
     "\n"
     "This method was introduced in version 0.25\n"
   ) +
-  gsi::iterator_ext ("each_overlapping", &begin_overlapping_all, gsi::arg ("region"),
+  gsi::iterator_ext ("each_overlapping", &begin_overlapping_all,
     "@brief Gets all shapes that overlap the search box (region)\n"
+    "@args region\n"
     "@param region The rectangular search region\n"
     "\n"
     "This call is equivalent to each_overlapping(SAll,region). This convenience method has been introduced in version 0.16\n"
@@ -1542,21 +1173,24 @@ Class<db::Shapes> decl_Shapes ("db", "Shapes",
     "\n"
     "This method was introduced in version 0.25\n"
   ) +
-  gsi::method ("erase", &db::Shapes::erase_shape, gsi::arg ("shape"),
+  gsi::method ("erase", &db::Shapes::erase_shape,
     "@brief Erases the shape pointed to by the given \\Shape object\n"
+    "@args shape\n"
     "This method has been introduced in version 0.16. It can only be used in editable mode.\n"
     "Erasing a shape will invalidate the shape reference. Access to this reference may then render invalid results.\n"
     "\n"
     "@param shape The shape which to destroy"
   ) +
-  gsi::method ("find", (db::Shape (db::Shapes::*)(const db::Shape &) const) &db::Shapes::find, gsi::arg ("shape"),
+  gsi::method ("find", (db::Shape (db::Shapes::*)(const db::Shape &) const) &db::Shapes::find, 
     "@brief Finds a shape inside this collected\n"
+    "@args shape\n"
     "This method has been introduced in version 0.21.\n"
     "This method tries to find the given shape in this collection. The original shape may be located in another collection. "
     "If the shape is found, this method returns a reference to the shape in this collection, otherwise a null reference is returned."
   ) +
-  gsi::method ("is_valid?", &db::Shapes::is_valid, gsi::arg ("shape"),
+  gsi::method ("is_valid?", &db::Shapes::is_valid, 
     "@brief Tests if the given \\Shape object is still pointing to a valid object\n"
+    "@args shape\n"
     "This method has been introduced in version 0.16.\n"
     "If the shape represented by the given reference has been deleted, this method returns false. "
     "If however, another shape has been inserted already that occupies the original shape's position, "
@@ -1566,35 +1200,18 @@ Class<db::Shapes> decl_Shapes ("db", "Shapes",
     "@brief Returns a value indicating whether the shapes container is empty\n"
     "This method has been introduced in version 0.20.\n"
   ) +
-  gsi::method ("clear", static_cast<void (db::Shapes::*) ()> (&db::Shapes::clear),
+  gsi::method ("clear", &db::Shapes::clear, 
     "@brief Clears the shape container\n"
-    "This method has been introduced in version 0.16."
-  ) +
-  gsi::method ("clear", static_cast<void (db::Shapes::*) (unsigned int)> (&db::Shapes::clear), gsi::arg ("flags"),
-    "@brief Clears certain shape types from the shape container\n"
-    "Only shapes matching the shape types from 'flags' are removed. 'flags' is a combination of the S... constants.\n"
-    "\n"
-    "This method has been introduced in version 0.28.9."
+    "This method has been introduced in version 0.16. It can only be used in editable mode."
   ) +
   gsi::method_ext ("size", &shapes_size,
     "@brief Gets the number of shapes in this container\n"
     "This method was introduced in version 0.16\n"
     "@return The number of shapes in this container\n"
   ) +
-  gsi::method ("cell", &db::Shapes::cell,
-    "@brief Gets the cell the shape container belongs to\n"
-    "This method returns nil if the shape container does not belong to a cell.\n"
-    "\n"
-    "This method has been added in version 0.28."
-  ) +
-  gsi::method_ext ("layout", &layout,
-    "@brief Gets the layout object the shape container belongs to\n"
-    "This method returns nil if the shape container does not belong to a layout.\n"
-    "\n"
-    "This method has been added in version 0.28."
-  ) +
-  gsi::method ("replace_prop_id", (db::Shape (db::Shapes::*) (const db::Shape &, db::properties_id_type)) &db::Shapes::replace_prop_id, gsi::arg ("shape"), gsi::arg ("property_id"),
+  gsi::method ("replace_prop_id", (db::Shape (db::Shapes::*) (const db::Shape &, db::properties_id_type)) &db::Shapes::replace_prop_id,
     "@brief Replaces (or install) the properties of a shape\n"
+    "@args shape,property_id\n"
     "@return A \\Shape object representing the new shape\n"
     "This method has been introduced in version 0.16. It can only be used in editable mode.\n"
     "Changes the properties Id of the given shape or install a properties Id on that shape if it does not have one yet.\n"
@@ -1604,27 +1221,13 @@ Class<db::Shapes> decl_Shapes ("db", "Shapes",
     "returned for future references."
   ) +
   gsi::method ("SAll|#s_all", &s_all,
-    "@brief Indicates that all shapes shall be retrieved\n"
-    "You can use this constant to construct 'except' classes - e.g. "
-    "to specify 'all shape types except boxes' use\n"
-    "\n"
-    "@code SAll - SBoxes @/code\n"
+    "@brief Indicates that all shapes shall be retrieved"
   ) +
   gsi::method ("SAllWithProperties|#s_all_with_properties", &s_all_with_properties,
-    "@brief Indicates that all shapes with properties shall be retrieved\n"
-    "Using this selector means to retrieve only shapes with properties."
-    "You can use this constant to construct 'except' classes - e.g. "
-    "to specify 'all shape types with properties except boxes' use\n"
-    "\n"
-    "@code SAllWithProperties - SBoxes @/code\n"
+    "@brief Indicates that all shapes with properties shall be retrieved"
   ) +
   gsi::method ("SPolygons|#s_polygons", &s_polygons,
     "@brief Indicates that polygons shall be retrieved"
-  ) +
-  gsi::method ("SRegions|#s_regions", &s_regions,
-    "@brief Indicates that objects which can be polygonized shall be retrieved (paths, boxes, polygons etc.)\n"
-    "\n"
-    "This constant has been added in version 0.27."
   ) +
   gsi::method ("SBoxes|#s_boxes", &s_boxes,
     "@brief Indicates that boxes shall be retrieved"
@@ -1634,11 +1237,6 @@ Class<db::Shapes> decl_Shapes ("db", "Shapes",
   ) +
   gsi::method ("SEdgePairs|#s_edge_pairs", &s_edge_pairs,
     "@brief Indicates that edge pairs shall be retrieved"
-  ) +
-  gsi::method ("SPoints|#s_points", &s_points,
-    "@brief Indicates that points shall be retrieved"
-    "\n"
-    "This constant has been added in version 0.28."
   ) +
   gsi::method ("SPaths|#s_paths", &s_paths,
     "@brief Indicates that paths shall be retrieved"
@@ -1650,10 +1248,7 @@ Class<db::Shapes> decl_Shapes ("db", "Shapes",
     "@brief Indicates that user objects shall be retrieved"
   ) +
   gsi::method ("SProperties|#s_properties", &s_properties,
-    "@brief Indicates that only shapes with properties shall be retrieved\n"
-    "You can or-combine this flag with the plain shape types to select a "
-    "certain shape type, but only those shapes with properties. For example to "
-    "select boxes with properties, use 'SProperties | SBoxes'."
+    "@brief Indicates that only shapes with properties shall be retrieved"
   ) +
   gsi::method_ext ("dump_mem_statistics", &dump_mem_statistics, gsi::arg<bool> ("detailed", false),
     "@hide"
@@ -1668,3 +1263,4 @@ Class<db::Shapes> decl_Shapes ("db", "Shapes",
 );
 
 }
+

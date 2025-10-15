@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -59,11 +59,6 @@ public:
   GlobPattern (const GlobPattern &other);
 
   /**
-   *  @brief Destructor
-   */
-  ~GlobPattern ();
-
-  /**
    *  @brief Assignment
    */
   GlobPattern &operator= (const GlobPattern &other);
@@ -72,30 +67,6 @@ public:
    *  @brief Assignment of a string
    */
   GlobPattern &operator= (const std::string &s);
-
-  /**
-   *  @brief Equality
-   */
-  bool operator== (const tl::GlobPattern &other) const
-  {
-    return m_p == other.m_p;
-  }
-
-  /**
-   *  @brief Less
-   */
-  bool operator< (const tl::GlobPattern &other) const
-  {
-    return m_p < other.m_p;
-  }
-
-  /**
-   *  @brief Pattern is empty
-   */
-  bool empty () const
-  {
-    return m_p.empty ();
-  }
 
   /**
    *  @brief Sets a value indicating whether to treat the match case sensitive

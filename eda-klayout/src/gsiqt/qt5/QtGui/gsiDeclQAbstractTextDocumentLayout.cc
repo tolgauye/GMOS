@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -48,6 +48,7 @@
 #include <QTimerEvent>
 #include "gsiQt.h"
 #include "gsiQtGuiCommon.h"
+#include "gsiDeclQtGuiTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -157,25 +158,6 @@ static void _call_f_draw_6787 (const qt_gsi::GenericMethod * /*decl*/, void *cls
 }
 
 
-// QTextFormat QAbstractTextDocumentLayout::formatAt(const QPointF &pos)
-
-
-static void _init_f_formatAt_c1986 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("pos");
-  decl->add_arg<const QPointF & > (argspec_0);
-  decl->set_return<QTextFormat > ();
-}
-
-static void _call_f_formatAt_c1986 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const QPointF &arg1 = gsi::arg_reader<const QPointF & >() (args, heap);
-  ret.write<QTextFormat > ((QTextFormat)((QAbstractTextDocumentLayout *)cls)->formatAt (arg1));
-}
-
-
 // QRectF QAbstractTextDocumentLayout::frameBoundingRect(QTextFrame *frame)
 
 
@@ -233,25 +215,6 @@ static void _call_f_hitTest_c4147 (const qt_gsi::GenericMethod * /*decl*/, void 
   const QPointF &arg1 = gsi::arg_reader<const QPointF & >() (args, heap);
   const qt_gsi::Converter<Qt::HitTestAccuracy>::target_type & arg2 = gsi::arg_reader<const qt_gsi::Converter<Qt::HitTestAccuracy>::target_type & >() (args, heap);
   ret.write<int > ((int)((QAbstractTextDocumentLayout *)cls)->hitTest (arg1, qt_gsi::QtToCppAdaptor<Qt::HitTestAccuracy>(arg2).cref()));
-}
-
-
-// QString QAbstractTextDocumentLayout::imageAt(const QPointF &pos)
-
-
-static void _init_f_imageAt_c1986 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("pos");
-  decl->add_arg<const QPointF & > (argspec_0);
-  decl->set_return<QString > ();
-}
-
-static void _call_f_imageAt_c1986 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const QPointF &arg1 = gsi::arg_reader<const QPointF & >() (args, heap);
-  ret.write<QString > ((QString)((QAbstractTextDocumentLayout *)cls)->imageAt (arg1));
 }
 
 
@@ -335,7 +298,7 @@ static void _init_f_unregisterHandler_1961 (qt_gsi::GenericMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("objectType");
   decl->add_arg<int > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("component", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("component", true, "0");
   decl->add_arg<QObject * > (argspec_1);
   decl->set_return<void > ();
 }
@@ -345,7 +308,7 @@ static void _call_f_unregisterHandler_1961 (const qt_gsi::GenericMethod * /*decl
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   int arg1 = gsi::arg_reader<int >() (args, heap);
-  QObject *arg2 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (nullptr, heap);
+  QObject *arg2 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (0, heap);
   __SUPPRESS_UNUSED_WARNING(ret);
   ((QAbstractTextDocumentLayout *)cls)->unregisterHandler (arg1, arg2);
 }
@@ -358,7 +321,7 @@ static void _init_f_tr_4013 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("s");
   decl->add_arg<const char * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("c", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("c", true, "__null");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("n", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -370,7 +333,7 @@ static void _call_f_tr_4013 (const qt_gsi::GenericStaticMethod * /*decl*/, gsi::
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (__null, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QAbstractTextDocumentLayout::tr (arg1, arg2, arg3));
 }
@@ -383,7 +346,7 @@ static void _init_f_trUtf8_4013 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("s");
   decl->add_arg<const char * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("c", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("c", true, "__null");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("n", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -395,7 +358,7 @@ static void _call_f_trUtf8_4013 (const qt_gsi::GenericStaticMethod * /*decl*/, g
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (__null, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QAbstractTextDocumentLayout::trUtf8 (arg1, arg2, arg3));
 }
@@ -412,11 +375,9 @@ static gsi::Methods methods_QAbstractTextDocumentLayout () {
   methods += new qt_gsi::GenericMethod ("document", "@brief Method QTextDocument *QAbstractTextDocumentLayout::document()\n", true, &_init_f_document_c0, &_call_f_document_c0);
   methods += new qt_gsi::GenericMethod ("documentSize", "@brief Method QSizeF QAbstractTextDocumentLayout::documentSize()\n", true, &_init_f_documentSize_c0, &_call_f_documentSize_c0);
   methods += new qt_gsi::GenericMethod ("draw", "@brief Method void QAbstractTextDocumentLayout::draw(QPainter *painter, const QAbstractTextDocumentLayout::PaintContext &context)\n", false, &_init_f_draw_6787, &_call_f_draw_6787);
-  methods += new qt_gsi::GenericMethod ("formatAt", "@brief Method QTextFormat QAbstractTextDocumentLayout::formatAt(const QPointF &pos)\n", true, &_init_f_formatAt_c1986, &_call_f_formatAt_c1986);
   methods += new qt_gsi::GenericMethod ("frameBoundingRect", "@brief Method QRectF QAbstractTextDocumentLayout::frameBoundingRect(QTextFrame *frame)\n", true, &_init_f_frameBoundingRect_c1615, &_call_f_frameBoundingRect_c1615);
   methods += new qt_gsi::GenericMethod ("handlerForObject", "@brief Method QTextObjectInterface *QAbstractTextDocumentLayout::handlerForObject(int objectType)\n", true, &_init_f_handlerForObject_c767, &_call_f_handlerForObject_c767);
   methods += new qt_gsi::GenericMethod ("hitTest", "@brief Method int QAbstractTextDocumentLayout::hitTest(const QPointF &point, Qt::HitTestAccuracy accuracy)\n", true, &_init_f_hitTest_c4147, &_call_f_hitTest_c4147);
-  methods += new qt_gsi::GenericMethod ("imageAt", "@brief Method QString QAbstractTextDocumentLayout::imageAt(const QPointF &pos)\n", true, &_init_f_imageAt_c1986, &_call_f_imageAt_c1986);
   methods += new qt_gsi::GenericMethod ("pageCount", "@brief Method int QAbstractTextDocumentLayout::pageCount()\n", true, &_init_f_pageCount_c0, &_call_f_pageCount_c0);
   methods += new qt_gsi::GenericMethod (":paintDevice", "@brief Method QPaintDevice *QAbstractTextDocumentLayout::paintDevice()\n", true, &_init_f_paintDevice_c0, &_call_f_paintDevice_c0);
   methods += new qt_gsi::GenericMethod ("registerHandler", "@brief Method void QAbstractTextDocumentLayout::registerHandler(int objectType, QObject *component)\n", false, &_init_f_registerHandler_1961, &_call_f_registerHandler_1961);
@@ -424,7 +385,6 @@ static gsi::Methods methods_QAbstractTextDocumentLayout () {
   methods += new qt_gsi::GenericMethod ("unregisterHandler", "@brief Method void QAbstractTextDocumentLayout::unregisterHandler(int objectType, QObject *component)\n", false, &_init_f_unregisterHandler_1961, &_call_f_unregisterHandler_1961);
   methods += gsi::qt_signal<QObject * > ("destroyed(QObject *)", "destroyed", gsi::arg("arg1"), "@brief Signal declaration for QAbstractTextDocumentLayout::destroyed(QObject *)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<const QSizeF & > ("documentSizeChanged(const QSizeF &)", "documentSizeChanged", gsi::arg("newSize"), "@brief Signal declaration for QAbstractTextDocumentLayout::documentSizeChanged(const QSizeF &newSize)\nYou can bind a procedure to this signal.");
-  methods += gsi::qt_signal<const QString & > ("objectNameChanged(const QString &)", "objectNameChanged", gsi::arg("objectName"), "@brief Signal declaration for QAbstractTextDocumentLayout::objectNameChanged(const QString &objectName)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<int > ("pageCountChanged(int)", "pageCountChanged", gsi::arg("newPages"), "@brief Signal declaration for QAbstractTextDocumentLayout::pageCountChanged(int newPages)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<const QRectF & > ("update(const QRectF &)", "update", gsi::arg("arg1"), "@brief Signal declaration for QAbstractTextDocumentLayout::update(const QRectF &)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<const QTextBlock & > ("updateBlock(const QTextBlock &)", "updateBlock", gsi::arg("block"), "@brief Signal declaration for QAbstractTextDocumentLayout::updateBlock(const QTextBlock &block)\nYou can bind a procedure to this signal.");
@@ -546,33 +506,33 @@ public:
     }
   }
 
-  //  [adaptor impl] bool QAbstractTextDocumentLayout::event(QEvent *event)
-  bool cbs_event_1217_0(QEvent *_event)
+  //  [adaptor impl] bool QAbstractTextDocumentLayout::event(QEvent *)
+  bool cbs_event_1217_0(QEvent *arg1)
   {
-    return QAbstractTextDocumentLayout::event(_event);
+    return QAbstractTextDocumentLayout::event(arg1);
   }
 
-  virtual bool event(QEvent *_event)
+  virtual bool event(QEvent *arg1)
   {
     if (cb_event_1217_0.can_issue()) {
-      return cb_event_1217_0.issue<QAbstractTextDocumentLayout_Adaptor, bool, QEvent *>(&QAbstractTextDocumentLayout_Adaptor::cbs_event_1217_0, _event);
+      return cb_event_1217_0.issue<QAbstractTextDocumentLayout_Adaptor, bool, QEvent *>(&QAbstractTextDocumentLayout_Adaptor::cbs_event_1217_0, arg1);
     } else {
-      return QAbstractTextDocumentLayout::event(_event);
+      return QAbstractTextDocumentLayout::event(arg1);
     }
   }
 
-  //  [adaptor impl] bool QAbstractTextDocumentLayout::eventFilter(QObject *watched, QEvent *event)
-  bool cbs_eventFilter_2411_0(QObject *watched, QEvent *event)
+  //  [adaptor impl] bool QAbstractTextDocumentLayout::eventFilter(QObject *, QEvent *)
+  bool cbs_eventFilter_2411_0(QObject *arg1, QEvent *arg2)
   {
-    return QAbstractTextDocumentLayout::eventFilter(watched, event);
+    return QAbstractTextDocumentLayout::eventFilter(arg1, arg2);
   }
 
-  virtual bool eventFilter(QObject *watched, QEvent *event)
+  virtual bool eventFilter(QObject *arg1, QEvent *arg2)
   {
     if (cb_eventFilter_2411_0.can_issue()) {
-      return cb_eventFilter_2411_0.issue<QAbstractTextDocumentLayout_Adaptor, bool, QObject *, QEvent *>(&QAbstractTextDocumentLayout_Adaptor::cbs_eventFilter_2411_0, watched, event);
+      return cb_eventFilter_2411_0.issue<QAbstractTextDocumentLayout_Adaptor, bool, QObject *, QEvent *>(&QAbstractTextDocumentLayout_Adaptor::cbs_eventFilter_2411_0, arg1, arg2);
     } else {
-      return QAbstractTextDocumentLayout::eventFilter(watched, event);
+      return QAbstractTextDocumentLayout::eventFilter(arg1, arg2);
     }
   }
 
@@ -609,13 +569,6 @@ public:
     }
   }
 
-  //  [emitter impl] void QAbstractTextDocumentLayout::objectNameChanged(const QString &objectName)
-  void emitter_QAbstractTextDocumentLayout_objectNameChanged_4567(const QString &objectName)
-  {
-    __SUPPRESS_UNUSED_WARNING (objectName);
-    throw tl::Exception ("Can't emit private signal 'void QAbstractTextDocumentLayout::objectNameChanged(const QString &objectName)'");
-  }
-
   //  [adaptor impl] int QAbstractTextDocumentLayout::pageCount()
   int cbs_pageCount_c0_0() const
   {
@@ -649,33 +602,33 @@ public:
     emit QAbstractTextDocumentLayout::updateBlock(block);
   }
 
-  //  [adaptor impl] void QAbstractTextDocumentLayout::childEvent(QChildEvent *event)
-  void cbs_childEvent_1701_0(QChildEvent *event)
+  //  [adaptor impl] void QAbstractTextDocumentLayout::childEvent(QChildEvent *)
+  void cbs_childEvent_1701_0(QChildEvent *arg1)
   {
-    QAbstractTextDocumentLayout::childEvent(event);
+    QAbstractTextDocumentLayout::childEvent(arg1);
   }
 
-  virtual void childEvent(QChildEvent *event)
+  virtual void childEvent(QChildEvent *arg1)
   {
     if (cb_childEvent_1701_0.can_issue()) {
-      cb_childEvent_1701_0.issue<QAbstractTextDocumentLayout_Adaptor, QChildEvent *>(&QAbstractTextDocumentLayout_Adaptor::cbs_childEvent_1701_0, event);
+      cb_childEvent_1701_0.issue<QAbstractTextDocumentLayout_Adaptor, QChildEvent *>(&QAbstractTextDocumentLayout_Adaptor::cbs_childEvent_1701_0, arg1);
     } else {
-      QAbstractTextDocumentLayout::childEvent(event);
+      QAbstractTextDocumentLayout::childEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QAbstractTextDocumentLayout::customEvent(QEvent *event)
-  void cbs_customEvent_1217_0(QEvent *event)
+  //  [adaptor impl] void QAbstractTextDocumentLayout::customEvent(QEvent *)
+  void cbs_customEvent_1217_0(QEvent *arg1)
   {
-    QAbstractTextDocumentLayout::customEvent(event);
+    QAbstractTextDocumentLayout::customEvent(arg1);
   }
 
-  virtual void customEvent(QEvent *event)
+  virtual void customEvent(QEvent *arg1)
   {
     if (cb_customEvent_1217_0.can_issue()) {
-      cb_customEvent_1217_0.issue<QAbstractTextDocumentLayout_Adaptor, QEvent *>(&QAbstractTextDocumentLayout_Adaptor::cbs_customEvent_1217_0, event);
+      cb_customEvent_1217_0.issue<QAbstractTextDocumentLayout_Adaptor, QEvent *>(&QAbstractTextDocumentLayout_Adaptor::cbs_customEvent_1217_0, arg1);
     } else {
-      QAbstractTextDocumentLayout::customEvent(event);
+      QAbstractTextDocumentLayout::customEvent(arg1);
     }
   }
 
@@ -757,18 +710,18 @@ public:
     }
   }
 
-  //  [adaptor impl] void QAbstractTextDocumentLayout::timerEvent(QTimerEvent *event)
-  void cbs_timerEvent_1730_0(QTimerEvent *event)
+  //  [adaptor impl] void QAbstractTextDocumentLayout::timerEvent(QTimerEvent *)
+  void cbs_timerEvent_1730_0(QTimerEvent *arg1)
   {
-    QAbstractTextDocumentLayout::timerEvent(event);
+    QAbstractTextDocumentLayout::timerEvent(arg1);
   }
 
-  virtual void timerEvent(QTimerEvent *event)
+  virtual void timerEvent(QTimerEvent *arg1)
   {
     if (cb_timerEvent_1730_0.can_issue()) {
-      cb_timerEvent_1730_0.issue<QAbstractTextDocumentLayout_Adaptor, QTimerEvent *>(&QAbstractTextDocumentLayout_Adaptor::cbs_timerEvent_1730_0, event);
+      cb_timerEvent_1730_0.issue<QAbstractTextDocumentLayout_Adaptor, QTimerEvent *>(&QAbstractTextDocumentLayout_Adaptor::cbs_timerEvent_1730_0, arg1);
     } else {
-      QAbstractTextDocumentLayout::timerEvent(event);
+      QAbstractTextDocumentLayout::timerEvent(arg1);
     }
   }
 
@@ -833,11 +786,11 @@ static void _set_callback_cbs_blockBoundingRect_c2306_0 (void *cls, const gsi::C
 }
 
 
-// void QAbstractTextDocumentLayout::childEvent(QChildEvent *event)
+// void QAbstractTextDocumentLayout::childEvent(QChildEvent *)
 
 static void _init_cbs_childEvent_1701_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QChildEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -857,11 +810,11 @@ static void _set_callback_cbs_childEvent_1701_0 (void *cls, const gsi::Callback 
 }
 
 
-// void QAbstractTextDocumentLayout::customEvent(QEvent *event)
+// void QAbstractTextDocumentLayout::customEvent(QEvent *)
 
 static void _init_cbs_customEvent_1217_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -885,7 +838,7 @@ static void _set_callback_cbs_customEvent_1217_0 (void *cls, const gsi::Callback
 
 static void _init_emitter_destroyed_1302 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("arg1", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("arg1", true, "0");
   decl->add_arg<QObject * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -894,7 +847,7 @@ static void _call_emitter_destroyed_1302 (const qt_gsi::GenericMethod * /*decl*/
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (nullptr, heap);
+  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (0, heap);
   ((QAbstractTextDocumentLayout_Adaptor *)cls)->emitter_QAbstractTextDocumentLayout_destroyed_1302 (arg1);
 }
 
@@ -1053,11 +1006,11 @@ static void _set_callback_cbs_drawInlineObject_8199_0 (void *cls, const gsi::Cal
 }
 
 
-// bool QAbstractTextDocumentLayout::event(QEvent *event)
+// bool QAbstractTextDocumentLayout::event(QEvent *)
 
 static void _init_cbs_event_1217_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QEvent * > (argspec_0);
   decl->set_return<bool > ();
 }
@@ -1076,13 +1029,13 @@ static void _set_callback_cbs_event_1217_0 (void *cls, const gsi::Callback &cb)
 }
 
 
-// bool QAbstractTextDocumentLayout::eventFilter(QObject *watched, QEvent *event)
+// bool QAbstractTextDocumentLayout::eventFilter(QObject *, QEvent *)
 
 static void _init_cbs_eventFilter_2411_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("watched");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QObject * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("event");
+  static gsi::ArgSpecBase argspec_1 ("arg2");
   decl->add_arg<QEvent * > (argspec_1);
   decl->set_return<bool > ();
 }
@@ -1202,24 +1155,6 @@ static void _call_fp_isSignalConnected_c2394 (const qt_gsi::GenericMethod * /*de
   tl::Heap heap;
   const QMetaMethod &arg1 = gsi::arg_reader<const QMetaMethod & >() (args, heap);
   ret.write<bool > ((bool)((QAbstractTextDocumentLayout_Adaptor *)cls)->fp_QAbstractTextDocumentLayout_isSignalConnected_c2394 (arg1));
-}
-
-
-// emitter void QAbstractTextDocumentLayout::objectNameChanged(const QString &objectName)
-
-static void _init_emitter_objectNameChanged_4567 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("objectName");
-  decl->add_arg<const QString & > (argspec_0);
-  decl->set_return<void > ();
-}
-
-static void _call_emitter_objectNameChanged_4567 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs & /*ret*/) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const QString &arg1 = gsi::arg_reader<const QString & >() (args, heap);
-  ((QAbstractTextDocumentLayout_Adaptor *)cls)->emitter_QAbstractTextDocumentLayout_objectNameChanged_4567 (arg1);
 }
 
 
@@ -1366,11 +1301,11 @@ static void _call_fp_senderSignalIndex_c0 (const qt_gsi::GenericMethod * /*decl*
 }
 
 
-// void QAbstractTextDocumentLayout::timerEvent(QTimerEvent *event)
+// void QAbstractTextDocumentLayout::timerEvent(QTimerEvent *)
 
 static void _init_cbs_timerEvent_1730_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QTimerEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1434,48 +1369,47 @@ gsi::Class<QAbstractTextDocumentLayout> &qtdecl_QAbstractTextDocumentLayout ();
 static gsi::Methods methods_QAbstractTextDocumentLayout_Adaptor () {
   gsi::Methods methods;
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QAbstractTextDocumentLayout::QAbstractTextDocumentLayout(QTextDocument *doc)\nThis method creates an object of class QAbstractTextDocumentLayout.", &_init_ctor_QAbstractTextDocumentLayout_Adaptor_1955, &_call_ctor_QAbstractTextDocumentLayout_Adaptor_1955);
-  methods += new qt_gsi::GenericMethod ("blockBoundingRect", "@brief Virtual method QRectF QAbstractTextDocumentLayout::blockBoundingRect(const QTextBlock &block)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_blockBoundingRect_c2306_0, &_call_cbs_blockBoundingRect_c2306_0);
-  methods += new qt_gsi::GenericMethod ("blockBoundingRect", "@hide", true, &_init_cbs_blockBoundingRect_c2306_0, &_call_cbs_blockBoundingRect_c2306_0, &_set_callback_cbs_blockBoundingRect_c2306_0);
-  methods += new qt_gsi::GenericMethod ("*childEvent", "@brief Virtual method void QAbstractTextDocumentLayout::childEvent(QChildEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0);
-  methods += new qt_gsi::GenericMethod ("*childEvent", "@hide", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0, &_set_callback_cbs_childEvent_1701_0);
-  methods += new qt_gsi::GenericMethod ("*customEvent", "@brief Virtual method void QAbstractTextDocumentLayout::customEvent(QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*customEvent", "@hide", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0, &_set_callback_cbs_customEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("blockBoundingRect", "@hide", true, &_init_cbs_blockBoundingRect_c2306_0, &_call_cbs_blockBoundingRect_c2306_0);
+  methods += new qt_gsi::GenericMethod ("blockBoundingRect", "@brief Virtual method QRectF QAbstractTextDocumentLayout::blockBoundingRect(const QTextBlock &block)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_blockBoundingRect_c2306_0, &_call_cbs_blockBoundingRect_c2306_0, &_set_callback_cbs_blockBoundingRect_c2306_0);
+  methods += new qt_gsi::GenericMethod ("*childEvent", "@hide", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0);
+  methods += new qt_gsi::GenericMethod ("*childEvent", "@brief Virtual method void QAbstractTextDocumentLayout::childEvent(QChildEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0, &_set_callback_cbs_childEvent_1701_0);
+  methods += new qt_gsi::GenericMethod ("*customEvent", "@hide", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*customEvent", "@brief Virtual method void QAbstractTextDocumentLayout::customEvent(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0, &_set_callback_cbs_customEvent_1217_0);
   methods += new qt_gsi::GenericMethod ("emit_destroyed", "@brief Emitter for signal void QAbstractTextDocumentLayout::destroyed(QObject *)\nCall this method to emit this signal.", false, &_init_emitter_destroyed_1302, &_call_emitter_destroyed_1302);
-  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@brief Virtual method void QAbstractTextDocumentLayout::disconnectNotify(const QMetaMethod &signal)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0);
-  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@hide", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0, &_set_callback_cbs_disconnectNotify_2394_0);
-  methods += new qt_gsi::GenericMethod ("*documentChanged", "@brief Virtual method void QAbstractTextDocumentLayout::documentChanged(int from, int charsRemoved, int charsAdded)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_documentChanged_2085_0, &_call_cbs_documentChanged_2085_0);
-  methods += new qt_gsi::GenericMethod ("*documentChanged", "@hide", false, &_init_cbs_documentChanged_2085_0, &_call_cbs_documentChanged_2085_0, &_set_callback_cbs_documentChanged_2085_0);
-  methods += new qt_gsi::GenericMethod ("documentSize", "@brief Virtual method QSizeF QAbstractTextDocumentLayout::documentSize()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_documentSize_c0_0, &_call_cbs_documentSize_c0_0);
-  methods += new qt_gsi::GenericMethod ("documentSize", "@hide", true, &_init_cbs_documentSize_c0_0, &_call_cbs_documentSize_c0_0, &_set_callback_cbs_documentSize_c0_0);
+  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@hide", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0);
+  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@brief Virtual method void QAbstractTextDocumentLayout::disconnectNotify(const QMetaMethod &signal)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0, &_set_callback_cbs_disconnectNotify_2394_0);
+  methods += new qt_gsi::GenericMethod ("*documentChanged", "@hide", false, &_init_cbs_documentChanged_2085_0, &_call_cbs_documentChanged_2085_0);
+  methods += new qt_gsi::GenericMethod ("*documentChanged", "@brief Virtual method void QAbstractTextDocumentLayout::documentChanged(int from, int charsRemoved, int charsAdded)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_documentChanged_2085_0, &_call_cbs_documentChanged_2085_0, &_set_callback_cbs_documentChanged_2085_0);
+  methods += new qt_gsi::GenericMethod ("documentSize", "@hide", true, &_init_cbs_documentSize_c0_0, &_call_cbs_documentSize_c0_0);
+  methods += new qt_gsi::GenericMethod ("documentSize", "@brief Virtual method QSizeF QAbstractTextDocumentLayout::documentSize()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_documentSize_c0_0, &_call_cbs_documentSize_c0_0, &_set_callback_cbs_documentSize_c0_0);
   methods += new qt_gsi::GenericMethod ("emit_documentSizeChanged", "@brief Emitter for signal void QAbstractTextDocumentLayout::documentSizeChanged(const QSizeF &newSize)\nCall this method to emit this signal.", false, &_init_emitter_documentSizeChanged_1875, &_call_emitter_documentSizeChanged_1875);
-  methods += new qt_gsi::GenericMethod ("draw", "@brief Virtual method void QAbstractTextDocumentLayout::draw(QPainter *painter, const QAbstractTextDocumentLayout::PaintContext &context)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_draw_6787_0, &_call_cbs_draw_6787_0);
-  methods += new qt_gsi::GenericMethod ("draw", "@hide", false, &_init_cbs_draw_6787_0, &_call_cbs_draw_6787_0, &_set_callback_cbs_draw_6787_0);
-  methods += new qt_gsi::GenericMethod ("*drawInlineObject", "@brief Virtual method void QAbstractTextDocumentLayout::drawInlineObject(QPainter *painter, const QRectF &rect, QTextInlineObject object, int posInDocument, const QTextFormat &format)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_drawInlineObject_8199_0, &_call_cbs_drawInlineObject_8199_0);
-  methods += new qt_gsi::GenericMethod ("*drawInlineObject", "@hide", false, &_init_cbs_drawInlineObject_8199_0, &_call_cbs_drawInlineObject_8199_0, &_set_callback_cbs_drawInlineObject_8199_0);
-  methods += new qt_gsi::GenericMethod ("event", "@brief Virtual method bool QAbstractTextDocumentLayout::event(QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0);
-  methods += new qt_gsi::GenericMethod ("event", "@hide", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0, &_set_callback_cbs_event_1217_0);
-  methods += new qt_gsi::GenericMethod ("eventFilter", "@brief Virtual method bool QAbstractTextDocumentLayout::eventFilter(QObject *watched, QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0);
-  methods += new qt_gsi::GenericMethod ("eventFilter", "@hide", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0, &_set_callback_cbs_eventFilter_2411_0);
+  methods += new qt_gsi::GenericMethod ("draw", "@hide", false, &_init_cbs_draw_6787_0, &_call_cbs_draw_6787_0);
+  methods += new qt_gsi::GenericMethod ("draw", "@brief Virtual method void QAbstractTextDocumentLayout::draw(QPainter *painter, const QAbstractTextDocumentLayout::PaintContext &context)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_draw_6787_0, &_call_cbs_draw_6787_0, &_set_callback_cbs_draw_6787_0);
+  methods += new qt_gsi::GenericMethod ("*drawInlineObject", "@hide", false, &_init_cbs_drawInlineObject_8199_0, &_call_cbs_drawInlineObject_8199_0);
+  methods += new qt_gsi::GenericMethod ("*drawInlineObject", "@brief Virtual method void QAbstractTextDocumentLayout::drawInlineObject(QPainter *painter, const QRectF &rect, QTextInlineObject object, int posInDocument, const QTextFormat &format)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_drawInlineObject_8199_0, &_call_cbs_drawInlineObject_8199_0, &_set_callback_cbs_drawInlineObject_8199_0);
+  methods += new qt_gsi::GenericMethod ("event", "@hide", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0);
+  methods += new qt_gsi::GenericMethod ("event", "@brief Virtual method bool QAbstractTextDocumentLayout::event(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0, &_set_callback_cbs_event_1217_0);
+  methods += new qt_gsi::GenericMethod ("eventFilter", "@hide", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0);
+  methods += new qt_gsi::GenericMethod ("eventFilter", "@brief Virtual method bool QAbstractTextDocumentLayout::eventFilter(QObject *, QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0, &_set_callback_cbs_eventFilter_2411_0);
   methods += new qt_gsi::GenericMethod ("*format", "@brief Method QTextCharFormat QAbstractTextDocumentLayout::format(int pos)\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_format_767, &_call_fp_format_767);
   methods += new qt_gsi::GenericMethod ("*formatIndex", "@brief Method int QAbstractTextDocumentLayout::formatIndex(int pos)\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_formatIndex_767, &_call_fp_formatIndex_767);
-  methods += new qt_gsi::GenericMethod ("frameBoundingRect", "@brief Virtual method QRectF QAbstractTextDocumentLayout::frameBoundingRect(QTextFrame *frame)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_frameBoundingRect_c1615_0, &_call_cbs_frameBoundingRect_c1615_0);
-  methods += new qt_gsi::GenericMethod ("frameBoundingRect", "@hide", true, &_init_cbs_frameBoundingRect_c1615_0, &_call_cbs_frameBoundingRect_c1615_0, &_set_callback_cbs_frameBoundingRect_c1615_0);
-  methods += new qt_gsi::GenericMethod ("hitTest", "@brief Virtual method int QAbstractTextDocumentLayout::hitTest(const QPointF &point, Qt::HitTestAccuracy accuracy)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_hitTest_c4147_0, &_call_cbs_hitTest_c4147_0);
-  methods += new qt_gsi::GenericMethod ("hitTest", "@hide", true, &_init_cbs_hitTest_c4147_0, &_call_cbs_hitTest_c4147_0, &_set_callback_cbs_hitTest_c4147_0);
+  methods += new qt_gsi::GenericMethod ("frameBoundingRect", "@hide", true, &_init_cbs_frameBoundingRect_c1615_0, &_call_cbs_frameBoundingRect_c1615_0);
+  methods += new qt_gsi::GenericMethod ("frameBoundingRect", "@brief Virtual method QRectF QAbstractTextDocumentLayout::frameBoundingRect(QTextFrame *frame)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_frameBoundingRect_c1615_0, &_call_cbs_frameBoundingRect_c1615_0, &_set_callback_cbs_frameBoundingRect_c1615_0);
+  methods += new qt_gsi::GenericMethod ("hitTest", "@hide", true, &_init_cbs_hitTest_c4147_0, &_call_cbs_hitTest_c4147_0);
+  methods += new qt_gsi::GenericMethod ("hitTest", "@brief Virtual method int QAbstractTextDocumentLayout::hitTest(const QPointF &point, Qt::HitTestAccuracy accuracy)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_hitTest_c4147_0, &_call_cbs_hitTest_c4147_0, &_set_callback_cbs_hitTest_c4147_0);
   methods += new qt_gsi::GenericMethod ("*isSignalConnected", "@brief Method bool QAbstractTextDocumentLayout::isSignalConnected(const QMetaMethod &signal)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_isSignalConnected_c2394, &_call_fp_isSignalConnected_c2394);
-  methods += new qt_gsi::GenericMethod ("emit_objectNameChanged", "@brief Emitter for signal void QAbstractTextDocumentLayout::objectNameChanged(const QString &objectName)\nCall this method to emit this signal.", false, &_init_emitter_objectNameChanged_4567, &_call_emitter_objectNameChanged_4567);
-  methods += new qt_gsi::GenericMethod ("pageCount", "@brief Virtual method int QAbstractTextDocumentLayout::pageCount()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_pageCount_c0_0, &_call_cbs_pageCount_c0_0);
-  methods += new qt_gsi::GenericMethod ("pageCount", "@hide", true, &_init_cbs_pageCount_c0_0, &_call_cbs_pageCount_c0_0, &_set_callback_cbs_pageCount_c0_0);
+  methods += new qt_gsi::GenericMethod ("pageCount", "@hide", true, &_init_cbs_pageCount_c0_0, &_call_cbs_pageCount_c0_0);
+  methods += new qt_gsi::GenericMethod ("pageCount", "@brief Virtual method int QAbstractTextDocumentLayout::pageCount()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_pageCount_c0_0, &_call_cbs_pageCount_c0_0, &_set_callback_cbs_pageCount_c0_0);
   methods += new qt_gsi::GenericMethod ("emit_pageCountChanged", "@brief Emitter for signal void QAbstractTextDocumentLayout::pageCountChanged(int newPages)\nCall this method to emit this signal.", false, &_init_emitter_pageCountChanged_767, &_call_emitter_pageCountChanged_767);
-  methods += new qt_gsi::GenericMethod ("*positionInlineObject", "@brief Virtual method void QAbstractTextDocumentLayout::positionInlineObject(QTextInlineObject item, int posInDocument, const QTextFormat &format)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_positionInlineObject_5127_0, &_call_cbs_positionInlineObject_5127_0);
-  methods += new qt_gsi::GenericMethod ("*positionInlineObject", "@hide", false, &_init_cbs_positionInlineObject_5127_0, &_call_cbs_positionInlineObject_5127_0, &_set_callback_cbs_positionInlineObject_5127_0);
+  methods += new qt_gsi::GenericMethod ("*positionInlineObject", "@hide", false, &_init_cbs_positionInlineObject_5127_0, &_call_cbs_positionInlineObject_5127_0);
+  methods += new qt_gsi::GenericMethod ("*positionInlineObject", "@brief Virtual method void QAbstractTextDocumentLayout::positionInlineObject(QTextInlineObject item, int posInDocument, const QTextFormat &format)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_positionInlineObject_5127_0, &_call_cbs_positionInlineObject_5127_0, &_set_callback_cbs_positionInlineObject_5127_0);
   methods += new qt_gsi::GenericMethod ("*receivers", "@brief Method int QAbstractTextDocumentLayout::receivers(const char *signal)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_receivers_c1731, &_call_fp_receivers_c1731);
-  methods += new qt_gsi::GenericMethod ("*resizeInlineObject", "@brief Virtual method void QAbstractTextDocumentLayout::resizeInlineObject(QTextInlineObject item, int posInDocument, const QTextFormat &format)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_resizeInlineObject_5127_0, &_call_cbs_resizeInlineObject_5127_0);
-  methods += new qt_gsi::GenericMethod ("*resizeInlineObject", "@hide", false, &_init_cbs_resizeInlineObject_5127_0, &_call_cbs_resizeInlineObject_5127_0, &_set_callback_cbs_resizeInlineObject_5127_0);
+  methods += new qt_gsi::GenericMethod ("*resizeInlineObject", "@hide", false, &_init_cbs_resizeInlineObject_5127_0, &_call_cbs_resizeInlineObject_5127_0);
+  methods += new qt_gsi::GenericMethod ("*resizeInlineObject", "@brief Virtual method void QAbstractTextDocumentLayout::resizeInlineObject(QTextInlineObject item, int posInDocument, const QTextFormat &format)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_resizeInlineObject_5127_0, &_call_cbs_resizeInlineObject_5127_0, &_set_callback_cbs_resizeInlineObject_5127_0);
   methods += new qt_gsi::GenericMethod ("*sender", "@brief Method QObject *QAbstractTextDocumentLayout::sender()\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_sender_c0, &_call_fp_sender_c0);
   methods += new qt_gsi::GenericMethod ("*senderSignalIndex", "@brief Method int QAbstractTextDocumentLayout::senderSignalIndex()\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_senderSignalIndex_c0, &_call_fp_senderSignalIndex_c0);
-  methods += new qt_gsi::GenericMethod ("*timerEvent", "@brief Virtual method void QAbstractTextDocumentLayout::timerEvent(QTimerEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0);
-  methods += new qt_gsi::GenericMethod ("*timerEvent", "@hide", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0, &_set_callback_cbs_timerEvent_1730_0);
+  methods += new qt_gsi::GenericMethod ("*timerEvent", "@hide", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0);
+  methods += new qt_gsi::GenericMethod ("*timerEvent", "@brief Virtual method void QAbstractTextDocumentLayout::timerEvent(QTimerEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0, &_set_callback_cbs_timerEvent_1730_0);
   methods += new qt_gsi::GenericMethod ("emit_update", "@brief Emitter for signal void QAbstractTextDocumentLayout::update(const QRectF &)\nCall this method to emit this signal.", false, &_init_emitter_update_1862, &_call_emitter_update_1862);
   methods += new qt_gsi::GenericMethod ("emit_updateBlock", "@brief Emitter for signal void QAbstractTextDocumentLayout::updateBlock(const QTextBlock &block)\nCall this method to emit this signal.", false, &_init_emitter_updateBlock_2306, &_call_emitter_updateBlock_2306);
   return methods;

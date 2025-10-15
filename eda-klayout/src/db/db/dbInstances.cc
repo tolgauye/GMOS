@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -147,7 +147,7 @@ InstOp<Inst, ET>::erase (Instances *insts)
     std::vector<bool> done;
     done.resize (m_insts.size (), false);
 
-    //  This is not quite effective but seems to be the simplest way
+    //  This is not quite effective but seems to be the simpliest way
     //  of implementing this: search for each element and erase these.
     //  The alternative would be to store the iterator along with the object.
     std::vector<typename tree_type::const_iterator> to_erase;
@@ -241,32 +241,20 @@ Instance::to_string (bool resolve_cell_name) const
     r = "cell_index=" + tl::to_string (ci.object ().cell_index ());
   }
 
+  if (ci.is_complex ()) {
+    r += " " + ci.complex_trans ().to_string ();
+  } else {
+    r += " " + (*ci.begin ()).to_string ();
+  }
+
   db::vector<coord_type> a, b;
   unsigned long amax, bmax;
   if (ci.is_regular_array (a, b, amax, bmax)) {
-
-    if (ci.is_complex ()) {
-      r += " " + ci.complex_trans ().to_string ();
-    } else {
-      r += " " + (*ci.begin ()).to_string ();
-    }
-
     r += " array=(" + a.to_string () + "," + b.to_string () + " " + tl::to_string (amax) + "x" + tl::to_string (bmax) + ")";
-
-  } else {
-
-    for (db::CellInstArray::iterator i = ci.begin (); ! i.at_end (); ++i) {
-      if (ci.is_complex ()) {
-        r += " " + ci.complex_trans (*i).to_string ();
-      } else {
-        r += " " + (*i).to_string ();
-      }
-    }
-
   }
 
   if (has_prop_id ()) {
-    r += std::string (" props=") + db::properties (prop_id ()).to_dict_var ().to_string ();
+    r += " prop_id=" + tl::to_string (prop_id ());
   }
 
   return r;
@@ -280,17 +268,11 @@ void
 instance_iterator<Traits>::release_iter ()
 { 
   if (m_type == TInstance) {
-    if (m_stable && ! m_unsorted) {
+    if (m_stable) {
       if (m_with_props) {
         basic_iter (cell_inst_wp_array_type::tag (), InstancesEditableTag ()).~stable_iter_wp_type ();
       } else {
         basic_iter (cell_inst_array_type::tag (), InstancesEditableTag ()).~stable_iter_type ();
-      }
-    } else if (m_stable) {
-      if (m_with_props) {
-        basic_unsorted_iter (cell_inst_wp_array_type::tag (), InstancesEditableTag ()).~stable_unsorted_iter_wp_type ();
-      } else {
-        basic_unsorted_iter (cell_inst_array_type::tag (), InstancesEditableTag ()).~stable_unsorted_iter_type ();
       }
     } else {
       if (m_with_props) {
@@ -307,17 +289,11 @@ void
 instance_iterator<Traits>::make_iter ()
 { 
   if (m_type == TInstance) {
-    if (m_stable && ! m_unsorted) {
+    if (m_stable) {
       if (m_with_props) {
         new (&basic_iter (cell_inst_wp_array_type::tag (), InstancesEditableTag ())) stable_iter_wp_type ();
       } else {
         new (&basic_iter (cell_inst_array_type::tag (), InstancesEditableTag ())) stable_iter_type ();
-      }
-    } else if (m_stable) {
-      if (m_with_props) {
-        new (&basic_unsorted_iter (cell_inst_wp_array_type::tag (), InstancesEditableTag ())) stable_unsorted_iter_wp_type ();
-      } else {
-        new (&basic_unsorted_iter (cell_inst_array_type::tag (), InstancesEditableTag ())) stable_unsorted_iter_type ();
       }
     } else {
       if (m_with_props) {
@@ -334,23 +310,17 @@ template <class Traits>
 bool
 instance_iterator<Traits>::operator== (const instance_iterator<Traits> &d) const
 {
-  if (! (m_type == d.m_type && m_stable == d.m_stable && m_with_props == d.m_with_props && m_unsorted == d.m_unsorted)) {
+  if (! (m_type == d.m_type && m_stable == d.m_stable && m_with_props == d.m_with_props)) {
     return false;
   }
   if (m_type == TNull) {
     return true;
   } else {
     if (m_stable) {
-      if (m_with_props && ! m_unsorted) {
+      if (m_with_props) {
         return (basic_iter (cell_inst_wp_array_type::tag (), InstancesEditableTag ()) == d.basic_iter (cell_inst_wp_array_type::tag (), InstancesEditableTag ()));
       } else {
         return (basic_iter (cell_inst_array_type::tag (), InstancesEditableTag ()) == d.basic_iter (cell_inst_array_type::tag (), InstancesEditableTag ()));
-      }
-    } else if (m_stable) {
-      if (m_with_props) {
-        return (basic_unsorted_iter (cell_inst_wp_array_type::tag (), InstancesEditableTag ()) == d.basic_unsorted_iter (cell_inst_wp_array_type::tag (), InstancesEditableTag ()));
-      } else {
-        return (basic_unsorted_iter (cell_inst_array_type::tag (), InstancesEditableTag ()) == d.basic_unsorted_iter (cell_inst_array_type::tag (), InstancesEditableTag ()));
       }
     } else {
       if (m_with_props) {
@@ -373,22 +343,15 @@ instance_iterator<Traits>::operator= (const instance_iterator<Traits> &iter)
     m_type = iter.m_type;
     m_stable = iter.m_stable;
     m_with_props = iter.m_with_props;
-    m_unsorted = iter.m_unsorted;
     m_traits = iter.m_traits;
 
     if (m_type == TInstance) {
 
-      if (m_stable && ! m_unsorted) {
+      if (m_stable) {
         if (m_with_props) {
           new (&basic_iter (cell_inst_wp_array_type::tag (), InstancesEditableTag ())) stable_iter_wp_type (iter.basic_iter (cell_inst_wp_array_type::tag (), InstancesEditableTag ()));
         } else {
           new (&basic_iter (cell_inst_array_type::tag (), InstancesEditableTag ())) stable_iter_type (iter.basic_iter (cell_inst_array_type::tag (), InstancesEditableTag ()));
-        }
-      } else if (m_stable) {
-        if (m_with_props) {
-          new (&basic_unsorted_iter (cell_inst_wp_array_type::tag (), InstancesEditableTag ())) stable_unsorted_iter_wp_type (iter.basic_unsorted_iter (cell_inst_wp_array_type::tag (), InstancesEditableTag ()));
-        } else {
-          new (&basic_unsorted_iter (cell_inst_array_type::tag (), InstancesEditableTag ())) stable_unsorted_iter_type (iter.basic_unsorted_iter (cell_inst_array_type::tag (), InstancesEditableTag ()));
         }
       } else {
         if (m_with_props) {
@@ -412,17 +375,11 @@ db::Box
 instance_iterator<Traits>::quad_box () const
 {
   if (m_type == TInstance) {
-    if (m_stable && ! m_unsorted) {
+    if (m_stable) {
       if (m_with_props) {
         return m_traits.quad_box (basic_iter (cell_inst_wp_array_type::tag (), InstancesEditableTag ()));
       } else {
         return m_traits.quad_box (basic_iter (cell_inst_array_type::tag (), InstancesEditableTag ()));
-      }
-    } else if (m_stable) {
-      if (m_with_props) {
-        return m_traits.quad_box (basic_unsorted_iter (cell_inst_wp_array_type::tag (), InstancesEditableTag ()));
-      } else {
-        return m_traits.quad_box (basic_unsorted_iter (cell_inst_array_type::tag (), InstancesEditableTag ()));
       }
     } else {
       if (m_with_props) {
@@ -440,17 +397,11 @@ size_t
 instance_iterator<Traits>::quad_id () const
 {
   if (m_type == TInstance) {
-    if (m_stable && ! m_unsorted) {
+    if (m_stable) {
       if (m_with_props) {
         return m_traits.quad_id (basic_iter (cell_inst_wp_array_type::tag (), InstancesEditableTag ()));
       } else {
         return m_traits.quad_id (basic_iter (cell_inst_array_type::tag (), InstancesEditableTag ()));
-      }
-    } else if (m_stable) {
-      if (m_with_props) {
-        return m_traits.quad_id (basic_unsorted_iter (cell_inst_wp_array_type::tag (), InstancesEditableTag ()));
-      } else {
-        return m_traits.quad_id (basic_unsorted_iter (cell_inst_array_type::tag (), InstancesEditableTag ()));
       }
     } else {
       if (m_with_props) {
@@ -468,17 +419,11 @@ void
 instance_iterator<Traits>::skip_quad () 
 {
   if (m_type == TInstance) {
-    if (m_stable && ! m_unsorted) {
+    if (m_stable) {
       if (m_with_props) {
         m_traits.skip_quad (basic_iter (cell_inst_wp_array_type::tag (), InstancesEditableTag ()));
       } else {
         m_traits.skip_quad (basic_iter (cell_inst_array_type::tag (), InstancesEditableTag ()));
-      }
-    } else if (m_stable) {
-      if (m_with_props) {
-        m_traits.skip_quad (basic_unsorted_iter (cell_inst_wp_array_type::tag (), InstancesEditableTag ()));
-      } else {
-        m_traits.skip_quad (basic_unsorted_iter (cell_inst_array_type::tag (), InstancesEditableTag ()));
       }
     } else {
       if (m_with_props) {
@@ -497,17 +442,11 @@ instance_iterator<Traits> &
 instance_iterator<Traits>::operator++() 
 {
   if (m_type == TInstance) {
-    if (m_stable && ! m_unsorted) {
+    if (m_stable) {
       if (m_with_props) {
         ++basic_iter (cell_inst_wp_array_type::tag (), InstancesEditableTag ());
       } else {
         ++basic_iter (cell_inst_array_type::tag (), InstancesEditableTag ());
-      }
-    } else if (m_stable) {
-      if (m_with_props) {
-        ++basic_unsorted_iter (cell_inst_wp_array_type::tag (), InstancesEditableTag ());
-      } else {
-        ++basic_unsorted_iter (cell_inst_array_type::tag (), InstancesEditableTag ());
       }
     } else {
       if (m_with_props) {
@@ -527,23 +466,13 @@ void
 instance_iterator<Traits>::make_next () 
 {
   while (true) {
-    if (m_stable && ! m_unsorted) {
+    if (m_stable) {
       if (m_with_props) {
         if (! basic_iter (cell_inst_wp_array_type::tag (), InstancesEditableTag ()).at_end ()) {
           return;
         }
       } else {
         if (! basic_iter (cell_inst_array_type::tag (), InstancesEditableTag ()).at_end ()) {
-          return;
-        }
-      }
-    } else if (m_stable) {
-      if (m_with_props) {
-        if (! basic_unsorted_iter (cell_inst_wp_array_type::tag (), InstancesEditableTag ()).at_end ()) {
-          return;
-        }
-      } else {
-        if (! basic_unsorted_iter (cell_inst_array_type::tag (), InstancesEditableTag ()).at_end ()) {
           return;
         }
       }
@@ -573,17 +502,11 @@ void
 instance_iterator<Traits>::update_ref ()
 {
   if (m_type == TInstance) {
-    if (m_stable && ! m_unsorted) {
+    if (m_stable) {
       if (m_with_props) {
         m_ref = m_traits.instance_from_stable_iter (basic_iter (cell_inst_wp_array_type::tag (), InstancesEditableTag ()));
       } else {
         m_ref = m_traits.instance_from_stable_iter (basic_iter (cell_inst_array_type::tag (), InstancesEditableTag ()));
-      }
-    } else if (m_stable) {
-      if (m_with_props) {
-        m_ref = m_traits.instance_from_stable_iter (basic_unsorted_iter (cell_inst_wp_array_type::tag (), InstancesEditableTag ()));
-      } else {
-        m_ref = m_traits.instance_from_stable_iter (basic_unsorted_iter (cell_inst_array_type::tag (), InstancesEditableTag ()));
       }
     } else {
       if (m_with_props) {
@@ -616,21 +539,13 @@ void
 NormalInstanceIteratorTraits::init (instance_iterator<NormalInstanceIteratorTraits> *iter) const
 {
   tl_assert (mp_insts != 0);
-  if (iter->m_stable && ! iter->m_unsorted) {
+  if (iter->m_stable) {
     if (iter->m_with_props) {
       cell_inst_wp_array_type::tag tag = cell_inst_wp_array_type::tag ();
       iter->basic_iter (tag, InstancesEditableTag ()) = mp_insts->inst_tree (tag, InstancesEditableTag ()).begin_flat ();
     } else {
       cell_inst_array_type::tag tag = cell_inst_array_type::tag ();
       iter->basic_iter (tag, InstancesEditableTag ()) = mp_insts->inst_tree (tag, InstancesEditableTag ()).begin_flat ();
-    }
-  } else if (iter->m_stable) {
-    if (iter->m_with_props) {
-      cell_inst_wp_array_type::tag tag = cell_inst_wp_array_type::tag ();
-      iter->basic_unsorted_iter (tag, InstancesEditableTag ()) = stable_unsorted_iter_wp_type (mp_insts->inst_tree (tag, InstancesEditableTag ()).begin (), mp_insts->inst_tree (tag, InstancesEditableTag ()).end ());
-    } else {
-      cell_inst_array_type::tag tag = cell_inst_array_type::tag ();
-      iter->basic_unsorted_iter (tag, InstancesEditableTag ()) = stable_unsorted_iter_type (mp_insts->inst_tree (tag, InstancesEditableTag ()).begin (), mp_insts->inst_tree (tag, InstancesEditableTag ()).end ());
     }
   } else {
     if (iter->m_with_props) {
@@ -725,12 +640,13 @@ OverlappingInstanceIteratorTraits::init (instance_iterator<OverlappingInstanceIt
 //  ChildCellIterator implementation
 
 ChildCellIterator::ChildCellIterator ()
-  : m_iter (), m_end ()
+  : m_iter (), m_end (), mp_insts (0)
 { }
 
 ChildCellIterator::ChildCellIterator (const instances_type *insts)
   : m_iter (insts->begin_sorted_insts ()),
-    m_end (insts->end_sorted_insts ())
+    m_end (insts->end_sorted_insts ()),
+    mp_insts (insts)
 { }
 
 cell_index_type 
@@ -907,29 +823,8 @@ Instance::bbox () const
   }
 }
 
-Instance::box_type
-Instance::bbox_with_empty () const
-{
-  const db::Instances *i = instances ();
-  const db::Cell *c = i ? i->cell () : 0;
-  const db::Layout *g = c ? c->layout () : 0;
-  if (g) {
-    return bbox (db::box_convert<cell_inst_type, false> (*g));
-  } else {
-    return db::Instance::box_type ();
-  }
-}
-
 // -------------------------------------------------------------------------------------
 //  Instances implementation
-
-static void
-check_is_editable_for_undo_redo (const Instances *instances)
-{
-  if (! instances->is_editable ()) {
-    throw tl::Exception (tl::to_string (tr ("No undo/redo support on non-editable instance lists")));
-  }
-}
 
 Instances::Instances (cell_type *cell)
   : mp_cell (cell)
@@ -1026,9 +921,6 @@ Instances::operator= (const Instances &d)
 
     m_parent_insts = d.m_parent_insts;
 
-    set_instance_by_cell_index_needs_made (true);
-    set_instance_tree_needs_sort (true);
-
   }
   return *this;
 }
@@ -1036,36 +928,13 @@ Instances::operator= (const Instances &d)
 bool 
 Instances::is_editable () const
 {
-  return cell () && cell ()->layout () ? cell ()->layout ()->is_editable () : true;
+  return mp_cell && mp_cell->layout () ? mp_cell->layout ()->is_editable () : true;
 }
 
 db::Layout *
 Instances::layout () const
 {
-  return cell () ? cell ()->layout () : 0;
-}
-
-void
-Instances::invalidate_insts ()
-{
-  db::Cell *cp = cell ();
-  if (cp) {
-    cp->check_locked ();
-    cp->invalidate_insts ();
-  }
-
-  set_instance_by_cell_index_needs_made (true);
-  set_instance_tree_needs_sort (true);
-
-  invalidate_prop_ids ();
-}
-
-void
-Instances::invalidate_prop_ids ()
-{
-  if (layout ()) {
-    layout ()->invalidate_prop_ids ();
-  }
+  return mp_cell ? mp_cell->layout () : 0;
 }
 
 template <class Tag, class ET, class I>
@@ -1074,15 +943,10 @@ Instances::erase_positions (Tag tag, ET editable_tag, I first, I last)
 {
   typedef instances_editable_traits<ET> editable_traits;
 
-  invalidate_insts ();  //  HINT: must come before the change is done!
-
-  if (cell ()) {
-    if (cell ()->manager () && cell ()->manager ()->transacting ()) {
-      check_is_editable_for_undo_redo (this);
-      if (! is_editable ()) {
-        throw tl::Exception (tl::to_string (tr ("No undo/redo support for non-editable instance lists in 'erase_positions'")));
-      }
-      cell ()->manager ()->queue (cell (), new db::InstOp<typename Tag::object_type, ET> (false /*not insert*/, first, last, true /*dummy*/));
+  if (mp_cell) { 
+    mp_cell->invalidate_insts ();  //  HINT: must come before the change is done!
+    if (mp_cell->manager () && mp_cell->manager ()->transacting ()) {
+      mp_cell->manager ()->queue (mp_cell, new db::InstOp<typename Tag::object_type, ET> (false /*not insert*/, first, last, true /*dummy*/));
     }
   }
 
@@ -1096,18 +960,16 @@ Instances::insert (const InstArray &inst)
 {
   bool editable = is_editable ();
 
-  if (cell ()) {
-    if (cell ()->manager () && cell ()->manager ()->transacting ()) {
-      check_is_editable_for_undo_redo (this);
+  if (mp_cell) {
+    if (mp_cell->manager () && mp_cell->manager ()->transacting ()) {
       if (editable) {
-        cell ()->manager ()->queue (cell (), new db::InstOp<InstArray, InstancesEditableTag> (true /*insert*/, inst));
+        mp_cell->manager ()->queue (mp_cell, new db::InstOp<InstArray, InstancesEditableTag> (true /*insert*/, inst));
       } else {
-        cell ()->manager ()->queue (cell (), new db::InstOp<InstArray, InstancesNonEditableTag> (true /*insert*/, inst));
+        mp_cell->manager ()->queue (mp_cell, new db::InstOp<InstArray, InstancesNonEditableTag> (true /*insert*/, inst));
       }
     }
+    mp_cell->invalidate_insts ();
   }
-
-  invalidate_insts ();
 
   // TODO: simplify this, i.e. through instance_from_pointer
   if (editable) {
@@ -1124,14 +986,13 @@ Instances::insert (I from, I to)
   typedef std::iterator_traits<I> it_traits;
   typedef typename it_traits::value_type value_type;
 
-  if (cell ()) {
-    if (cell ()->manager () && cell ()->manager ()->transacting ()) {
-      check_is_editable_for_undo_redo (this);
-      cell ()->manager ()->queue (cell (), new db::InstOp<typename it_traits::value_type, ET> (true /*insert*/, from, to));
+  if (mp_cell) {
+    if (mp_cell->manager () && mp_cell->manager ()->transacting ()) {
+      mp_cell->manager ()->queue (mp_cell, new db::InstOp<typename it_traits::value_type, ET> (true /*insert*/, from, to));
     }
+    mp_cell->invalidate_insts ();
   }
 
-  invalidate_insts ();
   inst_tree (typename value_type::tag (), ET ()).insert (from, to);
 }
 
@@ -1175,20 +1036,18 @@ template <class InstArray>
 void 
 Instances::replace (const InstArray *replace, const InstArray &with)
 {
-  if (cell ()) {
-    if (cell ()->manager () && cell ()->manager ()->transacting ()) {
-      check_is_editable_for_undo_redo (this);
+  if (mp_cell) {
+    if (mp_cell->manager () && mp_cell->manager ()->transacting ()) {
       if (is_editable ()) {
-        cell ()->manager ()->queue (cell (), new db::InstOp<InstArray, InstancesEditableTag> (false /*not insert*/, *replace));
-        cell ()->manager ()->queue (cell (), new db::InstOp<InstArray, InstancesEditableTag> (true /*insert*/, with));
+        mp_cell->manager ()->queue (mp_cell, new db::InstOp<InstArray, InstancesEditableTag> (false /*not insert*/, *replace));
+        mp_cell->manager ()->queue (mp_cell, new db::InstOp<InstArray, InstancesEditableTag> (true /*insert*/, with));
       } else {
-        cell ()->manager ()->queue (cell (), new db::InstOp<InstArray, InstancesNonEditableTag> (false /*not insert*/, *replace));
-        cell ()->manager ()->queue (cell (), new db::InstOp<InstArray, InstancesNonEditableTag> (true /*insert*/, with));
+        mp_cell->manager ()->queue (mp_cell, new db::InstOp<InstArray, InstancesNonEditableTag> (false /*not insert*/, *replace));
+        mp_cell->manager ()->queue (mp_cell, new db::InstOp<InstArray, InstancesNonEditableTag> (true /*insert*/, with));
       }
     }
+    mp_cell->invalidate_insts ();
   }
-
-  invalidate_insts ();
 
   //  HINT: this only works because we know our box trees well:
   *((InstArray *)replace) = with;
@@ -1265,12 +1124,10 @@ Instances::erase_inst_by_iter (Tag tag, ET editable_tag, I iter)
     throw tl::Exception (tl::to_string (tr ("Trying to erase an object from a list that it does not belong to")));
   }
 
-  invalidate_insts ();
-
-  if (cell ()) {
-    if (cell ()->manager () && cell ()->manager ()->transacting ()) {
-      check_is_editable_for_undo_redo (this);
-      cell ()->manager ()->queue (cell (), new db::InstOp<typename Tag::object_type, ET> (false /*not insert*/, *iter));
+  if (mp_cell) {
+    mp_cell->invalidate_insts ();
+    if (mp_cell->manager () && mp_cell->manager ()->transacting ()) {
+      mp_cell->manager ()->queue (mp_cell, new db::InstOp<typename Tag::object_type, ET> (false /*not insert*/, *iter));
     }
   }
 
@@ -1281,12 +1138,10 @@ template <class Tag, class ET>
 void 
 Instances::erase_inst_by_tag (Tag tag, ET editable_tag, const typename Tag::object_type &obj)
 {
-  invalidate_insts ();
-
-  if (cell ()) {
-    if (cell ()->manager () && cell ()->manager ()->transacting ()) {
-      check_is_editable_for_undo_redo (this);
-      cell ()->manager ()->queue (cell (), new db::InstOp<typename Tag::object_type, ET> (false /*not insert*/, obj));
+  if (mp_cell) {
+    mp_cell->invalidate_insts ();
+    if (mp_cell->manager () && mp_cell->manager ()->transacting ()) {
+      mp_cell->manager ()->queue (mp_cell, new db::InstOp<typename Tag::object_type, ET> (false /*not insert*/, obj));
     }
   }
 
@@ -1314,17 +1169,15 @@ template <class ET>
 void
 Instances::clear_insts (ET editable_tag)
 {
-  invalidate_insts ();
-
-  if (cell ()) {
-    if (cell ()->manager () && cell ()->manager ()->transacting ()) {
-      check_is_editable_for_undo_redo (this);
+  if (mp_cell) {
+    mp_cell->invalidate_insts ();
+    if (mp_cell->manager () && mp_cell->manager ()->transacting ()) {
       const Instances *const_this = this;
       if (! const_this->inst_tree (cell_inst_array_type::tag (), editable_tag).empty ()) {
-        cell ()->manager ()->queue (cell (), new db::InstOp<cell_inst_array_type, ET> (false /*not insert*/, const_this->inst_tree (cell_inst_array_type::tag (), editable_tag).begin (), const_this->inst_tree (cell_inst_array_type::tag (), editable_tag).end ()));
+        mp_cell->manager ()->queue (mp_cell, new db::InstOp<cell_inst_array_type, ET> (false /*not insert*/, const_this->inst_tree (cell_inst_array_type::tag (), editable_tag).begin (), const_this->inst_tree (cell_inst_array_type::tag (), editable_tag).end ()));
       }
       if (! const_this->inst_tree (cell_inst_wp_array_type::tag (), editable_tag).empty ()) {
-        cell ()->manager ()->queue (cell (), new db::InstOp<cell_inst_wp_array_type, ET> (false /*not insert*/, const_this->inst_tree (cell_inst_wp_array_type::tag (), editable_tag).begin (), const_this->inst_tree (cell_inst_wp_array_type::tag (), editable_tag).end ()));
+        mp_cell->manager ()->queue (mp_cell, new db::InstOp<cell_inst_wp_array_type, ET> (false /*not insert*/, const_this->inst_tree (cell_inst_wp_array_type::tag (), editable_tag).begin (), const_this->inst_tree (cell_inst_wp_array_type::tag (), editable_tag).end ()));
       }
     }
   }
@@ -1345,7 +1198,9 @@ Instances::clear_insts ()
 void 
 Instances::clear (Instances::cell_inst_array_type::tag) 
 {
-  invalidate_insts ();
+  if (mp_cell) {
+    mp_cell->invalidate_insts ();
+  }
 
   if (m_generic.any) {
     if (is_editable ()) {
@@ -1360,7 +1215,9 @@ Instances::clear (Instances::cell_inst_array_type::tag)
 void 
 Instances::clear (Instances::cell_inst_wp_array_type::tag) 
 {
-  invalidate_insts ();
+  if (mp_cell) {
+    mp_cell->invalidate_insts ();
+  }
 
   if (m_generic_wp.any) {
     if (is_editable ()) {
@@ -1485,13 +1342,8 @@ struct cell_inst_compare_f
 };
 
 void 
-Instances::sort_child_insts (bool force)
+Instances::sort_child_insts () 
 {
-  if (! force && ! instance_by_cell_index_needs_made ()) {
-    return;
-  }
-  set_instance_by_cell_index_needs_made (false);
-
   m_insts_by_cell_index = sorted_inst_vector ();
   m_insts_by_cell_index.reserve (cell_instances ());
 
@@ -1525,20 +1377,15 @@ Instances::sort_child_insts (bool force)
 }
 
 void 
-Instances::sort_inst_tree (const Layout *g, bool force)
+Instances::sort_inst_tree (const Layout *g)
 {
-  if (! force && ! instance_tree_needs_sort ()) {
-    return;
-  }
-  set_instance_tree_needs_sort (false);
-
   if (m_generic.any) {
     if (is_editable ()) {
       m_generic.stable_tree->sort (cell_inst_array_box_converter (*g));
     } else {
       m_generic.unstable_tree->sort (cell_inst_array_box_converter (*g));
       //  since we use unstable instance trees in non-editable mode, we need to resort the child instances in this case
-      sort_child_insts (true);
+      sort_child_insts ();
     }
   }
   if (m_generic_wp.any) {
@@ -1547,7 +1394,7 @@ Instances::sort_inst_tree (const Layout *g, bool force)
     } else {
       m_generic_wp.unstable_tree->sort (cell_inst_wp_array_box_converter (*g));
       //  since we use unstable instance trees in non-editable mode, we need to resort the child instances in this case
-      sort_child_insts (true);
+      sort_child_insts ();
     }
   }
 
@@ -1624,8 +1471,7 @@ Instances::replace_prop_id (const instance_type &ref, db::properties_id_type pro
     throw tl::Exception (tl::to_string (tr ("Trying to replace an object in a list that it does not belong to")));
   }
 
-  if (! ref.is_null () && (!ref.has_prop_id () || ref.prop_id () != prop_id)) {
-    invalidate_prop_ids ();
+  if (! ref.is_null ()) {
     cell_inst_wp_array_type new_inst (ref.cell_inst (), prop_id);
     return replace (ref, new_inst);
   } else {
@@ -1633,29 +1479,7 @@ Instances::replace_prop_id (const instance_type &ref, db::properties_id_type pro
   }
 }
 
-Instances::instance_type
-Instances::clear_properties (const instance_type &ref)
-{
-  if (ref.instances () != this) {
-    throw tl::Exception (tl::to_string (tr ("Trying to replace an object in a list that it does not belong to")));
-  }
-
-  if (! ref.is_null () && ref.has_prop_id ()) {
-
-    invalidate_prop_ids ();
-
-    cell_inst_array_type new_inst (ref.cell_inst ());
-    erase (ref);
-    return insert (new_inst);
-
-  } else {
-
-    return ref;
-
-  }
-}
-
-void
+void 
 Instances::do_clear_insts ()
 {
   if (m_generic.any) {
@@ -1699,7 +1523,8 @@ Instances::redo (db::Op *op)
 
 Instances::instance_type 
 Instances::do_insert (const Instances::instance_type &ref, 
-                      tl::func_delegate_base <db::cell_index_type> &im)
+                      tl::func_delegate_base <db::cell_index_type> &im,
+                      tl::func_delegate_base <db::properties_id_type> &pm)
 {
   if (ref.instances () == this) {
 
@@ -1714,7 +1539,7 @@ Instances::do_insert (const Instances::instance_type &ref,
 
       cell_inst_wp_array_type inst_wp = *ref.basic_ptr (cell_inst_wp_array_type::tag ());
       inst_wp.object () = cell_inst_type (im (ref.cell_index ()));
-      inst_wp.properties_id (ref.prop_id ());
+      inst_wp.properties_id (pm (ref.prop_id ()));
 
       return insert (inst_wp);
 
@@ -1734,7 +1559,7 @@ Instances::do_insert (const Instances::instance_type &ref,
       cell_inst_array_type inst (*ref.basic_ptr (cell_inst_wp_array_type::tag ()), layout () ? &layout ()->array_repository () : 0);
       inst.object () = cell_inst_type (im (ref.cell_index ()));
 
-      return insert (cell_inst_wp_array_type (inst, ref.prop_id ()));
+      return insert (cell_inst_wp_array_type (inst, pm (ref.prop_id ())));
 
     }
 
@@ -1749,17 +1574,15 @@ void Instances::apply_op (const Op &op, ET editable_tag)
   bool has_insts = ! const_this->inst_tree (cell_inst_array_type::tag (), editable_tag).empty ();
   bool has_wp_insts = ! const_this->inst_tree (cell_inst_wp_array_type::tag (), editable_tag).empty ();
 
-  invalidate_insts ();
-
-  if (cell ()) {
-    if (cell ()->manager () && cell ()->manager ()->transacting ()) {
-      check_is_editable_for_undo_redo (this);
+  if (mp_cell) {
+    mp_cell->invalidate_insts ();
+    if (mp_cell->manager () && mp_cell->manager ()->transacting ()) {
       transacting = true;
       if (has_insts) {
-        cell ()->manager ()->queue (cell (), new db::InstOp<cell_inst_array_type, ET> (false /*not insert*/, const_this->inst_tree (cell_inst_array_type::tag (), editable_tag).begin (), const_this->inst_tree (cell_inst_array_type::tag (), editable_tag).end ()));
+        mp_cell->manager ()->queue (mp_cell, new db::InstOp<cell_inst_array_type, ET> (false /*not insert*/, const_this->inst_tree (cell_inst_array_type::tag (), editable_tag).begin (), const_this->inst_tree (cell_inst_array_type::tag (), editable_tag).end ()));
       }
       if (has_wp_insts) {
-        cell ()->manager ()->queue (cell (), new db::InstOp<cell_inst_wp_array_type, ET> (false /*not insert*/, const_this->inst_tree (cell_inst_wp_array_type::tag (), editable_tag).begin (), const_this->inst_tree (cell_inst_wp_array_type::tag (), editable_tag).end ()));
+        mp_cell->manager ()->queue (mp_cell, new db::InstOp<cell_inst_wp_array_type, ET> (false /*not insert*/, const_this->inst_tree (cell_inst_wp_array_type::tag (), editable_tag).begin (), const_this->inst_tree (cell_inst_wp_array_type::tag (), editable_tag).end ()));
       }
     }
   }
@@ -1784,10 +1607,10 @@ void Instances::apply_op (const Op &op, ET editable_tag)
 
   if (transacting) {
     if (has_insts) {
-      cell ()->manager ()->queue (cell (), new db::InstOp<cell_inst_array_type, ET> (true /*insert*/, const_this->inst_tree (cell_inst_array_type::tag (), editable_tag).begin (), const_this->inst_tree (cell_inst_array_type::tag (), editable_tag).end ()));
+      mp_cell->manager ()->queue (mp_cell, new db::InstOp<cell_inst_array_type, ET> (true /*insert*/, const_this->inst_tree (cell_inst_array_type::tag (), editable_tag).begin (), const_this->inst_tree (cell_inst_array_type::tag (), editable_tag).end ()));
     }
     if (has_wp_insts) {
-      cell ()->manager ()->queue (cell (), new db::InstOp<cell_inst_wp_array_type, ET> (true /*insert*/, const_this->inst_tree (cell_inst_wp_array_type::tag (), editable_tag).begin (), const_this->inst_tree (cell_inst_wp_array_type::tag (), editable_tag).end ()));
+      mp_cell->manager ()->queue (mp_cell, new db::InstOp<cell_inst_wp_array_type, ET> (true /*insert*/, const_this->inst_tree (cell_inst_wp_array_type::tag (), editable_tag).begin (), const_this->inst_tree (cell_inst_wp_array_type::tag (), editable_tag).end ()));
     }
   }
 }

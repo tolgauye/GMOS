@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -36,7 +36,7 @@ namespace Ui
 
 namespace lay
 {
-  class LayoutViewBase;
+  class LayoutView;
 }
 
 namespace lay
@@ -57,7 +57,7 @@ public:
   DiffToolDialog (QWidget *parent);
   ~DiffToolDialog ();
 
-  int exec_dialog (lay::LayoutViewBase *view);
+  int exec_dialog (lay::LayoutView *view);
 
 protected slots:
   void xor_changed () { update (); }
@@ -69,7 +69,7 @@ protected:
 
 private:
   Ui::DiffToolDialog *mp_ui;
-  lay::LayoutViewBase *mp_view;
+  lay::LayoutView *mp_view;
 };
 
 }

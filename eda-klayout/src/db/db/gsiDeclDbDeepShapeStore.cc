@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -111,34 +111,6 @@ Class<db::DeepShapeStore> decl_dbDeepShapeStore ("db", "DeepShapeStore",
   gsi::method ("threads", &db::DeepShapeStore::threads,
     "@brief Gets the number of threads.\n"
   ) +
-  gsi::method ("wants_all_cells=", &db::DeepShapeStore::set_wants_all_cells, gsi::arg ("flag"),
-    "@brief Sets a flag wether to copy the full hierarchy for the working layouts\n"
-    "\n"
-    "The DeepShapeStore object keeps a copy of the original hierarchy internally for the working layouts.\n"
-    "By default, this hierarchy is mapping only non-empty cells. While the operations proceed, more cells "
-    "may need to be added. This conservative approach saves some memory, but the update operations may "
-    "reduce overall performance. Setting this flag to 'true' switches to a mode where the full "
-    "hierarchy is copied always. This will take more memory but may save CPU time.\n"
-    "\n"
-    "This attribute has been introduced in version 0.28.10."
-  ) +
-  gsi::method ("wants_all_cells", &db::DeepShapeStore::wants_all_cells,
-    "@brief Gets a flag wether to copy the full hierarchy for the working layouts\n"
-    "This attribute has been introduced in version 0.28.10."
-  ) +
-  gsi::method ("reject_odd_polygons=", &db::DeepShapeStore::set_reject_odd_polygons, gsi::arg ("count"),
-    "@brief Sets a flag indicating whether to reject odd polygons\n"
-    "\n"
-    "Some kind of 'odd' (e.g. non-orientable) polygons may spoil the functionality "
-    "because they cannot be handled properly. By using this flag, the shape store "
-    "we reject these kind of polygons. The default is 'accept' (without warning).\n"
-    "\n"
-    "This attribute has been introduced in version 0.27."
-  ) +
-  gsi::method ("reject_odd_polygons", &db::DeepShapeStore::reject_odd_polygons,
-    "@brief Gets a flag indicating whether to reject odd polygons.\n"
-    "This attribute has been introduced in version 0.27."
-  ) +
   gsi::method ("max_vertex_count=", &db::DeepShapeStore::set_max_vertex_count, gsi::arg ("count"),
     "@brief Sets the maximum vertex count default value\n"
     "\n"
@@ -180,21 +152,6 @@ Class<db::DeepShapeStore> decl_dbDeepShapeStore ("db", "DeepShapeStore",
   ) +
   gsi::method ("text_enlargement", &db::DeepShapeStore::text_enlargement,
     "@brief Gets the text enlargement value.\n"
-  ) +
-  gsi::method ("subcircuit_hierarchy_for_nets=", &db::DeepShapeStore::set_subcircuit_hierarchy_for_nets, gsi::arg ("value"),
-    "@brief Sets a value indicating whether to build a subcircuit hierarchy per net\n"
-    "\n"
-    "\nThis flag is used to determine the way, net subcircuit hierarchies are built:\n"
-    "when true, subcells are created for subcircuits on a net. Otherwise the net\n"
-    "shapes are produced flat inside the cell they appear on.\n"
-    "\n"
-    "This attribute has been introduced in version 0.28.4"
-  ) +
-  gsi::method ("subcircuit_hierarchy_for_nets", &db::DeepShapeStore::subcircuit_hierarchy_for_nets,
-    "@brief Gets a value indicating whether to build a subcircuit hierarchy per net\n"
-    "See \\subcircuit_hierarchy_for_nets= for details.\n"
-    "\n"
-    "This attribute has been introduced in version 0.28.4"
   ) +
   gsi::method ("clear_breakout_cells", &db::DeepShapeStore::clear_breakout_cells, gsi::arg ("layout_index"),
     "@brief Clears the breakout cells\n"

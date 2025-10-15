@@ -28,10 +28,8 @@ pwd=$(pwd)
 
 enable32bit=1
 enable64bit=1
-ucrt=0
 args=""
 suffix=""
-qt="qt5"
 
 while [ "$1" != "" ]; do
   if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
@@ -43,32 +41,18 @@ while [ "$1" != "" ]; do
     echo "  scripts/deploy-win-mingw.sh <options>"
     echo ""
     echo "Options:"
-    echo "  -32          Run 32 bit build only (default: both)"
-    echo "  -64          Run 64 bit build only (default: both)"
-    echo "  -ucrt        Builds with UCRT runtime only (not enabled by default)"
-    echo "  -qt5         Builds on qt5 (default)"
-    echo "  -qt6         Builds on qt6"
+    echo "  -32          Run 32 bit build only"
+    echo "  -64          Run 64 bit build only"
     echo "  -s <suffix>  Binary suffix"
     echo ""
     echo "By default, both 32 and 64 bit builds are performed"
     exit 0
-  elif [ "$1" = "-ucrt" ]; then
-    enable64bit=0
-    enable32bit=0
-    ucrt=1
   elif [ "$1" = "-32" ]; then
     enable64bit=0
     enable32bit=1
-    ucrt=0
   elif [ "$1" = "-64" ]; then
     enable64bit=1
     enable32bit=0
-    ucrt=0
-  elif [ "$1" = "-qt5" ]; then
-    qt="qt5"
-  elif [ "$1" = "-qt6" ]; then
-    qt="qt6"
-    args="$args -qmake qmake-qt6"
   elif [ "$1" = "-s" ]; then
     shift
     suffix="-$1"
@@ -89,7 +73,6 @@ if [ "$KLAYOUT_BUILD_IN_PROGRESS" == "" ]; then
   export KLAYOUT_BUILD_IN_PROGRESS=1
   export KLAYOUT_BUILD_ARGS="$args"
   export KLAYOUT_BUILD_SUFFIX="$suffix"
-  export KLAYOUT_BUILD_QT="$qt"
 
   # Run ourself in MINGW32 system for the win32 build
   if [ "$enable32bit" != "0" ]; then
@@ -101,11 +84,6 @@ if [ "$KLAYOUT_BUILD_IN_PROGRESS" == "" ]; then
     MSYSTEM=MINGW64 bash --login -c "cd $pwd ; $self"
   fi
 
-  # Run ourself in UCRT64 system for the ucrt build
-  if [ "$ucrt" != "0" ]; then
-    MSYSTEM=UCRT64 bash --login -c "cd $pwd ; $self"
-  fi
-
   exit 0
 
 fi
@@ -113,38 +91,22 @@ fi
 # ---------------------------------------------------
 # Actual build branch
 
-if [ "$MSYSTEM" == "UCRT64" ]; then
-
-  arch=win64-ucrt
-  mingw_inst=/ucrt64
-
-  shopt -s nullglob
-  ucrt_vssdk=(/c/Program\ Files\ \(x86\)/Windows\ Kits/10/Redist/10.0.*)
-  shopt -u nullglob
-  ucrt_vssdk=${ucrt_vssdk[0]}
-  if [ "$ucrt_vssdk" = "" ]; then
-    echo "ERROR: ucrt64 DLLs not found"
-    exit 1
-  fi
-  ucrt_vssdk=$(cygpath -w "$ucrt_vssdk")
-
-elif [ "$MSYSTEM" == "MINGW32" ]; then
+if [ "$MSYSTEM" == "MINGW32" ]; then
   arch=win32
   mingw_inst=/mingw32
 elif [ "$MSYSTEM" == "MINGW64" ]; then
   arch=win64
   mingw_inst=/mingw64
 else
-  echo "ERROR: not in ucrt64, mingw32 or mingw64 system."
+  echo "ERROR: not in mingw32 or mingw64 system."
 fi
 
-target=$pwd/bin-release-$arch$KLAYOUT_BUILD_SUFFIX
-build=$pwd/build-release-$arch$KLAYOUT_BUILD_SUFFIX
+target=$pwd/bin-release-$arch
+build=$pwd/build-release-$arch
 src=$pwd/src
 scripts=$pwd/scripts
-
 # Update in NSIS script too:
-plugins="audio generic iconengines imageformats multimedia networkinformation platforms printsupport sqldrivers styles tls"
+plugins="audio generic iconengines imageformats platforms printsupport sqldrivers styles"
 
 # read the current version
 . ./version.sh
@@ -157,9 +119,6 @@ echo "  build      = $build"
 echo "  version    = $KLAYOUT_VERSION"
 echo "  build args = $KLAYOUT_BUILD_ARGS"
 echo "  suffix     = $KLAYOUT_BUILD_SUFFIX"
-echo "  qt         = $KLAYOUT_BUILD_QT"
-echo ""
-echo "  UCRT libs  = $ucrt_vssdk"
 echo ""
 
 rm -rf $target
@@ -176,31 +135,19 @@ if ! [ -e $target/klayout.exe ]; then
 fi
 
 # ----------------------------------------------------------
-# cert.pem
-
-echo "Installing cert.pem .."
-
-cp $mingw_inst/etc/ssl/cert.pem $target
-
-# ----------------------------------------------------------
 # Plugins
 
 echo "Installing plugins .."
 for p in $plugins; do
-  if [ -e $mingw_inst/share/$KLAYOUT_BUILD_QT/plugins/$p ]; then
-    echo "  $mingw_inst/share/$KLAYOUT_BUILD_QT/plugins/$p .."
-    cp -R $mingw_inst/share/$KLAYOUT_BUILD_QT/plugins/$p $target
-    # remove the debug versions - otherwise they pull in the debug Qt libs
-    shopt -s nullglob
-    rm -f $target/$p/*d.dll $target/$p/*.dll.debug
-    shopt -u nullglob
-  fi
+  cp -R $mingw_inst/share/qt5/plugins/$p $target
+  # remove the debug versions - otherwise they pull in the debug Qt libs
+  rm $target/$p/*d.dll
 done
 
 # ----------------------------------------------------------
 # Ruby dependencies
 
-rubys=$($ruby -e 'puts $:' | sort | awk '{print $1}')
+rubys=$($ruby -e 'puts $:' | sort)
 
 rm -rf $target/.ruby-paths.txt
 echo '# Builds the Ruby paths.' >$target/.ruby-paths.txt
@@ -288,33 +235,20 @@ echo ']' >>$target/.python-paths.txt
 
 pushd $target
 
-new_libs=$(find . -name "*.dll" -or -name "*.pyd" -or -name "*.so")
+new_libs=$(find . -name "*.dll" -or -name "*.so")
 
 while [ "$new_libs" != "" ]; do
 
   echo "Analyzing dependencies of $new_libs .."
 
   # Analyze the dependencies of our components and add the corresponding libraries from $mingw_inst/bin
-  tmp_libs=.tmp-libs.txt
-  rm -f $tmp_libs
-  echo "" >$tmp_libs
-  for l in $new_libs; do
-    echo -n "."
-    objdump -p $l | grep "DLL Name:" | sed 's/.*DLL Name: *//' >>$tmp_libs
-  done
-  echo ""
-  libs=$(cat $tmp_libs | sort -u)
-  rm -f $tmp_libs
+  libs=$(objdump -p $new_libs | grep "DLL Name:" | sort -u | sed 's/.*DLL Name: *//')
   new_libs=""
 
   for l in $libs; do
     if [ -e $mingw_inst/bin/$l ] && ! [ -e $l ]; then
       echo "Copying binary installation partial $mingw_inst/bin/$l -> $l .."
       cp $mingw_inst/bin/$l $l
-      new_libs="$new_libs $l"
-    elif [ -e "${ucrt_vssdk}/$l" ] && ! [ -e $l ]; then
-      echo "Copying binary installation partial ${ucrt_vssdk}/${l} -> $l .."
-      cp "${ucrt_vssdk}/${l}" "$l"
       new_libs="$new_libs $l"
     fi  
   done
@@ -341,7 +275,7 @@ echo "Making .zip file $zipname.zip .."
 
 rm -rf $zipname $zipname.zip
 mkdir $zipname
-cp -Rv strm*.exe *.dll cert.pem .*-paths.txt db_plugins lay_plugins pymod $plugins lib $zipname | sed -u 's/.*/echo -n ./' | sh
+cp -Rv *.dll .*-paths.txt db_plugins lay_plugins $plugins lib $zipname | sed -u 's/.*/echo -n ./' | sh
 cp klayout.exe $zipname/klayout_app.exe
 cp klayout.exe $zipname/klayout_vo_app.exe
 echo ""

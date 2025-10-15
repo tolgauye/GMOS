@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -76,8 +76,6 @@ ArgType::to_string () const
     s += "float"; break;
   case T_string:
     s += "string"; break;
-  case T_byte_array:
-    s += "byte array"; break;
   case T_var:
     s += "variant"; break;
   case T_object:

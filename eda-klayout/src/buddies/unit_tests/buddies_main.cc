@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -28,8 +28,9 @@
 #include "rba.h"
 #include "gsiDecl.h"
 
+// On Windows, ruby.h is not compatible with windows.h which is included by utHead - at least not if
+// windows.h is included before ruby.h ...
 #include "tlUnitTest.h"
-#include "tlFileUtils.h"
 
 void run_rubytest (tl::TestBase * /*_this*/, const std::string &fn)
 {

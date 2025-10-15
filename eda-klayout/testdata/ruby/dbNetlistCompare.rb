@@ -33,7 +33,7 @@ class NetlistCompareTestLogger < RBA::GenericNetlistCompareLogger
     @texts << text
   end
 
-  def device_class_mismatch(a, b, msg)
+  def device_class_mismatch(a, b)
     out("device_class_mismatch " + dc2str(a) + " " + dc2str(b))
   end
 
@@ -41,15 +41,15 @@ class NetlistCompareTestLogger < RBA::GenericNetlistCompareLogger
     out("begin_circuit " + circuit2str(a) + " " + circuit2str(b))
   end
 
-  def end_circuit(a, b, matching, msg)
+  def end_circuit(a, b, matching)
     out("end_circuit " + circuit2str(a) + " " + circuit2str(b) + " " + (matching ? "MATCH" : "NOMATCH"))
   end
 
-  def circuit_skipped(a, b, msg)
+  def circuit_skipped(a, b)
     out("circuit_skipped " + circuit2str(a) + " " + circuit2str(b))
   end
 
-  def circuit_mismatch(a, b, msg)
+  def circuit_mismatch(a, b)
     out("circuit_mismatch " + circuit2str(a) + " " + circuit2str(b))
   end
 
@@ -57,11 +57,11 @@ class NetlistCompareTestLogger < RBA::GenericNetlistCompareLogger
     out("match_nets " + net2str(a) + " " + net2str(b))
   end
 
-  def match_ambiguous_nets(a, b, msg)
+  def match_ambiguous_nets(a, b)
     out("match_ambiguous_nets " + net2str(a) + " " + net2str(b))
   end
 
-  def net_mismatch(a, b, msg)
+  def net_mismatch(a, b)
     out("net_mismatch " + net2str(a) + " " + net2str(b))
   end
 
@@ -69,7 +69,7 @@ class NetlistCompareTestLogger < RBA::GenericNetlistCompareLogger
     out("match_devices " + device2str(a) + " " + device2str(b))
   end
 
-  def device_mismatch(a, b, msg)
+  def device_mismatch(a, b)
     out("device_mismatch " + device2str(a) + " " + device2str(b))
   end
 
@@ -85,7 +85,7 @@ class NetlistCompareTestLogger < RBA::GenericNetlistCompareLogger
     out("match_pins " + pin2str(a) + " " + pin2str(b))
   end
 
-  def pin_mismatch(a, b, msg)
+  def pin_mismatch(a, b)
     out("pin_mismatch " + pin2str(a) + " " + pin2str(b))
   end
 
@@ -93,7 +93,7 @@ class NetlistCompareTestLogger < RBA::GenericNetlistCompareLogger
     out("match_subcircuits " + subcircuit2str(a) + " " + subcircuit2str(b))
   end
 
-  def subcircuit_mismatch(a, b, msg)
+  def subcircuit_mismatch(a, b)
     out("subcircuit_mismatch " + subcircuit2str(a) + " " + subcircuit2str(b))
   end
 
@@ -180,12 +180,6 @@ end
 class NetlistCompare_TestClass < TestBase
 
   def test_1
-
-    # severity enums
-    assert_equal(NetlistCompareTestLogger::Info.to_s, "Info")
-    assert_equal(NetlistCompareTestLogger::Error.to_s, "Error")
-    assert_equal(NetlistCompareTestLogger::Warning.to_s, "Warning")
-    assert_equal(NetlistCompareTestLogger::NoSeverity.to_s, "NoSeverity")
 
     nl1 = RBA::Netlist::new
     nl2 = RBA::Netlist::new
@@ -339,8 +333,6 @@ END
 
     assert_equal(logger.text(), <<"END")
 begin_circuit INV INV
-match_nets VDD VDD
-match_nets VSS VSS
 match_nets OUT OUT
 match_nets IN IN
 match_pins $0 $1
@@ -467,11 +459,9 @@ END
 
     assert_equal(logger.text, <<"END")
 begin_circuit BUF BUF
-match_nets VDD VDD
-match_nets VSS VSS
 match_nets OUT OUT
-net_mismatch IN IN
 match_nets INT $10
+net_mismatch IN IN
 net_mismatch INT2 $11
 match_pins $0 $1
 match_pins $1 $3
@@ -492,13 +482,11 @@ END
 
     logger.clear
     eqp = RBA::EqualDeviceParameters::new(RBA::DeviceClassMOS3Transistor::PARAM_L, 0.2, 0.0)
-    nl1.device_class_by_name("NMOS").equal_parameters = eqp
+    nl2.device_class_by_name("NMOS").equal_parameters = eqp
     good = comp.compare(nl1, nl2)
 
     assert_equal(logger.text, <<"END")
 begin_circuit BUF BUF
-match_nets VDD VDD
-match_nets VSS VSS
 match_nets OUT OUT
 match_nets IN IN
 match_ambiguous_nets INT $10
@@ -519,48 +507,15 @@ end_circuit BUF BUF MATCH
 END
 
     assert_equal(good, true)
-
-    logger.clear
-    nl1.device_class_by_name("NMOS").equal_parameters = nil
-    assert_equal(nl1.device_class_by_name("NMOS").equal_parameters == nil, true)
-    good = comp.compare(nl1, nl2)
-
-    assert_equal(logger.text, <<"END")
-begin_circuit BUF BUF
-match_nets VDD VDD
-match_nets VSS VSS
-match_nets OUT OUT
-net_mismatch IN IN
-match_nets INT $10
-net_mismatch INT2 $11
-match_pins $0 $1
-match_pins $1 $3
-match_pins $2 $0
-match_pins $3 $2
-match_devices $1 $1
-match_devices $3 $2
-match_devices $5 $3
-match_devices $7 $4
-match_devices $2 $5
-match_devices $4 $6
-match_devices_with_different_parameters $6 $7
-match_devices $8 $8
-end_circuit BUF BUF NOMATCH
-END
-
-    assert_equal(good, false)
 
     logger.clear
     eqp = RBA::EqualDeviceParameters::new(RBA::DeviceClassMOS3Transistor::PARAM_W, 0.01, 0.0)
     eqp = eqp + RBA::EqualDeviceParameters::new(RBA::DeviceClassMOS3Transistor::PARAM_L, 0.2, 0.0)
-    nl1.device_class_by_name("NMOS").equal_parameters = eqp
-    assert_equal(nl1.device_class_by_name("NMOS").equal_parameters == nil, false)
+    nl2.device_class_by_name("NMOS").equal_parameters = eqp
     good = comp.compare(nl1, nl2)
 
     assert_equal(logger.text, <<"END")
 begin_circuit BUF BUF
-match_nets VDD VDD
-match_nets VSS VSS
 match_nets OUT OUT
 match_nets IN IN
 match_ambiguous_nets INT $10
@@ -583,15 +538,13 @@ END
     assert_equal(good, true)
 
     logger.clear
-    dc = nl1.device_class_by_name("NMOS")
-    dc.equal_parameters = RBA::EqualDeviceParameters::new(RBA::DeviceClassMOS3Transistor::PARAM_W, 0.01, 0.0)
-    dc.equal_parameters += RBA::EqualDeviceParameters::new(RBA::DeviceClassMOS3Transistor::PARAM_L, 0.2, 0.0)
+    eqp = RBA::EqualDeviceParameters::new(RBA::DeviceClassMOS3Transistor::PARAM_W, 0.01, 0.0)
+    eqp += RBA::EqualDeviceParameters::new(RBA::DeviceClassMOS3Transistor::PARAM_L, 0.2, 0.0)
+    nl2.device_class_by_name("NMOS").equal_parameters = eqp
     good = comp.compare(nl1, nl2)
 
     assert_equal(logger.text, <<"END")
 begin_circuit BUF BUF
-match_nets VDD VDD
-match_nets VSS VSS
 match_nets OUT OUT
 match_nets IN IN
 match_ambiguous_nets INT $10
@@ -654,91 +607,16 @@ END
     #  NOTE: adding this power hint makes the device class error harder to detect
     ca = nl1.circuit_by_name("BUF")
     cb = nl2.circuit_by_name("BUF")
-    comp.same_nets(ca.net_by_name("VDD"), cb.net_by_name("VDD"), false)
-    comp.same_nets(ca.net_by_name("VSS"), cb.net_by_name("VSS"), false)
-    comp.same_nets(ca.net_by_name("OUT"), cb.net_by_name("OUT"), false)
+    comp.same_nets(ca.net_by_name("VDD"), cb.net_by_name("VDD"))
+    comp.same_nets(ca.net_by_name("VSS"), cb.net_by_name("VSS"))
 
     good = comp.compare(nl1, nl2)
 
     assert_equal(logger.text, <<"END")
 begin_circuit BUF BUF
-match_nets VDD VDD
-match_nets VSS VSS
-match_nets OUT OUT
 match_nets INT $10
 match_nets IN IN
-net_mismatch INT2 $11
-match_pins $0 $1
-match_pins $1 $3
-match_pins $2 $0
-match_pins $3 $2
-match_devices $1 $1
-match_devices $3 $2
-match_devices $5 $3
-match_devices_with_different_device_classes $7 $4
-match_devices $2 $5
-match_devices $4 $6
-match_devices $6 $7
-match_devices $8 $8
-end_circuit BUF BUF NOMATCH
-END
-
-    assert_equal(good, false)
-
-  end
- 
-  def test_6b
-
-    nls1 = <<"END"
-circuit BUF ($1=IN,$2=OUT,$3=VDD,$4=VSS);
-  device PMOS $1 (S=VDD,G=IN,D=INT) (L=0.25,W=0.95,AS=0.49875,AD=0.26125,PS=2.95,PD=1.5);
-  device NMOS $2 (S=VSS,G=IN,D=INT) (L=0.25,W=0.95,AS=0.49875,AD=0.26125,PS=2.95,PD=1.5);
-  device PMOS $3 (S=VDD,G=INT,D=OUT) (L=0.25,W=0.95,AS=0.49875,AD=0.26125,PS=2.95,PD=1.5);
-  device NMOS $4 (S=VSS,G=INT,D=OUT) (L=0.25,W=0.95,AS=0.49875,AD=0.26125,PS=2.95,PD=1.5);
-  device PMOS $5 (S=VDD,G=IN,D=INT2) (L=0.25,W=0.95,AS=0.49875,AD=0.26125,PS=2.95,PD=1.5);
-  device NMOS $6 (S=VSS,G=IN,D=INT2) (L=0.25,W=0.95,AS=0.49875,AD=0.26125,PS=2.95,PD=1.5);
-  device PMOSB $7 (S=VDD,G=INT2,D=OUT) (L=0.25,W=0.95,AS=0.49875,AD=0.26125,PS=2.95,PD=1.5);
-  device NMOSB $8 (S=VSS,G=INT2,D=OUT) (L=0.25,W=0.95,AS=0.49875,AD=0.26125,PS=2.95,PD=1.5);
-end;
-END
-
-    nls2 = <<"END"
-circuit BUF ($1=VDD,$2=IN,$3=VSS,$4=OUT);
-  device PMOS $1 (S=VDD,G=IN,D=$10) (L=0.25,W=0.95,AS=0.49875,AD=0.26125,PS=2.95,PD=1.5);
-  device PMOS $2 (S=VDD,G=$10,D=OUT) (L=0.25,W=0.95,AS=0.49875,AD=0.26125,PS=2.95,PD=1.5);
-  device PMOS $3 (S=VDD,G=IN,D=$11) (L=0.25,W=0.95,AS=0.49875,AD=0.26125,PS=2.95,PD=1.5);
-  device PMOS $4 (S=VDD,G=$11,D=OUT) (L=0.25,W=0.95,AS=0.49875,AD=0.26125,PS=2.95,PD=1.5);
-  device NMOS $5 (S=$10,G=IN,D=VSS) (L=0.25,W=0.95,AS=0.49875,AD=0.26125,PS=2.95,PD=1.5);
-  device NMOS $6 (S=OUT,G=$10,D=VSS) (L=0.25,W=0.95,AS=0.49875,AD=0.26125,PS=2.95,PD=1.5);
-  device NMOS $7 (S=$11,G=IN,D=VSS) (L=0.25,W=0.95,AS=0.49875,AD=0.26125,PS=2.95,PD=1.5);
-  device NMOSB $8 (S=OUT,G=$11,D=VSS) (L=0.25,W=0.95,AS=0.49875,AD=0.26125,PS=2.95,PD=1.5);
-end;
-END
-
-    nl1 = RBA::Netlist::new
-    nl2 = RBA::Netlist::new
-    prep_nl(nl1, nls1)
-    prep_nl(nl2, nls2)
-
-    logger = NetlistCompareTestLogger::new
-    comp = RBA::NetlistComparer::new(logger)
-
-    #  NOTE: adding this power hint makes the device class error harder to detect
-    ca = nl1.circuit_by_name("BUF")
-    cb = nl2.circuit_by_name("BUF")
-    comp.same_nets(ca.net_by_name("VDD"), cb.net_by_name("VDD"), true)
-    comp.same_nets(ca.net_by_name("VSS"), cb.net_by_name("VSS"), true)
-    comp.same_nets(ca.net_by_name("OUT"), cb.net_by_name("OUT"), true)
-
-    good = comp.compare(nl1, nl2)
-
-    assert_equal(logger.text, <<"END")
-begin_circuit BUF BUF
-net_mismatch VDD VDD
-match_nets VSS VSS
 net_mismatch OUT OUT
-match_nets INT $10
-match_nets IN IN
 net_mismatch INT2 $11
 match_pins $0 $1
 match_pins $1 $3
@@ -752,85 +630,6 @@ match_devices $2 $5
 match_devices $4 $6
 match_devices $6 $7
 match_devices $8 $8
-end_circuit BUF BUF NOMATCH
-END
-
-    assert_equal(good, false)
-
-  end
- 
-  def test_6c
-
-    nls1 = <<"END"
-circuit BUF ($1=IN,$2=OUT,$3=VDD,$4=VSS);
-  device PMOS $1 (S=VDD,G=IN,D=INT) (L=0.25,W=0.95,AS=0.49875,AD=0.26125,PS=2.95,PD=1.5);
-  device NMOS $2 (S=VSS,G=IN,D=INT) (L=0.25,W=0.95,AS=0.49875,AD=0.26125,PS=2.95,PD=1.5);
-  device PMOS $3 (S=VDD,G=INT,D=OUT) (L=0.25,W=0.95,AS=0.49875,AD=0.26125,PS=2.95,PD=1.5);
-  device NMOS $4 (S=VSS,G=INT,D=OUT) (L=0.25,W=0.95,AS=0.49875,AD=0.26125,PS=2.95,PD=1.5);
-  device PMOS $5 (S=VDD,G=IN,D=INT2) (L=0.25,W=0.95,AS=0.49875,AD=0.26125,PS=2.95,PD=1.5);
-  device NMOS $6 (S=VSS,G=IN,D=INT2) (L=0.25,W=0.95,AS=0.49875,AD=0.26125,PS=2.95,PD=1.5);
-  device PMOSB $7 (S=VDD,G=INT2,D=OUT) (L=0.25,W=0.95,AS=0.49875,AD=0.26125,PS=2.95,PD=1.5);
-  device NMOSB $8 (S=VSS,G=INT2,D=OUT) (L=0.25,W=0.95,AS=0.49875,AD=0.26125,PS=2.95,PD=1.5);
-end;
-END
-
-    nls2 = <<"END"
-circuit BUF ($1=VDD,$2=IN,$3=VSS,$4=OUT);
-  device PMOS $1 (S=VDD,G=IN,D=$10) (L=0.25,W=0.95,AS=0.49875,AD=0.26125,PS=2.95,PD=1.5);
-  device PMOS $2 (S=VDD,G=$10,D=OUT) (L=0.25,W=0.95,AS=0.49875,AD=0.26125,PS=2.95,PD=1.5);
-  device PMOS $3 (S=VDD,G=IN,D=$11) (L=0.25,W=0.95,AS=0.49875,AD=0.26125,PS=2.95,PD=1.5);
-  device PMOS $4 (S=VDD,G=$11,D=OUT) (L=0.25,W=0.95,AS=0.49875,AD=0.26125,PS=2.95,PD=1.5);
-  device NMOS $5 (S=$10,G=IN,D=VSS) (L=0.25,W=0.95,AS=0.49875,AD=0.26125,PS=2.95,PD=1.5);
-  device NMOS $6 (S=OUT,G=$10,D=VSS) (L=0.25,W=0.95,AS=0.49875,AD=0.26125,PS=2.95,PD=1.5);
-  device NMOS $7 (S=$11,G=IN,D=VSS) (L=0.25,W=0.95,AS=0.49875,AD=0.26125,PS=2.95,PD=1.5);
-  device NMOSB $8 (S=OUT,G=$11,D=VSS) (L=0.25,W=0.95,AS=0.49875,AD=0.26125,PS=2.95,PD=1.5);
-end;
-END
-
-    nl1 = RBA::Netlist::new
-    nl2 = RBA::Netlist::new
-    prep_nl(nl1, nls1)
-    prep_nl(nl2, nls2)
-
-    logger = NetlistCompareTestLogger::new
-    comp = RBA::NetlistComparer::new(logger)
-
-    #  NOTE: adding this power hint makes the device class error harder to detect
-    ca = nl1.circuit_by_name("BUF")
-    cb = nl2.circuit_by_name("BUF")
-    comp.same_nets(ca, cb, ca.net_by_name("VDD"), cb.net_by_name("VDD"), true)
-    comp.same_nets(ca, cb, ca.net_by_name("VSS"), nil, false)
-    comp.same_nets(ca, cb, ca.net_by_name("OUT"), nil, true)
-
-    good = comp.compare(nl1, nl2)
-
-    assert_equal(logger.text, <<"END")
-begin_circuit BUF BUF
-net_mismatch VDD VDD
-match_nets VSS (null)
-net_mismatch OUT (null)
-match_nets INT $10
-match_nets IN IN
-net_mismatch INT2 (null)
-net_mismatch (null) VSS
-net_mismatch (null) OUT
-net_mismatch (null) $11
-match_pins $0 $1
-match_pins $2 $0
-match_pins $1 (null)
-match_pins $3 (null)
-match_pins (null) $2
-match_pins (null) $3
-match_devices $1 $1
-device_mismatch $5 $3
-device_mismatch $3 $2
-device_mismatch (null) $4
-device_mismatch $6 $5
-device_mismatch $4 $6
-device_mismatch $2 $7
-device_mismatch (null) $8
-device_mismatch $7 (null)
-device_mismatch $8 (null)
 end_circuit BUF BUF NOMATCH
 END
 
@@ -885,12 +684,10 @@ END
 
     assert_equal(logger.text, <<"END")
 begin_circuit BUF BUF
-match_nets VDD VDD
-match_nets VSS VSS
 net_mismatch INT $10
 match_nets IN IN
-net_mismatch INT2 $11
 match_nets OUT OUT
+net_mismatch INT2 $11
 match_pins $0 $1
 match_pins $1 $3
 match_pins $2 $0
@@ -1187,57 +984,6 @@ END
 
     assert_equal(good, true)
 
-  end
-
-  def test_11
-
-    nls = <<END
-      circuit RESCUBE (A=A,B=B);
-        device RES $1 (A=A,B=$1) (R=1000);
-        device RES $2 (A=A,B=$2) (R=1000);
-        device RES $3 (A=A,B=$3) (R=1000);
-        device RES $4 (A=$1,B=$4) (R=1000);
-        device RES $5 (A=$2,B=$4) (R=1000);
-        device RES $6 (A=$2,B=$5) (R=1000);
-        device RES $7 (A=$3,B=$5) (R=1000);
-        device RES $8 (A=$3,B=$6) (R=1000);
-        device RES $9 (A=$1,B=$6) (R=1000);
-        device RES $9 (A=$4,B=B) (R=1000);
-        device RES $10 (A=$5,B=B) (R=1000);
-        device RES $11 (A=$6,B=B) (R=1000);
-      end;
-END
-
-    nl = RBA::Netlist::new
-    prep_nl(nl, nls)
-
-    comp = RBA::NetlistComparer::new
-    comp.join_symmetric_nets(nl.circuit_by_name("RESCUBE"))
-
-    assert_equal(nl.to_s, <<END)
-circuit RESCUBE (A=A,B=B);
-  device RES $1 (A=A,B=$1) (R=1000,L=0,W=0,A=0,P=0);
-  device RES $2 (A=A,B=$1) (R=1000,L=0,W=0,A=0,P=0);
-  device RES $3 (A=A,B=$1) (R=1000,L=0,W=0,A=0,P=0);
-  device RES $4 (A=$1,B=$4) (R=1000,L=0,W=0,A=0,P=0);
-  device RES $5 (A=$1,B=$4) (R=1000,L=0,W=0,A=0,P=0);
-  device RES $6 (A=$1,B=$4) (R=1000,L=0,W=0,A=0,P=0);
-  device RES $7 (A=$1,B=$4) (R=1000,L=0,W=0,A=0,P=0);
-  device RES $8 (A=$1,B=$4) (R=1000,L=0,W=0,A=0,P=0);
-  device RES $9 (A=$1,B=$4) (R=1000,L=0,W=0,A=0,P=0);
-  device RES $10 (A=$4,B=B) (R=1000,L=0,W=0,A=0,P=0);
-  device RES $11 (A=$4,B=B) (R=1000,L=0,W=0,A=0,P=0);
-  device RES $12 (A=$4,B=B) (R=1000,L=0,W=0,A=0,P=0);
-end;
-END
-
-    nl.combine_devices
-    assert_equal(nl.to_s, <<END)
-circuit RESCUBE (A=A,B=B);
-  device RES $10 (A=A,B=B) (R=833.333333333,L=0,W=0,A=0,P=0);
-end;
-END
-    
   end
 
 end

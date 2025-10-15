@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@
 #include <QSsl>
 #include "gsiQt.h"
 #include "gsiQtNetworkCommon.h"
+#include "gsiDeclQtNetworkTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -138,8 +139,7 @@ static gsi::Enum<QSsl::SslOption> decl_QSsl_SslOption_Enum ("QtNetwork", "QSsl_S
     gsi::enum_const ("SslOptionDisableServerNameIndication", QSsl::SslOptionDisableServerNameIndication, "@brief Enum constant QSsl::SslOptionDisableServerNameIndication") +
     gsi::enum_const ("SslOptionDisableLegacyRenegotiation", QSsl::SslOptionDisableLegacyRenegotiation, "@brief Enum constant QSsl::SslOptionDisableLegacyRenegotiation") +
     gsi::enum_const ("SslOptionDisableSessionSharing", QSsl::SslOptionDisableSessionSharing, "@brief Enum constant QSsl::SslOptionDisableSessionSharing") +
-    gsi::enum_const ("SslOptionDisableSessionPersistence", QSsl::SslOptionDisableSessionPersistence, "@brief Enum constant QSsl::SslOptionDisableSessionPersistence") +
-    gsi::enum_const ("SslOptionDisableServerCipherPreference", QSsl::SslOptionDisableServerCipherPreference, "@brief Enum constant QSsl::SslOptionDisableServerCipherPreference"),
+    gsi::enum_const ("SslOptionDisableSessionPersistence", QSsl::SslOptionDisableSessionPersistence, "@brief Enum constant QSsl::SslOptionDisableSessionPersistence"),
   "@qt\n@brief This class represents the QSsl::SslOption enum");
 
 static gsi::QFlagsClass<QSsl::SslOption > decl_QSsl_SslOption_Enums ("QtNetwork", "QSsl_QFlags_SslOption",
@@ -169,12 +169,6 @@ static gsi::Enum<QSsl::SslProtocol> decl_QSsl_SslProtocol_Enum ("QtNetwork", "QS
     gsi::enum_const ("TlsV1_0OrLater", QSsl::TlsV1_0OrLater, "@brief Enum constant QSsl::TlsV1_0OrLater") +
     gsi::enum_const ("TlsV1_1OrLater", QSsl::TlsV1_1OrLater, "@brief Enum constant QSsl::TlsV1_1OrLater") +
     gsi::enum_const ("TlsV1_2OrLater", QSsl::TlsV1_2OrLater, "@brief Enum constant QSsl::TlsV1_2OrLater") +
-    gsi::enum_const ("DtlsV1_0", QSsl::DtlsV1_0, "@brief Enum constant QSsl::DtlsV1_0") +
-    gsi::enum_const ("DtlsV1_0OrLater", QSsl::DtlsV1_0OrLater, "@brief Enum constant QSsl::DtlsV1_0OrLater") +
-    gsi::enum_const ("DtlsV1_2", QSsl::DtlsV1_2, "@brief Enum constant QSsl::DtlsV1_2") +
-    gsi::enum_const ("DtlsV1_2OrLater", QSsl::DtlsV1_2OrLater, "@brief Enum constant QSsl::DtlsV1_2OrLater") +
-    gsi::enum_const ("TlsV1_3", QSsl::TlsV1_3, "@brief Enum constant QSsl::TlsV1_3") +
-    gsi::enum_const ("TlsV1_3OrLater", QSsl::TlsV1_3OrLater, "@brief Enum constant QSsl::TlsV1_3OrLater") +
     gsi::enum_const ("UnknownProtocol", QSsl::UnknownProtocol, "@brief Enum constant QSsl::UnknownProtocol"),
   "@qt\n@brief This class represents the QSsl::SslProtocol enum");
 

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -136,11 +136,6 @@ public:
   {
     return 0;
   }
-
-  /**
-   *  @brief Returns a string for the file dialogs that describes all formats
-   */
-  static std::string all_formats_string ();
 };
 
 /**
@@ -204,7 +199,7 @@ public:
 
   void operator () (HOST &options, tl::XMLReaderState &reader) const
   {
-    std::unique_ptr<OPT> opt (new OPT ());
+    std::auto_ptr<OPT> opt (new OPT ());
 
     tl::XMLObjTag<OPT> tag;
     *opt = *reader.back (tag);

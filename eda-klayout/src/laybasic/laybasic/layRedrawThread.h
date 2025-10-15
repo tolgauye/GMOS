@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -28,16 +28,19 @@
 #include <set>
 #include <memory>
 
+#include <QThread>
+#include <QMutex>
+#include <QWaitCondition>
+
 #include "dbBox.h"
 #include "dbTrans.h"
 #include "dbLayout.h"
 #include "layRenderer.h"
-#include "layLayoutViewBase.h"
+#include "layLayoutView.h"
 #include "layRedrawThreadCanvas.h"
 #include "layRedrawLayerInfo.h"
 #include "layCanvasPlane.h"
 #include "tlTimer.h"
-#include "tlThreads.h"
 #include "tlThreadedWorkers.h"
 
 namespace lay {
@@ -52,11 +55,11 @@ class RedrawThread
     public tl::JobBase
 {
 public:
-  RedrawThread (lay::RedrawThreadCanvas *canvas, lay::LayoutViewBase *view);
+  RedrawThread (lay::RedrawThreadCanvas *canvas, lay::LayoutView *view);
   virtual ~RedrawThread ();
 
-  void commit (const std::vector <lay::RedrawLayerInfo> &layers, const lay::Viewport &vp, double resolution, double font_resolution);
-  void start (int workers, const std::vector <lay::RedrawLayerInfo> &layers, const lay::Viewport &vp, double resolution, double font_resolution, bool force_redraw);
+  void commit (const std::vector <lay::RedrawLayerInfo> &layers, const lay::Viewport &vp, double resolution);
+  void start (int workers, const std::vector <lay::RedrawLayerInfo> &layers, const lay::Viewport &vp, double resolution, bool force_redraw);
   void restart (const std::vector<int> &restart);
   void wakeup_checked ();
   void wakeup ();
@@ -107,21 +110,20 @@ private:
   db::DCplxTrans m_vp_trans;
   int m_width, m_height;
   double m_resolution;
-  double m_font_resolution;
   std::vector<db::Box> m_redraw_regions;
   db::DBox m_stored_region, m_valid_region;
   db::DPoint m_last_center;
   db::DFTrans m_stored_fp;
 
   lay::RedrawThreadCanvas *mp_canvas;
-  lay::LayoutViewBase *mp_view;
+  lay::LayoutView *mp_view;
   bool m_start_recursion_sentinel;
 
   tl::Clock m_clock;
-  tl::Mutex m_initial_wait_lock;
-  tl::WaitCondition m_initial_wait_cond;
+  QMutex m_initial_wait_lock;
+  QWaitCondition m_initial_wait_cond;
 
-  std::unique_ptr<tl::SelfTimer> m_main_timer;
+  std::auto_ptr<tl::SelfTimer> m_main_timer;
 };
 
 }

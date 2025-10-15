@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -33,6 +33,8 @@
 #include "tlObjectCollection.h"
 #include "layViewOp.h"
 #include "dbTrans.h"
+
+#include <QColor>
 
 namespace lay
 {
@@ -121,7 +123,7 @@ public:
   /**
    *  @brief Get the current appearance
    */
-  virtual std::vector <lay::ViewOp> get_view_ops (lay::RedrawThreadCanvas &canvas, tl::Color background, tl::Color foreground, tl::Color active) const = 0;
+  virtual std::vector <lay::ViewOp> get_view_ops (lay::RedrawThreadCanvas &canvas, QColor background, QColor foreground, QColor active) const = 0;
 
 private:
   unsigned int m_num_planes;

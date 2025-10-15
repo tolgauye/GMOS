@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -20,7 +20,6 @@
 
 */
 
-#if defined(HAVE_QT)
 
 
 #ifndef HDR_edtDialogs
@@ -38,16 +37,14 @@
 #include "ui_InstantiationForm.h"
 #include "ui_ChangeLayerOptionsDialog.h"
 #include "ui_AlignOptionsDialog.h"
-#include "ui_DistributeOptionsDialog.h"
 #include "ui_CopyModeDialog.h"
 #include "ui_MakeCellOptionsDialog.h"
 #include "ui_MakeArrayOptionsDialog.h"
 #include "ui_RoundCornerOptionsDialog.h"
-#include "ui_AreaAndPerimeterDialog.h"
 
 namespace lay
 {
-  class LayoutViewBase;
+  class LayoutView;
   class Marker;
   class ObjectInstPath;
 }
@@ -83,7 +80,7 @@ public:
   InstantiationForm (QWidget *parent);
   virtual ~InstantiationForm ();
 
-  void show (lay::LayoutViewBase *view, const lay::ObjectInstPath &path);
+  void show (lay::LayoutView *view, const lay::ObjectInstPath &path);
 
 public slots:
   void display_mode_changed (bool);
@@ -92,7 +89,7 @@ public slots:
 private:
   void update ();
 
-  lay::LayoutViewBase *mp_view;
+  lay::LayoutView *mp_view;
   const lay::ObjectInstPath *mp_path;
   lay::Marker *mp_marker;
   bool m_enable_cb_callbacks;
@@ -111,7 +108,7 @@ public:
   ChangeLayerOptionsDialog (QWidget *parent);
   virtual ~ChangeLayerOptionsDialog ();
 
-  bool exec_dialog (lay::LayoutViewBase *view, int cv_index, unsigned int &new_layer);
+  bool exec_dialog (lay::LayoutView *view, int cv_index, unsigned int &new_layer);
 };
 
 /**
@@ -127,23 +124,7 @@ public:
   AlignOptionsDialog (QWidget *parent);
   virtual ~AlignOptionsDialog ();
 
-  bool exec_dialog (int &hmode, int &vmode, bool &visible_layers);
-};
-
-/**
- *  @brief Distribute function options dialog
- */
-class DistributeOptionsDialog
-  : public QDialog,
-    public Ui::DistributeOptionsDialog
-{
-Q_OBJECT
-
-public:
-  DistributeOptionsDialog (QWidget *parent);
-  virtual ~DistributeOptionsDialog ();
-
-  bool exec_dialog (bool &hdistribute, int &hmode, double &hpitch, double &hspace, bool &vdistribute, int &vmode, double &vpitch, double &vspace, bool &visible_layers);
+  bool exec_dialog (lay::LayoutView *view, int &hmode, int &vmode, bool &visible_layers);
 };
 
 /**
@@ -206,25 +187,7 @@ private:
   bool m_has_extracted;
 };
 
-/**
- *  @brief Result dialog for "area and perimeter"
- */
-class AreaAndPerimeterDialog
-  : public QDialog,
-    private Ui::AreaAndPerimeterDialog
-{
-Q_OBJECT
-
-public:
-  AreaAndPerimeterDialog (QWidget *parent);
-  ~AreaAndPerimeterDialog ();
-
-  bool exec_dialog (double area, double perimeter);
-};
-
 } // namespace edt
-
-#endif
 
 #endif
 

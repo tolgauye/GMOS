@@ -40,7 +40,7 @@ InstallDirRegKey HKLM \
           "UninstallString"
 
 # The text to prompt the user to enter a directory
-DirText "Please select your ${NAME} installation path below (CAUTION: THE GIVEN FOLDER WILL BE DELETED ENTIRELY ON UNINSTALLATION - DO NOT USE A GENERAL PURPOSE FOLDER OR A DRIVE ONLY):"
+DirText "Please select your ${NAME} installation path below:"
  
 # automatically close the installer when done.
 AutoCloseWindow true
@@ -68,21 +68,16 @@ section
   file *.dll
   file strm*.exe
   file .*-paths.txt
-  file cert.pem
   file /r db_plugins
   file /r lay_plugins
-  file /r pymod
-  file /nonfatal /r audio
-  file /nonfatal /r generic
-  file /nonfatal /r iconengines
-  file /nonfatal /r imageformats
-  file /nonfatal /r multimedia
-  file /nonfatal /r networkinformation
-  file /nonfatal /r platforms
-  file /nonfatal /r printsupport
-  file /nonfatal /r sqldrivers
-  file /nonfatal /r styles
-  file /nonfatal /r tls
+  file /r audio
+  file /r generic
+  file /r iconengines
+  file /r imageformats
+  file /r platforms
+  file /r printsupport
+  file /r sqldrivers
+  file /r styles
   file /r lib
   file /oname=${EXENAME}.exe ${EXEBASE}.exe
   file /oname=${EXENAME_VO}.exe ${EXEBASE}.exe
@@ -159,7 +154,7 @@ section "Uninstall"
   # now delete installed files
   rmDir /r "$INSTDIR"
 
-  # remove shortcut 
+  # create a shortcut 
   rmDir /r "$SMPROGRAMS\${NAME}"
  
   DeleteRegKey SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${NAME}"

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -28,7 +28,6 @@
 #include "ui_NetTracerConfigPage.h"
 
 #include "layPlugin.h"
-#include "layPluginConfigPage.h"
 #include "layColorPalette.h"
 
 namespace lay
@@ -45,7 +44,6 @@ extern const std::string cfg_nt_marker_intensity;
 extern const std::string cfg_nt_window_mode;
 extern const std::string cfg_nt_window_dim;
 extern const std::string cfg_nt_max_shapes_highlighted;
-extern const std::string cfg_nt_trace_depth;
 
 enum nt_window_type { NTDontChange = 0, NTFitNet, NTCenter, NTCenterSize };
 
@@ -65,8 +63,8 @@ class NetTracerConfigPage
 public:
   NetTracerConfigPage (QWidget *parent);
 
-  virtual void setup (lay::Dispatcher *root);
-  virtual void commit (lay::Dispatcher *root);
+  virtual void setup (lay::PluginRoot *root);
+  virtual void commit (lay::PluginRoot *root);
 
 public slots:
   void window_changed (int);

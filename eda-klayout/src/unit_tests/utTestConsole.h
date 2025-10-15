@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -52,8 +52,6 @@ public:
   TestConsole (FILE *file);
   ~TestConsole ();
 
-  void send_to (FILE *file);
-
   void write_str (const char *text, output_stream os);
   void raw_write (const char *text);
   virtual void flush ();
@@ -87,7 +85,6 @@ private:
 
   void redirect ();
   void restore ();
-  void prepare_file ();
 };
 
 }

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@ template <class C> class point;
  */
 
 template <class C>
-class DB_PUBLIC vector
+class DB_PUBLIC_TEMPLATE vector
 {
 public:
   typedef C coord_type;
@@ -127,18 +127,6 @@ public:
   }
 
   /**
-   *  @brief Assignment
-   *
-   *  @param d The source from which to take the data
-   */
-  vector &operator= (const vector<C> &d) 
-  {
-    m_x = d.x ();
-    m_y = d.y ();
-    return *this;
-  }
-
-  /**
    *  @brief The copy constructor that converts also
    *
    *  The copy constructor allows converting between different
@@ -154,59 +142,24 @@ public:
   }
 
   /**
-   *  @brief Assignment which also converts
-   *
-   *  This assignment operator will convert the coordinate types if possible
-   *
-   *  @param d The source from which to take the data
-   */
-  template <class D>
-  vector &operator= (const point<C> &d) 
-  {
-    m_x = coord_traits::rounded (d.x ());
-    m_y = coord_traits::rounded (d.y ());
-    return *this;
-  }
-
-  /**
    *  @brief Add to operation
    */
-  vector<C> &operator+= (const vector<C> &p)
-  {
-    m_x += p.x ();
-    m_y += p.y ();
-    return *this;
-  }
+  vector<C> &operator+= (const vector<C> &p);
 
   /**
    *  @brief method version of operator+ (mainly for automation purposes)
    */
-  vector<C> add (const vector<C> &p) const
-  {
-    vector<C> r (*this);
-    r += p;
-    return r;
-  }
+  vector<C> add (const vector<C> &p) const;
 
   /**
    *  @brief Subtract from operation
    */
-  vector<C> &operator-= (const vector<C> &p)
-  {
-    m_x -= p.x ();
-    m_y -= p.y ();
-    return *this;
-  }
+  vector<C> &operator-= (const vector<C> &p);
   
   /**
    *  @brief method version of operator- (mainly for automation purposes)
    */
-  vector<C> subtract (const vector<C> &p) const
-  {
-    vector<C> r (*this);
-    r -= p;
-    return r;
-  }
+  vector<C> subtract (const vector<C> &p) const;
 
   /**
    *  @brief "less" comparison operator
@@ -214,26 +167,17 @@ public:
    *  This operator is provided to establish a sorting
    *  order
    */
-  bool operator< (const vector<C> &p) const
-  {
-    return m_y < p.m_y || (m_y == p.m_y && m_x < p.m_x);
-  }
+  bool operator< (const vector<C> &p) const;
 
   /**
    *  @brief Equality test operator
    */
-  bool operator== (const vector<C> &p) const
-  {
-    return m_x == p.m_x && m_y == p.m_y;
-  }
+  bool operator== (const vector<C> &p) const;
 
   /**
    *  @brief Inequality test operator
    */
-  bool operator!= (const vector<C> &p) const
-  {
-    return !operator== (p);
-  }
+  bool operator!= (const vector<C> &p) const;
 
   /**
    *  @brief Const transform
@@ -246,10 +190,7 @@ public:
    *  @return The transformed vector
    */
   template <class Tr>
-  vector<typename Tr::target_coord_type> transformed (const Tr &t) const
-  {
-    return t (vector<typename Tr::target_coord_type> (*this));
-  }
+  vector<typename Tr::target_coord_type> transformed (const Tr &t) const;
 
   /**
    *  @brief In-place transformation
@@ -261,51 +202,32 @@ public:
    *  @return The transformed vector
    */
   template <class Tr>
-  vector &transform (const Tr &t)
-  {
-    *this = vector<C> (t (*this));
-    return *this;
-  }
+  vector &transform (const Tr &t);
 
   /**
    *  @brief Accessor to the x coordinate
    */
-  C x () const
-  {
-    return m_x;
-  }
+  C x () const;
 
   /**
    *  @brief Accessor to the y coordinate
    */
-  C y () const
-  {
-    return m_y;
-  }
+  C y () const;
 
   /**
    *  @brief Write accessor to the x coordinate
    */
-  void set_x (C _x)
-  {
-    m_x = _x;
-  }
+  void set_x (C _x);
 
   /**
    *  @brief Write accessor to the y coordinate
    */
-  void set_y (C _y)
-  {
-    m_y = _y;
-  }
+  void set_y (C _y);
 
   /**
    *  @brief Fuzzy comparison of vectors
    */
-  bool equal (const vector<C> &p) const
-  {
-    return coord_traits::equal (x (), p.x ()) && coord_traits::equal (y (), p.y ());
-  }
+  bool equal (const vector<C> &p) const;
 
   /**
    *  @brief Fuzzy comparison of vectors for inequality
@@ -318,117 +240,72 @@ public:
   /**
    *  @brief Fuzzy "less" comparison of vectors
    */
-  bool less (const vector<C> &p) const
-  {
-    if (! coord_traits::equal (y (), p.y ())) {
-      return y () < p.y ();
-    }
-    if (! coord_traits::equal (x (), p.x ())) {
-      return x () < p.x ();
-    }
-    return false;
-  }
+  bool less (const vector<C> &p) const;
 
   /**
    *  @brief Scaling by some factor
    *
    *  To avoid round effects, the result vector is of double coordinate type.
    */
-  vector<double> operator* (double s) const
-  {
-    return vector<double> (m_x * s, m_y * s);
-  }
+  vector<double> operator* (double s) const;
 
   /**
    *  @brief Scaling by some factor
    */
-  vector<C> operator* (long s) const
-  {
-    return vector<C> (m_x * s, m_y * s);
-  }
+  vector<C> operator* (long s) const;
 
   /**
    *  @brief Scaling self by some factor
    *
    *  Scaling by a double value in general involves rounding when the coordinate type is integer.
    */
-  vector<C> operator*= (double s)
-  {
-    m_x = coord_traits::rounded (m_x * s);
-    m_y = coord_traits::rounded (m_y * s);
-    return *this;
-  }
+  vector<C> operator*= (double s);
 
   /**
    *  @brief Scaling self by some integer factor
    */
-  vector<C> operator*= (long s)
-  {
-    m_x *= s;
-    m_y *= s;
-    return *this;
-  }
+  vector<C> operator*= (long s);
 
   /**
    *  @brief Division by some divisor.
    *
-   *  Scaling involves rounding which in our case is simply handled
+   *  Scaline involves rounding which in our case is simply handled
    *  with the coord_traits scheme.
    */
 
-  vector<C> &operator/= (double s)
-  {
-    double mult = 1.0 / static_cast<double>(s);
-    *this *= mult;
-    return *this;
-  }
+  vector<C> &operator/= (double s);
 
   /**
    *  @brief Dividing self by some integer divisor
    */
-  vector<C> &operator/= (long s)
-  {
-    double mult = 1.0 / static_cast<double>(s);
-    *this *= mult;
-    return *this;
-  }
+  vector<C> &operator/= (long s);
 
   /**
    *  @brief The euclidian length 
    */
-  distance_type length () const
-  {
-    double ddx (x ());
-    double ddy (y ());
-    return coord_traits::rounded_distance (sqrt (ddx * ddx + ddy * ddy));
-  }
+  distance_type length () const;
 
   /**
    *  @brief The euclidian length of the vector
    */
-  double double_length () const
-  {
-    double ddx (x ());
-    double ddy (y ());
-    return sqrt (ddx * ddx + ddy * ddy);
-  }
+  double double_length () const;
 
   /**
    *  @brief The square euclidian length of the vector
    */
-  area_type sq_length () const
-  {
-    return coord_traits::sq_length (0, 0, x (), y ());
-  }
+  area_type sq_length () const;
 
   /**
    *  @brief The square of the euclidian length of the vector
    */
-  double sq_double_length () const
+  double sq_double_length () const;
+
+  /**
+   *  @brief Default conversion to string
+   */
+  std::string to_string () const
   {
-    double ddx (x ());
-    double ddy (y ());
-    return ddx * ddx + ddy * ddy;
+    return to_string (0.0);
   }
 
   /**
@@ -438,7 +315,7 @@ public:
    *  micron units. In addition, a micron format is chosen for output of these coordinates.
    */
   std::string
-  to_string (double dbu = 0.0) const
+  to_string (double dbu) const 
   {
     if (dbu == 1.0) {
       return tl::db_to_string (m_x) + "," + tl::db_to_string (m_y);
@@ -453,12 +330,216 @@ private:
   C m_x, m_y;
 };
 
+template <class C>
+inline vector<C> &
+vector<C>::operator+= (const vector<C> &p)
+{
+  m_x += p.x ();
+  m_y += p.y ();
+  return *this;
+}
+
+template <class C>
+inline vector<C> 
+vector<C>::add (const vector<C> &p) const
+{
+  vector<C> r (*this);
+  r += p;
+  return r;
+}
+
+template <class C>
+inline vector<C> &
+vector<C>::operator-= (const vector<C> &p)
+{
+  m_x -= p.x ();
+  m_y -= p.y ();
+  return *this;
+}
+
+template <class C>
+inline vector<C> 
+vector<C>::subtract (const vector<C> &p) const
+{
+  vector<C> r (*this);
+  r -= p;
+  return r;
+}
+
+template <class C>
+inline bool
+vector<C>::operator< (const vector<C> &p) const
+{
+  return m_y < p.m_y || (m_y == p.m_y && m_x < p.m_x);
+}
+
+template <class C>
+inline bool
+vector<C>::less (const vector<C> &p) const
+{
+  if (! coord_traits::equal (y (), p.y ())) {
+    return y () < p.y ();
+  }
+  if (! coord_traits::equal (x (), p.x ())) {
+    return x () < p.x ();
+  }
+  return false;
+}
+
+template <class C>
+inline bool
+vector<C>::operator== (const vector<C> &p) const
+{
+  return m_x == p.m_x && m_y == p.m_y;
+}
+
+template <class C>
+inline bool
+vector<C>::equal (const vector<C> &p) const
+{
+  return coord_traits::equal (x (), p.x ()) && coord_traits::equal (y (), p.y ());
+}
+
+template <class C>
+inline bool
+vector<C>::operator!= (const vector<C> &p) const
+{
+  return !operator== (p);
+}
+
+template <class C> template <class Tr>
+inline vector<typename Tr::target_coord_type> 
+vector<C>::transformed (const Tr &t) const
+{
+  return t (vector<typename Tr::target_coord_type> (*this));
+}
+
+template <class C> template <class Tr>
+inline vector<C> &
+vector<C>::transform (const Tr &t)
+{
+  *this = vector<C> (t (*this));
+  return *this;
+}
+
+template <class C>
+inline C 
+vector<C>::x () const
+{
+  return m_x;
+}
+
+template <class C>
+inline C 
+vector<C>::y () const
+{
+  return m_y;
+}
+
+template <class C>
+inline void 
+vector<C>::set_x (C _x) 
+{
+  m_x = _x;
+}
+
+template <class C>
+inline void 
+vector<C>::set_y (C _y) 
+{
+  m_y = _y;
+}
+
+template <class C>
+inline vector<double>
+vector<C>::operator* (double s) const
+{
+  return vector<double> (m_x * s, m_y * s);
+}
+
+template <class C>
+inline vector<C>
+vector<C>::operator* (long s) const
+{
+  return vector<C> (m_x * s, m_y * s);
+}
+
 template <class C, typename Number>
 inline vector<C>
 operator/ (const db::vector<C> &p, Number s)
 {
   double mult = 1.0 / static_cast<double>(s);
   return vector<C> (p.x () * mult, p.y () * mult);
+}
+
+template <class C>
+inline vector<C> &
+vector<C>::operator/= (double s)
+{
+  double mult = 1.0 / static_cast<double>(s);
+  *this *= mult;
+  return *this;
+}
+
+template <class C>
+inline vector<C> &
+vector<C>::operator/= (long s)
+{
+  double mult = 1.0 / static_cast<double>(s);
+  *this *= mult;
+  return *this;
+}
+
+template <class C>
+inline vector<C> 
+vector<C>::operator*= (double s) 
+{
+  m_x = coord_traits::rounded (m_x * s);
+  m_y = coord_traits::rounded (m_y * s);
+  return *this;
+}
+
+template <class C>
+inline vector<C>
+vector<C>::operator*= (long s)
+{
+  m_x *= s;
+  m_y *= s;
+  return *this;
+}
+
+template <class C>
+inline typename vector<C>::distance_type 
+vector<C>::length () const
+{
+  double ddx (x ());
+  double ddy (y ());
+  return coord_traits::rounded_distance (sqrt (ddx * ddx + ddy * ddy));
+}
+
+template <class C>
+inline double 
+vector<C>::double_length () const
+{
+  double ddx (x ());
+  double ddy (y ());
+  return sqrt (ddx * ddx + ddy * ddy);
+}
+
+template <class C>
+inline typename vector<C>::area_type 
+vector<C>::sq_length () const
+{
+  return coord_traits::sq_length (0, 0, x (), y ());
+}
+
+template <class C>
+inline double 
+vector<C>::sq_double_length () const
+{
+  double ddx (x ());
+  double ddy (y ());
+  return ddx * ddx + ddy * ddy;
 }
 
 /**
@@ -605,6 +686,15 @@ struct from_double_vector
 
 namespace tl 
 {
+  template <class C>
+  struct type_traits <db::vector<C> > : public type_traits<void> 
+  {
+    typedef true_tag supports_extractor;
+    typedef true_tag supports_to_string;
+    typedef true_tag has_less_operator;
+    typedef true_tag has_equal_operator;
+  };
+
   template <> DB_PUBLIC void extractor_impl (tl::Extractor &ex, db::Vector &p);
   template <> DB_PUBLIC void extractor_impl (tl::Extractor &ex, db::DVector &p);
 

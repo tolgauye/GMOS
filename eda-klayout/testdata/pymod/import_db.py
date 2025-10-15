@@ -1,5 +1,5 @@
 # KLayout Layout Viewer
-# Copyright (C) 2006-2025 Matthias Koefferlein
+# Copyright (C) 2006-2019 Matthias Koefferlein
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-import testprep
+
 import klayout.db as db
 import unittest
 import sys
@@ -41,12 +41,6 @@ class BasicTest(unittest.TestCase):
     v.read(os.path.join(os.path.dirname(__file__), "..", "gds", "t10.gds"))
     self.assertEqual(v.top_cell().name, "RINGO")
 
-  def test_4(self):
-    # gds2_text plugin loaded? (issue #1393)
-    v = db.Layout()
-    v.read(os.path.join(os.path.dirname(__file__), "..", "gds2_txt", "read.txt"))
-    self.assertEqual(v.top_cell().name, "RINGO")
-
 # run unit tests
 if __name__ == '__main__':
   suite = unittest.TestSuite()
@@ -54,3 +48,5 @@ if __name__ == '__main__':
 
   if not unittest.TextTestRunner(verbosity = 1).run(suite).wasSuccessful():
     sys.exit(1)
+
+

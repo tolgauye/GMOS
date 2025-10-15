@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -23,13 +23,11 @@
 
 
 #include "gsiDecl.h"
-#include "gsiEnums.h"
 #include "dbLayout.h"
 #include "dbLibrary.h"
 #include "dbPCellDeclaration.h"
 #include "dbLibrary.h"
 #include "dbLibraryManager.h"
-#include "tlLog.h"
 
 namespace gsi
 {
@@ -38,21 +36,16 @@ namespace gsi
 //  db::Library binding
 
 /**
- *  @brief A basic implementation of the library
+ *  @brief A basic implementation of the library 
  */
 static db::Library *new_lib ()
 {
   return new db::Library ();
 }
 
-static db::Library *library_by_name (const std::string &name, const std::string &for_technology)
+static db::Library *library_by_name (const std::string &name)
 {
-  return db::LibraryManager::instance ().lib_ptr_by_name (name, for_technology);
-}
-
-static db::Library *library_by_id (db::lib_id_type id)
-{
-  return db::LibraryManager::instance ().lib (id);
+  return db::LibraryManager::instance ().lib_ptr_by_name (name);
 }
 
 static std::vector<std::string> library_names ()
@@ -60,15 +53,6 @@ static std::vector<std::string> library_names ()
   std::vector<std::string> r;
   for (db::LibraryManager::iterator l = db::LibraryManager::instance ().begin (); l != db::LibraryManager::instance ().end (); ++l) {
     r.push_back (l->first);
-  }
-  return r;
-}
-
-static std::vector<db::lib_id_type> library_ids ()
-{
-  std::vector<db::lib_id_type> r;
-  for (db::LibraryManager::iterator l = db::LibraryManager::instance ().begin (); l != db::LibraryManager::instance ().end (); ++l) {
-    r.push_back (l->second);
   }
   return r;
 }
@@ -84,87 +68,28 @@ static void delete_lib (db::Library *lib)
   db::LibraryManager::instance ().delete_lib (lib);
 }
 
-static std::string get_technology (db::Library *lib)
-{
-  const std::set<std::string> &techs = lib->get_technologies ();
-  if (techs.empty ()) {
-    return std::string ();
-  } else {
-    return *techs.begin ();
-  }
-}
-
-static void destroy_lib (db::Library *lib)
-{
-  if (db::LibraryManager::instance ().lib_ptr_by_name (lib->get_name ()) == lib) {
-    //  Library is registered -> do not delete
-  } else {
-    delete lib;
-  }
-}
-
-namespace {
-
-class LibraryClass
-  : public Class<db::Library>
-{
-public:
-  LibraryClass (const char *module, const char *name, const gsi::Methods &methods, const char *description)
-    : Class<db::Library> (module, name, methods, description)
-  { }
-
-  virtual void destroy (void *p) const
-  {
-    db::Library *lib = reinterpret_cast<db::Library *> (p);
-    destroy_lib (lib);
-  }
-};
-
-}
-
-LibraryClass decl_Library ("db", "Library",
+Class<db::Library> decl_Library ("db", "Library",
   gsi::constructor ("new", &new_lib,
     "@brief Creates a new, empty library"
   ) +
-  gsi::method ("library_by_name", &library_by_name, gsi::arg ("name"), gsi::arg ("for_technology", std::string (), "unspecific"),
+  gsi::method ("library_by_name", &library_by_name,
     "@brief Gets a library by name\n"
+    "@args name\n"
     "Returns the library object for the given name. If the name is not a valid\n"
     "library name, nil is returned.\n"
-    "\n"
-    "Different libraries can be registered under the same names for different technologies. When a technology name is given in 'for_technologies', "
-    "the first library matching this technology is returned. If no technology is given, the first library is returned.\n"
-    "\n"
-    "The technology selector has been introduced in version 0.27."
-  ) +
-  gsi::method ("library_by_id", &library_by_id, gsi::arg ("id"),
-    "@brief Gets the library object for the given ID\n"
-    "If the ID is not valid, nil is returned.\n"
-    "\n"
-    "This method has been introduced in version 0.27."
   ) +
   gsi::method ("library_names", &library_names,
     "@brief Returns a list of the names of all libraries registered in the system.\n"
-    "\n"
-    "NOTE: starting with version 0.27, the name of a library does not need to be unique if libraries are associated with specific technologies. "
-    "This method will only return the names and it's not possible not unambiguously derive the library object. It is recommended to use "
-    "\\library_ids and \\library_by_id to obtain the library unambiguously."
   ) +
-  gsi::method ("library_ids", &library_ids,
-    "@brief Returns a list of valid library IDs.\n"
-    "See \\library_names for the reasoning behind this method."
-    "\n"
-    "This method has been introduced in version 0.27."
-  ) +
-  gsi::method_ext ("register", &register_lib, gsi::arg ("name"),
+  gsi::method_ext ("register", &register_lib,
     "@brief Registers the library with the given name\n"
+    "@args name\n"
     "\n"
     "This method can be called in the constructor to register the library after \n"
     "the layout object has been filled with content. If a library with that name\n"
-    "already exists for the same technologies, it will be replaced with this library. \n"
+    "already exists, it will be replaced with this library. \n"
     "\n"
     "This method will set the libraries' name.\n"
-    "\n"
-    "The technology specific behaviour has been introduced in version 0.27."
   ) +
   gsi::method_ext ("delete", &delete_lib,
     "@brief Deletes the library\n"
@@ -174,74 +99,40 @@ LibraryClass decl_Library ("db", "Library",
     "\n"
     "This method has been introduced in version 0.25.\n"
   ) +
-  gsi::method ("name", &db::Library::get_name,
+  gsi::method ("name", &db::Library::get_name, 
     "@brief Returns the libraries' name\n"
     "The name is set when the library is registered and cannot be changed\n"
   ) +
-  gsi::method ("id", &db::Library::get_id,
+  gsi::method ("id", &db::Library::get_id, 
     "@brief Returns the library's ID\n"
     "The ID is set when the library is registered and cannot be changed \n"
   ) +
-  gsi::method ("description", &db::Library::get_description,
+  gsi::method ("description", &db::Library::get_description, 
     "@brief Returns the libraries' description text\n"
   ) +
-  gsi::method ("description=", &db::Library::set_description, gsi::arg ("description"),
+  gsi::method ("description=", &db::Library::set_description,
     "@brief Sets the libraries' description text\n"
+    "@args description\n"
   ) +
-  gsi::method_ext ("#technology", &get_technology,
+  gsi::method ("technology", &db::Library::get_technology,
     "@brief Returns name of the technology the library is associated with\n"
     "If this attribute is a non-empty string, this library is only offered for "
     "selection if the current layout uses this technology.\n"
     "\n"
-    "This attribute has been introduced in version 0.25. In version 0.27 this attribute is deprecated as "
-    "a library can now be associated with multiple technologies."
+    "This attribute has been introduced in version 0.25."
   ) +
-  gsi::method ("technology=", &db::Library::set_technology, gsi::arg ("technology"),
+  gsi::method ("technology=", &db::Library::set_technology,
     "@brief sets the name of the technology the library is associated with\n"
+    "@args technology\n"
     "\n"
     "See \\technology for details. "
-    "This attribute has been introduced in version 0.25. In version 0.27, a library can be associated with "
-    "multiple technologies and this method will revert the selection to a single one. Passing an empty string "
-    "is equivalent to \\clear_technologies."
-  ) +
-  gsi::method ("clear_technologies", &db::Library::clear_technologies,
-    "@brief Clears the list of technologies the library is associated with.\n"
-    "See also \\add_technology.\n"
-    "\n"
-    "This method has been introduced in version 0.27"
-  ) +
-  gsi::method ("add_technology", &db::Library::add_technology, gsi::arg ("tech"),
-    "@brief Additionally associates the library with the given technology.\n"
-    "See also \\clear_technologies.\n"
-    "\n"
-    "This method has been introduced in version 0.27"
-  ) +
-  gsi::method ("is_for_technology", &db::Library::is_for_technology, gsi::arg ("tech"),
-    "@brief Returns a value indicating whether the library is associated with the given technology.\n"
-    "The method is equivalent to checking whether the \\technologies list is empty.\n"
-    "\n"
-    "This method has been introduced in version 0.27"
-  ) +
-  gsi::method ("for_technologies", &db::Library::for_technologies,
-    "@brief Returns a value indicating whether the library is associated with any technology.\n"
-    "This method has been introduced in version 0.27"
-  ) +
-  gsi::method ("technologies", &db::Library::get_technologies,
-    "@brief Gets the list of technologies this library is associated with.\n"
-    "This method has been introduced in version 0.27"
+    "This attribute has been introduced in version 0.25."
   ) +
   gsi::method ("layout_const", (const db::Layout &(db::Library::*)() const) &db::Library::layout,
     "@brief The layout object where the cells reside that this library defines (const version)\n"
   ) +
-  gsi::method ("layout", (db::Layout &(db::Library::*)()) &db::Library::layout,
+  gsi::method ("layout", (db::Layout &(db::Library::*)()) &db::Library::layout, 
     "@brief The layout object where the cells reside that this library defines\n"
-  ) +
-  gsi::method ("refresh", &db::Library::refresh,
-    "@brief Updates all layouts using this library.\n"
-    "This method will retire cells or update layouts in the attached clients.\n"
-    "It will also recompute the PCells inside the library. "
-    "\n"
-    "This method has been introduced in version 0.27.8."
   ),
   "@brief A Library \n"
   "\n"
@@ -264,7 +155,7 @@ static std::vector<db::LayerProperties> get_layer_declarations_native (const db:
   std::vector<db::PCellLayerDeclaration> lp = pd->db::PCellDeclaration::get_layer_declarations (parameters);
   std::vector<db::LayerProperties> ret;
   for (std::vector<db::PCellLayerDeclaration>::const_iterator l = lp.begin (); l != lp.end (); ++l) {
-    ret.push_back (db::LayerProperties (*l));
+    ret.push_back (db::LayerProperties(*l));
   }
   return ret;
 }
@@ -278,22 +169,14 @@ static db::pcell_parameters_type coerce_parameters_native (const db::PCellDeclar
 
 //  Provide a binding for db::PCellDeclaration for native PCell implementations
 Class<db::PCellDeclaration> decl_PCellDeclaration_Native ("db", "PCellDeclaration_Native",
-  gsi::method_ext ("get_layers", &get_layer_declarations_native, gsi::arg ("parameters")) +
+  gsi::method_ext ("get_layers", &get_layer_declarations_native) +
   gsi::method ("get_parameters", &db::PCellDeclaration::get_parameter_declarations) +
-  gsi::method ("produce", &db::PCellDeclaration::produce, gsi::arg ("layout"), gsi::arg ("layers"), gsi::arg ("parameters"), gsi::arg ("cell")) +
-  gsi::method ("callback", &db::PCellDeclaration::callback, gsi::arg ("layout"), gsi::arg ("name"), gsi::arg ("states")) +
-  gsi::method_ext ("coerce_parameters", &coerce_parameters_native, gsi::arg ("layout"), gsi::arg ("parameters")) +
-  gsi::method ("can_create_from_shape", &db::PCellDeclaration::can_create_from_shape, gsi::arg ("layout"), gsi::arg ("shape"), gsi::arg ("layer")) +
-  gsi::method ("parameters_from_shape", &db::PCellDeclaration::parameters_from_shape, gsi::arg ("layout"), gsi::arg ("shape"), gsi::arg ("layer")) +
-  gsi::method ("transformation_from_shape", &db::PCellDeclaration::transformation_from_shape, gsi::arg ("layout"), gsi::arg ("shape"), gsi::arg ("layer")) +
-  gsi::method ("wants_lazy_evaluation", &db::PCellDeclaration::wants_lazy_evaluation) +
-  gsi::method ("via_types", &db::PCellDeclaration::via_types) +
-  gsi::method ("description", &db::PCellDeclaration::get_description) +
-  gsi::method ("display_text", &db::PCellDeclaration::get_display_name, gsi::arg ("parameters")) +
-  gsi::method ("layout", &db::PCellDeclaration::layout,
-    "@brief Gets the Layout object the PCell is registered in or nil if it is not registered yet.\n"
-    "This attribute has been added in version 0.27.5."
-  ) +
+  gsi::method ("produce", &db::PCellDeclaration::produce) +
+  gsi::method_ext ("coerce_parameters", &coerce_parameters_native) +
+  gsi::method ("can_create_from_shape", &db::PCellDeclaration::can_create_from_shape) +
+  gsi::method ("parameters_from_shape", &db::PCellDeclaration::parameters_from_shape) +
+  gsi::method ("transformation_from_shape", &db::PCellDeclaration::transformation_from_shape) +
+  gsi::method ("display_text", &db::PCellDeclaration::get_display_name) +
   gsi::method ("id", &db::PCellDeclaration::id,
     "@brief Gets the integer ID of the PCell declaration\n"
     "This ID is used to identify the PCell in the context of a Layout object for example"
@@ -304,102 +187,11 @@ Class<db::PCellDeclaration> decl_PCellDeclaration_Native ("db", "PCellDeclaratio
   "@hide\n@alias PCellDeclaration\n"
 );
 
-//  Provide a binding for db::ParameterState for native PCell implementations
-Class<db::ParameterState> decl_PCellParameterState ("db", "PCellParameterState",
-  gsi::method("value=", &db::ParameterState::set_value, gsi::arg ("v"),
-    "@brief Sets the value of the parameter\n"
-  ) +
-  gsi::method("value", &db::ParameterState::value,
-    "@brief Gets the value of the parameter\n"
-  ) +
-  gsi::method("visible=", &db::ParameterState::set_visible, gsi::arg ("f"),
-    "@brief Sets a value indicating whether the parameter is visible in the parameter form\n"
-  ) +
-  gsi::method("is_visible?", &db::ParameterState::is_visible,
-    "@brief Gets a value indicating whether the parameter is visible in the parameter form\n"
-  ) +
-  gsi::method("enabled=", &db::ParameterState::set_enabled, gsi::arg ("f"),
-    "@brief Sets a value indicating whether the parameter is enabled in the parameter form\n"
-  ) +
-  gsi::method("is_enabled?", &db::ParameterState::is_enabled,
-    "@brief Gets a value indicating whether the parameter is enabled in the parameter form\n"
-  ) +
-  gsi::method("readonly=", &db::ParameterState::set_readonly, gsi::arg ("f"),
-    "@brief Sets a value indicating whether the parameter is made read-only (not editable) in the parameter form\n"
-  ) +
-  gsi::method("is_readonly?", &db::ParameterState::is_readonly,
-    "@brief Gets a value indicating whether the parameter is read-only (not editable) in the parameter form\n"
-  ) +
-  gsi::method("tooltip=", &db::ParameterState::set_tooltip, gsi::arg ("s"),
-    "@brief Sets the tool tip text\n"
-    "\n"
-    "The tool tip is shown when hovering over the parameter label or edit field."
-  ) +
-  gsi::method("tooltip", &db::ParameterState::tooltip,
-    "@brief Gets the tool tip text\n"
-  ) +
-  gsi::method("icon=", &db::ParameterState::set_icon, gsi::arg ("i"),
-    "@brief Sets the icon for the parameter\n"
-  ) +
-  gsi::method("icon", &db::ParameterState::icon,
-    "@brief Gets the icon for the parameter\n"
-  ),
-  "@brief Provides access to the attributes of a single parameter within \\PCellParameterStates.\n"
-  "\n"
-  "See \\PCellParameterStates for details about this feature.\n"
-  "\n"
-  "This class has been introduced in version 0.28."
-);
-
-gsi::EnumIn<db::ParameterState, db::ParameterState::Icon> decl_PCellParameterState_Icon ("db", "ParameterStateIcon",
-  gsi::enum_const ("NoIcon", db::ParameterState::NoIcon,
-    "@brief No icon is shown for the parameter\n"
-  ) +
-  gsi::enum_const ("InfoIcon", db::ParameterState::InfoIcon,
-    "@brief A general 'information' icon is shown\n"
-  ) +
-  gsi::enum_const ("ErrorIcon", db::ParameterState::ErrorIcon,
-    "@brief An icon indicating an error is shown\n"
-  ) +
-  gsi::enum_const ("WarningIcon", db::ParameterState::WarningIcon,
-    "@brief An icon indicating a warning is shown\n"
-  ),
-  "@brief This enum specifies the icon shown next to the parameter in PCell parameter list.\n"
-  "\n"
-  "This enum was introduced in version 0.28.\n"
-);
-
-//  Inject the NetlistCrossReference::Status declarations into NetlistCrossReference:
-gsi::ClassExt<db::ParameterState> inject_PCellParameterState_Icon_in_parent (decl_PCellParameterState_Icon.defs ());
-
-//  Provide a binding for db::ParameterStates for native PCell implementations
-Class<db::ParameterStates> decl_PCellParameterStates ("db", "PCellParameterStates",
-  gsi::method ("has_parameter?", &db::ParameterStates::has_parameter, gsi::arg ("name"),
-    "@brief Gets a value indicating whether a parameter with that name exists\n"
-  ) +
-  gsi::method ("parameter", static_cast<db::ParameterState & (db::ParameterStates::*) (const std::string &name)> (&db::ParameterStates::parameter), gsi::arg ("name"),
-    "@brief Gets the parameter by name\n"
-    "\n"
-    "This will return a \\PCellParameterState object that can be used to manipulate the "
-    "parameter state."
-  ),
-  "@brief Provides access to the parameter states inside a 'callback' implementation of a PCell\n"
-  "\n"
-  "Example: enables or disables a parameter 'n' based on the value:\n"
-  "\n"
-  "@code\n"
-  "n_param = states.parameter(\"n\")\n"
-  "n_param.enabled = n_param.value > 1.0\n"
-  "@/code\n"
-  "\n"
-  "This class has been introduced in version 0.28."
-);
-
 class PCellDeclarationImpl
   : public db::PCellDeclaration
 {
 public:
-  //  dummy implementation to provide the signature
+  //  dummy implementation to provide the signature 
   virtual std::vector<db::LayerProperties> get_layer_declarations_impl (const db::pcell_parameters_type &) const
   {
     return std::vector<db::LayerProperties> ();
@@ -436,7 +228,7 @@ public:
     }
   }
 
-  //  dummy implementation to provide the signature
+  //  dummy implementation to provide the signature 
   virtual db::pcell_parameters_type coerce_parameters_impl (const db::Layout & /*layout*/, const db::pcell_parameters_type &input) const
   {
     return input;
@@ -452,20 +244,6 @@ public:
     }
     if (! output.empty ()) {
       parameters = output;
-    }
-  }
-
-  virtual void callback_fb (const db::Layout &layout, const std::string &name, db::ParameterStates &states) const
-  {
-    db::PCellDeclaration::callback (layout, name, states);
-  }
-
-  virtual void callback (const db::Layout &layout, const std::string &name, db::ParameterStates &states) const
-  {
-    if (cb_callback.can_issue ()) {
-      cb_callback.issue<db::PCellDeclaration, const db::Layout &, const std::string &, db::ParameterStates &> (&db::PCellDeclaration::callback, layout, name, states);
-    } else {
-      db::PCellDeclaration::callback (layout, name, states);
     }
   }
 
@@ -525,48 +303,6 @@ public:
     }
   }
 
-  bool wants_lazy_evaluation_fb () const
-  {
-    return db::PCellDeclaration::wants_lazy_evaluation ();
-  }
-
-  virtual bool wants_lazy_evaluation () const
-  {
-    if (cb_wants_lazy_evaluation.can_issue ()) {
-      return cb_wants_lazy_evaluation.issue<db::PCellDeclaration, bool> (&db::PCellDeclaration::wants_lazy_evaluation);
-    } else {
-      return db::PCellDeclaration::wants_lazy_evaluation ();
-    }
-  }
-
-  std::string get_description_fb () const
-  {
-    return db::PCellDeclaration::get_description ();
-  }
-
-  virtual std::string get_description () const
-  {
-    if (cb_get_description.can_issue ()) {
-      return cb_get_description.issue<db::PCellDeclaration, std::string> (&db::PCellDeclaration::get_description);
-    } else {
-      return db::PCellDeclaration::get_description ();
-    }
-  }
-
-  std::vector<db::ViaType> via_types_fb () const
-  {
-    return db::PCellDeclaration::via_types ();
-  }
-
-  virtual std::vector<db::ViaType> via_types () const
-  {
-    if (cb_via_types.can_issue ()) {
-      return cb_via_types.issue<db::PCellDeclaration, std::vector<db::ViaType>> (&db::PCellDeclaration::via_types);
-    } else {
-      return db::PCellDeclaration::via_types ();
-    }
-  }
-
   std::string get_display_name_fb (const db::pcell_parameters_type &parameters) const
   {
     return db::PCellDeclaration::get_display_name (parameters);
@@ -587,28 +323,21 @@ public:
   gsi::Callback cb_can_create_from_shape;
   gsi::Callback cb_parameters_from_shape;
   gsi::Callback cb_transformation_from_shape;
-  gsi::Callback cb_wants_lazy_evaluation;
   gsi::Callback cb_coerce_parameters;
-  gsi::Callback cb_callback;
   gsi::Callback cb_get_display_name;
-  gsi::Callback cb_get_description;
-  gsi::Callback cb_via_types;
 };
 
 Class<PCellDeclarationImpl> decl_PCellDeclaration (decl_PCellDeclaration_Native, "db", "PCellDeclaration",
   //  fallback implementations to reroute Ruby calls to the base class:
   gsi::method ("get_parameters", &PCellDeclarationImpl::get_parameter_declarations_fb, "@hide") +
   gsi::method ("produce", &PCellDeclarationImpl::produce_fb, "@hide") +
-  gsi::method ("callback", &PCellDeclarationImpl::callback_fb, "@hide") +
   gsi::method ("can_create_from_shape", &PCellDeclarationImpl::can_create_from_shape_fb, "@hide") +
   gsi::method ("parameters_from_shape", &PCellDeclarationImpl::parameters_from_shape_fb, "@hide") +
   gsi::method ("transformation_from_shape", &PCellDeclarationImpl::transformation_from_shape_fb, "@hide") +
   gsi::method ("display_text", &PCellDeclarationImpl::get_display_name_fb, "@hide") +
-  gsi::method ("wants_lazy_evaluation", &PCellDeclarationImpl::wants_lazy_evaluation_fb, "@hide") +
-  gsi::method ("description", &PCellDeclarationImpl::get_description_fb, "@hide") +
-  gsi::method ("via_types", &PCellDeclarationImpl::via_types_fb, "@hide") +
-  gsi::callback ("get_layers", &PCellDeclarationImpl::get_layer_declarations_impl, &PCellDeclarationImpl::cb_get_layer_declarations, gsi::arg ("parameters"),
+  gsi::callback ("get_layers", &PCellDeclarationImpl::get_layer_declarations_impl, &PCellDeclarationImpl::cb_get_layer_declarations, 
     "@brief Returns a list of layer declarations\n"
+    "@args parameters\n"
     "Reimplement this method to return a list of layers this PCell wants to create.\n"
     "The layer declarations are returned as a list of LayerInfo objects which are\n"
     "used as match expressions to look up the layer in the actual layout.\n"
@@ -616,15 +345,16 @@ Class<PCellDeclarationImpl> decl_PCellDeclaration (decl_PCellDeclaration_Native,
     "This method receives the PCell parameters which allows it to deduce layers\n"
     "from the parameters."
   ) +
-  gsi::callback ("get_parameters", &PCellDeclarationImpl::get_parameter_declarations, &PCellDeclarationImpl::cb_get_parameter_declarations,
+  gsi::callback ("get_parameters", &PCellDeclarationImpl::get_parameter_declarations, &PCellDeclarationImpl::cb_get_parameter_declarations, 
     "@brief Returns a list of parameter declarations\n"
     "Reimplement this method to return a list of parameters used in that PCell \n"
     "implementation. A parameter declaration is a PCellParameterDeclaration object\n"
     "and defines the parameter name, type, description text and possible choices for\n"
     "the parameter value.\n"
   ) +
-  gsi::callback ("coerce_parameters", &PCellDeclarationImpl::coerce_parameters_impl, &PCellDeclarationImpl::cb_coerce_parameters, gsi::arg ("layout"), gsi::arg ("input"),
+  gsi::callback ("coerce_parameters", &PCellDeclarationImpl::coerce_parameters_impl, &PCellDeclarationImpl::cb_coerce_parameters, 
     "@brief Modifies the parameters to match the requirements\n"
+    "@args layout, input\n"
     "@param layout The layout object in which the PCell will be produced\n"
     "@param input The parameters before the modification\n"
     "@return The modified parameters or an empty array, indicating that no modification was done\n"
@@ -637,27 +367,9 @@ Class<PCellDeclarationImpl> decl_PCellDeclaration (decl_PCellDeclaration_Native,
     "\n"
     "It can raise an exception to indicate that something is not correct.\n"
   ) +
-  gsi::callback ("callback", &PCellDeclarationImpl::callback, &PCellDeclarationImpl::cb_callback, gsi::arg ("layout"), gsi::arg ("name"), gsi::arg ("states"),
-    "@brief Indicates a parameter change and allows implementing actions based on the parameter value\n"
-    "@param layout The layout object in which the PCell will be produced\n"
-    "@param name The name of the parameter which has changed or an empty string if all parameters need to be considered\n"
-    "@param states A \\PCellParameterStates object which can be used to manipulate the parameter states\n"
-    "This method may be reimplemented to implement parameter-specific actions upon value change or button callbacks. "
-    "Whenever the value of a parameter is changed in the PCell parameter form, this method is called with the name of the parameter "
-    "in 'name'. The implementation can manipulate values or states (enabled, visible) or parameters using the "
-    "\\PCellParameterStates object passed in 'states'.\n"
-    "\n"
-    "Initially, this method will be called with an empty parameter name to indicate a global change. The implementation "
-    "may then consolidate all states. The initial state is build from the 'readonly' (disabled) or 'hidden' (invisible) parameter "
-    "declarations.\n"
-    "\n"
-    "This method is also called when a button-type parameter is present and the button is pressed. In this case the parameter "
-    "name is the name of the button.\n"
-    "\n"
-    "This feature has been introduced in version 0.28."
-  ) +
-  gsi::callback ("produce", &PCellDeclarationImpl::produce, &PCellDeclarationImpl::cb_produce, gsi::arg ("layout"), gsi::arg ("layer_ids"), gsi::arg ("parameters"), gsi::arg ("cell"),
+  gsi::callback ("produce", &PCellDeclarationImpl::produce, &PCellDeclarationImpl::cb_produce, 
     "@brief The production callback\n"
+    "@args layout, layer_ids, parameters, cell\n"
     "@param layout The layout object where the cell resides\n"
     "@param layer_ids A list of layer ID's which correspond to the layers declared with get_layers\n"
     "@param parameters A list of parameter values which correspond to the parameters declared with get_parameters\n"
@@ -666,8 +378,9 @@ Class<PCellDeclarationImpl> decl_PCellDeclaration (decl_PCellDeclaration_Native,
     "The code is supposed to create the layout in the target cell using the provided \n"
     "parameters and the layers passed in the layer_ids list.\n"
   ) +
-  gsi::callback ("can_create_from_shape", &PCellDeclarationImpl::can_create_from_shape, &PCellDeclarationImpl::cb_can_create_from_shape, gsi::arg ("layout"), gsi::arg ("shape"), gsi::arg ("layer"),
+  gsi::callback ("can_create_from_shape", &PCellDeclarationImpl::can_create_from_shape, &PCellDeclarationImpl::cb_can_create_from_shape,
     "@brief Returns true, if the PCell can be created from the given shape\n"
+    "@args layout,shape,layer\n"
     "@param layout The layout the shape lives in\n"
     "@param shape The shape from which a PCell shall be created\n"
     "@param layer The layer index (in layout) of the shape\n"
@@ -676,8 +389,9 @@ Class<PCellDeclarationImpl> decl_PCellDeclaration (decl_PCellDeclaration_Native,
     "\\parameters_from_shape and \\transformation_from_shape to derive the parameters and instance "
     "transformation for the new PCell instance that will replace the shape.\n"
   ) +
-  gsi::callback ("parameters_from_shape", &PCellDeclarationImpl::parameters_from_shape, &PCellDeclarationImpl::cb_parameters_from_shape, gsi::arg ("layout"), gsi::arg ("shape"), gsi::arg ("layer"),
+  gsi::callback ("parameters_from_shape", &PCellDeclarationImpl::parameters_from_shape, &PCellDeclarationImpl::cb_parameters_from_shape,
     "@brief Gets the parameters for the PCell which can replace the given shape\n"
+    "@args layout,shape,layer\n"
     "@param layout The layout the shape lives in\n"
     "@param shape The shape from which a PCell shall be created\n"
     "@param layer The layer index (in layout) of the shape\n"
@@ -685,8 +399,9 @@ Class<PCellDeclarationImpl> decl_PCellDeclaration (decl_PCellDeclaration_Native,
     "it will use this method to derive the parameters for the PCell instance that will replace the shape. "
     "See also \\transformation_from_shape and \\can_create_from_shape."
   ) +
-  gsi::callback ("transformation_from_shape", &PCellDeclarationImpl::transformation_from_shape, &PCellDeclarationImpl::cb_transformation_from_shape, gsi::arg ("layout"), gsi::arg ("shape"), gsi::arg ("layer"),
+  gsi::callback ("transformation_from_shape", &PCellDeclarationImpl::transformation_from_shape, &PCellDeclarationImpl::cb_transformation_from_shape,
     "@brief Gets the instance transformation for the PCell which can replace the given shape\n"
+    "@args layout,shape,layer\n"
     "@param layout The layout the shape lives in\n"
     "@param shape The shape from which a PCell shall be created\n"
     "@param layer The layer index (in layout) of the shape\n"
@@ -694,41 +409,9 @@ Class<PCellDeclarationImpl> decl_PCellDeclaration (decl_PCellDeclaration_Native,
     "it will use this method to derive the transformation for the PCell instance that will replace the shape. "
     "See also \\parameters_from_shape and \\can_create_from_shape."
   ) +
-  gsi::callback ("wants_lazy_evaluation", &PCellDeclarationImpl::wants_lazy_evaluation, &PCellDeclarationImpl::cb_wants_lazy_evaluation,
-    "@brief Gets a value indicating whether the PCell wants lazy evaluation\n"
-    "In lazy evaluation mode, the PCell UI will not immediately update the layout when a parameter is changed. "
-    "Instead, the user has to commit the changes in order to have the parameters updated. This is "
-    "useful for PCells that take a long time to compute.\n"
-    "\n"
-    "The default implementation will return 'false' indicating immediate updates.\n"
-    "\n"
-    "This method has been added in version 0.27.6.\n"
-  ) +
-  gsi::callback ("description", &PCellDeclarationImpl::get_description, &PCellDeclarationImpl::cb_get_description,
-    "@brief Gets the PCell description\n"
-    "The description string is a text that gives a human-readable description of the PCell. By default, the "
-    "PCell name is used for the description.\n"
-    "\n"
-    "This method has been added in version 0.30.4.\n"
-  ) +
-  gsi::callback ("via_types", &PCellDeclarationImpl::via_types, &PCellDeclarationImpl::cb_via_types,
-    "@brief Gets the via types the PCell supports - if it is a via PCell\n"
-    "If the returned list is non-empty, the PCell may be used as a via PCell. This method is supposed "
-    "to deliver a list of via types the PCell supports. If the PCell supports vias, it is expected to "
-    "accept the following parameters:\n"
-    "\n"
-    "@ul\n"
-    "@li 'via' (string): the name of the via type requested @/li\n"
-    "@li 'w_bottom' (float): the bottom wire width in um or 0 if not specified @/li\n"
-    "@li 'h_bottom' (float): the bottom wire height in um or 0 if not specified @/li\n"
-    "@li 'w_top' (float): the top wire width in um or 0 if not specified @/li\n"
-    "@li 'h_top' (float): the top wire height in um or 0 if not specified @/li\n"
-    "@/ul\n"
-    "\n"
-    "This method has been added in version 0.30.4.\n"
-  ) +
-  gsi::callback ("display_text", &PCellDeclarationImpl::get_display_name, &PCellDeclarationImpl::cb_get_display_name, gsi::arg ("parameters"),
+  gsi::callback ("display_text", &PCellDeclarationImpl::get_display_name, &PCellDeclarationImpl::cb_get_display_name, 
     "@brief Returns the display text for this PCell given a certain parameter set\n"
+    "@args parameters\n"
     "Reimplement this method to create a distinct display text for a PCell variant with \n"
     "the given parameter set. If this method is not implemented, a default text is created. \n"
   ),
@@ -759,23 +442,23 @@ Class<PCellDeclarationImpl> decl_PCellDeclaration (decl_PCellDeclaration_Native,
 // ---------------------------------------------------------------
 //  db::PCellParameterDeclaration binding
 
-static unsigned int get_type (const db::PCellParameterDeclaration *pd)
+unsigned int get_type (const db::PCellParameterDeclaration *pd)
 {
   return (unsigned int) pd->get_type ();
 }
 
-static void set_type (db::PCellParameterDeclaration *pd, unsigned int t)
+void set_type (db::PCellParameterDeclaration *pd, unsigned int t)
 {
   pd->set_type (db::PCellParameterDeclaration::type (t));
 }
 
-static void clear_choices (db::PCellParameterDeclaration *pd)
+void clear_choices (db::PCellParameterDeclaration *pd)
 {
   pd->set_choices (std::vector<tl::Variant> ());
   pd->set_choice_descriptions (std::vector<std::string> ());
 }
 
-static void add_choice (db::PCellParameterDeclaration *pd, const std::string &d, const tl::Variant &v)
+void add_choice (db::PCellParameterDeclaration *pd, const std::string &d, const tl::Variant &v)
 {
   std::vector<tl::Variant> vv = pd->get_choices ();
   std::vector<std::string> dd = pd->get_choice_descriptions ();
@@ -820,17 +503,31 @@ static unsigned int pd_type_list ()
   return (unsigned int) db::PCellParameterDeclaration::t_list;
 }
 
-static unsigned int pd_type_callback ()
-{
-  return (unsigned int) db::PCellParameterDeclaration::t_callback;
-}
-
 static unsigned int pd_type_none ()
 {
   return (unsigned int) db::PCellParameterDeclaration::t_none;
 }
 
-db::PCellParameterDeclaration *ctor_pcell_parameter (const std::string &name, unsigned int type, const std::string &description, const tl::Variant &def, const std::string &unit)
+db::PCellParameterDeclaration *ctor_pcell_parameter (const std::string &name, unsigned int type, const std::string &description)
+{
+  db::PCellParameterDeclaration *pd = new db::PCellParameterDeclaration ();
+  pd->set_name (name);
+  pd->set_type (db::PCellParameterDeclaration::type (type));
+  pd->set_description (description);
+  return pd;
+}
+
+db::PCellParameterDeclaration *ctor_pcell_parameter_2 (const std::string &name, unsigned int type, const std::string &description, const tl::Variant &def)
+{
+  db::PCellParameterDeclaration *pd = new db::PCellParameterDeclaration ();
+  pd->set_name (name);
+  pd->set_type (db::PCellParameterDeclaration::type (type));
+  pd->set_description (description);
+  pd->set_default (def);
+  return pd;
+}
+
+db::PCellParameterDeclaration *ctor_pcell_parameter_3 (const std::string &name, unsigned int type, const std::string &description, const tl::Variant &def, const std::string &unit)
 {
   db::PCellParameterDeclaration *pd = new db::PCellParameterDeclaration ();
   pd->set_name (name);
@@ -842,122 +539,100 @@ db::PCellParameterDeclaration *ctor_pcell_parameter (const std::string &name, un
 }
 
 Class<db::PCellParameterDeclaration> decl_PCellParameterDeclaration ("db", "PCellParameterDeclaration",
-  gsi::constructor ("new", &ctor_pcell_parameter, gsi::arg ("name"), gsi::arg ("type"), gsi::arg ("description"), gsi::arg ("default", tl::Variant (), "nil"), gsi::arg ("unit", std::string ()),
+  gsi::constructor ("new", &ctor_pcell_parameter, 
+    "@brief Create a new parameter declaration with the given name and type\n"
+    "@args name, type, description\n"
+    "@param name The parameter name\n"
+    "@param type One of the Type... constants describing the type of the parameter\n"
+    "@param description The description text\n"
+  ) +
+  gsi::constructor ("new", &ctor_pcell_parameter_2, 
+    "@brief Create a new parameter declaration with the given name, type and default value\n"
+    "@args name, type, description, default\n"
+    "@param name The parameter name\n"
+    "@param type One of the Type... constants describing the type of the parameter\n"
+    "@param description The description text\n"
+    "@param default The default (initial) value\n"
+  ) +
+  gsi::constructor ("new", &ctor_pcell_parameter_3, 
     "@brief Create a new parameter declaration with the given name, type, default value and unit string\n"
+    "@args name, type, description, default\n"
     "@param name The parameter name\n"
     "@param type One of the Type... constants describing the type of the parameter\n"
     "@param description The description text\n"
     "@param default The default (initial) value\n"
     "@param unit The unit string\n"
   ) +
-  gsi::method ("name", &db::PCellParameterDeclaration::get_name,
+  gsi::method ("name", &db::PCellParameterDeclaration::get_name, 
     "@brief Gets the name\n"
   ) +
-  gsi::method ("name=", &db::PCellParameterDeclaration::set_name, gsi::arg ("value"),
+  gsi::method ("name=", &db::PCellParameterDeclaration::set_name, 
     "@brief Sets the name\n"
+    "@args value\n"
   ) +
-  gsi::method ("unit", &db::PCellParameterDeclaration::get_unit,
+  gsi::method ("unit", &db::PCellParameterDeclaration::get_unit, 
     "@brief Gets the unit string\n"
   ) +
-  gsi::method ("unit=", &db::PCellParameterDeclaration::set_unit, gsi::arg ("unit"),
+  gsi::method ("unit=", &db::PCellParameterDeclaration::set_unit, 
     "@brief Sets the unit string\n"
     "The unit string is shown right to the edit fields for numeric parameters.\n"
+    "@args unit\n"
   ) +
-  gsi::method_ext ("type", &get_type,
+  gsi::method_ext ("type", &get_type, 
     "@brief Gets the type\n"
     "The type is one of the T... constants."
   ) +
-  gsi::method_ext ("type=", &set_type, gsi::arg ("type"),
+  gsi::method_ext ("type=", &set_type, 
     "@brief Sets the type\n"
+    "@args type\n"
   ) +
-  gsi::method ("description", &db::PCellParameterDeclaration::get_description,
+  gsi::method ("description", &db::PCellParameterDeclaration::get_description, 
     "@brief Gets the description text\n"
   ) +
-  gsi::method ("description=", &db::PCellParameterDeclaration::set_description, gsi::arg ("description"),
+  gsi::method ("description=", &db::PCellParameterDeclaration::set_description, 
     "@brief Sets the description\n"
+    "@args description\n"
   ) +
-  gsi::method ("tooltip", &db::PCellParameterDeclaration::get_tooltip,
-    "@brief Gets the tool tip text\n"
-    "This attribute has been introduced in version 0.29.3."
-  ) +
-  gsi::method ("tooltip=", &db::PCellParameterDeclaration::set_tooltip, gsi::arg ("tooltip"),
-    "@brief Sets the tool tip text\n"
-    "This attribute has been introduced in version 0.29.3."
-  ) +
-  gsi::method ("hidden?", &db::PCellParameterDeclaration::is_hidden,
+  gsi::method ("hidden?", &db::PCellParameterDeclaration::is_hidden, 
     "@brief Returns true, if the parameter is a hidden parameter that should not be shown in the user interface\n"
     "By making a parameter hidden, it is possible to create internal parameters which cannot be\n"
     "edited.\n"
   ) +
-  gsi::method ("hidden=", &db::PCellParameterDeclaration::set_hidden, gsi::arg ("flag"),
+  gsi::method ("hidden=", &db::PCellParameterDeclaration::set_hidden, 
     "@brief Makes the parameter hidden if this attribute is set to true\n"
+    "@args flag\n"
   ) +
-  gsi::method ("readonly?", &db::PCellParameterDeclaration::is_readonly,
+  gsi::method ("readonly?", &db::PCellParameterDeclaration::is_readonly, 
     "@brief Returns true, if the parameter is a read-only parameter\n"
     "By making a parameter read-only, it is shown but cannot be\n"
     "edited.\n"
   ) +
-  gsi::method ("readonly=", &db::PCellParameterDeclaration::set_readonly, gsi::arg ("flag"),
+  gsi::method ("readonly=", &db::PCellParameterDeclaration::set_readonly, 
     "@brief Makes the parameter read-only if this attribute is set to true\n"
+    "@args flag\n"
   ) +
-  gsi::method_ext ("clear_choices", &clear_choices,
+  gsi::method_ext ("clear_choices", &clear_choices, 
     "@brief Clears the list of choices\n"
   ) +
-  gsi::method_ext ("add_choice", &add_choice, gsi::arg ("description"), gsi::arg ("value"),
+  gsi::method_ext ("add_choice", &add_choice, 
     "@brief Add a new value to the list of choices\n"
+    "@args description, value\n"
     "This method will add the given value with the given description to the list of\n"
     "choices. If choices are defined, KLayout will show a drop-down box instead of an\n"
     "entry field in the parameter user interface.\n"
   ) +
-  gsi::method ("choice_values", &db::PCellParameterDeclaration::get_choices,
+  gsi::method ("choice_values", &db::PCellParameterDeclaration::get_choices, 
     "@brief Returns a list of choice values\n"
   ) +
-  gsi::method ("choice_descriptions", &db::PCellParameterDeclaration::get_choice_descriptions,
+  gsi::method ("choice_descriptions", &db::PCellParameterDeclaration::get_choice_descriptions, 
     "@brief Returns a list of choice descriptions\n"
   ) +
-  gsi::method ("min_value", &db::PCellParameterDeclaration::min_value,
-    "@brief Gets the minimum value allowed\n"
-    "See \\min_value= for a description of this attribute.\n"
-    "\n"
-    "This attribute has been added in version 0.29."
-  ) +
-  gsi::method ("min_value=", &db::PCellParameterDeclaration::set_min_value, gsi::arg ("value"),
-    "@brief Sets the minimum value allowed\n"
-    "The minimum value is a visual feature and limits the allowed values for numerical\n"
-    "entry boxes. This applies to parameters of type int or double. The minimum value\n"
-    "is not effective if choices are present.\n"
-    "\n"
-    "The minimum value is not enforced - for example there is no restriction implemented\n"
-    "when setting values programmatically.\n"
-    "\n"
-    "Setting this attribute to \"nil\" (the default) implies \"no limit\".\n"
-    "\n"
-    "This attribute has been added in version 0.29."
-  ) +
-  gsi::method ("max_value", &db::PCellParameterDeclaration::max_value,
-    "@brief Gets the maximum value allowed\n"
-    "See \\max_value= for a description of this attribute.\n"
-    "\n"
-    "This attribute has been added in version 0.29."
-  ) +
-  gsi::method ("max_value=", &db::PCellParameterDeclaration::set_max_value, gsi::arg ("value"),
-    "@brief Sets the maximum value allowed\n"
-    "The maximum value is a visual feature and limits the allowed values for numerical\n"
-    "entry boxes. This applies to parameters of type int or double. The maximum value\n"
-    "is not effective if choices are present.\n"
-    "\n"
-    "The maximum value is not enforced - for example there is no restriction implemented\n"
-    "when setting values programmatically.\n"
-    "\n"
-    "Setting this attribute to \"nil\" (the default) implies \"no limit\".\n"
-    "\n"
-    "This attribute has been added in version 0.29."
-  ) +
-  gsi::method ("default", &db::PCellParameterDeclaration::get_default,
+  gsi::method ("default", &db::PCellParameterDeclaration::get_default, 
     "@brief Gets the default value\n"
   ) +
-  gsi::method ("default=", &db::PCellParameterDeclaration::set_default, gsi::arg ("value"),
+  gsi::method ("default=", &db::PCellParameterDeclaration::set_default, 
     "@brief Sets the default value\n"
+    "@args value\n"
     "If a default value is defined, it will be used to initialize the parameter value\n"
     "when a PCell is created.\n"
   ) +
@@ -968,8 +643,7 @@ Class<db::PCellParameterDeclaration> decl_PCellParameterDeclaration ("db", "PCel
   gsi::method ("TypeList", &pd_type_list, "@brief Type code: a list of variants") +
   gsi::method ("TypeLayer", &pd_type_layer, "@brief Type code: a layer (a \\LayerInfo object)") +
   gsi::method ("TypeShape", &pd_type_shape, "@brief Type code: a guiding shape (Box, Edge, Point, Polygon or Path)") +
-  gsi::method ("TypeCallback", &pd_type_callback, "@brief Type code: a button triggering a callback\n\nThis code has been introduced in version 0.28.") +
-  gsi::method ("TypeNone", &pd_type_none, "@brief Type code: unspecific type")
+  gsi::method ("TypeNone", &pd_type_none, "@brief Type code: unspecific type") 
   ,
   "@brief A PCell parameter declaration\n"
   "\n"
@@ -982,3 +656,5 @@ Class<db::PCellParameterDeclaration> decl_PCellParameterDeclaration ("db", "PCel
 );
 
 }
+
+

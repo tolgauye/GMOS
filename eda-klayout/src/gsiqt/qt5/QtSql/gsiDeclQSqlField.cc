@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@
 #include <QSqlField>
 #include "gsiQt.h"
 #include "gsiQtSqlCommon.h"
+#include "gsiDeclQtSqlTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -54,31 +55,6 @@ static void _call_ctor_QSqlField_3693 (const qt_gsi::GenericStaticMethod * /*dec
   const QString &arg1 = args ? gsi::arg_reader<const QString & >() (args, heap) : gsi::arg_maker<const QString & >() (QString(), heap);
   const qt_gsi::Converter<QVariant::Type>::target_type & arg2 = args ? gsi::arg_reader<const qt_gsi::Converter<QVariant::Type>::target_type & >() (args, heap) : gsi::arg_maker<const qt_gsi::Converter<QVariant::Type>::target_type & >() (qt_gsi::CppToQtReadAdaptor<QVariant::Type>(heap, QVariant::Invalid), heap);
   ret.write<QSqlField *> (new QSqlField (arg1, qt_gsi::QtToCppAdaptor<QVariant::Type>(arg2).cref()));
-}
-
-
-//  Constructor QSqlField::QSqlField(const QString &fieldName, QVariant::Type type, const QString &tableName)
-
-
-static void _init_ctor_QSqlField_5610 (qt_gsi::GenericStaticMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("fieldName");
-  decl->add_arg<const QString & > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("type");
-  decl->add_arg<const qt_gsi::Converter<QVariant::Type>::target_type & > (argspec_1);
-  static gsi::ArgSpecBase argspec_2 ("tableName");
-  decl->add_arg<const QString & > (argspec_2);
-  decl->set_return_new<QSqlField> ();
-}
-
-static void _call_ctor_QSqlField_5610 (const qt_gsi::GenericStaticMethod * /*decl*/, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const QString &arg1 = gsi::arg_reader<const QString & >() (args, heap);
-  const qt_gsi::Converter<QVariant::Type>::target_type & arg2 = gsi::arg_reader<const qt_gsi::Converter<QVariant::Type>::target_type & >() (args, heap);
-  const QString &arg3 = gsi::arg_reader<const QString & >() (args, heap);
-  ret.write<QSqlField *> (new QSqlField (arg1, qt_gsi::QtToCppAdaptor<QVariant::Type>(arg2).cref(), arg3));
 }
 
 
@@ -524,26 +500,6 @@ static void _call_f_setSqlType_767 (const qt_gsi::GenericMethod * /*decl*/, void
 }
 
 
-// void QSqlField::setTableName(const QString &tableName)
-
-
-static void _init_f_setTableName_2025 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("tableName");
-  decl->add_arg<const QString & > (argspec_0);
-  decl->set_return<void > ();
-}
-
-static void _call_f_setTableName_2025 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const QString &arg1 = gsi::arg_reader<const QString & >() (args, heap);
-  __SUPPRESS_UNUSED_WARNING(ret);
-  ((QSqlField *)cls)->setTableName (arg1);
-}
-
-
 // void QSqlField::setType(QVariant::Type type)
 
 
@@ -581,21 +537,6 @@ static void _call_f_setValue_2119 (const qt_gsi::GenericMethod * /*decl*/, void 
   const QVariant &arg1 = gsi::arg_reader<const QVariant & >() (args, heap);
   __SUPPRESS_UNUSED_WARNING(ret);
   ((QSqlField *)cls)->setValue (arg1);
-}
-
-
-// QString QSqlField::tableName()
-
-
-static void _init_f_tableName_c0 (qt_gsi::GenericMethod *decl)
-{
-  decl->set_return<QString > ();
-}
-
-static void _call_f_tableName_c0 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  ret.write<QString > ((QString)((QSqlField *)cls)->tableName ());
 }
 
 
@@ -651,7 +592,6 @@ namespace gsi
 static gsi::Methods methods_QSqlField () {
   gsi::Methods methods;
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QSqlField::QSqlField(const QString &fieldName, QVariant::Type type)\nThis method creates an object of class QSqlField.", &_init_ctor_QSqlField_3693, &_call_ctor_QSqlField_3693);
-  methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QSqlField::QSqlField(const QString &fieldName, QVariant::Type type, const QString &tableName)\nThis method creates an object of class QSqlField.", &_init_ctor_QSqlField_5610, &_call_ctor_QSqlField_5610);
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QSqlField::QSqlField(const QSqlField &other)\nThis method creates an object of class QSqlField.", &_init_ctor_QSqlField_2182, &_call_ctor_QSqlField_2182);
   methods += new qt_gsi::GenericMethod ("clear", "@brief Method void QSqlField::clear()\n", false, &_init_f_clear_0, &_call_f_clear_0);
   methods += new qt_gsi::GenericMethod (":defaultValue", "@brief Method QVariant QSqlField::defaultValue()\n", true, &_init_f_defaultValue_c0, &_call_f_defaultValue_c0);
@@ -677,10 +617,8 @@ static gsi::Methods methods_QSqlField () {
   methods += new qt_gsi::GenericMethod ("setRequired", "@brief Method void QSqlField::setRequired(bool required)\n", false, &_init_f_setRequired_864, &_call_f_setRequired_864);
   methods += new qt_gsi::GenericMethod ("setRequiredStatus|requiredStatus=", "@brief Method void QSqlField::setRequiredStatus(QSqlField::RequiredStatus status)\n", false, &_init_f_setRequiredStatus_2898, &_call_f_setRequiredStatus_2898);
   methods += new qt_gsi::GenericMethod ("setSqlType", "@brief Method void QSqlField::setSqlType(int type)\n", false, &_init_f_setSqlType_767, &_call_f_setSqlType_767);
-  methods += new qt_gsi::GenericMethod ("setTableName|tableName=", "@brief Method void QSqlField::setTableName(const QString &tableName)\n", false, &_init_f_setTableName_2025, &_call_f_setTableName_2025);
   methods += new qt_gsi::GenericMethod ("setType|type=", "@brief Method void QSqlField::setType(QVariant::Type type)\n", false, &_init_f_setType_1776, &_call_f_setType_1776);
   methods += new qt_gsi::GenericMethod ("setValue|value=", "@brief Method void QSqlField::setValue(const QVariant &value)\n", false, &_init_f_setValue_2119, &_call_f_setValue_2119);
-  methods += new qt_gsi::GenericMethod (":tableName", "@brief Method QString QSqlField::tableName()\n", true, &_init_f_tableName_c0, &_call_f_tableName_c0);
   methods += new qt_gsi::GenericMethod (":type", "@brief Method QVariant::Type QSqlField::type()\n", true, &_init_f_type_c0, &_call_f_type_c0);
   methods += new qt_gsi::GenericMethod ("typeID", "@brief Method int QSqlField::typeID()\n", true, &_init_f_typeID_c0, &_call_f_typeID_c0);
   methods += new qt_gsi::GenericMethod (":value", "@brief Method QVariant QSqlField::value()\n", true, &_init_f_value_c0, &_call_f_value_c0);

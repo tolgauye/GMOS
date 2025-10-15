@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -40,6 +40,7 @@
 #include <QTimerEvent>
 #include "gsiQt.h"
 #include "gsiQtWidgetsCommon.h"
+#include "gsiDeclQtWidgetsTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -150,7 +151,7 @@ static void _init_f_tr_4013 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("s");
   decl->add_arg<const char * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("c", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("c", true, "__null");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("n", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -162,7 +163,7 @@ static void _call_f_tr_4013 (const qt_gsi::GenericStaticMethod * /*decl*/, gsi::
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (__null, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QGraphicsEffect::tr (arg1, arg2, arg3));
 }
@@ -175,7 +176,7 @@ static void _init_f_trUtf8_4013 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("s");
   decl->add_arg<const char * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("c", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("c", true, "__null");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("n", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -187,7 +188,7 @@ static void _call_f_trUtf8_4013 (const qt_gsi::GenericStaticMethod * /*decl*/, g
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (__null, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QGraphicsEffect::trUtf8 (arg1, arg2, arg3));
 }
@@ -206,7 +207,6 @@ static gsi::Methods methods_QGraphicsEffect () {
   methods += new qt_gsi::GenericMethod ("update", "@brief Method void QGraphicsEffect::update()\n", false, &_init_f_update_0, &_call_f_update_0);
   methods += gsi::qt_signal<QObject * > ("destroyed(QObject *)", "destroyed", gsi::arg("arg1"), "@brief Signal declaration for QGraphicsEffect::destroyed(QObject *)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<bool > ("enabledChanged(bool)", "enabledChanged", gsi::arg("enabled"), "@brief Signal declaration for QGraphicsEffect::enabledChanged(bool enabled)\nYou can bind a procedure to this signal.");
-  methods += gsi::qt_signal<const QString & > ("objectNameChanged(const QString &)", "objectNameChanged", gsi::arg("objectName"), "@brief Signal declaration for QGraphicsEffect::objectNameChanged(const QString &objectName)\nYou can bind a procedure to this signal.");
   methods += new qt_gsi::GenericStaticMethod ("tr", "@brief Static method QString QGraphicsEffect::tr(const char *s, const char *c, int n)\nThis method is static and can be called without an instance.", &_init_f_tr_4013, &_call_f_tr_4013);
   methods += new qt_gsi::GenericStaticMethod ("trUtf8", "@brief Static method QString QGraphicsEffect::trUtf8(const char *s, const char *c, int n)\nThis method is static and can be called without an instance.", &_init_f_trUtf8_4013, &_call_f_trUtf8_4013);
   return methods;
@@ -313,70 +313,63 @@ public:
     emit QGraphicsEffect::enabledChanged(enabled);
   }
 
-  //  [adaptor impl] bool QGraphicsEffect::event(QEvent *event)
-  bool cbs_event_1217_0(QEvent *_event)
+  //  [adaptor impl] bool QGraphicsEffect::event(QEvent *)
+  bool cbs_event_1217_0(QEvent *arg1)
   {
-    return QGraphicsEffect::event(_event);
+    return QGraphicsEffect::event(arg1);
   }
 
-  virtual bool event(QEvent *_event)
+  virtual bool event(QEvent *arg1)
   {
     if (cb_event_1217_0.can_issue()) {
-      return cb_event_1217_0.issue<QGraphicsEffect_Adaptor, bool, QEvent *>(&QGraphicsEffect_Adaptor::cbs_event_1217_0, _event);
+      return cb_event_1217_0.issue<QGraphicsEffect_Adaptor, bool, QEvent *>(&QGraphicsEffect_Adaptor::cbs_event_1217_0, arg1);
     } else {
-      return QGraphicsEffect::event(_event);
+      return QGraphicsEffect::event(arg1);
     }
   }
 
-  //  [adaptor impl] bool QGraphicsEffect::eventFilter(QObject *watched, QEvent *event)
-  bool cbs_eventFilter_2411_0(QObject *watched, QEvent *event)
+  //  [adaptor impl] bool QGraphicsEffect::eventFilter(QObject *, QEvent *)
+  bool cbs_eventFilter_2411_0(QObject *arg1, QEvent *arg2)
   {
-    return QGraphicsEffect::eventFilter(watched, event);
+    return QGraphicsEffect::eventFilter(arg1, arg2);
   }
 
-  virtual bool eventFilter(QObject *watched, QEvent *event)
+  virtual bool eventFilter(QObject *arg1, QEvent *arg2)
   {
     if (cb_eventFilter_2411_0.can_issue()) {
-      return cb_eventFilter_2411_0.issue<QGraphicsEffect_Adaptor, bool, QObject *, QEvent *>(&QGraphicsEffect_Adaptor::cbs_eventFilter_2411_0, watched, event);
+      return cb_eventFilter_2411_0.issue<QGraphicsEffect_Adaptor, bool, QObject *, QEvent *>(&QGraphicsEffect_Adaptor::cbs_eventFilter_2411_0, arg1, arg2);
     } else {
-      return QGraphicsEffect::eventFilter(watched, event);
+      return QGraphicsEffect::eventFilter(arg1, arg2);
     }
   }
 
-  //  [emitter impl] void QGraphicsEffect::objectNameChanged(const QString &objectName)
-  void emitter_QGraphicsEffect_objectNameChanged_4567(const QString &objectName)
+  //  [adaptor impl] void QGraphicsEffect::childEvent(QChildEvent *)
+  void cbs_childEvent_1701_0(QChildEvent *arg1)
   {
-    __SUPPRESS_UNUSED_WARNING (objectName);
-    throw tl::Exception ("Can't emit private signal 'void QGraphicsEffect::objectNameChanged(const QString &objectName)'");
+    QGraphicsEffect::childEvent(arg1);
   }
 
-  //  [adaptor impl] void QGraphicsEffect::childEvent(QChildEvent *event)
-  void cbs_childEvent_1701_0(QChildEvent *event)
-  {
-    QGraphicsEffect::childEvent(event);
-  }
-
-  virtual void childEvent(QChildEvent *event)
+  virtual void childEvent(QChildEvent *arg1)
   {
     if (cb_childEvent_1701_0.can_issue()) {
-      cb_childEvent_1701_0.issue<QGraphicsEffect_Adaptor, QChildEvent *>(&QGraphicsEffect_Adaptor::cbs_childEvent_1701_0, event);
+      cb_childEvent_1701_0.issue<QGraphicsEffect_Adaptor, QChildEvent *>(&QGraphicsEffect_Adaptor::cbs_childEvent_1701_0, arg1);
     } else {
-      QGraphicsEffect::childEvent(event);
+      QGraphicsEffect::childEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QGraphicsEffect::customEvent(QEvent *event)
-  void cbs_customEvent_1217_0(QEvent *event)
+  //  [adaptor impl] void QGraphicsEffect::customEvent(QEvent *)
+  void cbs_customEvent_1217_0(QEvent *arg1)
   {
-    QGraphicsEffect::customEvent(event);
+    QGraphicsEffect::customEvent(arg1);
   }
 
-  virtual void customEvent(QEvent *event)
+  virtual void customEvent(QEvent *arg1)
   {
     if (cb_customEvent_1217_0.can_issue()) {
-      cb_customEvent_1217_0.issue<QGraphicsEffect_Adaptor, QEvent *>(&QGraphicsEffect_Adaptor::cbs_customEvent_1217_0, event);
+      cb_customEvent_1217_0.issue<QGraphicsEffect_Adaptor, QEvent *>(&QGraphicsEffect_Adaptor::cbs_customEvent_1217_0, arg1);
     } else {
-      QGraphicsEffect::customEvent(event);
+      QGraphicsEffect::customEvent(arg1);
     }
   }
 
@@ -426,18 +419,18 @@ public:
     }
   }
 
-  //  [adaptor impl] void QGraphicsEffect::timerEvent(QTimerEvent *event)
-  void cbs_timerEvent_1730_0(QTimerEvent *event)
+  //  [adaptor impl] void QGraphicsEffect::timerEvent(QTimerEvent *)
+  void cbs_timerEvent_1730_0(QTimerEvent *arg1)
   {
-    QGraphicsEffect::timerEvent(event);
+    QGraphicsEffect::timerEvent(arg1);
   }
 
-  virtual void timerEvent(QTimerEvent *event)
+  virtual void timerEvent(QTimerEvent *arg1)
   {
     if (cb_timerEvent_1730_0.can_issue()) {
-      cb_timerEvent_1730_0.issue<QGraphicsEffect_Adaptor, QTimerEvent *>(&QGraphicsEffect_Adaptor::cbs_timerEvent_1730_0, event);
+      cb_timerEvent_1730_0.issue<QGraphicsEffect_Adaptor, QTimerEvent *>(&QGraphicsEffect_Adaptor::cbs_timerEvent_1730_0, arg1);
     } else {
-      QGraphicsEffect::timerEvent(event);
+      QGraphicsEffect::timerEvent(arg1);
     }
   }
 
@@ -458,7 +451,7 @@ QGraphicsEffect_Adaptor::~QGraphicsEffect_Adaptor() { }
 
 static void _init_ctor_QGraphicsEffect_Adaptor_1302 (qt_gsi::GenericStaticMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("parent", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("parent", true, "0");
   decl->add_arg<QObject * > (argspec_0);
   decl->set_return_new<QGraphicsEffect_Adaptor> ();
 }
@@ -467,7 +460,7 @@ static void _call_ctor_QGraphicsEffect_Adaptor_1302 (const qt_gsi::GenericStatic
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (nullptr, heap);
+  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (0, heap);
   ret.write<QGraphicsEffect_Adaptor *> (new QGraphicsEffect_Adaptor (arg1));
 }
 
@@ -495,11 +488,11 @@ static void _set_callback_cbs_boundingRectFor_c1862_0 (void *cls, const gsi::Cal
 }
 
 
-// void QGraphicsEffect::childEvent(QChildEvent *event)
+// void QGraphicsEffect::childEvent(QChildEvent *)
 
 static void _init_cbs_childEvent_1701_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QChildEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -519,11 +512,11 @@ static void _set_callback_cbs_childEvent_1701_0 (void *cls, const gsi::Callback 
 }
 
 
-// void QGraphicsEffect::customEvent(QEvent *event)
+// void QGraphicsEffect::customEvent(QEvent *)
 
 static void _init_cbs_customEvent_1217_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -547,7 +540,7 @@ static void _set_callback_cbs_customEvent_1217_0 (void *cls, const gsi::Callback
 
 static void _init_emitter_destroyed_1302 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("arg1", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("arg1", true, "0");
   decl->add_arg<QObject * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -556,7 +549,7 @@ static void _call_emitter_destroyed_1302 (const qt_gsi::GenericMethod * /*decl*/
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (nullptr, heap);
+  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (0, heap);
   ((QGraphicsEffect_Adaptor *)cls)->emitter_QGraphicsEffect_destroyed_1302 (arg1);
 }
 
@@ -646,11 +639,11 @@ static void _call_emitter_enabledChanged_864 (const qt_gsi::GenericMethod * /*de
 }
 
 
-// bool QGraphicsEffect::event(QEvent *event)
+// bool QGraphicsEffect::event(QEvent *)
 
 static void _init_cbs_event_1217_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QEvent * > (argspec_0);
   decl->set_return<bool > ();
 }
@@ -669,13 +662,13 @@ static void _set_callback_cbs_event_1217_0 (void *cls, const gsi::Callback &cb)
 }
 
 
-// bool QGraphicsEffect::eventFilter(QObject *watched, QEvent *event)
+// bool QGraphicsEffect::eventFilter(QObject *, QEvent *)
 
 static void _init_cbs_eventFilter_2411_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("watched");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QObject * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("event");
+  static gsi::ArgSpecBase argspec_1 ("arg2");
   decl->add_arg<QEvent * > (argspec_1);
   decl->set_return<bool > ();
 }
@@ -710,24 +703,6 @@ static void _call_fp_isSignalConnected_c2394 (const qt_gsi::GenericMethod * /*de
   tl::Heap heap;
   const QMetaMethod &arg1 = gsi::arg_reader<const QMetaMethod & >() (args, heap);
   ret.write<bool > ((bool)((QGraphicsEffect_Adaptor *)cls)->fp_QGraphicsEffect_isSignalConnected_c2394 (arg1));
-}
-
-
-// emitter void QGraphicsEffect::objectNameChanged(const QString &objectName)
-
-static void _init_emitter_objectNameChanged_4567 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("objectName");
-  decl->add_arg<const QString & > (argspec_0);
-  decl->set_return<void > ();
-}
-
-static void _call_emitter_objectNameChanged_4567 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs & /*ret*/) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const QString &arg1 = gsi::arg_reader<const QString & >() (args, heap);
-  ((QGraphicsEffect_Adaptor *)cls)->emitter_QGraphicsEffect_objectNameChanged_4567 (arg1);
 }
 
 
@@ -839,7 +814,7 @@ static void _init_fp_sourcePixmap_c6763 (qt_gsi::GenericMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("system", true, "Qt::LogicalCoordinates");
   decl->add_arg<const qt_gsi::Converter<Qt::CoordinateSystem>::target_type & > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("offset", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("offset", true, "0");
   decl->add_arg<QPoint * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("mode", true, "QGraphicsEffect::PadToEffectiveBoundingRect");
   decl->add_arg<const qt_gsi::Converter<QGraphicsEffect::PixmapPadMode>::target_type & > (argspec_2);
@@ -851,17 +826,17 @@ static void _call_fp_sourcePixmap_c6763 (const qt_gsi::GenericMethod * /*decl*/,
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const qt_gsi::Converter<Qt::CoordinateSystem>::target_type & arg1 = args ? gsi::arg_reader<const qt_gsi::Converter<Qt::CoordinateSystem>::target_type & >() (args, heap) : gsi::arg_maker<const qt_gsi::Converter<Qt::CoordinateSystem>::target_type & >() (qt_gsi::CppToQtReadAdaptor<Qt::CoordinateSystem>(heap, Qt::LogicalCoordinates), heap);
-  QPoint *arg2 = args ? gsi::arg_reader<QPoint * >() (args, heap) : gsi::arg_maker<QPoint * >() (nullptr, heap);
+  QPoint *arg2 = args ? gsi::arg_reader<QPoint * >() (args, heap) : gsi::arg_maker<QPoint * >() (0, heap);
   const qt_gsi::Converter<QGraphicsEffect::PixmapPadMode>::target_type & arg3 = args ? gsi::arg_reader<const qt_gsi::Converter<QGraphicsEffect::PixmapPadMode>::target_type & >() (args, heap) : gsi::arg_maker<const qt_gsi::Converter<QGraphicsEffect::PixmapPadMode>::target_type & >() (qt_gsi::CppToQtReadAdaptor<QGraphicsEffect::PixmapPadMode>(heap, QGraphicsEffect::PadToEffectiveBoundingRect), heap);
   ret.write<QPixmap > ((QPixmap)((QGraphicsEffect_Adaptor *)cls)->fp_QGraphicsEffect_sourcePixmap_c6763 (arg1, arg2, arg3));
 }
 
 
-// void QGraphicsEffect::timerEvent(QTimerEvent *event)
+// void QGraphicsEffect::timerEvent(QTimerEvent *)
 
 static void _init_cbs_timerEvent_1730_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QTimerEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -904,35 +879,34 @@ gsi::Class<QGraphicsEffect> &qtdecl_QGraphicsEffect ();
 static gsi::Methods methods_QGraphicsEffect_Adaptor () {
   gsi::Methods methods;
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QGraphicsEffect::QGraphicsEffect(QObject *parent)\nThis method creates an object of class QGraphicsEffect.", &_init_ctor_QGraphicsEffect_Adaptor_1302, &_call_ctor_QGraphicsEffect_Adaptor_1302);
-  methods += new qt_gsi::GenericMethod ("boundingRectFor", "@brief Virtual method QRectF QGraphicsEffect::boundingRectFor(const QRectF &sourceRect)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_boundingRectFor_c1862_0, &_call_cbs_boundingRectFor_c1862_0);
-  methods += new qt_gsi::GenericMethod ("boundingRectFor", "@hide", true, &_init_cbs_boundingRectFor_c1862_0, &_call_cbs_boundingRectFor_c1862_0, &_set_callback_cbs_boundingRectFor_c1862_0);
-  methods += new qt_gsi::GenericMethod ("*childEvent", "@brief Virtual method void QGraphicsEffect::childEvent(QChildEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0);
-  methods += new qt_gsi::GenericMethod ("*childEvent", "@hide", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0, &_set_callback_cbs_childEvent_1701_0);
-  methods += new qt_gsi::GenericMethod ("*customEvent", "@brief Virtual method void QGraphicsEffect::customEvent(QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*customEvent", "@hide", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0, &_set_callback_cbs_customEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("boundingRectFor", "@hide", true, &_init_cbs_boundingRectFor_c1862_0, &_call_cbs_boundingRectFor_c1862_0);
+  methods += new qt_gsi::GenericMethod ("boundingRectFor", "@brief Virtual method QRectF QGraphicsEffect::boundingRectFor(const QRectF &sourceRect)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_boundingRectFor_c1862_0, &_call_cbs_boundingRectFor_c1862_0, &_set_callback_cbs_boundingRectFor_c1862_0);
+  methods += new qt_gsi::GenericMethod ("*childEvent", "@hide", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0);
+  methods += new qt_gsi::GenericMethod ("*childEvent", "@brief Virtual method void QGraphicsEffect::childEvent(QChildEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0, &_set_callback_cbs_childEvent_1701_0);
+  methods += new qt_gsi::GenericMethod ("*customEvent", "@hide", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*customEvent", "@brief Virtual method void QGraphicsEffect::customEvent(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0, &_set_callback_cbs_customEvent_1217_0);
   methods += new qt_gsi::GenericMethod ("emit_destroyed", "@brief Emitter for signal void QGraphicsEffect::destroyed(QObject *)\nCall this method to emit this signal.", false, &_init_emitter_destroyed_1302, &_call_emitter_destroyed_1302);
-  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@brief Virtual method void QGraphicsEffect::disconnectNotify(const QMetaMethod &signal)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0);
-  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@hide", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0, &_set_callback_cbs_disconnectNotify_2394_0);
-  methods += new qt_gsi::GenericMethod ("*draw", "@brief Virtual method void QGraphicsEffect::draw(QPainter *painter)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_draw_1426_0, &_call_cbs_draw_1426_0);
-  methods += new qt_gsi::GenericMethod ("*draw", "@hide", false, &_init_cbs_draw_1426_0, &_call_cbs_draw_1426_0, &_set_callback_cbs_draw_1426_0);
+  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@hide", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0);
+  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@brief Virtual method void QGraphicsEffect::disconnectNotify(const QMetaMethod &signal)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0, &_set_callback_cbs_disconnectNotify_2394_0);
+  methods += new qt_gsi::GenericMethod ("*draw", "@hide", false, &_init_cbs_draw_1426_0, &_call_cbs_draw_1426_0);
+  methods += new qt_gsi::GenericMethod ("*draw", "@brief Virtual method void QGraphicsEffect::draw(QPainter *painter)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_draw_1426_0, &_call_cbs_draw_1426_0, &_set_callback_cbs_draw_1426_0);
   methods += new qt_gsi::GenericMethod ("*drawSource", "@brief Method void QGraphicsEffect::drawSource(QPainter *painter)\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_drawSource_1426, &_call_fp_drawSource_1426);
   methods += new qt_gsi::GenericMethod ("emit_enabledChanged", "@brief Emitter for signal void QGraphicsEffect::enabledChanged(bool enabled)\nCall this method to emit this signal.", false, &_init_emitter_enabledChanged_864, &_call_emitter_enabledChanged_864);
-  methods += new qt_gsi::GenericMethod ("event", "@brief Virtual method bool QGraphicsEffect::event(QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0);
-  methods += new qt_gsi::GenericMethod ("event", "@hide", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0, &_set_callback_cbs_event_1217_0);
-  methods += new qt_gsi::GenericMethod ("eventFilter", "@brief Virtual method bool QGraphicsEffect::eventFilter(QObject *watched, QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0);
-  methods += new qt_gsi::GenericMethod ("eventFilter", "@hide", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0, &_set_callback_cbs_eventFilter_2411_0);
+  methods += new qt_gsi::GenericMethod ("event", "@hide", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0);
+  methods += new qt_gsi::GenericMethod ("event", "@brief Virtual method bool QGraphicsEffect::event(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0, &_set_callback_cbs_event_1217_0);
+  methods += new qt_gsi::GenericMethod ("eventFilter", "@hide", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0);
+  methods += new qt_gsi::GenericMethod ("eventFilter", "@brief Virtual method bool QGraphicsEffect::eventFilter(QObject *, QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0, &_set_callback_cbs_eventFilter_2411_0);
   methods += new qt_gsi::GenericMethod ("*isSignalConnected", "@brief Method bool QGraphicsEffect::isSignalConnected(const QMetaMethod &signal)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_isSignalConnected_c2394, &_call_fp_isSignalConnected_c2394);
-  methods += new qt_gsi::GenericMethod ("emit_objectNameChanged", "@brief Emitter for signal void QGraphicsEffect::objectNameChanged(const QString &objectName)\nCall this method to emit this signal.", false, &_init_emitter_objectNameChanged_4567, &_call_emitter_objectNameChanged_4567);
   methods += new qt_gsi::GenericMethod ("*receivers", "@brief Method int QGraphicsEffect::receivers(const char *signal)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_receivers_c1731, &_call_fp_receivers_c1731);
   methods += new qt_gsi::GenericMethod ("*sender", "@brief Method QObject *QGraphicsEffect::sender()\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_sender_c0, &_call_fp_sender_c0);
   methods += new qt_gsi::GenericMethod ("*senderSignalIndex", "@brief Method int QGraphicsEffect::senderSignalIndex()\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_senderSignalIndex_c0, &_call_fp_senderSignalIndex_c0);
   methods += new qt_gsi::GenericMethod ("*sourceBoundingRect", "@brief Method QRectF QGraphicsEffect::sourceBoundingRect(Qt::CoordinateSystem system)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_sourceBoundingRect_c2426, &_call_fp_sourceBoundingRect_c2426);
-  methods += new qt_gsi::GenericMethod ("*sourceChanged", "@brief Virtual method void QGraphicsEffect::sourceChanged(QFlags<QGraphicsEffect::ChangeFlag> flags)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_sourceChanged_3695_0, &_call_cbs_sourceChanged_3695_0);
-  methods += new qt_gsi::GenericMethod ("*sourceChanged", "@hide", false, &_init_cbs_sourceChanged_3695_0, &_call_cbs_sourceChanged_3695_0, &_set_callback_cbs_sourceChanged_3695_0);
+  methods += new qt_gsi::GenericMethod ("*sourceChanged", "@hide", false, &_init_cbs_sourceChanged_3695_0, &_call_cbs_sourceChanged_3695_0);
+  methods += new qt_gsi::GenericMethod ("*sourceChanged", "@brief Virtual method void QGraphicsEffect::sourceChanged(QFlags<QGraphicsEffect::ChangeFlag> flags)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_sourceChanged_3695_0, &_call_cbs_sourceChanged_3695_0, &_set_callback_cbs_sourceChanged_3695_0);
   methods += new qt_gsi::GenericMethod ("*sourceIsPixmap", "@brief Method bool QGraphicsEffect::sourceIsPixmap()\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_sourceIsPixmap_c0, &_call_fp_sourceIsPixmap_c0);
   methods += new qt_gsi::GenericMethod ("*sourcePixmap", "@brief Method QPixmap QGraphicsEffect::sourcePixmap(Qt::CoordinateSystem system, QPoint *offset, QGraphicsEffect::PixmapPadMode mode)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_sourcePixmap_c6763, &_call_fp_sourcePixmap_c6763);
-  methods += new qt_gsi::GenericMethod ("*timerEvent", "@brief Virtual method void QGraphicsEffect::timerEvent(QTimerEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0);
-  methods += new qt_gsi::GenericMethod ("*timerEvent", "@hide", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0, &_set_callback_cbs_timerEvent_1730_0);
+  methods += new qt_gsi::GenericMethod ("*timerEvent", "@hide", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0);
+  methods += new qt_gsi::GenericMethod ("*timerEvent", "@brief Virtual method void QGraphicsEffect::timerEvent(QTimerEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0, &_set_callback_cbs_timerEvent_1730_0);
   methods += new qt_gsi::GenericMethod ("*updateBoundingRect", "@brief Method void QGraphicsEffect::updateBoundingRect()\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_updateBoundingRect_0, &_call_fp_updateBoundingRect_0);
   return methods;
 }

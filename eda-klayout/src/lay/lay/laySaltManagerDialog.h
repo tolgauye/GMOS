@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -184,13 +184,10 @@ private:
   SaltGrainPropertiesDialog *mp_properties_dialog;
   tl::DeferredMethod<SaltManagerDialog> dm_update_models;
   int m_current_tab;
-  std::unique_ptr<tl::InputStream> m_downloaded_grain_reader;
-  std::unique_ptr<lay::SaltGrain> m_downloaded_grain, m_salt_mine_grain;
+  std::auto_ptr<tl::InputStream> m_downloaded_grain_reader;
+  std::auto_ptr<lay::SaltGrain> m_downloaded_grain, m_salt_mine_grain;
   SaltGrainDetailsTextWidget *mp_downloaded_target;
-  std::unique_ptr<tl::InputStream> m_salt_mine_reader;
-  tl::DeferredMethod<SaltManagerDialog> dm_mine_update_selected_changed;
-  tl::DeferredMethod<SaltManagerDialog> dm_mine_new_selected_changed;
-  std::map<std::string, lay::SaltGrain> m_salt_grain_cache;
+  std::auto_ptr<tl::InputStream> m_salt_mine_reader;
 
   SaltGrain *current_grain ();
   std::vector<lay::SaltGrain *> current_grains ();
@@ -202,8 +199,6 @@ private:
   void show_error (tl::Exception &ex);
   void salt_mine_download_started ();
   void salt_mine_download_finished ();
-  void do_mine_update_selected_changed ();
-  void do_mine_new_selected_changed ();
 };
 
 }

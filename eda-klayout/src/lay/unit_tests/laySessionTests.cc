@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -41,11 +41,9 @@ TEST (1)
 
   mw->close_all ();
 
-  mw->load_layout (tl::testdata () + "/sessions/test.gds");
+  mw->load_layout (tl::testsrc () + "/testdata/sessions/test.gds");
 
   lay::LayoutView *view = mw->current_view ();
-
-  view->set_title ("xyz");
 
   ant::Service *ant_service = view->get_plugin <ant::Service> ();
   tl_assert (ant_service != 0);
@@ -59,18 +57,18 @@ TEST (1)
   tl_assert (img_service != 0);
   if (img_service) {
     img::Object img;
-    img.load_data (tl::testdata () + "/sessions/test.png");
+    img.load_data (tl::testsrc () + "/testdata/sessions/test.png");
     img_service->insert_image (img);
   }
 
-  std::unique_ptr<rdb::Database> rdb (new rdb::Database ());
-  rdb->load (tl::testdata () + "/sessions/test.lyrdb");
+  std::auto_ptr<rdb::Database> rdb (new rdb::Database ());
+  rdb->load (tl::testsrc () + "/testdata/sessions/test.lyrdb");
   view->add_rdb (rdb.release ());
 
-  std::unique_ptr<db::LayoutToNetlist> l2ndb (db::LayoutToNetlist::create_from_file (tl::testdata () + "/sessions/test.l2n"));
+  std::auto_ptr<db::LayoutToNetlist> l2ndb (db::LayoutToNetlist::create_from_file (tl::testsrc () + "/testdata/sessions/test.l2n"));
   view->add_l2ndb (l2ndb.release ());
 
-  std::unique_ptr<db::LayoutToNetlist> lvsdb (db::LayoutToNetlist::create_from_file (tl::testdata () + "/sessions/test.lvsdb"));
+  std::auto_ptr<db::LayoutToNetlist> lvsdb (db::LayoutToNetlist::create_from_file (tl::testsrc () + "/testdata/sessions/test.lvsdb"));
   view->add_l2ndb (lvsdb.release ());
 
   std::string lys_file = tmp_file ("test1.lys");
@@ -85,8 +83,6 @@ TEST (1)
 
   view = mw->current_view ();
   tl_assert (view != 0);
-
-  EXPECT_EQ (view->title (), "xyz");
 
   ant_service = view->get_plugin <ant::Service> ();
   tl_assert (ant_service != 0);
@@ -133,7 +129,7 @@ TEST (2)
   mw->close_all ();
 
   EXPECT_EQ (mw->views (), (unsigned int) 0);
-  mw->restore_session (tl::testdata () + "/sessions/test_with_relative_paths.lys");
+  mw->restore_session (tl::testsrc () + "/testdata/sessions/test_with_relative_paths.lys");
 
   EXPECT_EQ (mw->views (), (unsigned int) 1);
 

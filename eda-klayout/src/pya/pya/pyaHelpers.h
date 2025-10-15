@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -44,7 +44,7 @@ class SignalHandler;
 struct PYAChannelObject
   : public PyObject
 {
-  static void make_class ();
+  static void make_class (PyObject *module);
   static PYAChannelObject *create (gsi::Console::output_stream chn);
 
   gsi::Console::output_stream channel;

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -22,6 +22,21 @@
 
 
 #include "gsiDecl.h"
+
+namespace tl
+{
+
+template <> struct type_traits<gsi::ClassBase> : public type_traits<void> {
+  typedef tl::false_tag has_copy_constructor;
+  typedef tl::false_tag has_default_constructor;
+};
+
+template <> struct type_traits<gsi::MethodBase> : public type_traits<void> {
+  typedef tl::false_tag has_copy_constructor;
+  typedef tl::false_tag has_default_constructor;
+};
+
+}
 
 namespace gsi
 {
@@ -49,13 +64,12 @@ static int t_double () { return T_double; }
 static int t_float () { return T_float; }
 static int t_var () { return T_var; }
 static int t_string () { return T_string; }
-static int t_byte_array () { return T_byte_array; }
 static int t_void_ptr () { return T_void_ptr; }
 static int t_object () { return T_object; }
 static int t_vector () { return T_vector; }
 static int t_map () { return T_map; }
 
-static int type (const ArgType *t)
+static int type (const ArgType *t) 
 {
   return t->type ();
 }
@@ -78,41 +92,36 @@ static tl::Variant default_value (const ArgType *t)
 }
 
 Class<ArgType> decl_ArgType ("tl", "ArgType",
-  gsi::method ("TypeVoid", &t_void) +
-  gsi::method ("TypeBool", &t_bool) +
-  gsi::method ("TypeChar", &t_char) +
-  gsi::method ("TypeSChar", &t_schar) +
-  gsi::method ("TypeUChar", &t_uchar) +
-  gsi::method ("TypeShort", &t_short) +
-  gsi::method ("TypeUShort", &t_ushort) +
-  gsi::method ("TypeInt", &t_int) +
-  gsi::method ("TypeUInt", &t_uint) +
-  gsi::method ("TypeLong", &t_long) +
-  gsi::method ("TypeULong", &t_ulong) +
-  gsi::method ("TypeLongLong", &t_longlong) +
-  gsi::method ("TypeULongLong", &t_ulonglong) +
+  gsi::method ("TypeVoid|#t_void", &t_void) +
+  gsi::method ("TypeBool|#t_bool", &t_bool) +
+  gsi::method ("TypeChar|#t_char", &t_char) +
+  gsi::method ("TypeSChar|#t_schar", &t_schar) +
+  gsi::method ("TypeUChar|#t_uchar", &t_uchar) +
+  gsi::method ("TypeShort|#t_short", &t_short) +
+  gsi::method ("TypeUShort|#t_ushort", &t_ushort) +
+  gsi::method ("TypeInt|#t_int", &t_int) +
+  gsi::method ("TypeUInt|#t_uint", &t_uint) +
+  gsi::method ("TypeLong|#t_long", &t_long) +
+  gsi::method ("TypeULong|#t_ulong", &t_ulong) +
+  gsi::method ("TypeLongLong|#t_longlong", &t_longlong) +
+  gsi::method ("TypeULongLong|#t_ulonglong", &t_ulonglong) +
 #if defined(HAVE_64BIT_COORD)
   gsi::method ("TypeInt128|#t_int128", &t_int128) +
 #endif
-  gsi::method ("TypeDouble", &t_double) +
-  gsi::method ("TypeFloat", &t_float) +
-  gsi::method ("TypeVar", &t_var) +
-  gsi::method ("TypeByteArray", &t_byte_array) +
-  gsi::method ("TypeString", &t_string) +
-  gsi::method ("TypeVoidPtr", &t_void_ptr) +
-  gsi::method ("TypeObject", &t_object) +
-  gsi::method ("TypeVector", &t_vector) +
-  gsi::method ("TypeMap", &t_map) +
+  gsi::method ("TypeDouble|#t_double", &t_double) +
+  gsi::method ("TypeFloat|#t_float", &t_float) +
+  gsi::method ("TypeVar|#t_var", &t_var) +
+  gsi::method ("TypeString|#t_string", &t_string) +
+  gsi::method ("TypeVoidPtr|#t_void_ptr", &t_void_ptr) +
+  gsi::method ("TypeObject|#t_object", &t_object) +
+  gsi::method ("TypeVector|#t_vector", &t_vector) +
+  gsi::method ("TypeMap|#t_map", &t_map) +
   gsi::method_ext ("type", &type,
     "@brief Return the basic type (see t_.. constants)\n"
   ) +
   gsi::method ("inner", &ArgType::inner,
-    "@brief Returns the inner ArgType object (i.e. value of a vector/map)\n"
+    "@brief Returns the inner ArgType object (i.e. value of a vector)\n"
     "Starting with version 0.22, this method replaces the is_vector method.\n"
-  ) +
-  gsi::method ("inner_k", &ArgType::inner_k,
-    "@brief Returns the inner ArgType object (i.e. key of a map)\n"
-    "This method has been introduced in version 0.27."
   ) +
   gsi::method ("pass_obj?", &ArgType::pass_obj,
     "@brief True, if the ownership over an object represented by this type is passed to the receiver\n"
@@ -158,10 +167,10 @@ Class<ArgType> decl_ArgType ("tl", "ArgType",
     "@brief Returns the name for this argument or an empty string if the argument is not named\n"
     "Applies to arguments only. This method has been introduced in version 0.24."
   ) +
-  gsi::method ("==", &ArgType::operator==, gsi::arg ("other"),
+  gsi::method ("==", &ArgType::operator==,
     "@brief Equality of two types\n"
   ) +
-  gsi::method ("!=", &ArgType::operator!=, gsi::arg ("other"),
+  gsi::method ("!=", &ArgType::operator!=,
     "@brief Inequality of two types\n"
   ),
   "@hide"
@@ -230,7 +239,7 @@ Class<MethodBase> decl_Method ("tl", "Method",
     "\n"
     "This method has been introduced in version 0.24."
   ) +
-  gsi::method ("accepts_num_args", &MethodBase::compatible_with_num_args, gsi::arg ("n"),
+  gsi::method ("accepts_num_args", &MethodBase::compatible_with_num_args,
     "@brief True, if this method is compatible with the given number of arguments\n"
     "\n"
     "This method has been introduced in version 0.24."
@@ -276,12 +285,6 @@ Class<MethodBase> decl_Method ("tl", "Method",
     "\n"
     "This method has been introduced in version 0.24."
   ) +
-  gsi::method ("to_s", &MethodBase::to_string,
-    "@brief Describes the method\n"
-    "This attribute returns a string description of the method and its signature.\n"
-    "\n"
-    "This method has been introduced in version 0.29."
-  ) +
   gsi::method ("doc", &MethodBase::doc,
     "@brief The documentation string for this method\n"
   ),
@@ -294,12 +297,6 @@ Class<ClassBase> decl_Class ("tl", "Class",
   ) +
   gsi::iterator ("each_method", &ClassBase::begin_methods, &ClassBase::end_methods,
     "@brief Iterate over all methods of this class\n"
-  ) +
-  gsi::iterator ("each_child_class", &ClassBase::begin_child_classes, &ClassBase::end_child_classes,
-    "@brief Iterate over all child classes defined within this class\n"
-  ) +
-  gsi::method ("parent", &ClassBase::parent,
-    "@brief The parent of the class\n"
   ) +
   gsi::method ("name", &ClassBase::name,
     "@brief The name of the class\n"
@@ -327,3 +324,5 @@ Class<ClassBase> decl_Class ("tl", "Class",
 );
 
 }
+
+

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -25,8 +25,6 @@
 
 #include "dbCommon.h"
 #include "dbHierNetworkProcessor.h"
-#include "dbNetShape.h"
-#include "tlGlobPattern.h"
 
 #include <map>
 #include <set>
@@ -73,9 +71,9 @@ class DeviceAbstract;
 class DB_PUBLIC NetlistExtractor
 {
 public:
-  typedef db::hier_clusters<db::NetShape> hier_clusters_type;
-  typedef db::connected_clusters<db::NetShape> connected_clusters_type;
-  typedef db::local_cluster<db::NetShape> local_cluster_type;
+  typedef db::hier_clusters<db::PolygonRef> hier_clusters_type;
+  typedef db::connected_clusters<db::PolygonRef> connected_clusters_type;
+  typedef db::local_cluster<db::PolygonRef> local_cluster_type;
 
   /**
    *  @brief NetExtractor constructor
@@ -105,38 +103,23 @@ public:
    *  @brief Sets the joined net names attribute
    *  This is a glob expression rendering net names where partial nets with the
    *  same name are joined even without explicit connection.
-   *  The cell-less version applies to top level cells only.
-   *  NOTE: this feature is not really used as must-connect nets are handled now in the LayoutToNetlist extractor.
-   *  Remove this function later.
    */
-  void set_joined_net_names (const std::list<tl::GlobPattern> &jnn);
+  void set_joined_net_names (const std::string &jnn);
 
   /**
    *  @brief Sets the joined net names attribute for a given cell name
    *  While the single-parameter set_joined_net_names only acts on the top cell, this
    *  version will act on the cell with the given name.
-   *  NOTE: this feature is not really used as must-connect nets are handled now in the LayoutToNetlist extractor.
-   *  Remove this function later.
    */
-  void set_joined_net_names (const std::string &cell_name, const std::list<tl::GlobPattern> &jnn);
+  void set_joined_net_names (const std::string &cell_name, const std::string &jnn);
 
   /**
-   *  @brief Sets the joined nets attribute
-   *  This specifies a list of net names to join. Each join group is a set of names which specifies the net
-   *  names that are to be connected. Multiple such groups can be specified. Each net name listed in a
-   *  group implies implicit joining of the corresponding labels into one net.
-   *  The cell-less version applies to top level cells only.
-   *  NOTE: this feature is not really used as must-connect nets are handled now in the LayoutToNetlist extractor.
-   *  Remove this function later.
+   *  @brief Gets the joined net names expression
    */
-  void set_joined_nets (const std::list<std::set<std::string> > &jnn);
-
-  /**
-   *  @brief Sets the joined nets attribute per cell
-   *  NOTE: this feature is not really used as must-connect nets are handled now in the LayoutToNetlist extractor.
-   *  Remove this function later.
-   */
-  void set_joined_nets (const std::string &cell_name, const std::list<std::set<std::string> > &jnn);
+  const std::string &joined_net_names () const
+  {
+    return m_joined_net_names;
+  }
 
   /**
    *  @brief Extract the nets
@@ -151,10 +134,8 @@ private:
   std::pair<bool, db::property_names_id_type> m_text_annot_name_id;
   std::pair<bool, db::property_names_id_type> m_device_annot_name_id;
   std::pair<bool, db::property_names_id_type> m_terminal_annot_name_id;
-  std::list<tl::GlobPattern> m_joined_net_names;
-  std::list<std::pair<std::string, std::list<tl::GlobPattern> > > m_joined_net_names_per_cell;
-  std::list<std::set<std::string> > m_joined_nets;
-  std::list<std::pair<std::string, std::list<std::set<std::string> > > > m_joined_nets_per_cell;
+  std::string m_joined_net_names;
+  std::list<std::pair<std::string, std::string> > m_joined_net_names_per_cell;
   bool m_include_floating_subcircuits;
 
   bool instance_is_device (db::properties_id_type prop_id) const;
@@ -233,7 +214,7 @@ private:
   /**
    *  @brief Makes the terminal to cluster ID connections of the device abstract
    */
-  void make_device_abstract_connections (db::DeviceAbstract *dm, connected_clusters_type &clusters);
+  void make_device_abstract_connections (db::DeviceAbstract *dm, const connected_clusters_type &clusters);
 
 };
 

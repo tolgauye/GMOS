@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -26,23 +26,58 @@
 
 #include "dbCommon.h"
 
-#include "dbMutableEdgePairs.h"
+#include "dbAsIfFlatEdgePairs.h"
 #include "dbShapes.h"
-#include "dbGenericShapeIterator.h"
-#include "tlCopyOnWrite.h"
 
 namespace db {
 
 /**
  *  @brief An iterator delegate for the flat edge pair set
  */
-typedef generic_shapes_iterator_delegate<db::EdgePair> FlatEdgePairsIterator;
+class DB_PUBLIC FlatEdgePairsIterator
+  : public EdgePairsIteratorDelegate
+{
+public:
+  typedef db::layer<db::EdgePair, db::unstable_layer_tag> edge_pair_layer_type;
+  typedef edge_pair_layer_type::iterator iterator_type;
+
+  FlatEdgePairsIterator (iterator_type from, iterator_type to)
+    : m_from (from), m_to (to)
+  {
+    //  .. nothing yet ..
+  }
+
+  virtual bool at_end () const
+  {
+    return m_from == m_to;
+  }
+
+  virtual void increment ()
+  {
+    ++m_from;
+  }
+
+  virtual const value_type *get () const
+  {
+    return m_from.operator-> ();
+  }
+
+  virtual EdgePairsIteratorDelegate *clone () const
+  {
+    return new FlatEdgePairsIterator (*this);
+  }
+
+private:
+  friend class EdgePairs;
+
+  iterator_type m_from, m_to;
+};
 
 /**
  *  @brief The delegate for the actual edge pair set implementation
  */
 class DB_PUBLIC FlatEdgePairs
-  : public MutableEdgePairs
+  : public AsIfFlatEdgePairs
 {
 public:
   typedef db::layer<db::EdgePair, db::unstable_layer_tag> edge_pair_layer_type;
@@ -66,8 +101,7 @@ public:
   virtual std::pair<db::RecursiveShapeIterator, db::ICplxTrans> begin_iter () const;
 
   virtual bool empty () const;
-  virtual size_t count () const;
-  virtual size_t hier_count () const;
+  virtual size_t size () const;
 
   virtual EdgePairsDelegate *filter_in_place (const EdgePairFilterBase &filter);
 
@@ -75,41 +109,49 @@ public:
   virtual EdgePairsDelegate *add (const EdgePairs &other) const;
 
   virtual const db::EdgePair *nth (size_t n) const;
-  virtual db::properties_id_type nth_prop_id (size_t n) const;
   virtual bool has_valid_edge_pairs () const;
 
   virtual const db::RecursiveShapeIterator *iter () const;
-  virtual void apply_property_translator (const db::PropertiesTranslator &pt);
 
   virtual void insert_into (Layout *layout, db::cell_index_type into_cell, unsigned int into_layer) const;
   virtual void insert_into_as_polygons (Layout *layout, db::cell_index_type into_cell, unsigned int into_layer, db::Coord enl) const;
 
-  virtual void do_insert (const db::EdgePair &edge_pair, db::properties_id_type prop_id);
+  void insert (const db::EdgePair &edge_pair);
+  void insert (const db::Shape &shape);
 
-  virtual void do_transform (const db::Trans &t)
+  template <class T>
+  void insert (const db::Shape &shape, const T &trans)
   {
-    transform_generic (t);
+    if (shape.is_edge_pair ()) {
+
+      db::EdgePair ep;
+      shape.edge_pair (ep);
+      ep.transform (trans);
+      insert (ep);
+
+    }
   }
 
-  virtual void do_transform (const db::ICplxTrans &t)
+  template <class Iter>
+  void insert_seq (const Iter &seq)
   {
-    transform_generic (t);
+    for (Iter i = seq; ! i.at_end (); ++i) {
+      insert (*i);
+    }
   }
 
-  virtual void do_transform (const db::IMatrix2d &t)
+  template <class Trans>
+  void transform (const Trans &trans)
   {
-    transform_generic (t);
+    if (! trans.is_unity ()) {
+      for (edge_pair_iterator_type p = m_edge_pairs.template get_layer<db::EdgePair, db::unstable_layer_tag> ().begin (); p != m_edge_pairs.template get_layer<db::EdgePair, db::unstable_layer_tag> ().end (); ++p) {
+        m_edge_pairs.get_layer<db::EdgePair, db::unstable_layer_tag> ().replace (p, p->transformed (trans));
+      }
+      invalidate_cache ();
+    }
   }
 
-  virtual void do_transform (const db::IMatrix3d &t)
-  {
-    transform_generic (t);
-  }
-
-  virtual void flatten () { }
-
-  db::Shapes &raw_edge_pairs () { return *mp_edge_pairs; }
-  const db::Shapes &raw_edge_pairs () const { return *mp_edge_pairs; }
+  db::Shapes &raw_edge_pairs () { return m_edge_pairs; }
 
 protected:
   virtual Box compute_bbox () const;
@@ -120,19 +162,7 @@ private:
 
   FlatEdgePairs &operator= (const FlatEdgePairs &other);
 
-  mutable tl::copy_on_write_ptr<db::Shapes> mp_edge_pairs;
-
-  template <class Trans>
-  void transform_generic (const Trans &trans)
-  {
-    if (! trans.is_unity ()) {
-      db::Shapes &ep = *mp_edge_pairs;
-      for (edge_pair_iterator_type p = ep.template get_layer<db::EdgePair, db::unstable_layer_tag> ().begin (); p != ep.template get_layer<db::EdgePair, db::unstable_layer_tag> ().end (); ++p) {
-        ep.get_layer<db::EdgePair, db::unstable_layer_tag> ().replace (p, p->transformed (trans));
-      }
-      invalidate_cache ();
-    }
-  }
+  mutable db::Shapes m_edge_pairs;
 };
 
 }

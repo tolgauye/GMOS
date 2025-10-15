@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -436,7 +436,7 @@ public:
   virtual std::string format_name () const { return "OASIS"; }
   virtual std::string format_desc () const { return "OASIS"; }
   virtual std::string format_title () const { return "OASIS"; }
-  virtual std::string file_format () const { return "OASIS files (*.oas *.OAS *.oas.gz *.OAS.gz)"; }
+  virtual std::string file_format () const { return "OASIS files (*.OAS *.oas *.oas.gz *.OAS.gz)"; }
 
   virtual bool detect (tl::InputStream &stream) const 
   {

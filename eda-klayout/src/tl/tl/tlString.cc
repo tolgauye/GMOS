@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -28,6 +28,7 @@
 #include <cctype>
 #include <limits>
 #include <vector>
+#include <sstream>
 #include <cwctype>
 #include <algorithm>
 
@@ -39,21 +40,6 @@ namespace tl
 {
 
 static std::locale c_locale ("C");
-
-// -------------------------------------------------------------------------
-//  Exception classes
-
-ExtractorNotImplementedException::ExtractorNotImplementedException (const std::type_info &ti)
-  : Exception (tl::to_string (tr ("No string extractor available for type: ")) + ti.name ())
-{
-  //  .. nothing yet ..
-}
-
-StringConversionException::StringConversionException (const std::type_info &ti)
-  : Exception (tl::to_string (tr ("No string conversion available for type: ")) + ti.name ())
-{
-  //  .. nothing yet ..
-}
 
 // -------------------------------------------------------------------------
 //  lower and upper case for wchar_t and uint32_t
@@ -211,42 +197,7 @@ inline bool safe_isspace (char c)
 }
 
 // -------------------------------------------------------------------------
-//  Utility: skip a newline
-
-bool skip_newline (const char *&cp)
-{
-  if (*cp == '\012' || *cp == '\015') {
-    if (*cp == '\015' && cp[1] == '\012') {
-      ++cp;
-    }
-    ++cp;
-    return true;
-  } else {
-    return false;
-  }
-}
-
-// -------------------------------------------------------------------------
-//  Utility: case-insensitive compare of the first characters
-
-static bool local_compare (const char *s1, const char *s2)
-{
-  while (*s1 && *s2) {
-    uint32_t c1 = utf32_downcase (utf32_from_utf8 (s1));
-    uint32_t c2 = utf32_downcase (utf32_from_utf8 (s2));
-    if (c1 != c2) {
-      return false;
-    }
-  }
-  return true;
-}
-
-// -------------------------------------------------------------------------
 //  Utility: a strtod version that is independent of the locale
-
-static std::string inf_string = "inf";
-static std::string ninf_string = "-inf";
-static std::string nan_string = "nan";
 
 static std::string micron_format ("%.5f");
 static std::string dbu_format ("%.2f");
@@ -263,24 +214,12 @@ void set_db_resolution (unsigned int ndigits)
 
 std::string micron_to_string (double d)
 {
-  if (std::isnan (d)) {
-    return nan_string;
-  } else if (std::isinf (d)) {
-    return d < 0 ? ninf_string : inf_string;
-  } else {
-    return tl::sprintf (micron_format.c_str (), d);
-  }
+  return tl::sprintf (micron_format.c_str (), d);
 }
 
 std::string db_to_string (double d)
 {
-  if (std::isnan (d)) {
-    return nan_string;
-  } else if (std::isinf (d)) {
-    return d < 0 ? ninf_string : inf_string;
-  } else {
-    return tl::sprintf (dbu_format.c_str (), d);
-  }
+  return tl::sprintf (dbu_format.c_str (), d);
 }
 
 std::string to_upper_case (const std::string &s)
@@ -303,7 +242,7 @@ std::string to_lower_case (const std::string &s)
 
 std::string to_local (const std::string &s)
 {
-  std::unique_ptr<char []> buffer (new char [MB_CUR_MAX]); //  MB_CUR_MAX isn't a constant
+  std::auto_ptr<char> buffer (new char [MB_CUR_MAX]); //  MB_CUR_MAX isn't a constant
   std::string ls;
 
   std::wstring ws = to_wstring (s);
@@ -348,25 +287,15 @@ static double local_strtod (const char *cp, const char *&cp_new)
 {
   const char *cp0 = cp;
 
-  //  special numerical values
-  if (local_compare (cp, nan_string.c_str ())) {
-    cp_new = cp + nan_string.size ();
-    return NAN;
-  } else if (local_compare (cp, inf_string.c_str ())) {
-    cp_new = cp + inf_string.size ();
-    return INFINITY;
-  } else if (local_compare (cp, ninf_string.c_str ())) {
-    cp_new = cp + ninf_string.size ();
-    return -INFINITY;
-  }
-
   //  Extract sign
   double s = 1.0;
   if (*cp == '-') {
     s = -1.0;
     ++cp;
+  /*
   } else if (*cp == '+') {
     ++cp;
+  */
   }
 
   //  Extract upper digits
@@ -419,12 +348,6 @@ static double local_strtod (const char *cp, const char *&cp_new)
 std::string
 to_string (double d, int prec)
 {
-  if (std::isnan (d)) {
-    return nan_string;
-  } else if (std::isinf (d)) {
-    return d < 0 ? ninf_string : inf_string;
-  }
-
   //  For small values less than 1e-(prec) simply return "0" to avoid ugly values like "1.2321716e-14".
   if (fabs (d) < pow (10.0, -prec)) {
     return "0";
@@ -442,12 +365,6 @@ to_string (double d, int prec)
 std::string
 to_string (float d, int prec)
 {
-  if (std::isnan (d)) {
-    return nan_string;
-  } else if (std::isinf (d)) {
-    return d < 0 ? ninf_string : inf_string;
-  }
-
   //  For small values less than 1e-(prec) simply return "0" to avoid ugly values like "1.2321716e-14".
   if (fabs (d) < pow (10.0, -prec)) {
     return "0";
@@ -702,8 +619,7 @@ inline char unescape_char (const char * &cp)
 {
   if (safe_isdigit (*cp)) {
     int c = 0;
-    unsigned int n = 0;
-    while (*cp && safe_isdigit (*cp) && n++ < 3) {
+    while (*cp && safe_isdigit (*cp)) {
       c = c * 8 + int (*cp - '0');
       ++cp;
     }
@@ -859,8 +775,8 @@ from_string (const std::string &s, const unsigned char * &result)
   result = (unsigned char *) s.c_str ();
 }
 
-static void
-from_string_numeric (const std::string &s, double &v, bool eval)
+void
+from_string (const std::string &s, double &v)
 {
   const char *cp = s.c_str ();
   while (safe_isspace (*cp)) {
@@ -869,30 +785,24 @@ from_string_numeric (const std::string &s, double &v, bool eval)
   if (! *cp) {
     throw tl::Exception (tl::to_string (tr ("Got empty string where a real number was expected")));
   }
-
   const char *cp_end = cp;
   v = local_strtod (cp, cp_end);
   while (safe_isspace (*cp_end)) {
     ++cp_end;
   }
   if (*cp_end) {
-    if (eval) {
-      //  try using an expression (using a clean environment disables all global features and leaves
-      //  only some static functions)
-      v = tl::Eval (0, 0, false).parse (s).execute ().to_double ();
-    } else {
-      throw tl::Exception (tl::to_string (tr ("Unexpected text after numeric value: '...")) + cp_end + "'");
-    }
+    //  try using an expression
+    v = tl::Eval ().parse (s).execute ().to_double ();
   }
 }
 
 template <class T>
-static void
-convert_string_to_int (const std::string &s, T &v, bool eval)
+void
+convert_string_to_int (const std::string &s, T &v)
 {
   double x;
   // HACK: this should be some real string-to-int conversion
-  tl::from_string_numeric (s, x, eval);
+  tl::from_string (s, x);
   if (x < std::numeric_limits <T>::min ()) {
     throw tl::Exception (tl::to_string (tr ("Range underflow: ")) + s);
   }
@@ -906,87 +816,39 @@ convert_string_to_int (const std::string &s, T &v, bool eval)
 }
 
 void
-from_string (const std::string &s, double &v)
-{
-  return from_string_numeric (s, v, false);
-}
-
-void
 from_string (const std::string &s, int &v)
 {
-  convert_string_to_int (s, v, false);
+  convert_string_to_int (s, v);
 }
 
 void
 from_string (const std::string &s, long &v)
 {
-  convert_string_to_int (s, v, false);
+  convert_string_to_int (s, v);
 }
 
 void
 from_string (const std::string &s, long long &v)
 {
-  convert_string_to_int (s, v, false);
+  convert_string_to_int (s, v);
 }
 
 void
 from_string (const std::string &s, unsigned int &v)
 {
-  convert_string_to_int (s, v, false);
+  convert_string_to_int (s, v);
 }
 
 void
 from_string (const std::string &s, unsigned long &v)
 {
-  convert_string_to_int (s, v, false);
+  convert_string_to_int (s, v);
 }
 
 void
 from_string (const std::string &s, unsigned long long &v)
 {
-  convert_string_to_int (s, v, false);
-}
-
-void
-from_string_ext (const std::string &s, double &v)
-{
-  return from_string_numeric (s, v, true);
-}
-
-void
-from_string_ext (const std::string &s, int &v)
-{
-  convert_string_to_int (s, v, true);
-}
-
-void
-from_string_ext (const std::string &s, long &v)
-{
-  convert_string_to_int (s, v, true);
-}
-
-void
-from_string_ext (const std::string &s, long long &v)
-{
-  convert_string_to_int (s, v, true);
-}
-
-void
-from_string_ext (const std::string &s, unsigned int &v)
-{
-  convert_string_to_int (s, v, true);
-}
-
-void
-from_string_ext (const std::string &s, unsigned long &v)
-{
-  convert_string_to_int (s, v, true);
-}
-
-void
-from_string_ext (const std::string &s, unsigned long long &v)
-{
-  convert_string_to_int (s, v, true);
+  convert_string_to_int (s, v);
 }
 
 void
@@ -1004,6 +866,23 @@ from_string (const std::string &s, bool &b)
   } else {
     throw tl::Exception (tl::to_string (tr ("Invalid boolean value: ")) + s);
   }
+}
+
+std::string
+join (const std::vector <std::string> &vv, const std::string &s)
+{
+  std::ostringstream r;
+
+  bool first = true;
+  for (std::vector <std::string>::const_iterator i = vv.begin (); i != vv.end (); ++i) {
+    if (!first) {
+      r << s;
+    }
+    first = false;
+    r << *i;
+  }
+
+  return r.str ();
 }
 
 std::vector<std::string>
@@ -1062,15 +941,6 @@ Extractor::read (unsigned int &value)
 }
 
 Extractor &
-Extractor::read (unsigned char &value)
-{
-  if (! try_read (value)) {
-    error (tl::to_string (tr ("Expected an unsigned byte value")));
-  }
-  return *this;
-}
-
-Extractor &
 Extractor::read (unsigned long &value)
 {
   if (! try_read (value)) {
@@ -1090,15 +960,6 @@ Extractor::read (unsigned long long &value)
 
 Extractor &
 Extractor::read (double &value)
-{
-  if (! try_read (value)) {
-    error (tl::to_string (tr ("Expected a real number")));
-  }
-  return *this;
-}
-
-Extractor &
-Extractor::read (float &value)
 {
   if (! try_read (value)) {
     error (tl::to_string (tr ("Expected a real number")));
@@ -1238,14 +1099,6 @@ namespace
       return tl::to_string (tr ("Range overflow on unsigned integer"));
     }
   };
-
-  template <> struct overflow_msg_func<unsigned char>
-  {
-    std::string operator() () const
-    {
-      return tl::to_string (tr ("Range overflow on unsigned byte"));
-    }
-  };
 }
 
 template <class T> bool
@@ -1315,12 +1168,6 @@ Extractor::try_read_unsigned_int (T &value)
 }
 
 bool
-Extractor::try_read (unsigned char &value)
-{
-  return try_read_unsigned_int (value);
-}
-
-bool
 Extractor::try_read (unsigned int &value)
 {
   return try_read_unsigned_int (value);
@@ -1355,19 +1202,6 @@ Extractor::try_read (long long &value)
 {
   return try_read_signed_int (value);
 }
-
-bool
-Extractor::try_read (float &value)
-{
-  double d = value;
-  if (try_read (d)) {
-    value = d;
-    return true;
-  } else {
-    return false;
-  }
-}
-
 bool
 Extractor::try_read (double &value)
 {
@@ -1897,10 +1731,10 @@ std::string format_sci_stlport_fix (double f, int prec, unsigned int flags)
   std::string res;
   res.reserve (os.str ().size ());
   for (const char *cp = os.str ().c_str (); *cp; ++cp) {
-  if (*cp == '0' && (cp[1] == 'e' || cp[1] == 'E')) {
-    ++cp;
-  }
-  res += *cp;
+	if (*cp == '0' && (cp[1] == 'e' || cp[1] == 'E')) {
+	  ++cp;
+	}
+	res += *cp;
   }
   return res;
 };
@@ -1975,17 +1809,17 @@ sprintf (const char *f, const std::vector <tl::Variant> &vv, unsigned int a0)
           os.setf (std::ios::uppercase);
         }
         if (a < vv.size ()) {
-          os << vv [a].to_ulonglong ();
+          os << vv [a].to_ulong ();
         }
       } else if (*cp == 'u' || *cp == 'U') {
         os.setf (std::ios_base::fmtflags (0), std::ios::basefield);
         if (a < vv.size ()) {
-          os << vv [a].to_ulonglong ();
+          os << vv [a].to_ulong ();
         }
       } else if (*cp == 'd' || *cp == 'D') {
         os.setf (std::ios_base::fmtflags (0), std::ios::basefield);
         if (a < vv.size ()) {
-          os << vv [a].to_longlong ();
+          os << vv [a].to_long ();
         }
       } else if (*cp == 's' || *cp == 'S') {
         os.setf (std::ios_base::fmtflags (0), std::ios::basefield);
@@ -2007,7 +1841,7 @@ sprintf (const char *f, const std::vector <tl::Variant> &vv, unsigned int a0)
         }
         if (a < vv.size ()) {
 #if defined(_STLPORT_VERSION) && _STLPORT_VERSION == 0x521 && defined(_MSC_VER)
-        os << format_sci_stlport_fix (vv [a].to_double (), os.precision (), os.flags ()).c_str ();
+	      os << format_sci_stlport_fix (vv [a].to_double (), os.precision (), os.flags ()).c_str ();
 #else
           os << vv [a].to_double ();
 #endif

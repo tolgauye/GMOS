@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -183,7 +183,7 @@ public:
    *
    *  Returns true, if the package could be created successfully.
    */
-  bool create_grain (const SaltGrain &templ, SaltGrain &target, double timeout = 60.0, tl::InputHttpStreamCallback *callback = 0);
+  bool create_grain (const SaltGrain &templ, SaltGrain &target);
 
   /**
    *  @brief Removes redundant entries with same names
@@ -198,11 +198,6 @@ public:
    *  This method is provided for test purposes mainly.
    */
   SaltGrains &root ();
-
-  /**
-   *  @brief Gets a value indicating whether the collection wants package information to be downloaded always
-   */
-  bool download_package_information () const;
 
 signals:
   /**

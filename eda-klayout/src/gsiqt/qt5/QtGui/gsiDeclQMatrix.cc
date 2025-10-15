@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -40,6 +40,7 @@
 #include <QRegion>
 #include "gsiQt.h"
 #include "gsiQtGuiCommon.h"
+#include "gsiDeclQtGuiTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -94,12 +95,12 @@ static void _call_ctor_QMatrix_5886 (const qt_gsi::GenericStaticMethod * /*decl*
 }
 
 
-//  Constructor QMatrix::QMatrix(const QMatrix &other)
+//  Constructor QMatrix::QMatrix(const QMatrix &matrix)
 
 
 static void _init_ctor_QMatrix_2023 (qt_gsi::GenericStaticMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("other");
+  static gsi::ArgSpecBase argspec_0 ("matrix");
   decl->add_arg<const QMatrix & > (argspec_0);
   decl->set_return_new<QMatrix> ();
 }
@@ -163,7 +164,7 @@ static void _call_f_dy_c0 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gs
 
 static void _init_f_inverted_c1050 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("invertible", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("invertible", true, "0");
   decl->add_arg<bool * > (argspec_0);
   decl->set_return<QMatrix > ();
 }
@@ -172,7 +173,7 @@ static void _call_f_inverted_c1050 (const qt_gsi::GenericMethod * /*decl*/, void
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  bool *arg1 = args ? gsi::arg_reader<bool * >() (args, heap) : gsi::arg_maker<bool * >() (nullptr, heap);
+  bool *arg1 = args ? gsi::arg_reader<bool * >() (args, heap) : gsi::arg_maker<bool * >() (0, heap);
   ret.write<QMatrix > ((QMatrix)((QMatrix *)cls)->inverted (arg1));
 }
 
@@ -773,7 +774,7 @@ static gsi::Methods methods_QMatrix () {
   gsi::Methods methods;
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QMatrix::QMatrix()\nThis method creates an object of class QMatrix.", &_init_ctor_QMatrix_0, &_call_ctor_QMatrix_0);
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QMatrix::QMatrix(double m11, double m12, double m21, double m22, double dx, double dy)\nThis method creates an object of class QMatrix.", &_init_ctor_QMatrix_5886, &_call_ctor_QMatrix_5886);
-  methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QMatrix::QMatrix(const QMatrix &other)\nThis method creates an object of class QMatrix.", &_init_ctor_QMatrix_2023, &_call_ctor_QMatrix_2023);
+  methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QMatrix::QMatrix(const QMatrix &matrix)\nThis method creates an object of class QMatrix.", &_init_ctor_QMatrix_2023, &_call_ctor_QMatrix_2023);
   methods += new qt_gsi::GenericMethod ("determinant", "@brief Method double QMatrix::determinant()\n", true, &_init_f_determinant_c0, &_call_f_determinant_c0);
   methods += new qt_gsi::GenericMethod ("dx", "@brief Method double QMatrix::dx()\n", true, &_init_f_dx_c0, &_call_f_dx_c0);
   methods += new qt_gsi::GenericMethod ("dy", "@brief Method double QMatrix::dy()\n", true, &_init_f_dy_c0, &_call_f_dy_c0);

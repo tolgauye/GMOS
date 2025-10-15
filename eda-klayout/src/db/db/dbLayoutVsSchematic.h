@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -145,22 +145,6 @@ public:
   db::NetlistCrossReference *make_cross_ref ();
 
   /**
-   *  @brief Checks top-level port names
-   *
-   *  This method checks that every top-level pin has a corresponding
-   *  schematic pin and their names are equivalent. This verifies that
-   *  all pins are labelles properly.
-   *
-   *  Errors are placed in the log file. The return values indicates
-   *  if there are no errors.
-   *
-   *  The circuit is either a schematic or layout circuit.
-   *
-   *  See issue #2055.
-   */
-  bool flag_missing_ports (const db::Circuit *circuit);
-
-  /**
    *  @brief Saves the database to the given path
    *
    *  Currently, the internal format will be used. If "short_format" is true, the short version
@@ -184,6 +168,18 @@ private:
 
   tl::shared_ptr<db::Netlist> mp_reference_netlist;
   tl::shared_ptr<db::NetlistCrossReference> mp_cross_ref;
+};
+
+}
+
+namespace tl
+{
+
+template<> struct type_traits<db::LayoutVsSchematic> : public tl::type_traits<void>
+{
+  //  mark "NetlistDeviceExtractor" as not having a default ctor and no copy ctor
+  typedef tl::false_tag has_copy_constructor;
+  typedef tl::false_tag has_default_constructor;
 };
 
 }

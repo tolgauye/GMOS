@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -20,7 +20,6 @@
 
 */
 
-#if defined(HAVE_QT)
 
 #ifndef HDR_gtf
 #define HDR_gtf
@@ -187,8 +186,8 @@ public:
    *  @brief Load the log file
    *
    *  This method parses the given file and stores the events internally.
-   *  If the file is not a valid log file or an error occurs, an exception
-   *  is thrown. 
+   *  If the file is not a valid log file or an error occures, an exception
+   *  is thown. 
    */
   void load (const std::string &filename, bool no_spontaneous = false);
 
@@ -373,8 +372,8 @@ public:
    *  @brief Load the log file
    *
    *  This method parses the given file and stores the events internally.
-   *  If the file is not a valid log file or an error occurs, an exception
-   *  is thrown. 
+   *  If the file is not a valid log file or an error occures, an exception
+   *  is thown. 
    */
   void load (const std::string &filename, bool no_spontaneous = false)
   {
@@ -570,4 +569,5 @@ LAYBASIC_PUBLIC tl::Variant image_to_variant (const QImage &image);
 
 #endif
 
-#endif  //  defined(HAVE_QT)
+
+

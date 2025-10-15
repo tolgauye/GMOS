@@ -7,8 +7,7 @@ TARGET = rdb_tests
 include($$PWD/../../lib_ut.pri)
 
 SOURCES = \
-    rdbRVEReaderTests.cc \
-    rdbTests.cc
+  rdb.cc \
 
 INCLUDEPATH += $$RDB_INC $$TL_INC $$DB_INC $$GSI_INC
 DEPENDPATH += $$RDB_INC $$TL_INC $$DB_INC $$GSI_INC

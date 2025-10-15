@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -22,8 +22,6 @@
 
 
 #include "gsiDecl.h"
-#include "gsiDeclDbPropertiesSupport.h"
-#include "gsiEnums.h"
 #include "dbPoint.h"
 #include "dbText.h"
 #include "dbHash.h"
@@ -38,7 +36,6 @@ template <class C>
 struct text_defs 
 {
   typedef typename C::coord_type coord_type;
-  typedef typename C::box_type box_type;
   typedef typename C::point_type point_type;
   typedef typename C::vector_type vector_type;
   typedef db::simple_trans<coord_type> simple_trans_type;
@@ -47,7 +44,7 @@ struct text_defs
   static C *from_string (const char *s)
   {
     tl::Extractor ex (s);
-    std::unique_ptr<C> c (new C ());
+    std::auto_ptr<C> c (new C ());
     ex.read (*c.get ());
     return c.release ();
   }
@@ -99,53 +96,32 @@ struct text_defs
     t->font (db::Font (f));
   }
 
-  static int get_font (const C *t)
+  static int get_font (C *t)
   {
     return t->font ();
   }
 
-  static point_type get_pos (const C *t)
-  {
-    return t->trans () * point_type ();
-  }
-
-  static box_type get_bbox (const C *t)
-  {
-    point_type p = get_pos (t);
-    return box_type (p, p);
-  }
-
-  static void set_halign (C *t, db::HAlign f)
-  {
-    t->halign (f);
-  }
-
-  static void set_halign_int (C *t, int f)
+  static void set_halign (C *t, int f)
   {
     t->halign (db::HAlign (f));
   }
 
-  static db::HAlign get_halign (const C *t)
+  static int get_halign (C *t)
   {
     return t->halign ();
   }
 
-  static void set_valign (C *t, db::VAlign f)
-  {
-    t->valign (f);
-  }
-
-  static void set_valign_int (C *t, int f)
+  static void set_valign (C *t, int f)
   {
     t->valign (db::VAlign (f));
   }
 
-  static db::VAlign get_valign (const C *t)
+  static int get_valign (C *t)
   {
     return t->valign ();
   }
 
-  static C moved (const C *c, const vector_type &p)
+  static C moved (C *c, const vector_type &p)
   {
     return c->transformed (simple_trans_type (p));
   }
@@ -156,7 +132,7 @@ struct text_defs
     return *c;
   }
 
-  static C moved_xy (const C *c, coord_type dx, coord_type dy)
+  static C moved_xy (C *c, coord_type dx, coord_type dy)
   {
     return c->transformed (simple_trans_type (vector_type (dx, dy)));
   }
@@ -169,7 +145,7 @@ struct text_defs
 
   static size_t hash_value (const C *box)
   {
-    return tl::hfunc (*box);
+    return std::hfunc (*box);
   }
 
   static gsi::Methods methods ()
@@ -180,50 +156,43 @@ struct text_defs
       "\n"
       "Creates a text with unit transformation and empty text."
     ) +
-    constructor ("new", &new_st, gsi::arg ("string"), gsi::arg ("trans"),
+    constructor ("new", &new_st,
       "@brief Constructor with string and transformation\n"
       "\n"
+      "@args string, trans\n"
       "\n"
       "A string and a transformation is provided to this constructor. The transformation "
       "specifies the location and orientation of the text object."
     ) +
-    constructor ("new", &new_sxy, gsi::arg ("string"), gsi::arg ("x"), gsi::arg ("y"),
+    constructor ("new", &new_sxy,
       "@brief Constructor with string and location\n"
       "\n"
+      "@args string, x, y\n"
       "\n"
       "A string and a location is provided to this constructor. The location "
       "is specifies as a pair of x and y coordinates.\n"
       "\n"
       "This method has been introduced in version 0.23."
     ) +
-    constructor ("new", &new_sthf, gsi::arg ("string"), gsi::arg ("trans"), gsi::arg ("height"), gsi::arg ("font"),
+    constructor ("new", &new_sthf,
       "@brief Constructor with string, transformation, text height and font\n"
       "\n"
+      "@args string, trans, height, font\n"
       "\n"
       "A string and a transformation is provided to this constructor. The transformation "
       "specifies the location and orientation of the text object. In addition, the text height "
       "and font can be specified."
     ) +
-    method ("string=", (void (C::*) (const std::string &)) &C::string, gsi::arg ("text"),
+    method ("string=", (void (C::*) (const std::string &)) &C::string,
       "@brief Assign a text string to this object\n"
+      "@args text\n"
     ) +
     method ("string", (const char *(C::*) () const) &C::string,
       "@brief Get the text string\n"
     ) +
-    method_ext ("position", get_pos,
-      "@brief Gets the position of the text\n"
-      "\n"
-      "This convenience method has been added in version 0.28."
-    ) +
-    method_ext ("bbox", get_bbox,
-      "@brief Gets the bounding box of the text\n"
-      "The bounding box of the text is a single point - the location of the text. "
-      "Both points of the box are identical.\n"
-      "\n"
-      "This method has been added in version 0.28."
-    ) +
-    method_ext ("x=", set_x, gsi::arg ("x"),
+    method_ext ("x=", set_x,
       "@brief Sets the x location of the text\n"
+      "@args x\n"
       "\n"
       "This method has been introduced in version 0.23.\n"
     ) +
@@ -232,8 +201,9 @@ struct text_defs
       "\n"
       "This method has been introduced in version 0.23.\n"
     ) +
-    method_ext ("y=", set_y, gsi::arg ("y"),
+    method_ext ("y=", set_y,
       "@brief Sets the y location of the text\n"
+      "@args y\n"
       "\n"
       "This method has been introduced in version 0.23.\n"
     ) +
@@ -242,75 +212,71 @@ struct text_defs
       "\n"
       "This method has been introduced in version 0.23.\n"
     ) +
-    method ("trans=", (void (C::*) (const simple_trans_type &)) &C::trans, gsi::arg ("t"),
+    method ("trans=", (void (C::*) (const simple_trans_type &)) &C::trans,
       "@brief Assign a transformation (text position and orientation) to this object\n"
+      "@args t\n"
     ) +
     method ("trans", (const simple_trans_type & (C::*) () const) &C::trans,
-      "@brief Gets the transformation\n"
+      "@brief Get the transformation\n"
     ) +
-    method ("size=", (void (C::*) (coord_type)) &C::size, gsi::arg ("s"),
-      "@brief Sets the text height of this object\n"
+    method ("size=", (void (C::*) (coord_type)) &C::size,
+      "@brief Set the text height of this object\n"
+      "@args s\n"
     ) +
     method ("size", (coord_type (C::*) () const) &C::size,
-      "@brief Gets the text height\n"
+      "@brief Get the text height\n"
     ) +
-    method_ext ("font=", &set_font, gsi::arg ("f"),
-      "@brief Sets the font number\n"
-      "The font number does not play a role for KLayout. This property is provided "
-      "for compatibility with other systems which allow using different fonts for the text objects."
+    method_ext ("font=", &set_font,
+      "@brief Set the font number\n"
+      "@args f\n"
     ) +
     method_ext ("font", &get_font,
-      "@brief Gets the font number\n"
-      "See \\font= for a description of this property."
+      "@brief Get the font number\n"
     ) +
-    method_ext ("#halign=", &set_halign_int, gsi::arg ("a"),
-      "@brief Sets the horizontal alignment\n"
-      "\n"
-      "This is the version accepting integer values. It's provided for backward compatibility.\n"
-    ) +
-    method_ext ("halign=", &set_halign, gsi::arg ("a"),
-      "@brief Sets the horizontal alignment\n"
+    method_ext ("halign=", &set_halign,
+      "@brief Set the horizontal alignment\n"
+      "@args a\n"
       "\n"
       "This property specifies how the text is aligned relative to the anchor point. "
+      "Allowed values for this property are 0 (left), 1 (center) and 2 (right)."
       "\n"
-      "This property has been introduced in version 0.22 and extended to enums in 0.28.\n"
+      "This property has been introduced in version 0.22.\n"
     ) +
     method_ext ("halign", &get_halign,
-      "@brief Gets the horizontal alignment\n"
+      "@brief Get the horizontal alignment\n"
       "\n"
       "See \\halign= for a description of this property.\n"
     ) +
-    method_ext ("#valign=", &set_valign_int, gsi::arg ("a"),
-      "@brief Sets the vertical alignment\n"
-      "\n"
-      "This is the version accepting integer values. It's provided for backward compatibility.\n"
-    ) +
-    method_ext ("valign=", &set_valign, gsi::arg ("a"),
-      "@brief Sets the vertical alignment\n"
+    method_ext ("valign=", &set_valign,
+      "@brief Set the vertical alignment\n"
+      "@args a\n"
       "\n"
       "This property specifies how the text is aligned relative to the anchor point. "
+      "Allowed values for this property are 0 (top), 1 (center) and 2 (bottom)."
       "\n"
-      "This property has been introduced in version 0.22 and extended to enums in 0.28.\n"
+      "This property has been introduced in version 0.22.\n"
     ) +
     method_ext ("valign", &get_valign,
-      "@brief Gets the vertical alignment\n"
+      "@brief Get the vertical alignment\n"
       "\n"
       "See \\valign= for a description of this property.\n"
     ) +
-    method_ext ("move", &move, gsi::arg ("v"),
+    method_ext ("move", &move,
       "@brief Moves the text by a certain distance (modifies self)\n"
       "\n"
+      "@args distance\n"
       "\n"
       "Moves the text by a given offset and returns the moved\n"
       "text. Does not check for coordinate overflows.\n"
       "\n"
-      "@param v The offset to move the text.\n"
+      "@param p The offset to move the text.\n"
       "\n"
       "@return A reference to this text object\n"
     ) +
-    method_ext ("move", &move_xy, gsi::arg ("dx", 0), gsi::arg ("dy", 0),
+    method_ext ("move", &move_xy,
       "@brief Moves the text by a certain distance (modifies self)\n"
       "\n"
+      "@args dx, dy\n"
       "\n"
       "Moves the text by a given distance in x and y direction and returns the moved\n"
       "text. Does not check for coordinate overflows.\n"
@@ -322,21 +288,23 @@ struct text_defs
       "\n"
       "This method was introduced in version 0.23."
     ) +
-    method_ext ("moved", &moved, gsi::arg ("v"),
+    method_ext ("moved", &moved,
       "@brief Returns the text moved by a certain distance (does not modify self)\n"
       "\n"
+      "@args distance\n"
       "\n"
       "Moves the text by a given offset and returns the moved\n"
       "text. Does not modify *this. Does not check for coordinate\n"
       "overflows.\n"
       "\n"
-      "@param v The offset to move the text.\n"
+      "@param p The offset to move the text.\n"
       "\n"
       "@return The moved text.\n"
     ) +
-    method_ext ("moved", &moved_xy, gsi::arg ("dx", 0), gsi::arg ("dy", 0),
+    method_ext ("moved", &moved_xy,
       "@brief Returns the text moved by a certain distance (does not modify self)\n"
       "\n"
+      "@args dx, dy\n"
       "\n"
       "Moves the text by a given offset and returns the moved\n"
       "text. Does not modify *this. Does not check for coordinate\n"
@@ -349,34 +317,39 @@ struct text_defs
       "\n"
       "This method was introduced in version 0.23."
     ) +
-    method ("transformed", &C::template transformed<simple_trans_type>, gsi::arg ("t"),
-      "@brief Transforms the text with the given simple transformation\n"
+    method ("transformed", &C::template transformed<simple_trans_type>,
+      "@brief Transform the text with the given simple transformation\n"
       "\n"
+      "@args t\n"
       "\n"
       "@param t The transformation to apply\n"
       "@return The transformed text\n"
     ) +
-    method ("transformed", &C::template transformed<complex_trans_type>, gsi::arg ("t"),
-      "@brief Transforms the text with the given complex transformation\n"
+    method ("transformed", &C::template transformed<complex_trans_type>,
+      "@brief Transform the text with the given complex transformation\n"
       "\n"
+      "@args t\n"
       "\n"
       "@param t The magnifying transformation to apply\n"
       "@return The transformed text (a DText now)\n"
     ) +
-    method ("<", &C::less, gsi::arg ("t"),
+    method ("<", &C::less,
       "@brief Less operator\n"
+      "@args t\n"
       "@param t The object to compare against\n"
       "This operator is provided to establish some, not necessarily a certain sorting order"
     ) +
-    method ("==", &C::equal, gsi::arg ("text"),
+    method ("==", &C::equal,
       "@brief Equality\n"
       "\n"
+      "@args text\n"
       "\n"
       "Return true, if this text object and the given text are equal "
     ) +
-    method ("!=", &C::not_equal, gsi::arg ("text"),
+    method ("!=", &C::not_equal,
       "@brief Inequality\n"
       "\n"
+      "@args text\n"
       "\n"
       "Return true, if this text object and the given text are not equal "
     ) +
@@ -386,17 +359,15 @@ struct text_defs
       "\n"
       "This method has been introduced in version 0.25.\n"
     ) +
-    constructor ("from_s", &from_string, gsi::arg ("s"),
+    constructor ("from_s", &from_string,
       "@brief Creates an object from a string\n"
+      "@args s\n"
       "Creates the object from a string representation (as returned by \\to_s)\n"
       "\n"
       "This method has been added in version 0.23.\n"
     ) +
-    method ("to_s", &C::to_string, gsi::arg ("dbu", 0.0),
-      "@brief Converts the object to a string.\n"
-      "If a DBU is given, the output units will be micrometers.\n"
-      "\n"
-      "The DBU argument has been added in version 0.27.6.\n"
+    method ("to_s", (std::string (C::*) () const) &C::to_string,
+      "@brief Convert to a string\n"
     );
   }
 };
@@ -425,9 +396,10 @@ Class<db::Text> decl_Text ("db", "Text",
     "\n"
     "This method has been introduced in version 0.25."
   ) +
-  method ("transformed", &db::Text::transformed<db::ICplxTrans>, gsi::arg ("t"),
+  method ("transformed", &db::Text::transformed<db::ICplxTrans>,
     "@brief Transform the text with the given complex transformation\n"
     "\n"
+    "@args t\n"
     "\n"
     "@param t The magnifying transformation to apply\n"
     "@return The transformed text (in this case an integer coordinate object now)\n"
@@ -447,33 +419,6 @@ Class<db::Text> decl_Text ("db", "Text",
   "\n"
   "See @<a href=\"/programming/database_api.xml\">The Database API@</a> for more details about the "
   "database objects."
-);
-
-static db::TextWithProperties *new_text_with_properties (const db::Text &text, db::properties_id_type pid)
-{
-  return new db::TextWithProperties (text, pid);
-}
-
-static db::TextWithProperties *new_text_with_properties2 (const db::Text &text, const std::map<tl::Variant, tl::Variant> &properties)
-{
-  return new db::TextWithProperties (text, db::properties_id (db::PropertiesSet (properties.begin (), properties.end ())));
-}
-
-Class<db::TextWithProperties> decl_TextWithProperties (decl_Text, "db", "TextWithProperties",
-  gsi::properties_support_methods<db::TextWithProperties> () +
-  constructor ("new", &new_text_with_properties, gsi::arg ("text"), gsi::arg ("properties_id", db::properties_id_type (0)),
-    "@brief Creates a new object from a property-less object and a properties ID."
-  ) +
-  constructor ("new", &new_text_with_properties2, gsi::arg ("text"), gsi::arg ("properties"),
-    "@brief Creates a new object from a property-less object and a properties hash."
-  )
-  ,
-  "@brief A Text object with properties attached.\n"
-  "This class represents a combination of a Text object an user properties. User properties are "
-  "stored in form of a properties ID. Convenience methods are provided to manipulate or retrieve "
-  "user properties directly.\n"
-  "\n"
-  "This class has been introduced in version 0.30."
 );
 
 static db::DText *dtext_from_itext (const db::Text &t)
@@ -501,9 +446,10 @@ Class<db::DText> decl_DText ("db", "DText",
     "\n"
     "This method has been introduced in version 0.25."
   ) +
-  method ("transformed", &db::DText::transformed<db::VCplxTrans>, gsi::arg ("t"),
+  method ("transformed", &db::DText::transformed<db::VCplxTrans>,
     "@brief Transforms the text with the given complex transformation\n"
     "\n"
+    "@args t\n"
     "\n"
     "@param t The magnifying transformation to apply\n"
     "@return The transformed text (in this case an integer coordinate text)\n"
@@ -525,71 +471,5 @@ Class<db::DText> decl_DText ("db", "DText",
   "database objects."
 );
 
-static db::DTextWithProperties *new_dtext_with_properties (const db::DText &text, db::properties_id_type pid)
-{
-  return new db::DTextWithProperties (text, pid);
 }
 
-static db::DTextWithProperties *new_dtext_with_properties2 (const db::DText &text, const std::map<tl::Variant, tl::Variant> &properties)
-{
-  return new db::DTextWithProperties (text, db::properties_id (db::PropertiesSet (properties.begin (), properties.end ())));
-}
-
-Class<db::DTextWithProperties> decl_DTextWithProperties (decl_DText, "db", "DTextWithProperties",
-  gsi::properties_support_methods<db::DTextWithProperties> () +
-  constructor ("new", &new_dtext_with_properties, gsi::arg ("text"), gsi::arg ("properties_id", db::properties_id_type (0)),
-    "@brief Creates a new object from a property-less object and a properties ID."
-  ) +
-  constructor ("new", &new_dtext_with_properties2, gsi::arg ("text"), gsi::arg ("properties"),
-    "@brief Creates a new object from a property-less object and a properties hash."
-  )
-  ,
-  "@brief A DText object with properties attached.\n"
-  "This class represents a combination of a DText object an user properties. User properties are "
-  "stored in form of a properties ID. Convenience methods are provided to manipulate or retrieve "
-  "user properties directly.\n"
-  "\n"
-  "This class has been introduced in version 0.30."
-);
-
-gsi::Enum<db::HAlign> decl_HAlign ("db", "HAlign",
-  gsi::enum_const ("HAlignLeft", db::HAlignLeft,
-    "@brief Left horizontal alignment\n"
-  ) +
-  gsi::enum_const ("HAlignCenter", db::HAlignCenter,
-    "@brief Centered horizontal alignment\n"
-  ) +
-  gsi::enum_const ("HAlignRight", db::HAlignRight,
-    "@brief Right horizontal alignment\n"
-  ) +
-  gsi::enum_const ("NoHAlign", db::NoHAlign,
-    "@brief Undefined horizontal alignment\n"
-  ),
-  "@brief This class represents the horizontal alignment modes.\n"
-  "This enum has been introduced in version 0.28."
-);
-
-gsi::Enum<db::VAlign> decl_VAlign ("db", "VAlign",
-  gsi::enum_const ("VAlignBottom", db::VAlignBottom,
-    "@brief Bottom vertical alignment\n"
-  ) +
-  gsi::enum_const ("VAlignCenter", db::VAlignCenter,
-    "@brief Centered vertical alignment\n"
-  ) +
-  gsi::enum_const ("VAlignTop", db::VAlignTop,
-    "@brief Top vertical alignment\n"
-  ) +
-  gsi::enum_const ("NoVAlign", db::NoVAlign,
-    "@brief Undefined vertical alignment\n"
-  ),
-  "@brief This class represents the vertical alignment modes.\n"
-  "This enum has been introduced in version 0.28."
-);
-
-//  Inject the alignment enums
-gsi::ClassExt<db::Text> inject_Text_HAlign_in_parent (decl_HAlign.defs ());
-gsi::ClassExt<db::DText> inject_DText_HAlign_in_parent (decl_HAlign.defs ());
-gsi::ClassExt<db::Text> inject_Text_VAlign_in_parent (decl_VAlign.defs ());
-gsi::ClassExt<db::DText> inject_DText_VAlign_in_parent (decl_VAlign.defs ());
-
-}

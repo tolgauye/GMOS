@@ -1,7 +1,7 @@
 # encoding: UTF-8
 
 # KLayout Layout Viewer
-# Copyright (C) 2006-2025 Matthias Koefferlein
+# Copyright (C) 2006-2019 Matthias Koefferlein
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,20 +25,20 @@ load("test_prologue.rb")
 
 class LAYLayers_TestClass < TestBase
 
-  def lnode_str(space, l)
-    return space + l.current.source(true) + "\n";
+  def lnode_str( space, l )
+    return space + l.current.source( true ) + "\n";
   end
 
-  def lnodes_str(space, l)
+  def lnodes_str( space, l )
     res = ""
     while ! l.at_end?  
-      res += lnode_str(space, l)
+      res += lnode_str( space, l )
       if (l.current.has_children?) 
         l.down_first_child
-        res += lnodes_str("  #{space}", l)
+        res += lnodes_str( "  #{space}", l )
         l.up
       end
-      l.next_sibling(1)
+      l.next_sibling( 1 )
     end
     return res
   end
@@ -152,7 +152,7 @@ class LAYLayers_TestClass < TestBase
     l12_new.source = "@* (0,0 *0.5) (0,5 r45 *2.5)"
     cv.set_layer_properties( p12, l12_new )
     trans = p12.current.trans( true )
-    assert_equal( trans.map(&:to_s), p12.current.trans.map(&:to_s) )
+    assert_equal( trans.to_s, p12.current.trans.to_s )
     assert_equal( trans.size, 2 )
     assert_equal( trans [0].to_s, "r0 *0.5 0,0" )
     assert_equal( trans [1].to_s, "r45 *2.5 0,5" )
@@ -234,8 +234,6 @@ class LAYLayers_TestClass < TestBase
 
     cv.insert_layer_list(1)
     cv.rename_layer_list(1, "x")
-    assert_equal(cv.layer_list_name(1), "x")
-    assert_equal(cv.layer_list_name(10000), "")  # must not crash
     assert_equal(cv.current_layer_list, 1)
     cv.set_current_layer_list(0)
     assert_equal(cv.current_layer_list, 0)
@@ -669,18 +667,12 @@ class LAYLayers_TestClass < TestBase
     p.clear_line_style
     assert_equal( p.has_line_style?, false )
 
-    assert_equal( p.is_expanded?, false )
-    p.expanded = true
-    assert_equal( p.is_expanded?, true )
-
     pp = RBA::LayerPropertiesNode::new
     assert_equal( pp == p, false )
     assert_equal( pp != p, true )
-    assert_equal( pp.is_expanded?, false )
     pp = p.dup
     assert_equal( pp == p, true )
     assert_equal( pp != p, false )
-    assert_equal( pp.is_expanded?, true )
 
   end
 
@@ -945,135 +937,6 @@ class LAYLayers_TestClass < TestBase
     assert_equal(cv.get_line_style(index), "")
 
     mw.close_all
-
-  end
-
-  # dynamic update of tree with LayerPropertiesNodeRef
-  def test_7
-
-    if !RBA.constants.member?(:Application)
-      return
-    end
-
-    app = RBA::Application.instance
-    mw = app.main_window
-    mw.close_all
-
-    mw.load_layout( ENV["TESTSRC"] + "/testdata/gds/t11.gds", 1 ) 
-
-    lv = mw.current_view
-    lv.clear_layers
-
-    lp = RBA::LayerProperties::new
-    lp.source = "A@*"
-     
-    lp = lv.insert_layer(lv.begin_layers, lp)
-     
-    lpp = RBA::LayerProperties::new
-    lpp = lp.add_child(lpp)
-    lpp.source = "A.1"
-     
-    lppp = RBA::LayerProperties::new
-    lppp = lpp.add_child(lppp)
-    lppp.source = "A.1.1@*"
-     
-    lppp = RBA::LayerProperties::new
-    lppp = lpp.add_child(lppp)
-    li = lv.begin_layers # lp
-    li.down_first_child # lpp
-    li.down_first_child # before lppp
-    li.next # lppp
-    li.current.source = "X"
-    assert_equal(lppp.source, "X@1")
-    lppp.source = "A.1.2"
-    assert_equal(li.current.source, "A.1.2@1")
-     
-    lpp = RBA::LayerProperties::new
-    lpp = lp.add_child(lpp)
-    lpp.source = "A.2@*"
-     
-    lppp = RBA::LayerProperties::new
-    lppp = lpp.add_child(lppp)
-    lppp.source = "A.2.1"
-    lppp_saved = lppp
-
-    lppp = RBA::LayerProperties::new
-    lppp = lpp.add_child(lppp)
-    lppp.source = "A.2.2@*"
-
-    assert_equal(lnodes_str("", lv.begin_layers), 
-      "A@*\n" +
-      "  A.1@1\n" +
-      "    A.1.1@1\n" +
-      "    A.1.2@1\n" +
-      "  A.2@*\n" +
-      "    A.2.1@1\n" +
-      "    A.2.2@*\n"
-    )
-
-    lp.source = "B@2"
-
-    assert_equal(lnodes_str("", lv.begin_layers), 
-      "B@2\n" +
-      "  A.1@1\n" +
-      "    A.1.1@1\n" +
-      "    A.1.2@1\n" +
-      "  A.2@2\n" +
-      "    A.2.1@1\n" +
-      "    A.2.2@2\n"
-    )
-
-    lppp_saved.delete
-
-    assert_equal(lnodes_str("", lv.begin_layers), 
-      "B@2\n" +
-      "  A.1@1\n" +
-      "    A.1.1@1\n" +
-      "    A.1.2@1\n" +
-      "  A.2@2\n" +
-      "    A.2.2@2\n"
-    )
-
-    assert_equal(lppp.source, "A.2.2@*")
-
-  end
-
-  # clear_layers with index and layer list with name
-  def test_8
-
-    if !RBA.constants.member?(:Application)
-      return
-    end
-
-    app = RBA::Application.instance
-    mw = app.main_window
-    mw.close_all
-
-    mw.load_layout( ENV["TESTSRC"] + "/testdata/gds/t11.gds", 1 ) 
-
-    cv = mw.current_view
-
-    cv.clear_layers
-    assert_equal(lnodes_str("", cv.begin_layers(0)), "")
-
-    cv.rename_layer_list(0, "x")
-    assert_equal(cv.layer_list_name(0), "x")
-
-    cv.insert_layer(0, cv.end_layers(0), RBA::LayerProperties::new)
-    assert_equal(lnodes_str("", cv.begin_layers(0)), "*/*@*\n")
-
-    cv.clear_layers(0)
-    assert_equal(lnodes_str("", cv.begin_layers(0)), "")
-    assert_equal(cv.layer_list_name(0), "x")
-
-    cv.rename_layer_list(cv.current_layer_list, "y")
-    assert_equal(cv.layer_list_name(0), "y")
-    cv.insert_layer(cv.end_layers, RBA::LayerProperties::new)
-    assert_equal(lnodes_str("", cv.begin_layers), "*/*@*\n")
-
-    cv.clear_layers
-    assert_equal(lnodes_str("", cv.begin_layers), "")
-    assert_equal(cv.layer_list_name(cv.current_layer_list), "y")
 
   end
 

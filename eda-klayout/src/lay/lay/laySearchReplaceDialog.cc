@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -38,14 +38,9 @@
 #include "tlLog.h"
 #include "tlProgress.h"
 #include "tlTimer.h"
-#include "rdbUtils.h"
-#include "edtService.h"
 
 #include <QInputDialog>
 #include <QHeaderView>
-#include <QRegExp>
-#include <QClipboard>
-#include <QMimeData>
 
 #include <fstream>
 
@@ -76,15 +71,6 @@ SearchReplaceResults::clear ()
   m_cell_result.clear ();
   m_data_columns = 1;
   m_has_more = false;
-}
-
-void
-SearchReplaceResults::set_data_column_headers (const tl::Variant &v)
-{
-  m_data_column_headers = v;
-  if (v.is_list ()) {
-    m_data_columns = std::max (v.get_list ().size (), m_data_columns);
-  }
 }
 
 void 
@@ -156,7 +142,7 @@ SearchReplaceResults::size () const
   return std::max (std::max (m_cell_result.size (), m_data_result.size ()), std::max (m_shape_result.size (), m_inst_result.size ())) + (m_has_more ? 1 : 0);
 }
 
-int 
+int	
 SearchReplaceResults::columnCount (const QModelIndex & /*parent*/) const
 {
   //  Note: keep last column count for empty model to avoid resize events for the header
@@ -177,13 +163,7 @@ SearchReplaceResults::headerData (int section, Qt::Orientation /*orientation*/, 
 {
   if (role == Qt::DisplayRole) {
     if (! m_data_result.empty ()) {
-      if (m_data_column_headers.is_list ()) {
-        if (section < int (m_data_column_headers.get_list ().size ())) {
-          return QVariant (m_data_column_headers.get_list () [section].to_string ());
-        } else {
-          return QVariant (QString ());
-        }
-      } else if (section == 0) {
+      if (section == 0) {
         return QVariant (QObject::tr ("Value"));
       } else {
         return QVariant (QString ());
@@ -416,7 +396,7 @@ SearchReplaceResults::data (const QModelIndex &index, int role) const
   return QVariant ();
 }
 
-Qt::ItemFlags 
+Qt::ItemFlags	
 SearchReplaceResults::flags (const QModelIndex & /*index*/) const
 {
   return Qt::ItemIsSelectable | Qt::ItemIsEnabled;
@@ -434,7 +414,7 @@ SearchReplaceResults::hasIndex (int row, int /*column*/, const QModelIndex &pare
   return ! parent.isValid () && row < int (size ());
 }
 
-QModelIndex 
+QModelIndex	
 SearchReplaceResults::index (int row, int column, const QModelIndex &parent) const
 {
   if (! parent.isValid ()) {
@@ -444,13 +424,13 @@ SearchReplaceResults::index (int row, int column, const QModelIndex &parent) con
   }
 }
 
-QModelIndex 
+QModelIndex	
 SearchReplaceResults::parent (const QModelIndex & /*index*/) const
 {
   return QModelIndex ();
 }
 
-int 
+int	
 SearchReplaceResults::rowCount (const QModelIndex &parent) const
 {
   return parent.isValid () ? 0 : int (size ());
@@ -475,101 +455,11 @@ escape_csv (const std::string &s)
   }
 }
 
-void
-SearchReplaceResults::select_items (lay::LayoutViewBase *view, int cv_index, const std::set<int> *rows)
+void 	
+SearchReplaceResults::export_csv (const std::string &file)
 {
-  const lay::CellView &cv = view->cellview (cv_index);
-  const db::Layout &layout = cv->layout ();
+  std::ofstream output (file.c_str ());
 
-  std::vector<edt::Service::objects::value_type> sel;
-
-  int n_rows = int (size ());
-  for (int r = 0; r < n_rows; ++r) {
-
-    if (rows && rows->find (r) == rows->end ()) {
-      continue;
-    }
-
-    if (r < int (shapes ().size ())) {
-
-      const SearchReplaceResults::QueryShapeResult &sr = shapes () [r];
-      if (! sr.shape.is_null () && layout.is_valid_cell_index (sr.initial_cell_index)) {
-
-        std::vector<db::InstElement> path;
-        if (db::find_path (layout, sr.initial_cell_index, cv.cell_index (), path)) {
-
-          sel.push_back (edt::Service::objects::value_type ());
-          sel.back ().set_cv_index (cv_index);
-          sel.back ().set_layer (sr.layer_index);
-          sel.back ().set_shape (sr.shape);
-          sel.back ().set_topcell (cv.cell_index ());
-          sel.back ().assign_path (path.begin (), path.end ());
-          if (sr.inst_elements.has_value ()) {
-            sel.back ().add_path (sr.inst_elements->begin (), sr.inst_elements->end ());
-          }
-
-        }
-
-      }
-
-    } else if (r < int (instances ().size ())) {
-
-      const SearchReplaceResults::QueryInstResult &ir = instances () [r];
-      if (! ir.inst.is_null () && layout.is_valid_cell_index (ir.initial_cell_index)) {
-
-        std::vector<db::InstElement> path;
-        if (db::find_path (layout, ir.initial_cell_index, cv.cell_index (), path)) {
-
-          sel.push_back (edt::Service::objects::value_type ());
-          sel.back ().set_cv_index (cv_index);
-          sel.back ().set_topcell (cv.cell_index ());
-          sel.back ().assign_path (path.begin (), path.end ());
-          if (ir.inst_elements.has_value ()) {
-            sel.back ().add_path (ir.inst_elements->begin (), ir.inst_elements->end ());
-          }
-
-        }
-
-      }
-
-    }
-
-  }
-
-  edt::set_object_selection (view, sel);
-}
-
-void
-SearchReplaceResults::export_csv_to_clipboard (const std::set<int> *rows)
-{
-  tl::OutputMemoryStream buffer;
-
-  {
-    tl::OutputStream os (buffer, true /* as text */);
-    export_csv (os, rows);
-  }
-
-#if QT_VERSION >= 0x050000
-  QClipboard *clipboard = QGuiApplication::clipboard();
-#else
-  QClipboard *clipboard = QApplication::clipboard();
-#endif
-  QMimeData *data = new QMimeData ();
-  data->setData (QString::fromUtf8 ("text/csv"), QByteArray (buffer.data (), buffer.size ()));
-  data->setText (QString::fromUtf8 (buffer.data (), buffer.size ()));
-  clipboard->setMimeData (data);
-}
-
-void
-SearchReplaceResults::export_csv (const std::string &file, const std::set<int> *rows)
-{
-  tl::OutputStream os (file, tl::OutputStream::OM_Auto, true /* as text */);
-  export_csv (os, rows);
-}
-
-void
-SearchReplaceResults::export_csv (tl::OutputStream &os, const std::set<int> *rows)
-{
   QModelIndex parent;
 
   size_t n_columns = columnCount (parent);
@@ -577,33 +467,29 @@ SearchReplaceResults::export_csv (tl::OutputStream &os, const std::set<int> *row
 
   for (size_t c = 0; c < n_columns; ++c) {
     if (c) {
-      os << ",";
+      output << ",";
     }
-    os << escape_csv (tl::to_string (headerData (int (c), Qt::Horizontal, Qt::DisplayRole).toString ()));
+    output << escape_csv (tl::to_string (headerData (int (c), Qt::Horizontal, Qt::DisplayRole).toString ()));
   }
-  os << "\n";
+  output << std::endl;
 
   for (size_t r = 0; r < n_rows; ++r) {
 
-    if (! rows || rows->find (r) != rows->end ()) {
-
-      for (size_t c = 0; c < n_columns; ++c) {
-        if (c) {
-          os << ",";
-        }
-        //  TODO: optimize
-        os << escape_csv (tl::to_string (data (index (int (r), int (c), parent), Qt::DisplayRole).toString ()));
+    for (size_t c = 0; c < n_columns; ++c) {
+      if (c) {
+        output << ",";
       }
-
-      os << "\n";
-
+      //  TODO: optimize
+      output << escape_csv (tl::to_string (data (index (int (r), int (c), parent), Qt::DisplayRole).toString ()));
     }
+
+    output << std::endl;
 
   }
 }
 
-void  
-SearchReplaceResults::export_layout (db::Layout &layout, const std::set<int> *rows)
+void 	
+SearchReplaceResults::export_layout (db::Layout &layout)
 {
   if (! m_data_result.empty () || ! m_cell_result.empty () || ! m_inst_result.empty ()) {
     throw tl::Exception (tl::to_string (QObject::tr ("Query produces something other than shapes - such results cannot be converted to layout currently.")));
@@ -612,18 +498,13 @@ SearchReplaceResults::export_layout (db::Layout &layout, const std::set<int> *ro
   db::Cell &top_cell = layout.cell (layout.add_cell ("RESULTS"));
   db::LayerMap insert_lm;
 
-  int r = 0;
-  for (std::vector<QueryShapeResult>::const_iterator s = m_shape_result.begin (); s != m_shape_result.end (); ++s, ++r) {
-
-    if (rows && rows->find (r) == rows->end ()) {
-      continue;
-    }
+  for (std::vector<QueryShapeResult>::const_iterator s = m_shape_result.begin (); s != m_shape_result.end (); ++s) {
 
     unsigned int layer = s->layer_index;
     std::map<unsigned int, db::LayerProperties>::const_iterator lm = m_lp_map.find (layer);
     if (lm != m_lp_map.end ()) {
 
-      std::pair<bool, unsigned int> ll = insert_lm.first_logical (lm->second);
+      std::pair<bool, unsigned int> ll = insert_lm.logical (lm->second);
       if (! ll.first) {
         layer = layout.insert_layer (lm->second);
         insert_lm.map (lm->second, layer, lm->second);
@@ -639,8 +520,8 @@ SearchReplaceResults::export_layout (db::Layout &layout, const std::set<int> *ro
   }
 }
 
-void  
-SearchReplaceResults::export_rdb (rdb::Database &rdb, double dbu, const std::set<int> *rows)
+void 	
+SearchReplaceResults::export_rdb (rdb::Database &rdb, double dbu)
 {
   if (! m_cell_result.empty ()) {
 
@@ -651,20 +532,15 @@ SearchReplaceResults::export_rdb (rdb::Database &rdb, double dbu, const std::set
     rdb::Category *cat = rdb.create_category ("data");
     rdb::Cell *cell = rdb.create_cell (rdb.top_cell_name ());
 
-    int r = 0;
-    for (std::vector<tl::Variant>::const_iterator v = m_data_result.begin (); v != m_data_result.end (); ++v, ++r) {
-
-      if (rows && rows->find (r) == rows->end ()) {
-        continue;
-      }
+    for (std::vector<tl::Variant>::const_iterator v = m_data_result.begin (); v != m_data_result.end (); ++v) {
 
       rdb::Item *item = rdb.create_item (cell->id (), cat->id ());
 
       if (! v->is_list ()) {
-        rdb::add_item_value (item, *v, dbu);
+        item->add_value (std::string (v->to_string ()));
       } else {
         for (std::vector<tl::Variant>::const_iterator i = v->get_list ().begin (); i != v->get_list ().end (); ++i) {
-          rdb::add_item_value (item, *i, dbu);
+          item->add_value (std::string (i->to_string ()));
         }
       } 
 
@@ -682,12 +558,7 @@ SearchReplaceResults::export_rdb (rdb::Database &rdb, double dbu, const std::set
       }
     }
 
-    int r = 0;
-    for (std::vector<QueryInstResult>::const_iterator i = m_inst_result.begin (); i != m_inst_result.end (); ++i, ++r) {
-
-      if (rows && rows->find (r) == rows->end ()) {
-        continue;
-      }
+    for (std::vector<QueryInstResult>::const_iterator i = m_inst_result.begin (); i != m_inst_result.end (); ++i) {
 
       std::map<std::pair<db::cell_index_type, db::CplxTrans>, rdb::Cell *>::const_iterator v = cells_by_variant.find (std::make_pair (i->cell_index, db::CplxTrans (i->trans)));
       if (v == cells_by_variant.end ()) {
@@ -715,13 +586,7 @@ SearchReplaceResults::export_rdb (rdb::Database &rdb, double dbu, const std::set
 
     //  create categories
     std::map<unsigned int, rdb::Category *> categories;
-
-    int r = 0;
-    for (std::vector<QueryShapeResult>::const_iterator s = m_shape_result.begin (); s != m_shape_result.end (); ++s, ++r) {
-
-      if (rows && rows->find (r) == rows->end ()) {
-        continue;
-      }
+    for (std::vector<QueryShapeResult>::const_iterator s = m_shape_result.begin (); s != m_shape_result.end (); ++s) {
 
       unsigned int layer = s->layer_index;
       std::map<unsigned int, db::LayerProperties>::const_iterator lm = m_lp_map.find (layer);
@@ -742,12 +607,7 @@ SearchReplaceResults::export_rdb (rdb::Database &rdb, double dbu, const std::set
       }
     }
 
-    r = 0;
-    for (std::vector<QueryShapeResult>::const_iterator s = m_shape_result.begin (); s != m_shape_result.end (); ++s, ++r) {
-
-      if (rows && rows->find (r) == rows->end ()) {
-        continue;
-      }
+    for (std::vector<QueryShapeResult>::const_iterator s = m_shape_result.begin (); s != m_shape_result.end (); ++s) {
 
       unsigned int layer = s->layer_index;
       std::map<unsigned int, rdb::Category *>::const_iterator cm = categories.find (layer);
@@ -837,7 +697,7 @@ fill_ctx_cbx (QComboBox *cbx)
   cbx->addItem (QObject::tr ("All cells"));
 }
 
-SearchReplaceDialog::SearchReplaceDialog (lay::Dispatcher *root, LayoutViewBase *view)
+SearchReplaceDialog::SearchReplaceDialog (lay::PluginRoot *root, lay::LayoutView *view)
   : lay::Browser (root, view),
     Ui::SearchReplaceDialog (),
     mp_view (view),
@@ -886,36 +746,10 @@ SearchReplaceDialog::SearchReplaceDialog (lay::Dispatcher *root, LayoutViewBase 
   connect (results->header (), SIGNAL (sectionCountChanged (int, int)), this, SLOT (header_columns_changed (int, int)));
 
   QMenu *menu = new QMenu (this);
-  menu->addAction (QObject::tr ("Copy to clipboard"), this, SLOT (export_csv_to_clipboard ()));
   menu->addAction (QObject::tr ("To CSV file"), this, SLOT (export_csv ()));
   menu->addAction (QObject::tr ("To report database"), this, SLOT (export_rdb ()));
   menu->addAction (QObject::tr ("To layout"), this, SLOT (export_layout ()));
-  menu->addAction (QObject::tr ("To selection"), this, SLOT (select_items ()));
   export_b->setMenu (menu);
-
-  QAction *action;
-
-  action = new QAction (QObject::tr ("Copy to clipboard"), results);
-  connect (action, SIGNAL (triggered ()), this, SLOT (sel_export_csv_to_clipboard ()));
-  results->addAction (action);
-
-  action = new QAction (QObject::tr ("Export to CSV file"), results);
-  connect (action, SIGNAL (triggered ()), this, SLOT (sel_export_csv ()));
-  results->addAction (action);
-
-  action = new QAction (QObject::tr ("Export to report database"), results);
-  connect (action, SIGNAL (triggered ()), this, SLOT (sel_export_rdb ()));
-  results->addAction (action);
-
-  action = new QAction (QObject::tr ("Export to layout"), results);
-  connect (action, SIGNAL (triggered ()), this, SLOT (sel_export_layout ()));
-  results->addAction (action);
-
-  action = new QAction (QObject::tr ("Export to selection"), results);
-  connect (action, SIGNAL (triggered ()), this, SLOT (sel_select_items ()));
-  results->addAction (action);
-
-  results->setContextMenuPolicy (Qt::ActionsContextMenu);
 
   bool editable = view->is_editable ();
   mode_tab->setTabEnabled (replace_mode_index, editable);
@@ -934,7 +768,7 @@ SearchReplaceDialog::~SearchReplaceDialog ()
 }
 
 static void 
-save_states (QStackedWidget *sw, const std::string &pfx, lay::Dispatcher *config_root)
+save_states (QStackedWidget *sw, const std::string &pfx, lay::PluginRoot *config_root)
 {
   for (int i = 0; i < sw->count (); ++i) {
     SearchReplacePropertiesWidget *pw = dynamic_cast<SearchReplacePropertiesWidget *> (sw->widget (i));
@@ -945,7 +779,7 @@ save_states (QStackedWidget *sw, const std::string &pfx, lay::Dispatcher *config
 }
 
 static void 
-restore_states (QStackedWidget *sw, const std::string &pfx, lay::Dispatcher *config_root)
+restore_states (QStackedWidget *sw, const std::string &pfx, lay::PluginRoot *config_root)
 {
   for (int i = 0; i < sw->count (); ++i) {
     SearchReplacePropertiesWidget *pw = dynamic_cast<SearchReplacePropertiesWidget *> (sw->widget (i));
@@ -979,7 +813,7 @@ ctx_from_index (int index)
 void 
 SearchReplaceDialog::restore_state ()
 {
-  lay::Dispatcher *config_root = root ();
+  lay::PluginRoot *config_root = root ();
 
   restore_states (find_properties, "sr-find", config_root);
   restore_states (delete_properties, "sr-find", config_root);
@@ -1047,7 +881,7 @@ SearchReplaceDialog::restore_state ()
 void
 SearchReplaceDialog::save_state ()
 {
-  lay::Dispatcher *config_root = root ();
+  lay::PluginRoot *config_root = root ();
 
   config_root->config_set (cfg_sr_window_state, lay::save_dialog_state (this));
 
@@ -1098,83 +932,6 @@ SearchReplaceDialog::save_state ()
 }
 
 void
-SearchReplaceDialog::sel_select_items ()
-{
-BEGIN_PROTECTED
-
-  int cv_index = m_last_query_cv_index;
-  const lay::CellView &cv = mp_view->cellview (cv_index);
-  if (! cv.is_valid ()) {
-    return;
-  }
-
-  std::set<int> rows;
-  QModelIndexList sel = results->selectionModel ()->selectedRows (0);
-  for (auto s = sel.begin (); s != sel.end (); ++s) {
-    rows.insert (s->row ());
-  }
-
-  m_model.select_items (view (), cv_index, &rows);
-
-END_PROTECTED
-}
-
-void
-SearchReplaceDialog::select_items ()
-{
-BEGIN_PROTECTED
-
-  int cv_index = m_last_query_cv_index;
-  const lay::CellView &cv = mp_view->cellview (cv_index);
-  if (! cv.is_valid ()) {
-    return;
-  }
-
-  db::LayoutQuery lq (m_last_query);
-
-  tl::AbsoluteProgress progress (tl::to_string (QObject::tr ("Running query")));
-  progress.set_unit (100000);
-  progress.set_format ("Processing ..");
-
-  db::LayoutQueryIterator iq (lq, &cv->layout (), cv.cell (), 0, &progress);
-
-  if (tl::verbosity () >= 10) {
-    tl::log << tl::to_string (QObject::tr ("Running query: ")) << m_last_query;
-  }
-
-  SearchReplaceResults model;
-  model.begin_changes (& cv->layout ());
-  query_to_model (model, lq, iq, std::numeric_limits<size_t>::max (), true, true /*with paths*/);
-  model.end_changes ();
-  model.select_items (view (), cv_index);
-
-END_PROTECTED
-}
-
-void
-SearchReplaceDialog::sel_export_csv ()
-{
-BEGIN_PROTECTED
-
-  std::set<int> rows;
-  QModelIndexList sel = results->selectionModel ()->selectedRows (0);
-  for (auto s = sel.begin (); s != sel.end (); ++s) {
-    rows.insert (s->row ());
-  }
-
-  std::string fn;
-
-  lay::FileDialog file_dialog (this, tl::to_string (QObject::tr ("Export CSV")), tl::to_string (QObject::tr ("CSV Files (*.csv);;All Files (*)")), "csv");
-  if (! file_dialog.get_save (fn)) {
-    return;
-  }
-
-  m_model.export_csv (fn, &rows);
-
-END_PROTECTED
-}
-
-void
 SearchReplaceDialog::export_csv ()
 {
 BEGIN_PROTECTED
@@ -1198,7 +955,7 @@ BEGIN_PROTECTED
   progress.set_unit (100000);
   progress.set_format ("Processing ..");
 
-  db::LayoutQueryIterator iq (lq, &cv->layout (), cv.cell (), 0, &progress);
+  db::LayoutQueryIterator iq (lq, &cv->layout (), 0, &progress);
 
   if (tl::verbosity () >= 10) {
     tl::log << tl::to_string (QObject::tr ("Running query: ")) << m_last_query;
@@ -1214,86 +971,6 @@ END_PROTECTED
 }
 
 void
-SearchReplaceDialog::sel_export_csv_to_clipboard ()
-{
-BEGIN_PROTECTED
-
-  std::set<int> rows;
-  QModelIndexList sel = results->selectionModel ()->selectedRows (0);
-  for (auto s = sel.begin (); s != sel.end (); ++s) {
-    rows.insert (s->row ());
-  }
-
-  m_model.export_csv_to_clipboard (&rows);
-
-END_PROTECTED
-}
-
-void
-SearchReplaceDialog::export_csv_to_clipboard ()
-{
-BEGIN_PROTECTED
-
-  int cv_index = m_last_query_cv_index;
-  const lay::CellView &cv = mp_view->cellview (cv_index);
-  if (! cv.is_valid ()) {
-    return;
-  }
-
-  db::LayoutQuery lq (m_last_query);
-
-  tl::AbsoluteProgress progress (tl::to_string (QObject::tr ("Running query")));
-  progress.set_unit (100000);
-  progress.set_format ("Processing ..");
-
-  db::LayoutQueryIterator iq (lq, &cv->layout (), cv.cell (), 0, &progress);
-
-  if (tl::verbosity () >= 10) {
-    tl::log << tl::to_string (QObject::tr ("Running query: ")) << m_last_query;
-  }
-
-  SearchReplaceResults model;
-  model.begin_changes (& cv->layout ());
-  query_to_model (model, lq, iq, std::numeric_limits<size_t>::max (), true);
-  model.end_changes ();
-  model.export_csv_to_clipboard ();
-
-END_PROTECTED
-}
-
-void
-SearchReplaceDialog::sel_export_rdb ()
-{
-BEGIN_PROTECTED
-
-  int cv_index = m_last_query_cv_index;
-  const lay::CellView &cv = mp_view->cellview (cv_index);
-  if (! cv.is_valid ()) {
-    return;
-  }
-
-  std::set<int> rows;
-  QModelIndexList sel = results->selectionModel ()->selectedRows (0);
-  for (auto s = sel.begin (); s != sel.end (); ++s) {
-    rows.insert (s->row ());
-  }
-
-  std::unique_ptr<rdb::Database> rdb (new rdb::Database ());
-
-  rdb->set_description (tl::to_string (QObject::tr ("Query results: ")) + m_last_query);
-  rdb->set_name ("query_results");
-  rdb->set_generator ("query: " + m_last_query);
-  rdb->set_top_cell_name (cv->layout ().cell_name (cv.cell_index ()));
-
-  m_model.export_rdb (*rdb, cv->layout ().dbu (), &rows);
-
-  int rdb_index = mp_view->add_rdb (rdb.release ());
-  mp_view->open_rdb_browser (rdb_index, cv_index);
-
-END_PROTECTED
-}
-
-void
 SearchReplaceDialog::export_rdb ()
 {
 BEGIN_PROTECTED
@@ -1304,7 +981,7 @@ BEGIN_PROTECTED
     return;
   }
 
-  std::unique_ptr<rdb::Database> rdb (new rdb::Database ());
+  std::auto_ptr<rdb::Database> rdb (new rdb::Database ());
 
   rdb->set_description (tl::to_string (QObject::tr ("Query results: ")) + m_last_query);
   rdb->set_name ("query_results");
@@ -1317,7 +994,7 @@ BEGIN_PROTECTED
   progress.set_unit (100000);
   progress.set_format ("Processing ..");
 
-  db::LayoutQueryIterator iq (lq, &cv->layout (), cv.cell (), 0, &progress);
+  db::LayoutQueryIterator iq (lq, &cv->layout (), 0, &progress);
 
   if (tl::verbosity () >= 10) {
     tl::log << tl::to_string (QObject::tr ("Running query: ")) << m_last_query;
@@ -1331,25 +1008,6 @@ BEGIN_PROTECTED
 
   int rdb_index = mp_view->add_rdb (rdb.release ());
   mp_view->open_rdb_browser (rdb_index, cv_index);
-
-END_PROTECTED
-}
-
-void
-SearchReplaceDialog::sel_export_layout ()
-{
-BEGIN_PROTECTED
-
-  std::set<int> rows;
-  QModelIndexList sel = results->selectionModel ()->selectedRows (0);
-  for (auto s = sel.begin (); s != sel.end (); ++s) {
-    rows.insert (s->row ());
-  }
-
-  std::unique_ptr <lay::LayoutHandle> handle (new lay::LayoutHandle (new db::Layout (mp_view->manager ()), std::string ()));
-  handle->rename ("query_results");
-  m_model.export_layout (handle->layout (), &rows);
-  mp_view->add_layout (handle.release (), true);
 
 END_PROTECTED
 }
@@ -1371,7 +1029,7 @@ BEGIN_PROTECTED
   progress.set_unit (100000);
   progress.set_format ("Processing ..");
 
-  db::LayoutQueryIterator iq (lq, &cv->layout (), cv.cell (), 0, &progress);
+  db::LayoutQueryIterator iq (lq, &cv->layout (), 0, &progress);
 
   if (tl::verbosity () >= 10) {
     tl::log << tl::to_string (QObject::tr ("Running query: ")) << m_last_query;
@@ -1382,7 +1040,7 @@ BEGIN_PROTECTED
   query_to_model (model, lq, iq, std::numeric_limits<size_t>::max (), true);
   model.end_changes ();
 
-  std::unique_ptr <lay::LayoutHandle> handle (new lay::LayoutHandle (new db::Layout (mp_view->manager ()), std::string ()));
+  std::auto_ptr <lay::LayoutHandle> handle (new lay::LayoutHandle (new db::Layout (), std::string ()));
   handle->rename ("query_results");
   model.export_layout (handle->layout ());
   mp_view->add_layout (handle.release (), true);
@@ -1465,8 +1123,9 @@ SearchReplaceDialog::configure (const std::string &name, const std::string &valu
 
   } else if (name == cfg_sr_window_dim) {
 
-    lay::Margin wdim = lay::Margin::from_string (value);
-    if (wdim != m_window_dim) {
+    double wdim = m_window_dim;
+    tl::from_string (value, wdim);
+    if (fabs (wdim - m_window_dim) > 1e-6) {
       m_window_dim = wdim;
       need_update = true;
     }
@@ -1589,7 +1248,8 @@ SearchReplaceDialog::update_mru_list ()
 
   for (std::vector<std::string>::const_iterator mru = m_mru.begin (); mru != m_mru.end (); ++mru) {
     QString text = tl::to_qstring (*mru);
-    QString display_text = text.simplified ();
+    QString display_text = text;
+    display_text.replace (QRegExp (QString::fromUtf8 ("\\s+")), QString::fromUtf8 (" "));
     int nmax = 50;
     if (display_text.size () > nmax) {
       display_text = display_text.left (nmax) + QString::fromUtf8 ("...");
@@ -1668,7 +1328,7 @@ SearchReplaceDialog::issue_query (const std::string &q, const std::set<size_t> *
     progress.set_unit (100000);
     progress.set_format ("Processing ..");
 
-    db::LayoutQueryIterator iq (lq, &cv->layout (), cv.cell (), 0, &progress);
+    db::LayoutQueryIterator iq (lq, &cv->layout (), 0, &progress);
     while (! iq.at_end ()) {
       ++iq;
     }
@@ -1690,7 +1350,7 @@ SearchReplaceDialog::issue_query (const std::string &q, const std::set<size_t> *
     progress.set_format ("Processing ..");
 
     size_t n = 0;
-    for (db::LayoutQueryIterator iq (lq, &cv->layout (), cv.cell (), 0, &progress); ! iq.at_end (); ++n) {
+    for (db::LayoutQueryIterator iq (lq, &cv->layout (), 0, &progress); ! iq.at_end (); ++n) {
       iq.next (selected_items->find (n) == selected_items->end ());
     }
 
@@ -1767,14 +1427,14 @@ SearchReplaceDialog::update_results (const std::string &q)
     progress.set_unit (100000);
     progress.set_format ("Processing ..");
 
-    db::LayoutQueryIterator iq (lq, &cv->layout (), cv.cell (), 0, &progress);
+    db::LayoutQueryIterator iq (lq, &cv->layout (), 0, &progress);
 
     if (tl::verbosity () >= 10) {
       tl::log << tl::to_string (QObject::tr ("Running query: ")) << q;
     }
 
     try {
-      fill_model (lq, iq, &cv->layout (), true, true);
+      fill_model (lq, iq, &cv->layout (), true);
       attach_layout (&cv->layout ());
     } catch (...) {
       attach_layout (&cv->layout ());
@@ -1785,7 +1445,7 @@ SearchReplaceDialog::update_results (const std::string &q)
 }
 
 bool
-SearchReplaceDialog::query_to_model (SearchReplaceResults &model, const db::LayoutQuery &lq, db::LayoutQueryIterator &iq, size_t max_item_count, bool all, bool with_path)
+SearchReplaceDialog::query_to_model (SearchReplaceResults &model, const db::LayoutQuery &lq, db::LayoutQueryIterator &iq, size_t max_item_count, bool all)
 {
   tl::SelfTimer timer (tl::verbosity () >= 21, tl::to_string (QObject::tr ("Query run")));
 
@@ -1793,21 +1453,14 @@ SearchReplaceDialog::query_to_model (SearchReplaceResults &model, const db::Layo
   bool res = false;
 
   int data_prop_id = lq.has_property ("data") ? int (lq.property_by_name ("data")) : -1;
-  int expressions_prop_id = lq.has_property ("expressions") ? int (lq.property_by_name ("expressions")) : -1;
   int shape_prop_id = lq.has_property ("shape") ? int (lq.property_by_name ("shape")) : -1;
   int layer_index_prop_id = lq.has_property ("layer_index") ? int (lq.property_by_name ("layer_index")) : -1;
   int instance_prop_id = lq.has_property ("inst") ? int (lq.property_by_name ("inst")) : -1;
-  int inst_elements_prop_id = with_path && lq.has_property ("inst_elements") ? int (lq.property_by_name ("inst_elements")) : -1;
   int path_trans_prop_id = lq.has_property ("path_trans") ? int (lq.property_by_name ("path_trans")) : -1;
   int trans_prop_id = lq.has_property ("trans") ? int (lq.property_by_name ("trans")) : -1;
   int cell_index_prop_id = lq.has_property ("cell_index") ? int (lq.property_by_name ("cell_index")) : -1;
   int parent_cell_index_prop_id = lq.has_property ("parent_cell_index") ? int (lq.property_by_name ("parent_cell_index")) : -1;
   int initial_cell_index_prop_id = lq.has_property ("initial_cell_index") ? int (lq.property_by_name ("initial_cell_index")) : -1;
-
-  tl::Variant ve;
-  if (expressions_prop_id >= 0 && iq.get (expressions_prop_id, ve)) {
-    model.set_data_column_headers (ve);
-  }
 
   while (! iq.at_end ()) {
 
@@ -1850,18 +1503,6 @@ SearchReplaceDialog::query_to_model (SearchReplaceResults &model, const db::Layo
 
       model.push_back (SearchReplaceResults::QueryShapeResult (shape, layer_index, trans, cell_index, initial_cell_index));
 
-      if (inst_elements_prop_id >= 0 && iq.get (inst_elements_prop_id, v) && v.is_list ()) {
-        try {
-          std::vector<db::InstElement> inst_elements;
-          for (auto i = v.begin (); i != v.end (); ++i) {
-            inst_elements.push_back (i->to_user<db::InstElement> ());
-          }
-          model.shapes ().back ().inst_elements = std::move (inst_elements);
-        } catch (...) {
-          //  ignore conversion errors
-        }
-      }
-
     } else if (instance_prop_id >= 0) {
 
       db::Instance instance;
@@ -1887,18 +1528,6 @@ SearchReplaceDialog::query_to_model (SearchReplaceResults &model, const db::Layo
       }
 
       model.push_back (SearchReplaceResults::QueryInstResult (instance, trans, cell_index, initial_cell_index));
-
-      if (inst_elements_prop_id >= 0 && iq.get (inst_elements_prop_id, v) && v.is_list ()) {
-        try {
-          std::vector<db::InstElement> inst_elements;
-          for (auto i = v.begin (); i != v.end (); ++i) {
-            inst_elements.push_back (i->to_user<db::InstElement> ());
-          }
-          model.instances ().back ().inst_elements = std::move (inst_elements);
-        } catch (...) {
-          //  ignore conversion errors
-        }
-      }
 
     } else if (cell_index_prop_id >= 0) {
 
@@ -1930,7 +1559,7 @@ SearchReplaceDialog::query_to_model (SearchReplaceResults &model, const db::Layo
 }
 
 bool
-SearchReplaceDialog::fill_model (const db::LayoutQuery &lq, db::LayoutQueryIterator &iq, const db::Layout *layout, bool all, bool with_paths)
+SearchReplaceDialog::fill_model (const db::LayoutQuery &lq, db::LayoutQueryIterator &iq, const db::Layout *layout, bool all)
 {
   bool res = false;
 
@@ -1939,7 +1568,7 @@ SearchReplaceDialog::fill_model (const db::LayoutQuery &lq, db::LayoutQueryItera
     m_model.begin_changes (layout);
     m_model.clear ();
 
-    res = query_to_model (m_model, lq, iq, m_max_item_count, all, with_paths);
+    res = query_to_model (m_model, lq, iq, m_max_item_count, all);
 
     m_model.end_changes ();
     results_stack->setCurrentIndex (0);
@@ -2069,72 +1698,21 @@ SearchReplaceDialog::result_selection_changed ()
 
         }
 
-      } else if (index < int (m_model.data ().size ())) {
-
-        db::DCplxTrans as_dbu = db::DCplxTrans (layout.dbu ()).inverted ();
-
-        const tl::Variant &dr = m_model.data () [index];
-        for (tl::Variant::const_iterator v = dr.begin (); v != dr.end (); ++v) {
-
-          lay::Marker *marker = new lay::Marker (view (), cv_index);
-
-          if (v->is_user<db::DBox> ()) {
-            marker->set (v->to_user<db::DBox> (), as_dbu, global_trans);
-          } else if (v->is_user<db::Box> ()) {
-            marker->set (v->to_user<db::Box> (), db::ICplxTrans (), global_trans);
-          } else if (v->is_user<db::DEdge> ()) {
-            marker->set (v->to_user<db::DEdge> (), as_dbu, global_trans);
-          } else if (v->is_user<db::Edge> ()) {
-            marker->set (v->to_user<db::Edge> (), db::ICplxTrans (), global_trans);
-          } else if (v->is_user<db::DPolygon> ()) {
-            marker->set (v->to_user<db::DPolygon> (), as_dbu, global_trans);
-          } else if (v->is_user<db::Polygon> ()) {
-            marker->set (v->to_user<db::Polygon> (), db::ICplxTrans (), global_trans);
-          } else if (v->is_user<db::DPath> ()) {
-            marker->set (v->to_user<db::DPath> (), as_dbu, global_trans);
-          } else if (v->is_user<db::Path> ()) {
-            marker->set (v->to_user<db::Path> (), db::ICplxTrans (), global_trans);
-          } else if (v->is_user<db::DPoint> ()) {
-            db::DPoint p = v->to_user<db::DPoint> ();
-            marker->set (db::DBox (p, p), as_dbu, global_trans);
-          } else if (v->is_user<db::Point> ()) {
-            db::Point p = v->to_user<db::Point> ();
-            marker->set (db::Box (p, p), db::ICplxTrans (), global_trans);
-          } else if (v->is_user<db::DVector> ()) {
-            db::DPoint p = db::DPoint () + v->to_user<db::DVector> ();
-            marker->set (db::DBox (p, p), as_dbu, global_trans);
-          } else if (v->is_user<db::Vector> ()) {
-            db::Point p = db::Point () + v->to_user<db::Vector> ();
-            marker->set (db::Box (p, p), db::ICplxTrans (), global_trans);
-          } else {
-            delete marker;
-            marker = 0;
-          }
-
-          if (marker) {
-            mp_markers.push_back (marker);
-            dbox += marker->bbox ();
-          }
-
-        }
-
       }
 
     }
 
     if (! dbox.empty ()) {
 
-      double window_dim = m_window_dim.get (dbox);
-
       if (m_window == FitCell) {
         view ()->zoom_fit ();
       } else if (m_window == FitMarker) {
-        view ()->zoom_box (dbox.enlarged (db::DVector (window_dim, window_dim)));
+        view ()->zoom_box (dbox.enlarged (db::DVector (m_window_dim, m_window_dim)));
       } else if (m_window == Center) {
         view ()->pan_center (dbox.p1 () + (dbox.p2 () - dbox.p1 ()) * 0.5);
       } else if (m_window == CenterSize) {
-        double w = std::max (dbox.width (), window_dim);
-        double h = std::max (dbox.height (), window_dim);
+        double w = std::max (dbox.width (), m_window_dim);
+        double h = std::max (dbox.height (), m_window_dim);
         db::DPoint center (dbox.p1 () + (dbox.p2 () - dbox.p1 ()) * 0.5);
         db::DVector d (w * 0.5, h * 0.5);
         view ()->zoom_box (db::DBox (center - d, center + d));
@@ -2186,14 +1764,10 @@ BEGIN_PROTECTED
 
   cancel_exec ();
 
-  if (mp_view->manager ()) {
-    mp_view->manager ()->transaction (tl::to_string (QObject::tr ("Delete all")));
-  }
+  mp_view->manager ()->transaction (tl::to_string (QObject::tr ("Delete all")));
   mp_view->cancel ();
   issue_query (build_delete_expression (), 0, false);
-  if (mp_view->manager ()) {
-    mp_view->manager ()->commit ();
-  }
+  mp_view->manager ()->commit ();
 
 END_PROTECTED
 }
@@ -2238,19 +1812,15 @@ BEGIN_PROTECTED
 
   if (! sel.empty ()) {
 
-    if (mp_view->manager ()) {
-      if (sender () == delete_selected_button) {
-        mp_view->manager ()->transaction (tl::to_string (QObject::tr ("Delete selected")));
-      } else {
-        mp_view->manager ()->transaction (tl::to_string (QObject::tr ("Replace selected")));
-      }
+    if (sender () == delete_selected_button) {
+      mp_view->manager ()->transaction (tl::to_string (QObject::tr ("Delete selected")));
+    } else {
+      mp_view->manager ()->transaction (tl::to_string (QObject::tr ("Replace selected")));
     }
 
     mp_view->cancel ();
     issue_query (m_execute_query, &selected_items, false);
-    if (mp_view->manager ()) {
-      mp_view->manager ()->commit ();
-    }
+    mp_view->manager ()->commit ();
 
     issue_query (m_find_query, 0, true);
 
@@ -2269,14 +1839,10 @@ BEGIN_PROTECTED
   m_execute_query.clear ();
   m_find_query.clear ();
 
-  if (mp_view->manager ()) {
-    mp_view->manager ()->transaction (tl::to_string (QObject::tr ("Replace all")));
-  }
+  mp_view->manager ()->transaction (tl::to_string (QObject::tr ("Replace all")));
   mp_view->cancel ();
   issue_query (build_replace_expression (), 0, false);
-  if (mp_view->manager ()) {
-    mp_view->manager ()->commit ();
-  }
+  mp_view->manager ()->commit ();
 
 END_PROTECTED
 }
@@ -2291,14 +1857,10 @@ BEGIN_PROTECTED
   m_execute_query.clear ();
   m_find_query.clear ();
 
-  if (mp_view->manager ()) {
-    mp_view->manager ()->transaction (tl::to_string (QObject::tr ("Execute custom query")));
-  }
+  mp_view->manager ()->transaction (tl::to_string (QObject::tr ("Execute custom query")));
   mp_view->cancel ();
   issue_query (tl::to_string (custom_query->toPlainText ()), 0, true);
-  if (mp_view->manager ()) {
-    mp_view->manager ()->commit ();
-  }
+  mp_view->manager ()->commit ();
 
 END_PROTECTED
 }
@@ -2315,7 +1877,7 @@ SearchReplaceDialog::tab_index_changed (int index)
 {
   cancel ();
 
-  lay::Dispatcher *config_root = root ();
+  lay::PluginRoot *config_root = root ();
 
   std::string v;
 

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -31,7 +31,6 @@
 #include "tlObject.h"
 
 #include <string>
-#include <set>
 
 namespace db
 {
@@ -109,38 +108,18 @@ public:
    *  If this attribute is non-empty, the library is selected only when the given technology is
    *  used for the layout.
    */
-  const std::set<std::string> &get_technologies () const
+  const std::string &get_technology () const
   {
-    return m_technologies;
+    return m_technology;
   }
 
   /**
-   *  @brief Gets a value indicating whether this library is associated with the given technology
-   */
-  bool is_for_technology (const std::string &name) const;
-
-  /**
-   *  @brief Gets a value indicating whether the library is associated with any technology
-   */
-  bool for_technologies () const;
-
-  /**
    *  @brief Sets the technology name this library is associated with
-   *
-   *  This will reset the list of technologies to this one.
-   *  If the given technology string is empty, the list of technologies will be cleared.
    */
-  void set_technology (const std::string &t);
-
-  /**
-   *  @brief Clears the list of technologies this library is associated with
-   */
-  void clear_technologies ();
-
-  /**
-   *  @brief Additionally associate the library with the given technology
-   */
-  void add_technology (const std::string &tech);
+  void set_technology (const std::string &t)
+  {
+    m_technology = t;
+  }
 
   /**
    *  @brief Getter for the description property
@@ -205,13 +184,6 @@ public:
   bool is_retired (const cell_index_type library_cell_index) const;
 
   /**
-   *  @brief Refreshes the library on all clients
-   *
-   *  This will refresh PCells, retire cells (turn them into "cold proxies") and reload layouts.
-   */
-  void refresh ();
-
-  /**
    *  @brief Remap the library proxies to a different library
    *
    *  After remapping, "other" can replace "this".
@@ -226,7 +198,7 @@ public:
 private:
   std::string m_name;
   std::string m_description;
-  std::set<std::string> m_technologies;
+  std::string m_technology;
   lib_id_type m_id;
   db::Layout m_layout;
   std::map<db::Layout *, int> m_referrers;
@@ -236,6 +208,16 @@ private:
   Library &operator=(const Library &);
 };
 
+}
+
+namespace tl
+{
+  /**
+   *  @brief Type traits 
+   */
+  template <> struct type_traits <db::Library> : public type_traits<void> {
+    typedef tl::false_tag has_copy_constructor;
+  };
 }
 
 #endif

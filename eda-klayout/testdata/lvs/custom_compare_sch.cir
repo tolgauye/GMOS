@@ -1,3 +1,0 @@
-.subckt top r1 r2
-r5  r1 r2 50.1
-.ends

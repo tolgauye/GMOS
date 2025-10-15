@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -378,10 +378,8 @@ NetTracerData::configure_l2n (db::LayoutToNetlist &l2n)
 
   //  make all connections (intra and inter-layer)
   for (std::map<unsigned int, tl::shared_ptr<NetTracerLayerExpression::RegionHolder> >::const_iterator r = m_l2n_regions.begin (); r != m_l2n_regions.end (); ++r) {
+    l2n.connect (*r->second->get ());
     const std::set<unsigned int> &connections_to = log_connections (r->first);
-    if (! connections_to.empty ()) {
-      l2n.connect (*r->second->get ());
-    }
     for (std::set<unsigned int>::const_iterator c = connections_to.begin (); c != connections_to.end (); ++c) {
       std::map<unsigned int, tl::shared_ptr<NetTracerLayerExpression::RegionHolder> >::const_iterator rc = m_l2n_regions.find (*c);
       if (rc != m_l2n_regions.end ()) {
@@ -819,7 +817,7 @@ NetTracerLayerExpression::make_l2n_region (db::LayoutToNetlist &l2n, std::map <u
     rhb = make_l2n_region_for_org (l2n, region_cache, m_b, std::string ());
   }
 
-  std::unique_ptr<db::Region> res (new db::Region (*rha->get ()));
+  std::auto_ptr<db::Region> res (new db::Region (*rha->get ()));
 
   if (m_op == OPAnd) {
     *res &= *rhb->get ();
@@ -831,7 +829,9 @@ NetTracerLayerExpression::make_l2n_region (db::LayoutToNetlist &l2n, std::map <u
     *res -= *rhb->get ();
   }
 
-  l2n.register_layer (*res, name);
+  if (! name.empty ()) {
+    l2n.register_layer (*res, name);
+  }
 
   return tl::shared_ptr<NetTracerLayerExpression::RegionHolder> (new NetTracerLayerExpression::RegionHolder (res.release ()));
 }
@@ -840,7 +840,7 @@ NetTracerLayerExpression::make_l2n_region (db::LayoutToNetlist &l2n, std::map <u
 //  NetTracer implementation
 
 NetTracer::NetTracer ()
-  : mp_layout (0), mp_cell (0), mp_progress (0), m_name_hier_depth (-1), m_incomplete (false), m_trace_depth (0)
+  : mp_layout (0), mp_cell (0), mp_progress (0), m_name_hier_depth (-1), m_incomplete (false)
 {
   //  .. nothing yet ..
 }
@@ -1067,7 +1067,7 @@ NetTracer::trace (const db::Layout &layout, const db::Cell &cell, const NetTrace
           db::Box b = c->first.bbox ();
           double a = c->first.shape ().area ();
 
-          //  The ratio threshold of 20 for box/shape area was determined empirically
+          //  The ratio theshold of 20 for box/shape area was determined empirically
           if ((combined_box + b).area () > (asum + a) * 20.0) {
             ++c;
             --n;
@@ -1187,17 +1187,6 @@ NetTracer::trace (const db::Layout &layout, const db::Cell &cell, const NetTrace
     m_incomplete = false;
     mp_progress = 0;
 
-  } catch (tl::BreakException &) {
-
-    m_shapes_graph.clear ();
-
-    m_hit_test_queue.clear ();
-    m_incomplete = true;
-    mp_progress = 0;
-
-    //  on user break or depth exhausted just keep the shapes
-    return;
-
   } catch (...) {
 
     m_shapes_graph.clear ();
@@ -1221,7 +1210,7 @@ NetTracer::trace (const db::Layout &layout, const db::Cell &cell, const NetTrace
       const NetTracerShape *stop = &m_shapes_graph.find (m_stop_shape)->first;
       const NetTracerShape *start = &m_shapes_graph.find (m_start_shape)->first;
 
-      //  find the shortest path with Dijkstra's algorithm
+      //  find the shortest path with Dijkstras algorithm
 
       std::map<const NetTracerShape *, const NetTracerShape *> previous;
       std::map<const NetTracerShape *, size_t> cost;
@@ -1322,10 +1311,6 @@ NetTracer::deliver_shape (const NetTracerShape &net_shape, const NetTracerShape 
 
   if (! m_stop_shape.is_valid ()) {
 
-    if (m_trace_depth > 0 && m_shapes_found.size () >= m_trace_depth) {
-      throw tl::BreakException ();
-    }
-
     std::pair<std::set <NetTracerShape>::iterator, bool> f = m_shapes_found.insert (net_shape);
     if (f.second) {
       if (mp_progress) {
@@ -1340,10 +1325,6 @@ NetTracer::deliver_shape (const NetTracerShape &net_shape, const NetTracerShape 
     
     std::map <NetTracerShape, std::vector<const NetTracerShape *> >::iterator n = m_shapes_graph.find (net_shape);
     if (n == m_shapes_graph.end ()) {
-
-      if (m_trace_depth > 0 && m_shapes_graph.size () >= m_trace_depth) {
-        throw tl::BreakException ();
-      }
 
       n = m_shapes_graph.insert (std::make_pair (net_shape, std::vector<const NetTracerShape *> ())).first;
 
@@ -1451,10 +1432,10 @@ NetTracer::determine_interactions (const db::Polygon &seed, const NetTracerShape
 {
   int area_ratio = 2;
 
-  db::Polygon::area_type poly_area = seed.area_upper_manhattan_bound ();
+  db::Polygon::area_type poly_area = seed.area ();
   db::Polygon::area_type box_area = seed.box ().area ();
 
-  if (seed.is_box ()) {
+  if (poly_area == box_area && seed.vertices () == 4) {
 
     //  The polygon is a box
     determine_interactions (seed.box (), shape, layers, delivery);

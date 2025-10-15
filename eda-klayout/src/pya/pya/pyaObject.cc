@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -145,7 +145,7 @@ Callee::call (int id, gsi::SerialArgs &args, gsi::SerialArgs &ret) const
 
         //  TODO: callbacks with default arguments?
         for (gsi::MethodBase::argument_iterator a = meth->begin_arguments (); args && a != meth->end_arguments (); ++a) {
-          PyTuple_SetItem (argv.get (), arg4self + (a - meth->begin_arguments ()), pull_arg (*a, args, 0, heap).release ());
+          PyTuple_SetItem (argv.get (), arg4self + (a - meth->begin_arguments ()), pop_arg (*a, args, 0, heap).release ());
         }
 
         PythonRef result (PyObject_CallObject (callable.get (), argv.get ()));
@@ -238,16 +238,9 @@ PYAObjectBase::object_destroyed ()
 
     detach ();
 
-    if (! prev_owner) {
-      const gsi::ClassBase *cls = cls_decl ();
-      if (cls && cls->is_managed ()) {
-        //  If the object was owned on C++ side before, we need to decrement the
-        //  reference count to reflect the fact, that there no longer is an external
-        //  owner.
-        //  NOTE: this may delete "this", hence we return
-        Py_DECREF (py_object ());
-        return;
-      }
+    //  NOTE: this may delete "this"!
+    if (!prev_owner) {
+      Py_DECREF (py_object ());
     }
 
   }
@@ -256,44 +249,31 @@ PYAObjectBase::object_destroyed ()
 void 
 PYAObjectBase::release ()
 {
-  //  "release" means to release ownership of the C++ object on the C++ side.
-  //  In other words: to transfer ownership to the script side. Specifically to
-  //  transfer it to the Python domain.
-
   //  If the object is managed we first reset the ownership of all other clients
   //  and then make us the owner
   const gsi::ClassBase *cls = cls_decl ();
   if (cls && cls->is_managed ()) {
     void *o = obj ();
     if (o) {
-      //  NOTE: "keep" means "move ownership of the C++ object to C++". In other words,
-      //  release ownership of the C++ object on script side.
       cls->gsi_object (o)->keep ();
-      if (! m_owned) {
-        //  We have to *decrement* the reference count as now there is no other entity
-        //  holding a reference to this Python object.
-        //  NOTE: this may delete "this", hence we return
-        m_owned = true;
-        Py_DECREF (py_object ());
-        return;
-      }
     }
   }
 
-  m_owned = true;
+  //  NOTE: this is fairly dangerous
+  if (!m_owned) {
+    m_owned = true;
+    //  NOTE: this may delete "this"! TODO: this should not happen. Can we assert that somehow?
+    Py_DECREF (py_object ());
+  }
 }
 
 void
 PYAObjectBase::keep_internal ()
 {
   if (m_owned) {
-    //  "keep" means to transfer ownership of the C++ object to C++ side, while
-    //  "m_owned" refers to ownership on the Python side. So if we perform this
-    //  transfer, we need to reflect the fact that there is another entity holding
-    //  a reference.
     Py_INCREF (py_object ());
+    m_owned = false;
   }
-  m_owned = false;
 }
 
 void 
@@ -304,11 +284,9 @@ PYAObjectBase::keep ()
     void *o = obj ();
     if (o) {
       if (cls->is_managed ()) {
-        //  dispatch the keep notification - this will call "keep_internal" through the
-        //  event handler (StatusChangedListener)
         cls->gsi_object (o)->keep ();
       } else {
-        m_owned = false;
+        keep_internal ();
       }
     }
   }
@@ -328,11 +306,7 @@ PYAObjectBase::detach ()
       }
     }
 
-    //  NOTE: m_owned = false might mean the C++ object is already destroyed. We must not
-    //  modify in this case and without is_managed() there is no way of knowing the state.
-    if (m_owned) {
-      detach_callbacks ();
-    }
+    detach_callbacks ();
 
     m_obj = 0;
     m_const_ref = false;
@@ -363,17 +337,15 @@ PYAObjectBase::set (void *obj, bool owned, bool const_ref, bool can_destroy)
 
   if (cls->is_managed ()) {
     gsi::ObjectBase *gsi_object = cls->gsi_object (m_obj);
+    //  Consider the case of "keep inside constructor"
     if (gsi_object->already_kept ()) {
-      //  Consider the case of "keep inside constructor"
-      m_owned = false;
-    }
-    if (! m_owned) {
-      //  "m_owned = false" means ownership of the C++ object is on C++ side,
-      //  and not on script side. In that case, we need to increment the
-      //  reference count to reflect the fact that there is an external owner.
-      Py_INCREF (py_object ());
+      keep_internal ();
     }
     gsi_object->status_changed_event ().add (mp_listener, &StatusChangedListener::object_status_changed);
+  }
+
+  if (!m_owned) {
+    Py_INCREF (py_object ());
   }
 }
 
@@ -400,7 +372,7 @@ PYAObjectBase::initialize_callbacks ()
 
   PythonRef type_ref ((PyObject *) Py_TYPE (py_object ()), false /*borrowed*/);
 
-  //  Locate the callback-enabled methods set by Python type object (pointer)
+  //  Locate the callback-enabled methods set by Python tpye object (pointer)
   //  NOTE: I'm not quite sure whether the type object pointer is a good key
   //  for the cache. It may change since class objects may expire too if
   //  classes are put on the heap. Hence we have to keep a reference which is
@@ -433,7 +405,7 @@ PYAObjectBase::initialize_callbacks ()
           //  possible to reimplement a method through instance attributes (rare case, I hope).
           //  In addition, if we'd use instance attributes we create circular references 
           //  (self/callback to method, method to self).
-          //  TODO: That may happen too often, i.e. if the Python class does not reimplement the virtual
+          //  TOOD: That may happen too often, i.e. if the Python class does not reimplement the virtual
           //  method, but the C++ class defines a method hook that the reimplementation can call. 
           //  We don't want to produce a lot of overhead for the Qt classes here.
           PythonRef py_attr = PyObject_GetAttrString ((PyObject *) Py_TYPE (py_object ()), nstr);
@@ -500,7 +472,7 @@ PYAObjectBase::initialize_callbacks ()
         //  possible to reimplement a method through instance attributes (rare case, I hope).
         //  In addition, if we'd use instance attributes we create circular references 
         //  (self/callback to method, method to self).
-        //  TODO: That may happen too often, i.e. if the Python class does not reimplement the virtual
+        //  TOOD: That may happen too often, i.e. if the Python class does not reimplement the virtual
         //  method, but the C++ class defines a method hook that the reimplementation can call. 
         //  We don't want to produce a lot of overhead for the Qt classes here.
         PythonRef py_attr = PyObject_GetAttrString ((PyObject *) Py_TYPE (py_object ()), nstr);
@@ -538,16 +510,8 @@ PYAObjectBase::initialize_callbacks ()
 }
 
 void 
-PYAObjectBase::clear_callbacks_cache (bool embedded)
+PYAObjectBase::clear_callbacks_cache ()
 {
-  //  if not embedded, we cannot use the python API at this stage - do not try to
-  //  reference count the objects there.
-  if (! embedded) {
-    for (auto c = s_callbacks_cache.begin (); c != s_callbacks_cache.end (); ++c) {
-      c->first.release_const ();
-    }
-  }
-
   s_callbacks_cache.clear ();
 }
 
@@ -611,23 +575,11 @@ PYAObjectBase::obj ()
       throw tl::Exception (tl::to_string (tr ("Object has been destroyed already")));
     } else {
       //  delayed creation of a detached C++ object ..
-      set (cls_decl ()->create (), true, false, true);
+      set(cls_decl ()->create (), true, false, true);
     }
   }
 
   return m_obj;
-}
-
-PYAObjectBase *
-PYAObjectBase::from_pyobject (PyObject *py_object)
-{
-  if (Py_TYPE (py_object)->tp_init == NULL) {
-    throw tl::Exception (tl::to_string (tr ("Extension classes do not support instance methods or properties")));
-  }
-
-  PYAObjectBase *pya_object = from_pyobject_unsafe (py_object);
-  tl_assert (pya_object->py_object () == py_object);
-  return pya_object;
 }
 
 }

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -126,11 +126,6 @@ public:
     return m_layer.is_bbox_dirty ();
   }
 
-  virtual bool is_tree_dirty () const
-  {
-    return m_layer.is_tree_dirty ();
-  }
-
   size_t size () const
   {
     return m_layer.size ();
@@ -146,19 +141,14 @@ public:
     m_layer.sort ();
   }
 
-  virtual bool is_same_type (const LayerBase *other) const
-  {
-    return dynamic_cast<const layer_class<Sh, StableTag> *> (other);
-  }
-
-  virtual LayerBase *clone () const;
+  virtual void clear (Shapes *target, db::Manager *manager);
+  virtual LayerBase *clone (Shapes *target, db::Manager *manager) const;
   virtual void translate_into (Shapes *target, GenericRepository &rep, ArrayRepository &array_rep) const;
   virtual void translate_into (Shapes *target, GenericRepository &rep, ArrayRepository &array_rep, pm_delegate_type &pm) const;
   virtual void transform_into (Shapes *target, const Trans &trans, GenericRepository &rep, ArrayRepository &array_rep) const;
   virtual void transform_into (Shapes *target, const Trans &trans, GenericRepository &rep, ArrayRepository &array_rep, pm_delegate_type &pm) const;
   virtual void transform_into (Shapes *target, const ICplxTrans &trans, GenericRepository &rep, ArrayRepository &array_rep) const;
   virtual void transform_into (Shapes *target, const ICplxTrans &trans, GenericRepository &rep, ArrayRepository &array_rep, pm_delegate_type &pm) const;
-  virtual void insert_into (Shapes *target);
   virtual void deref_into (Shapes *target);
   virtual void deref_into (Shapes *target, pm_delegate_type &pm);
   virtual void deref_and_transform_into (Shapes *target, const Trans &trans);

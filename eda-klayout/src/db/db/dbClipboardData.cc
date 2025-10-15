@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -29,6 +29,7 @@ namespace db
 ClipboardData::ClipboardData ()
   : m_layout (), m_incomplete_cells ()
 {
+  m_prop_id_map.set_target (m_layout);
   m_container_cell_index = m_layout.add_cell ("");
 }
 
@@ -46,7 +47,8 @@ ClipboardData::add (const db::Layout &layout, unsigned int layer, const db::Shap
     m_layout.insert_layer (layer, layout.get_properties (layer));
   }
 
-  m_layout.cell (m_container_cell_index).shapes (layer).insert (shape);
+  m_prop_id_map.set_source (layout);
+  m_layout.cell (m_container_cell_index).shapes (layer).insert (shape, m_prop_id_map);
 }
 
 void 
@@ -58,7 +60,8 @@ ClipboardData::add (const db::Layout &layout, unsigned int layer, const db::Shap
     m_layout.insert_layer (layer, layout.get_properties (layer));
   }
 
-  db::Shape new_shape = m_layout.cell (m_container_cell_index).shapes (layer).insert (shape);
+  m_prop_id_map.set_source (layout);
+  db::Shape new_shape = m_layout.cell (m_container_cell_index).shapes (layer).insert (shape, m_prop_id_map);
   m_layout.cell (m_container_cell_index).shapes (layer).transform (new_shape, trans);
 }
 
@@ -77,8 +80,9 @@ ClipboardData::add (const db::Layout &layout, const db::Instance &inst, unsigned
   }
 
   //  Insert the instance mapping the cell to the target cell_index and the property ID using the map
+  m_prop_id_map.set_source (layout);
   tl::const_map<db::cell_index_type> im (target_cell_index);
-  m_layout.cell (m_container_cell_index).insert (inst, im);
+  m_layout.cell (m_container_cell_index).insert (inst, im, m_prop_id_map);
 }
 
 void 
@@ -98,8 +102,9 @@ ClipboardData::add (const db::Layout &layout, const db::Instance &inst, unsigned
   }
 
   //  Insert the instance mapping the cell to the target cell_index and the property ID using the map
+  m_prop_id_map.set_source (layout);
   tl::const_map<db::cell_index_type> im (target_cell_index);
-  db::Instance new_inst = m_layout.cell (m_container_cell_index).insert (inst, im);
+  db::Instance new_inst = m_layout.cell (m_container_cell_index).insert (inst, im, m_prop_id_map);
   m_layout.cell (m_container_cell_index).transform (new_inst, trans);
 }
 
@@ -118,6 +123,8 @@ ClipboardData::add (const db::Layout &layout, const db::Cell &cell, unsigned int
     m_context_info.erase (target_cell_index);
   } 
 
+  m_prop_id_map.set_source (layout);
+
   //  copy the shapes
   for (unsigned int l = 0; l < layout.layers (); ++l) {
 
@@ -129,7 +136,7 @@ ClipboardData::add (const db::Layout &layout, const db::Cell &cell, unsigned int
 
       db::Shapes &shapes = m_layout.cell (target_cell_index).shapes (l);
       for (db::Shapes::shape_iterator sh = cell.shapes (l).begin (db::Shapes::shape_iterator::All); ! sh.at_end (); ++sh) {
-        shapes.insert (*sh);
+        shapes.insert (*sh, m_prop_id_map);
       }
 
     }
@@ -149,14 +156,8 @@ ClipboardData::add (const db::Layout &layout, const db::Cell &cell, unsigned int
 std::vector<unsigned int>
 ClipboardData::do_insert (db::Layout &layout, const db::ICplxTrans *trans, db::Cell *cell, std::vector<db::cell_index_type> *new_tops, ClipboardDataInsertReceiver *insert_receiver) const
 {
-  //  identify the cells our target is eventually called from, including itself
-  std::set<db::cell_index_type> callers;
-  if (cell) {
-    cell->collect_caller_cells (callers);
-    callers.insert (cell->cell_index ());
-  }
-
   std::vector <unsigned int> new_layers;
+  PropertyMapper prop_id_map (layout, m_layout);
 
   std::map <db::LayerProperties, unsigned int, db::LPLogicalLessFunc> layer_map;
   for (unsigned int l = 0; l < layout.layers (); ++l) {
@@ -200,8 +201,7 @@ ClipboardData::do_insert (db::Layout &layout, const db::ICplxTrans *trans, db::C
           cell_map.insert (std::make_pair (c->cell_index (), pc->cell_index ()));
         } else {
           //  fallback: create a new cell
-          db::cell_index_type ci = layout.add_cell (m_layout, c->cell_index ());
-          cell_map.insert (std::make_pair (c->cell_index (), ci));
+          cell_map.insert (std::make_pair (c->cell_index (), layout.add_cell (m_layout.cell_name (c->cell_index ()))));
         }
 
       } else {
@@ -217,8 +217,7 @@ ClipboardData::do_insert (db::Layout &layout, const db::ICplxTrans *trans, db::C
             cell_map.insert (std::make_pair (c->cell_index (), tc));
           }
         } else {
-          db::cell_index_type ci = layout.add_cell (m_layout, c->cell_index ());
-          cell_map.insert (std::make_pair (c->cell_index (), ci));
+          cell_map.insert (std::make_pair (c->cell_index (), layout.add_cell (m_layout.cell_name (c->cell_index ()))));
         }
 
       }
@@ -250,7 +249,7 @@ ClipboardData::do_insert (db::Layout &layout, const db::ICplxTrans *trans, db::C
 
           for (db::Shapes::shape_iterator sh = c->shapes (l).begin (db::Shapes::shape_iterator::All); ! sh.at_end (); ++sh) {
 
-            db::Shape new_shape = t.insert (*sh);
+            db::Shape new_shape = t.insert (*sh, prop_id_map);
             if (trans) {
               new_shape = t.transform (new_shape, *trans);
             }
@@ -278,21 +277,14 @@ ClipboardData::do_insert (db::Layout &layout, const db::ICplxTrans *trans, db::C
 
       for (db::Cell::const_iterator inst = c->begin (); ! inst.at_end (); ++inst) {
 
-        db::cell_index_type inst_cell = cell_map.find (inst->cell_index ())->second;
-        if (callers.find (inst_cell) == callers.end ()) {
+        tl::const_map<db::cell_index_type> im (cell_map.find (inst->cell_index ())->second);
+        db::Instance new_inst = t.insert (*inst, im, prop_id_map);
+        if (trans) {
+          new_inst = t.transform (new_inst, *trans);
+        }
 
-          tl::const_map<db::cell_index_type> im (inst_cell);
-          db::Instance new_inst = t.insert (*inst, im);
-          if (trans) {
-            new_inst = t.transform (new_inst, *trans);
-          }
-
-          if (insert_receiver) {
-            insert_receiver->instance_inserted (cp->second, new_inst);
-          }
-
-        } else {
-          tl::warn << tl::sprintf (tl::to_string (tr ("Refusing to paste an instance for cell %s, as this would create a recursive hierarchy")), layout.cell_name (inst_cell));
+        if (insert_receiver) {
+          insert_receiver->instance_inserted (cp->second, new_inst);
         }
 
       }
@@ -321,7 +313,7 @@ ClipboardData::cell_for_cell (const db::Layout &layout, db::cell_index_type cell
     return cm->second;
   }
 
-  db::cell_index_type target_cell_index = m_layout.add_cell (layout, cell_index);
+  db::cell_index_type target_cell_index = m_layout.add_cell (layout.cell_name (cell_index));
   m_cell_index_map.insert (std::make_pair (cell_index, target_cell_index));
 
   if (incomplete) {

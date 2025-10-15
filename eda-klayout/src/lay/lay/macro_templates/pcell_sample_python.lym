@@ -6,7 +6,6 @@
  <autorun-early>false</autorun-early>
  <show-in-menu>false</show-in-menu>
  <shortcut></shortcut>
- <category>pymacros</category>
  <interpreter>python</interpreter>
  <text>import pya
 import math
@@ -33,7 +32,7 @@ class Circle(pya.PCellDeclarationHelper):
     super(Circle, self).__init__()
 
     # declare the parameters
-    self.param("l", self.TypeLayer, "Layer")
+    self.param("l", self.TypeLayer, "Layer", default = pya.LayerInfo(1, 0))
     self.param("s", self.TypeShape, "", default = pya.DPoint(0, 0))
     self.param("r", self.TypeDouble, "Radius", default = 0.1)
     self.param("n", self.TypeInt, "Number of points", default = 64)     
@@ -89,12 +88,17 @@ class Circle(pya.PCellDeclarationHelper):
   
     # This is the main part of the implementation: create the layout
 
+    # fetch the parameters
+    ru_dbu = self.ru / self.layout.dbu
+    
     # compute the circle
+    pts = []
     da = math.pi * 2 / self.n
-    pts = [ pya.DPoint(self.ru * math.cos(i * da), self.ru * math.sin(i * da)) for i in range(0, self.n) ]
+    for i in range(0, self.n):
+      pts.append(pya.Point.from_dpoint(pya.DPoint(ru_dbu * math.cos(i * da), ru_dbu * math.sin(i * da))))
     
     # create the shape
-    self.cell.shapes(self.l_layer).insert(pya.DPolygon(pts))
+    self.cell.shapes(self.l_layer).insert(pya.Polygon(pts))
 
 
 class MyLib(pya.Library):

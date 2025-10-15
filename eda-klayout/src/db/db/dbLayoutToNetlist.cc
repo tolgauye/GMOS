@@ -1,8 +1,9 @@
 
+
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -23,7 +24,6 @@
 #include "dbCommon.h"
 #include "dbLayoutToNetlist.h"
 #include "dbDeepRegion.h"
-#include "dbDeepTexts.h"
 #include "dbShapeRepository.h"
 #include "dbCellMapping.h"
 #include "dbLayoutToNetlistWriter.h"
@@ -31,23 +31,15 @@
 #include "dbLayoutVsSchematic.h"
 #include "dbLayoutToNetlistFormatDefs.h"
 #include "dbLayoutVsSchematicFormatDefs.h"
-#include "dbLayoutToNetlistSoftConnections.h"
-#include "dbShapeProcessor.h"
-#include "dbNetlistDeviceClasses.h"
-#include "dbMeasureEval.h"
-#include "dbLog.h"
 #include "tlGlobPattern.h"
 
 namespace db
 {
 
-// -----------------------------------------------------------------------------------------------
-//  LayoutToNetlist implementation
-
-//  Note: the iterator provides the hierarchical selection (enabling/disabling cells etc.)
+//  the iterator provides the hierarchical selection (enabling/disabling cells etc.)
 
 LayoutToNetlist::LayoutToNetlist (const db::RecursiveShapeIterator &iter)
-  : m_iter (iter), m_layout_index (0), m_netlist_extracted (false), m_is_flat (false), m_device_scaling (1.0), m_include_floating_subcircuits (false), m_top_level_mode (false), m_make_soft_connection_diodes (false)
+  : m_iter (iter), m_layout_index (0), m_netlist_extracted (false), m_is_flat (false), m_device_scaling (1.0)
 {
   //  check the iterator
   if (iter.has_complex_region () || iter.region () != db::Box::world ()) {
@@ -67,7 +59,7 @@ LayoutToNetlist::LayoutToNetlist (const db::RecursiveShapeIterator &iter)
 }
 
 LayoutToNetlist::LayoutToNetlist (db::DeepShapeStore *dss, unsigned int layout_index)
-  : mp_dss (dss), m_layout_index (layout_index), m_netlist_extracted (false), m_is_flat (false), m_device_scaling (1.0), m_include_floating_subcircuits (false), m_top_level_mode (false), m_make_soft_connection_diodes (false)
+  : mp_dss (dss), m_layout_index (layout_index), m_netlist_extracted (false), m_is_flat (false), m_device_scaling (1.0)
 {
   if (dss->is_valid_layout_index (m_layout_index)) {
     m_iter = db::RecursiveShapeIterator (dss->layout (m_layout_index), dss->initial_cell (m_layout_index), std::set<unsigned int> ());
@@ -75,7 +67,7 @@ LayoutToNetlist::LayoutToNetlist (db::DeepShapeStore *dss, unsigned int layout_i
 }
 
 LayoutToNetlist::LayoutToNetlist (const std::string &topcell_name, double dbu)
-  : m_iter (), m_netlist_extracted (false), m_is_flat (true), m_device_scaling (1.0), m_include_floating_subcircuits (false), m_top_level_mode (false), m_make_soft_connection_diodes (false)
+  : m_iter (), m_netlist_extracted (false), m_is_flat (true), m_device_scaling (1.0)
 {
   mp_internal_dss.reset (new db::DeepShapeStore (topcell_name, dbu));
   mp_dss.reset (mp_internal_dss.get ());
@@ -86,7 +78,7 @@ LayoutToNetlist::LayoutToNetlist (const std::string &topcell_name, double dbu)
 
 LayoutToNetlist::LayoutToNetlist ()
   : m_iter (), mp_internal_dss (new db::DeepShapeStore ()), mp_dss (mp_internal_dss.get ()), m_layout_index (0),
-    m_netlist_extracted (false), m_is_flat (false), m_device_scaling (1.0), m_include_floating_subcircuits (false), m_top_level_mode (false), m_make_soft_connection_diodes (false)
+    m_netlist_extracted (false), m_is_flat (false), m_device_scaling (1.0)
 {
   init ();
 }
@@ -94,7 +86,7 @@ LayoutToNetlist::LayoutToNetlist ()
 LayoutToNetlist::~LayoutToNetlist ()
 {
   //  NOTE: do this in this order because of unregistration of the layers
-  m_named_dls.clear ();
+  m_named_regions.clear ();
   m_dlrefs.clear ();
   mp_internal_dss.reset (0);
   mp_netlist.reset (0);
@@ -111,7 +103,7 @@ void LayoutToNetlist::keep_dss ()
 
 void LayoutToNetlist::init ()
 {
-  dss ().set_text_enlargement (0);
+  dss ().set_text_enlargement (1);
   dss ().set_text_property_name (tl::Variant ("LABEL"));
 }
 
@@ -160,8 +152,10 @@ db::Region *LayoutToNetlist::make_layer (const std::string &n)
   db::RecursiveShapeIterator si (m_iter);
   si.shape_flags (db::ShapeIterator::Nothing);
 
-  std::unique_ptr <db::Region> region (new db::Region (si, dss ()));
-  register_layer (*region, n);
+  std::auto_ptr <db::Region> region (new db::Region (si, dss ()));
+  if (! n.empty ()) {
+    register_layer (*region, n);
+  }
   return region.release ();
 }
 
@@ -171,67 +165,49 @@ db::Region *LayoutToNetlist::make_layer (unsigned int layer_index, const std::st
   si.set_layer (layer_index);
   si.shape_flags (db::ShapeIterator::All);
 
-  std::unique_ptr <db::Region> region (new db::Region (si, dss ()));
-  register_layer (*region, n);
+  std::auto_ptr <db::Region> region (new db::Region (si, dss ()));
+  if (! n.empty ()) {
+    register_layer (*region, n);
+  }
   return region.release ();
 }
 
-db::Texts *LayoutToNetlist::make_text_layer (const std::string &n)
-{
-  db::RecursiveShapeIterator si (m_iter);
-  si.shape_flags (db::ShapeIterator::Nothing);
-
-  std::unique_ptr <db::Texts> texts (new db::Texts (si, dss ()));
-  register_layer (*texts, n);
-  return texts.release ();
-}
-
-db::Texts *LayoutToNetlist::make_text_layer (unsigned int layer_index, const std::string &n)
+db::Region *LayoutToNetlist::make_text_layer (unsigned int layer_index, const std::string &n)
 {
   db::RecursiveShapeIterator si (m_iter);
   si.set_layer (layer_index);
   si.shape_flags (db::ShapeIterator::Texts);
 
-  std::unique_ptr <db::Texts> texts (new db::Texts (si, dss ()));
-  register_layer (*texts, n);
-  return texts.release ();
+  std::auto_ptr <db::Region> region (new db::Region (si, dss ()));
+  if (! n.empty ()) {
+    register_layer (*region, n);
+  }
+  return region.release ();
 }
 
 db::Region *LayoutToNetlist::make_polygon_layer (unsigned int layer_index, const std::string &n)
 {
   db::RecursiveShapeIterator si (m_iter);
   si.set_layer (layer_index);
-  si.shape_flags (db::ShapeIterator::Regions);
+  si.shape_flags (db::ShapeIterator::Paths | db::ShapeIterator::Polygons | db::ShapeIterator::Boxes);
 
-  std::unique_ptr <db::Region> region (new db::Region (si, dss ()));
-  register_layer (*region, n);
-  return region.release ();
-}
-
-void LayoutToNetlist::link_nets (const db::Net *net, const db::Net *with)
-{
-  if (! net->circuit () || net->circuit () != with->circuit () || ! internal_layout ()
-      || ! internal_layout ()->is_valid_cell_index (net->circuit ()->cell_index ())
-      || net->cluster_id () == 0 || with->cluster_id () == 0) {
-    return;
+  std::auto_ptr <db::Region> region (new db::Region (si, dss ()));
+  if (! n.empty ()) {
+    register_layer (*region, n);
   }
-
-  connected_clusters<db::NetShape> &clusters = m_net_clusters.clusters_per_cell (net->circuit ()->cell_index ());
-  clusters.join_cluster_with (net->cluster_id (), with->cluster_id ());
+  return region.release ();
 }
 
 size_t LayoutToNetlist::link_net_to_parent_circuit (const Net *subcircuit_net, Circuit *parent_circuit, const DCplxTrans &dtrans)
 {
-  if (! subcircuit_net->circuit () || ! has_internal_layout ()
-      || ! internal_layout ()->is_valid_cell_index (parent_circuit->cell_index ())
-      || subcircuit_net->cluster_id () == 0) {
+  if (! subcircuit_net->circuit () || ! has_internal_layout () || ! internal_layout ()->is_valid_cell_index (parent_circuit->cell_index ())) {
     return 0;
   }
 
   db::CplxTrans dbu_trans (internal_layout ()->dbu ());
   db::ICplxTrans trans = dbu_trans.inverted () * dtrans * dbu_trans;
 
-  connected_clusters<db::NetShape> &parent_net_clusters = m_net_clusters.clusters_per_cell (parent_circuit->cell_index ());
+  connected_clusters<db::PolygonRef> &parent_net_clusters = m_net_clusters.clusters_per_cell (parent_circuit->cell_index ());
 
   size_t id = parent_net_clusters.insert_dummy ();
 
@@ -246,41 +222,23 @@ void LayoutToNetlist::ensure_netlist ()
   }
 }
 
-void LayoutToNetlist::extract_devices (db::NetlistDeviceExtractor &extractor, const std::map<std::string, db::ShapeCollection *> &layers)
+void LayoutToNetlist::extract_devices (db::NetlistDeviceExtractor &extractor, const std::map<std::string, db::Region *> &layers)
+{
+  if (m_netlist_extracted) {
+    throw tl::Exception (tl::to_string (tr ("The netlist has already been extracted")));
+  }
+  ensure_netlist ();
+  extractor.extract (dss (), m_layout_index, layers, *mp_netlist, m_net_clusters, m_device_scaling);
+}
+
+void LayoutToNetlist::connect (const db::Region &l)
 {
   if (m_netlist_extracted) {
     throw tl::Exception (tl::to_string (tr ("The netlist has already been extracted")));
   }
 
-  ensure_netlist ();
-
-  extractor.clear_log_entries ();
-  extractor.extract (dss (), m_layout_index, layers, *mp_netlist, m_net_clusters, m_device_scaling);
-
-  //  transfer errors to log entries
-  m_log_entries.insert (m_log_entries.end (), extractor.begin_log_entries (), extractor.end_log_entries ());
-}
-
-void LayoutToNetlist::reset_extracted ()
-{
-  if (m_netlist_extracted) {
-
-    m_net_clusters.clear ();
-    mp_netlist.reset (0);
-
-    m_log_entries.clear ();
-
-    m_netlist_extracted = false;
-
-  }
-}
-
-void LayoutToNetlist::connect (const db::Region &l)
-{
-  reset_extracted ();
-
   if (! is_persisted (l)) {
-    register_layer (l);
+    register_layer (l, make_new_name ());
   }
 
   //  we need to keep a reference, so we can safely delete the region
@@ -290,15 +248,16 @@ void LayoutToNetlist::connect (const db::Region &l)
   m_conn.connect (dl.layer ());
 }
 
-void LayoutToNetlist::connect_impl (const db::ShapeCollection &a, const db::ShapeCollection &b)
+void LayoutToNetlist::connect (const db::Region &a, const db::Region &b)
 {
-  reset_extracted ();
-
+  if (m_netlist_extracted) {
+    throw tl::Exception (tl::to_string (tr ("The netlist has already been extracted")));
+  }
   if (! is_persisted (a)) {
-    register_layer (a);
+    register_layer (a, make_new_name ());
   }
   if (! is_persisted (b)) {
-    register_layer (b);
+    register_layer (b, make_new_name ());
   }
 
   //  we need to keep a reference, so we can safely delete the region
@@ -310,32 +269,13 @@ void LayoutToNetlist::connect_impl (const db::ShapeCollection &a, const db::Shap
   m_conn.connect (dla.layer (), dlb.layer ());
 }
 
-void LayoutToNetlist::soft_connect_impl (const db::ShapeCollection &a, const db::ShapeCollection &b)
+size_t LayoutToNetlist::connect_global (const db::Region &l, const std::string &gn)
 {
-  reset_extracted ();
-
-  if (! is_persisted (a)) {
-    register_layer (a);
+  if (m_netlist_extracted) {
+    throw tl::Exception (tl::to_string (tr ("The netlist has already been extracted")));
   }
-  if (! is_persisted (b)) {
-    register_layer (b);
-  }
-
-  //  we need to keep a reference, so we can safely delete the region
-  db::DeepLayer dla = deep_layer_of (a);
-  db::DeepLayer dlb = deep_layer_of (b);
-  m_dlrefs.insert (dla);
-  m_dlrefs.insert (dlb);
-
-  m_conn.soft_connect (dla.layer (), dlb.layer ());
-}
-
-size_t LayoutToNetlist::connect_global_impl (const db::ShapeCollection &l, const std::string &gn)
-{
-  reset_extracted ();
-
   if (! is_persisted (l)) {
-    register_layer (l);
+    register_layer (l, make_new_name ());
   }
 
   //  we need to keep a reference, so we can safely delete the region
@@ -343,21 +283,6 @@ size_t LayoutToNetlist::connect_global_impl (const db::ShapeCollection &l, const
   m_dlrefs.insert (dl);
 
   return m_conn.connect_global (dl.layer (), gn);
-}
-
-size_t LayoutToNetlist::soft_connect_global_impl (const db::ShapeCollection &l, const std::string &gn)
-{
-  reset_extracted ();
-
-  if (! is_persisted (l)) {
-    register_layer (l);
-  }
-
-  //  we need to keep a reference, so we can safely delete the region
-  db::DeepLayer dl = deep_layer_of (l);
-  m_dlrefs.insert (dl);
-
-  return m_conn.soft_connect_global (dl.layer (), gn);
 }
 
 const std::string &LayoutToNetlist::global_net_name (size_t id) const
@@ -370,62 +295,12 @@ size_t LayoutToNetlist::global_net_id (const std::string &name)
   return m_conn.global_net_id (name);
 }
 
-void LayoutToNetlist::set_include_floating_subcircuits (bool f)
+void LayoutToNetlist::extract_netlist (const std::string &joined_net_names, bool include_floating_subcircuits)
 {
-  m_include_floating_subcircuits = f;
+  extract_netlist (joined_net_names, std::map<std::string, std::string> (), include_floating_subcircuits);
 }
 
-void LayoutToNetlist::clear_join_net_names ()
-{
-  m_joined_net_names.clear ();
-  m_joined_net_names_per_cell.clear ();
-}
-
-void LayoutToNetlist::join_net_names (const tl::GlobPattern &gp)
-{
-  m_joined_net_names.push_back (gp);
-}
-
-void LayoutToNetlist::join_net_names (const tl::GlobPattern &cell, const tl::GlobPattern &gp)
-{
-  m_joined_net_names_per_cell.push_back (std::make_pair (cell, gp));
-}
-
-void LayoutToNetlist::clear_join_nets ()
-{
-  m_joined_nets.clear ();
-  m_joined_nets_per_cell.clear ();
-}
-
-void LayoutToNetlist::join_nets (const std::set<std::string> &jn)
-{
-  m_joined_nets.push_back (jn);
-}
-
-void LayoutToNetlist::join_nets (const tl::GlobPattern &cell, const std::set<std::string> &gp)
-{
-  m_joined_nets_per_cell.push_back (std::make_pair (cell, gp));
-}
-
-#if defined(HAVE_DEBUG)
-static bool check_many_pins (const db::Netlist *netlist)
-{
-  bool ok = true;
-  for (auto c = netlist->begin_circuits (); c != netlist->end_circuits (); ++c) {
-    const db::Circuit &circuit = *c;
-    for (auto n = circuit.begin_nets (); n != circuit.end_nets (); ++n) {
-      const db::Net &net = *n;
-      if (net.pin_count () > 1) {
-        ok = false;
-        tl::error << "Many pins on net " << net.expanded_name () << " in circuit " << circuit.name ();
-      }
-    }
-  }
-  return ok;
-}
-#endif
-
-void LayoutToNetlist::extract_netlist ()
+void LayoutToNetlist::extract_netlist (const std::string &joined_net_names, const std::map<std::string, std::string> &joined_net_names_per_cell, bool include_floating_subcircuits)
 {
   if (m_netlist_extracted) {
     throw tl::Exception (tl::to_string (tr ("The netlist has already been extracted")));
@@ -433,447 +308,27 @@ void LayoutToNetlist::extract_netlist ()
   ensure_netlist ();
 
   db::NetlistExtractor netex;
-  netex.set_include_floating_subcircuits (m_include_floating_subcircuits);
+
+  netex.set_joined_net_names (joined_net_names);
+
+  const db::Layout &layout = dss ().layout (m_layout_index);
+  for (std::map<std::string, std::string>::const_iterator j = joined_net_names_per_cell.begin (); j != joined_net_names_per_cell.end (); ++j) {
+    tl::GlobPattern pat (j->first);
+    if (pat.is_const ()) {
+      netex.set_joined_net_names (j->first, j->second);
+    } else {
+      for (db::Layout::const_iterator c = layout.begin (); c != layout.end (); ++c) {
+        if (pat.match (layout.cell_name (c->cell_index ()))) {
+          netex.set_joined_net_names (layout.cell_name (c->cell_index ()), j->second);
+        }
+      }
+    }
+  }
+
+  netex.set_include_floating_subcircuits (include_floating_subcircuits);
   netex.extract_nets (dss (), m_layout_index, m_conn, *mp_netlist, m_net_clusters);
 
-  //  treat soft connections
-  do_soft_connections ();
-
-  //  implement the "join_nets" (aka "must connect") feature
-#if defined(HAVE_DEBUG)
-  //  NOTE: the join_nets feature only works for "one pin per net" case
-  //  TODO: either fix that or make sure we do not get multiple pins per net.
-  //  Right now, there no known case that produces multiple pins on a net at
-  //  this stage.
-  tl_assert (check_many_pins (mp_netlist.get ()));
-#endif
-  do_join_nets ();
-
-  if (tl::verbosity () >= 41) {
-    MemStatisticsCollector m (false);
-    mem_stat (&m, db::MemStatistics::None, 0);
-    m.print ();
-  }
-
   m_netlist_extracted = true;
-}
-
-void LayoutToNetlist::check_extraction_errors ()
-{
-  int num_errors = 0;
-  int max_errors = 10;
-  std::string errors;
-  for (auto l = m_log_entries.begin (); l != m_log_entries.end (); ++l) {
-    if (l->severity () >= db::Error) {
-      errors += "\n";
-      if (++num_errors >= max_errors) {
-        errors += "...\n";
-        errors += tl::sprintf (tl::to_string (tr ("(list shortened after %d errrors, see log for all errors)")), max_errors);
-        break;
-      } else {
-        errors += l->to_string ();
-      }
-    }
-  }
-
-  if (num_errors > 0) {
-    throw tl::Exception (tl::to_string (tr ("Errors encountered during netlist extraction:")) + errors);
-  }
-}
-
-void LayoutToNetlist::join_nets_from_pattern (db::Circuit &c, const tl::GlobPattern &p)
-{
-  std::map<std::string, std::vector<db::Net *> > nets_by_name;
-  for (auto n = c.begin_nets (); n != c.end_nets (); ++n) {
-    if (! n->name ().empty () && p.match (n->name ())) {
-      nets_by_name [n->name ()].push_back (n.operator-> ());
-    }
-  }
-
-  for (auto n2n = nets_by_name.begin (); n2n != nets_by_name.end (); ++n2n) {
-    if (n2n->second.size () > 1) {
-      do_join_nets (c, n2n->second);
-    }
-  }
-}
-
-void LayoutToNetlist::join_nets_from_pattern (db::Circuit &c, const std::set<std::string> &p)
-{
-  //  NOTE: this version implies implicit joining of different nets with the same name from the set p
-  std::vector<db::Net *> nets;
-  for (auto n = c.begin_nets (); n != c.end_nets (); ++n) {
-    if (! n->name ().empty () && p.find (n->name ()) != p.end ()) {
-      nets.push_back (n.operator-> ());
-    }
-  }
-
-  if (nets.size () > 1) {
-    do_join_nets (c, nets);
-  }
-}
-
-void LayoutToNetlist::do_join_nets (db::Circuit &c, const std::vector<db::Net *> &nets)
-{
-  if (nets.size () <= 1) {
-    return;
-  }
-
-  check_must_connect (c, nets);
-
-  for (auto n = nets.begin () + 1; n != nets.end (); ++n) {
-    c.join_nets (nets [0], *n);
-  }
-}
-
-void LayoutToNetlist::check_must_connect (const db::Circuit &c, const std::vector<db::Net *> &nets)
-{
-  std::vector<const db::Net *> unique_nets;
-  unique_nets.reserve (nets.size ());
-  std::set<const db::Net *> seen;
-  for (auto n = nets.begin (); n != nets.end (); ++n) {
-    if (seen.find (*n) == seen.end ()) {
-      seen.insert (*n);
-      unique_nets.push_back (*n);
-    }
-  }
-  if (unique_nets.size () < size_t (2)) {
-    return;
-  }
-
-  bool same_names = true;
-  for (auto n = unique_nets.begin () + 1; n != unique_nets.end () && same_names; ++n) {
-    same_names = (unique_nets.front ()->expanded_name () == (*n)->expanded_name ());
-  }
-
-  std::vector<const db::SubCircuit *> path;
-  check_must_connect_impl (c, unique_nets, c, unique_nets, path, same_names);
-}
-
-static std::string subcircuit_to_string (const db::SubCircuit &sc)
-{
-  if (! sc.name ().empty ()) {
-    return tl::to_string (tr (" on subcircuit ")) + sc.name ();
-  } else {
-    return std::string ();
-  }
-}
-
-static db::DPolygon subcircuit_geometry (const db::SubCircuit &sc, const db::Layout *layout)
-{
-  if (! layout || ! sc.circuit_ref () || ! layout->is_valid_cell_index (sc.circuit_ref ()->cell_index ())) {
-    return db::DPolygon ();
-  }
-
-  db::DBox dbox = db::CplxTrans (layout->dbu ()) * layout->cell (sc.circuit_ref ()->cell_index ()).bbox ();
-  return db::DPolygon (sc.trans () * dbox);
-}
-
-static db::DBox net_geometry_box (const db::Circuit &c, const db::Net *net, const db::Layout *layout, const db::hier_clusters<db::NetShape> &net_clusters)
-{
-  if (! layout || ! net) {
-    return db::DBox ();
-  }
-
-  auto nc = net_clusters.clusters_per_cell (c.cell_index ());
-  auto lc = nc.cluster_by_id (net->cluster_id ());
-
-  return db::CplxTrans (layout->dbu ()) * lc.bbox ();
-}
-
-static db::DPolygon net_geometry (const db::Circuit &c, const db::Net *net, const db::Layout *layout, const db::hier_clusters<db::NetShape> &net_clusters)
-{
-  auto box = net_geometry_box (c, net, layout, net_clusters);
-  return box.empty () ? db::DPolygon () : db::DPolygon (box);
-}
-
-static db::DPolygon net_geometry (const db::Circuit &c, const std::vector<const db::Net *> &nets, const db::Layout *layout, const db::hier_clusters<db::NetShape> &net_clusters)
-{
-  db::DBox box;
-  for (auto n = nets.begin (); n != nets.end (); ++n) {
-    box += net_geometry_box (c, *n, layout, net_clusters);
-  }
-  return box.empty () ? db::DPolygon () : db::DPolygon (box);
-}
-
-static std::string path_msg (const std::vector<const db::SubCircuit *> &path)
-{
-  if (path.empty ()) {
-    return std::string ();
-  }
-
-  std::string msg (".\n" + tl::to_string (tr ("Instance path: ")));
-
-  auto p0 = path.rbegin ();
-  msg += (*p0)->circuit ()->name ();
-
-  for (auto p = p0; p != path.rend (); ++p) {
-    msg += "/";
-    msg += (*p)->circuit_ref ()->name () + "[" + (*p)->trans ().to_string (true /*short*/) + "]" + ":" + (*p)->expanded_name ();
-  }
-
-  return msg;
-}
-
-static bool all_nets_are_same (const std::vector<const db::Net *> &nets)
-{
-  for (auto n = nets.begin () + 1; n != nets.end (); ++n) {
-    if (*n != nets.front ()) {
-      return false;
-    }
-  }
-  return true;
-}
-
-static bool no_pins_on_any_net (const std::vector<const db::Net *> &nets)
-{
-  for (auto n = nets.begin (); n != nets.end (); ++n) {
-    if ((*n)->begin_pins () == (*n)->end_pins ()) {
-      return true;
-    }
-  }
-  return false;
-}
-
-static std::string net_names_msg (const std::vector<const db::Net *> &nets)
-{
-  std::set<std::string> names;
-  for (auto n = nets.begin (); n != nets.end (); ++n) {
-    names.insert ((*n)->expanded_name ());
-  }
-
-  std::string msg;
-  size_t num = names.size ();
-  size_t i = 0;
-  for (auto n = names.begin (); n != names.end (); ++n, ++i) {
-    if (i > 0) {
-      if (i + 1 < num) {
-        msg += ", ";
-      } else {
-        msg += tl::to_string (tr (" and "));
-      }
-    }
-    msg += *n;
-  }
-
-  return msg;
-}
-
-void LayoutToNetlist::check_must_connect_impl (const db::Circuit &c, const std::vector<const db::Net *> &nets, const db::Circuit &c_org, const std::vector<const db::Net *> &nets_org, std::vector<const db::SubCircuit *> &path, bool same_names)
-{
-  if (c.begin_refs () != c.end_refs () && path.empty ()) {
-
-    for (auto n = nets.begin (); n != nets.end (); ++n) {
-
-      if ((*n)->begin_pins () == (*n)->end_pins ()) {
-        std::string msg;
-        if (same_names) {
-          msg = tl::sprintf (tl::to_string (tr ("Must-connect subnet of %s does not have any pin at all")), (*n)->expanded_name ());
-        } else {
-          msg = tl::sprintf (tl::to_string (tr ("Must-connect net %s does not have any pin at all")), (*n)->expanded_name ());
-        }
-        db::LogEntryData error (db::Error, msg);
-        error.set_cell_name (c.name ());
-        error.set_geometry (net_geometry (c, *n, internal_layout (), net_clusters ()));
-        error.set_category_name ("must-connect");
-        log_entry (error);
-      }
-
-    }
-
-  } else if (c.begin_refs () == c.end_refs () || no_pins_on_any_net (nets)) {
-
-    if (same_names) {
-      if (path.empty ()) {
-        db::LogEntryData warn (m_top_level_mode ? db::Error : db::Warning, tl::sprintf (tl::to_string (tr ("Must-connect subnets of %s must be connected further up in the hierarchy - this is an error at chip top level")), nets_org.front ()->expanded_name ()) + path_msg (path));
-        warn.set_cell_name (c.name ());
-        warn.set_geometry (net_geometry (c, nets, internal_layout (), net_clusters ()));
-        warn.set_category_name ("must-connect");
-        log_entry (warn);
-      } else {
-        db::LogEntryData warn (m_top_level_mode ? db::Error : db::Warning, tl::sprintf (tl::to_string (tr ("Must-connect subnets of %s of circuit %s must be connected further up in the hierarchy - this is an error at chip top level")), nets_org.front ()->expanded_name (), c_org.name ()) + path_msg (path));
-        warn.set_cell_name (c.name ());
-        warn.set_geometry (subcircuit_geometry (*path.back (), internal_layout ()));
-        warn.set_category_name ("must-connect");
-        log_entry (warn);
-      }
-    } else {
-      std::string net_names = net_names_msg (nets_org);
-      if (path.empty ()) {
-        db::LogEntryData warn (m_top_level_mode ? db::Error : db::Warning, tl::sprintf (tl::to_string (tr ("Must-connect nets %s must be connected further up in the hierarchy - this is an error at chip top level")), net_names) + path_msg (path));
-        warn.set_cell_name (c.name ());
-        warn.set_geometry (net_geometry (c, nets, internal_layout (), net_clusters ()));
-        warn.set_category_name ("must-connect");
-        log_entry (warn);
-      } else {
-        db::LogEntryData warn (m_top_level_mode ? db::Error : db::Warning, tl::sprintf (tl::to_string (tr ("Must-connect nets %s of circuit %s must be connected further up in the hierarchy - this is an error at chip top level")), net_names, c_org.name ()) + path_msg (path));
-        warn.set_cell_name (c.name ());
-        warn.set_geometry (subcircuit_geometry (*path.back (), internal_layout ()));
-        warn.set_category_name ("must-connect");
-        log_entry (warn);
-      }
-    }
-
-  }
-
-  if (! no_pins_on_any_net (nets)) {
-
-    for (auto ref = c.begin_refs (); ref != c.end_refs (); ++ref) {
-
-      const db::SubCircuit &sc = *ref;
-
-      //  TODO: consider the case of multiple pins on a net (rare)
-      std::vector<const db::Net *> new_nets;
-      new_nets.reserve (nets.size ());
-
-      bool failed = false;
-      std::set<const db::Net *> seen;
-      size_t i = 0;
-      for (auto n = nets.begin (); n != nets.end (); ++n, ++i) {
-
-        if (seen.find (*n) != seen.end ()) {
-          continue;
-        }
-        seen.insert (*n);
-
-        const db::Net *new_net = sc.net_for_pin ((*n)->begin_pins ()->pin_id ());
-        new_nets.push_back (new_net);
-
-        if (new_net == 0) {
-          failed = true;
-          std::string msg;
-          if (same_names) {
-            msg = tl::sprintf (tl::to_string (tr ("Must-connect subnet of %s of circuit %s has no outside connection at all%s")), nets_org[i]->expanded_name (), c_org.name (), subcircuit_to_string (sc)) + path_msg (path);
-          } else {
-            msg = tl::sprintf (tl::to_string (tr ("Must-connect net %s of circuit %s has no outside connection at all%s")), nets_org[i]->expanded_name (), c_org.name (), subcircuit_to_string (sc)) + path_msg (path);
-          }
-          db::LogEntryData error (db::Error, msg);
-          error.set_cell_name (sc.circuit ()->name ());
-          error.set_geometry (subcircuit_geometry (sc, internal_layout ()));
-          error.set_category_name ("must-connect");
-          log_entry (error);
-        }
-
-      }
-
-      if (! failed && ! all_nets_are_same (new_nets)) {
-        path.push_back (&sc);
-        check_must_connect_impl (*sc.circuit (), new_nets, c_org, nets_org, path, same_names);
-        path.pop_back ();
-      }
-
-    }
-
-  }
-}
-
-void LayoutToNetlist::place_soft_connection_diodes ()
-{
-  db::DeviceClassDiode *soft_diode = 0;
-
-  for (auto c = mp_netlist->begin_bottom_up (); c != mp_netlist->end_bottom_up (); ++c) {
-
-    auto clusters = net_clusters ().clusters_per_cell (c->cell_index ());
-
-    for (auto n = c->begin_nets (); n != c->end_nets (); ++n) {
-
-      auto soft_connections = clusters.upward_soft_connections (n->cluster_id ());
-      for (auto sc = soft_connections.begin (); sc != soft_connections.end (); ++sc) {
-
-        if (! soft_diode) {
-          soft_diode = new db::DeviceClassDiode ();
-          soft_diode->set_name ("SOFT");
-          mp_netlist->add_device_class (soft_diode);
-        }
-
-        db::Device *sc_device = new db::Device (soft_diode);
-        c->add_device (sc_device);
-
-        auto nn = c->net_by_cluster_id (*sc);
-        if (nn) {
-          sc_device->connect_terminal (db::DeviceClassDiode::terminal_id_C, n.operator-> ());
-          sc_device->connect_terminal (db::DeviceClassDiode::terminal_id_A, nn);
-        }
-
-      }
-
-    }
-
-  }
-}
-
-void LayoutToNetlist::do_soft_connections ()
-{
-  SoftConnectionInfo sc_info;
-  sc_info.build (*netlist (), net_clusters ());
-  sc_info.report (*this);
-
-  if (m_make_soft_connection_diodes) {
-    place_soft_connection_diodes ();
-  } else {
-    sc_info.join_soft_connections (*netlist ());
-  }
-}
-
-void LayoutToNetlist::do_join_nets ()
-{
-  if (! mp_netlist) {
-    return;
-  }
-
-  //  prevents updates
-  NetlistLocker locked_netlist (mp_netlist.get ());
-
-  for (auto c = mp_netlist->begin_top_down (); c != mp_netlist->end_top_down (); ++c) {
-
-    for (auto jn = m_joined_net_names.begin (); jn != m_joined_net_names.end (); ++jn) {
-      join_nets_from_pattern (*c, *jn);
-    }
-
-    for (auto jn = m_joined_nets.begin (); jn != m_joined_nets.end (); ++jn) {
-      join_nets_from_pattern (*c, *jn);
-    }
-
-    for (auto jn = m_joined_net_names_per_cell.begin (); jn != m_joined_net_names_per_cell.end (); ++jn) {
-      if (jn->first.match (c->name ())) {
-        join_nets_from_pattern (*c, jn->second);
-      }
-    }
-
-    for (auto jn = m_joined_nets_per_cell.begin (); jn != m_joined_nets_per_cell.end (); ++jn) {
-      if (jn->first.match (c->name ())) {
-        join_nets_from_pattern (*c, jn->second);
-      }
-    }
-
-  }
-}
-
-void LayoutToNetlist::mem_stat (MemStatistics *stat, MemStatistics::purpose_t purpose, int cat, bool no_self, void *parent) const
-{
-  if (! no_self) {
-    stat->add (typeid (*this), (void *) this, sizeof (*this), sizeof (*this), parent, purpose, cat);
-  }
-
-  db::mem_stat (stat, purpose, cat, m_description, true, (void *) this);
-  db::mem_stat (stat, purpose, cat, m_name, true, (void *) this);
-  db::mem_stat (stat, purpose, cat, m_original_file, true, (void *) this);
-  db::mem_stat (stat, purpose, cat, m_filename, true, (void *) this);
-  db::mem_stat (stat, purpose, cat, m_net_clusters, true, (void *) this);
-  db::mem_stat (stat, purpose, cat, mp_netlist, true, (void *) this);
-  db::mem_stat (stat, purpose, cat, m_dlrefs, true, (void *) this);
-  db::mem_stat (stat, purpose, cat, m_named_dls, true, (void *) this);
-  db::mem_stat (stat, purpose, cat, m_name_of_layer, true, (void *) this);
-  db::mem_stat (stat, purpose, cat, m_dl_by_original, true, (void *) this);
-  db::mem_stat (stat, purpose, cat, m_dl_of_layer, true, (void *) this);
-  db::mem_stat (stat, purpose, cat, m_joined_net_names, true, (void *) this);
-  db::mem_stat (stat, purpose, cat, m_joined_net_names_per_cell, true, (void *) this);
-  db::mem_stat (stat, purpose, cat, m_joined_nets, true, (void *) this);
-  db::mem_stat (stat, purpose, cat, m_joined_nets_per_cell, true, (void *) this);
-
-  m_net_clusters.mem_stat (stat, MemStatistics::LayoutToNetlist, cat, true, (void *) this);
-  if (mp_netlist.get ()) {
-    db::mem_stat (stat, MemStatistics::Netlist, cat, *mp_netlist, false, (void *) this);
-  }
 }
 
 void LayoutToNetlist::set_netlist_extracted ()
@@ -910,26 +365,6 @@ db::Cell *LayoutToNetlist::internal_top_cell ()
   return &dss ().initial_cell (m_layout_index);
 }
 
-const db::Layout *LayoutToNetlist::original_layout () const
-{
-  return m_iter.layout ();
-}
-
-const db::Cell *LayoutToNetlist::original_top_cell () const
-{
-  return m_iter.top_cell ();
-}
-
-db::Layout *LayoutToNetlist::original_layout ()
-{
-  return const_cast<db::Layout *> (m_iter.layout ());
-}
-
-db::Cell *LayoutToNetlist::original_top_cell ()
-{
-  return const_cast<db::Cell *> (m_iter.top_cell ());
-}
-
 void LayoutToNetlist::ensure_layout () const
 {
   if (! dss ().is_valid_layout_index (m_layout_index)) {
@@ -942,6 +377,42 @@ void LayoutToNetlist::ensure_layout () const
     non_const_this->m_dummy_layer = db::DeepLayer (& non_const_this->dss (), m_layout_index, dummy_layer_index);
 
   }
+}
+
+void LayoutToNetlist::register_layer (const db::Region &region, const std::string &n)
+{
+  if (m_named_regions.find (n) != m_named_regions.end ()) {
+    throw tl::Exception (tl::to_string (tr ("Layer name is already used: ")) + n);
+  }
+
+  db::DeepLayer dl;
+
+  if (m_is_flat) {
+
+    dl = dss ().create_from_flat (region, true);
+
+  } else {
+
+    db::DeepRegion *delegate = dynamic_cast<db::DeepRegion *> (region.delegate());
+    if (! delegate) {
+
+      dl = dss ().create_from_flat (region, true);
+
+    } else {
+
+      if (is_persisted (region)) {
+        std::string prev_name = name (region);
+        m_named_regions.erase (prev_name);
+      }
+
+      dl = delegate->deep_layer ();
+
+    }
+
+  }
+
+  m_named_regions [n] = dl;
+  m_name_of_layer [dl.layer ()] = n;
 }
 
 std::string LayoutToNetlist::make_new_name (const std::string &stem)
@@ -958,13 +429,23 @@ std::string LayoutToNetlist::make_new_name (const std::string &stem)
     name += std::string ("$");
     name += tl::to_string (n - m);
 
-    if (m_named_dls.find (name) == m_named_dls.end ()) {
+    if (m_named_regions.find (name) == m_named_regions.end ()) {
       n -= m;
     }
 
   }
 
   return name;
+}
+
+std::string LayoutToNetlist::name (const db::Region &region) const
+{
+  std::map<unsigned int, std::string>::const_iterator n = m_name_of_layer.find (layer_of (region));
+  if (n != m_name_of_layer.end ()) {
+    return n->second;
+  } else {
+    return std::string ();
+  }
 }
 
 std::string LayoutToNetlist::name (unsigned int l) const
@@ -977,147 +458,37 @@ std::string LayoutToNetlist::name (unsigned int l) const
   }
 }
 
+bool LayoutToNetlist::is_persisted (const db::Region &region) const
+{
+  return m_name_of_layer.find (layer_of (region)) != m_name_of_layer.end ();
+}
+
 db::Region *LayoutToNetlist::layer_by_name (const std::string &name)
 {
-  std::map<std::string, db::DeepLayer>::const_iterator l = m_named_dls.find (name);
-  if (l == m_named_dls.end ()) {
+  std::map<std::string, db::DeepLayer>::const_iterator l = m_named_regions.find (name);
+  if (l == m_named_regions.end ()) {
     return 0;
   } else {
     return new db::Region (new db::DeepRegion (l->second));
   }
 }
 
-db::Texts *LayoutToNetlist::texts_by_name (const std::string &name)
-{
-  std::map<std::string, db::DeepLayer>::const_iterator l = m_named_dls.find (name);
-  if (l == m_named_dls.end ()) {
-    return 0;
-  } else {
-    return new db::Texts (new db::DeepTexts (l->second));
-  }
-}
-
-tl::optional<unsigned int> LayoutToNetlist::layer_index_by_name (const std::string &name) const
-{
-  std::map<std::string, db::DeepLayer>::const_iterator l = m_named_dls.find (name);
-  if (l == m_named_dls.end ()) {
-    return tl::optional<unsigned int> ();
-  } else {
-    return tl::optional<unsigned int> (l->second.layer ());
-  }
-}
-
 db::Region *LayoutToNetlist::layer_by_index (unsigned int index)
 {
-  auto n = m_dl_of_layer.find (index);
-  if (n == m_dl_of_layer.end ()) {
+  std::map<unsigned int, std::string>::const_iterator n = m_name_of_layer.find (index);
+  if (n == m_name_of_layer.end ()) {
     return 0;
   } else {
-    return new db::Region (new db::DeepRegion (n->second));
+    return layer_by_name (n->second);
   }
 }
 
-db::Texts *LayoutToNetlist::texts_by_index (unsigned int index)
+db::DeepLayer LayoutToNetlist::deep_layer_of (const db::Region &region) const
 {
-  auto n = m_dl_of_layer.find (index);
-  if (n == m_dl_of_layer.end ()) {
-    return 0;
-  } else {
-    return new db::Texts (new db::DeepTexts (n->second));
-  }
-}
-
-tl::optional<unsigned int> LayoutToNetlist::layer_by_original (const ShapeCollectionDelegateBase *original_delegate)
-{
-  auto n = m_dl_by_original.find (tl::id_of (original_delegate));
-  if (n == m_dl_by_original.end ()) {
-
-    DeepShapeCollectionDelegateBase *dl = const_cast<ShapeCollectionDelegateBase *> (original_delegate)->deep ();
-    if (dl && dl->deep_layer ().store () == mp_dss.get ()) {
-      //  implicitly original because the collection is inside our DSS
-      return tl::optional<unsigned int> (dl->deep_layer ().layer ());
-    } else {
-      return tl::optional<unsigned int> ();
-    }
-
-  } else {
-    return tl::optional<unsigned int> (n->second.layer ());
-  }
-}
-
-static db::DeepLayer dss_create_from_flat (db::DeepShapeStore &dss, const db::ShapeCollection &coll)
-{
-  const db::Region *region = dynamic_cast<const db::Region *> (&coll);
-  const db::Texts *texts = dynamic_cast<const db::Texts *> (&coll);
-  if (region) {
-    return dss.create_from_flat (*region, true);
-  } else if (texts) {
-    return dss.create_from_flat (*texts);
-  } else {
-    tl_assert (false);
-  }
-}
-
-std::string LayoutToNetlist::name (const ShapeCollection &coll) const
-{
-  std::map<unsigned int, std::string>::const_iterator n = m_name_of_layer.find (layer_of (coll));
-  if (n != m_name_of_layer.end ()) {
-    return n->second;
-  } else {
-    return std::string ();
-  }
-}
-
-unsigned int LayoutToNetlist::register_layer (const ShapeCollection &collection, const std::string &n_in)
-{
-  if (m_dl_by_original.find (tl::id_of (collection.get_delegate ())) != m_dl_by_original.end ()) {
-    throw tl::Exception (tl::to_string (tr ("The layer is already registered")));
-  }
-
-  if (! n_in.empty () && m_named_dls.find (n_in) != m_named_dls.end ()) {
-    throw tl::Exception (tl::to_string (tr ("Layer name is already used: ")) + n_in);
-  }
-
-  //  Caution: this may create names which clash with future explicit names. Hopefully, the generated names are unique enough.
-  std::string n = n_in.empty () ? make_new_name () : n_in;
-
-  db::DeepLayer dl;
-
-  if (m_is_flat) {
-
-    dl = dss_create_from_flat (dss (), collection);
-
-  } else {
-
-    db::DeepShapeCollectionDelegateBase *delegate = collection.get_delegate ()->deep ();
-    if (! delegate) {
-
-      dl = dss_create_from_flat (dss (), collection);
-
-    } else {
-
-      dl = delegate->deep_layer ();
-
-    }
-
-  }
-
-  unsigned int layer = dl.layer ();
-
-  m_dl_by_original [tl::id_of (collection.get_delegate ())] = dl;
-  m_dl_of_layer [layer] = dl;
-  m_named_dls [n] = dl;
-  m_name_of_layer [layer] = n;
-
-  return layer;
-}
-
-db::DeepLayer LayoutToNetlist::deep_layer_of (const db::ShapeCollection &coll) const
-{
-  const db::DeepShapeCollectionDelegateBase *dr = coll.get_delegate ()->deep ();
+  const db::DeepRegion *dr = dynamic_cast<const db::DeepRegion *> (region.delegate ());
   if (! dr) {
 
-    std::pair<bool, db::DeepLayer> lff = dss ().layer_for_flat (coll);
+    std::pair<bool, db::DeepLayer> lff = dss ().layer_for_flat (region);
     if (lff.first) {
       return lff.second;
     } else {
@@ -1129,15 +500,9 @@ db::DeepLayer LayoutToNetlist::deep_layer_of (const db::ShapeCollection &coll) c
   }
 }
 
-bool LayoutToNetlist::is_persisted_impl (const db::ShapeCollection &coll) const
+unsigned int LayoutToNetlist::layer_of (const db::Region &region) const
 {
-  if (coll.get_delegate ()->deep () && coll.get_delegate ()->deep ()->deep_layer ().store () == mp_dss.get ()) {
-    //  implicitly persisted because the collection is inside our DSS
-    return true;
-  } else {
-    //  explicitly persisted through "register"
-    return m_dl_by_original.find (tl::id_of (coll.get_delegate ())) != m_dl_by_original.end ();
-  }
+  return deep_layer_of (region).layer ();
 }
 
 db::CellMapping LayoutToNetlist::make_cell_mapping_into (db::Layout &layout, db::Cell &cell, const std::vector<const db::Net *> *nets, bool with_device_cells)
@@ -1187,10 +552,10 @@ db::CellMapping LayoutToNetlist::const_cell_mapping_into (const db::Layout &layo
   return cm;
 }
 
-std::map<unsigned int, unsigned int>
+std::map<unsigned int, const db::Region *>
 LayoutToNetlist::create_layermap (db::Layout &target_layout, int ln) const
 {
-  std::map<unsigned int, unsigned int> lm;
+  std::map<unsigned int, const db::Region *> lm;
   if (! internal_layout ()) {
     return lm;
   }
@@ -1199,19 +564,19 @@ LayoutToNetlist::create_layermap (db::Layout &target_layout, int ln) const
 
   std::set<unsigned int> layers_to_copy;
   const db::Connectivity &conn = connectivity ();
-  for (db::Connectivity::all_layer_iterator layer = conn.begin_layers (); layer != conn.end_layers (); ++layer) {
+  for (db::Connectivity::layer_iterator layer = conn.begin_layers (); layer != conn.end_layers (); ++layer) {
     layers_to_copy.insert (*layer);
   }
 
   for (std::set<unsigned int>::const_iterator l = layers_to_copy.begin (); l != layers_to_copy.end (); ++l) {
     const db::LayerProperties &lp = source_layout.get_properties (*l);
+    unsigned int tl;
     if (! lp.is_null ()) {
-      unsigned int tl = target_layout.insert_layer (lp);
-      lm.insert (std::make_pair (tl, *l));
-    } else if (ln >= 0) {
-      unsigned int tl = target_layout.insert_layer (db::LayerProperties (ln++, 0, name (*l)));
-      lm.insert (std::make_pair (tl, *l));
+      tl = target_layout.insert_layer (lp);
+    } else {
+      tl = target_layout.insert_layer (db::LayerProperties (ln++, 0, name (*l)));
     }
+    lm.insert (std::make_pair (tl, const_cast<LayoutToNetlist *> (this)->layer_by_index (*l)));
   }
 
   return lm;
@@ -1234,78 +599,39 @@ namespace
 }
 
 template <class Tr>
-static bool deliver_shape (const db::NetShape &, StopOnFirst, const Tr &, db::properties_id_type)
+static bool deliver_shape (const db::PolygonRef &, StopOnFirst, const Tr &, db::properties_id_type)
 {
   return false;
 }
 
 template <class Tr>
-static bool deliver_shape (const db::NetShape &s, db::Region &region, const Tr &tr, db::properties_id_type propid)
+static bool deliver_shape (const db::PolygonRef &pr, db::Region &region, const Tr &tr, db::properties_id_type /*propid*/)
 {
-  if (s.type () == db::NetShape::Polygon) {
-
-    db::PolygonRef pr = s.polygon_ref ();
-
-    if (pr.obj ().is_box ()) {
-      if (propid) {
-        region.insert (db::BoxWithProperties (pr.obj ().box ().transformed (pr.trans ()).transformed (tr), propid));
-      } else {
-        region.insert (pr.obj ().box ().transformed (pr.trans ()).transformed (tr));
-      }
-    } else {
-      if (propid) {
-        region.insert (db::PolygonWithProperties (pr.obj ().transformed (pr.trans ()).transformed (tr), propid));
-      } else {
-        region.insert (pr.obj ().transformed (pr.trans ()).transformed (tr));
-      }
-    }
-
+  if (pr.obj ().is_box ()) {
+    region.insert (pr.obj ().box ().transformed (pr.trans ()).transformed (tr));
+  } else {
+    region.insert (pr.obj ().transformed (pr.trans ()).transformed (tr));
   }
-
   return true;
 }
 
 template <class Tr>
-static bool deliver_shape (const db::NetShape &s, db::Texts &texts, const Tr &tr, db::properties_id_type propid)
+static bool deliver_shape (const db::PolygonRef &pr, db::Shapes &shapes, const Tr &tr, db::properties_id_type propid)
 {
-  if (s.type () == db::NetShape::Text) {
-
-    db::TextRef pr = s.text_ref ();
-
-    db::Text text (pr.obj ().transformed (pr.trans ()).transformed (tr));
+  if (pr.obj ().is_box ()) {
     if (propid) {
-      texts.insert (db::TextWithProperties (text, propid));
+      shapes.insert (db::BoxWithProperties (pr.obj ().box ().transformed (pr.trans ()).transformed (tr), propid));
     } else {
-      texts.insert (text);
+      shapes.insert (pr.obj ().box ().transformed (pr.trans ()).transformed (tr));
     }
-
-  }
-
-  return true;
-}
-
-template <class Tr>
-static bool deliver_shape (const db::NetShape &s, db::Shapes &shapes, const Tr &tr, db::properties_id_type propid)
-{
-  if (s.type () == db::NetShape::Polygon) {
-
-    db::PolygonRef pr = s.polygon_ref ();
-
+  } else {
     db::Layout *layout = shapes.layout ();
     if (layout) {
-      //  NOTE: by maintaining the PolygonRefs we can directly use the output of "build_nets" as input
-      //  for a hierarchical processor.
       db::PolygonRef polygon_ref (pr.obj ().transformed (pr.trans ()).transformed (tr), layout->shape_repository ());
       if (propid) {
         shapes.insert (db::PolygonRefWithProperties (polygon_ref, propid));
       } else {
         shapes.insert (polygon_ref);
-      }
-    } else if (pr.obj ().is_box ()) {
-      if (propid) {
-        shapes.insert (db::BoxWithProperties (pr.obj ().box ().transformed (pr.trans ()).transformed (tr), propid));
-      } else {
-        shapes.insert (pr.obj ().box ().transformed (pr.trans ()).transformed (tr));
       }
     } else {
       db::Polygon polygon (pr.obj ().transformed (pr.trans ()).transformed (tr));
@@ -1315,30 +641,7 @@ static bool deliver_shape (const db::NetShape &s, db::Shapes &shapes, const Tr &
         shapes.insert (polygon);
       }
     }
-
-  } else if (s.type () == db::NetShape::Text) {
-
-    db::TextRef pr = s.text_ref ();
-
-    db::Layout *layout = shapes.layout ();
-    if (layout) {
-      db::TextRef text_ref (pr.obj ().transformed (pr.trans ()).transformed (tr), layout->shape_repository ());
-      if (propid) {
-        shapes.insert (db::TextRefWithProperties (text_ref, propid));
-      } else {
-        shapes.insert (text_ref);
-      }
-    } else {
-      db::Text text (pr.obj ().transformed (pr.trans ()).transformed (tr));
-      if (propid) {
-        shapes.insert (db::TextWithProperties (text, propid));
-      } else {
-        shapes.insert (text);
-      }
-    }
-
   }
-
   return true;
 }
 
@@ -1399,189 +702,305 @@ static bool deliver_shapes_of_net (bool recursive, const db::Netlist *nl, const 
   return true;
 }
 
-void
-LayoutToNetlist::collect_shapes_of_pin (const local_cluster<db::NetShape> &c, const db::Net *other_net, const db::ICplxTrans &sc_trans, const db::ICplxTrans &trans, std::map<unsigned int, db::Region> &result) const
-{
-  if (! other_net || ! other_net->circuit ()) {
-    return;
-  }
-
-  auto cc_other = m_net_clusters.clusters_per_cell (other_net->circuit ()->cell_index ());
-  auto c_other = cc_other.cluster_by_id (other_net->cluster_id ());
-
-  std::map<unsigned int, std::vector<const db::NetShape *> > interacting;
-  int soft = 0;
-  if (c.interacts (c_other, sc_trans, m_conn, soft, 0, &interacting)) {
-
-    auto t = trans * sc_trans;
-
-    for (auto i = interacting.begin (); i != interacting.end (); ++i) {
-      db::Region &r = result [i->first];
-      for (auto s = i->second.begin (); s != i->second.end (); ++s) {
-        deliver_shape (**s, r, t, 0);
-      }
-    }
-
-  }
-
-  double dbu = internal_layout ()->dbu ();
-
-  for (auto p = other_net->begin_subcircuit_pins (); p != other_net->end_subcircuit_pins (); ++p) {
-
-    db::ICplxTrans sc_trans2 = sc_trans * db::CplxTrans (dbu).inverted () * p->subcircuit ()->trans () * db::CplxTrans (dbu);
-    const db::Net *other_net2 = p->subcircuit ()->circuit_ref ()->net_for_pin (p->pin_id ());
-
-    collect_shapes_of_pin (c, other_net2, sc_trans2, trans, result);
-
-  }
-}
-
-std::map<unsigned int, db::Region>
-LayoutToNetlist::shapes_of_pin (const db::NetSubcircuitPinRef &pin, const db::ICplxTrans &trans) const
-{
-  std::map<unsigned int, db::Region> result;
-
-  const db::Net *net = pin.net ();
-  if (! net || ! net->circuit () || ! pin.subcircuit () || ! pin.subcircuit ()->circuit_ref ()) {
-    return result;
-  }
-
-  auto cc = m_net_clusters.clusters_per_cell (net->circuit ()->cell_index ());
-  auto c = cc.cluster_by_id (net->cluster_id ());
-
-  double dbu = internal_layout ()->dbu ();
-  db::ICplxTrans sc_trans = db::CplxTrans (dbu).inverted () * pin.subcircuit ()->trans () * db::CplxTrans (dbu);
-  const db::Net *other_net = pin.subcircuit ()->circuit_ref ()->net_for_pin (pin.pin_id ());
-
-  collect_shapes_of_pin (c, other_net, sc_trans, trans, result);
-
-  return result;
-}
-
-std::map<unsigned int, db::Region>
-LayoutToNetlist::shapes_of_terminal (const db::NetTerminalRef &terminal, const db::ICplxTrans &trans) const
-{
-  std::map<unsigned int, db::Region> result;
-
-  const db::Net *net = terminal.net ();
-  if (! net || ! net->circuit () || ! terminal.device () || ! terminal.device ()->device_abstract ()) {
-    return result;
-  }
-
-  auto cc = m_net_clusters.clusters_per_cell (net->circuit ()->cell_index ());
-  auto c = cc.cluster_by_id (net->cluster_id ());
-
-  double dbu = internal_layout ()->dbu ();
-  db::ICplxTrans d_trans = db::CplxTrans (dbu).inverted () * terminal.device ()->trans () * db::CplxTrans (dbu);
-
-  auto cc_other = m_net_clusters.clusters_per_cell (terminal.device ()->device_abstract ()->cell_index ());
-  auto c_other = cc_other.cluster_by_id (terminal.device ()->device_abstract ()->cluster_id_for_terminal (terminal.terminal_id ()));
-
-  std::map<unsigned int, std::vector<const db::NetShape *> > interacting;
-  int soft = 0;
-  if (c.interacts (c_other, d_trans, m_conn, soft, 0, &interacting)) {
-
-    auto t = trans * d_trans;
-
-    for (auto i = interacting.begin (); i != interacting.end (); ++i) {
-      db::Region &r = result [i->first];
-      for (auto s = i->second.begin (); s != i->second.end (); ++s) {
-        deliver_shape (**s, r, t, 0);
-      }
-    }
-
-  }
-
-  return result;
-}
-
-void LayoutToNetlist::shapes_of_net (const db::Net &net, const db::ShapeCollection &of_layer, bool recursive, db::Shapes &to, db::properties_id_type propid, const ICplxTrans &trans) const
+void LayoutToNetlist::shapes_of_net (const db::Net &net, const db::Region &of_layer, bool recursive, db::Shapes &to, db::properties_id_type propid) const
 {
   unsigned int lid = layer_of (of_layer);
-  shapes_of_net (net, lid, recursive, to, propid, trans);
-}
-
-void LayoutToNetlist::shapes_of_net (const db::Net &net, unsigned int lid, bool recursive, db::Shapes &to, db::properties_id_type propid, const ICplxTrans &trans) const
-{
   const db::Circuit *circuit = net.circuit ();
   tl_assert (circuit != 0);
 
   std::map<unsigned int, db::Shapes *> lmap;
   lmap [lid] = &to;
 
-  deliver_shapes_of_net (recursive, mp_netlist.get (), m_net_clusters, circuit->cell_index (), net.cluster_id (), lmap, trans, propid);
+  deliver_shapes_of_net (recursive, mp_netlist.get (), m_net_clusters, circuit->cell_index (), net.cluster_id (), lmap, db::ICplxTrans (), propid);
 }
 
-template<class Coll>
-Coll *LayoutToNetlist::shapes_of_net_with_layer_index (const db::Net &net, unsigned int lid, bool recursive, const db::ICplxTrans &trans) const
+db::Region *LayoutToNetlist::shapes_of_net (const db::Net &net, const db::Region &of_layer, bool recursive) const
 {
+  unsigned int lid = layer_of (of_layer);
   const db::Circuit *circuit = net.circuit ();
   tl_assert (circuit != 0);
 
-  std::unique_ptr<Coll> res (new Coll ());
-  std::map<unsigned int, Coll *> lmap;
+  std::auto_ptr<db::Region> res (new db::Region ());
+  std::map<unsigned int, db::Region *> lmap;
   lmap [lid] = res.get ();
 
-  deliver_shapes_of_net (recursive, mp_netlist.get (), m_net_clusters, circuit->cell_index (), net.cluster_id (), lmap, trans, 0);
+  deliver_shapes_of_net (recursive, mp_netlist.get (), m_net_clusters, circuit->cell_index (), net.cluster_id (), lmap, db::ICplxTrans (), 0);
 
   return res.release ();
 }
 
-//  explicit instantiations
-template
-DB_PUBLIC db::Region *LayoutToNetlist::shapes_of_net_with_layer_index<db::Region> (const db::Net &net, unsigned int lid, bool recursive, const db::ICplxTrans &trans) const;
-template
-DB_PUBLIC db::Texts *LayoutToNetlist::shapes_of_net_with_layer_index<db::Texts> (const db::Net &net, unsigned int lid, bool recursive, const db::ICplxTrans &trans) const;
-
 void
-LayoutToNetlist::build_net (const db::Net &net, db::Layout &target, db::Cell &target_cell, const std::map<unsigned int, unsigned int> &lmap, NetPropertyMode net_prop_mode, const tl::Variant &netname_prop, BuildNetHierarchyMode hier_mode, const char *cell_name_prefix, const char *device_cell_name_prefix) const
+LayoutToNetlist::build_net_rec (const db::Net &net, db::Layout &target, db::Cell &target_cell, const std::map<unsigned int, const db::Region *> &lmap, const char *net_cell_name_prefix, db::properties_id_type netname_propid, BuildNetHierarchyMode hier_mode, const char *cell_name_prefix, const char *device_cell_name_prefix, cell_reuse_table_type &reuse_table, const db::ICplxTrans &tr) const
 {
-  NetBuilder builder (&target, this);
-  builder.set_hier_mode (hier_mode);
-  builder.set_cell_name_prefix (cell_name_prefix);
-  builder.set_device_cell_name_prefix (device_cell_name_prefix);
+  const db::Circuit *circuit = net.circuit ();
+  tl_assert (circuit != 0);
 
-  builder.build_net (target_cell, net, lmap, net_prop_mode, netname_prop);
+  build_net_rec (circuit->cell_index (), net.cluster_id (), target, target_cell, lmap, &net, net_cell_name_prefix, netname_propid, hier_mode, cell_name_prefix, device_cell_name_prefix, reuse_table, tr);
 }
 
 void
-LayoutToNetlist::build_all_nets (const db::CellMapping &cmap, db::Layout &target, const std::map<unsigned int, unsigned int> &lmap, const char *net_cell_name_prefix, NetPropertyMode net_prop_mode, const tl::Variant &netname_prop, BuildNetHierarchyMode hier_mode, const char *circuit_cell_name_prefix, const char *device_cell_name_prefix) const
+LayoutToNetlist::build_net_rec (db::cell_index_type ci, size_t cid, db::Layout &target, db::Cell &tc, const std::map<unsigned int, const db::Region *> &lmap, const db::Net *net, const char *net_cell_name_prefix, db::properties_id_type netname_propid, BuildNetHierarchyMode hier_mode, const char *circuit_cell_name_prefix, const char *device_cell_name_prefix, cell_reuse_table_type &reuse_table, const db::ICplxTrans &tr) const
 {
-  NetBuilder builder (&target, cmap, this);
-  builder.set_hier_mode (hier_mode);
-  builder.set_net_cell_name_prefix (net_cell_name_prefix);
-  builder.set_cell_name_prefix (circuit_cell_name_prefix);
-  builder.set_device_cell_name_prefix (device_cell_name_prefix);
+  db::Cell *target_cell = &tc;
 
-  builder.build_nets (0, lmap, net_prop_mode, netname_prop);
+  if (net_cell_name_prefix) {
+
+    const db::connected_clusters<db::PolygonRef> &ccl = m_net_clusters.clusters_per_cell (ci);
+
+    bool any_connections = circuit_cell_name_prefix && ! ccl.connections_for_cluster (cid).empty ();
+    if (! any_connections) {
+
+      StopOnFirst sof;
+      std::map<unsigned int, StopOnFirst *> sof_lmap;
+      for (std::map<unsigned int, const db::Region *>::const_iterator l = lmap.begin (); l != lmap.end (); ++l) {
+        if (l->second) {
+          sof_lmap.insert (std::make_pair (layer_of (*l->second), &sof));
+        }
+      }
+
+      bool consider_cell = ! deliver_shapes_of_net (hier_mode == BNH_Flatten, mp_netlist.get (), m_net_clusters, ci, cid, sof_lmap, tr, 0);
+      if (! consider_cell) {
+        //  shortcut if cell is empty -> no net cell will be produced
+        return;
+      }
+
+    }
+
+    //  make a specific cell for the net if requested
+
+    target_cell = &target.cell (target.add_cell ((std::string (net_cell_name_prefix) + net->expanded_name ()).c_str ()));
+    tc.insert (db::CellInstArray (db::CellInst (target_cell->cell_index ()), db::Trans ()));
+
+  }
+
+  std::map<unsigned int, db::Shapes *> target_lmap;
+  for (std::map<unsigned int, const db::Region *>::const_iterator l = lmap.begin (); l != lmap.end (); ++l) {
+    if (l->second) {
+      target_lmap.insert (std::make_pair (layer_of (*l->second), &target_cell->shapes (l->first)));
+    }
+  }
+
+  deliver_shapes_of_net (hier_mode == BNH_Flatten, mp_netlist.get (), m_net_clusters, ci, cid, target_lmap, tr, netname_propid);
+
+  if (hier_mode != BNH_SubcircuitCells && ! device_cell_name_prefix) {
+    return;
+  }
+
+  //  NOTE: we propagate the magnification part of tr down, but keep the rotation/translation part in the instance
+  //  (we want to avoid magnified instances)
+  db::ICplxTrans tr_wo_mag = tr * db::ICplxTrans (1.0 / tr.mag ());
+  db::ICplxTrans tr_mag (tr.mag ());
+
+  const db::connected_clusters<db::PolygonRef> &clusters = m_net_clusters.clusters_per_cell (ci);
+  typedef db::connected_clusters<db::PolygonRef>::connections_type connections_type;
+  const connections_type &connections = clusters.connections_for_cluster (cid);
+  for (connections_type::const_iterator c = connections.begin (); c != connections.end (); ++c) {
+
+    db::cell_index_type subci = c->inst_cell_index ();
+    size_t subcid = c->id ();
+
+    CellReuseTableKey cmap_key (subci, netname_propid, subcid);
+
+    cell_reuse_table_type::const_iterator cm = reuse_table.find (cmap_key);
+    if (cm == reuse_table.end ()) {
+
+      const char *name_prefix = 0;
+      if (mp_netlist->device_abstract_by_cell_index (subci)) {
+        name_prefix = device_cell_name_prefix;
+      } else {
+        name_prefix = circuit_cell_name_prefix;
+      }
+
+      if (name_prefix) {
+
+        std::string cell_name = internal_layout ()->cell_name (subci);
+
+        db::cell_index_type target_ci = target.add_cell ((std::string (name_prefix) + cell_name).c_str ());
+        cm = reuse_table.insert (std::make_pair (cmap_key, target_ci)).first;
+
+        build_net_rec (subci, subcid, target, target.cell (target_ci), lmap, 0, 0, netname_propid, hier_mode, circuit_cell_name_prefix, device_cell_name_prefix, reuse_table, tr_mag);
+
+      } else {
+        cm = reuse_table.insert (std::make_pair (cmap_key, std::numeric_limits<db::cell_index_type>::max ())).first;
+      }
+
+    }
+
+    if (cm->second != std::numeric_limits<db::cell_index_type>::max ()) {
+      db::CellInstArray ci (db::CellInst (cm->second), tr_wo_mag * c->inst_trans ());
+      ci.transform_into (tr_mag);
+      target_cell->insert (ci);
+    }
+
+  }
+}
+
+db::properties_id_type
+LayoutToNetlist::make_netname_propid (db::Layout &ly, const tl::Variant &netname_prop, const db::Net &net) const
+{
+  if (! netname_prop.is_nil () || net.begin_properties () != net.end_properties ()) {
+
+    db::PropertiesRepository::properties_set propset;
+
+    //  add the user properties too (TODO: make this configurable?)
+    for (db::Net::property_iterator p = net.begin_properties (); p != net.end_properties (); ++p) {
+      db::property_names_id_type key_propnameid = ly.properties_repository ().prop_name_id (p->first);
+      propset.insert (std::make_pair (key_propnameid, p->second));
+    }
+
+    if (! netname_prop.is_nil ()) {
+      db::property_names_id_type name_propnameid = ly.properties_repository ().prop_name_id (netname_prop);
+      propset.insert (std::make_pair (name_propnameid, tl::Variant (net.expanded_name ())));
+    }
+
+    return ly.properties_repository ().properties_id (propset);
+
+  } else {
+    return 0;
+  }
 }
 
 void
-LayoutToNetlist::build_nets (const std::vector<const db::Net *> *nets, const db::CellMapping &cmap, db::Layout &target, const std::map<unsigned int, unsigned int> &lmap, const char *net_cell_name_prefix, NetPropertyMode net_prop_mode, const tl::Variant &netname_prop, BuildNetHierarchyMode hier_mode, const char *circuit_cell_name_prefix, const char *device_cell_name_prefix) const
+LayoutToNetlist::build_net (const db::Net &net, db::Layout &target, db::Cell &target_cell, const std::map<unsigned int, const db::Region *> &lmap, const tl::Variant &netname_prop, BuildNetHierarchyMode hier_mode, const char *cell_name_prefix, const char *device_cell_name_prefix) const
 {
-  NetBuilder builder (&target, cmap, this);
-  builder.set_hier_mode (hier_mode);
-  builder.set_net_cell_name_prefix (net_cell_name_prefix);
-  builder.set_cell_name_prefix (circuit_cell_name_prefix);
-  builder.set_device_cell_name_prefix (device_cell_name_prefix);
+  if (! m_netlist_extracted) {
+    throw tl::Exception (tl::to_string (tr ("The netlist has not been extracted yet")));
+  }
 
-  builder.build_nets (nets, lmap, net_prop_mode, netname_prop);
+  cell_reuse_table_type cell_reuse_table;
+
+  double mag = internal_layout ()->dbu () / target.dbu ();
+
+  db::properties_id_type netname_propid = make_netname_propid (target, netname_prop, net);
+  build_net_rec (net, target, target_cell, lmap, 0, netname_propid, hier_mode, cell_name_prefix, device_cell_name_prefix, cell_reuse_table, db::ICplxTrans (mag));
 }
 
-db::Net *LayoutToNetlist::probe_net (const db::Region &of_region, const db::DPoint &point, std::vector<db::SubCircuit *> *sc_path_out, db::Circuit *initial_circuit)
+void
+LayoutToNetlist::build_all_nets (const db::CellMapping &cmap, db::Layout &target, const std::map<unsigned int, const db::Region *> &lmap, const char *net_cell_name_prefix, const tl::Variant &netname_prop, BuildNetHierarchyMode hier_mode, const char *circuit_cell_name_prefix, const char *device_cell_name_prefix) const
 {
-  return probe_net (of_region, db::CplxTrans (internal_layout ()->dbu ()).inverted () * point, sc_path_out, initial_circuit);
+  build_nets (0, cmap, target, lmap, net_cell_name_prefix, netname_prop, hier_mode, circuit_cell_name_prefix, device_cell_name_prefix);
 }
 
-size_t LayoutToNetlist::search_net (const db::ICplxTrans &trans, const db::Cell *cell, const db::local_cluster<db::NetShape> &test_cluster, std::vector<db::InstElement> &rev_inst_path)
+void
+LayoutToNetlist::build_net_rec (const db::Net &net, db::Layout &target, db::cell_index_type circuit_cell, const db::CellMapping &cmap, const std::map<unsigned int, const db::Region *> &lmap, const char *net_cell_name_prefix, db::properties_id_type netname_propid, BuildNetHierarchyMode hier_mode, const char *cell_name_prefix, const char *device_cell_name_prefix, cell_reuse_table_type &reuse_table, const ICplxTrans &tr) const
+{
+  if (! cmap.has_mapping (circuit_cell)) {
+
+    const db::Cell &cc = internal_layout ()->cell (circuit_cell);
+
+    for (db::Cell::parent_inst_iterator p = cc.begin_parent_insts (); ! p.at_end (); ++p) {
+
+      db::CellInstArray ci = p->child_inst ().cell_inst ();
+      for (db::CellInstArray::iterator ia = ci.begin (); ! ia.at_end(); ++ia) {
+
+        db::ICplxTrans tr_parent = ci.complex_trans (*ia) * tr;
+        build_net_rec (net, target, p->parent_cell_index (), cmap, lmap, net_cell_name_prefix, netname_propid, hier_mode, cell_name_prefix, device_cell_name_prefix, reuse_table, tr_parent);
+
+      }
+
+    }
+
+  } else {
+
+    double mag = internal_layout ()->dbu () / target.dbu ();
+
+    db::cell_index_type target_ci = cmap.cell_mapping (circuit_cell);
+    build_net_rec (net, target, target.cell (target_ci), lmap, net_cell_name_prefix, netname_propid, hier_mode, cell_name_prefix, device_cell_name_prefix, reuse_table, db::ICplxTrans (mag) * tr);
+
+  }
+}
+
+void
+LayoutToNetlist::build_nets (const std::vector<const db::Net *> *nets, const db::CellMapping &cmap, db::Layout &target, const std::map<unsigned int, const db::Region *> &lmap, const char *net_cell_name_prefix, const tl::Variant &netname_prop, BuildNetHierarchyMode hier_mode, const char *circuit_cell_name_prefix, const char *device_cell_name_prefix) const
+{
+  if (! m_netlist_extracted) {
+    throw tl::Exception (tl::to_string (tr ("The netlist has not been extracted yet")));
+  }
+
+  std::set<const db::Net *> net_set;
+  if (nets) {
+    net_set.insert (nets->begin (), nets->end ());
+  }
+
+  cell_reuse_table_type cell_reuse_table;
+
+  const db::Netlist *netlist = mp_netlist.get ();
+  for (db::Netlist::const_circuit_iterator c = netlist->begin_circuits (); c != netlist->end_circuits (); ++c) {
+
+    bool is_top_circuit = c->begin_parents () == c->end_parents ();
+
+    for (db::Circuit::const_net_iterator n = c->begin_nets (); n != c->end_nets (); ++n) {
+
+      //  exlude local nets in recursive mode except if they are explicitly selected
+      if (! nets && hier_mode != BNH_Disconnected && ! is_top_circuit && n->pin_count () > 0) {
+        continue;
+      }
+
+      if (! nets || net_set.find (n.operator-> ()) != net_set.end ()) {
+        db::properties_id_type netname_propid = make_netname_propid (target, netname_prop, *n);
+        build_net_rec (*n, target, c->cell_index (), cmap, lmap, net_cell_name_prefix, netname_propid, hier_mode, circuit_cell_name_prefix, device_cell_name_prefix, cell_reuse_table, db::ICplxTrans ());
+      }
+
+    }
+
+    if (hier_mode != BNH_Disconnected && ! nets) {
+
+      //  With recursive nets we skip nets in subcircuits which are connected upwards. This means, nets will
+      //  get lost if there is no connection to this pin from the outside. Hence we need to deliver nets from
+      //  subcircuits as part of the circuit which calls the subcircuit - but NOT in a subcircuit cell, because
+      //  this will just apply to nets from certain instances. But the net cell name will be formed as "subcircuit:net"
+      //
+      //  In explicit selection mode we don't care about this as nets are explicitly taken or not.
+
+      const db::Circuit &circuit = *c;
+      for (db::Circuit::const_subcircuit_iterator sc = circuit.begin_subcircuits (); sc != circuit.end_subcircuits (); ++sc) {
+
+        const db::SubCircuit &subcircuit = *sc;
+        for (db::Circuit::const_pin_iterator p = subcircuit.circuit_ref ()->begin_pins (); p != subcircuit.circuit_ref ()->end_pins (); ++p) {
+
+          if (! subcircuit.net_for_pin (p->id ())) {
+
+            const db::Net *n = subcircuit.circuit_ref ()->net_for_pin (p->id ());
+            if (n) {
+
+              double dbu = target.dbu ();
+              db::ICplxTrans tr = db::CplxTrans (dbu).inverted () * subcircuit.trans () * db::CplxTrans (dbu);
+
+              db::properties_id_type netname_propid = make_netname_propid (target, netname_prop, *n);
+
+              if (net_cell_name_prefix) {
+                std::string ncn = std::string (net_cell_name_prefix) + subcircuit.expanded_name () + ":";
+                build_net_rec (*n, target, c->cell_index (), cmap, lmap, ncn.c_str (), netname_propid, hier_mode, circuit_cell_name_prefix, device_cell_name_prefix, cell_reuse_table, tr);
+              } else {
+                build_net_rec (*n, target, c->cell_index (), cmap, lmap, net_cell_name_prefix, netname_propid, hier_mode, circuit_cell_name_prefix, device_cell_name_prefix, cell_reuse_table, tr);
+              }
+
+            }
+
+          }
+
+        }
+
+      }
+
+    }
+
+  }
+}
+
+db::Net *LayoutToNetlist::probe_net (const db::Region &of_region, const db::DPoint &point)
+{
+  return probe_net (of_region, db::CplxTrans (internal_layout ()->dbu ()).inverted () * point);
+}
+
+size_t LayoutToNetlist::search_net (const db::ICplxTrans &trans, const db::Cell *cell, const db::local_cluster<db::PolygonRef> &test_cluster, std::vector<db::InstElement> &rev_inst_path)
 {
   db::Box local_box = trans * test_cluster.bbox ();
 
-  const db::local_clusters<db::NetShape> &lcc = net_clusters ().clusters_per_cell (cell->cell_index ());
-  for (db::local_clusters<db::NetShape>::touching_iterator i = lcc.begin_touching (local_box); ! i.at_end (); ++i) {
-    const db::local_cluster<db::NetShape> &lc = *i;
-    int soft = 0;
-    if (lc.interacts (test_cluster, trans, m_conn, soft)) {
+  const db::local_clusters<db::PolygonRef> &lcc = net_clusters ().clusters_per_cell (cell->cell_index ());
+  for (db::local_clusters<db::PolygonRef>::touching_iterator i = lcc.begin_touching (local_box); ! i.at_end (); ++i) {
+    const db::local_cluster<db::PolygonRef> &lc = *i;
+    if (lc.interacts (test_cluster, trans, m_conn)) {
       return lc.id ();
     }
   }
@@ -1605,7 +1024,7 @@ size_t LayoutToNetlist::search_net (const db::ICplxTrans &trans, const db::Cell 
   return 0;
 }
 
-db::Net *LayoutToNetlist::probe_net (const db::Region &of_region, const db::Point &point, std::vector<db::SubCircuit *> *sc_path_out, db::Circuit *initial_circuit)
+db::Net *LayoutToNetlist::probe_net (const db::Region &of_region, const db::Point &point)
 {
   if (! m_netlist_extracted) {
     throw tl::Exception (tl::to_string (tr ("The netlist has not been extracted yet")));
@@ -1617,23 +1036,15 @@ db::Net *LayoutToNetlist::probe_net (const db::Region &of_region, const db::Poin
 
   unsigned int layer = layer_of (of_region);
 
-  const db::Cell *top_cell = internal_top_cell ();
-  if (initial_circuit && internal_layout ()->is_valid_cell_index (initial_circuit->cell_index ())) {
-    top_cell = &internal_layout ()->cell (initial_circuit->cell_index ());
-  }
-  if (! top_cell) {
-    return 0;
-  }
-
   //  Prepare a test cluster
   db::Box box (point - db::Vector (1, 1), point + db::Vector (1, 1));
   db::GenericRepository sr;
-  db::local_cluster<db::NetShape> test_cluster;
+  db::local_cluster<db::PolygonRef> test_cluster;
   test_cluster.add (db::PolygonRef (db::Polygon (box), sr), layer);
 
   std::vector<db::InstElement> inst_path;
 
-  size_t cluster_id = search_net (db::ICplxTrans (), top_cell, test_cluster, inst_path);
+  size_t cluster_id = search_net (db::ICplxTrans (), internal_top_cell (), test_cluster, inst_path);
   if (cluster_id > 0) {
 
     //  search_net delivers the path in reverse order
@@ -1641,7 +1052,7 @@ db::Net *LayoutToNetlist::probe_net (const db::Region &of_region, const db::Poin
 
     std::vector<db::cell_index_type> cell_indexes;
     cell_indexes.reserve (inst_path.size () + 1);
-    cell_indexes.push_back (top_cell->cell_index ());
+    cell_indexes.push_back (internal_top_cell ()->cell_index ());
     for (std::vector<db::InstElement>::const_iterator i = inst_path.begin (); i != inst_path.end (); ++i) {
       cell_indexes.push_back (i->inst_ptr.cell_index ());
     }
@@ -1678,230 +1089,45 @@ db::Net *LayoutToNetlist::probe_net (const db::Region &of_region, const db::Poin
 
     }
 
-    std::vector<db::SubCircuit *> sc_path;
-
-    db::Net *topmost_net = net;
-
     //  follow the path up in the net hierarchy using the transformation and the upper cell index as the
     //  guide line
-    while (circuit && ! inst_path.empty ()) {
+    while (! inst_path.empty () && net->pin_count () > 0) {
 
       cell_indexes.pop_back ();
 
-      const db::Pin *pin = 0;
-      if (net && net->pin_count () > 0) {
-        pin = circuit->pin_by_id (net->begin_pins ()->pin_id ());
-        tl_assert (pin != 0);
-      }
+      const db::Pin *pin = circuit->pin_by_id (net->begin_pins ()->pin_id ());
+      tl_assert (pin != 0);
 
       db::DCplxTrans dtrans = dbu_trans * inst_path.back ().complex_trans () * dbu_trans_inv;
 
       //  try to find a parent circuit which connects to this net
       db::Circuit *upper_circuit = 0;
-      db::SubCircuit *subcircuit = 0;
       db::Net *upper_net = 0;
-      for (db::Circuit::refs_iterator r = circuit->begin_refs (); r != circuit->end_refs () && ! upper_circuit; ++r) {
+      for (db::Circuit::refs_iterator r = circuit->begin_refs (); r != circuit->end_refs () && ! upper_net; ++r) {
         if (r->trans ().equal (dtrans) && r->circuit () && r->circuit ()->cell_index () == cell_indexes.back ()) {
-          subcircuit = r.operator-> ();
-          if (pin) {
-            upper_net = subcircuit->net_for_pin (pin->id ());
-          }
-          upper_circuit = subcircuit->circuit ();
+          upper_net = r->net_for_pin (pin->id ());
+          upper_circuit = r->circuit ();
         }
       }
 
-      net = upper_net;
-
       if (upper_net) {
-        topmost_net = upper_net;
+        circuit = upper_circuit;
+        net = upper_net;
+        inst_path.pop_back ();
       } else {
-        sc_path.push_back (subcircuit);
+        break;
       }
 
-      circuit = upper_circuit;
-      inst_path.pop_back ();
-
     }
 
-    if (sc_path_out) {
-      std::reverse (sc_path.begin (), sc_path.end ());
-      *sc_path_out = sc_path;
-    }
-
-    return topmost_net;
+    return net;
 
   } else {
     return 0;
   }
 }
 
-namespace
-{
-
-class PolygonAreaAndPerimeterCollector
-  : public db::PolygonSink
-{
-public:
-  typedef db::Polygon polygon_type;
-  typedef polygon_type::perimeter_type perimeter_type;
-  typedef polygon_type::area_type area_type;
-
-  PolygonAreaAndPerimeterCollector ()
-    : m_area (0), m_perimeter (0)
-  { }
-
-  area_type area () const
-  {
-    return m_area;
-  }
-
-  perimeter_type perimeter () const
-  {
-    return m_perimeter;
-  }
-
-  virtual void put (const db::Polygon &poly)
-  {
-    m_area += poly.area ();
-    m_perimeter += poly.perimeter ();
-  }
-
-public:
-  area_type m_area;
-  perimeter_type m_perimeter;
-};
-
-}
-
-void
-LayoutToNetlist::compute_area_and_perimeter_of_net_shapes (db::cell_index_type ci, size_t cid, unsigned int layer_id, db::Polygon::area_type &area, db::Polygon::perimeter_type &perimeter) const
-{
-  db::EdgeProcessor ep;
-
-  //  count vertices and reserve space
-  size_t n = 0;
-  for (db::recursive_cluster_shape_iterator<db::NetShape> rci (m_net_clusters, layer_id, ci, cid); !rci.at_end (); ++rci) {
-    n += rci->polygon_ref ().vertices ();
-  }
-  ep.reserve (n);
-
-  size_t p = 0;
-  for (db::recursive_cluster_shape_iterator<db::NetShape> rci (m_net_clusters, layer_id, ci, cid); !rci.at_end (); ++rci) {
-    ep.insert_with_trans (rci->polygon_ref (), rci.trans (), ++p);
-  }
-
-  PolygonAreaAndPerimeterCollector ap_collector;
-  db::PolygonGenerator pg (ap_collector, false);
-  db::SimpleMerge op;
-  ep.process (pg, op);
-
-  area = ap_collector.area ();
-  perimeter = ap_collector.perimeter ();
-}
-
-db::Point
-LayoutToNetlist::get_merged_shapes_of_net (db::cell_index_type ci, size_t cid, unsigned int layer_id, db::Shapes &shapes, db::properties_id_type prop_id) const
-{
-  const db::Layout *layout = &dss ().const_layout (m_layout_index);
-
-  db::Point ref;
-  bool any_ref = false;
-  db::EdgeProcessor ep;
-
-  //  count vertices and reserve space
-  size_t n = 0;
-  for (db::recursive_cluster_shape_iterator<db::NetShape> rci (m_net_clusters, layer_id, ci, cid); !rci.at_end (); ++rci) {
-    n += rci->polygon_ref ().vertices ();
-  }
-  ep.reserve (n);
-
-  size_t p = 0;
-  for (db::recursive_cluster_shape_iterator<db::NetShape> rci (m_net_clusters, layer_id, ci, cid); !rci.at_end (); ++rci) {
-    db::PolygonRef pr = rci->polygon_ref ();
-    db::PolygonRef::polygon_edge_iterator e = pr.begin_edge ();
-    if (! e.at_end ()) {
-      //  pick one reference point for the label
-      auto p1 = (rci.trans () * *e).p1 ();
-      if (! any_ref || p1 < ref) {
-        ref = p1;
-        any_ref = true;
-      }
-      ep.insert_with_trans (pr, rci.trans (), ++p);
-    }
-  }
-
-  db::PolygonRefToShapesGenerator sg (const_cast<db::Layout *> (layout), &shapes, prop_id);
-  db::PolygonGenerator pg (sg, false);
-  db::SimpleMerge op;
-  ep.process (pg, op);
-
-  return ref;
-}
-
-static std::vector<std::pair<std::string, tl::Variant> >
-create_antenna_values (double agate, db::Polygon::area_type agate_int, double gate_area_factor, db::Polygon::perimeter_type pgate_int, double gate_perimeter_factor,
-                       double ametal, db::Polygon::area_type ametal_int, double metal_area_factor, db::Polygon::perimeter_type pmetal_int, double metal_perimeter_factor,
-                       const std::vector<std::pair<const db::Region *, double> > &diodes,
-                       const std::vector<db::Polygon::area_type> &adiodes_int,
-                       double r, double ratio, double dbu)
-{
-  std::vector<std::pair<std::string, tl::Variant> > values;
-
-  if (fabs (gate_area_factor - 1.0) <= db::epsilon && fabs (gate_perimeter_factor) <= db::epsilon) {
-    values.push_back (std::make_pair ("agate", agate));
-  } else {
-    if (fabs (gate_area_factor) > db::epsilon) {
-      values.push_back (std::make_pair ("agate", agate_int * dbu * dbu));
-      values.push_back (std::make_pair ("agate_factor", gate_area_factor));
-    }
-    if (fabs (gate_perimeter_factor) > db::epsilon) {
-      values.push_back (std::make_pair ("pgate", pgate_int * dbu));
-      values.push_back (std::make_pair ("pgate_factor", gate_perimeter_factor));
-    }
-    values.push_back (std::make_pair ("agate_eff", agate));
-  }
-  if (fabs (metal_area_factor - 1.0) <= db::epsilon && fabs (metal_perimeter_factor) <= db::epsilon) {
-    values.push_back (std::make_pair ("ametal", ametal));
-  } else {
-    if (fabs (metal_area_factor) > db::epsilon) {
-      values.push_back (std::make_pair ("ametal", ametal_int * dbu * dbu));
-      values.push_back (std::make_pair ("ametal_factor", metal_area_factor));
-    }
-    if (fabs (metal_perimeter_factor) > db::epsilon) {
-      values.push_back (std::make_pair ("pmetal", pmetal_int * dbu));
-      values.push_back (std::make_pair ("pmetal_factor", metal_perimeter_factor));
-    }
-    values.push_back (std::make_pair ("ametal_eff", ametal));
-  }
-  if (! adiodes_int.empty ()) {
-    std::vector<tl::Variant> v;
-    v.reserve (adiodes_int.size ());
-    for (auto d = adiodes_int.begin (); d != adiodes_int.end (); ++d) {
-      v.push_back (*d * dbu * dbu);
-    }
-    values.push_back (std::make_pair ("adiodes", tl::Variant (v)));
-  }
-  if (! diodes.empty ()) {
-    std::vector<tl::Variant> v;
-    v.reserve (diodes.size ());
-    for (auto d = diodes.begin (); d != diodes.end (); ++d) {
-      v.push_back (d->second);
-    }
-    values.push_back (std::make_pair ("diode_factors", tl::Variant (v)));
-  }
-  values.push_back (std::make_pair ("ratio", ametal / agate));
-  if (ratio > db::epsilon) {
-    if (fabs (r / ratio - 1.0) < db::epsilon) {
-      values.push_back (std::make_pair ("max_ratio", ratio));
-    } else {
-      values.push_back (std::make_pair ("max_ratio_eff", r));
-      values.push_back (std::make_pair ("max_ratio", ratio));
-    }
-  }
-  return values;
-}
-
-db::Region LayoutToNetlist::antenna_check (const db::Region &gate, double gate_area_factor, double gate_perimeter_factor, const db::Region &metal, double metal_area_factor, double metal_perimeter_factor, double ratio, const std::vector<std::pair<const db::Region *, double> > &diodes, db::Texts *values)
+db::Region LayoutToNetlist::antenna_check (const db::Region &gate, const db::Region &metal, double ratio, const std::vector<std::pair<const db::Region *, double> > &diodes)
 {
   //  TODO: that's basically too much .. we only need the clusters
   if (! m_netlist_extracted) {
@@ -1913,213 +1139,58 @@ db::Region LayoutToNetlist::antenna_check (const db::Region &gate, double gate_a
 
   db::DeepLayer dl (&dss (), m_layout_index, ly.insert_layer ());
 
-  db::DeepLayer dlv;
-  if (values) {
-    dlv = db::DeepLayer (&dss (), m_layout_index, ly.insert_layer ());
-  }
-
   for (db::Layout::bottom_up_const_iterator cid = ly.begin_bottom_up (); cid != ly.end_bottom_up (); ++cid) {
 
-    const connected_clusters<db::NetShape> &clusters = m_net_clusters.clusters_per_cell (*cid);
+    const connected_clusters<db::PolygonRef> &clusters = m_net_clusters.clusters_per_cell (*cid);
     if (clusters.empty ()) {
       continue;
     }
 
-    std::vector<db::Polygon::area_type> adiodes_int;
-
-    for (connected_clusters<db::NetShape>::all_iterator c = clusters.begin_all (); ! c.at_end (); ++c) {
+    for (connected_clusters<db::PolygonRef>::all_iterator c = clusters.begin_all (); ! c.at_end (); ++c) {
 
       if (! clusters.is_root (*c)) {
         continue;
       }
 
+      db::Region rgate, rmetal;
+
+      deliver_shapes_of_net_recursive (0, m_net_clusters, *cid, *c, layer_of (gate), db::ICplxTrans (), rgate, 0);
+      deliver_shapes_of_net_recursive (0, m_net_clusters, *cid, *c, layer_of (metal), db::ICplxTrans (), rmetal, 0);
+
+      double agate = rgate.area () * dbu * dbu;
+      double ametal = rmetal.area () * dbu * dbu;
+
       double r = ratio;
       bool skip = false;
 
-      adiodes_int.clear ();
-      adiodes_int.reserve (diodes.size ());
+      for (std::vector<std::pair<const db::Region *, double> >::const_iterator d = diodes.begin (); d != diodes.end () && ! skip; ++d) {
 
-      for (auto d = diodes.begin (); d != diodes.end () && ! skip; ++d) {
-
-        db::Polygon::area_type adiode_int = 0;
-        db::Polygon::perimeter_type pdiode_int = 0;
-
-        compute_area_and_perimeter_of_net_shapes (*cid, *c, layer_of (*d->first), adiode_int, pdiode_int);
-
-        adiodes_int.push_back (adiode_int);
+        db::Region rdiode;
+        deliver_shapes_of_net_recursive (0, m_net_clusters, *cid, *c, layer_of (*d->first), db::ICplxTrans (), rdiode, 0);
 
         if (fabs (d->second) < db::epsilon) {
-          if (adiode_int > 0) {
+          if (rdiode.area () > 0) {
             skip = true;
           }
         } else {
-          r += adiode_int * dbu * dbu * d->second;
+          r += rdiode.area () * dbu * dbu * d->second;
         }
 
       }
 
       if (! skip) {
 
-        db::Polygon::area_type agate_int = 0;
-        db::Polygon::perimeter_type pgate_int = 0;
-
-        compute_area_and_perimeter_of_net_shapes (*cid, *c, layer_of (gate), agate_int, pgate_int);
-
-        double agate = 0.0;
-        if (fabs (gate_area_factor) > 1e-6) {
-          agate += agate_int * dbu * dbu * gate_area_factor;
-        }
-        if (fabs (gate_perimeter_factor) > 1e-6) {
-          agate += pgate_int * dbu * gate_perimeter_factor;
+        if (tl::verbosity () >= 50) {
+          tl::info << "cell [" << ly.cell_name (*cid) << "]: agate=" << tl::to_string (agate) << ", ametal=" << tl::to_string (ametal) << ", r=" << tl::sprintf ("%.12g", r);
         }
 
-        if (agate > dbu * dbu) {
-
-          db::Polygon::area_type ametal_int = 0;
-          db::Polygon::perimeter_type pmetal_int = 0;
-
-          compute_area_and_perimeter_of_net_shapes (*cid, *c, layer_of (metal), ametal_int, pmetal_int);
-
-          double ametal = 0.0;
-          if (fabs (metal_area_factor) > 1e-6) {
-            ametal += ametal_int * dbu * dbu * metal_area_factor;
-          }
-          if (fabs (metal_perimeter_factor) > 1e-6) {
-            ametal += pmetal_int * dbu * metal_perimeter_factor;
-          }
-
-          if (tl::verbosity () >= 50) {
-            std::vector<std::pair<std::string, tl::Variant> > antenna_values =
-              create_antenna_values (agate, agate_int, gate_area_factor, pgate_int, gate_perimeter_factor,
-                                     ametal, ametal_int, metal_area_factor, pmetal_int, metal_perimeter_factor,
-                                     diodes, adiodes_int, r, ratio, dbu);
-            tl::info << "cell [" << ly.cell_name (*cid) << "]: ";
-            for (auto v = antenna_values.begin (); v != antenna_values.end (); ++v) {
-              tl::info << "  " << v->first << ": " << v->second.to_string ();
-            }
-          }
-
-          if (ametal / agate > r + db::epsilon) {
-
-            db::Shapes &shapes = ly.cell (*cid).shapes (dl.layer ());
-
-            std::vector<std::pair<std::string, tl::Variant> > antenna_values =
-              create_antenna_values (agate, agate_int, gate_area_factor, pgate_int, gate_perimeter_factor,
-                                     ametal, ametal_int, metal_area_factor, pmetal_int, metal_perimeter_factor,
-                                     diodes, adiodes_int, r, ratio, dbu);
-
-            db::properties_id_type prop_id = 0;
-            if (! values) {
-              db::PropertiesSet ps;
-              for (auto v = antenna_values.begin (); v != antenna_values.end (); ++v) {
-                ps.insert (v->first, v->second);
-              }
-              prop_id = db::properties_id (ps);
-            }
-
-            db::Point ref = get_merged_shapes_of_net (*cid, *c, layer_of (metal), shapes, prop_id);
-
-            if (values) {
-
-              db::Shapes &shapesv = ly.cell (*cid).shapes (dlv.layer ());
-
-              std::string msg;
-              for (auto v = antenna_values.begin (); v != antenna_values.end (); ++v) {
-                if (v != antenna_values.begin ()) {
-                  msg += ", ";
-                }
-                msg += v->first;
-                msg += ": ";
-                msg += v->second.to_string ();
-              }
-
-              shapesv.insert (db::Text (msg, db::Trans (ref - db::Point ())));
-
-            }
-
-          }
-
-        }
-
-      }
-
-    }
-
-  }
-
-  if (values) {
-    *values = db::Texts (new db::DeepTexts (dlv));
-  }
-
-  return db::Region (new db::DeepRegion (dl));
-}
-
-db::Region
-LayoutToNetlist::measure_net (const db::Region &primary, const std::map<std::string, const db::Region *> &secondary, const std::string &expression, const std::map<std::string, tl::Variant> &variables, double dbu)
-{
-  //  TODO: that's basically too much .. we only need the clusters
-  if (! m_netlist_extracted) {
-    throw tl::Exception (tl::to_string (tr ("The netlist has not been extracted yet")));
-  }
-
-  db::Layout &ly = dss ().layout (m_layout_index);
-
-  if (dbu < 0.0) {
-    dbu = ly.dbu ();
-  }
-
-  db::MeasureNetEval eval (this, dbu);
-
-  for (auto v = variables.begin (); v != variables.end (); ++v) {
-    eval.set_var (v->first, v->second);
-  }
-
-  eval.set_primary_layer (layer_of (primary));
-  for (auto s = secondary.begin (); s != secondary.end (); ++s) {
-    if (s->second) {
-      eval.set_secondary_layer (s->first, layer_of (*s->second));
-    }
-  }
-
-  eval.init ();
-
-  tl::Extractor ex (expression.c_str ());
-  tl::Expression compiled_expr;
-  eval.parse (compiled_expr, ex);
-
-  db::DeepLayer dl (&dss (), m_layout_index, ly.insert_layer ());
-  unsigned int primary_layer = layer_of (primary);
-
-  for (db::Layout::bottom_up_const_iterator cid = ly.begin_bottom_up (); cid != ly.end_bottom_up (); ++cid) {
-
-    const connected_clusters<db::NetShape> &clusters = m_net_clusters.clusters_per_cell (*cid);
-    if (clusters.empty ()) {
-      continue;
-    }
-
-    for (connected_clusters<db::NetShape>::all_iterator c = clusters.begin_all (); ! c.at_end (); ++c) {
-
-      if (! clusters.is_root (*c)) {
-        continue;
-      }
-
-      //  skip nets without shapes on primary layer
-      if (db::recursive_cluster_shape_iterator<db::NetShape> (m_net_clusters, primary_layer, *cid, *c).at_end ()) {
-        continue;
-      }
-
-      try {
-
-        eval.reset (*cid, *c);
-        compiled_expr.execute ();
-
-        if (! eval.skip ()) {
+        if (agate > dbu * dbu && ametal / agate > r + db::epsilon) {
           db::Shapes &shapes = ly.cell (*cid).shapes (dl.layer ());
-          get_merged_shapes_of_net (*cid, *c, primary_layer, shapes, db::properties_id (eval.prop_set_out ()));
+          for (db::Region::const_iterator r = rmetal.begin_merged (); ! r.at_end (); ++r) {
+            shapes.insert (*r);
+          }
         }
 
-      } catch (tl::Exception &ex) {
-        tl::warn << ex.msg ();
       }
 
     }
@@ -2128,6 +1199,7 @@ LayoutToNetlist::measure_net (const db::Region &primary, const std::map<std::str
 
   return db::Region (new db::DeepRegion (dl));
 }
+
 
 void LayoutToNetlist::save (const std::string &path, bool short_format)
 {
@@ -2148,7 +1220,7 @@ void LayoutToNetlist::load (const std::string &path)
 
 db::LayoutToNetlist *LayoutToNetlist::create_from_file (const std::string &path)
 {
-  std::unique_ptr<db::LayoutToNetlist> db;
+  std::auto_ptr<db::LayoutToNetlist> db;
 
   //  TODO: generic concept to detect format
   std::string first_line;
@@ -2173,396 +1245,6 @@ db::LayoutToNetlist *LayoutToNetlist::create_from_file (const std::string &path)
 void LayoutToNetlist::set_generator (const std::string &g)
 {
   m_generator = g;
-}
-
-// -----------------------------------------------------------------------------------------------
-//  NetBuilder implementation
-
-NetBuilder::NetBuilder ()
-  : m_hier_mode (BNH_Flatten), m_has_net_cell_name_prefix (false), m_has_cell_name_prefix (false), m_has_device_cell_name_prefix (false)
-{
-  //  .. nothing yet ..
-}
-
-NetBuilder::NetBuilder (db::Layout *target, const db::CellMapping &cmap, const db::LayoutToNetlist *source)
-  : mp_target (target), m_cmap (cmap), mp_source (const_cast <db::LayoutToNetlist *> (source)),
-    m_hier_mode (BNH_Flatten), m_has_net_cell_name_prefix (false), m_has_cell_name_prefix (false), m_has_device_cell_name_prefix (false)
-{
-  //  .. nothing yet ..
-}
-
-NetBuilder::NetBuilder (db::Layout *target, const db::LayoutToNetlist *source)
-  : mp_target (target), mp_source (const_cast <db::LayoutToNetlist *> (source)),
-    m_hier_mode (BNH_Flatten), m_has_net_cell_name_prefix (false), m_has_cell_name_prefix (false), m_has_device_cell_name_prefix (false)
-{
-  //  .. nothing yet ..
-}
-
-NetBuilder::NetBuilder (const db::NetBuilder &other)
-{
-  operator=(other);
-}
-
-NetBuilder::NetBuilder (db::NetBuilder &&other)
-{
-  operator=(other);
-}
-
-NetBuilder &
-NetBuilder::operator= (const db::NetBuilder &other)
-{
-  if (this != &other) {
-    mp_target = other.mp_target;
-    mp_source = other.mp_source;
-    m_cmap = other.m_cmap;
-    m_reuse_table = other.m_reuse_table;
-    m_hier_mode = other.m_hier_mode;
-    m_has_net_cell_name_prefix = other.m_has_net_cell_name_prefix;
-    m_net_cell_name_prefix = other.m_net_cell_name_prefix;
-    m_has_cell_name_prefix = other.m_has_cell_name_prefix;
-    m_cell_name_prefix = other.m_cell_name_prefix;
-    m_has_device_cell_name_prefix = other.m_has_device_cell_name_prefix;
-    m_device_cell_name_prefix = other.m_device_cell_name_prefix;
-  }
-
-  return *this;
-}
-
-NetBuilder &
-NetBuilder::operator= (db::NetBuilder &&other)
-{
-  if (this != &other) {
-    mp_target = other.mp_target;
-    other.mp_target.reset (0);
-    mp_source = other.mp_source;
-    other.mp_source.reset (0);
-    m_cmap.swap (other.m_cmap);
-    m_reuse_table.swap (other.m_reuse_table);
-    std::swap (m_hier_mode, other.m_hier_mode);
-    std::swap (m_has_net_cell_name_prefix, other.m_has_net_cell_name_prefix);
-    m_net_cell_name_prefix.swap (other.m_net_cell_name_prefix);
-    std::swap (m_has_cell_name_prefix, other.m_has_cell_name_prefix);
-    m_cell_name_prefix.swap (other.m_cell_name_prefix);
-    std::swap (m_has_device_cell_name_prefix, other.m_has_device_cell_name_prefix);
-    m_device_cell_name_prefix.swap (other.m_device_cell_name_prefix);
-  }
-
-  return *this;
-}
-
-void
-NetBuilder::set_net_cell_name_prefix (const char *s)
-{
-  m_has_net_cell_name_prefix = (s != 0);
-  m_net_cell_name_prefix = std::string (s ? s : "");
-}
-
-void
-NetBuilder::set_cell_name_prefix (const char *s)
-{
-  bool has_cell_name_prefix = (s != 0);
-  std::string cell_name_prefix (s ? s : "");
-
-  if (has_cell_name_prefix != m_has_cell_name_prefix || cell_name_prefix != m_cell_name_prefix) {
-    m_reuse_table.clear ();
-    m_has_cell_name_prefix = has_cell_name_prefix;
-    m_cell_name_prefix = cell_name_prefix;
-  }
-}
-
-void
-NetBuilder::set_device_cell_name_prefix (const char *s)
-{
-  bool has_device_cell_name_prefix = (s != 0);
-  std::string device_cell_name_prefix (s ? s : "");
-
-  if (has_device_cell_name_prefix != m_has_device_cell_name_prefix || device_cell_name_prefix != m_device_cell_name_prefix) {
-    m_reuse_table.clear ();
-    m_has_device_cell_name_prefix = has_device_cell_name_prefix;
-    m_device_cell_name_prefix = device_cell_name_prefix;
-  }
-}
-
-void
-NetBuilder::prepare_build_nets () const
-{
-  tl_assert (mp_target.get ());
-  tl_assert (mp_source.get ());
-
-  if (! mp_source->is_netlist_extracted ()) {
-    throw tl::Exception (tl::to_string (tr ("The netlist has not been extracted yet")));
-  }
-
-  //  Resets the "initialized" flag so existing cells are reused but freshly filled
-  for (auto i = m_reuse_table.begin (); i != m_reuse_table.end (); ++i) {
-    i->second.second = false;
-  }
-}
-
-void
-NetBuilder::build_net (db::Cell &target_cell, const db::Net &net, const std::map<unsigned int, unsigned int> &lmap, NetPropertyMode net_prop_mode, const tl::Variant &netname_prop) const
-{
-  prepare_build_nets ();
-
-  double mag = mp_source->internal_layout ()->dbu () / mp_target->dbu ();
-
-  db::properties_id_type netname_propid = make_netname_propid (net_prop_mode, netname_prop, net);
-  build_net_rec (net, target_cell, lmap, std::string (), netname_propid, db::ICplxTrans (mag));
-}
-
-void
-NetBuilder::build_all_nets (const std::map<unsigned int, unsigned int> &lmap, NetPropertyMode net_prop_mode, const tl::Variant &netname_prop) const
-{
-  build_nets (0, lmap, net_prop_mode, netname_prop);
-}
-
-void
-NetBuilder::build_nets (const std::vector<const Net *> *nets, const std::map<unsigned int, unsigned int> &lmap, NetPropertyMode prop_mode, const tl::Variant &netname_prop) const
-{
-  prepare_build_nets ();
-
-  std::set<const db::Net *> net_set;
-  if (nets) {
-    net_set.insert (nets->begin (), nets->end ());
-  }
-
-  const db::Netlist *netlist = mp_source->netlist ();
-  for (db::Netlist::const_circuit_iterator c = netlist->begin_circuits (); c != netlist->end_circuits (); ++c) {
-
-    bool is_top_circuit = c->begin_parents () == c->end_parents ();
-
-    for (db::Circuit::const_net_iterator n = c->begin_nets (); n != c->end_nets (); ++n) {
-
-      //  exclude local nets in recursive mode except if they are explicitly selected
-      if (! nets && m_hier_mode != BNH_Disconnected && ! is_top_circuit && n->pin_count () > 0) {
-        continue;
-      }
-
-      if (! nets || net_set.find (n.operator-> ()) != net_set.end ()) {
-        db::properties_id_type netname_propid = make_netname_propid (prop_mode, netname_prop, *n);
-        build_net_rec (*n, c->cell_index (), lmap, std::string (), netname_propid, db::ICplxTrans ());
-      }
-
-    }
-
-    if (m_hier_mode != BNH_Disconnected && ! nets) {
-
-      //  With recursive nets we skip nets in subcircuits which are connected upwards. This means, nets will
-      //  get lost if there is no connection to this pin from the outside. Hence we need to deliver nets from
-      //  subcircuits as part of the circuit which calls the subcircuit - but NOT in a subcircuit cell, because
-      //  this will just apply to nets from certain instances. But the net cell name will be formed as "subcircuit:net"
-      //
-      //  In explicit selection mode we don't care about this as nets are explicitly taken or not.
-
-      const db::Circuit &circuit = *c;
-      for (db::Circuit::const_subcircuit_iterator sc = circuit.begin_subcircuits (); sc != circuit.end_subcircuits (); ++sc) {
-
-        const db::SubCircuit &subcircuit = *sc;
-        for (db::Circuit::const_pin_iterator p = subcircuit.circuit_ref ()->begin_pins (); p != subcircuit.circuit_ref ()->end_pins (); ++p) {
-
-          if (! subcircuit.net_for_pin (p->id ())) {
-
-            const db::Net *n = subcircuit.circuit_ref ()->net_for_pin (p->id ());
-            if (n) {
-
-              double dbu = mp_target->dbu ();
-              db::ICplxTrans tr = db::CplxTrans (dbu).inverted () * subcircuit.trans () * db::CplxTrans (dbu);
-
-              std::string net_name_prefix = subcircuit.expanded_name () + ":";
-              db::properties_id_type netname_propid = make_netname_propid (prop_mode, netname_prop, *n, net_name_prefix);
-
-              build_net_rec (*n, c->cell_index (), lmap, net_name_prefix, netname_propid, tr);
-
-            }
-
-          }
-
-        }
-
-      }
-
-    }
-
-  }
-}
-
-void
-NetBuilder::build_net_rec (const db::Net &net, db::Cell &target_cell, const std::map<unsigned int, unsigned int> &lmap, const std::string &add_net_cell_name_prefix, db::properties_id_type netname_propid, const db::ICplxTrans &tr) const
-{
-  const db::Circuit *circuit = net.circuit ();
-  tl_assert (circuit != 0);
-
-  build_net_rec (circuit->cell_index (), net.cluster_id (), target_cell, lmap, &net, add_net_cell_name_prefix, netname_propid, tr);
-}
-
-void
-NetBuilder::build_net_rec (db::cell_index_type ci, size_t cid, db::Cell &tc, const std::map<unsigned int, unsigned int> &lmap, const db::Net *net, const std::string &add_net_cell_name_prefix, db::properties_id_type netname_propid, const db::ICplxTrans &tr) const
-{
-  db::Cell *target_cell = &tc;
-
-  if (net && m_has_net_cell_name_prefix) {
-
-    const db::connected_clusters<db::NetShape> &ccl = mp_source->net_clusters ().clusters_per_cell (ci);
-
-    bool any_connections = m_has_cell_name_prefix && ! ccl.connections_for_cluster (cid).empty ();
-    if (! any_connections) {
-
-      StopOnFirst sof;
-      std::map<unsigned int, StopOnFirst *> sof_lmap;
-      for (std::map<unsigned int, unsigned int>::const_iterator l = lmap.begin (); l != lmap.end (); ++l) {
-        sof_lmap.insert (std::make_pair (l->second, &sof));
-      }
-
-      bool consider_cell = ! deliver_shapes_of_net (m_hier_mode == BNH_Flatten, mp_source->netlist (), mp_source->net_clusters (), ci, cid, sof_lmap, tr, 0);
-      if (! consider_cell) {
-        //  shortcut if cell is empty -> no net cell will be produced
-        return;
-      }
-
-    }
-
-    //  make a specific cell for the net if requested
-
-    target_cell = &target ().cell (target ().add_cell ((m_net_cell_name_prefix + add_net_cell_name_prefix + net->expanded_name ()).c_str ()));
-    tc.insert (db::CellInstArray (db::CellInst (target_cell->cell_index ()), db::Trans ()));
-
-  }
-
-  std::map<unsigned int, db::Shapes *> target_lmap;
-  for (std::map<unsigned int, unsigned int>::const_iterator l = lmap.begin (); l != lmap.end (); ++l) {
-    target_lmap.insert (std::make_pair (l->second, &target_cell->shapes (l->first)));
-  }
-
-  deliver_shapes_of_net (m_hier_mode == BNH_Flatten, mp_source->netlist (), mp_source->net_clusters (), ci, cid, target_lmap, tr, netname_propid);
-
-  if (m_hier_mode != BNH_SubcircuitCells && ! m_has_device_cell_name_prefix) {
-    return;
-  }
-
-  //  NOTE: we propagate the magnification part of tr down, but keep the rotation/translation part in the instance
-  //  (we want to avoid magnified instances)
-  db::ICplxTrans tr_wo_mag = tr * db::ICplxTrans (1.0 / tr.mag ());
-  db::ICplxTrans tr_mag (tr.mag ());
-
-  const db::connected_clusters<db::NetShape> &clusters = mp_source->net_clusters ().clusters_per_cell (ci);
-  typedef db::connected_clusters<db::NetShape>::connections_type connections_type;
-  const connections_type &connections = clusters.connections_for_cluster (cid);
-  for (connections_type::const_iterator c = connections.begin (); c != connections.end (); ++c) {
-
-    db::cell_index_type subci = c->inst_cell_index ();
-    size_t subcid = c->id ();
-
-    CellReuseTableKey cmap_key (subci, netname_propid, subcid);
-
-    cell_reuse_table_type::iterator cm = m_reuse_table.find (cmap_key);
-    if (cm == m_reuse_table.end ()) {
-
-      bool has_name_prefix = false;
-      std::string name_prefix;
-      if (mp_source->netlist ()->device_abstract_by_cell_index (subci)) {
-        name_prefix = m_device_cell_name_prefix;
-        has_name_prefix = m_has_device_cell_name_prefix;
-      } else {
-        name_prefix = m_cell_name_prefix;
-        has_name_prefix = m_has_cell_name_prefix;
-      }
-
-      if (has_name_prefix) {
-
-        std::string cell_name = mp_source->internal_layout ()->cell_name (subci);
-
-        db::cell_index_type target_ci = target ().add_cell ((name_prefix + cell_name).c_str ());
-        cm = m_reuse_table.insert (std::make_pair (cmap_key, std::make_pair (target_ci, true))).first;
-
-        build_net_rec (subci, subcid, target ().cell (target_ci), lmap, 0, std::string (), netname_propid, tr_mag);
-
-      } else {
-        cm = m_reuse_table.insert (std::make_pair (cmap_key, std::make_pair (std::numeric_limits<db::cell_index_type>::max (), false))).first;
-      }
-
-    } else if (!cm->second.second && cm->second.first != std::numeric_limits<db::cell_index_type>::max ()) {
-
-      //  initialize cell (after reuse of the net builder)
-      build_net_rec (subci, subcid, target ().cell (cm->second.first), lmap, 0, std::string (), netname_propid, tr_mag);
-      cm->second.second = true;
-
-    }
-
-    if (cm->second.first != std::numeric_limits<db::cell_index_type>::max ()) {
-      db::CellInstArray ci (db::CellInst (cm->second.first), tr_wo_mag * c->inst_trans ());
-      ci.transform_into (tr_mag);
-      target_cell->insert (ci);
-    }
-
-  }
-}
-
-void
-NetBuilder::build_net_rec (const db::Net &net, db::cell_index_type circuit_cell, const std::map<unsigned int, unsigned int> &lmap, const std::string &add_net_cell_name_prefix, db::properties_id_type netname_propid, const ICplxTrans &tr) const
-{
-  if (! m_cmap.has_mapping (circuit_cell)) {
-
-    const db::Cell &cc = mp_source->internal_layout ()->cell (circuit_cell);
-
-    for (db::Cell::parent_inst_iterator p = cc.begin_parent_insts (); ! p.at_end (); ++p) {
-
-      db::CellInstArray ci = p->child_inst ().cell_inst ();
-      for (db::CellInstArray::iterator ia = ci.begin (); ! ia.at_end(); ++ia) {
-
-        db::ICplxTrans tr_parent = ci.complex_trans (*ia) * tr;
-        build_net_rec (net, p->parent_cell_index (), lmap, add_net_cell_name_prefix, netname_propid, tr_parent);
-
-      }
-
-    }
-
-  } else {
-
-    double mag = mp_source->internal_layout ()->dbu () / mp_target->dbu ();
-
-    db::cell_index_type target_ci = m_cmap.cell_mapping (circuit_cell);
-    build_net_rec (net, target ().cell (target_ci), lmap, add_net_cell_name_prefix, netname_propid, db::ICplxTrans (mag) * tr);
-
-  }
-}
-
-db::properties_id_type
-NetBuilder::make_netname_propid (NetPropertyMode net_prop_mode, const tl::Variant &netname_prop, const db::Net &net, const std::string &net_name_prefix)
-{
-  if (net_prop_mode == NPM_NoProperties) {
-
-    return 0;
-
-  } else if (! netname_prop.is_nil () || (net_prop_mode == NPM_AllProperties && net.begin_properties () != net.end_properties ())) {
-
-    db::PropertiesSet propset;
-
-    //  add the user properties too (TODO: make this configurable?)
-    for (db::Net::property_iterator p = net.begin_properties (); p != net.end_properties (); ++p) {
-      propset.insert (p->first, p->second);
-    }
-
-    if (! netname_prop.is_nil ()) {
-      if (net_prop_mode == NPM_NetQualifiedNameOnly) {
-        std::vector<tl::Variant> l;
-        l.reserve (2);
-        l.push_back (tl::Variant (net_name_prefix + net.expanded_name ()));
-        l.push_back (tl::Variant (net.circuit ()->name ()));
-        propset.insert (netname_prop, tl::Variant (l));
-      } else if (net_prop_mode == NPM_NetIDOnly) {
-        propset.insert (netname_prop, tl::Variant (reinterpret_cast <size_t> (&net)));
-      } else {
-        propset.insert (netname_prop, tl::Variant (net_name_prefix + net.expanded_name ()));
-      }
-    }
-
-    return db::properties_id (propset);
-
-  } else {
-
-    return 0;
-
-  }
 }
 
 }

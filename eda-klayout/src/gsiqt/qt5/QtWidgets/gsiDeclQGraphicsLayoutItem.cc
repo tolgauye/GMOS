@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -34,6 +34,7 @@
 #include <QSizePolicy>
 #include "gsiQt.h"
 #include "gsiQtWidgetsCommon.h"
+#include "gsiDeclQtWidgetsTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -841,7 +842,7 @@ QGraphicsLayoutItem_Adaptor::~QGraphicsLayoutItem_Adaptor() { }
 
 static void _init_ctor_QGraphicsLayoutItem_Adaptor_3313 (qt_gsi::GenericStaticMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("parent", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("parent", true, "0");
   decl->add_arg<QGraphicsLayoutItem * > (argspec_0);
   static gsi::ArgSpecBase argspec_1 ("isLayout", true, "false");
   decl->add_arg<bool > (argspec_1);
@@ -852,7 +853,7 @@ static void _call_ctor_QGraphicsLayoutItem_Adaptor_3313 (const qt_gsi::GenericSt
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  QGraphicsLayoutItem *arg1 = args ? gsi::arg_reader<QGraphicsLayoutItem * >() (args, heap) : gsi::arg_maker<QGraphicsLayoutItem * >() (nullptr, heap);
+  QGraphicsLayoutItem *arg1 = args ? gsi::arg_reader<QGraphicsLayoutItem * >() (args, heap) : gsi::arg_maker<QGraphicsLayoutItem * >() (0, heap);
   bool arg2 = args ? gsi::arg_reader<bool >() (args, heap) : gsi::arg_maker<bool >() (false, heap);
   ret.write<QGraphicsLayoutItem_Adaptor *> (new QGraphicsLayoutItem_Adaptor (arg1, arg2));
 }
@@ -1007,16 +1008,16 @@ gsi::Class<QGraphicsLayoutItem> &qtdecl_QGraphicsLayoutItem ();
 static gsi::Methods methods_QGraphicsLayoutItem_Adaptor () {
   gsi::Methods methods;
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QGraphicsLayoutItem::QGraphicsLayoutItem(QGraphicsLayoutItem *parent, bool isLayout)\nThis method creates an object of class QGraphicsLayoutItem.", &_init_ctor_QGraphicsLayoutItem_Adaptor_3313, &_call_ctor_QGraphicsLayoutItem_Adaptor_3313);
-  methods += new qt_gsi::GenericMethod ("getContentsMargins", "@brief Virtual method void QGraphicsLayoutItem::getContentsMargins(double *left, double *top, double *right, double *bottom)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_getContentsMargins_c4704_0, &_call_cbs_getContentsMargins_c4704_0);
-  methods += new qt_gsi::GenericMethod ("getContentsMargins", "@hide", true, &_init_cbs_getContentsMargins_c4704_0, &_call_cbs_getContentsMargins_c4704_0, &_set_callback_cbs_getContentsMargins_c4704_0);
-  methods += new qt_gsi::GenericMethod ("setGeometry", "@brief Virtual method void QGraphicsLayoutItem::setGeometry(const QRectF &rect)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setGeometry_1862_0, &_call_cbs_setGeometry_1862_0);
-  methods += new qt_gsi::GenericMethod ("setGeometry", "@hide", false, &_init_cbs_setGeometry_1862_0, &_call_cbs_setGeometry_1862_0, &_set_callback_cbs_setGeometry_1862_0);
+  methods += new qt_gsi::GenericMethod ("getContentsMargins", "@hide", true, &_init_cbs_getContentsMargins_c4704_0, &_call_cbs_getContentsMargins_c4704_0);
+  methods += new qt_gsi::GenericMethod ("getContentsMargins", "@brief Virtual method void QGraphicsLayoutItem::getContentsMargins(double *left, double *top, double *right, double *bottom)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_getContentsMargins_c4704_0, &_call_cbs_getContentsMargins_c4704_0, &_set_callback_cbs_getContentsMargins_c4704_0);
+  methods += new qt_gsi::GenericMethod ("setGeometry", "@hide", false, &_init_cbs_setGeometry_1862_0, &_call_cbs_setGeometry_1862_0);
+  methods += new qt_gsi::GenericMethod ("setGeometry", "@brief Virtual method void QGraphicsLayoutItem::setGeometry(const QRectF &rect)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setGeometry_1862_0, &_call_cbs_setGeometry_1862_0, &_set_callback_cbs_setGeometry_1862_0);
   methods += new qt_gsi::GenericMethod ("*setGraphicsItem", "@brief Method void QGraphicsLayoutItem::setGraphicsItem(QGraphicsItem *item)\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_setGraphicsItem_1919, &_call_fp_setGraphicsItem_1919);
   methods += new qt_gsi::GenericMethod ("*setOwnedByLayout", "@brief Method void QGraphicsLayoutItem::setOwnedByLayout(bool ownedByLayout)\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_setOwnedByLayout_864, &_call_fp_setOwnedByLayout_864);
-  methods += new qt_gsi::GenericMethod ("*sizeHint", "@brief Virtual method QSizeF QGraphicsLayoutItem::sizeHint(Qt::SizeHint which, const QSizeF &constraint)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_sizeHint_c3330_1, &_call_cbs_sizeHint_c3330_1);
-  methods += new qt_gsi::GenericMethod ("*sizeHint", "@hide", true, &_init_cbs_sizeHint_c3330_1, &_call_cbs_sizeHint_c3330_1, &_set_callback_cbs_sizeHint_c3330_1);
-  methods += new qt_gsi::GenericMethod ("updateGeometry", "@brief Virtual method void QGraphicsLayoutItem::updateGeometry()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_updateGeometry_0_0, &_call_cbs_updateGeometry_0_0);
-  methods += new qt_gsi::GenericMethod ("updateGeometry", "@hide", false, &_init_cbs_updateGeometry_0_0, &_call_cbs_updateGeometry_0_0, &_set_callback_cbs_updateGeometry_0_0);
+  methods += new qt_gsi::GenericMethod ("*sizeHint", "@hide", true, &_init_cbs_sizeHint_c3330_1, &_call_cbs_sizeHint_c3330_1);
+  methods += new qt_gsi::GenericMethod ("*sizeHint", "@brief Virtual method QSizeF QGraphicsLayoutItem::sizeHint(Qt::SizeHint which, const QSizeF &constraint)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_sizeHint_c3330_1, &_call_cbs_sizeHint_c3330_1, &_set_callback_cbs_sizeHint_c3330_1);
+  methods += new qt_gsi::GenericMethod ("updateGeometry", "@hide", false, &_init_cbs_updateGeometry_0_0, &_call_cbs_updateGeometry_0_0);
+  methods += new qt_gsi::GenericMethod ("updateGeometry", "@brief Virtual method void QGraphicsLayoutItem::updateGeometry()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_updateGeometry_0_0, &_call_cbs_updateGeometry_0_0, &_set_callback_cbs_updateGeometry_0_0);
   return methods;
 }
 

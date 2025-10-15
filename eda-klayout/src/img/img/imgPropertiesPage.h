@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -20,7 +20,6 @@
 
 */
 
-#if defined(HAVE_QT)
 
 #ifndef HDR_imgPropertiesPage
 #define HDR_imgPropertiesPage
@@ -50,22 +49,22 @@ public:
   PropertiesPage (QWidget *parent);
   ~PropertiesPage ();
 
-  virtual size_t count () const;
-  virtual void select_entries (const std::vector<size_t> &entries);
-  virtual std::string description (size_t entry) const;
-  virtual std::string description () const;
-  virtual void confine_selection (const std::vector<size_t> &remaining_entries);
+  virtual void back ();
+  virtual void front ();
+  virtual bool at_begin () const;
+  virtual bool at_end () const;
+  virtual void operator-- ();
+  virtual void operator++ ();
   virtual void update ();
   virtual void leave ();
   virtual bool readonly ();
-  virtual void apply (bool commit);
+  virtual void apply (); 
 
   void set_direct_image (img::Object *image);
-  void attach_service (img::Service *service);
 
 private slots:
   void browse ();
-  void value_changed ();
+  void value_return_pressed ();
   void color_mapping_changed ();
   void brightness_slider_changed (int value);
   void brightness_spinbox_changed (int value);
@@ -84,27 +83,24 @@ private slots:
   void red_to_blue ();
   void blue_to_red ();
   void reverse_color_order ();
-  void min_max_value_changed ();
+  void min_max_return_pressed ();
+  void preview_checked ();
   void reset_pressed ();
-  void save_pressed ();
   void define_landmarks_pressed ();
 
 private:
   std::vector <img::Service::obj_iterator> m_selection;
-  size_t m_index;
+  std::vector <img::Service::obj_iterator>::iterator m_pos;
   img::Service *mp_service;
   img::Object *mp_direct_image;
   bool m_no_signals;
-  bool m_in_color_mapping_signal;
 
   void recompute_histogram ();
   void invalidate ();
   void init ();
-  void get_xmin_xmax (double &xmin, double &xmax, bool &has_error_out);
+  void preview ();
 };
 
 }
-
-#endif
 
 #endif

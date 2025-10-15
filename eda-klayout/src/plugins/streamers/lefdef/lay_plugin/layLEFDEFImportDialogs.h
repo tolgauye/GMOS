@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -98,19 +98,9 @@ private slots:
   void del_lef_files_clicked ();
   void move_lef_files_up_clicked ();
   void move_lef_files_down_clicked ();
-  void add_macro_layout_file_clicked ();
-  void del_macro_layout_files_clicked ();
-  void move_macro_layout_files_up_clicked ();
-  void move_macro_layout_files_down_clicked ();
-  void browse_mapfile_clicked ();
 
 private:
   tl::weak_ptr<db::Technology> mp_tech;
-
-  static void add_files (QListWidget *list, const QStringList &files, const db::Technology *tech);
-  static void del_files (QListWidget *list);
-  static void move_files_up (QListWidget *list);
-  static void move_files_down (QListWidget *list);
 };
 
 }

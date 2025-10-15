@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -23,11 +23,15 @@
 
 #include "tlLog.h"
 #include "tlString.h"
-#include "tlEnv.h"
 
 #include <stdio.h>
 #if !defined(_MSC_VER)
 #  include <unistd.h>
+#endif
+#include <stdlib.h>
+
+#if defined(_WIN32)
+#  include <windows.h>
 #endif
 
 namespace tl
@@ -38,9 +42,21 @@ namespace tl
 
 static int default_verbosity ()
 {
+  const char *verbosity_str = 0;
+
+#if defined(_WIN32)
+  const wchar_t *verbosity_wstr = _wgetenv (L"KLAYOUT_VERBOSITY");
+  std::string vs;
+  if (verbosity_wstr) {
+    vs = tl::to_string (std::wstring (verbosity_wstr));
+    verbosity_str = vs.c_str ();
+  }
+#else
+  verbosity_str = getenv ("KLAYOUT_VERBOSITY");
+#endif
+
   int verbosity = 0;
-  std::string verbosity_str = tl::get_env ("KLAYOUT_VERBOSITY");
-  if (! verbosity_str.empty ()) {
+  if (verbosity_str) {
     try {
       tl::from_string (verbosity_str, verbosity);
     } catch (...) {
@@ -49,29 +65,25 @@ static int default_verbosity ()
   return verbosity;
 }
 
-static int &verbosity_level ()
-{
-  static int level = default_verbosity ();
-  return level;
-}
+static int m_verbosity_level = default_verbosity ();
 
 void
 verbosity (int level)
 {
-  verbosity_level () = level;
+  m_verbosity_level = level;
 }
 
 int
 verbosity ()
 {
-  return verbosity_level ();
+  return m_verbosity_level;
 }
 
 // ------------------------------------------------
 //  Channel implementation
 
 Channel::Channel ()
-  : m_no_endl (false), m_active (false), m_in_yield (false)
+  : m_no_endl (false), m_active (false)
 {
   //  .. nothing else ..
 }
@@ -102,19 +114,7 @@ Channel::release_proxy ()
   end ();
   m_active = false;
   m_no_endl = false;
-  bool in_yield = m_in_yield;
-  m_in_yield = true;
   m_lock.unlock ();
-
-  //  after we have released the lock we give the receivers an opportunity to process events. Note that we allow only one thread to yield
-  //  at the same time and no recursive yields.
-  if (! in_yield) {
-    yield ();
-    //  this should be atomic, but execution reordering may place it before yield(). Hence the lock.
-    m_lock.lock ();
-    m_in_yield = false;
-    m_lock.unlock ();
-  }
 }
 
 ChannelEndl endl;
@@ -170,18 +170,6 @@ LogTee::puts (const char *s)
   try {
     for (tl::weak_collection<tl::Channel>::iterator c = m_channels.begin (); c != m_channels.end (); ++c) {
       c->puts (s);
-    }
-  } catch (...) {
-    //  ignore exceptions here
-  }
-}
-
-void
-LogTee::yield ()
-{
-  try {
-    for (tl::weak_collection<tl::Channel>::iterator c = m_channels.begin (); c != m_channels.end (); ++c) {
-      c->yield ();
     }
   } catch (...) {
     //  ignore exceptions here
@@ -298,7 +286,6 @@ protected:
   virtual void endl ();
   virtual void end ();
   virtual void begin ();
-  virtual void yield () { }
 
 private:
   int m_verbosity;
@@ -371,17 +358,14 @@ protected:
   virtual void endl ();
   virtual void end ();
   virtual void begin ();
-  virtual void yield () { }
 
 private:
   bool m_colorized;
-  bool m_new_line;
 };
 
 WarningChannel::WarningChannel ()
 {
   m_colorized = can_colorize (stdout);
-  m_new_line = true;
 }
 
 WarningChannel::~WarningChannel ()
@@ -392,43 +376,31 @@ WarningChannel::~WarningChannel ()
 void
 WarningChannel::puts (const char *s)
 {
-  if (verbosity () >= 0) {
-    fputs (s, stdout);
-  }
+  fputs (s, stdout);
 }
 
 void
 WarningChannel::endl ()
 {
-  if (verbosity () >= 0) {
-    fputs ("\n", stdout);
-    m_new_line = true;
-  }
+  fputs ("\n", stdout);
 }
 
 void
 WarningChannel::end ()
 {
-  if (verbosity () >= 0) {
-    if (m_colorized) {
-      fputs (ANSI_RESET, stdout);
-    }
-    fflush (stdout);
+  if (m_colorized) {
+    fputs (ANSI_RESET, stdout);
   }
+  fflush (stdout);
 }
 
 void
 WarningChannel::begin ()
 {
-  if (verbosity () >= 0) {
-    if (m_colorized) {
-      fputs (ANSI_BLUE, stdout);
-    }
-    if (m_new_line) {
-      fputs ("Warning: ", stdout);
-      m_new_line = false;
-    }
+  if (m_colorized) {
+    fputs (ANSI_BLUE, stdout);
   }
+  fputs ("Warning: ", stdout);
 }
 
 
@@ -450,17 +422,14 @@ protected:
   virtual void endl ();
   virtual void end ();
   virtual void begin ();
-  virtual void yield () { }
 
 private:
   bool m_colorized;
-  bool m_new_line;
 };
 
 ErrorChannel::ErrorChannel ()
 {
   m_colorized = can_colorize (stderr);
-  m_new_line = true;
 }
 
 ErrorChannel::~ErrorChannel ()
@@ -471,43 +440,31 @@ ErrorChannel::~ErrorChannel ()
 void
 ErrorChannel::puts (const char *s)
 {
-  if (verbosity () >= -10) {
-    fputs (s, stderr);
-  }
+  fputs (s, stderr);
 }
 
 void
 ErrorChannel::endl ()
 {
-  if (verbosity () >= -10) {
-    fputs ("\n", stderr);
-    m_new_line = true;
-  }
+  fputs ("\n", stderr);
 }
 
 void
 ErrorChannel::end ()
 {
-  if (verbosity () >= -10) {
-    if (m_colorized) {
-      fputs (ANSI_RESET, stderr);
-    }
-    fflush (stderr);
+  if (m_colorized) {
+    fputs (ANSI_RESET, stderr);
   }
+  fflush (stderr);
 }
 
 void
 ErrorChannel::begin ()
 {
-  if (verbosity () >= -10) {
-    if (m_colorized) {
-      fputs (ANSI_RED, stderr);
-    }
-    if (m_new_line) {
-      fputs ("ERROR: ", stderr);
-      m_new_line = false;
-    }
+  if (m_colorized) {
+    fputs (ANSI_RED, stderr);
   }
+  fputs ("ERROR: ", stderr);
 }
 
 // ------------------------------------------------

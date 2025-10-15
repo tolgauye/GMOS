@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -35,15 +35,15 @@
 
 namespace db
 {
-  class Layout;
   struct LayerProperties;
+  class Layout;
 }
 
 namespace lay 
 {
 
 class LayerProperties;
-class LayoutViewBase;
+class LayoutView;
 class PropertySelectorBase;
 
 /**
@@ -495,7 +495,7 @@ public:
   bool operator== (const PropertySelector &sel) const;
 
   /**
-   *  @brief Inequality 
+   *  @brief Inquality 
    */
   bool operator!= (const PropertySelector &sel) const
   {
@@ -533,7 +533,7 @@ public:
    *  The given properties set is checked against the selector and "true" is returned
    *  if the selector applies to the given set.
    */
-  bool check (db::properties_id_type id) const;
+  bool check (const db::PropertiesRepository &rep, db::properties_id_type id) const;
 
   /**
    *  @brief Obtain a list of properties ids that satisfy the selection
@@ -541,10 +541,10 @@ public:
    *  A set of properties ids is determined that each satisfies the given 
    *  selection. The set should be empty on enter. Otherwise the results are
    *  not defined.
-   *  The return value is true if the ids are to be interpreted inversely (every properties id
+   *  The return value is true if the ids are to be interpretated inversely (every properties id
    *  matches that is not in the set). This allows optimizing the computation of the set.
    */
-  bool matching (std::set<db::properties_id_type> &matching) const;
+  bool matching (const db::PropertiesRepository &rep, std::set<db::properties_id_type> &matching) const;
 
   /**
    *  @brief Return true, if the property selector is not set
@@ -640,7 +640,7 @@ public:
    *  This method delivers a display version that may be abbreviated and is supposed
    *  to be used in the layer list display.
    */
-  std::string display_string (const lay::LayoutViewBase *view) const;
+  std::string display_string (const lay::LayoutView *view) const;
 
   /**
    *  @brief Comparison (equality)

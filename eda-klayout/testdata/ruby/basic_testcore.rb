@@ -4,31 +4,12 @@
 # safe in multiple inclusions
 require File.expand_path('../basic_testcore_defs', __FILE__)
 
-
-class ObjectWithStr
-
-  def initialize(s)
-    @s = s
-  end
-
-  def to_s
-    @s
-  end
-
-end
-
 class Basic_TestClass < TestBase
 
   def test_FIRST
 
     # for testing the ut logger:
     puts "Special chars: <&>"
-
-    # static (class) properties
-    RBA::A.sp_i = 17
-    assert_equal( RBA::A.sp_i, 18 )
-    RBA::A.sp_i = -1
-    assert_equal( RBA::A.sp_i, 0 )
 
     GC.start 
     
@@ -40,12 +21,11 @@ class Basic_TestClass < TestBase
     assert_equal( RBA::A::instance_count, ic0 + 1 )
 
     a = RBA::A.new
-    assert_equal(a.get_n, 17)
+    assert_equal(a.a1, 17)
     a.assign(RBA::A.new(110))
-    assert_equal(a.get_n, 110)
+    assert_equal(a.a1, 110)
 
     a = nil
-    GC.start
     GC.start
     assert_equal( RBA::A::instance_count, ic0 )
 
@@ -95,16 +75,15 @@ class Basic_TestClass < TestBase
     assert_equal( RBA::A.aa, "static_a" )
     assert_equal( a.aa, "a" )
 
-    assert_equal( a.get_n, 17 )
+    assert_equal( a.a1, 17 )
     a.a5 -5
-    assert_equal( a.get_n, -5 )
+    assert_equal( a.a1, -5 )
     a.a5 0x7fffffff
-    assert_equal( a.get_n, 0x7fffffff )
+    assert_equal( a.a1, 0x7fffffff )
     a.a5 -0x80000000
-    assert_equal( a.get_n, -0x80000000 )
+    assert_equal( a.a1, -0x80000000 )
 
     assert_equal( a.a3("a"), 1 )
-    assert_equal( a.a3(ObjectWithStr::new("abcde")), 5 )   # implicitly using to_s for string conversion
     assert_equal( a.a3("ab"), 2 )
     assert_equal( a.a3("µ"), 2 )  # two UTF8 bytes
     if a.respond_to?(:a3_qstr) 
@@ -162,7 +141,7 @@ class Basic_TestClass < TestBase
     assert_equal( RBA::A::instance_count, ic0 )
     a = RBA::A::new_a( 55 )
     assert_equal( RBA::A::instance_count, ic0 + 1 )
-    assert_equal( a.get_n, 55 )
+    assert_equal( a.a1, 55 )
     assert_equal( a.a_vp1( a.a_vp2 ), "abc" )
     a.destroy
     assert_equal( RBA::A::instance_count, ic0 )
@@ -311,103 +290,6 @@ class Basic_TestClass < TestBase
 
   end
 
-  def test_10
-
-    GC.start 
-    
-    # all references of A are released now:
-    ic0 = RBA::A::instance_count
-    assert_equal(ic0, 0)
-
-    a = RBA::A.new_a_by_variant
-    assert_equal(RBA::A::instance_count, ic0 + 1)
-
-    assert_equal(a.get_n, 17)
-    a.a5(-15)
-    assert_equal(a.get_n, -15)
-
-    a = nil
-    GC.start
-    assert_equal(RBA::A::instance_count, ic0)
-
-    # destruction of raw instances (non-gsi-enabled) via c++
-    GC.start
-
-    ic0 = RBA::B::instance_count
-    assert_equal(ic0, 0)
-
-    b = RBA::B.new_b_by_variant
-    assert_equal(RBA::B::instance_count, ic0 + 1)
-
-    b.set_str_combine("x", "y")
-    assert_equal(b.str, "xy")
-
-    b._destroy
-    assert_equal(RBA::B::instance_count, ic0)
-
-  end
-
-  def test_11
-
-    # implicitly converting tuples/lists to objects by calling the constructor
-
-    b = RBA::B::new()
-    b.av_cptr = [ RBA::A::new(17), [1,2], [4,6,0.5] ]
-
-    arr = b.each_a.collect { |a| a.get_n_const }
-    assert_equal(arr, [17, 3, 5])
-    
-    b = RBA::B::new()
-    # NOTE: this gives an error (printed only) that tuples can't be modified as out parameters
-    b.av_ref = [ [1,2], [6,2,0.25], [42] ]
-
-    arr = b.each_a.collect { |a| a.get_n_const }
-    assert_equal(arr, [3, 2, 42])
-    
-    b = RBA::B::new()
-    aa = [ [1,2], [6,2,0.25], [42] ]
-    b.av_ptr = aa
-
-    arr = b.each_a.collect { |a| a.get_n_const }
-    assert_equal(arr, [3, 2, 42])
-    
-    # NOTE: as we used aa in "av_ptr", it got modified as out parameter and
-    # now holds A object references
-    arr = b.each_a.collect { |a| a.get_n_const }
-    assert_equal(arr, [3, 2, 42])
-    
-    b.av = [] 
-
-    arr = b.each_a.collect { |a| a.get_n_const }
-    assert_equal(arr, [])
-    
-    b.push_a_ref([1, 7])
-
-    arr = b.each_a.collect { |a| a.get_n_const }
-    assert_equal(arr, [8])
-    
-    b.push_a_ptr([1, 7, 0.25])
-
-    arr = b.each_a.collect { |a| a.get_n_const }
-    assert_equal(arr, [8, 2])
-    
-    b.push_a_cref([42])
-
-    arr = b.each_a.collect { |a| a.get_n_const }
-    assert_equal(arr, [8, 2, 42])
-    
-    b.push_a_cptr([1, 16])
-
-    arr = b.each_a.collect { |a| a.get_n_const }
-    assert_equal(arr, [8, 2, 42, 17])
-    
-    b.push_a([4, 6, 0.5])
-
-    arr = b.each_a.collect { |a| a.get_n_const }
-    assert_equal(arr, [8, 2, 42, 17, 5])
-
-  end
-
   def test_12
 
     a1 = RBA::A.new
@@ -415,16 +297,16 @@ class Basic_TestClass < TestBase
     a2 = a1
     a3 = a2.dup
 
-    assert_equal( a1.get_n, -15 )
-    assert_equal( a2.get_n, -15 )
-    assert_equal( a3.get_n, -15 )
+    assert_equal( a1.a1, -15 )
+    assert_equal( a2.a1, -15 )
+    assert_equal( a3.a1, -15 )
 
     a1.a5( 11 )
     a3.a5( -11 )
     
-    assert_equal( a1.get_n, 11 )
-    assert_equal( a2.get_n, 11 )
-    assert_equal( a3.get_n, -11 )
+    assert_equal( a1.a1, 11 )
+    assert_equal( a2.a1, 11 )
+    assert_equal( a3.a1, -11 )
 
     assert_equal( a1.a10_s(0x70000000), "0" )
     assert_equal( a1.a10_s(0x7fffffff), "-1" )
@@ -645,7 +527,7 @@ class Basic_TestClass < TestBase
 
       err_caught = false
       begin
-        b.amember_cptr.get_n # cannot call non-const method on const reference
+        b.amember_cptr.a1 # cannot call non-const method on const reference
       rescue 
         err_caught = true
       end
@@ -655,14 +537,14 @@ class Basic_TestClass < TestBase
       
     b.amember_cptr.a2 
 
-    assert_equal( b.always_5, 5 )
-    assert_equal( b.str, "" )
-    b.set_str( "xyz" )
-    assert_equal( b.str, "xyz" )
-    assert_equal( b.str_ccptr, "xyz" )
-    b.set_str_combine( "yx", "zz" )
-    assert_equal( b.str, "yxzz" )
-    assert_equal( b.str_ccptr, "yxzz" )
+    assert_equal( b.b1, 5 )
+    assert_equal( b.b2, "" )
+    b.b5( "xyz" )
+    assert_equal( b.b2, "xyz" )
+    assert_equal( b.b5a, "xyz" )
+    b.b5b( "yx", "zz" )
+    assert_equal( b.b2, "yxzz" )
+    assert_equal( b.b5a, "yxzz" )
 
     arr = []
 
@@ -671,7 +553,7 @@ class Basic_TestClass < TestBase
     if !$leak_check 
 
       begin
-        b.each_a_be { |a| arr.push(a.get_n) }  # b10 is a const iterator - cannot call a1 on it
+        b.b10 { |a| arr.push(a.a1) }  # b10 is a const iterator - cannot call a1 on it
       rescue 
         err_caught = true
       end
@@ -685,7 +567,7 @@ class Basic_TestClass < TestBase
     if !$leak_check 
 
       begin
-        b.each_a_be_pp { |a| arr.push(a.get_n) }  # b10p is a const iterator - cannot call a1 on it
+        b.b10p { |a| arr.push(a.a1) }  # b10p is a const iterator - cannot call a1 on it
       rescue 
         err_caught = true
       end
@@ -695,85 +577,85 @@ class Basic_TestClass < TestBase
     end
    
     arr = []
-    b.each_a_be { |a| arr.push(a.dup.get_n) } 
+    b.b10 { |a| arr.push(a.dup.a1) } 
     assert_equal(arr, [100, 121, 144])
 
     arr = []
-    b.dup.each_a_be { |a| arr.push(a.dup.get_n) } 
+    b.dup.b10 { |a| arr.push(a.dup.a1) } 
     assert_equal(arr, [100, 121, 144])
 
     arr = []
-    b.each_a_be { |a| arr.push(a.get_n_const) } 
+    b.b10 { |a| arr.push(a.a1c) } 
     assert_equal(arr, [100, 121, 144])
 
     arr = []
-    b.each_a_be_pp { |a| arr.push(a.dup.get_n) } 
+    b.b10p { |a| arr.push(a.dup.a1) } 
     assert_equal(arr, [100, 121, 144])
 
     arr = []
-    b.dup.each_a_be_pp { |a| arr.push(a.dup.get_n) } 
+    b.dup.b10p { |a| arr.push(a.dup.a1) } 
     assert_equal(arr, [100, 121, 144])
 
     arr = []
-    b.each_a_be_pp { |a| arr.push(a.get_n_const) } 
+    b.b10p { |a| arr.push(a.a1c) } 
     assert_equal(arr, [100, 121, 144])
 
     arr = []
-    b.each_a_be_v { |a| arr.push(a.get_n) } 
+    b.b11 { |a| arr.push(a.a1) } 
     assert_equal(arr, [100, 121, 144])
 
     arr = []
-    b.dup.each_a_be_v { |a| arr.push(a.get_n) } 
+    b.dup.b11 { |a| arr.push(a.a1) } 
     assert_equal(arr, [100, 121, 144])
 
     arr = []
-    b.each_a_be_p { |a| arr.push(a.get_n) } 
+    b.b12 { |a| arr.push(a.a1) } 
     assert_equal(arr, [7100, 7121, 7144, 7169])
 
     arr = []
-    b.dup.each_a_be_p { |a| arr.push(a.get_n) } 
+    b.dup.b12 { |a| arr.push(a.a1) } 
     assert_equal(arr, [7100, 7121, 7144, 7169])
 
-    aarr = b.av
+    aarr = b.b16a 
     arr = []
-    aarr.each { |a| arr.push(a.get_n) } 
+    aarr.each { |a| arr.push(a.a1) } 
     assert_equal(arr, [100, 121, 144])
 
-    aarr = b.av_cref
+    aarr = b.b16b 
     arr = []
-    aarr.each { |a| arr.push(a.get_n) } 
+    aarr.each { |a| arr.push(a.a1) } 
     assert_equal(arr, [100, 121, 144])
 
-    aarr = b.av_ref
+    aarr = b.b16c 
     arr = []
-    aarr.each { |a| arr.push(a.get_n) } 
+    aarr.each { |a| arr.push(a.a1) } 
     assert_equal(arr, [100, 121, 144])
 
-    b.av_cref = [ RBA::A.new_a( 101 ), RBA::A.new_a( -122 ) ]
+    b.b17a( [ RBA::A.new_a( 101 ), RBA::A.new_a( -122 ) ] )
     arr = []
-    b.each_a_be_v { |a| arr.push(a.get_n) } 
+    b.b11 { |a| arr.push(a.a1) } 
     assert_equal(arr, [101, -122])
 
-    b.av_cref = []
+    b.b17a( [] )
     arr = []
-    b.each_a_be_v { |a| arr.push(a.get_n) } 
+    b.b11 { |a| arr.push(a.a1) } 
     assert_equal(arr, [])
 
-    b.av_ref = [ RBA::A.new_a( 102 ), RBA::A.new_a( -123 ) ]
+    b.b17b( [ RBA::A.new_a( 102 ), RBA::A.new_a( -123 ) ] )
     arr = []
-    b.each_a_be_v { |a| arr.push(a.get_n) } 
+    b.b11 { |a| arr.push(a.a1) } 
     assert_equal(arr, [102, -123])
 
-    b.av = [ RBA::A.new_a( 100 ), RBA::A.new_a( 121 ), RBA::A.new_a( 144 ) ]
+    b.b17c( [ RBA::A.new_a( 100 ), RBA::A.new_a( 121 ), RBA::A.new_a( 144 ) ] )
     arr = []
-    b.each_a_be_v { |a| arr.push(a.get_n) } 
+    b.b11 { |a| arr.push(a.a1) } 
     assert_equal(arr, [100, 121, 144])
 
     if !$leak_check 
 
       arr = []
       begin
-        b.each_a_be_cp { |a| arr.push(a.get_n) } 
+        b.b13 { |a| arr.push(a.a1) } 
       rescue 
         err_caught = true
       end
@@ -783,31 +665,31 @@ class Basic_TestClass < TestBase
     end
 
     arr = []
-    b.each_a_be_cp { |a| arr.push(a.get_n_const) } 
+    b.b13 { |a| arr.push(a.a1c) } 
     assert_equal(arr, [-3100, -3121])
 
     arr = []
-    b.dup.each_a_be_cp { |a| arr.push(a.get_n_const) } 
+    b.dup.b13 { |a| arr.push(a.a1c) } 
     assert_equal(arr, [-3100, -3121])
 
     arr = []
-    b.each_a { |a| arr.push(a.get_n_const) } 
+    b.b18 { |a| arr.push(a.a1c) } 
     assert_equal(arr, [100, 121, 144])
 
     arr = []
-    b.each_a { |a| arr.push(a.get_n) } 
+    b.b18 { |a| arr.push(a.a1) } 
     assert_equal(arr, [100, 121, 144])
 
     arr = []
-    b.each_a_ref { |a| arr.push(a.get_n_const) } 
+    b.b18b { |a| arr.push(a.a1c) } 
     assert_equal(arr, [100, 121, 144])
 
     arr = []
-    # even though each_a_ref returns a "const A &", calling a non-const method does not work
+    # even though b18b returns a "const A &", calling a non-const method does not work
     # since A is a managed object and is not turned into a copy.
     err_caught = false
     begin 
-      b.each_a_ref { |a| arr.push(a.get_n) } 
+      b.b18b { |a| arr.push(a.a1) } 
     rescue
       err_caught = true
     end
@@ -815,15 +697,15 @@ class Basic_TestClass < TestBase
     assert_equal(err_caught, true)
 
     arr = []
-    b.each_a_ptr { |a| arr.push(a.get_n_const) } 
+    b.b18c { |a| arr.push(a.a1c) } 
     assert_equal(arr, [100, 121, 144])
 
     arr = []
-    # this does not work since each_a_ptr delivers a "const *" which cannot be used to call a non-const
+    # this does not work since b18c delivers a "const *" which cannot be used to call a non-const
     # method on
     err_caught = false
     begin 
-      b.each_a_ptr { |a| arr.push(a.get_n) } 
+      b.b18c { |a| arr.push(a.a1) } 
     rescue
       err_caught = true
     end
@@ -837,67 +719,52 @@ class Basic_TestClass < TestBase
     b = RBA::B.new
 
     bb = RBA::B.new
-    bb.set_str("a")
+    bb.b5("a")
     b.push_b(bb)
 
     bb = RBA::B.new
-    bb.set_str("y")
+    bb.b5("y")
     b.push_b(bb)
 
     bb = RBA::B.new
-    bb.set_str("uu")
+    bb.b5("uu")
     b.push_b(bb)
 
     arr = []
-    b.each_b_copy { |bb| arr.push(bb.str) } 
+    b.each_b_copy { |bb| arr.push(bb.b2) } 
     assert_equal(arr, ["a", "y", "uu"])
-    # through enumerator
-    if RUBY_VERSION > "2.0.0"
-      # this creates GC leaks in 2.0.0
-      assert_equal(b.each_b_copy.collect(&:str), ["a", "y", "uu"])
-    end
 
     arr = []
-    b.each_b_copy { |bb| bb.set_str(bb.str + "x"); arr.push(bb.str) } 
+    b.each_b_copy { |bb| bb.b5(bb.b2 + "x"); arr.push(bb.b2) } 
     assert_equal(arr, ["ax", "yx", "uux"])
 
     arr = []
-    b.each_b_copy { |bb| arr.push(bb.str) } 
+    b.each_b_copy { |bb| arr.push(bb.b2) } 
     assert_equal(arr, ["a", "y", "uu"])
 
     arr = []
-    b.each_b_cref { |bb| arr.push(bb.str) } 
+    b.each_b_cref { |bb| arr.push(bb.b2) } 
     assert_equal(arr, ["a", "y", "uu"])
-    # through enumerator
-    if RUBY_VERSION > "2.0.0"
-      # this creates GC leaks in 2.0.0
-      assert_equal(b.each_b_cref.collect(&:str), ["a", "y", "uu"])
-    end
 
     arr = []
     # this works, since the "const B &" will be converted to a copy
-    b.each_b_cref { |bb| bb.set_str(bb.str + "x"); arr.push(bb.str) } 
+    b.each_b_cref { |bb| bb.b5(bb.b2 + "x"); arr.push(bb.b2) } 
     assert_equal(arr, ["ax", "yx", "uux"])
 
     arr = []
     # since that was a copy, the b children were not modified
-    b.each_b_cref { |bb| arr.push(bb.str) } 
+    b.each_b_cref { |bb| arr.push(bb.b2) } 
     assert_equal(arr, ["a", "y", "uu"])
 
     arr = []
-    b.each_b_cptr { |bb| arr.push(bb.str) } 
+    b.each_b_cptr { |bb| arr.push(bb.b2) } 
     assert_equal(arr, ["a", "y", "uu"])
-    # through enumerator
-    if RUBY_VERSION > "2.0.0"
-      # this creates GC leaks in 2.0.0
-      assert_equal(b.each_b_cptr.collect(&:str), ["a", "y", "uu"])
-    end
 
     arr = []
     # const references cannot be modified
     err_caught = false
     begin
-      b.each_b_cptr { |bb| bb.set_str(bb.str + "x"); arr.push(bb.str) } 
+      b.each_b_cptr { |bb| bb.b5(bb.b2 + "x"); arr.push(bb.b2) } 
     rescue 
       err_caught = true
     end
@@ -905,74 +772,32 @@ class Basic_TestClass < TestBase
     assert_equal(arr, [])
 
     arr = []
-    b.each_b_cptr { |bb| arr.push(bb.str) } 
+    b.each_b_cptr { |bb| arr.push(bb.b2) } 
     assert_equal(arr, ["a", "y", "uu"])
 
     arr = []
-    b.each_b_ref { |bb| arr.push(bb.str) } 
+    b.each_b_ref { |bb| arr.push(bb.b2) } 
     assert_equal(arr, ["a", "y", "uu"])
-    # through enumerator
-    if RUBY_VERSION > "2.0.0"
-      # this creates GC leaks in 2.0.0
-      assert_equal(b.each_b_ref.collect(&:str), ["a", "y", "uu"])
-    end
 
     arr = []
-    b.each_b_ref { |bb| bb.set_str(bb.str + "x"); arr.push(bb.str) } 
+    b.each_b_ref { |bb| bb.b5(bb.b2 + "x"); arr.push(bb.b2) } 
     assert_equal(arr, ["ax", "yx", "uux"])
 
     arr = []
-    b.each_b_ref { |bb| arr.push(bb.str) } 
+    b.each_b_ref { |bb| arr.push(bb.b2) } 
     assert_equal(arr, ["ax", "yx", "uux"])
 
     arr = []
-    b.each_b_ptr { |bb| arr.push(bb.str) } 
+    b.each_b_ptr { |bb| arr.push(bb.b2) } 
     assert_equal(arr, ["ax", "yx", "uux"])
-    # through enumerator
-    if RUBY_VERSION > "2.0.0"
-      # this creates GC leaks in 2.0.0
-      assert_equal(b.each_b_ptr.collect(&:str), ["ax", "yx", "uux"])
-    end
 
     arr = []
-    b.each_b_ptr { |bb| bb.set_str(bb.str + "x"); arr.push(bb.str) } 
+    b.each_b_ptr { |bb| bb.b5(bb.b2 + "x"); arr.push(bb.b2) } 
     assert_equal(arr, ["axx", "yxx", "uuxx"])
 
     arr = []
-    b.each_b_ptr { |bb| arr.push(bb.str) } 
+    b.each_b_ptr { |bb| arr.push(bb.b2) } 
     assert_equal(arr, ["axx", "yxx", "uuxx"])
-
-  end
-
-  def _iter_find(b, find)
-    b.each_a_be do |a| 
-      if a.get_n_const == find
-        return true
-      end
-    end
-    return false
-  end
-
-  # Iterator break, return, continue
-  def test_13c
-
-    b = RBA::B.new
-
-    arr = []
-    b.each_a_be { |a| arr.push(a.get_n_const) } 
-    assert_equal(arr, [100, 121, 144])
-
-    arr = []
-    b.each_a_be do |a| 
-      if a.get_n_const == 121
-        next
-      end
-      arr.push(a.get_n_const) 
-    end
-    assert_equal(arr, [100, 144])
-
-    assert_equal(_iter_find(b, 121), true)
-    assert_equal(_iter_find(b, 122), false)
 
   end
 
@@ -1007,10 +832,7 @@ class Basic_TestClass < TestBase
 
   end
 
-  if RUBY_VERSION < "3.0.0"
-    # TODO: this class is going to be deprecated
-    class X < Data
-    end
+  class X < Data
   end
   class Y < Object
   end
@@ -1022,14 +844,12 @@ class Basic_TestClass < TestBase
     end
 
     # Test, if this throws an error (object of class X passed to A argument):
-    if RUBY_VERSION < "3.0.0"
-      begin
-        b = RBA::B.new
-        assert_equal( b.b4( X.new ), "b4_result: -6" )
-        assert_equal( false, true )  # this must never hit
-      rescue
-        assert_equal( $!.to_s(), "allocator undefined for Basic_TestClass::X" );
-      end
+    begin
+      b = RBA::B.new
+      assert_equal( b.b4( X.new ), "b4_result: -6" )
+      assert_equal( false, true )  # this must never hit
+    rescue
+      assert_equal( $!.to_s(), "allocator undefined for Basic_TestClass::X" );
     end
   
     # Test, if this throws an error (object of class X passed to A argument):
@@ -1038,7 +858,7 @@ class Basic_TestClass < TestBase
       assert_equal( b.b4( Y.new ), "b4_result: -6" )
       assert_equal( false, true )  # this must never hit
     rescue
-      assert_equal( $!.to_s(), "Unexpected object type (expected argument of class A, got Basic_TestClass::Y) for argument #1 in B::b4" );
+      assert_equal( $!.to_s(), "Unexpected object type (expected argument of class A, got Basic_TestClass::Y) in B::b4" );
     end
   
     # Test, if this throws an error (object of class X passed to A argument):
@@ -1048,7 +868,7 @@ class Basic_TestClass < TestBase
       assert_equal( b.b4( bb ), "b4_result: -6" )
       assert_equal( false, true )  # this must never hit
     rescue
-      assert_equal( $!.to_s(), "Unexpected object type (expected argument of class A, got RBA::B) for argument #1 in B::b4" );
+      assert_equal( $!.to_s(), "Unexpected object type (expected argument of class A, got RBA::B) in B::b4" );
     end
   
   end
@@ -1065,23 +885,23 @@ class Basic_TestClass < TestBase
     a = b.make_a( 1971 );
     assert_equal( RBA::A.instance_count, a_count + 1 )
 
-    assert_equal( a.get_n, 1971 );
+    assert_equal( a.a1, 1971 );
     assert_equal( b.an( a ), 1971 );
 
     aa = b.make_a( -61 );
     assert_equal( RBA::A.instance_count, a_count + 2 )
     assert_equal( b.an_cref( aa ), -61 );
-    assert_equal( a.get_n, 1971 );
+    assert_equal( a.a1, 1971 );
     assert_equal( b.an( a ), 1971 );
-    assert_equal( aa.get_n, -61 );
+    assert_equal( aa.a1, -61 );
     assert_equal( b.an( aa ), -61 );
 
     aa.a5 98;
     a.a5 100;
     
-    assert_equal( a.get_n, 100 );
+    assert_equal( a.a1, 100 );
     assert_equal( b.an( a ), 100 );
-    assert_equal( aa.get_n, 98 );
+    assert_equal( aa.a1, 98 );
     assert_equal( b.an( aa ), 98 );
 
     a._destroy
@@ -1097,10 +917,10 @@ class Basic_TestClass < TestBase
 
     b = RBA::B.new
     b.set_an( 77 )
-    assert_equal( b.amember_cptr.get_n_const, 77 );
+    assert_equal( b.amember_cptr.a1c, 77 );
 
     b.set_an_cref( 79 )
-    assert_equal( b.amember_cptr.get_n_const, 79 );
+    assert_equal( b.amember_cptr.a1c, 79 );
 
     aref = b.amember_cptr
     err_caught = false
@@ -1108,17 +928,17 @@ class Basic_TestClass < TestBase
     if !$leak_check 
 
       begin 
-        x = aref.get_n # cannot call non-const method on const reference (as delivered by amember_cptr)
+        x = aref.a1 # cannot call non-const method on const reference (as delivered by amember_cptr)
       rescue
         err_caught = true
       end
       assert_equal( err_caught, true )
-      assert_equal( aref.get_n_const, 79 );
+      assert_equal( aref.a1c, 79 );
 
     end
 
     b.set_an( -1 )
-    assert_equal( aref.get_n_const, -1 );
+    assert_equal( aref.a1c, -1 );
 
   end
 
@@ -1208,11 +1028,11 @@ class Basic_TestClass < TestBase
 
     a1 = b.amember_or_nil( true )
     a2 = b.amember_ptr
-    assert_equal( a1.get_n, 17 )
-    assert_equal( a2.get_n, 17 )
+    assert_equal( a1.a1, 17 )
+    assert_equal( a2.a1, 17 )
     a1.a5( 761 )
-    assert_equal( a1.get_n, 761 )
-    assert_equal( a2.get_n, 761 )
+    assert_equal( a1.a1, 761 )
+    assert_equal( a2.a1, 761 )
 
     a1 = b.amember_or_nil( false )
     assert_equal( a1, nil )
@@ -1438,55 +1258,11 @@ class Basic_TestClass < TestBase
     assert_equal( 2, n0 )
 
     # using lambda
-    n0 = 0
     p = lambda { n0 += 2 }
     e.e0(&p)
     e.s1
-    assert_equal( 2, n0 )
+    assert_equal( 4, n0 )
 
-    # remove event handler -> no events triggered anymore
-    n0 = 0
-    e.e0 -= p
-    e.s1
-    assert_equal( 0, n0 )
-
-    # adding again will re-activate it
-    e.e0 += p
-    n0 = 0
-    e.s1
-    assert_equal( 2, n0 )
-
-    # two events at once
-    pp = lambda { n0 += 10 }
-    n0 = 0
-    e.e0 += pp
-    e.s1
-    assert_equal( 12, n0 )
-
-    # clearing events
-    e.e0.clear
-    e.s1
-    n0 = 0
-    assert_equal( 0, n0 )
-
-    # synonyms: add, connect
-    e.e0.add(p)
-    e.e0.connect(pp)
-    n0 = 0
-    e.s1
-    assert_equal( 12, n0 )
-
-    # synonyms: remove, disconnect
-    e.e0.disconnect(p)
-    n0 = 0
-    e.s1
-    assert_equal( 10, n0 )
-    n0 = 0
-    e.e0.remove(pp)
-    e.s1
-    assert_equal( 0, n0 )
-
-    # another signal
     e.s2
     assert_equal( 100, n1 )
     e.m = 1
@@ -1599,7 +1375,6 @@ class Basic_TestClass < TestBase
 
     # makes sure the objects inside the block before are deleted
     GC.start
-    GC.start  # 2.0.0 needs a second one
 
     assert_equal(RBA::A.instance_count, ic0)
     assert_equal(RBA::A.a20_get == nil, true)
@@ -1622,14 +1397,10 @@ class Basic_TestClass < TestBase
     assert_equal(RBA::A.a20_get == nil, false)
 
     # after "manage" the object gets volatile again
-    a = RBA::A.a20_get
-    a._manage
-
-    # Looks like Ruby is keeping the last A instance in some kind of cache:
-    # this will release it
-    a = RBA::A.new
-    a._destroy
-    a = nil
+    1.times do
+      a = RBA::A.a20_get
+      a._manage
+    end
 
     # makes sure the objects inside the block before are deleted
     GC.start
@@ -2355,9 +2126,19 @@ class Basic_TestClass < TestBase
     assert_equal(b.map1_cptr_null == nil, true);
     assert_equal(b.map1_ptr_null == nil, true);
 
-    b.map1 = { 42 => 1, -17 => true }
-    assert_equal(b.map1.inspect, "{-17=>\"true\", 42=>\"1\"}")
-
+    begin
+      b.map1 = { 42 => 1, -17 => true }
+      error = nil
+    rescue => ex
+      error = ex.message.split("\n")[0]
+    end
+    if error == "can't convert Fixnum into String"
+      # Ok
+    elsif error == "no implicit conversion of Fixnum into String" || error == "no implicit conversion of Integer into String"
+      # Ok 
+    else
+      assert_equal(error, "")
+    end
     b.map1 = { 42 => "1", -17 => "true" }
     assert_equal(b.map1.inspect, "{-17=>\"true\", 42=>\"1\"}")
 
@@ -2889,15 +2670,12 @@ class Basic_TestClass < TestBase
 
     GC.start
 
-    nx = RBA::X::instances
     z = RBA::Z::new
 
+    nx = RBA::X::instances
     x = RBA::X::new("1")
     z.set_x(x)
     assert_equal(RBA::X::instances, nx + 1)
-
-    # weird. On WIN/32bit, this makes the test pass (enables GC somehow?):
-    puts("ANYTHING")
 
     x = nil
     z.set_x(nil)
@@ -2913,9 +2691,6 @@ class Basic_TestClass < TestBase
     GC.start
 
     assert_equal(RBA::X::instances, nx + 1)
-
-    # weird. On WIN/32bit, this makes the test pass (enables GC somehow?):
-    puts("ANYTHING")
 
     # this will release the object - hence it's going to be deleted
     z.set_x_keep(nil)
@@ -2950,272 +2725,6 @@ class Basic_TestClass < TestBase
 
   end
 
-  def test_QByteArray
-
-    # QByteArray
-
-    if RBA::A.respond_to?(:ia_cref_to_qba)
-
-      qba = RBA::A::ia_cref_to_qba([ 16, 42, 0, 8 ])
-      assert_equal(qba.inspect, "\"\\x10*\\x00\\b\"")
-      # full cycle must preserve encoding, also for var
-      assert_equal(RBA::A::ft_qba(qba).inspect, "\"\\x10*\\x00\\b\"")
-      assert_equal(RBA::A::ft_var(qba).inspect, "\"\\x10*\\x00\\b\"")
-
-      assert_equal(RBA::A::qba_to_ia(qba), [ 16, 42, 0, 8 ])
-      assert_equal(RBA::A::qba_cref_to_ia(qba), [ 16, 42, 0, 8 ])
-      assert_equal(RBA::A::qba_cptr_to_ia(qba), [ 16, 42, 0, 8 ])
-      assert_equal(RBA::A::qba_ref_to_ia(qba), [ 16, 42, 0, 8 ])
-      assert_equal(RBA::A::qba_ptr_to_ia(qba), [ 16, 42, 0, 8 ])
-
-      qba = RBA::A::ia_cref_to_qba_cref([ 17, 42, 0, 8 ])
-      assert_equal(qba.inspect, "\"\\x11*\\x00\\b\"")
-      qba = RBA::A::ia_cref_to_qba_ref([ 18, 42, 0, 8 ])
-      assert_equal(qba.inspect, "\"\\x12*\\x00\\b\"")
-      qba = RBA::A::ia_cref_to_qba_cptr([ 19, 42, 0, 8 ])
-      assert_equal(qba.inspect, "\"\\x13*\\x00\\b\"")
-      qba = RBA::A::ia_cref_to_qba_ptr([ 20, 42, 0, 8 ])
-      assert_equal(qba.inspect, "\"\\x14*\\x00\\b\"")
-
-      assert_equal(RBA::A::qba_to_ia("\x00\x01\x02"), [ 0, 1, 2 ])
-
-    end
-
-  end
-
-  def test_QByteArrayView
-
-    # QByteArrayView
-
-    if RBA::A.respond_to?(:ia_cref_to_qbav)
-
-      qbav = RBA::A::ia_cref_to_qbav([ 16, 42, 0, 8 ])
-      assert_equal(qbav.inspect, "\"\\x10*\\x00\\b\"")
-
-      assert_equal(RBA::A::qbav_to_ia(qbav), [ 16, 42, 0, 8 ])
-      assert_equal(RBA::A::qbav_cref_to_ia(qbav), [ 16, 42, 0, 8 ])
-      assert_equal(RBA::A::qbav_cptr_to_ia(qbav), [ 16, 42, 0, 8 ])
-      assert_equal(RBA::A::qbav_ref_to_ia(qbav), [ 16, 42, 0, 8 ])
-      assert_equal(RBA::A::qbav_ptr_to_ia(qbav), [ 16, 42, 0, 8 ])
-
-      qbav = RBA::A::ia_cref_to_qbav_cref([ 17, 42, 0, 8 ])
-      assert_equal(qbav.inspect, "\"\\x11*\\x00\\b\"")
-      qbav = RBA::A::ia_cref_to_qbav_ref([ 18, 42, 0, 8 ])
-      assert_equal(qbav.inspect, "\"\\x12*\\x00\\b\"")
-      qbav = RBA::A::ia_cref_to_qbav_cptr([ 19, 42, 0, 8 ])
-      assert_equal(qbav.inspect, "\"\\x13*\\x00\\b\"")
-      qbav = RBA::A::ia_cref_to_qbav_ptr([ 20, 42, 0, 8 ])
-      assert_equal(qbav.inspect, "\"\\x14*\\x00\\b\"")
-
-      assert_equal(RBA::A::qbav_to_ia("\x00\x01\x02"), [ 0, 1, 2 ])
-
-    end
-
-  end
-
-  def test_QString
-
-    # QString
-
-    if RBA::A.respond_to?(:ia_cref_to_qs)
-
-      qs = RBA::A::ia_cref_to_qs([ 16, 42, 0, 8, 0x03a9 ])
-      assert_equal(qs.encoding.name, "UTF-8")
-      assert_equal(qs, "\u0010*\u0000\b\u03a9")
-      # full cycle must preserve encoding, also for var
-      assert_equal(RBA::A::ft_qs(qs).encoding.name, "UTF-8")
-      assert_equal(RBA::A::ft_qs(qs), "\u0010*\u0000\b\u03a9")
-      assert_equal(RBA::A::ft_var(qs).encoding.name, "UTF-8")
-      assert_equal(RBA::A::ft_var(qs), "\u0010*\u0000\b\u03a9")
-
-      assert_equal(RBA::A::qs_to_ia(qs), [ 16, 42, 0, 8, 0x03a9 ])
-      assert_equal(RBA::A::qs_cref_to_ia(qs), [ 16, 42, 0, 8, 0x03a9 ])
-      assert_equal(RBA::A::qs_cptr_to_ia(qs), [ 16, 42, 0, 8, 0x03a9 ])
-      assert_equal(RBA::A::qs_ref_to_ia(qs), [ 16, 42, 0, 8, 0x03a9 ])
-      assert_equal(RBA::A::qs_ptr_to_ia(qs), [ 16, 42, 0, 8, 0x03a9 ])
-
-      qs = RBA::A::ia_cref_to_qs_cref([ 17, 42, 0, 8, 0x03a9 ])
-      assert_equal(qs.encoding.name, "UTF-8")
-      assert_equal(qs, "\u0011*\u0000\b\u03a9")
-      qs = RBA::A::ia_cref_to_qs_ref([ 18, 42, 0, 8, 0x03a9 ])
-      assert_equal(qs.encoding.name, "UTF-8")
-      assert_equal(qs, "\u0012*\u0000\b\u03a9")
-      qs = RBA::A::ia_cref_to_qs_cptr([ 19, 42, 0, 8, 0x03a9 ])
-      assert_equal(qs.encoding.name, "UTF-8")
-      assert_equal(qs, "\u0013*\u0000\b\u03a9")
-      qs = RBA::A::ia_cref_to_qs_ptr([ 20, 42, 0, 8, 0x03a9 ])
-      assert_equal(qs.encoding.name, "UTF-8")
-      assert_equal(qs, "\u0014*\u0000\b\u03a9")
-
-      assert_equal(RBA::A::qs_to_ia("\x00\x01\x02"), [ 0, 1, 2 ])
-
-    end
-
-  end
-
-  def test_QLatin1String
-
-    # QLatin1String
-
-    if RBA::A.respond_to?(:ia_cref_to_ql1s)
-
-      ql1s = RBA::A::ia_cref_to_ql1s([ 16, 42, 0, 8, 0x03a9 ])
-      assert_equal(ql1s.encoding.name, "UTF-8")
-      assert_equal(ql1s, "\u0010*\u0000\b\u00a9")
-
-      assert_equal(RBA::A::ql1s_to_ia(ql1s), [ 16, 42, 0, 8, 0xa9 ])
-      assert_equal(RBA::A::ql1s_cref_to_ia(ql1s), [ 16, 42, 0, 8, 0xa9 ])
-      assert_equal(RBA::A::ql1s_cptr_to_ia(ql1s), [ 16, 42, 0, 8, 0xa9 ])
-      assert_equal(RBA::A::ql1s_ref_to_ia(ql1s), [ 16, 42, 0, 8, 0xa9 ])
-      assert_equal(RBA::A::ql1s_ptr_to_ia(ql1s), [ 16, 42, 0, 8, 0xa9 ])
-
-      ql1s = RBA::A::ia_cref_to_ql1s_cref([ 17, 42, 0, 8, 0xa9 ])
-      assert_equal(ql1s.encoding.name, "UTF-8")
-      assert_equal(ql1s, "\u0011*\u0000\b\u00a9")
-      ql1s = RBA::A::ia_cref_to_ql1s_ref([ 18, 42, 0, 8, 0xa9 ])
-      assert_equal(ql1s.encoding.name, "UTF-8")
-      assert_equal(ql1s, "\u0012*\u0000\b\u00a9")
-      ql1s = RBA::A::ia_cref_to_ql1s_cptr([ 19, 42, 0, 8, 0xa9 ])
-      assert_equal(ql1s.encoding.name, "UTF-8")
-      assert_equal(ql1s, "\u0013*\u0000\b\u00a9")
-      ql1s = RBA::A::ia_cref_to_ql1s_ptr([ 20, 42, 0, 8, 0xa9 ])
-      assert_equal(ql1s.encoding.name, "UTF-8")
-      assert_equal(ql1s, "\u0014*\u0000\b\u00a9")
-
-      assert_equal(RBA::A::ql1s_to_ia("\x00\x01\x02"), [ 0, 1, 2 ])
-
-    end
-
-  end
-
-  def test_QStringView
-
-    # QStringView
-
-    if RBA::A.respond_to?(:ia_cref_to_qsv)
-
-      qsv = RBA::A::ia_cref_to_qsv([ 16, 42, 0, 8 ])
-      assert_equal(qsv.inspect, "\"\\u0010*\\u0000\\b\"")
-
-      assert_equal(RBA::A::qsv_to_ia(qsv), [ 16, 42, 0, 8 ])
-      assert_equal(RBA::A::qsv_cref_to_ia(qsv), [ 16, 42, 0, 8 ])
-      assert_equal(RBA::A::qsv_cptr_to_ia(qsv), [ 16, 42, 0, 8 ])
-      assert_equal(RBA::A::qsv_ref_to_ia(qsv), [ 16, 42, 0, 8 ])
-      assert_equal(RBA::A::qsv_ptr_to_ia(qsv), [ 16, 42, 0, 8 ])
-
-      qsv = RBA::A::ia_cref_to_qsv_cref([ 17, 42, 0, 8 ])
-      assert_equal(qsv.inspect, "\"\\u0011*\\u0000\\b\"")
-      qsv = RBA::A::ia_cref_to_qsv_ref([ 18, 42, 0, 8 ])
-      assert_equal(qsv.inspect, "\"\\u0012*\\u0000\\b\"")
-      qsv = RBA::A::ia_cref_to_qsv_cptr([ 19, 42, 0, 8 ])
-      assert_equal(qsv.inspect, "\"\\u0013*\\u0000\\b\"")
-      qsv = RBA::A::ia_cref_to_qsv_ptr([ 20, 42, 0, 8 ])
-      assert_equal(qsv.inspect, "\"\\u0014*\\u0000\\b\"")
-
-      assert_equal(RBA::A::qsv_to_ia("\x00\x01\x02"), [ 0, 1, 2 ])
-
-    end
-
-  end
-
-  def test_utf8Strings
-
-    # UTF8 strings (non-Qt)
-    s = "\u0010*\u0000\b\u03a9"
-    assert_equal(s.encoding.name, "UTF-8")
-
-    # full cycle must preserve encoding, also for var
-    assert_equal(RBA::A::ft_str(s).encoding.name, "UTF-8")
-    assert_equal(RBA::A::ft_str(s), "\u0010*\u0000\b\u03a9")
-    assert_equal(RBA::A::ft_var(s).encoding.name, "UTF-8")
-    assert_equal(RBA::A::ft_var(s), "\u0010*\u0000\b\u03a9")
-
-    # NUL character terminates in const char * mode:
-    assert_equal(RBA::A::ft_cptr(s).encoding.name, "UTF-8")
-    assert_equal(RBA::A::ft_cptr(s), "\u0010*")
-
-  end
-
-  def test_binaryStrings
-
-    # binary strings (non-Qt)
-
-    ba = RBA::A::ia_cref_to_ba([ 16, 42, 0, 8 ])
-    assert_equal(ba.inspect, "\"\\x10*\\x00\\b\"")
-    # full cycle must preserve encoding, also for var
-    assert_equal(RBA::A::ft_cv(ba).inspect, "\"\\x10*\\x00\\b\"")
-    assert_equal(RBA::A::ft_var(ba).inspect, "\"\\x10*\\x00\\b\"")
-
-    assert_equal(RBA::A::ba_to_ia(ba), [ 16, 42, 0, 8 ])
-    assert_equal(RBA::A::ba_cref_to_ia(ba), [ 16, 42, 0, 8 ])
-    assert_equal(RBA::A::ba_cptr_to_ia(ba), [ 16, 42, 0, 8 ])
-    assert_equal(RBA::A::ba_ref_to_ia(ba), [ 16, 42, 0, 8 ])
-    assert_equal(RBA::A::ba_ptr_to_ia(ba), [ 16, 42, 0, 8 ])
-
-    ba = RBA::A::ia_cref_to_ba_cref([ 17, 42, 0, 8 ])
-    assert_equal(ba.inspect, "\"\\x11*\\x00\\b\"")
-    ba = RBA::A::ia_cref_to_ba_ref([ 18, 42, 0, 8 ])
-    assert_equal(ba.inspect, "\"\\x12*\\x00\\b\"")
-    ba = RBA::A::ia_cref_to_ba_cptr([ 19, 42, 0, 8 ])
-    assert_equal(ba.inspect, "\"\\x13*\\x00\\b\"")
-    ba = RBA::A::ia_cref_to_ba_ptr([ 20, 42, 0, 8 ])
-    assert_equal(ba.inspect, "\"\\x14*\\x00\\b\"")
-
-    assert_equal(RBA::A::ba_to_ia("\x00\x01\x02"), [ 0, 1, 2 ])
-
-  end
-
-  def test_optional
-
-    if RBA::B.respond_to?(:int_to_optional)
-
-      assert_equal(RBA::B::int_to_optional(1, true), 1)
-      assert_equal(RBA::B::int_to_optional(1, false), nil)
-      assert_equal(RBA::B::int_to_optional_a(1, true).get_n, 1)
-      assert_equal(RBA::B::int_to_optional_a(1, false), nil)
-
-      assert_equal(RBA::B::optional_to_int(1, -1), 1)
-      assert_equal(RBA::B::optional_to_int(nil, -1), -1)
-      assert_equal(RBA::B::optional_cref_to_int(2, -1), 2)
-      assert_equal(RBA::B::optional_cref_to_int(nil, -1), -1)
-      assert_equal(RBA::B::optional_ref_to_int(3, -1), 3)
-      assert_equal(RBA::B::optional_ref_to_int(nil, -1), -1)
-
-      assert_equal(RBA::B::optional_cptr_to_int(4, -1), 4)
-      assert_equal(RBA::B::optional_ptr_to_int(5, -1), 5)
-
-      assert_equal(RBA::B::optional_a_to_int(RBA::A::new(1), -1), 1)
-      assert_equal(RBA::B::optional_a_to_int(nil, -1), -1)
-      assert_equal(RBA::B::optional_a_cref_to_int(RBA::A::new(2), -1), 2)
-      assert_equal(RBA::B::optional_a_cref_to_int(nil, -1), -1)
-      assert_equal(RBA::B::optional_a_ref_to_int(RBA::A::new(3), -1), 3)
-      assert_equal(RBA::B::optional_a_ref_to_int(nil, -1), -1)
-
-      assert_equal(RBA::B::optional_a_cptr_to_int(RBA::A::new(4), -1), 4)
-      assert_equal(RBA::B::optional_a_ptr_to_int(RBA::A::new(5), -1), 5)
-
-    end
-
-  end
-
-  # Tests multi-base mixins (only constants and enums available)
-  def test_multiBaseMixins
-    
-    bb = RBA::BB::new  # base classes B1,B2,B3
-    bb.set1(17)                                          # B1
-    assert_equal(bb.get1, 17)                            # B1
-    bb.set1(21)                                          # B1
-    assert_equal(RBA::B3::E::E3B.to_i, 101)              # B3
-
-    assert_equal(bb.get1, 21)                            # B1
-    assert_equal(RBA::BB::C2, 17)                        # B2
-    assert_equal(RBA::BB::C3, -1)                        # B3
-    assert_equal(RBA::BB::E::E3B.to_i, 101)              # B3
-    assert_equal(bb.d3(RBA::BB::E::E3C, RBA::BB::E::E3A), -2)  # BB with B3 enums
-    assert_equal(bb.d3(RBA::BB::E::E3A, RBA::BB::E::E3C), 2)   # BB with B3 enums
-
-  end
-
   # Custom factory implemented in Ruby
   def test_80
 
@@ -3228,94 +2737,6 @@ class Basic_TestClass < TestBase
     go = nil
     GC.start
     assert_equal(RBA::GObject.g_inst_count, gc)
-
-  end
-
-  # keyword arguments, enums and error messages
-  def test_81
-
-    bb = RBA::BB::new
-    
-    m = ""
-    begin
-      bb.d4()
-    rescue => ex
-      m = ex.to_s
-    end
-    assert_equal(m, "Can't match arguments. Variants are:\n  string d4(int a, string b, double c, B3::E d = E3A, variant e = nil) [no value given for argument #1 and following]\n in BB::d4")
-
-    m = ""
-    begin
-      bb.d4(1, "a")
-    rescue => ex
-      m = ex.to_s
-    end
-    assert_equal(m, "Can't match arguments. Variants are:\n  string d4(int a, string b, double c, B3::E d = E3A, variant e = nil) [no value given for argument #3]\n in BB::d4")
-
-    m = ""
-    begin
-      bb.d4(1, "a", 2.0, xxx: 17)
-    rescue => ex
-      m = ex.to_s
-    end
-    assert_equal(m, "Can't match arguments. Variants are:\n  string d4(int a, string b, double c, B3::E d = E3A, variant e = nil) [unknown keyword parameter: xxx]\n in BB::d4")
-
-    m = ""
-    begin
-      bb.d4(a: 1, b: "a", c: 2.0, xxx: 17)
-    rescue => ex
-      m = ex.to_s
-    end
-    assert_equal(m, "Can't match arguments. Variants are:\n  string d4(int a, string b, double c, B3::E d = E3A, variant e = nil) [unknown keyword parameter: xxx]\n in BB::d4")
-
-    assert_equal(bb.d4(1, "a", 2.0), "1,a,2,100,nil")
-    assert_equal(bb.d4(1, "a", 2.0, e: 42), "1,a,2,100,42")
-    assert_equal(bb.d4(1, "a", c: 2.0, e: 42), "1,a,2,100,42")
-    assert_equal(bb.d4(c: 2.0, a: 1, b: "a", e: 42), "1,a,2,100,42")
-    assert_equal(bb.d4(1, "a", 2.0, d: RBA::BB::E::E3B), "1,a,2,101,nil")
-    assert_equal(bb.d4(1, "a", d: RBA::BB::E::E3B, c: 2.5), "1,a,2.5,101,nil")
-    assert_equal(bb.d4(1, "a", 2.0, RBA::BB::E::E3B, 42), "1,a,2,101,42")
-
-  end
-
-  # constness
-  def test_82
-
-    b = RBA::B::new
-    assert_equal(b.is_const_object, false)
-
-    bc = b._to_const_object
-    assert_equal(bc.is_const_object, true)
-
-    m = ""
-    begin
-      bc.set_str("abc")
-      assert_equal(1, 0)
-    rescue => ex
-      m = ex.to_s
-    end
-
-    assert_equal(m, "Cannot call non-const method on a const reference in B::set_str")
-
-    b = RBA::B::new
-    bc = b
-    assert_equal(b._is_const_object, false)
-    assert_equal(bc._is_const_object, false)
-    b.set_str("abc")
-    bc._to_const_object
-    assert_equal(b._is_const_object, true)  # special
-    assert_equal(bc._is_const_object, true)
-    assert_equal(b.str, "abc")
-    assert_equal(bc.str, "abc")
-
-    bnc = bc._const_cast
-    assert_equal(b._is_const_object, false)  # special
-    assert_equal(bc._is_const_object, false)   # special
-    assert_equal(bnc._is_const_object, false)
-    bnc.set_str("xyz")
-    assert_equal(b.str, "xyz")
-    assert_equal(bc.str, "xyz")
-    assert_equal(bnc.str, "xyz")
 
   end
 

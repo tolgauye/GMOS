@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -139,20 +139,19 @@ TextWriter::endl_str ()
 }
 
 void
-TextWriter::write_props (const db::Layout & /*layout*/, size_t prop_id)
+TextWriter::write_props (const db::Layout &layout, size_t prop_id)
 {
   *this << "set props {" << endl_str ();
 
-  auto props = db::properties (prop_id).to_map ();
-  for (auto p = props.begin (); p != props.end (); ++p) {
+  const db::PropertiesRepository::properties_set &props = layout.properties_repository ().properties (prop_id);
+  for (db::PropertiesRepository::properties_set::const_iterator p = props.begin (); p != props.end (); ++p) {
 
-    const tl::Variant &name = p->first;
-    const tl::Variant &value = p->second;
+    const tl::Variant &name = layout.properties_repository ().prop_name (p->first);
 
-    if (name.can_convert_to_long ()) {
-      *this << "  {" << int (name.to_long ()) << " {" << value.to_string () << "}}" << endl_str ();
+    if (name.is_long () || name.is_ulong ()) {
+      *this << "  {" << int (name.to_long ()) << " {" << p->second.to_string () << "}}" << endl_str ();
     } else if (name.is_a_string ()) {
-      *this << "  {{" << name.to_string () << "} {" << value.to_string () << "}}" << endl_str ();
+      *this << "  {{" << name.to_string () << "} {" << p->second.to_string () << "}}" << endl_str ();
     }
 
   }
@@ -199,51 +198,42 @@ TextWriter::write (const db::Layout &layout)
     
     for (db::Cell::const_iterator inst = cref.begin (); ! inst.at_end (); ++inst) {
 
+      std::string pfx = "";
+
+      if (inst->has_prop_id () && inst->prop_id () != 0) {
+        pfx = "p $props";
+        write_props (layout, inst->prop_id ());
+      }
+
       db::Vector a, b;
       unsigned long amax, bmax;
 
       bool is_reg = inst->is_regular_array (a, b, amax, bmax);
 
-      for (db::CellInstArray::iterator i = inst->begin (); ! i.at_end (); ++i) {
+      *this << (is_reg ? "aref" : "sref") << pfx << " {" << layout.cell_name (inst->cell_index ()) << "}";
 
-        std::string pfx = "";
+      db::Trans t = inst->front ();
 
-        if (inst->has_prop_id () && inst->prop_id () != 0) {
-          pfx = "p $props";
-          write_props (layout, inst->prop_id ());
-        }
-
-        *this << (is_reg ? "aref" : "sref") << pfx << " {" << layout.cell_name (inst->cell_index ()) << "}";
-
-        db::Trans t = *i;
-
-        if (inst->is_complex ()) {
-          db::CellInstArray::complex_trans_type ct = inst->complex_trans (t);
-          *this << " " << ct.angle ();
-          *this << " " << (ct.is_mirror () ? 1 : 0);
-          *this << " " << ct.mag ();
-        } else {
-          *this << " " << (t.rot () % 4) * 90.0;
-          *this << " " << (t.is_mirror () ? 1 : 0);
-          *this << " " << 1.0;
-        }
-
-        if (is_reg) {
-          *this << " " << int (std::max ((unsigned long) 1, amax));
-          *this << " " << int (std::max ((unsigned long) 1, bmax));
-        }
-        *this << " " << t.disp ();
-        if (is_reg) {
-          *this << " " << (t.disp () + a * (long) amax);
-          *this << " " << (t.disp () + b * (long) bmax);
-        }
-        *this << endl ();
-
-        if (is_reg) {
-          break;
-        }
-
+      if (inst->is_complex ()) {
+        *this << " " << inst->complex_trans ().angle ();
+        *this << " " << (inst->complex_trans ().is_mirror () ? 1 : 0);
+        *this << " " << inst->complex_trans ().mag ();
+      } else {
+        *this << " " << (t.rot () % 4) * 90.0;
+        *this << " " << (t.is_mirror () ? 1 : 0);
+        *this << " " << 1.0;
       }
+
+      if (is_reg) {
+        *this << " " << int (std::max ((unsigned long) 1, amax));
+        *this << " " << int (std::max ((unsigned long) 1, bmax));
+      } 
+      *this << " " << t.disp ();
+      if (is_reg) {
+        *this << " " << (t.disp () + a * (long) amax);
+        *this << " " << (t.disp () + b * (long) bmax);
+      }
+      *this << endl ();
 
     }
 

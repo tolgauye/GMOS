@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -81,12 +81,6 @@ inline bool needs_translate (object_tag<Sh> /*tag*/)
   return tl::is_equal_type<typename shape_traits<Sh>::can_deref, tl::True> () || tl::is_equal_type<typename shape_traits<Sh>::is_array, tl::True> ();
 }
 
-inline bool type_mask_applies (const db::LayerBase *layer, unsigned int flags)
-{
-  unsigned int tm = layer->type_mask ();
-  return (((flags & db::ShapeIterator::Properties) == 0 || (tm & db::ShapeIterator::Properties) != 0) && (flags & tm) != 0);
-}
-
 // ---------------------------------------------------------------------------------------
 //  layer_op implementation
 
@@ -119,7 +113,7 @@ layer_op<Sh, StableTag>::erase (Shapes *shapes)
     std::vector<typename db::layer<Sh, StableTag>::iterator> to_erase;
     to_erase.reserve (m_shapes.size ());
 
-    //  This is not quite effective but seems to be the simplest way
+    //  This is not quite effective but seems to be the simpliest way
     //  of implementing this: search for each element and erase these.
     for (typename db::layer<Sh, StableTag>::iterator lsh = shapes->begin (typename Sh::tag (), StableTag ()); lsh != shapes->end (typename Sh::tag (), StableTag ()); ++lsh) {
       typename std::vector<Sh>::const_iterator s = std::lower_bound (s_begin, s_end, *lsh);
@@ -134,50 +128,6 @@ layer_op<Sh, StableTag>::erase (Shapes *shapes)
 
     shapes->erase_positions (typename Sh::tag (), StableTag (), to_erase.begin (), to_erase.end ());
 
-  }
-}
-
-// ---------------------------------------------------------------------------------------
-//  FullLayerOp implementation
-
-void
-FullLayerOp::insert (Shapes *shapes)
-{
-  for (tl::vector<LayerBase *>::iterator l = shapes->get_layers ().end (); l != shapes->get_layers ().begin (); ) {
-
-    --l;
-
-    if (*l == mp_layer) {
-
-      return;
-
-    } else if ((*l)->is_same_type (mp_layer)) {
-
-      delete (*l);
-      *l = mp_layer;
-      m_owns_layer = false;
-      shapes->invalidate_state ();
-      return;
-
-    }
-
-  }
-
-  shapes->get_layers ().push_back (mp_layer);
-  shapes->invalidate_state ();
-  m_owns_layer = false;
-}
-
-void
-FullLayerOp::erase (Shapes *shapes)
-{
-  for (tl::vector<LayerBase *>::iterator l = shapes->get_layers ().begin (); l != shapes->get_layers ().end (); ++l) {
-    if (*l == mp_layer) {
-      shapes->get_layers ().erase (l);
-      shapes->invalidate_state ();
-      m_owns_layer = true;
-      break;
-    }
   }
 }
 
@@ -206,27 +156,15 @@ Shapes::layout () const
 }
 
 void
-Shapes::check_is_editable_for_undo_redo () const
-{
-  if (! is_editable ()) {
-    throw tl::Exception (tl::to_string (tr ("No undo/redo support on non-editable shape lists")));
-  }
-}
-
-void
 Shapes::insert (const Shapes &d)
 {
+  //  no undo support for this currently
+  tl_assert (! manager () || ! manager ()->transacting ());
   do_insert (d);
 }
 
 void
-Shapes::insert (const Shapes &d, unsigned int flags)
-{
-  do_insert (d, flags);
-}
-
-void
-Shapes::do_insert (const Shapes &d, unsigned int flags)
+Shapes::do_insert (const Shapes &d)
 {
   //  shortcut for "nothing to do"
   if (d.empty ()) {
@@ -236,45 +174,23 @@ Shapes::do_insert (const Shapes &d, unsigned int flags)
   if (layout () == d.layout ()) {
 
     //  both shape containers reside in the same repository space - simply copy
-    if (m_layers.empty ()) {
-
-      m_layers.reserve (d.m_layers.size ());
-      for (tl::vector<LayerBase *>::const_iterator l = d.m_layers.begin (); l != d.m_layers.end (); ++l) {
-        if (type_mask_applies (*l, flags)) {
-          m_layers.push_back ((*l)->clone ());
-          if (manager () && manager ()->transacting ()) {
-            check_is_editable_for_undo_redo ();
-            manager ()->queue (this, new FullLayerOp (true, m_layers.back ()));
-          }
-        }
-      }
-
-      invalidate_state ();
-
-    } else {
-      for (tl::vector<LayerBase *>::const_iterator l = d.m_layers.begin (); l != d.m_layers.end (); ++l) {
-        if (type_mask_applies (*l, flags)) {
-          (*l)->insert_into (this);
-        }
-      }
+    m_layers.reserve (d.m_layers.size ());
+    for (tl::vector<LayerBase *>::const_iterator l = d.m_layers.begin (); l != d.m_layers.end (); ++l) {
+      m_layers.push_back ((*l)->clone (this, manager ()));
     }
 
   } else if (layout () == 0) {
 
     //  the target is standalone - dereference
     for (tl::vector<LayerBase *>::const_iterator l = d.m_layers.begin (); l != d.m_layers.end (); ++l) {
-      if (type_mask_applies (*l, flags)) {
-        (*l)->deref_into (this);
-      }
+      (*l)->deref_into (this);
     }
 
   } else {
 
     //  both shape containers are in separate spaces - translate
     for (tl::vector<LayerBase *>::const_iterator l = d.m_layers.begin (); l != d.m_layers.end (); ++l) {
-      if (type_mask_applies (*l, flags)) {
-        (*l)->translate_into (this, shape_repository (), array_repository ());
-      }
+      (*l)->translate_into (this, shape_repository (), array_repository ());
     }
 
   }
@@ -297,28 +213,14 @@ Shapes::array_repository () const
 void
 Shapes::invalidate_state ()
 {
-  db::Cell *cp = cell ();
-  if (cp) {
-    cp->check_locked ();
-  }
   if (! is_dirty ()) {
     set_dirty (true);
-    if (cp && cp->layout ()) {
-      unsigned int index = cp->index_of_shapes (this);
+    if (layout () && cell ()) {
+      unsigned int index = cell ()->index_of_shapes (this);
       if (index != std::numeric_limits<unsigned int>::max ()) {
-        cp->layout ()->invalidate_bboxes (index);
+        layout ()->invalidate_bboxes (index);
       }
-      //  property ID change is implied
-      layout ()->invalidate_prop_ids ();
     }
-  }
-}
-
-void
-Shapes::invalidate_prop_ids ()
-{
-  if (layout ()) {
-    layout ()->invalidate_prop_ids ();
   }
 }
 
@@ -330,20 +232,6 @@ Shapes::swap (Shapes &d)
   d.invalidate_state ();  //  HINT: must come before the change is done!
   invalidate_state ();
   m_layers.swap (d.m_layers);
-}
-
-static
-Shapes::shape_type safe_insert_text (Shapes &shapes, const Shapes::shape_type &shape, tl::func_delegate_base <db::properties_id_type> &pm)
-{
-  //  for texts referring to a string repository we go the safe way and
-  //  simply instantiate and re-insert the text:
-  Shapes::shape_type::text_type p;
-  shape.text (p);
-  if (! shape.has_prop_id ()) {
-    return shapes.insert (p);
-  } else {
-    return shapes.insert (db::object_with_properties<Shapes::shape_type::text_type> (p, pm (shape.prop_id ())));
-  }
 }
 
 Shapes::shape_type 
@@ -409,8 +297,6 @@ Shapes::do_insert (const Shapes::shape_type &shape, const Shapes::unit_trans_typ
     return (insert_by_tag (shape_type::edge_type::tag (), shape, pm));
   case shape_type::EdgePair:
     return (insert_by_tag (shape_type::edge_pair_type::tag (), shape, pm));
-  case shape_type::Point:
-    return (insert_by_tag (shape_type::point_type::tag (), shape, pm));
   case shape_type::Path:
     return (insert_by_tag (shape_type::path_type::tag (), shape, pm));
   case shape_type::PathRef:
@@ -466,31 +352,19 @@ Shapes::do_insert (const Shapes::shape_type &shape, const Shapes::unit_trans_typ
   case shape_type::ShortBoxArray:
     return (insert_by_tag (shape_type::short_box_array_type::tag (), shape, pm));
   case shape_type::Text:
-    {
-      if (shape.text ().string_ref () != 0) {
-        return safe_insert_text (*this, shape, pm);
-      } else {
-        return (insert_by_tag (shape_type::text_type::tag (), shape, pm));
-      }
-    }
   case shape_type::TextRef:
+  case shape_type::TextPtrArrayMember:
     {
-      if (! layout ()) {
-        shape_type::text_type t;
-        shape.text (t);
-        if (! shape.has_prop_id ()) {
-          return insert (t);
-        } else {
-          return insert (db::object_with_properties<shape_type::text_type> (t, pm (shape.prop_id ())));
-        }
-      } else if (shape.text_ref ().obj ().string_ref () != 0) {
-        return safe_insert_text (*this, shape, pm);
+      //  because texts can refer to a string repository we go the safe way and 
+      //  simply instantiate and re-insert the text:
+      shape_type::text_type p;
+      shape.text (p);
+      if (! shape.has_prop_id ()) {
+        return insert (p);
       } else {
-        return (insert_by_tag (shape_type::text_ref_type::tag (), shape, shape_repository (), pm));
+        return insert (db::object_with_properties<shape_type::text_type> (p, pm (shape.prop_id ())));
       }
     }
-  case shape_type::TextPtrArrayMember:
-    return safe_insert_text (*this, shape, pm);
   case shape_type::TextPtrArray:
     tl_assert (layout () != 0);  //  cannot translate the array members
     return insert_array_by_tag (shape_type::text_ptr_array_type::tag (), shape, shape_repository (), pm);
@@ -503,8 +377,6 @@ template <class Trans>
 Shapes::shape_type 
 Shapes::do_insert (const Shapes::shape_type &shape, const Trans &t, tl::func_delegate_base <db::properties_id_type> &pm)
 {
-  db::properties_id_type new_pid = shape.has_prop_id () ? pm (shape.prop_id ()) : 0;
-
   switch (shape.m_type) {
   case shape_type::Null:
   default:
@@ -514,10 +386,10 @@ Shapes::do_insert (const Shapes::shape_type &shape, const Trans &t, tl::func_del
       shape_type::polygon_type p (shape.polygon ());
       //  Hint: we don't compress so we don't loose information
       p.transform (t, false);
-      if (new_pid == 0) {
+      if (! shape.has_prop_id ()) {
         return insert (p);
       } else {
-        return insert (db::object_with_properties<shape_type::polygon_type> (p, new_pid));
+        return insert (db::object_with_properties<shape_type::polygon_type> (p, pm (shape.prop_id ())));
       }
     }
   case shape_type::PolygonRef:
@@ -528,10 +400,10 @@ Shapes::do_insert (const Shapes::shape_type &shape, const Trans &t, tl::func_del
       //  Hint: we don't compress so we don't loose information
       p.transform (t, false);
       //  TODO: could create a reference again, but this is what a transform would to as well.
-      if (new_pid == 0) {
+      if (! shape.has_prop_id ()) {
         return insert (p);
       } else {
-        return insert (db::object_with_properties<shape_type::polygon_type> (p, new_pid));
+        return insert (db::object_with_properties<shape_type::polygon_type> (p, pm (shape.prop_id ())));
       }
     }
   case shape_type::SimplePolygon:
@@ -539,10 +411,10 @@ Shapes::do_insert (const Shapes::shape_type &shape, const Trans &t, tl::func_del
       shape_type::simple_polygon_type p (shape.simple_polygon ());
       //  Hint: we don't compress so we don't loose information
       p.transform (t, false);
-      if (new_pid == 0) {
+      if (! shape.has_prop_id ()) {
         return insert (p);
       } else {
-        return insert (db::object_with_properties<shape_type::simple_polygon_type> (p, new_pid));
+        return insert (db::object_with_properties<shape_type::simple_polygon_type> (p, pm (shape.prop_id ())));
       }
     }
   case shape_type::SimplePolygonRef:
@@ -553,50 +425,40 @@ Shapes::do_insert (const Shapes::shape_type &shape, const Trans &t, tl::func_del
       //  Hint: we don't compress so we don't loose information
       p.transform (t, false);
       //  TODO: could create a reference again, but this is what a transform would to as well.
-      if (new_pid == 0) {
+      if (! shape.has_prop_id ()) {
         return insert (p);
       } else {
-        return insert (db::object_with_properties<shape_type::simple_polygon_type> (p, new_pid));
+        return insert (db::object_with_properties<shape_type::simple_polygon_type> (p, pm (shape.prop_id ())));
       }
     }
   case shape_type::Edge:
     {
       shape_type::edge_type p (shape.edge ());
       p.transform (t);
-      if (new_pid == 0) {
+      if (! shape.has_prop_id ()) {
         return insert (p);
       } else {
-        return insert (db::object_with_properties<shape_type::edge_type> (p, new_pid));
-      }
-    }
-  case shape_type::Point:
-    {
-      shape_type::point_type p (shape.point ());
-      p = t.trans (p);
-      if (new_pid == 0) {
-        return insert (p);
-      } else {
-        return insert (db::object_with_properties<shape_type::point_type> (p, new_pid));
+        return insert (db::object_with_properties<shape_type::edge_type> (p, pm (shape.prop_id ())));
       }
     }
   case shape_type::EdgePair:
     {
       shape_type::edge_pair_type p (shape.edge_pair ());
       p.transform (t);
-      if (new_pid == 0) {
+      if (! shape.has_prop_id ()) {
         return insert (p);
       } else {
-        return insert (db::object_with_properties<shape_type::edge_pair_type> (p, new_pid));
+        return insert (db::object_with_properties<shape_type::edge_pair_type> (p, pm (shape.prop_id ())));
       }
     }
   case shape_type::Path:
     {
       shape_type::path_type p (shape.path ());
       p.transform (t);
-      if (new_pid == 0) {
+      if (! shape.has_prop_id ()) {
         return insert (p);
       } else {
-        return insert (db::object_with_properties<shape_type::path_type> (p, new_pid));
+        return insert (db::object_with_properties<shape_type::path_type> (p, pm (shape.prop_id ())));
       }
     }
   case shape_type::PathRef:
@@ -606,10 +468,10 @@ Shapes::do_insert (const Shapes::shape_type &shape, const Trans &t, tl::func_del
       shape.path (p);
       p.transform (t);
       //  TODO: could create a reference again, but this is what a transform would to as well.
-      if (new_pid == 0) {
+      if (! shape.has_prop_id ()) {
         return insert (p);
       } else {
-        return insert (db::object_with_properties<shape_type::path_type> (p, new_pid));
+        return insert (db::object_with_properties<shape_type::path_type> (p, pm (shape.prop_id ())));
       }
     }
   case shape_type::Box:
@@ -620,19 +482,19 @@ Shapes::do_insert (const Shapes::shape_type &shape, const Trans &t, tl::func_del
       if (t.is_ortho ()) {
         shape_type::box_type p (shape.box ());
         p.transform (t);
-        if (new_pid == 0) {
+        if (! shape.has_prop_id ()) {
           return insert (p);
         } else {
-          return insert (db::object_with_properties<shape_type::box_type> (p, new_pid));
+          return insert (db::object_with_properties<shape_type::box_type> (p, pm (shape.prop_id ())));
         }
       } else {
         //  A box cannot stay a box in this case ...
         shape_type::simple_polygon_type p (shape.box ());
         p.transform (t);
-        if (new_pid == 0) {
+        if (! shape.has_prop_id ()) {
           return insert (p);
         } else {
-          return insert (db::object_with_properties<shape_type::simple_polygon_type> (p, new_pid));
+          return insert (db::object_with_properties<shape_type::simple_polygon_type> (p, pm (shape.prop_id ())));
         }
       }
     }
@@ -640,10 +502,10 @@ Shapes::do_insert (const Shapes::shape_type &shape, const Trans &t, tl::func_del
     {
       shape_type::text_type p (shape.text ());
       p.transform (t);
-      if (new_pid == 0) {
+      if (! shape.has_prop_id ()) {
         return insert (p);
       } else {
-        return insert (db::object_with_properties<shape_type::text_type> (p, new_pid));
+        return insert (db::object_with_properties<shape_type::text_type> (p, pm (shape.prop_id ())));
       }
     }
   case shape_type::TextRef:
@@ -653,20 +515,20 @@ Shapes::do_insert (const Shapes::shape_type &shape, const Trans &t, tl::func_del
       shape.text (p);
       p.transform (t);
       //  TODO: could create a reference again, but this is what a transform would to as well.
-      if (new_pid == 0) {
+      if (! shape.has_prop_id ()) {
         return insert (p);
       } else {
-        return insert (db::object_with_properties<shape_type::text_type> (p, new_pid));
+        return insert (db::object_with_properties<shape_type::text_type> (p, pm (shape.prop_id ())));
       }
     }
   case shape_type::UserObject:
     {
       shape_type::user_object_type p (shape.user_object ());
       p.transform (t);
-      if (new_pid == 0) {
+      if (! shape.has_prop_id ()) {
         return insert (p);
       } else {
-        return insert (db::object_with_properties<shape_type::user_object_type> (p, new_pid));
+        return insert (db::object_with_properties<shape_type::user_object_type> (p, pm (shape.prop_id ())));
       }
     }
   case shape_type::PolygonPtrArray:
@@ -706,8 +568,6 @@ Shapes::find (const Shapes::shape_type &shape) const
     return find_shape_by_tag (shape_type::edge_type::tag (), shape);
   case shape_type::EdgePair:
     return find_shape_by_tag (shape_type::edge_pair_type::tag (), shape);
-  case shape_type::Point:
-    return find_shape_by_tag (shape_type::point_type::tag (), shape);
   case shape_type::Path:
     return find_shape_by_tag (shape_type::path_type::tag (), shape);
   case shape_type::PathRef:
@@ -738,86 +598,14 @@ Shapes::find (const Shapes::shape_type &shape) const
 }
 
 Shapes::shape_type
-Shapes::clear_properties (const Shapes::shape_type &ref)
-{
-  tl_assert (! ref.is_array_member ());
-
-  if (ref.has_prop_id ()) {
-
-    if (! is_editable ()) {
-      throw tl::Exception (tl::to_string (tr ("Function 'clear_properties' is permitted only in editable mode when going to property-less shapes from some with properties")));
-    }
-
-    switch (ref.m_type) {
-    case shape_type::Null:
-      return ref;
-    case shape_type::Polygon:
-      return clear_properties_iter (shape_type::polygon_type::tag (), ref.basic_iter (object_with_properties<shape_type::polygon_type>::tag ()));
-    case shape_type::PolygonRef:
-      return clear_properties_iter (shape_type::polygon_ref_type::tag (), ref.basic_iter (object_with_properties<shape_type::polygon_ref_type>::tag ()));
-    case shape_type::PolygonPtrArray:
-      return clear_properties_iter (shape_type::polygon_ptr_array_type::tag (), ref.basic_iter (object_with_properties<shape_type::polygon_ptr_array_type>::tag ()));
-    case shape_type::SimplePolygon:
-      return clear_properties_iter (shape_type::simple_polygon_type::tag (), ref.basic_iter (object_with_properties<shape_type::simple_polygon_type>::tag ()));
-    case shape_type::SimplePolygonRef:
-      return clear_properties_iter (shape_type::simple_polygon_ref_type::tag (), ref.basic_iter (object_with_properties<shape_type::simple_polygon_ref_type>::tag ()));
-    case shape_type::SimplePolygonPtrArray:
-      //  HINT: since we are in editing mode, this type should not appear ..
-      return clear_properties_iter (shape_type::simple_polygon_ptr_array_type::tag (), ref.basic_iter (object_with_properties<shape_type::simple_polygon_ptr_array_type>::tag ()));
-    case shape_type::Edge:
-      return clear_properties_iter (shape_type::edge_type::tag (), ref.basic_iter (object_with_properties<shape_type::edge_type>::tag ()));
-    case shape_type::Point:
-      return clear_properties_iter (shape_type::point_type::tag (), ref.basic_iter (object_with_properties<shape_type::point_type>::tag ()));
-    case shape_type::EdgePair:
-      return clear_properties_iter (shape_type::edge_pair_type::tag (), ref.basic_iter (object_with_properties<shape_type::edge_pair_type>::tag ()));
-    case shape_type::Path:
-      return clear_properties_iter (shape_type::path_type::tag (), ref.basic_iter (object_with_properties<shape_type::path_type>::tag ()));
-    case shape_type::PathRef:
-      return clear_properties_iter (shape_type::path_ref_type::tag (), ref.basic_iter (object_with_properties<shape_type::path_ref_type>::tag ()));
-    case shape_type::PathPtrArray:
-      //  HINT: since we are in editing mode, this type should not appear ..
-      return clear_properties_iter (shape_type::path_ptr_array_type::tag (), ref.basic_iter (object_with_properties<shape_type::path_ptr_array_type>::tag ()));
-    case shape_type::Box:
-      return clear_properties_iter (shape_type::box_type::tag (), ref.basic_iter (object_with_properties<shape_type::box_type>::tag ()));
-    case shape_type::BoxArray:
-      //  HINT: since we are in editing mode, this type should not appear ..
-      return clear_properties_iter (shape_type::box_array_type::tag (), ref.basic_iter (object_with_properties<shape_type::box_array_type>::tag ()));
-    case shape_type::ShortBox:
-      return clear_properties_iter (shape_type::short_box_type::tag (), ref.basic_iter (object_with_properties<shape_type::short_box_type>::tag ()));
-    case shape_type::ShortBoxArray:
-      //  HINT: since we are in editing mode, this type should not appear ..
-      return clear_properties_iter (shape_type::short_box_array_type::tag (), ref.basic_iter (object_with_properties<shape_type::short_box_array_type>::tag ()));
-    case shape_type::Text:
-      return clear_properties_iter (shape_type::text_type::tag (), ref.basic_iter (object_with_properties<shape_type::text_type>::tag ()));
-    case shape_type::TextRef:
-      return clear_properties_iter (shape_type::text_ref_type::tag (), ref.basic_iter (object_with_properties<shape_type::text_ref_type>::tag ()));
-    case shape_type::TextPtrArray:
-      //  HINT: since we are in editing mode, this type should not appear ..
-      return clear_properties_iter (shape_type::text_ptr_array_type::tag (), ref.basic_iter (object_with_properties<shape_type::text_ptr_array_type>::tag ()));
-    case shape_type::UserObject:
-      return clear_properties_iter (shape_type::user_object_type::tag (), ref.basic_iter (object_with_properties<shape_type::user_object_type>::tag ()));
-    default:
-      return ref;
-    };
-
-  }
-
-  return ref;
-}
-
-Shapes::shape_type
 Shapes::replace_prop_id (const Shapes::shape_type &ref, db::properties_id_type prop_id)
 {
   tl_assert (! ref.is_array_member ());
-
-  //  nothing to do?
-  if (ref.has_prop_id () && ref.prop_id () == prop_id) {
-    return ref;
+  if (! is_editable ()) {
+    throw tl::Exception (tl::to_string (tr ("Function 'replace_prop_id' is permitted only in editable mode")));
   }
 
-  if (ref.has_prop_id ()) {
-
-    invalidate_prop_ids ();
+  if (ref.with_props ()) {
 
     //  this assumes we can simply patch the properties ID ..
     switch (ref.m_type) {
@@ -848,9 +636,6 @@ Shapes::replace_prop_id (const Shapes::shape_type &ref, db::properties_id_type p
       break;
     case shape_type::EdgePair:
       replace_prop_id (ref.basic_ptr (object_with_properties<shape_type::edge_pair_type>::tag ()), prop_id);
-      break;
-    case shape_type::Point:
-      replace_prop_id (ref.basic_ptr (object_with_properties<shape_type::point_type>::tag ()), prop_id);
       break;
     case shape_type::Path:
       replace_prop_id (ref.basic_ptr (object_with_properties<shape_type::path_type>::tag ()), prop_id);
@@ -896,10 +681,6 @@ Shapes::replace_prop_id (const Shapes::shape_type &ref, db::properties_id_type p
 
   } else {
 
-    if (! is_editable ()) {
-      throw tl::Exception (tl::to_string (tr ("Function 'replace_prop_id' is permitted only in editable mode when going to property-less shapes to some with properties")));
-    }
-
     switch (ref.m_type) {
     case shape_type::Null:
       return ref;
@@ -918,8 +699,6 @@ Shapes::replace_prop_id (const Shapes::shape_type &ref, db::properties_id_type p
       return replace_prop_id_iter (shape_type::simple_polygon_ptr_array_type::tag (), ref.basic_iter (shape_type::simple_polygon_ptr_array_type::tag ()), prop_id);
     case shape_type::Edge:
       return replace_prop_id_iter (shape_type::edge_type::tag (), ref.basic_iter (shape_type::edge_type::tag ()), prop_id);
-    case shape_type::Point:
-      return replace_prop_id_iter (shape_type::point_type::tag (), ref.basic_iter (shape_type::point_type::tag ()), prop_id);
     case shape_type::EdgePair:
       return replace_prop_id_iter (shape_type::edge_pair_type::tag (), ref.basic_iter (shape_type::edge_pair_type::tag ()), prop_id);
     case shape_type::Path:
@@ -970,27 +749,27 @@ Shapes::transform (const Shapes::shape_type &ref, const Trans &t)
   case shape_type::Polygon:
     {
       shape_type::polygon_type p (ref.polygon ());
-      p.transform (t, false /* don't compress */);
+      p.transform (t);
       return replace_member_with_props (shape_type::polygon_type::tag (), ref, p);
     }
   case shape_type::PolygonRef:
     {
       shape_type::polygon_type p;
       ref.polygon (p);
-      p.transform (t, false /* don't compress */);
+      p.transform (t);
       return replace_member_with_props (shape_type::polygon_ref_type::tag (), ref, p);
     }
   case shape_type::SimplePolygon:
     {
       shape_type::simple_polygon_type p (ref.simple_polygon ());
-      p.transform (t, false /* don't compress */);
+      p.transform (t);
       return replace_member_with_props (shape_type::simple_polygon_type::tag (), ref, p);
     }
   case shape_type::SimplePolygonRef:
     {
       shape_type::simple_polygon_type p;
       ref.simple_polygon (p);
-      p.transform (t, false /* don't compress */);
+      p.transform (t);
       return replace_member_with_props (shape_type::simple_polygon_ref_type::tag (), ref, p);
     }
   case shape_type::Edge:
@@ -1004,12 +783,6 @@ Shapes::transform (const Shapes::shape_type &ref, const Trans &t)
       shape_type::edge_pair_type p (ref.edge_pair ());
       p.transform (t);
       return replace_member_with_props (shape_type::edge_pair_type::tag (), ref, p);
-    }
-  case shape_type::Point:
-    {
-      shape_type::point_type p (ref.point ());
-      p = t.trans (p);
-      return replace_member_with_props (shape_type::point_type::tag (), ref, p);
     }
   case shape_type::Path:
     {
@@ -1099,8 +872,6 @@ Shapes::replace (const Shapes::shape_type &ref, const Sh &sh)
     return replace_member_with_props (shape_type::edge_type::tag (), ref, sh);
   case shape_type::EdgePair:
     return replace_member_with_props (shape_type::edge_pair_type::tag (), ref, sh);
-  case shape_type::Point:
-    return replace_member_with_props (shape_type::point_type::tag (), ref, sh);
   case shape_type::Path:
     return replace_member_with_props (shape_type::path_type::tag (), ref, sh);
   case shape_type::PathRef:
@@ -1136,82 +907,29 @@ void
 Shapes::clear ()
 {
   if (!m_layers.empty ()) {
-
-    invalidate_state ();  //  HINT: must come before the change is done!
-
-    for (tl::vector<LayerBase *>::const_iterator l = m_layers.end (); l != m_layers.begin (); ) {
-      //  because the undo stack will do a push, we need to remove layers from the back (this is the last undo
-      //  element to be executed)
-      --l;
-      if (manager () && manager ()->transacting ()) {
-        check_is_editable_for_undo_redo ();
-        manager ()->queue (this, new FullLayerOp (false, (*l)));
-      } else {
-        delete *l;
-      }
+    for (tl::vector<LayerBase *>::const_iterator l = m_layers.begin (); l != m_layers.end (); ++l) {
+      (*l)->clear (this, manager ());
+      delete *l;
     }
-
+    invalidate_state ();  //  HINT: must come before the change is done!
     m_layers.clear ();
-
   }
 }
 
-void
-Shapes::clear (unsigned int flags)
+void Shapes::update_bbox ()
 {
-  if (!m_layers.empty ()) {
-
-    invalidate_state ();  //  HINT: must come before the change is done!
-
-    tl::vector<LayerBase *> new_layers;
-
-    for (tl::vector<LayerBase *>::const_iterator l = m_layers.end (); l != m_layers.begin (); ) {
-
-      //  because the undo stack will do a push, we need to remove layers from the back (this is the last undo
-      //  element to be executed)
-      --l;
-
-      if (type_mask_applies (*l, flags)) {
-
-        if (manager () && manager ()->transacting ()) {
-          check_is_editable_for_undo_redo ();
-          manager ()->queue (this, new FullLayerOp (false, (*l)));
-        } else {
-          delete *l;
-        }
-
-      } else {
-        new_layers.push_back (*l);
-      }
-
-    }
-
-    m_layers.swap (new_layers);
-
+  for (tl::vector<LayerBase *>::const_iterator l = m_layers.begin (); l != m_layers.end (); ++l) {
+    (*l)->update_bbox ();
   }
-}
-
-void Shapes::reset_bbox_dirty ()
-{
   set_dirty (false);
 }
 
-void Shapes::update ()
+void Shapes::update () 
 {
-  std::unique_ptr<tl::MutexLocker> locker;
-
-  //  If not in a layout context, we should lock here against multiple calls from different threads.
-  //  In a layout context, the Layout object will do that for us.
-  if (layout () == 0) {
-    static tl::Mutex lock;
-    locker.reset (new tl::MutexLocker (&lock));
-  }
-
   for (tl::vector<LayerBase *>::const_iterator l = m_layers.begin (); l != m_layers.end (); ++l) {
     (*l)->sort ();
     (*l)->update_bbox ();
   }
-
   set_dirty (false);
 }
 
@@ -1221,7 +939,7 @@ bool Shapes::is_bbox_dirty () const
     return true;
   }
   for (tl::vector<LayerBase *>::const_iterator l = m_layers.begin (); l != m_layers.end (); ++l) {
-    if ((*l)->is_tree_dirty ()) {
+    if ((*l)->is_bbox_dirty ()) {
       return true;
     }
   }
@@ -1232,9 +950,6 @@ Shapes::box_type Shapes::bbox () const
 {
   box_type box;
   for (tl::vector<LayerBase *>::const_iterator l = m_layers.begin (); l != m_layers.end (); ++l) {
-    if ((*l)->is_bbox_dirty ()) {
-      (*l)->update_bbox ();
-    }
     box += (*l)->bbox ();
   }
   return box;
@@ -1353,8 +1068,10 @@ void
 Shapes::replace_prop_id (const Sh *pos, db::properties_id_type prop_id)
 {
   if (pos->properties_id () != prop_id) {
+    if (! is_editable ()) {
+      throw tl::Exception (tl::to_string (tr ("Function 'replace' is permitted only in editable mode")));
+    }
     if (manager () && manager ()->transacting ()) {
-      check_is_editable_for_undo_redo ();
       db::layer_op<Sh, db::stable_layer_tag>::queue_or_append (manager (), this, false /*not insert*/, *pos);
     }
     invalidate_state ();  //  HINT: must come before the change is done!
@@ -1369,8 +1086,11 @@ template <class Sh, class Iter>
 Shapes::shape_type
 Shapes::replace_prop_id_iter (typename db::object_tag<Sh>, const Iter &iter, db::properties_id_type prop_id)
 {
+  if (! is_editable ()) {
+    throw tl::Exception (tl::to_string (tr ("Function 'replace' is permitted only in editable mode")));
+  }
+
   if (manager () && manager ()->transacting ()) {
-    check_is_editable_for_undo_redo ();
     db::layer_op<Sh, db::stable_layer_tag>::queue_or_append (manager (), this, false /*not insert*/, *iter);
   }
   db::object_with_properties <Sh> wp (*iter, prop_id);
@@ -1382,29 +1102,16 @@ Shapes::replace_prop_id_iter (typename db::object_tag<Sh>, const Iter &iter, db:
   return shape_type (this, get_layer <db::object_with_properties <Sh>, db::stable_layer_tag> ().insert (wp)); 
 }
 
-template <class Sh, class Iter>
-Shapes::shape_type
-Shapes::clear_properties_iter (typename db::object_tag<Sh>, const Iter &iter)
-{
-  if (manager () && manager ()->transacting ()) {
-    check_is_editable_for_undo_redo ();
-    db::layer_op<db::object_with_properties <Sh>, db::stable_layer_tag>::queue_or_append (manager (), this, false /*not insert*/, *iter);
-  }
-  Sh wop (*iter);
-  invalidate_state ();  //  HINT: must come before the change is done!
-  get_layer<db::object_with_properties <Sh>, db::stable_layer_tag> ().erase (iter);
-  if (manager () && manager ()->transacting ()) {
-    db::layer_op<Sh, db::stable_layer_tag>::queue_or_append (manager (), this, true /*insert*/, wop);
-  }
-  return shape_type (this, get_layer <Sh, db::stable_layer_tag> ().insert (wop));
-}
-
 template <class Sh1, class Sh2>
 Shapes::shape_type 
 Shapes::reinsert_member_with_props (typename db::object_tag<Sh1>, const shape_type &ref, const Sh2 &sh)
 {
+  if (! is_editable ()) {
+    throw tl::Exception (tl::to_string (tr ("Function 'replace' is permitted only in editable mode")));
+  }
+
   //  the shape types are not equal - resolve into erase and insert (of new)
-  if (! ref.has_prop_id ()) {
+  if (! ref.with_props ()) {
     erase_shape (ref);
     return insert (sh);
   } else {
@@ -1418,8 +1125,12 @@ template <class Sh1, class Sh2>
 Shapes::shape_type 
 Shapes::replace_member_with_props (typename db::object_tag<Sh1>, const shape_type &ref, const Sh2 &sh)
 {
+  if (! is_editable ()) {
+    throw tl::Exception (tl::to_string (tr ("Function 'replace' is permitted only in editable mode")));
+  }
+
   //  the shape types are not equal - resolve into erase and insert (of new)
-  if (! ref.has_prop_id ()) {
+  if (! ref.with_props ()) {
     erase_shape (ref);
     return insert (sh);
   } else {
@@ -1441,15 +1152,12 @@ Shapes::replace_member_with_props (typename db::object_tag<Sh> tag, const shape_
   if (! layout ()) {
 
     if (needs_translate (tag)) {
-
       return reinsert_member_with_props (tag, ref, sh);
-
-    } else if (! ref.has_prop_id ()) {
+    } else {
 
       //  simple replace case
 
       if (manager () && manager ()->transacting ()) {
-        check_is_editable_for_undo_redo ();
         db::layer_op<Sh, db::stable_layer_tag>::queue_or_append (manager (), this, false /*not insert*/, *ref.basic_ptr (tag));
       }
 
@@ -1461,30 +1169,19 @@ Shapes::replace_member_with_props (typename db::object_tag<Sh> tag, const shape_
         db::layer_op<Sh, db::stable_layer_tag>::queue_or_append (manager (), this, true /*insert*/, sh);
       }
 
-    } else {
-
-      if (manager () && manager ()->transacting ()) {
-        check_is_editable_for_undo_redo ();
-        db::layer_op<db::object_with_properties<Sh>, db::stable_layer_tag>::queue_or_append (manager (), this, false /*not insert*/, *ref.basic_ptr (typename db::object_with_properties<Sh>::tag ()));
-      }
-
-      invalidate_state ();  //  HINT: must come before the change is done!
-
-      db::object_with_properties<Sh> swp (sh, ref.prop_id ());
-      get_layer<db::object_with_properties<Sh>, db::stable_layer_tag> ().replace (ref.basic_iter (typename db::object_with_properties<Sh>::tag ()), swp);
-
-      if (manager () && manager ()->transacting ()) {
-        db::layer_op<db::object_with_properties<Sh>, db::stable_layer_tag>::queue_or_append (manager (), this, true /*insert*/, swp);
-      }
+      return ref;
 
     }
 
   } else {
 
-    if (! ref.has_prop_id ()) {
+    if (! is_editable ()) {
+      throw tl::Exception (tl::to_string (tr ("Function 'replace' is permitted only in editable mode")));
+    }
+
+    if (! ref.with_props ()) {
 
       if (manager () && manager ()->transacting ()) {
-        check_is_editable_for_undo_redo ();
         db::layer_op<Sh, db::stable_layer_tag>::queue_or_append (manager (), this, false /*not insert*/, *ref.basic_ptr (tag));
       }
 
@@ -1505,7 +1202,6 @@ Shapes::replace_member_with_props (typename db::object_tag<Sh> tag, const shape_
         get_layer<Sh, db::stable_layer_tag> ().replace (ref.basic_iter (tag), sh);
 
         if (manager () && manager ()->transacting ()) {
-          check_is_editable_for_undo_redo ();
           db::layer_op<Sh, db::stable_layer_tag>::queue_or_append (manager (), this, true /*insert*/, sh);
         }
 
@@ -1514,7 +1210,6 @@ Shapes::replace_member_with_props (typename db::object_tag<Sh> tag, const shape_
     } else {
 
       if (manager () && manager ()->transacting ()) {
-        check_is_editable_for_undo_redo ();
         db::layer_op<db::object_with_properties<Sh>, db::stable_layer_tag>::queue_or_append (manager (), this, false /*not insert*/, *ref.basic_ptr (typename db::object_with_properties<Sh>::tag ()));
       }
 
@@ -1530,9 +1225,9 @@ Shapes::replace_member_with_props (typename db::object_tag<Sh> tag, const shape_
 
     }
 
-  }
+    return ref;
 
-  return ref;
+  }
 }
 
 //  explicit instantiations
@@ -1545,7 +1240,6 @@ template DB_PUBLIC Shape Shapes::replace<>(const Shape &, const SimplePolygon &)
 template DB_PUBLIC Shape Shapes::replace<>(const Shape &, const Text &);
 template DB_PUBLIC Shape Shapes::replace<>(const Shape &, const Edge &);
 template DB_PUBLIC Shape Shapes::replace<>(const Shape &, const EdgePair &);
-template DB_PUBLIC Shape Shapes::replace<>(const Shape &, const Point &);
 
 template DB_PUBLIC Shape Shapes::transform<> (const Shape &, const ICplxTrans &);
 template DB_PUBLIC Shape Shapes::transform<> (const Shape &, const Trans &);
@@ -1575,8 +1269,6 @@ template class DB_PUBLIC layer_op<db::Shape::edge_type, db::stable_layer_tag>;
 template class DB_PUBLIC layer_op<db::object_with_properties<db::Shape::edge_type>, db::stable_layer_tag>;
 template class DB_PUBLIC layer_op<db::Shape::edge_pair_type, db::stable_layer_tag>;
 template class DB_PUBLIC layer_op<db::object_with_properties<db::Shape::edge_pair_type>, db::stable_layer_tag>;
-template class DB_PUBLIC layer_op<db::Shape::point_type, db::stable_layer_tag>;
-template class DB_PUBLIC layer_op<db::object_with_properties<db::Shape::point_type>, db::stable_layer_tag>;
 template class DB_PUBLIC layer_op<db::Shape::text_type, db::stable_layer_tag>;
 template class DB_PUBLIC layer_op<db::object_with_properties<db::Shape::text_type>, db::stable_layer_tag>;
 template class DB_PUBLIC layer_op<db::Shape::text_ref_type, db::stable_layer_tag>;
@@ -1615,8 +1307,6 @@ template class DB_PUBLIC layer_op<db::Shape::edge_type, db::unstable_layer_tag>;
 template class DB_PUBLIC layer_op<db::object_with_properties<db::Shape::edge_type>, db::unstable_layer_tag>;
 template class DB_PUBLIC layer_op<db::Shape::edge_pair_type, db::unstable_layer_tag>;
 template class DB_PUBLIC layer_op<db::object_with_properties<db::Shape::edge_pair_type>, db::unstable_layer_tag>;
-template class DB_PUBLIC layer_op<db::Shape::point_type, db::unstable_layer_tag>;
-template class DB_PUBLIC layer_op<db::object_with_properties<db::Shape::point_type>, db::unstable_layer_tag>;
 template class DB_PUBLIC layer_op<db::Shape::text_type, db::unstable_layer_tag>;
 template class DB_PUBLIC layer_op<db::object_with_properties<db::Shape::text_type>, db::unstable_layer_tag>;
 template class DB_PUBLIC layer_op<db::Shape::text_ref_type, db::unstable_layer_tag>;

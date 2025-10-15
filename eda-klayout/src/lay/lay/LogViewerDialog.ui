@@ -33,16 +33,6 @@
     <widget class="QComboBox" name="verbosity_cbx">
      <item>
       <property name="text">
-       <string>No warnings, no errors</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>No warnings</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
        <string>Silent</string>
       </property>
      </item>
@@ -179,7 +169,7 @@
             <string/>
            </property>
            <property name="pixmap">
-            <pixmap resource="../../icons/icons.qrc">:/warn_16px@2x.png</pixmap>
+            <pixmap resource="layResources.qrc">:/warn_16.png</pixmap>
            </property>
           </widget>
          </item>
@@ -216,7 +206,7 @@
   <tabstop>log_view</tabstop>
  </tabstops>
  <resources>
-  <include location="../../icons/icons.qrc"/>
+  <include location="layResources.qrc"/>
  </resources>
  <connections>
   <connection>

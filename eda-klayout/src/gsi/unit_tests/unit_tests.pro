@@ -7,7 +7,7 @@ TARGET = gsi_tests
 include($$PWD/../../lib_ut.pri)
 
 SOURCES = \
-  gsiExpressionTests.cc
+  gsiExpression.cc \
 
 HEADERS += \
 

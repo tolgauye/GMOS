@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -68,7 +68,7 @@ public:
    *  @brief Read a block of n bytes
    *
    *  Read the requested number of bytes or less.
-   *  May throw an exception if a read error occurs.
+   *  May throw an exception if a read error occures.
    *  
    *  @param b The buffer where to write to
    *  @param n The number of bytes to read (or less)
@@ -122,20 +122,11 @@ public:
    *
    *  @param data The memory block where to read from
    *  @param length The length of the block
-   *  @param owns_data If true, the memory becomes owned by the stream
    */
-  InputMemoryStream (const char *data, size_t length, bool owns_data = false)
-    : mp_data (data), m_length (length), m_owns_data (owns_data), m_pos (0)
+  InputMemoryStream (const char *data, size_t length)
+    : mp_data (data), m_length (length), m_pos (0)
   {
     //  .. nothing yet ..
-  }
-
-  ~InputMemoryStream ()
-  {
-    if (m_owns_data) {
-      delete [] const_cast<char *> (mp_data);
-    }
-    mp_data = 0;
   }
 
   virtual size_t read (char *b, size_t n)
@@ -179,9 +170,7 @@ private:
   InputMemoryStream &operator= (const InputMemoryStream &);
 
   const char *mp_data;
-  size_t m_length;
-  bool m_owns_data;
-  size_t m_pos;
+  size_t m_length, m_pos;
 };
 
 /**
@@ -310,9 +299,10 @@ public:
    *  an error occurs - commonly if the command cannot be executed.
    *  This implementation is based on popen ().
    *
-   *  @param source The command to execute
+   *  @param cmd The command to execute
+   *  @param read True, if the file should be read, false on write.
    */
-  InputPipe (const std::string &source);
+  InputPipe (const std::string &path);
 
   /**
    *  @brief Close the pipe
@@ -347,7 +337,8 @@ public:
    */
   virtual std::string source () const
   {
-    return m_source;
+    //  No source (in the sense of a file name) is available ..
+    return std::string ();
   }
 
   virtual std::string absolute_path () const
@@ -407,8 +398,6 @@ public:
    *
    *  This will automatically create the appropriate delegate and 
    *  delete it later.
-   *
-   *  The abstract path
    */
   InputStream (const std::string &abstract_path);
 
@@ -418,11 +407,19 @@ public:
   virtual ~InputStream ();
 
   /** 
+   *  @brief This is the outer write method to call
+   *  
+   *  This implementation writes data through the 
+   *  protected write call.
+   */
+  void put (const char *b, size_t n);
+
+  /** 
    *  @brief This is the outer read method to call
    *  
    *  This implementation obtains data through the 
    *  protected read call and buffers the data accordingly so
-   *  a contigious memory block can be returned.
+   *  a contigous memory block can be returned.
    *  If inline deflating is enabled, the method will return
    *  inflate data unless "bypass_inflate" is set to true.
    *
@@ -454,7 +451,7 @@ public:
    *  @brief Copies the content of the stream to the output stream
    *  Throws an exception on error.
    */
-  void copy_to (tl::OutputStream &os);
+  void copy_to(tl::OutputStream &os);
 
   /**
    *  @brief Enable uncompression of the following DEFLATE-compressed block
@@ -464,20 +461,8 @@ public:
    *  the uncompressed data rather than the raw data, until the
    *  compressed block is finished.
    *  The stream must not be in inflate state yet.
-   *
-   *  If "stop_after" is true, the stream will stop after the inflated
-   *  block has finished.
    */
-  void inflate (bool stop_after = false);
-
-  /**
-   *  @brief Enables "inflate" right from the beginning
-   *
-   *  Contrary to "inflate" (which is temporary), this version enables
-   *  decompression right from the beginning of the file. It does a "reset"
-   *  implicitly.
-   */
-  void inflate_always ();
+  void inflate ();
 
   /**
    *  @brief Obtain the current file position
@@ -523,7 +508,7 @@ public:
    *
    *  Returns an empty string if no absolute path is available.
    */
-  std::string absolute_file_path () const
+  std::string absolute_path () const
   {
     return mp_delegate->absolute_path ();
   }
@@ -541,34 +526,9 @@ public:
   void close ();
 
   /**
-   *  @brief Gets the absolute, abstract path for a given abstract path
+   *  @brief Gets the absolute path for a given URL
    */
-  static std::string absolute_file_path (const std::string &apath);
-
-  /**
-   *  @brief Gets the absolute path for a given abstract path
-   */
-  static bool is_absolute (const std::string &apath);
-
-  /**
-   *  @brief Gets a value indicating whether the path is a file path
-   */
-  static bool is_file_path (const std::string &apath);
-
-  /**
-   *  @brief Gets the file path (no scheme) if it applies to the given abstract path
-   */
-  static std::string as_file_path (const std::string &apath);
-
-  /**
-   *  @brief Combines two abstract paths
-   */
-  static std::string combine (const std::string &apath1, const std::string &apath2);
-
-  /**
-   *  @brief Returns the relative abstract path of path2 vs. path1
-   */
-  static std::string relative_path (const std::string &apath1, const std::string &apath2);
+  static std::string absolute_path (const std::string &path);
 
   /**
    *  @brief Gets the base reader (delegate)
@@ -577,7 +537,7 @@ public:
   {
     return mp_delegate;
   }
-
+    
 protected:
   void reset_pos ()
   {
@@ -595,86 +555,10 @@ private:
 
   //  inflate support 
   InflateFilter *mp_inflate;
-  bool m_inflate_always;
-  bool m_stop_after_inflate;
 
   //  No copying currently
   InputStream (const InputStream &);
   InputStream &operator= (const InputStream &);
-};
-
-/**
- *  @brief A wrapper that adds generic .gz support
- */
-template <class Base>
-class TL_PUBLIC inflating_input_stream
-  : public InputStreamBase
-{
-public:
-  inflating_input_stream (Base *delegate);
-
-  Base *delegate ()
-  {
-    return mp_delegate;
-  }
-
-  virtual size_t read (char *b, size_t n);
-
-  virtual void reset ()
-  {
-    m_inflating_stream.reset ();
-    enter_inflate ();
-  }
-
-  virtual void close ()
-  {
-    m_inflating_stream.close ();
-  }
-
-  virtual std::string source () const
-  {
-    return m_inflating_stream.source ();
-  }
-
-  virtual std::string absolute_path () const
-  {
-    return m_inflating_stream.absolute_file_path ();
-  }
-
-  virtual std::string filename () const
-  {
-    return m_inflating_stream.filename ();
-  }
-
-private:
-  tl::InputStream m_inflating_stream;
-  bool m_is_compressed;
-  Base *mp_delegate;
-
-  void enter_inflate ();
-  bool auto_detect_gz ();
-};
-
-/**
- *  @brief A pipe stream with .gz support
- */
-class TL_PUBLIC InflatingInputPipe
-  : public inflating_input_stream<InputPipe>
-{
-public:
-  /**
-   *  @brief Open a stream by connecting with the stdout of a given command
-   *
-   *  Opening a pipe is a prerequisite for reading from the
-   *  object. open() will throw a FilePOpenErrorException if
-   *  an error occurs - commonly if the command cannot be executed.
-   *  This implementation is based on popen ().
-   *
-   *  @param source The command to execute
-   */
-  InflatingInputPipe (const std::string &source)
-    : inflating_input_stream<InputPipe> (new InputPipe (source))
-  { }
 };
 
 // ---------------------------------------------------------------------------------
@@ -794,7 +678,7 @@ public:
   /**
    *  @brief Write a block a n bytes
    *
-   *  May throw an exception if a write error occurs.
+   *  May throw an exception if a write error occures.
    *
    *  @param b What to write
    *  @param n The number of bytes to write 
@@ -817,22 +701,6 @@ public:
   virtual bool supports_seek () 
   {
     return false;
-  }
-
-  /**
-   *  @brief Returns a value indicating whether that stream is compressing
-   */
-  virtual bool is_compressing () const
-  {
-    return false;
-  }
-
-  /**
-   *  @brief Rejects the output - for delegates supporting unrolling, this means the original file is restored
-   */
-  virtual void reject ()
-  {
-    //  ... the default implementation does not support this feature ..
   }
 
 private:
@@ -964,96 +832,12 @@ private:
 };
 
 /**
- *  @brief A base for file writer delegates
- *
- *  This class mainly provides safety services for the file writer.
- *  When writing a file, it will keep a backup until the file actually
- *  has been written. This way, a network or disk full error will not
- *  compromise the file's content. The backup file name is created
- *  by appending ".~backup" to the original file path.
- *
- *  In addition, a specified number or persistent backup files can
- *  be kept. The first backup will be called like the original file
- *  with ".1" appended. The second will be called ".2" etc.
- *  The backups will be shuffled, so ".1" is always the most recent
- *  one while older ones get bigger numbers.
- *
- *  The number of backups can be specified with "keep_backups". If this
- *  count is zero, no backups will be kept. If the count is larger than
- *  zero, the specified maximum number of backups is kept. If less than
- *  zero, an infinite number of backups is made. But beware: shuffling
- *  will become increasingly expensive.
- */
-class TL_PUBLIC OutputFileBase
-  : public OutputStreamBase
-{
-public:
-  /**
-   *  @brief Constructor
-   *
-   *  @param path The (relative) path of the file to write
-   *  @param keep_backups The number of backups to keep (0: none, -1: infinite)
-   */
-  OutputFileBase (const std::string &path, int keep_backups);
-
-  /**
-   *  @brief Destructor
-   */
-  virtual ~OutputFileBase ();
-
-  /**
-   *  @brief Seek to the specified position
-   *
-   *  Writing continues at that position after a seek.
-   */
-  virtual void seek (size_t s);
-
-  /**
-   *  @brief Write to a file
-   *
-   *  Implements the basic write method.
-   *  Will throw a FileWriteErrorException if an error occurs.
-   */
-  virtual void write (const char *b, size_t n);
-
-  /**
-   *  @brief Unrolls the output
-   */
-  virtual void reject ();
-
-  /**
-   *  @brief Gets the actual path
-   */
-  const std::string &path () const
-  {
-    return m_path;
-  }
-
-  /**
-   *  @brief Gets the path of the backup file
-   */
-  const std::string &backup_path () const
-  {
-    return m_backup_path;
-  }
-
-protected:
-  virtual void seek_file (size_t s) = 0;
-  virtual void write_file (const char *b, size_t n) = 0;
-
-private:
-  int m_keep_backups;
-  std::string m_backup_path, m_path;
-  bool m_has_error;
-};
-
-/**
  *  @brief A zlib output file delegate
  *
  *  Implements the writer for a zlib stream
  */
 class TL_PUBLIC OutputZLibFile
-  : public OutputFileBase
+  : public OutputStreamBase
 {
 public:
   /**
@@ -1063,10 +847,9 @@ public:
    *  object. open() will throw a FileOpenErrorException if
    *  an error occurs.
    *
-   *  @param path The (relative) path of the file to write
-   *  @param keep_backups The number of backups to keep (0: none, -1: infinite)
+   *  @param path The (relative) path of the file to open
    */
-  OutputZLibFile (const std::string &path, int keep_backups);
+  OutputZLibFile (const std::string &path);
 
   /**
    *  @brief Close the file
@@ -1075,30 +858,20 @@ public:
    */
   virtual ~OutputZLibFile ();
 
-protected:
   /**
    *  @brief Write to a file
    *
    *  Implements the basic write method.
    *  Will throw a ZLibWriteErrorException if an error occurs.
    */
-  virtual void write_file (const char *b, size_t n);
-
-  /**
-   *  @brief The seek operation isn't implemented for zlib files
-   */
-  virtual void seek_file (size_t /*s*/) { }
-
-  /**
-   *  @brief Returns a value indicating whether this steam is compressing
-   */
-  virtual bool is_compressing () const { return true; }
+  virtual void write (const char *b, size_t n);
 
 private:
   //  No copying
   OutputZLibFile (const OutputZLibFile &);
   OutputZLibFile &operator= (const OutputZLibFile &);
 
+  std::string m_source;
   ZLibFilePrivate *mp_d;
 };
 
@@ -1108,7 +881,7 @@ private:
  *  Implements the writer for ordinary files.
  */
 class TL_PUBLIC OutputFile
-  : public OutputFileBase
+  : public OutputStreamBase
 {
 public:
   /**
@@ -1118,10 +891,10 @@ public:
    *  object. open() will throw a FileOpenErrorException if
    *  an error occurs.
    *
-   *  @param path The (relative) path of the file to write
-   *  @param keep_backups The number of backups to keep (0: none, -1: infinite)
+   *  @param path The (relative) path of the file to open
+   *  @param read True, if the file should be read, false on write.
    */
-  OutputFile (const std::string &path, int keep_backups = 0);
+  OutputFile (const std::string &path);
 
   /**
    *  @brief Close the file
@@ -1131,20 +904,19 @@ public:
   virtual ~OutputFile ();
 
   /**
-   *  @brief Returns a value indicating whether that stream supports seek
-   */
-  virtual bool supports_seek ()
-  {
-    return true;
-  }
-
-protected:
-  /**
    *  @brief Seek to the specified position
    *
    *  Writing continues at that position after a seek.
    */
-  virtual void seek_file (size_t s);
+  virtual void seek (size_t s);
+
+  /**
+   *  @brief Returns a value indicating whether that stream supports seek
+   */
+  bool supports_seek ()
+  {
+    return true;
+  }
 
   /**
    *  @brief Write to a file
@@ -1152,13 +924,14 @@ protected:
    *  Implements the basic write method.
    *  Will throw a FileWriteErrorException if an error occurs.
    */
-  virtual void write_file (const char *b, size_t n);
+  virtual void write (const char *b, size_t n);
 
 private:
   //  No copying
   OutputFile (const OutputFile &);
   OutputFile &operator= (const OutputFile &);
 
+  std::string m_source;
   int m_fd;
 };
 
@@ -1258,19 +1031,12 @@ public:
   OutputStream (OutputStreamBase &delegate, bool as_text = false);
 
   /**
-   *  @brief Default constructor
-   *
-   *  This constructor takes a delegate object. The stream will own the delegate.
-   */
-  OutputStream (OutputStreamBase *delegate, bool as_text = false);
-
-  /**
    *  @brief Open an output stream with the given path and stream mode
    *
    *  This will automatically create a delegate object and delete it later.
    *  If "as_text" is true, the output will be formatted with the system's line separator.
    */
-  OutputStream (const std::string &abstract_path, OutputStreamMode om = OM_Auto, bool as_text = false, int keep_backups = 0);
+  OutputStream (const std::string &abstract_path, OutputStreamMode om = OM_Auto, bool as_text = false);
 
   /**
    *  @brief Destructor
@@ -1352,24 +1118,6 @@ public:
   {
     put (tl::to_string (t));
     return *this;
-  }
-
-  /**
-   *  @brief Rejects the output - for delegates which support backup, this means the original file is restored
-   */
-  void reject () const
-  {
-    if (mp_delegate) {
-      mp_delegate->reject ();
-    }
-  }
-
-  /**
-   *  @brief Returns a value indicating whether that stream is compressing
-   */
-  bool is_compressing () const
-  {
-    return mp_delegate != 0 && mp_delegate->is_compressing ();
   }
 
   /**

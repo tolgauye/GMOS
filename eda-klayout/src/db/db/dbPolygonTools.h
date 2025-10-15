@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -27,7 +27,6 @@
 #include "dbCommon.h"
 
 #include "dbPolygon.h"
-#include "dbText.h"
 
 #include <vector>
 #include <limits>
@@ -74,26 +73,25 @@ private:
 
 //  Some helper classes and functions for implementing cut_polygon
 
-template <class Polygon>
-class DB_PUBLIC cut_polygon_receiver_base
+class DB_PUBLIC CutPolygonReceiverBase
 {
 public:
-  virtual ~cut_polygon_receiver_base () { }
-  virtual void put (const Polygon &) = 0;
+  virtual ~CutPolygonReceiverBase () { }
+  virtual void put (const void *) = 0;
 };
 
 template <class OutputIter, class Polygon>
 class cut_polygon_receiver
-  : public cut_polygon_receiver_base<Polygon>
+  : public CutPolygonReceiverBase
 {
 public:
   cut_polygon_receiver (const OutputIter &iter)
     : m_iter (iter)
   { }
 
-  virtual void put (const Polygon &polygon)
+  virtual void put (const void *polygon)
   {
-    *m_iter++ = polygon;
+    *m_iter++ = *((const Polygon *) polygon);
   }
 
 private:
@@ -101,7 +99,7 @@ private:
 };
 
 template <class PolygonType, class Edge>
-void DB_PUBLIC cut_polygon_internal (const PolygonType &input, const Edge &line, cut_polygon_receiver_base<PolygonType> *right_of_line);
+void DB_PUBLIC cut_polygon_internal (const PolygonType &input, const Edge &line, CutPolygonReceiverBase *right_of_line);
 
 /**
  *  @brief Polygon cut function
@@ -130,24 +128,9 @@ template <class PolygonType>
 void DB_PUBLIC split_polygon (const PolygonType &polygon, std::vector<PolygonType> &output);
 
 /**
- *  @brief Determines whether a polygon needs to be split according to the given max_vertex and area_ratio criteron
+ *  @brief Determines wheter a polygon and a box interact
  *
- *  If max_vertex is 0, there is no vertex limit.
- *  If max_vertex is >0, the function returns true, if the vertex limit is exceeded.
- *
- *  If area_ratio is 0, there is no area ratio limit.
- *  If area_ratio is >0, the function returns true, if the bounding box area is larger than area_ratio times the polygon area.
- *  If area_ratio is <0, the function returns true, if the bounding box area is larger than -area_ratio times the polygon
- *    manhattan approximation upper area bound.
- *  (the latter definition is useful to prevent splitting of thin diagonal lines).
- */
-template <class PolygonType>
-bool DB_PUBLIC suggest_split_polygon (const PolygonType &polygon, size_t max_vertex, double area_ratio);
-
-/**
- *  @brief Determines whether a polygon and a box interact
- *
- *  This function determines whether the polygon and the box share at least on common point
+ *  This function determines wheter the polygon and the box share at least on common point
  *  and returns true in this case.
  */
 template<class Polygon, class Box>
@@ -363,18 +346,6 @@ bool interact_pe (const Polygon &poly, const Edge &edge)
   return false;
 }
 
-/**
- *  @brief Determines whether the text is inside the polygon
- */
-template <class Polygon, class Text>
-bool interact_pt (const Polygon &poly, const Text &text)
-{
-  typedef typename Text::point_type point_type;
-  point_type p;
-  p += text.trans ().disp ();
-  return (poly.box ().contains (p) && db::inside_poly (poly.begin_edge (), p) >= 0);
-}
-
 //  Some specializations that map all combinations to template versions
 inline bool interact (const db::Box &box1,              const db::Box &box2)                { return box1.touches (box2); }
 inline bool interact (const db::DBox &box1,             const db::DBox &box2)               { return box1.touches (box2); }
@@ -394,10 +365,6 @@ inline bool interact (const db::DPolygon &poly1,        const db::DPolygon &poly
 inline bool interact (const db::DSimplePolygon &poly1,  const db::DPolygon &poly2)          { return interact_pp (poly1, poly2); }
 inline bool interact (const db::DPolygon &poly1,        const db::DSimplePolygon &poly2)    { return interact_pp (poly1, poly2); }
 inline bool interact (const db::DSimplePolygon &poly1,  const db::DSimplePolygon &poly2)    { return interact_pp (poly1, poly2); }
-inline bool interact (const db::Polygon &poly,          const db::Text &text)               { return interact_pt (poly, text); }
-inline bool interact (const db::SimplePolygon &poly,    const db::Text &text)               { return interact_pt (poly, text); }
-inline bool interact (const db::DPolygon &poly,         const db::DText &text)              { return interact_pt (poly, text); }
-inline bool interact (const db::DSimplePolygon &poly,   const db::DText &text)              { return interact_pt (poly, text); }
 
 /**
  *  @brief Extract a corner radius from a contour
@@ -464,8 +431,6 @@ db::Polygon DB_PUBLIC compute_rounded (const db::Polygon &poly, double rinner, d
  */
 db::DPolygon DB_PUBLIC compute_rounded (const db::DPolygon &poly, double rinner, double router, unsigned int n);
 
-#define KLAYOUT_SMOOTH_HAS_KEEP_HV 1
-
 /**
  *  @brief Smooth a contour 
  *
@@ -475,31 +440,13 @@ db::DPolygon DB_PUBLIC compute_rounded (const db::DPolygon &poly, double rinner,
  *  @param to The end of the contour
  *  @param new_pts The points that make up the new contour
  *  @param d The distance that determines the smoothing "roughness"
- *  @param keep_hv If true, vertical and horizontal edges are maintained
  */
-void DB_PUBLIC smooth_contour (db::Polygon::polygon_contour_iterator from, db::Polygon::polygon_contour_iterator to, std::vector <db::Point> &new_pts, db::Coord d, bool keep_hv);
+void DB_PUBLIC smooth_contour (db::Polygon::polygon_contour_iterator from, db::Polygon::polygon_contour_iterator to, std::vector <db::Point> &new_pts, db::Coord d);
 
 /**
  *  @brief Smooth a polygon (apply smoothing to the whole polygon)
  */
-db::Polygon DB_PUBLIC smooth (const db::Polygon &poly, db::Coord d, bool keep_hv);
-
-/**
- *  @brief Returns a value indicating whether the polygon is an "strange polygon"
- *  "strange polygons" are ones which are non-orientable or have self-overlaps, e.g. their wrap
- *  count after orientation normalization is not 0 or 1.
- *  If "error_parts" is given it will receive markers indicating the parts which violate
- *  this wrap count condition.
- */
-bool DB_PUBLIC is_strange_polygon (const db::Polygon &poly, std::vector<db::Polygon> *error_parts = 0);
-
-/**
- *  @brief Returns a value indicating whether the polygon is "non-orientable"
- *  Such polygons contain loops which cannot be oriented, e.g. "8"-type loops.
- *  If "error_parts" is given it will receive markers indicating the parts which are
- *  non-orientable.
- */
-bool DB_PUBLIC is_non_orientable_polygon (const db::Polygon &poly, std::vector<db::Polygon> *error_parts = 0);
+db::Polygon DB_PUBLIC smooth (const db::Polygon &poly, db::Coord d);
 
 /**
  *  @brief A area collector
@@ -508,59 +455,35 @@ bool DB_PUBLIC is_non_orientable_polygon (const db::Polygon &poly, std::vector<d
  *  It is used for example by the rasterize function to collect area values 
  *  on a per-pixel basis.
  */
-template <class C>
-class DB_PUBLIC area_map
+class DB_PUBLIC AreaMap
 {
 public:
-  typedef typename db::coord_traits<C>::area_type area_type;
-  typedef db::point<C> point_type;
-  typedef db::vector<C> vector_type;
-  typedef db::box<C> box_type;
+  typedef db::coord_traits<db::Coord>::area_type area_type;
 
   /**
    *  @brief Constructor
    */
-  area_map ();
-
-  /**
-   *  @brief Copy constructor
-   */
-  area_map (const area_map &);
+  AreaMap ();
 
   /**
    *  @brief Constructor
    */
-  area_map (const point_type &p0, const vector_type &d, size_t nx, size_t ny);
-
-  /**
-   *  @brief Constructor with pixel size
-   */
-  area_map (const point_type &p0, const vector_type &d, const vector_type &p, size_t nx, size_t ny);
+  AreaMap (const db::Point &p0, const db::Vector &d, size_t nx, size_t ny);
 
   /**
    *  @brief Destructor
    */
-  ~area_map ();
-
-  /**
-   *  @brief Assignment
-   */
-  area_map &operator= (const area_map &);
+  ~AreaMap ();
 
   /**
    *  @brief Reinitialize
    */
-  void reinitialize (const point_type &p0, const vector_type &d, size_t nx, size_t ny);
-
-  /**
-   *  @brief Reinitialize with pixel size
-   */
-  void reinitialize (const point_type &p0, const vector_type &d, const vector_type &p, size_t nx, size_t ny);
+  void reinitialize (const db::Point &p0, const db::Vector &d, size_t nx, size_t ny);
 
   /**
    *  @brief Swap of two maps
    */
-  void swap (area_map &other);
+  void swap (AreaMap &other);
 
   /**
    *  @brief Get the area of one pixel
@@ -597,7 +520,7 @@ public:
   /**
    *  @brief The origin
    */
-  const point_type &p0 () const
+  const db::Point &p0 () const
   {
     return m_p0;
   }
@@ -605,7 +528,7 @@ public:
   /**
    *  @brief Move the origin
    */
-  void move (const vector_type &d)
+  void move (const db::Vector &d)
   {
     m_p0 += d;
   }
@@ -613,23 +536,18 @@ public:
   /**
    *  @brief The per-pixel displacement vector (pixel size)
    */
-  const vector_type &d () const
+  const db::Vector &d () const
   {
     return m_d;
   }
 
   /**
-   *  @brief The pixel size (must be less than d)
-   */
-  const vector_type &p () const
-  {
-    return m_p;
-  }
-
-  /**
    *  @brief Compute the bounding box of the area map
    */
-  box_type bbox () const;
+  db::Box bbox () const
+  {
+    return db::Box (m_p0, m_p0 + db::Vector (db::Coord (m_nx) * m_d.x (), db::Coord (m_ny) * m_d.y ()));
+  }
 
   /**
    *  @brief Compute the total area
@@ -641,7 +559,7 @@ public:
    */
   area_type pixel_area () const
   {
-    return area_type (m_p.x ()) * area_type (m_p.y ());
+    return area_type (m_d.x ()) * area_type (m_d.y ());
   }
 
   /**
@@ -651,54 +569,42 @@ public:
 
 private:
   area_type *mp_av;
-  point_type m_p0;
-  vector_type m_d;
-  vector_type m_p;
+  db::Point m_p0;
+  db::Vector m_d;
   size_t m_nx, m_ny;
-};
 
-typedef area_map<db::Coord> AreaMap;
-typedef area_map<db::DCoord> DAreaMap;
+  //  no copying
+  AreaMap (const AreaMap &);
+  AreaMap &operator= (const AreaMap &);
+};
 
 /**
  *  @brief Rasterize the polygon into the given area map
  *
  *  This will decompose the polygon and produce per-pixel area values for the given 
  *  polygon. The area contributions will be added to the given area map.
- *
- *  Returns a value indicating whether the map will be non-empty.
  */
-bool DB_PUBLIC rasterize (const db::Polygon &polygon, db::AreaMap &am);
+void DB_PUBLIC rasterize (const db::Polygon &polygon, db::AreaMap &am);
 
 /**
- *  @brief Rasterize the polygon into the given area map (double version)
- *
- *  This will decompose the polygon and produce per-pixel area values for the given
- *  polygon. The area contributions will be added to the given area map.
- *
- *  Returns a value indicating whether the map will be non-empty.
+ *  @brief Minkowsky sum of an edge and a polygon
  */
-bool DB_PUBLIC rasterize (const db::DPolygon &polygon, db::DAreaMap &am);
+db::Polygon DB_PUBLIC minkowsky_sum (const db::Polygon &a, const db::Edge &b, bool resolve_holes = false);
 
 /**
- *  @brief Minkowski sum of an edge and a polygon
+ *  @brief Minkowsky sum of a polygon and a polygon
  */
-db::Polygon DB_PUBLIC minkowski_sum (const db::Polygon &a, const db::Edge &b, bool resolve_holes = false);
+db::Polygon DB_PUBLIC minkowsky_sum (const db::Polygon &a, const db::Polygon &b, bool resolve_holes = false);
 
 /**
- *  @brief Minkowski sum of a polygon and a polygon
+ *  @brief Minkowsky sum of a polygon and a box
  */
-db::Polygon DB_PUBLIC minkowski_sum (const db::Polygon &a, const db::Polygon &b, bool resolve_holes = false);
+db::Polygon DB_PUBLIC minkowsky_sum (const db::Polygon &a, const db::Box &b, bool resolve_holes = false);
 
 /**
- *  @brief Minkowski sum of a polygon and a box
+ *  @brief Minkowsky sum of a polygon and a contour
  */
-db::Polygon DB_PUBLIC minkowski_sum (const db::Polygon &a, const db::Box &b, bool resolve_holes = false);
-
-/**
- *  @brief Minkowski sum of a polygon and a contour
- */
-db::Polygon DB_PUBLIC minkowski_sum (const db::Polygon &a, const std::vector<db::Point> &c, bool resolve_holes = false);
+db::Polygon DB_PUBLIC minkowsky_sum (const db::Polygon &a, const std::vector<db::Point> &c, bool resolve_holes = false);
 
 /**
  *  @brief Resolve holes 
@@ -720,7 +626,7 @@ db::SimplePolygon DB_PUBLIC polygon_to_simple_polygon (const db::Polygon &a);
  *  This mode controls how the polygon is being cut to take off parts.
  *  "PO_any" will deliver a "best" cut. "PO_horizontal" will only apply
  *  horizontal cuts, "PO_vertical" only vertical ones. "PO_htrapezoids" will
- *  apply horizontal cuts to favor horizontal trapezoids. "PO_vtrapezoids"
+ *  apply horizontal cuts to favor horizontal trapzoids. "PO_vtrapezoids"
  *  will favor vertical trapezoids.
  */
 enum PreferredOrientation
@@ -778,7 +684,7 @@ bool DB_PUBLIC is_convex (const db::SimplePolygon &poly);
 /**
  *  @brief Decomposes the given polygon into trapezoids
  *
- *  @param horizontal If true, delivers htrapezoid objects, otherwise vtrapezoids
+ *  @param horizontal If true, delivers htrapzeoid objects, otherwise vtrapezoids
  *
  *  The resulting single polygons will be sent to the sink. Only "put" events will be
  *  generated on the sink.
@@ -791,37 +697,6 @@ void DB_PUBLIC decompose_trapezoids (const db::Polygon &p, TrapezoidDecompositio
  *  See the "Polygon" version of this function for details.
  */
 void DB_PUBLIC decompose_trapezoids (const db::SimplePolygon &p, TrapezoidDecompositionMode mode, SimplePolygonSink &sink);
-
-template <class C>
-static inline C snap_to_grid (C c, C g)
-{
-  //  This form of snapping always snaps g/2 to right/top.
-  if (c < 0) {
-    c = -g * ((-c + (g - 1) / 2) / g);
-  } else {
-    c = g * ((c + g / 2) / g);
-  }
-  return c;
-}
-
-/**
- *  @brief Snaps a polygon to the given grid
- *  Heap is a vector of points reused for the point list
- */
-DB_PUBLIC db::Polygon snapped_polygon (const db::Polygon &poly, db::Coord gx, db::Coord gy, std::vector<db::Point> &heap);
-
-/**
- *  @brief Scales and snaps a polygon to the given grid
- *  Heap is a vector of points reused for the point list
- *  The coordinate transformation is q = ((p * m + o) snap (g * d)) / d.
- */
-DB_PUBLIC db::Polygon scaled_and_snapped_polygon (const db::Polygon &poly, db::Coord gx, db::Coord mx, db::Coord dx, db::Coord ox, db::Coord gy, db::Coord my, db::Coord dy, db::Coord oy, std::vector<db::Point> &heap);
-
-/**
- *  @brief Scales and snaps a vector to the given grid
- *  The coordinate transformation is q = ((p * m + o) snap (g * d)) / d.
- */
-DB_PUBLIC db::Vector scaled_and_snapped_vector (const db::Vector &v, db::Coord gx, db::Coord mx, db::Coord dx, db::Coord ox, db::Coord gy, db::Coord my, db::Coord dy, db::Coord oy);
 
 }
 

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -24,13 +24,9 @@
 #include "dbLayoutToNetlist.h"
 #include "dbLayoutToNetlistFormatDefs.h"
 #include "dbPolygonTools.h"
-#include "tlMath.h"
 
 namespace db
 {
-
-static const std::string endl ("\n");
-static const std::string indent1 (" ");
 
 // -------------------------------------------------------------------------------------------
 //  LayoutToNetlistWriterBase implementation
@@ -51,122 +47,13 @@ void LayoutToNetlistWriterBase::write (const db::LayoutToNetlist *l2n)
 }
 
 // -------------------------------------------------------------------------------------------
-//  TokenizedOutput implementation
-
-TokenizedOutput::TokenizedOutput (tl::OutputStream &s)
-  : mp_stream (&s), mp_parent (0), m_first (true), m_inline (false), m_newline (false), m_indent (-1)
-{
-  //  .. nothing yet ..
-}
-
-TokenizedOutput::TokenizedOutput (tl::OutputStream &s, const std::string &token)
-  : mp_stream (&s), mp_parent (0), m_first (true), m_inline (false), m_newline (false), m_indent (0)
-{
-  stream () << token << "(";
-}
-
-TokenizedOutput::TokenizedOutput (tl::OutputStream &s, int indent, const std::string &token)
-  : mp_stream (&s), mp_parent (0), m_first (true), m_inline (false), m_newline (false)
-{
-  m_indent = indent;
-  for (int i = 0; i < m_indent; ++i) {
-    stream () << indent1;
-  }
-  stream () << token << "(";
-}
-
-TokenizedOutput::TokenizedOutput (TokenizedOutput &output, const std::string &token, bool inl)
-  : mp_stream (&output.stream ()), mp_parent (&output), m_first (true), m_inline (inl), m_newline (false)
-{
-  m_indent = output.indent () + 1;
-  output.emit_sep ();
-  stream () << token << "(";
-}
-
-TokenizedOutput::~TokenizedOutput ()
-{
-  if (m_newline) {
-    for (int i = 0; i < m_indent; ++i) {
-      stream () << indent1;
-    }
-  }
-  if (m_indent >= 0) {
-    stream () << ")";
-    if (! m_inline) {
-      if (mp_parent) {
-        *mp_parent << endl;
-      } else {
-        stream () << endl;
-      }
-    }
-  }
-}
-
-void TokenizedOutput::emit_sep ()
-{
-  if (m_newline) {
-    for (int i = 0; i <= m_indent; ++i) {
-      stream () << indent1;
-    }
-    m_newline = false;
-  } else if (! m_first) {
-    stream () << " ";
-  }
-  m_first = false;
-}
-
-TokenizedOutput &TokenizedOutput::operator<< (const std::string &s)
-{
-  if (s == endl) {
-    m_newline = true;
-    stream () << s;
-  } else if (! s.empty ()) {
-    emit_sep ();
-    stream () << s;
-  }
-
-  return *this;
-}
-
-// -------------------------------------------------------------------------------------------
-
-static void write_point (TokenizedOutput &out, const db::Point &pt, db::Point &ref, bool relative)
-{
-  if (relative) {
-
-    TokenizedOutput (out, std::string (), true) << tl::to_string (pt.x () - ref.x ()) << tl::to_string (pt.y () - ref.y ());
-
-  } else {
-
-    if (pt.x () == 0 || pt.x () != ref.x ()) {
-      out << tl::to_string (pt.x ());
-    } else {
-      out << "*";
-    }
-
-    if (pt.y () == 0 || pt.y () != ref.y ()) {
-      out << tl::to_string (pt.y ());
-    } else {
-      out << "*";
-    }
-
-  }
-
-  ref = pt;
-}
-
-template <class T, class Tr>
-static void write_points (TokenizedOutput &out, const T &poly, const Tr &tr, db::Point &ref, bool relative)
-{
-  for (typename T::polygon_contour_iterator c = poly.begin_hull (); c != poly.end_hull (); ++c) {
-    write_point (out, tr * *c, ref, relative);
-  }
-}
-
-// -------------------------------------------------------------------------------------------
 
 namespace l2n_std_format
 {
+
+static const std::string endl ("\n");
+static const std::string indent1 (" ");
+static const std::string indent2 ("  ");
 
 template <class Keys>
 std_writer_impl<Keys>::std_writer_impl (tl::OutputStream &stream, double dbu, const std::string &progress_description)
@@ -175,54 +62,6 @@ std_writer_impl<Keys>::std_writer_impl (tl::OutputStream &stream, double dbu, co
 {
   m_progress.set_format (tl::to_string (tr ("%.0f MB")));
   m_progress.set_unit (1024 * 1024);
-}
-
-template <class Keys>
-std::string std_writer_impl<Keys>::message_to_s (const std::string &msg)
-{
-  if (msg.empty ()) {
-    return std::string ();
-  } else {
-    return Keys::description_key + "(" + tl::to_word_or_quoted_string (msg) + ")";
-  }
-}
-
-template <class Keys>
-std::string std_writer_impl<Keys>::severity_to_s (const db::Severity severity)
-{
-  if (severity == db::Info) {
-    return Keys::info_severity_key;
-  } else if (severity == db::Warning) {
-    return Keys::warning_severity_key;
-  } else if (severity == db::Error) {
-    return Keys::error_severity_key;
-  } else {
-    return std::string ();
-  }
-}
-
-template <class Keys>
-void std_writer_impl<Keys>::write_log_entry (TokenizedOutput &stream, const LogEntryData &le)
-{
-  stream << severity_to_s (le.severity ());
-  stream << message_to_s (le.message ());
-
-  if (! le.cell_name ().empty ()) {
-    TokenizedOutput (stream, Keys::cell_key, true) << tl::to_word_or_quoted_string (le.cell_name ());
-  }
-
-  if (! le.category_name ().empty ()) {
-    TokenizedOutput o (stream, Keys::cat_key, true);
-    o << tl::to_word_or_quoted_string (le.category_name ());
-    if (! le.category_description ().empty ()) {
-      o << tl::to_word_or_quoted_string (le.category_description ());
-    }
-  }
-
-  if (le.geometry () != db::DPolygon ()) {
-    TokenizedOutput o (stream, Keys::polygon_key, true);
-    o << tl::to_word_or_quoted_string (le.geometry ().to_string ());
-  }
 }
 
 static std::string name_for_layer (const db::LayoutToNetlist *l2n, unsigned int l)
@@ -242,10 +81,7 @@ void std_writer_impl<Keys>::write (const db::LayoutToNetlist *l2n)
     mp_netlist = l2n->netlist ();
     mp_l2n = l2n;
 
-    {
-      TokenizedOutput stream (*mp_stream);
-      write (false, stream, 0);
-    }
+    write (false, 0);
 
     mp_netlist = 0;
     mp_l2n = 0;
@@ -258,14 +94,14 @@ void std_writer_impl<Keys>::write (const db::LayoutToNetlist *l2n)
 }
 
 template <class Keys>
-void std_writer_impl<Keys>::write (TokenizedOutput &stream, bool nested, const db::Netlist *netlist, const db::LayoutToNetlist *l2n, std::map<const db::Circuit *, std::map<const db::Net *, unsigned int> > *net2id_per_circuit)
+void std_writer_impl<Keys>::write (const db::Netlist *netlist, const db::LayoutToNetlist *l2n, bool nested, std::map<const db::Circuit *, std::map<const db::Net *, unsigned int> > *net2id_per_circuit)
 {
   try {
 
     mp_netlist = netlist;
     mp_l2n = l2n;
 
-    write (nested, stream, net2id_per_circuit);
+    write (nested, net2id_per_circuit);
 
     mp_netlist = 0;
     mp_l2n = 0;
@@ -277,243 +113,176 @@ void std_writer_impl<Keys>::write (TokenizedOutput &stream, bool nested, const d
   }
 }
 
-static bool same_parameter (const DeviceParameterDefinition &a, const DeviceParameterDefinition &b)
-{
-  if (a.is_primary () != b.is_primary ()) {
-    return false;
-  }
-  if (! tl::equal (a.default_value (), b.default_value ())) {
-    return false;
-  }
-  return true;
-}
-
 template <class Keys>
-void std_writer_impl<Keys>::write_device_class (TokenizedOutput &stream, const db::DeviceClass *cls, const std::string &temp_name, const db::DeviceClass *temp_class)
+void std_writer_impl<Keys>::write (bool nested, std::map<const db::Circuit *, std::map<const db::Net *, unsigned int> > *net2id_per_circuit)
 {
-  TokenizedOutput out (stream, Keys::class_key);
-  out << tl::to_word_or_quoted_string (cls->name ()) << tl::to_word_or_quoted_string (temp_name);
+  bool any = false;
 
-  //  we need to issue all specs if some are deleted
-  bool full_specs = false;
-
-  const std::vector<DeviceParameterDefinition> &pd_temp = temp_class->parameter_definitions ();
-  for (auto p = pd_temp.begin (); p != pd_temp.end () && ! full_specs; ++p) {
-    full_specs = ! cls->has_parameter_with_name (p->name ());
-  }
-
-  const std::vector<DeviceTerminalDefinition> &td_temp = temp_class->terminal_definitions ();
-  for (auto t = td_temp.begin (); t != td_temp.end () && ! full_specs; ++t) {
-    full_specs = ! cls->has_terminal_with_name (t->name ());
-  }
-
-  //  new token: indicates that all specs will be listed
-  if (full_specs) {
-    out << tl::to_string (1);
-  }
-
-  bool any_def = false;
-
-  const std::vector<DeviceParameterDefinition> &pd = cls->parameter_definitions ();
-  for (auto p = pd.begin (); p != pd.end (); ++p) {
-    if (full_specs || ! temp_class->has_parameter_with_name (p->name ()) || !same_parameter (*p, *temp_class->parameter_definition (temp_class->parameter_id_for_name (p->name ())))) {
-      if (! any_def) {
-        out << endl;
-      }
-      TokenizedOutput (out, Keys::param_key) << tl::to_word_or_quoted_string (p->name ()) << tl::to_string (p->is_primary () ? 1 : 0) << tl::to_string (p->default_value ());
-      any_def = true;
-    }
-  }
-
-  const std::vector<DeviceTerminalDefinition> &td = cls->terminal_definitions ();
-  for (auto t = td.begin (); t != td.end (); ++t) {
-    if (full_specs || ! temp_class->has_terminal_with_name (t->name ())) {
-      if (! any_def) {
-        out << endl;
-      }
-      TokenizedOutput (out, Keys::terminal_key) << tl::to_word_or_quoted_string (t->name ());
-      any_def = true;
-    }
-  }
-}
-
-template <class Keys>
-void std_writer_impl<Keys>::write (bool nested, TokenizedOutput &stream, std::map<const db::Circuit *, std::map<const db::Net *, unsigned int> > *net2id_per_circuit)
-{
   const int version = 0;
 
   const db::Layout *ly = mp_l2n ? mp_l2n->internal_layout () : 0;
+  const std::string indent (nested ? indent1 : "");
 
   if (! nested) {
-    stream << Keys::l2n_magic_string << endl;
+    *mp_stream << Keys::l2n_magic_string << endl;
   }
 
   if (version > 0) {
-    TokenizedOutput (stream, Keys::version_key) << tl::to_string (version);
-    stream << endl;
+    *mp_stream << indent << Keys::version_key << "(" << version << ")" << endl;
   }
   if (ly) {
-    TokenizedOutput (stream, Keys::top_key) << tl::to_word_or_quoted_string (ly->cell_name (mp_l2n->internal_top_cell ()->cell_index ()));
-    TokenizedOutput (stream, Keys::unit_key) << tl::to_string (m_dbu);
+    *mp_stream << indent << Keys::top_key << "(" << tl::to_word_or_quoted_string (ly->cell_name (mp_l2n->internal_top_cell ()->cell_index ())) << ")" << endl;
+    *mp_stream << indent << Keys::unit_key << "(" << m_dbu << ")" << endl;
   }
-
-  bool any = false;
 
   if (mp_l2n) {
 
     if (! Keys::is_short ()) {
-      stream << endl << "# Layer section" << endl;
-      stream << "# This section lists the mask layers (drawing or derived) and their connections." << endl;
+      *mp_stream << endl << indent << "# Layer section" << endl;
+      *mp_stream << indent << "# This section lists the mask layers (drawing or derived) and their connections." << endl;
     }
 
     if (! Keys::is_short ()) {
-      stream << endl << "# Mask layers" << endl;
+      *mp_stream << endl << indent << "# Mask layers" << endl;
     }
-    for (db::Connectivity::all_layer_iterator l = mp_l2n->connectivity ().begin_layers (); l != mp_l2n->connectivity ().end_layers (); ++l) {
-      TokenizedOutput out (stream, Keys::layer_key);
-      out << name_for_layer (mp_l2n, *l);
+    for (db::Connectivity::layer_iterator l = mp_l2n->connectivity ().begin_layers (); l != mp_l2n->connectivity ().end_layers (); ++l) {
+      *mp_stream << indent << Keys::layer_key << "(" << name_for_layer (mp_l2n, *l);
       db::LayerProperties lp = ly->get_properties (*l);
       if (! lp.is_null ()) {
-        out << tl::to_word_or_quoted_string (lp.to_string ());
+        *mp_stream << " " << tl::to_word_or_quoted_string (lp.to_string ());
       }
+      *mp_stream << ")" << endl;
       m_progress.set (mp_stream->pos ());
     }
 
     if (! Keys::is_short ()) {
-      stream << endl << "# Mask layer connectivity" << endl;
+      *mp_stream << endl << indent << "# Mask layer connectivity" << endl;
     }
-    for (db::Connectivity::all_layer_iterator l = mp_l2n->connectivity ().begin_layers (); l != mp_l2n->connectivity ().end_layers (); ++l) {
+    for (db::Connectivity::layer_iterator l = mp_l2n->connectivity ().begin_layers (); l != mp_l2n->connectivity ().end_layers (); ++l) {
 
       db::Connectivity::layer_iterator ce = mp_l2n->connectivity ().end_connected (*l);
       db::Connectivity::layer_iterator cb = mp_l2n->connectivity ().begin_connected (*l);
       if (cb != ce) {
-        bool any_soft = false;
-        {
-          TokenizedOutput out (stream, Keys::connect_key);
-          out << name_for_layer (mp_l2n, *l);
-          for (db::Connectivity::layer_iterator c = mp_l2n->connectivity ().begin_connected (*l); c != ce; ++c) {
-            if (c->second < 0) {
-              any_soft = true;
-            }
-            out << name_for_layer (mp_l2n, c->first);
-          }
+        *mp_stream << indent << Keys::connect_key << "(" << name_for_layer (mp_l2n, *l);
+        for (db::Connectivity::layer_iterator c = mp_l2n->connectivity ().begin_connected (*l); c != ce; ++c) {
+          *mp_stream << " " << name_for_layer (mp_l2n, *c);
         }
-        //  add soft connections in addition and as overrides to stay backward compatible with older versions
-        //  (these will ignore these statements)
-        if (any_soft) {
-          TokenizedOutput out (stream, Keys::softconnect_key);
-          out << name_for_layer (mp_l2n, *l);
-          for (db::Connectivity::layer_iterator c = mp_l2n->connectivity ().begin_connected (*l); c != ce; ++c) {
-            if (c->second < 0) {
-              out << name_for_layer (mp_l2n, c->first);
-            }
-          }
-        }
+        *mp_stream << ")" << endl;
         m_progress.set (mp_stream->pos ());
       }
 
     }
 
     any = false;
-    for (db::Connectivity::all_layer_iterator l = mp_l2n->connectivity ().begin_layers (); l != mp_l2n->connectivity ().end_layers (); ++l) {
+    for (db::Connectivity::layer_iterator l = mp_l2n->connectivity ().begin_layers (); l != mp_l2n->connectivity ().end_layers (); ++l) {
 
       db::Connectivity::global_nets_iterator ge = mp_l2n->connectivity ().end_global_connections (*l);
       db::Connectivity::global_nets_iterator gb = mp_l2n->connectivity ().begin_global_connections (*l);
       if (gb != ge) {
         if (! any) {
           if (! Keys::is_short ()) {
-            stream << endl << "# Global nets and connectivity" << endl;
+            *mp_stream << endl << indent << "# Global nets and connectivity" << endl;
           }
           any = true;
         }
-        bool any_soft = false;
-        {
-          TokenizedOutput out (stream, Keys::global_key);
-          out << name_for_layer (mp_l2n, *l);
-          for (db::Connectivity::global_nets_iterator g = gb; g != ge; ++g) {
-            if (g->second < 0) {
-              any_soft = true;
-            }
-            out << tl::to_word_or_quoted_string (mp_l2n->connectivity ().global_net_name (g->first));
-          }
+        *mp_stream << indent << Keys::global_key << "(" << name_for_layer (mp_l2n, *l);
+        for (db::Connectivity::global_nets_iterator g = gb; g != ge; ++g) {
+          *mp_stream << " " << tl::to_word_or_quoted_string (mp_l2n->connectivity ().global_net_name (*g));
         }
-        //  add soft connections in addition and as overrides to stay backward compatible with older versions
-        //  (these will ignore these statements)
-        if (any_soft) {
-          TokenizedOutput out (stream, Keys::softglobal_key);
-          out << name_for_layer (mp_l2n, *l);
-          for (db::Connectivity::global_nets_iterator g = gb; g != ge; ++g) {
-            if (g->second < 0) {
-              out << tl::to_word_or_quoted_string (mp_l2n->connectivity ().global_net_name (g->first));
-            }
-          }
-        }
+        *mp_stream << ")" << endl;
         m_progress.set (mp_stream->pos ());
       }
 
-    }
-
-    if (! mp_l2n->log_entries ().empty ()) {
-      if (! Keys::is_short ()) {
-        stream << endl << "# Log entries" << endl;
-      }
-      for (auto l = mp_l2n->begin_log_entries (); l != mp_l2n->end_log_entries (); ++l) {
-        TokenizedOutput out (stream, Keys::message_key);
-        this->write_log_entry (out, *l);
-        m_progress.set (mp_stream->pos ());
-      }
     }
 
   }
 
   if (mp_netlist->begin_device_classes () != mp_netlist->end_device_classes () && ! Keys::is_short ()) {
-    stream << endl << "# Device class section" << endl;
+    *mp_stream << endl << indent << "# Device class section" << endl;
   }
   for (db::Netlist::const_device_class_iterator c = mp_netlist->begin_device_classes (); c != mp_netlist->end_device_classes (); ++c) {
     db::DeviceClassTemplateBase *temp = db::DeviceClassTemplateBase::is_a (c.operator-> ());
     if (temp) {
-      std::unique_ptr<db::DeviceClass> temp_class (temp->create ());
-      write_device_class (stream, c.operator-> (), temp->name (), temp_class.get ());
-    } else {
-      db::DeviceClass empty;
-      write_device_class (stream, c.operator-> (), std::string (), &empty);
+      *mp_stream << indent << Keys::class_key << "(" << tl::to_word_or_quoted_string (c->name ()) << " " << tl::to_word_or_quoted_string (temp->name ()) << ")" << endl;
+      m_progress.set (mp_stream->pos ());
     }
-    m_progress.set (mp_stream->pos ());
   }
 
   if (mp_netlist->begin_device_abstracts () != mp_netlist->end_device_abstracts () && ! Keys::is_short ()) {
-    stream << endl << "# Device abstracts section" << endl;
-    stream << "# Device abstracts list the pin shapes of the devices." << endl;
+    *mp_stream << endl << indent << "# Device abstracts section" << endl;
+    *mp_stream << indent << "# Device abstracts list the pin shapes of the devices." << endl;
   }
   for (db::Netlist::const_abstract_model_iterator m = mp_netlist->begin_device_abstracts (); m != mp_netlist->end_device_abstracts (); ++m) {
     if (m->device_class ()) {
-      TokenizedOutput out (stream, Keys::device_key);
-      out << tl::to_word_or_quoted_string (m->name ()) << tl::to_word_or_quoted_string (m->device_class ()->name ()) << endl;
-      write (out, *m);
+      *mp_stream << indent << Keys::device_key << "(" << tl::to_word_or_quoted_string (m->name ()) << " " << tl::to_word_or_quoted_string (m->device_class ()->name ()) << endl;
+      write (*m, indent);
+      *mp_stream << indent << ")" << endl;
       m_progress.set (mp_stream->pos ());
     }
   }
 
   if (! Keys::is_short ()) {
-    stream << endl << "# Circuit section" << endl;
-    stream << "# Circuits are the hierarchical building blocks of the netlist." << endl;
+    *mp_stream << endl << indent << "# Circuit section" << endl;
+    *mp_stream << indent << "# Circuits are the hierarchical building blocks of the netlist." << endl;
   }
   for (db::Netlist::const_bottom_up_circuit_iterator i = mp_netlist->begin_bottom_up (); i != mp_netlist->end_bottom_up (); ++i) {
     const db::Circuit *x = i.operator-> ();
-    TokenizedOutput out (stream, Keys::circuit_key);
-    out << tl::to_word_or_quoted_string (x->name ()) << endl;
-    write (out, *x, net2id_per_circuit);
+    *mp_stream << indent << Keys::circuit_key << "(" << tl::to_word_or_quoted_string (x->name ()) << endl;
+    write (*x, indent, net2id_per_circuit);
+    *mp_stream << indent << ")" << endl;
     m_progress.set (mp_stream->pos ());
   }
 }
 
+void write_point (tl::OutputStream &stream, const db::Point &pt, db::Point &ref, bool relative)
+{
+  if (relative) {
+
+    stream << "(";
+    stream << pt.x () - ref.x ();
+    stream << " ";
+    stream << pt.y () - ref.y ();
+    stream << ")";
+
+  } else {
+
+    if (pt.x () == 0 || pt.x () != ref.x ()) {
+      stream << pt.x ();
+    } else {
+      stream << "*";
+    }
+
+    if (pt.y () == 0 || pt.y () != ref.y ()) {
+      stream << pt.y ();
+    } else {
+      stream << "*";
+    }
+
+  }
+
+  ref = pt;
+}
+
+template <class T, class Tr>
+void write_points (tl::OutputStream &stream, const T &poly, const Tr &tr, db::Point &ref, bool relative)
+{
+  for (typename T::polygon_contour_iterator c = poly.begin_hull (); c != poly.end_hull (); ++c) {
+
+    typename T::point_type pt = tr * *c;
+
+    stream << " ";
+    write_point (stream, pt, ref, relative);
+
+  }
+}
+
 template <class Keys>
-void std_writer_impl<Keys>::write (TokenizedOutput &stream, const db::Circuit &circuit, std::map<const db::Circuit *, std::map<const db::Net *, unsigned int> > *net2id_per_circuit)
+void std_writer_impl<Keys>::write (const db::Circuit &circuit, const std::string &indent, std::map<const db::Circuit *, std::map<const db::Net *, unsigned int> > *net2id_per_circuit)
 {
   if (circuit.boundary ().vertices () > 0) {
 
     if (! Keys::is_short ()) {
-      stream << endl << "# Circuit boundary" << endl;
+      *mp_stream << endl << indent << indent1 << "# Circuit boundary" << endl;
     }
 
     reset_geometry_ref ();
@@ -522,20 +291,22 @@ void std_writer_impl<Keys>::write (TokenizedOutput &stream, const db::Circuit &c
     if (poly.is_box ()) {
 
       db::Box box = poly.box ();
-
-      TokenizedOutput out (stream, Keys::rect_key);
-      write_point (out, box.p1 (), m_ref, true);
-      write_point (out, box.p2 (), m_ref, true);
+      *mp_stream << indent << indent1 << Keys::rect_key << "(";
+      write_point (*mp_stream, box.p1 (), m_ref, true);
+      *mp_stream << " ";
+      write_point (*mp_stream, box.p2 (), m_ref, true);
+      *mp_stream << ")" << endl;
 
     } else {
 
-      TokenizedOutput out (stream, Keys::polygon_key);
+      *mp_stream << indent << indent1 << Keys::polygon_key << "(";
       if (poly.holes () > 0) {
         db::SimplePolygon sp = db::polygon_to_simple_polygon (poly);
-        write_points (out, sp, db::UnitTrans (), m_ref, true);
+        write_points (*mp_stream, sp, db::UnitTrans (), m_ref, true);
       } else {
-        write_points (out, poly, db::UnitTrans (), m_ref, true);
+        write_points (*mp_stream, poly, db::UnitTrans (), m_ref, true);
       }
+      *mp_stream << ")" << endl;
 
     }
 
@@ -543,9 +314,9 @@ void std_writer_impl<Keys>::write (TokenizedOutput &stream, const db::Circuit &c
 
   for (db::NetlistObject::property_iterator p = circuit.begin_properties (); p != circuit.end_properties (); ++p) {
     if (p == circuit.begin_properties() && ! Keys::is_short ()) {
-      stream << endl << "# Properties" << endl;
+      *mp_stream << endl << indent << indent1 << "# Properties" << endl;
     }
-    TokenizedOutput (stream, Keys::property_key) << p->first.to_parsable_string () << p->second.to_parsable_string ();
+    *mp_stream << indent << indent1 << Keys::property_key << "(" << p->first.to_parsable_string () << " " << p->second.to_parsable_string () << ")" << endl;
   }
 
   std::map<const db::Net *, unsigned int> net2id_local;
@@ -562,56 +333,60 @@ void std_writer_impl<Keys>::write (TokenizedOutput &stream, const db::Circuit &c
   if (circuit.begin_nets () != circuit.end_nets ()) {
     if (! Keys::is_short ()) {
       if (mp_l2n) {
-        stream << endl << "# Nets with their geometries" << endl;
+        *mp_stream << endl << indent << indent1 << "# Nets with their geometries" << endl;
       } else {
-        stream << endl << "# Nets" << endl;
+        *mp_stream << endl << indent << indent1 << "# Nets" << endl;
       }
     }
     for (db::Circuit::const_net_iterator n = circuit.begin_nets (); n != circuit.end_nets (); ++n) {
-      write (stream, *n, (*net2id) [n.operator-> ()]);
+      write (*n, (*net2id) [n.operator-> ()], indent);
       m_progress.set (mp_stream->pos ());
     }
   }
 
   if (circuit.begin_pins () != circuit.end_pins ()) {
     if (! Keys::is_short ()) {
-      stream << endl << "# Outgoing pins and their connections to nets" << endl;
+      *mp_stream << endl << indent << indent1 << "# Outgoing pins and their connections to nets" << endl;
     }
     for (db::Circuit::const_pin_iterator p = circuit.begin_pins (); p != circuit.end_pins (); ++p) {
-      TokenizedOutput out (stream, Keys::pin_key);
+      *mp_stream << indent << indent1 << Keys::pin_key << "(";
       const db::Net *net = circuit.net_for_pin (p->id ());
       if (net) {
-        out << tl::to_string ((*net2id) [net]);
+        *mp_stream << (*net2id) [net];
       }
       if (! p->name ().empty ()) {
-        TokenizedOutput (out, Keys::name_key, true) << tl::to_word_or_quoted_string (p->name ());
+        if (net) {
+          *mp_stream << " ";
+        }
+        *mp_stream << Keys::name_key << "(" << tl::to_word_or_quoted_string (p->name ()) << ")";
       }
+      *mp_stream << ")" << endl;
       m_progress.set (mp_stream->pos ());
     }
   }
 
   if (circuit.begin_devices () != circuit.end_devices ()) {
     if (! Keys::is_short ()) {
-      stream << endl << "# Devices and their connections" << endl;
+      *mp_stream << endl << indent << indent1 << "# Devices and their connections" << endl;
     }
     for (db::Circuit::const_device_iterator d = circuit.begin_devices (); d != circuit.end_devices (); ++d) {
-      write (stream, *d, *net2id);
+      write (*d, *net2id, indent);
       m_progress.set (mp_stream->pos ());
     }
   }
 
   if (circuit.begin_subcircuits () != circuit.end_subcircuits ()) {
     if (! Keys::is_short ()) {
-      stream << endl << "# Subcircuits and their connections" << endl;
+      *mp_stream << endl << indent << indent1 << "# Subcircuits and their connections" << endl;
     }
     for (db::Circuit::const_subcircuit_iterator x = circuit.begin_subcircuits (); x != circuit.end_subcircuits (); ++x) {
-      write (stream, *x, *net2id);
+      write (*x, *net2id, indent);
       m_progress.set (mp_stream->pos ());
     }
   }
 
   if (! Keys::is_short ()) {
-    stream << endl;
+    *mp_stream << endl;
   }
 }
 
@@ -622,47 +397,31 @@ void std_writer_impl<Keys>::reset_geometry_ref ()
 }
 
 template <class Keys>
-void std_writer_impl<Keys>::write (TokenizedOutput &stream, const db::NetShape *s, const db::ICplxTrans &tr, const std::string &lname, bool relative)
+void std_writer_impl<Keys>::write (const db::PolygonRef *s, const db::ICplxTrans &tr, const std::string &lname, bool relative)
 {
-  if (s->type () == db::NetShape::Polygon) {
+  db::ICplxTrans t = tr * db::ICplxTrans (s->trans ());
 
-    db::PolygonRef pr = s->polygon_ref ();
-    db::ICplxTrans t = tr * db::ICplxTrans (pr.trans ());
+  const db::Polygon &poly = s->obj ();
+  if (poly.is_box ()) {
 
-    const db::Polygon &poly = pr.obj ();
-    if (poly.is_box ()) {
+    db::Box box = t * poly.box ();
+    *mp_stream << Keys::rect_key << "(" << lname;
+    *mp_stream << " ";
+    write_point (*mp_stream, box.p1 (), m_ref, relative);
+    *mp_stream << " ";
+    write_point (*mp_stream, box.p2 (), m_ref, relative);
+    *mp_stream << ")";
 
-      db::Box box = t * poly.box ();
-      TokenizedOutput out (stream, Keys::rect_key);
-      out << lname;
-      write_point (out, box.p1 (), m_ref, relative);
-      write_point (out, box.p2 (), m_ref, relative);
+  } else {
 
+    *mp_stream << Keys::polygon_key << "(" << lname;
+    if (poly.holes () > 0) {
+      db::SimplePolygon sp = db::polygon_to_simple_polygon (poly);
+      write_points (*mp_stream, sp, t, m_ref, relative);
     } else {
-
-      TokenizedOutput out (stream, Keys::polygon_key);
-      out << lname;
-      if (poly.holes () > 0) {
-        db::SimplePolygon sp = db::polygon_to_simple_polygon (poly);
-        write_points (out, sp, t, m_ref, relative);
-      } else {
-        write_points (out, poly, t, m_ref, relative);
-      }
-
+      write_points (*mp_stream, poly, t, m_ref, relative);
     }
-
-  } else if (s->type () == db::NetShape::Text) {
-
-    TokenizedOutput out (stream, Keys::text_key);
-    out << lname;
-
-    db::TextRef txtr = s->text_ref ();
-    db::ICplxTrans t = tr * db::ICplxTrans (txtr.trans ());
-
-    out << tl::to_word_or_quoted_string (txtr.obj ().string ());
-
-    db::Point pt = t * (db::Point () + txtr.obj ().trans ().disp ());
-    write_point (out, pt, m_ref, relative);
+    *mp_stream << ")";
 
   }
 }
@@ -674,24 +433,24 @@ bool std_writer_impl<Keys>::new_cell (cell_index_type ci) const
 }
 
 template <class Keys>
-void std_writer_impl<Keys>::write (TokenizedOutput &stream, const db::Net &net, unsigned int id)
+void std_writer_impl<Keys>::write (const db::Net &net, unsigned int id, const std::string &indent)
 {
-  const db::hier_clusters<db::NetShape> &clusters = mp_l2n->net_clusters ();
+  const db::hier_clusters<db::PolygonRef> &clusters = mp_l2n->net_clusters ();
   const db::Circuit *circuit = net.circuit ();
   const db::Connectivity &conn = mp_l2n->connectivity ();
 
-  std::unique_ptr<TokenizedOutput> outp;
+  bool any = false;
 
   if (mp_l2n) {
 
     reset_geometry_ref ();
 
-    for (db::Connectivity::all_layer_iterator l = conn.begin_layers (); l != conn.end_layers (); ++l) {
+    for (db::Connectivity::layer_iterator l = conn.begin_layers (); l != conn.end_layers (); ++l) {
 
       db::cell_index_type cci = circuit->cell_index ();
       db::cell_index_type prev_ci = cci;
 
-      for (db::recursive_cluster_shape_iterator<db::NetShape> si (clusters, *l, cci, net.cluster_id (), this); ! si.at_end (); ) {
+      for (db::recursive_cluster_shape_iterator<db::PolygonRef> si (clusters, *l, cci, net.cluster_id (), this); ! si.at_end (); ) {
 
         //  NOTE: we don't recursive into circuits which will later be output. However, as circuits may
         //  vanish in "purge" but the clusters will still be there we need to recursive into clusters from
@@ -703,26 +462,25 @@ void std_writer_impl<Keys>::write (TokenizedOutput &stream, const db::Net &net, 
 
         } else {
 
-          if (! outp) {
+          if (! any) {
 
-            outp.reset (new TokenizedOutput (stream, Keys::net_key));
-
-            *outp << tl::to_string (id);
+            *mp_stream << indent << indent1 << Keys::net_key << "(" << id;
             if (! net.name ().empty ()) {
-              TokenizedOutput (*outp, Keys::name_key, true) << tl::to_word_or_quoted_string (net.name ());
-            } else if (net.id () != id) {
-              TokenizedOutput (*outp, Keys::name_key, true) << tl::to_word_or_quoted_string (net.expanded_name ());
+              *mp_stream << " " << Keys::name_key << "(" << tl::to_word_or_quoted_string (net.name ()) << ")";
             }
-
-            *outp << endl;
+            *mp_stream << endl;
 
             for (db::NetlistObject::property_iterator p = net.begin_properties (); p != net.end_properties (); ++p) {
-              TokenizedOutput (*outp, Keys::property_key) << p->first.to_parsable_string () << p->second.to_parsable_string ();
+              *mp_stream << indent << indent2 << Keys::property_key << "(" << p->first.to_parsable_string () << " " << p->second.to_parsable_string () << ")" << endl;
             }
+
+            any = true;
 
           }
 
-          write (*outp, si.operator-> (), si.trans (), name_for_layer (mp_l2n, *l), true);
+          *mp_stream << indent << indent2;
+          write (si.operator-> (), si.trans (), name_for_layer (mp_l2n, *l), true);
+          *mp_stream << endl;
           m_progress.set (mp_stream->pos ());
 
           prev_ci = ci;
@@ -737,81 +495,91 @@ void std_writer_impl<Keys>::write (TokenizedOutput &stream, const db::Net &net, 
 
   }
 
-  if (! outp) {
+  if (any) {
+    *mp_stream << indent << indent1 << ")" << endl;
+  } else {
 
-    outp.reset (new TokenizedOutput (stream, Keys::net_key));
-    *outp << tl::to_string (id);
-
+    *mp_stream << indent << indent1 << Keys::net_key << "(" << id;
     if (! net.name ().empty ()) {
-      TokenizedOutput (*outp, Keys::name_key, true) << tl::to_word_or_quoted_string (net.name ());
+      *mp_stream << " " << Keys::name_key << "(" << tl::to_word_or_quoted_string (net.name ()) << ")";
     }
-
     if (net.begin_properties () != net.end_properties ()) {
-      *outp << endl;
+      *mp_stream << endl;
       for (db::NetlistObject::property_iterator p = net.begin_properties (); p != net.end_properties (); ++p) {
-        TokenizedOutput (*outp, Keys::property_key) << p->first.to_parsable_string () << p->second.to_parsable_string ();
+        *mp_stream << indent << indent2 << Keys::property_key << "(" << p->first.to_parsable_string () << " " << p->second.to_parsable_string () << ")" << endl;
       }
+      *mp_stream << indent << ")" << endl;
+    } else {
+      *mp_stream << ")" << endl;
     }
 
   }
 }
 
 template <class Keys>
-void std_writer_impl<Keys>::write (TokenizedOutput &stream, const db::SubCircuit &subcircuit, std::map<const db::Net *, unsigned int> &net2id)
+void std_writer_impl<Keys>::write (const db::SubCircuit &subcircuit, std::map<const db::Net *, unsigned int> &net2id, const std::string &indent)
 {
-  TokenizedOutput out (stream, Keys::circuit_key);
-  out << tl::to_string (subcircuit.id ());
-  out << tl::to_word_or_quoted_string (subcircuit.circuit_ref ()->name ());
+  *mp_stream << indent << indent1 << Keys::circuit_key << "(" << tl::to_string (subcircuit.id ());
+  *mp_stream << " " << tl::to_word_or_quoted_string (subcircuit.circuit_ref ()->name ());
 
   if (! subcircuit.name ().empty ()) {
-    TokenizedOutput (out, Keys::name_key, true) << tl::to_word_or_quoted_string (subcircuit.name ());
+    *mp_stream << " " << Keys::name_key << "(" << tl::to_word_or_quoted_string (subcircuit.name ()) << ")";
   }
 
   if (mp_l2n) {
-    write (out, subcircuit.trans ());
+    *mp_stream << " ";
+    write (subcircuit.trans ());
   }
 
   //  each pin in one line for more than a few pins
   bool separate_lines = (subcircuit.circuit_ref ()->pin_count () > 1) || subcircuit.begin_properties () != subcircuit.end_properties ();
 
   if (separate_lines) {
-    out << endl;
+    *mp_stream << endl;
   }
 
   for (db::NetlistObject::property_iterator p = subcircuit.begin_properties (); p != subcircuit.end_properties (); ++p) {
-    TokenizedOutput (out, Keys::property_key, ! separate_lines) << p->first.to_parsable_string () << p->second.to_parsable_string ();
+    *mp_stream << indent << indent2 << Keys::property_key << "(" << p->first.to_parsable_string () << " " << p->second.to_parsable_string () << ")" << endl;
   }
 
-  unsigned int pin_id = 0;
-  for (db::Circuit::const_pin_iterator p = subcircuit.circuit_ref ()->begin_pins (); p != subcircuit.circuit_ref ()->end_pins (); ++p, ++pin_id) {
+  for (db::Circuit::const_pin_iterator p = subcircuit.circuit_ref ()->begin_pins (); p != subcircuit.circuit_ref ()->end_pins (); ++p) {
     const db::Net *net = subcircuit.net_for_pin (p->id ());
     if (net) {
-      TokenizedOutput (out, Keys::pin_key, ! separate_lines) << tl::to_string (pin_id) << tl::to_string (net2id [net]);
+      if (separate_lines) {
+        *mp_stream << indent << indent2;
+      } else {
+        *mp_stream << " ";
+      }
+      *mp_stream << Keys::pin_key << "(" << tl::to_string (p->id ()) << " " << net2id [net] << ")";
+      if (separate_lines) {
+        *mp_stream << endl;
+      }
       m_progress.set (mp_stream->pos ());
     }
   }
+
+  if (separate_lines) {
+    *mp_stream << indent << indent1;
+  }
+
+  *mp_stream << ")" << endl;
 }
 
 template <class Keys>
-void std_writer_impl<Keys>::write (TokenizedOutput &stream, const db::DeviceAbstract &device_abstract)
+void std_writer_impl<Keys>::write (const db::DeviceAbstract &device_abstract, const std::string &indent)
 {
-  tl_assert (mp_l2n);
-
   const std::vector<db::DeviceTerminalDefinition> &td = device_abstract.device_class ()->terminal_definitions ();
 
-  const db::hier_clusters<db::NetShape> &clusters = mp_l2n->net_clusters ();
+  const db::hier_clusters<db::PolygonRef> &clusters = mp_l2n->net_clusters ();
   const db::Connectivity &conn = mp_l2n->connectivity ();
 
   for (std::vector<db::DeviceTerminalDefinition>::const_iterator t = td.begin (); t != td.end (); ++t) {
 
-    TokenizedOutput out (stream, Keys::terminal_key);
-    out << t->name ();
+    *mp_stream << indent << indent1 << Keys::terminal_key << "(" << t->name () << endl;
 
     reset_geometry_ref ();
 
-    bool any = false;
-
-    for (db::Connectivity::all_layer_iterator l = conn.begin_layers (); l != conn.end_layers (); ++l) {
+    for (db::Connectivity::layer_iterator l = conn.begin_layers (); l != conn.end_layers (); ++l) {
 
       size_t cid = device_abstract.cluster_id_for_terminal (t->id ());
       if (cid == 0) {
@@ -819,65 +587,75 @@ void std_writer_impl<Keys>::write (TokenizedOutput &stream, const db::DeviceAbst
         continue;
       }
 
-      const db::local_cluster<db::NetShape> &lc = clusters.clusters_per_cell (device_abstract.cell_index ()).cluster_by_id (cid);
-      for (db::local_cluster<db::NetShape>::shape_iterator s = lc.begin (*l); ! s.at_end (); ++s) {
+      const db::local_cluster<db::PolygonRef> &lc = clusters.clusters_per_cell (device_abstract.cell_index ()).cluster_by_id (cid);
+      for (db::local_cluster<db::PolygonRef>::shape_iterator s = lc.begin (*l); ! s.at_end (); ++s) {
 
-        if (! any) {
-          out << endl;
-        }
-
-        write (out, s.operator-> (), db::ICplxTrans (), name_for_layer (mp_l2n, *l), true);
+        *mp_stream << indent << indent2;
+        write (s.operator-> (), db::ICplxTrans (), name_for_layer (mp_l2n, *l), true);
+        *mp_stream << endl;
         m_progress.set (mp_stream->pos ());
-
-        any = true;
 
       }
 
     }
 
+    *mp_stream << indent << indent1 << ")" << endl;
     m_progress.set (mp_stream->pos ());
 
   }
 }
 
 template <class Keys>
-void std_writer_impl<Keys>::write (TokenizedOutput &stream, const db::DCplxTrans &tr)
+void std_writer_impl<Keys>::write (const db::DCplxTrans &tr)
 {
+  bool first = true;
+
   if (tr.is_mag ()) {
-    TokenizedOutput (stream, Keys::scale_key, true) << tl::to_string (tr.mag ());
+    *mp_stream << Keys::scale_key << "(" << tr.mag () << ")";
+    first = false;
   }
 
   if (tr.is_mirror ()) {
-    stream << Keys::mirror_key;
+    if (! first) {
+      *mp_stream << " ";
+    }
+    *mp_stream << Keys::mirror_key;
+    first = false;
   }
 
   if (fabs (tr.angle ()) > 1e-6) {
-    TokenizedOutput (stream, Keys::rotation_key, true) << tl::to_string (tr.angle ());
+    if (! first) {
+      *mp_stream << " ";
+    }
+    *mp_stream << Keys::rotation_key << "(" << tr.angle () << ")";
+    first = false;
   }
 
-  TokenizedOutput (stream, Keys::location_key, true) << tl::to_string (floor (0.5 + tr.disp ().x () / m_dbu)) << tl::to_string (floor (0.5 + tr.disp ().y () / m_dbu));
+  if (! first) {
+    *mp_stream << " ";
+  }
+  *mp_stream << Keys::location_key << "(" << floor (0.5 + tr.disp ().x () / m_dbu) << " " << floor (0.5 + tr.disp ().y () / m_dbu) << ")";
 }
 
 template <class Keys>
-void std_writer_impl<Keys>::write (TokenizedOutput &stream, const db::Device &device, std::map<const Net *, unsigned int> &net2id)
+void std_writer_impl<Keys>::write (const db::Device &device, std::map<const Net *, unsigned int> &net2id, const std::string &indent)
 {
   tl_assert (device.device_class () != 0);
   const std::vector<DeviceTerminalDefinition> &td = device.device_class ()->terminal_definitions ();
   const std::vector<DeviceParameterDefinition> &pd = device.device_class ()->parameter_definitions ();
 
-  TokenizedOutput out (stream, Keys::device_key);
-  out << tl::to_string (device.id ());
+  *mp_stream << indent << indent1 << Keys::device_key << "(" << tl::to_string (device.id ());
 
   if (device.device_abstract ()) {
 
-    out << tl::to_word_or_quoted_string (device.device_abstract ()->name ()) << endl;
+    *mp_stream << " " << tl::to_word_or_quoted_string (device.device_abstract ()->name ()) << endl;
 
     const std::vector<db::DeviceAbstractRef> &other_abstracts = device.other_abstracts ();
     for (std::vector<db::DeviceAbstractRef>::const_iterator a = other_abstracts.begin (); a != other_abstracts.end (); ++a) {
 
-      TokenizedOutput o (out, Keys::device_key);
-      o << tl::to_word_or_quoted_string (a->device_abstract->name ());
-      write (o, a->trans);
+      *mp_stream << indent << indent2 << Keys::device_key << "(" << tl::to_word_or_quoted_string (a->device_abstract->name ()) << " ";
+      write (a->trans);
+      *mp_stream << ")" << endl;
 
     }
 
@@ -885,38 +663,41 @@ void std_writer_impl<Keys>::write (TokenizedOutput &stream, const db::Device &de
     for (std::map<unsigned int, std::vector<db::DeviceReconnectedTerminal> >::const_iterator t = reconnected_terminals.begin (); t != reconnected_terminals.end (); ++t) {
 
       for (std::vector<db::DeviceReconnectedTerminal>::const_iterator c = t->second.begin (); c != t->second.end (); ++c) {
-        TokenizedOutput (out, Keys::connect_key) << tl::to_string (c->device_index) << tl::to_word_or_quoted_string (td [t->first].name ()) << tl::to_word_or_quoted_string (td [c->other_terminal_id].name ());
+        *mp_stream << indent << indent2 << Keys::connect_key << "(" << c->device_index << " " << tl::to_word_or_quoted_string (td [t->first].name ()) << " " << tl::to_word_or_quoted_string (td [c->other_terminal_id].name ()) << ")" << endl;
       }
 
     }
 
-    write (out, device.trans ());
-    out << endl;
+    *mp_stream << indent << indent2;
+    write (device.trans ());
+    *mp_stream << endl;
 
   } else {
-    out << tl::to_word_or_quoted_string (device.device_class ()->name ()) << endl;
+    *mp_stream << " " << tl::to_word_or_quoted_string (device.device_class ()->name ()) << endl;
   }
 
   if (! device.name ().empty ()) {
-    TokenizedOutput (out, Keys::name_key) << tl::to_word_or_quoted_string (device.name ());
+    *mp_stream << indent << indent2 << Keys::name_key << "(" << tl::to_word_or_quoted_string (device.name ()) << ")" << endl;
   }
 
   for (db::NetlistObject::property_iterator p = device.begin_properties (); p != device.end_properties (); ++p) {
-    TokenizedOutput (out, Keys::property_key) << p->first.to_parsable_string () << p->second.to_parsable_string ();
+    *mp_stream << indent << indent2 << Keys::property_key << "(" << p->first.to_parsable_string () << " " << p->second.to_parsable_string () << ")" << endl;
   }
 
   for (std::vector<DeviceParameterDefinition>::const_iterator i = pd.begin (); i != pd.end (); ++i) {
-    TokenizedOutput (out, Keys::param_key) << tl::to_word_or_quoted_string (i->name ()) << tl::sprintf ("%.12g", device.parameter_value (i->id ()));
+    *mp_stream << indent << indent2 << Keys::param_key << "(" << tl::to_word_or_quoted_string (i->name ()) << " " << tl::sprintf ("%.12g", device.parameter_value (i->id ())) << ")" << endl;
   }
 
   for (std::vector<DeviceTerminalDefinition>::const_iterator i = td.begin (); i != td.end (); ++i) {
     const db::Net *net = device.net_for_terminal (i->id ());
-    TokenizedOutput o (out, Keys::terminal_key);
-    o << tl::to_word_or_quoted_string (i->name ());
     if (net) {
-      o << tl::to_string (net2id [net]);
+      *mp_stream << indent << indent2 << Keys::terminal_key << "(" << tl::to_word_or_quoted_string (i->name ()) << " " << net2id [net] << ")" << endl;
+    } else {
+      *mp_stream << indent << indent2 << Keys::terminal_key << "(" << tl::to_word_or_quoted_string (i->name ()) << ")" << endl;
     }
   }
+
+  *mp_stream << indent << indent1 << ")" << endl;
 }
 
 //  explicit instantiation

@@ -4,17 +4,6 @@ DESTDIR = $$OUT_PWD/..
 include($$PWD/../klayout.pri)
 include($$PWD/../with_all_libs.pri)
 
-!equals(HAVE_QT, "0") {
-
-  # NOTE: doc is needed for testing help sources
-
-  INCLUDEPATH += $$DOC_INC $$ICONS_INC
-  DEPENDPATH += $$DOC_INC $$ICONS_INC
-
-  LIBS += -lklayout_doc -lklayout_icons
-
-}
-
 TEMPLATE = app
 
 # Don't build the ut_runner app as ordinary command line tool on MacOS
@@ -33,8 +22,6 @@ HEADERS += \
 
 !win32 {
   LIBS += -ldl
-} else {
-  LIBS += -lshell32
 }
 
 LIBS += -lklayout_gsi_test
@@ -45,15 +32,11 @@ LIBS += -lklayout_gsi_test
   DEPENDPATH += $$QTBASIC_INC
 
   equals(HAVE_QTBINDINGS, "1") {
-    !equals(HAVE_QT_XML, "0") {
-      LIBS += -lklayout_QtXml
-    }
-    greaterThan(QT_MAJOR_VERSION, 4) {
+    LIBS += -lklayout_QtXml
+    equals(HAVE_QT5, "1") {
       LIBS += -lklayout_QtWidgets
     }
   }
 
-} else {
-  CONFIG -= qt
 }
 

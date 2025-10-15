@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -66,7 +66,7 @@ public:
   /**
    *  @brief The ctor
    */
-  Renderer (unsigned int width, unsigned int height, double resolution, double font_resolution);
+  Renderer (unsigned int width, unsigned int height, double resolution);
 
   /**
    *  @brief The destructor
@@ -116,31 +116,31 @@ public:
   }
 
   /**
-   *  @brief The default text size to use for draw(db::Text..) - i.e in DBU units
+   *  @brief The default text size to use for draw(db::Text..) 
    */
-  void default_text_size (db::DCoord sz)
+  void default_text_size (db::Coord sz)
   {
     m_default_text_size = sz;
   }
 
   /**
-   *  @brief Get the default text size to use for draw(db::Text..) - i.e in DBU units
+   *  @brief Get the default text size
    */
-  db::DCoord default_text_size () const
+  db::Coord default_text_size () const
   {
     return m_default_text_size;
   }
 
   /**
-   *  @brief The default text size to use for draw(db::DText..) - i.e. in micron units
+   *  @brief The default text size to use for draw(db::DText..) 
    */
-  void default_text_size_dbl (double sz)
+  void default_text_size (double sz)
   {
     m_default_text_size_dbl = sz;
   }
 
   /**
-   *  @brief Get the default text size for draw (DText ...) - i.e. in micron units
+   *  @brief Get the default text size for draw (DText ...)
    */
   double default_text_size_dbl () const
   {
@@ -350,7 +350,7 @@ public:
    *  This method draws the properties if "draw_properties" is set to true and/or the 
    *  "description" property when "draw_description_property" is set to true.
    */
-  void draw_propstring (const db::Shape &shape, lay::CanvasPlane *text, const db::CplxTrans &trans);
+  void draw_propstring (const db::Shape &shape, const db::PropertiesRepository *prep, lay::CanvasPlane *text, const db::CplxTrans &trans);
 
   /**
    *  @brief Draw a properties string at the given position
@@ -358,7 +358,8 @@ public:
    *  The transformation is not used to transform the point (it must be given in micron units
    *  already) but to compute the position of the text, given the text height.
    */
-  void draw_propstring (db::properties_id_type id, const db::DPoint &pref,
+  void draw_propstring (db::properties_id_type id, 
+                        const db::PropertiesRepository *prep, const db::DPoint &pref, 
                         lay::CanvasPlane *text, const db::CplxTrans &trans);
 
   /**
@@ -367,7 +368,8 @@ public:
    *  The transformation is not used to transform the point (it must be given in micron units
    *  already) but to compute the position of the text, given the text height.
    */
-  void draw_description_propstring (db::properties_id_type id, const db::DPoint &pref,
+  void draw_description_propstring (db::properties_id_type id, 
+                                    const db::PropertiesRepository *prep, const db::DPoint &pref, 
                                     lay::CanvasPlane *text, const db::CplxTrans &trans);
 
   /**
@@ -398,22 +400,11 @@ public:
     return m_resolution;
   }
 
-  /**
-   *  @brief Get the font resolution value
-   *
-   *  The resolution value is used to convert dimensions on the output device into canvas
-   *  units. This value applies to rendering the "Default" font.
-   */
-  double font_resolution () const
-  {
-    return m_font_resolution;
-  }
-
 protected:
   bool m_draw_texts;
   bool m_draw_properties;
   bool m_draw_description_property;
-  db::DCoord m_default_text_size;
+  db::Coord m_default_text_size;
   double m_default_text_size_dbl;
   bool m_apply_text_trans;
   bool m_precise;
@@ -421,7 +412,6 @@ protected:
   db::Font m_font;
   unsigned int m_width, m_height;
   double m_resolution;
-  double m_font_resolution;
 };
 
 } // namespace lay

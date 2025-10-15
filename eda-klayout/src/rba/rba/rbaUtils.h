@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -25,10 +25,9 @@
 
 #ifdef HAVE_RUBY
 
-#include "gsiInterpreter.h"
-#include "gsiSerialisation.h"
-
 #include <ruby.h>
+
+#include "gsiInterpreter.h"
 
 #include "tlScriptError.h"
 
@@ -135,20 +134,6 @@ inline void rb_hash_clear(VALUE hash)
 
 #endif
 
-#if HAVE_RUBY_VERSION_CODE < 20200
-
-#include <ruby/encoding.h>
-
-//  Ruby <2.2 does not have this useful function
-inline VALUE rb_utf8_str_new (const char *ptr, long len)
-{
-  VALUE str = rb_str_new (ptr, len);
-  rb_enc_associate_index (str, rb_utf8_encindex ());
-  return str;
-}
-
-#endif
-
 typedef VALUE (*ruby_func)(ANYARGS);
 
 /**
@@ -162,6 +147,14 @@ inline std::string rb_cstring_from_utf8 (const std::string &utf8)
 }
 
 /**
+ *  @brief A setter for $0
+ */
+inline void rb_set_progname (VALUE pn)
+{
+  rb_gv_set ("PROGRAM_NAME", pn);
+}
+
+/**
  *  @brief Sets up a block for protected evaluation
  *
  *  It was learned (by bitter experience), that in particular rb_protect cannot simply be
@@ -171,7 +164,7 @@ inline std::string rb_cstring_from_utf8 (const std::string &utf8)
  *  functionality, the rb_sourcefile () variable is copied into the RNode object, as this
  *  variable is usually updated with the current sourcefile name.
  *  In effect, the string referenced by this variable participates in the GC mark&sweep
- *  steps which leads to unpredictable results, if this variable is not set to a valid
+ *  steps which leads to unpredicable results, if this variable is not set to a valid
  *  string (ruby) buffer or 0.
  *
  *  As a consequence, this function must be called before rb_protect and likely other xx_protect
@@ -204,11 +197,10 @@ namespace rba
 
 tl::BacktraceElement rba_split_bt_information (const char *m, size_t l);
 void rba_get_backtrace_from_array (VALUE backtrace, std::vector<tl::BacktraceElement> &bt, unsigned int skip);
-void rba_check_error (int state);
+void rba_check_error ();
 VALUE rba_string_value_f (VALUE obj);
 VALUE rba_safe_string_value (VALUE obj);
 VALUE rba_safe_obj_as_string (VALUE obj);
-VALUE rba_safe_inspect (VALUE obj);
 int rba_num2int_f (VALUE obj);
 int rba_safe_num2int (VALUE obj);
 unsigned int rba_num2uint_f (VALUE obj);
@@ -229,9 +221,6 @@ VALUE rba_funcall2_checked (VALUE obj, ID id, int argc, VALUE *args);
 VALUE rba_f_eval_checked (int argc, VALUE *argv, VALUE self);
 void rba_yield_checked (VALUE value);
 VALUE rba_eval_string_in_context (const char *expr, const char *file, int line, int context);
-
-bool exceptions_blocked ();
-void block_exceptions (bool f);
 
 /**
  *  @brief A struct encapsulating the call parameters for a function
@@ -270,16 +259,11 @@ R rba_safe_func (R (*f) (A), A arg)
   int error = 0;
 
   RUBY_BEGIN_EXEC
-    //  NOTE: we do not want exceptions to be seen in the debugger here - later they are rethrown after
-    //  being annotated. This is when we want to see them.
-    bool eb = exceptions_blocked ();
-    block_exceptions (true);
     rb_protect (&rba_safe_func_caller<R, A>, (VALUE) &cp, &error);
-    block_exceptions (eb);
   RUBY_END_EXEC
 
   if (error) {
-    rba_check_error (error);
+    rba_check_error ();
   }
   return cp.r;
 }

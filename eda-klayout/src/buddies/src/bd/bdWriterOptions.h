@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -116,14 +116,12 @@ private:
   unsigned int m_gds2_max_vertex_count;
   bool m_gds2_no_zero_length_paths;
   bool m_gds2_multi_xy_records;
-  bool m_gds2_resolve_skew_arrays;
   unsigned int m_gds2_max_cellname_length;
   std::string m_gds2_libname;
   double m_gds2_user_units;
   bool m_gds2_write_timestamps;
   bool m_gds2_write_cell_properties;
   bool m_gds2_write_file_properties;
-  double m_gds2_default_text_size;
 
   int m_oasis_compression_level;
   bool m_oasis_write_cblocks;

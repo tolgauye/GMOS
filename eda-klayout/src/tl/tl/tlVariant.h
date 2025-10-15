@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -29,8 +29,6 @@
 #include <string>
 #include <vector>
 #include <map>
-#include <set>
-#include <list>
 #include <stdexcept>
 #include <typeinfo>
 
@@ -55,11 +53,8 @@ namespace gsi
 namespace tl
 {
 
-class Variant;
 class Extractor;
 class EvalClass;
-template <class T> void extractor_impl (tl::Extractor &, T &);
-template <class T> bool test_extractor_impl (tl::Extractor &, T &);
 
 /**
  *  @brief A base class which describes a class, i.e. an object capable of converting and handling void *
@@ -79,9 +74,6 @@ public:
   virtual bool less (const void *, const void *) const = 0;
   virtual void *clone (const void *) const = 0;
   virtual std::string to_string (const void *) const = 0;
-  virtual int to_int (const void *) const = 0;
-  virtual double to_double (const void *) const = 0;
-  virtual void to_variant (const void *, tl::Variant &var) const = 0;
   virtual void read (void *, tl::Extractor &ex) const = 0;
   virtual const char *name () const = 0;
   virtual bool is_const () const = 0;
@@ -89,7 +81,6 @@ public:
   virtual const gsi::ClassBase *gsi_cls () const = 0;
   virtual const tl::EvalClass *eval_cls () const = 0;
   virtual void *deref_proxy (tl::Object *proxy) const = 0;
-  virtual const tl::VariantUserClassBase *change_constness (bool constness) const = 0;
 
   const void *deref_proxy_const (const tl::Object *proxy) const
   {
@@ -125,11 +116,6 @@ public:
   static const tl::VariantUserClassBase *instance (bool is_const)
   {
     return VariantUserClassBase::instance (typeid (T), is_const);
-  }
-
-  const tl::VariantUserClassBase *change_constness (bool constness) const
-  {
-    return instance (constness);
   }
 
 private:
@@ -178,7 +164,6 @@ public:
     t_double, 
     t_string, 
     t_stdstring, 
-    t_bytearray,
 #if defined(HAVE_QT)
     t_qstring,
     t_qbytearray, 
@@ -204,11 +189,6 @@ public:
    *  @brief Copy ctor
    */
   Variant (const tl::Variant &d);
-
-  /**
-   *  @brief Initialize the Variant with a std::vector<char>
-   */
-  Variant (const std::vector<char> &s);
 
 #if defined(HAVE_QT)
   /**
@@ -366,113 +346,12 @@ public:
   }
 
   /**
-   *  @brief Initialize with a const user type (will always create a reference and NOT own the object)
-   */
-  template <class T>
-  Variant (const T *obj)
-    : m_type (t_nil), m_string (0)
-  {
-    if (obj) {
-      *this = make_variant_ref (obj);
-    }
-  }
-
-  /**
-   *  @brief Initialize with a non-const user type (will always create a reference and NOT own the object)
-   */
-  template <class T>
-  Variant (T *obj)
-    : m_type (t_nil), m_string (0)
-  {
-    if (obj) {
-      *this = make_variant_ref (obj);
-    }
-  }
-
-  /**
-   *  @brief Initialize the Variant with a STL vector
-   */
-  template <class T>
-  Variant (const std::vector<T> &list)
-    : m_type (t_list), m_string (0)
-  {
-    m_var.m_list = new std::vector<tl::Variant> ();
-    m_var.m_list->reserve (list.size ());
-    for (auto i = list.begin (); i != list.end (); ++i) {
-      m_var.m_list->push_back (tl::Variant (*i));
-    }
-  }
-
-  /**
-   *  @brief Initialize the Variant with a STL list
-   */
-  template <class T>
-  Variant (const std::list<T> &list)
-    : m_type (t_list), m_string (0)
-  {
-    m_var.m_list = new std::vector<tl::Variant> ();
-    m_var.m_list->reserve (list.size ());
-    for (auto i = list.begin (); i != list.end (); ++i) {
-      m_var.m_list->push_back (tl::Variant (*i));
-    }
-  }
-
-  /**
-   *  @brief Initialize the Variant with a STL set (not maintaining the set character)
-   */
-  template <class T>
-  Variant (const std::set<T> &list)
-    : m_type (t_list), m_string (0)
-  {
-    m_var.m_list = new std::vector<tl::Variant> ();
-    m_var.m_list->reserve (list.size ());
-    for (auto i = list.begin (); i != list.end (); ++i) {
-      m_var.m_list->push_back (tl::Variant (*i));
-    }
-  }
-
-  /**
-   *  @brief Initialize the Variant with a STL pair
-   */
-  template <class A, class B>
-  Variant (const std::pair<A, B> &pair)
-    : m_type (t_list), m_string (0)
-  {
-    m_var.m_list = new std::vector<tl::Variant> ();
-    m_var.m_list->reserve (2);
-    m_var.m_list->push_back (tl::Variant (pair.first));
-    m_var.m_list->push_back (tl::Variant (pair.second));
-  }
-
-  /**
-   *  @brief Initialize the Variant with a STL map
-   */
-  template <class K, class V>
-  Variant (const std::map<K, V> &map)
-    : m_type (t_array), m_string (0)
-  {
-    m_var.m_array = new std::map<tl::Variant, tl::Variant> ();
-    for (auto i = map.begin (); i != map.end (); ++i) {
-      m_var.m_array->insert (std::make_pair (tl::Variant (i->first), tl::Variant (i->second)));
-    }
-  }
-
-  /**
-   *  @brief Initialize the Variant with an explicit vector of variants
+   *  @brief Initialize the Variant with an explicit vector or variants
    */
   Variant (const std::vector<tl::Variant> &list)
     : m_type (t_list), m_string (0)
   {
     m_var.m_list = new std::vector<tl::Variant> (list);
-  }
-
-  /**
-   *  @brief Initialize the Variant with an explicit map of variants
-   */
-  Variant (const std::map<tl::Variant, tl::Variant> &map)
-    : m_type (t_array), m_string (0)
-  {
-    m_var.m_array = new std::map<tl::Variant, tl::Variant> (map);
   }
 
   /**
@@ -567,11 +446,6 @@ public:
    *  @brief Assignment of a string
    */
   Variant &operator= (const std::string &v);
-
-  /**
-   *  @brief Assignment of a STL byte array
-   */
-  Variant &operator= (const std::vector<char> &v);
 
   /**
    *  @brief Assignment of a double
@@ -726,22 +600,6 @@ public:
   bool operator< (const Variant &d) const;
 
   /**
-   *  @brief An exact compare
-   *
-   *  In constrast to operator==, this method compares the two variants exactly -
-   *  i.e. also the types have to be identical, not only the (normalized type) values.
-   */
-  bool equal (const Variant &d) const;
-
-  /**
-   *  @brief An exact less operator
-   *
-   *  This is the companion for "equal". It is also an exact compare - i.e.
-   *  the type codes are compared as well.
-   */
-  bool less (const Variant &d) const;
-
-  /**
    *  @brief Conversion to a string
    *
    *  This performs the conversion to a string as far as possible.
@@ -766,14 +624,6 @@ public:
    */
   QString to_qstring () const;
 #endif
-
-  /**
-   *  @brief Conversion to a STL byte array
-   *
-   *  This performs the conversion to a std::vector<char> as far as possible.
-   *  No conversion is provided to user types currently.
-   */
-  std::vector<char> to_bytearray () const;
 
   /**
    *  @brief Conversion to a std::string
@@ -1010,23 +860,6 @@ public:
    *  An object can only be deleted if it is owned by the variant, i.e. user_is_ref is false.
    */
   void user_destroy ();
-
-  /**
-   *  @brief Takes the user object and releases it from the variant
-   */
-  void *user_take ();
-
-  /**
-   *  @brief Takes the user object and releases ownership by the variant
-   *  This method is const as it does not change the value, but the ownership of
-   *  the contained object. The object must not be "user_is_ref".
-   */
-  void *user_unshare () const;
-
-  /**
-   *  @brief Changes the constness of the user object
-   */
-  void user_change_constness (bool constness);
 
   /**
    *  @brief Assigns the object stored in other to self
@@ -1493,14 +1326,6 @@ public:
     return m_type == t_id;
   }
 
-  /**
-   *  @brief Test, if it is a std::vector<char> byte array
-   */
-  bool is_bytearray () const
-  {
-    return m_type == t_bytearray;
-  }
-
 #if defined(HAVE_QT)
 
   /**
@@ -1543,21 +1368,9 @@ public:
   bool is_a_string () const
   {
 #if defined(HAVE_QT)
-    return m_type == t_string || m_type == t_stdstring || m_type == t_qstring;
+    return m_type == t_string || m_type == t_stdstring || m_type == t_qstring || m_type == t_qbytearray;
 #else
     return m_type == t_string || m_type == t_stdstring;
-#endif
-  }
-
-  /**
-   *  @brief Test, if it is a byte array
-   */
-  bool is_a_bytearray () const
-  {
-#if defined(HAVE_QT)
-    return m_type == t_bytearray || m_type == t_qbytearray;
-#else
-    return m_type == t_bytearray;
 #endif
   }
 
@@ -1675,11 +1488,6 @@ public:
    */
   std::string to_parsable_string () const;
 
-  /**
-   *  @brief Gets a hash value for the variant
-   */
-  size_t hash () const;
-
 private:
   type m_type;
 
@@ -1717,7 +1525,6 @@ private:
     QString *m_qstring;
     QByteArray *m_qbytearray;
 #endif
-    std::vector<char> *m_bytearray;
     std::string *m_stdstring;
   } m_var;
 
@@ -1725,8 +1532,6 @@ private:
   mutable char *m_string;
 
   void set_user_object (void *obj, bool shared);
-  bool equal_core (const Variant &d, type t) const;
-  bool less_core (const Variant &d, type t) const;
 };
 
 //  specializations of the to ... methods
@@ -1748,7 +1553,6 @@ template<> inline __int128 Variant::to<__int128> () const                       
 template<> inline double Variant::to<double> () const                             { return to_double (); }
 template<> inline float Variant::to<float> () const                               { return to_float (); }
 template<> inline std::string Variant::to<std::string> () const                   { return to_stdstring (); }
-template<> inline std::vector<char> Variant::to<std::vector<char> > () const      { return to_bytearray (); }
 #if defined(HAVE_QT)
 template<> inline QString Variant::to<QString> () const                           { return to_qstring (); }
 template<> inline QByteArray Variant::to<QByteArray> () const                     { return to_qbytearray (); }
@@ -1774,7 +1578,6 @@ template<> inline bool Variant::is<__int128> () const             { return m_typ
 template<> inline bool Variant::is<double> () const               { return m_type == t_double; }
 template<> inline bool Variant::is<float> () const                { return m_type == t_float; }
 template<> inline bool Variant::is<std::string> () const          { return m_type == t_stdstring; }
-template<> inline bool Variant::is<std::vector<char> > () const   { return m_type == t_bytearray; }
 #if defined(HAVE_QT)
 template<> inline bool Variant::is<QString> () const              { return m_type == t_qstring; }
 template<> inline bool Variant::is<QByteArray> () const           { return m_type == t_qbytearray; }
@@ -1800,7 +1603,6 @@ template<> inline bool Variant::can_convert_to<__int128> () const             { 
 template<> inline bool Variant::can_convert_to<double> () const               { return can_convert_to_double (); }
 template<> inline bool Variant::can_convert_to<float> () const                { return can_convert_to_float (); }
 template<> inline bool Variant::can_convert_to<std::string> () const          { return true; }
-template<> inline bool Variant::can_convert_to<std::vector<char> > () const   { return true; }
 #if defined(HAVE_QT)
 template<> inline bool Variant::can_convert_to<QString> () const              { return true; }
 template<> inline bool Variant::can_convert_to<QByteArray> () const           { return true; }
@@ -1812,28 +1614,7 @@ template<> inline bool Variant::can_convert_to<const char *> () const         { 
  */
 void initialize_variant_class_table ();
 
-/**
- *  @brief Special extractors for Variant
- */
-template<> TL_PUBLIC void extractor_impl<Variant> (tl::Extractor &ex, Variant &v);
-template<> TL_PUBLIC bool test_extractor_impl<Variant> (tl::Extractor &ex, Variant &v);
-
 } // namespace tl
-
-namespace std
-{
-  /**
-   *  @brief That hash function for tl::Variant
-   */
-  template <>
-  struct hash <tl::Variant>
-  {
-    size_t operator() (const tl::Variant &o) const
-    {
-      return o.hash ();
-    }
-  };
-}
 
 #endif
 

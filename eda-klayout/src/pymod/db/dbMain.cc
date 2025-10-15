@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -24,7 +24,8 @@
 
 #include "../../db/db/dbInit.h"
 
-#include "dbMain.h"
+//  to force linking of the db module
+#include "../../db/db/dbForceLink.h"
 
 static PyObject *db_module_init (const char *pymod_name, const char *mod_name, const char *mod_description)
 {

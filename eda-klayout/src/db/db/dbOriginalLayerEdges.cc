@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -39,17 +39,10 @@ namespace
     : public EdgesIteratorDelegate
   {
   public:
-    typedef db::Edge value_type;
-
     OriginalLayerEdgesIterator (const db::RecursiveShapeIterator &iter, const db::ICplxTrans &trans)
-      : m_rec_iter (iter), m_iter_trans (trans), m_prop_id (0)
+      : m_rec_iter (iter), m_iter_trans (trans)
     {
       set ();
-    }
-
-    virtual bool is_addressable() const
-    {
-      return false;
     }
 
     virtual bool at_end () const
@@ -59,18 +52,13 @@ namespace
 
     virtual void increment ()
     {
-      do_increment ();
+      inc ();
       set ();
     }
 
     virtual const value_type *get () const
     {
-      return &m_shape;
-    }
-
-    virtual db::properties_id_type prop_id () const
-    {
-      return m_prop_id;
+      return &m_edge;
     }
 
     virtual EdgesIteratorDelegate *clone () const
@@ -78,55 +66,32 @@ namespace
       return new OriginalLayerEdgesIterator (*this);
     }
 
-    virtual bool equals (const generic_shape_iterator_delegate_base<value_type> *other) const
-    {
-      const OriginalLayerEdgesIterator *o = dynamic_cast<const OriginalLayerEdgesIterator *> (other);
-      return o && o->m_rec_iter == m_rec_iter && o->m_iter_trans.equal (m_iter_trans);
-    }
-
-    virtual void do_reset (const db::Box &region, bool overlapping)
-    {
-      if (region == db::Box::world ()) {
-        m_rec_iter.set_region (region);
-      } else {
-        m_rec_iter.set_region (m_iter_trans.inverted () * region);
-      }
-      m_rec_iter.set_overlapping (overlapping);
-      set ();
-    }
-
-    virtual db::Box bbox () const
-    {
-      return m_iter_trans * m_rec_iter.bbox ();
-    }
-
   private:
     friend class Edges;
 
     db::RecursiveShapeIterator m_rec_iter;
     db::ICplxTrans m_iter_trans;
-    value_type m_shape;
-    db::properties_id_type m_prop_id;
+    db::Edge m_edge;
 
     void set ()
     {
-      while (! m_rec_iter.at_end () && !m_rec_iter->is_edge ()) {
+      while (! m_rec_iter.at_end () && ! (m_rec_iter.shape ().is_edge () || m_rec_iter.shape ().is_path () || m_rec_iter.shape ().is_box ())) {
         ++m_rec_iter;
       }
       if (! m_rec_iter.at_end ()) {
-        m_rec_iter->edge (m_shape);
-        m_shape.transform (m_iter_trans * m_rec_iter.trans ());
-        m_prop_id = m_rec_iter.prop_id ();
+        m_rec_iter.shape ().edge (m_edge);
+        m_edge.transform (m_iter_trans * m_rec_iter.trans ());
       }
     }
 
-    void do_increment ()
+    void inc ()
     {
       if (! m_rec_iter.at_end ()) {
         ++m_rec_iter;
       }
     }
   };
+
 }
 
 OriginalLayerEdges::OriginalLayerEdges ()
@@ -194,7 +159,7 @@ OriginalLayerEdges::begin_merged () const
     return begin ();
   } else {
     ensure_merged_edges_valid ();
-    return new FlatEdgesIterator (&m_merged_edges);
+    return new FlatEdgesIterator (m_merged_edges.get_layer<db::Edge, db::unstable_layer_tag> ().begin (), m_merged_edges.get_layer<db::Edge, db::unstable_layer_tag> ().end ());
   }
 }
 
@@ -218,7 +183,7 @@ OriginalLayerEdges::begin_merged_iter () const
 bool
 OriginalLayerEdges::empty () const
 {
-  return m_iter.at_end_no_lock ();
+  return m_iter.at_end ();
 }
 
 bool
@@ -229,12 +194,6 @@ OriginalLayerEdges::is_merged () const
 
 const db::Edge *
 OriginalLayerEdges::nth (size_t) const
-{
-  throw tl::Exception (tl::to_string (tr ("Random access to edges is available only for flat collections")));
-}
-
-db::properties_id_type
-OriginalLayerEdges::nth_prop_id (size_t) const
 {
   throw tl::Exception (tl::to_string (tr ("Random access to edges is available only for flat collections")));
 }
@@ -255,15 +214,6 @@ const db::RecursiveShapeIterator *
 OriginalLayerEdges::iter () const
 {
   return &m_iter;
-}
-
-void
-OriginalLayerEdges::apply_property_translator (const db::PropertiesTranslator &pt)
-{
-  m_iter.apply_property_translator (pt);
-
-  m_merged_edges_valid = false;
-  m_merged_edges.clear ();
 }
 
 bool
@@ -291,7 +241,7 @@ OriginalLayerEdges::less (const Edges &other) const
 void
 OriginalLayerEdges::init ()
 {
-  m_is_merged = false;
+  m_is_merged = true;
   m_merged_edges_valid = false;
 }
 
@@ -306,9 +256,9 @@ OriginalLayerEdges::ensure_merged_edges_valid () const
     EdgeBooleanClusterCollectorToShapes cluster_collector (&tmp, EdgeOr);
 
     db::box_scanner<db::Edge, size_t> scanner (report_progress (), progress_desc ());
-    scanner.reserve (count ());
+    scanner.reserve (size ());
 
-    AddressableEdgeDelivery e (begin ());
+    AddressableEdgeDelivery e (begin (), has_valid_edges ());
 
     for ( ; ! e.at_end (); ++e) {
       if (! e->is_degenerate ()) {

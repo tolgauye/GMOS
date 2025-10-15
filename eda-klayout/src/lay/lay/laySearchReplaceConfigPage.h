@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -25,7 +25,6 @@
 #define HDR_laySearchReplaceConfigPage
 
 #include "layPlugin.h"
-#include "layPluginConfigPage.h"
 #include "laySearchReplaceDialog.h"
 
 #include "ui_SearchReplaceConfigPage.h"
@@ -56,8 +55,8 @@ class SearchReplaceConfigPage
 public:
   SearchReplaceConfigPage (QWidget *parent);
 
-  virtual void setup (lay::Dispatcher *root);
-  virtual void commit (lay::Dispatcher *root);
+  virtual void setup (lay::PluginRoot *root);
+  virtual void commit (lay::PluginRoot *root);
 
 public slots:
   void window_changed (int);

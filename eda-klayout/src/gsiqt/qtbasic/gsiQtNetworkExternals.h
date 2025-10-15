@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -20,11 +20,7 @@
 
 */
 
-#if !defined(HAVE_QT_NETWORK)
-#  define FORCE_LINK_GSI_QTNETWORK
-#elif QT_VERSION >= 0x060000
-#  include "../qt6/QtNetwork/gsiQtExternals.h"
-#elif QT_VERSION >= 0x050000
+#if QT_VERSION >= 0x050000
 #  include "../qt5/QtNetwork/gsiQtExternals.h"
 #else
 #  include "../qt4/QtNetwork/gsiQtExternals.h"

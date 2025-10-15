@@ -1,8 +1,7 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<ui version="4.0">
+<ui version="4.0" >
  <class>SearchReplaceDialog</class>
- <widget class="QDialog" name="SearchReplaceDialog">
-  <property name="geometry">
+ <widget class="QDialog" name="SearchReplaceDialog" >
+  <property name="geometry" >
    <rect>
     <x>0</x>
     <y>0</y>
@@ -10,63 +9,65 @@
     <height>590</height>
    </rect>
   </property>
-  <property name="windowTitle">
+  <property name="windowTitle" >
    <string>Search and Replace</string>
   </property>
-  <layout class="QVBoxLayout">
-   <property name="spacing">
-    <number>6</number>
-   </property>
-   <property name="margin" stdset="0">
+  <layout class="QVBoxLayout" >
+   <property name="margin" >
     <number>9</number>
    </property>
+   <property name="spacing" >
+    <number>6</number>
+   </property>
    <item>
-    <widget class="QFrame" name="frame_2">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+    <widget class="QFrame" name="frame_2" >
+     <property name="sizePolicy" >
+      <sizepolicy>
+       <hsizetype>5</hsizetype>
+       <vsizetype>5</vsizetype>
        <horstretch>0</horstretch>
        <verstretch>1</verstretch>
       </sizepolicy>
      </property>
-     <property name="frameShape">
+     <property name="frameShape" >
       <enum>QFrame::NoFrame</enum>
      </property>
-     <property name="frameShadow">
+     <property name="frameShadow" >
       <enum>QFrame::Raised</enum>
      </property>
-     <layout class="QVBoxLayout">
-      <property name="spacing">
-       <number>6</number>
-      </property>
-      <property name="margin" stdset="0">
+     <layout class="QVBoxLayout" >
+      <property name="margin" >
        <number>0</number>
       </property>
+      <property name="spacing" >
+       <number>6</number>
+      </property>
       <item>
-       <widget class="QSplitter" name="splitter">
-        <property name="orientation">
+       <widget class="QSplitter" name="splitter" >
+        <property name="orientation" >
          <enum>Qt::Horizontal</enum>
         </property>
-        <widget class="QTabWidget" name="mode_tab">
-         <property name="currentIndex">
+        <widget class="QTabWidget" name="mode_tab" >
+         <property name="currentIndex" >
           <number>3</number>
          </property>
-         <widget class="QWidget" name="tab">
-          <attribute name="title">
+         <widget class="QWidget" name="tab" >
+          <attribute name="title" >
            <string>Find</string>
           </attribute>
-          <layout class="QGridLayout">
-           <property name="margin" stdset="0">
+          <layout class="QGridLayout" >
+           <property name="margin" >
             <number>9</number>
            </property>
-           <property name="spacing">
+           <property name="spacing" >
             <number>6</number>
            </property>
-           <item row="5" column="0" colspan="2">
+           <item row="5" column="0" colspan="2" >
             <spacer>
-             <property name="orientation">
+             <property name="orientation" >
               <enum>Qt::Vertical</enum>
              </property>
-             <property name="sizeHint" stdset="0">
+             <property name="sizeHint" >
               <size>
                <width>20</width>
                <height>40</height>
@@ -74,77 +75,81 @@
              </property>
             </spacer>
            </item>
-           <item row="6" column="0" colspan="2">
-            <widget class="QLabel" name="hint_label1">
-             <property name="text">
-              <string>&lt;html&gt;&lt;body&gt;You can do much more with custom queries.&lt;br/&gt;&lt;a href=&quot;int:/about/custom_queries.xml&quot;&gt;Click here for details&lt;/a&gt;.&lt;/body&gt;&lt;/html&gt;</string>
+           <item row="6" column="0" colspan="2" >
+            <widget class="QLabel" name="hint_label1" >
+             <property name="text" >
+              <string>&lt;html>&lt;body>You can do much more with custom queries.&lt;br/>&lt;a href="int:/about/custom_queries.xml">Click here for details&lt;/a>.&lt;/body>&lt;/html></string>
              </property>
-             <property name="wordWrap">
+             <property name="wordWrap" >
               <bool>true</bool>
              </property>
             </widget>
            </item>
-           <item row="3" column="0" colspan="2">
-            <widget class="QLabel" name="label_2">
-             <property name="text">
+           <item row="3" column="0" colspan="2" >
+            <widget class="QLabel" name="label_2" >
+             <property name="text" >
               <string>With ...</string>
              </property>
             </widget>
            </item>
-           <item row="4" column="0" colspan="2">
-            <widget class="QStackedWidget" name="find_properties">
-             <widget class="QWidget" name="page"/>
-             <widget class="QWidget" name="page_2"/>
+           <item row="4" column="0" colspan="2" >
+            <widget class="QStackedWidget" name="find_properties" >
+             <widget class="QWidget" name="page" />
+             <widget class="QWidget" name="page_2" />
             </widget>
            </item>
-           <item row="1" column="1">
-            <widget class="QComboBox" name="find_context">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+           <item row="1" column="1" >
+            <widget class="QComboBox" name="find_context" >
+             <property name="sizePolicy" >
+              <sizepolicy>
+               <hsizetype>5</hsizetype>
+               <vsizetype>0</vsizetype>
                <horstretch>1</horstretch>
                <verstretch>0</verstretch>
               </sizepolicy>
              </property>
             </widget>
            </item>
-           <item row="1" column="0">
-            <widget class="QLabel" name="label_17">
-             <property name="text">
+           <item row="1" column="0" >
+            <widget class="QLabel" name="label_17" >
+             <property name="text" >
               <string>In ...    </string>
              </property>
             </widget>
            </item>
-           <item row="0" column="1">
-            <widget class="QComboBox" name="find_objects">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+           <item row="0" column="1" >
+            <widget class="QComboBox" name="find_objects" >
+             <property name="sizePolicy" >
+              <sizepolicy>
+               <hsizetype>7</hsizetype>
+               <vsizetype>0</vsizetype>
                <horstretch>0</horstretch>
                <verstretch>0</verstretch>
               </sizepolicy>
              </property>
             </widget>
            </item>
-           <item row="0" column="0">
-            <widget class="QLabel" name="label">
-             <property name="text">
+           <item row="0" column="0" >
+            <widget class="QLabel" name="label" >
+             <property name="text" >
               <string>Object</string>
              </property>
             </widget>
            </item>
-           <item row="8" column="0" colspan="2">
-            <layout class="QHBoxLayout">
-             <property name="spacing">
-              <number>6</number>
-             </property>
-             <property name="margin" stdset="0">
+           <item row="8" column="0" colspan="2" >
+            <layout class="QHBoxLayout" >
+             <property name="margin" >
               <number>0</number>
+             </property>
+             <property name="spacing" >
+              <number>6</number>
              </property>
              <item>
               <spacer>
-               <property name="orientation">
+               <property name="orientation" >
                 <enum>Qt::Horizontal</enum>
                </property>
-               <property name="sizeHint" stdset="0">
+               <property name="sizeHint" >
                 <size>
                  <width>40</width>
                  <height>20</height>
@@ -153,45 +158,46 @@
               </spacer>
              </item>
              <item>
-              <widget class="QPushButton" name="find_all_button">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+              <widget class="QPushButton" name="find_all_button" >
+               <property name="sizePolicy" >
+                <sizepolicy>
+                 <hsizetype>1</hsizetype>
+                 <vsizetype>0</vsizetype>
                  <horstretch>0</horstretch>
                  <verstretch>0</verstretch>
                 </sizepolicy>
                </property>
-               <property name="toolTip">
-                <string>&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+               <property name="toolTip" >
+                <string>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Liberation Sans'; font-size:11pt; font-weight:400; font-style:normal; text-decoration:none;&quot;&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Find all&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Liberation Sans'; font-size:11pt; font-weight:400; font-style:normal; text-decoration:none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">Find all&lt;/p>&lt;/body>&lt;/html></string>
                </property>
-               <property name="text">
+               <property name="text" >
                 <string>Find</string>
                </property>
-               <property name="icon">
-                <iconset>
-                 <normaloff>:/run_16px.png</normaloff>:/run_16px.png</iconset>
+               <property name="icon" >
+                <iconset resource="layResources.qrc" >:/run.png</iconset>
                </property>
-               <property name="autoDefault">
+               <property name="autoDefault" >
                 <bool>true</bool>
                </property>
-               <property name="default">
+               <property name="default" >
                 <bool>false</bool>
                </property>
               </widget>
              </item>
             </layout>
            </item>
-           <item row="2" column="1">
+           <item row="2" column="1" >
             <spacer>
-             <property name="orientation">
+             <property name="orientation" >
               <enum>Qt::Vertical</enum>
              </property>
-             <property name="sizeType">
+             <property name="sizeType" >
               <enum>QSizePolicy::Fixed</enum>
              </property>
-             <property name="sizeHint" stdset="0">
+             <property name="sizeHint" >
               <size>
                <width>20</width>
                <height>20</height>
@@ -201,33 +207,33 @@ p, li { white-space: pre-wrap; }
            </item>
           </layout>
          </widget>
-         <widget class="QWidget" name="tab_4">
-          <attribute name="title">
+         <widget class="QWidget" name="tab_4" >
+          <attribute name="title" >
            <string>Delete</string>
           </attribute>
-          <layout class="QGridLayout">
-           <property name="margin" stdset="0">
+          <layout class="QGridLayout" >
+           <property name="margin" >
             <number>9</number>
            </property>
-           <property name="spacing">
+           <property name="spacing" >
             <number>6</number>
            </property>
-           <item row="6" column="0" colspan="2">
-            <widget class="QLabel" name="hint_label2">
-             <property name="text">
-              <string>&lt;html&gt;&lt;body&gt;You can do much more with custom queries. &lt;br/&gt;&lt;a href=&quot;int:/about/custom_queries.xml&quot;&gt;Click here for details&lt;/a&gt;.&lt;/body&gt;&lt;/html&gt;</string>
+           <item row="6" column="0" colspan="2" >
+            <widget class="QLabel" name="hint_label2" >
+             <property name="text" >
+              <string>&lt;html>&lt;body>You can do much more with custom queries. &lt;br/>&lt;a href="int:/about/custom_queries.xml">Click here for details&lt;/a>.&lt;/body>&lt;/html></string>
              </property>
-             <property name="wordWrap">
+             <property name="wordWrap" >
               <bool>true</bool>
              </property>
             </widget>
            </item>
-           <item row="5" column="0" colspan="2">
+           <item row="5" column="0" colspan="2" >
             <spacer>
-             <property name="orientation">
+             <property name="orientation" >
               <enum>Qt::Vertical</enum>
              </property>
-             <property name="sizeHint" stdset="0">
+             <property name="sizeHint" >
               <size>
                <width>311</width>
                <height>40</height>
@@ -235,20 +241,20 @@ p, li { white-space: pre-wrap; }
              </property>
             </spacer>
            </item>
-           <item row="8" column="0" colspan="2">
-            <layout class="QHBoxLayout">
-             <property name="spacing">
-              <number>6</number>
-             </property>
-             <property name="margin" stdset="0">
+           <item row="8" column="0" colspan="2" >
+            <layout class="QHBoxLayout" >
+             <property name="margin" >
               <number>0</number>
+             </property>
+             <property name="spacing" >
+              <number>6</number>
              </property>
              <item>
               <spacer>
-               <property name="orientation">
+               <property name="orientation" >
                 <enum>Qt::Horizontal</enum>
                </property>
-               <property name="sizeHint" stdset="0">
+               <property name="sizeHint" >
                 <size>
                  <width>20</width>
                  <height>20</height>
@@ -257,84 +263,86 @@ p, li { white-space: pre-wrap; }
               </spacer>
              </item>
              <item>
-              <widget class="QPushButton" name="delete_all_button">
-               <property name="text">
+              <widget class="QPushButton" name="delete_all_button" >
+               <property name="text" >
                 <string>Delete All</string>
                </property>
-               <property name="icon">
-                <iconset>
-                 <normaloff>:/runthis.png</normaloff>:/runthis.png</iconset>
+               <property name="icon" >
+                <iconset resource="layResources.qrc" >:/runthis.png</iconset>
                </property>
               </widget>
              </item>
              <item>
-              <widget class="QPushButton" name="delete_button">
-               <property name="toolTip">
-                <string>&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+              <widget class="QPushButton" name="delete_button" >
+               <property name="toolTip" >
+                <string>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Liberation Sans'; font-size:11pt; font-weight:400; font-style:normal; text-decoration:none;&quot;&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Find all&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Liberation Sans'; font-size:11pt; font-weight:400; font-style:normal; text-decoration:none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">Find all&lt;/p>&lt;/body>&lt;/html></string>
                </property>
-               <property name="text">
+               <property name="text" >
                 <string>Select + Delete</string>
                </property>
-               <property name="icon">
-                <iconset>
-                 <normaloff>:/run_16px.png</normaloff>:/run_16px.png</iconset>
+               <property name="icon" >
+                <iconset resource="layResources.qrc" >:/run.png</iconset>
                </property>
-               <property name="autoDefault">
+               <property name="autoDefault" >
                 <bool>true</bool>
                </property>
-               <property name="default">
+               <property name="default" >
                 <bool>false</bool>
                </property>
               </widget>
              </item>
             </layout>
            </item>
-           <item row="0" column="0">
-            <widget class="QLabel" name="label_34">
-             <property name="text">
+           <item row="0" column="0" >
+            <widget class="QLabel" name="label_34" >
+             <property name="text" >
               <string>Object</string>
              </property>
             </widget>
            </item>
-           <item row="1" column="1">
-            <widget class="QComboBox" name="delete_context">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+           <item row="1" column="1" >
+            <widget class="QComboBox" name="delete_context" >
+             <property name="sizePolicy" >
+              <sizepolicy>
+               <hsizetype>5</hsizetype>
+               <vsizetype>0</vsizetype>
                <horstretch>1</horstretch>
                <verstretch>0</verstretch>
               </sizepolicy>
              </property>
             </widget>
            </item>
-           <item row="1" column="0">
-            <widget class="QLabel" name="label_33">
-             <property name="text">
+           <item row="1" column="0" >
+            <widget class="QLabel" name="label_33" >
+             <property name="text" >
               <string>In ...    </string>
              </property>
             </widget>
            </item>
-           <item row="0" column="1">
-            <widget class="QComboBox" name="delete_objects">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+           <item row="0" column="1" >
+            <widget class="QComboBox" name="delete_objects" >
+             <property name="sizePolicy" >
+              <sizepolicy>
+               <hsizetype>7</hsizetype>
+               <vsizetype>0</vsizetype>
                <horstretch>0</horstretch>
                <verstretch>0</verstretch>
               </sizepolicy>
              </property>
             </widget>
            </item>
-           <item row="2" column="0" colspan="2">
+           <item row="2" column="0" colspan="2" >
             <spacer>
-             <property name="orientation">
+             <property name="orientation" >
               <enum>Qt::Vertical</enum>
              </property>
-             <property name="sizeType">
+             <property name="sizeType" >
               <enum>QSizePolicy::Fixed</enum>
              </property>
-             <property name="sizeHint" stdset="0">
+             <property name="sizeHint" >
               <size>
                <width>20</width>
                <height>20</height>
@@ -342,87 +350,89 @@ p, li { white-space: pre-wrap; }
              </property>
             </spacer>
            </item>
-           <item row="4" column="0" colspan="2">
-            <widget class="QStackedWidget" name="delete_properties">
-             <widget class="QWidget" name="page_3"/>
-             <widget class="QWidget" name="page_4"/>
+           <item row="4" column="0" colspan="2" >
+            <widget class="QStackedWidget" name="delete_properties" >
+             <widget class="QWidget" name="page_3" />
+             <widget class="QWidget" name="page_4" />
             </widget>
            </item>
-           <item row="3" column="0" colspan="2">
-            <widget class="QLabel" name="label_3">
-             <property name="text">
+           <item row="3" column="0" colspan="2" >
+            <widget class="QLabel" name="label_3" >
+             <property name="text" >
               <string>With ...</string>
              </property>
             </widget>
            </item>
           </layout>
          </widget>
-         <widget class="QWidget" name="tab_2">
-          <attribute name="title">
+         <widget class="QWidget" name="tab_2" >
+          <attribute name="title" >
            <string>Replace</string>
           </attribute>
-          <layout class="QGridLayout">
-           <property name="margin" stdset="0">
+          <layout class="QGridLayout" >
+           <property name="margin" >
             <number>9</number>
            </property>
-           <property name="spacing">
+           <property name="spacing" >
             <number>6</number>
            </property>
-           <item row="8" column="0" colspan="2">
-            <widget class="QLabel" name="hint_label3">
-             <property name="text">
-              <string>&lt;html&gt;&lt;body&gt;You can do much more with custom queries. &lt;br/&gt;&lt;a href=&quot;int:/about/custom_queries.xml&quot;&gt;Click here for details&lt;/a&gt;.&lt;/body&gt;&lt;/html&gt;</string>
+           <item row="8" column="0" colspan="2" >
+            <widget class="QLabel" name="hint_label3" >
+             <property name="text" >
+              <string>&lt;html>&lt;body>You can do much more with custom queries. &lt;br/>&lt;a href="int:/about/custom_queries.xml">Click here for details&lt;/a>.&lt;/body>&lt;/html></string>
              </property>
-             <property name="wordWrap">
+             <property name="wordWrap" >
               <bool>true</bool>
              </property>
             </widget>
            </item>
-           <item row="1" column="1">
-            <widget class="QComboBox" name="replace_context">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+           <item row="1" column="1" >
+            <widget class="QComboBox" name="replace_context" >
+             <property name="sizePolicy" >
+              <sizepolicy>
+               <hsizetype>5</hsizetype>
+               <vsizetype>0</vsizetype>
                <horstretch>0</horstretch>
                <verstretch>0</verstretch>
               </sizepolicy>
              </property>
             </widget>
            </item>
-           <item row="1" column="0">
-            <widget class="QLabel" name="label_40">
-             <property name="text">
+           <item row="1" column="0" >
+            <widget class="QLabel" name="label_40" >
+             <property name="text" >
               <string>In ...    </string>
              </property>
             </widget>
            </item>
-           <item row="0" column="0">
-            <widget class="QLabel" name="label_39">
-             <property name="text">
+           <item row="0" column="0" >
+            <widget class="QLabel" name="label_39" >
+             <property name="text" >
               <string>Object</string>
              </property>
             </widget>
            </item>
-           <item row="9" column="0" colspan="2">
-            <widget class="QFrame" name="frame_8">
-             <property name="frameShape">
+           <item row="9" column="0" colspan="2" >
+            <widget class="QFrame" name="frame_8" >
+             <property name="frameShape" >
               <enum>QFrame::NoFrame</enum>
              </property>
-             <property name="frameShadow">
+             <property name="frameShadow" >
               <enum>QFrame::Raised</enum>
              </property>
-             <layout class="QHBoxLayout">
-              <property name="spacing">
-               <number>6</number>
-              </property>
-              <property name="margin" stdset="0">
+             <layout class="QHBoxLayout" >
+              <property name="margin" >
                <number>0</number>
+              </property>
+              <property name="spacing" >
+               <number>6</number>
               </property>
               <item>
                <spacer>
-                <property name="orientation">
+                <property name="orientation" >
                  <enum>Qt::Horizontal</enum>
                 </property>
-                <property name="sizeHint" stdset="0">
+                <property name="sizeHint" >
                  <size>
                   <width>40</width>
                   <height>20</height>
@@ -431,35 +441,33 @@ p, li { white-space: pre-wrap; }
                </spacer>
               </item>
               <item>
-               <widget class="QPushButton" name="replace_all_button">
-                <property name="text">
+               <widget class="QPushButton" name="replace_all_button" >
+                <property name="text" >
                  <string>Replace All</string>
                 </property>
-                <property name="icon">
-                 <iconset>
-                  <normaloff>:/runthis.png</normaloff>:/runthis.png</iconset>
+                <property name="icon" >
+                 <iconset resource="layResources.qrc" >:/runthis.png</iconset>
                 </property>
                </widget>
               </item>
               <item>
-               <widget class="QPushButton" name="replace_button">
-                <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+               <widget class="QPushButton" name="replace_button" >
+                <property name="toolTip" >
+                 <string>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Liberation Sans'; font-size:11pt; font-weight:400; font-style:normal; text-decoration:none;&quot;&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Execute and ask on each action&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Liberation Sans'; font-size:11pt; font-weight:400; font-style:normal; text-decoration:none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">Execute and ask on each action&lt;/p>&lt;/body>&lt;/html></string>
                 </property>
-                <property name="text">
+                <property name="text" >
                  <string>Select + Replace</string>
                 </property>
-                <property name="icon">
-                 <iconset>
-                  <normaloff>:/run_16px.png</normaloff>:/run_16px.png</iconset>
+                <property name="icon" >
+                 <iconset resource="layResources.qrc" >:/run.png</iconset>
                 </property>
-                <property name="autoDefault">
+                <property name="autoDefault" >
                  <bool>true</bool>
                 </property>
-                <property name="default">
+                <property name="default" >
                  <bool>false</bool>
                 </property>
                </widget>
@@ -467,25 +475,27 @@ p, li { white-space: pre-wrap; }
              </layout>
             </widget>
            </item>
-           <item row="0" column="1">
-            <widget class="QComboBox" name="replace_objects">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+           <item row="0" column="1" >
+            <widget class="QComboBox" name="replace_objects" >
+             <property name="sizePolicy" >
+              <sizepolicy>
+               <hsizetype>7</hsizetype>
+               <vsizetype>0</vsizetype>
                <horstretch>1</horstretch>
                <verstretch>0</verstretch>
               </sizepolicy>
              </property>
             </widget>
            </item>
-           <item row="2" column="0" colspan="2">
+           <item row="2" column="0" colspan="2" >
             <spacer>
-             <property name="orientation">
+             <property name="orientation" >
               <enum>Qt::Vertical</enum>
              </property>
-             <property name="sizeType">
+             <property name="sizeType" >
               <enum>QSizePolicy::Fixed</enum>
              </property>
-             <property name="sizeHint" stdset="0">
+             <property name="sizeHint" >
               <size>
                <width>20</width>
                <height>20</height>
@@ -493,41 +503,43 @@ p, li { white-space: pre-wrap; }
              </property>
             </spacer>
            </item>
-           <item row="3" column="0" colspan="2">
-            <widget class="QLabel" name="label_4">
-             <property name="text">
+           <item row="3" column="0" colspan="2" >
+            <widget class="QLabel" name="label_4" >
+             <property name="text" >
               <string>With ...</string>
              </property>
             </widget>
            </item>
-           <item row="4" column="0" colspan="2">
-            <widget class="QStackedWidget" name="find_replace_properties">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+           <item row="4" column="0" colspan="2" >
+            <widget class="QStackedWidget" name="find_replace_properties" >
+             <property name="sizePolicy" >
+              <sizepolicy>
+               <hsizetype>5</hsizetype>
+               <vsizetype>5</vsizetype>
                <horstretch>0</horstretch>
                <verstretch>1</verstretch>
               </sizepolicy>
              </property>
-             <widget class="QWidget" name="page_5"/>
-             <widget class="QWidget" name="page_6"/>
+             <widget class="QWidget" name="page_5" />
+             <widget class="QWidget" name="page_6" />
             </widget>
            </item>
-           <item row="6" column="0" colspan="2">
-            <widget class="QLabel" name="label_42">
-             <property name="text">
+           <item row="6" column="0" colspan="2" >
+            <widget class="QLabel" name="label_42" >
+             <property name="text" >
               <string>Replace ...</string>
              </property>
             </widget>
            </item>
-           <item row="5" column="0" colspan="2">
+           <item row="5" column="0" colspan="2" >
             <spacer>
-             <property name="orientation">
+             <property name="orientation" >
               <enum>Qt::Vertical</enum>
              </property>
-             <property name="sizeType">
+             <property name="sizeType" >
               <enum>QSizePolicy::Fixed</enum>
              </property>
-             <property name="sizeHint" stdset="0">
+             <property name="sizeHint" >
               <size>
                <width>20</width>
                <height>20</height>
@@ -535,51 +547,53 @@ p, li { white-space: pre-wrap; }
              </property>
             </spacer>
            </item>
-           <item row="7" column="0" colspan="2">
-            <widget class="QStackedWidget" name="replace_properties">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+           <item row="7" column="0" colspan="2" >
+            <widget class="QStackedWidget" name="replace_properties" >
+             <property name="sizePolicy" >
+              <sizepolicy>
+               <hsizetype>5</hsizetype>
+               <vsizetype>5</vsizetype>
                <horstretch>0</horstretch>
                <verstretch>0</verstretch>
               </sizepolicy>
              </property>
-             <widget class="QWidget" name="page_7"/>
-             <widget class="QWidget" name="page_8"/>
+             <widget class="QWidget" name="page_7" />
+             <widget class="QWidget" name="page_8" />
             </widget>
            </item>
           </layout>
          </widget>
-         <widget class="QWidget" name="tab_3">
-          <attribute name="title">
+         <widget class="QWidget" name="tab_3" >
+          <attribute name="title" >
            <string>Custom</string>
           </attribute>
-          <layout class="QGridLayout">
-           <property name="margin" stdset="0">
+          <layout class="QGridLayout" >
+           <property name="margin" >
             <number>9</number>
            </property>
-           <property name="spacing">
+           <property name="spacing" >
             <number>6</number>
            </property>
-           <item row="4" column="0">
-            <widget class="QLabel" name="label_16">
-             <property name="text">
+           <item row="4" column="0" >
+            <widget class="QLabel" name="label_16" >
+             <property name="text" >
               <string>Saved</string>
              </property>
             </widget>
            </item>
-           <item row="2" column="0">
-            <widget class="QLabel" name="label_15">
-             <property name="text">
+           <item row="2" column="0" >
+            <widget class="QLabel" name="label_15" >
+             <property name="text" >
               <string>Recent</string>
              </property>
             </widget>
            </item>
-           <item row="5" column="0">
+           <item row="5" column="0" >
             <spacer>
-             <property name="orientation">
+             <property name="orientation" >
               <enum>Qt::Vertical</enum>
              </property>
-             <property name="sizeHint" stdset="0">
+             <property name="sizeHint" >
               <size>
                <width>20</width>
                <height>20</height>
@@ -587,41 +601,41 @@ p, li { white-space: pre-wrap; }
              </property>
             </spacer>
            </item>
-           <item row="3" column="0" colspan="2">
-            <widget class="Line" name="line">
-             <property name="orientation">
+           <item row="3" column="0" colspan="2" >
+            <widget class="Line" name="line" >
+             <property name="orientation" >
               <enum>Qt::Horizontal</enum>
              </property>
             </widget>
            </item>
-           <item row="0" column="0" colspan="2">
-            <widget class="QLabel" name="hint_label4">
-             <property name="text">
-              <string>&lt;html&gt;&lt;body&gt;Query (Search/Action) - &lt;a href=&quot;int:/about/custom_queries.xml&quot;&gt;Click here for details&lt;/a&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <item row="0" column="0" colspan="2" >
+            <widget class="QLabel" name="hint_label4" >
+             <property name="text" >
+              <string>&lt;html>&lt;body>Query (Search/Action) - &lt;a href="int:/about/custom_queries.xml">Click here for details&lt;/a>&lt;/body>&lt;/html></string>
              </property>
             </widget>
            </item>
-           <item row="7" column="0" colspan="2">
-            <widget class="QFrame" name="frame_7">
-             <property name="frameShape">
+           <item row="7" column="0" colspan="2" >
+            <widget class="QFrame" name="frame_7" >
+             <property name="frameShape" >
               <enum>QFrame::NoFrame</enum>
              </property>
-             <property name="frameShadow">
+             <property name="frameShadow" >
               <enum>QFrame::Raised</enum>
              </property>
-             <layout class="QHBoxLayout">
-              <property name="spacing">
-               <number>6</number>
-              </property>
-              <property name="margin" stdset="0">
+             <layout class="QHBoxLayout" >
+              <property name="margin" >
                <number>0</number>
+              </property>
+              <property name="spacing" >
+               <number>6</number>
               </property>
               <item>
                <spacer>
-                <property name="orientation">
+                <property name="orientation" >
                  <enum>Qt::Horizontal</enum>
                 </property>
-                <property name="sizeHint" stdset="0">
+                <property name="sizeHint" >
                  <size>
                   <width>40</width>
                   <height>20</height>
@@ -630,24 +644,23 @@ p, li { white-space: pre-wrap; }
                </spacer>
               </item>
               <item>
-               <widget class="QPushButton" name="execute_all_button">
-                <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+               <widget class="QPushButton" name="execute_all_button" >
+                <property name="toolTip" >
+                 <string>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Liberation Sans'; font-size:11pt; font-weight:400; font-style:normal; text-decoration:none;&quot;&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Execute and ask on each action&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Liberation Sans'; font-size:11pt; font-weight:400; font-style:normal; text-decoration:none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">Execute and ask on each action&lt;/p>&lt;/body>&lt;/html></string>
                 </property>
-                <property name="text">
+                <property name="text" >
                  <string>Execute</string>
                 </property>
-                <property name="icon">
-                 <iconset>
-                  <normaloff>:/run_16px.png</normaloff>:/run_16px.png</iconset>
+                <property name="icon" >
+                 <iconset resource="layResources.qrc" >:/run.png</iconset>
                 </property>
-                <property name="autoDefault">
+                <property name="autoDefault" >
                  <bool>true</bool>
                 </property>
-                <property name="default">
+                <property name="default" >
                  <bool>false</bool>
                 </property>
                </widget>
@@ -655,12 +668,12 @@ p, li { white-space: pre-wrap; }
              </layout>
             </widget>
            </item>
-           <item row="6" column="0" colspan="2">
+           <item row="6" column="0" colspan="2" >
             <spacer>
-             <property name="orientation">
+             <property name="orientation" >
               <enum>Qt::Vertical</enum>
              </property>
-             <property name="sizeHint" stdset="0">
+             <property name="sizeHint" >
               <size>
                <width>16</width>
                <height>20</height>
@@ -668,63 +681,66 @@ p, li { white-space: pre-wrap; }
              </property>
             </spacer>
            </item>
-           <item row="2" column="1">
-            <widget class="QComboBox" name="recent_queries">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+           <item row="2" column="1" >
+            <widget class="QComboBox" name="recent_queries" >
+             <property name="sizePolicy" >
+              <sizepolicy>
+               <hsizetype>5</hsizetype>
+               <vsizetype>0</vsizetype>
                <horstretch>1</horstretch>
                <verstretch>0</verstretch>
               </sizepolicy>
              </property>
             </widget>
            </item>
-           <item row="4" column="1" rowspan="2">
-            <widget class="QFrame" name="frame_6">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Ignored" vsizetype="Preferred">
+           <item rowspan="2" row="4" column="1" >
+            <widget class="QFrame" name="frame_6" >
+             <property name="sizePolicy" >
+              <sizepolicy>
+               <hsizetype>13</hsizetype>
+               <vsizetype>5</vsizetype>
                <horstretch>0</horstretch>
                <verstretch>0</verstretch>
               </sizepolicy>
              </property>
-             <property name="frameShape">
+             <property name="frameShape" >
               <enum>QFrame::NoFrame</enum>
              </property>
-             <property name="frameShadow">
+             <property name="frameShadow" >
               <enum>QFrame::Raised</enum>
              </property>
-             <layout class="QGridLayout">
-              <property name="margin" stdset="0">
+             <layout class="QGridLayout" >
+              <property name="margin" >
                <number>0</number>
               </property>
-              <property name="spacing">
+              <property name="spacing" >
                <number>6</number>
               </property>
-              <item row="0" column="1">
-               <widget class="QToolButton" name="add_saved_button">
-                <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+              <item row="0" column="1" >
+               <widget class="QToolButton" name="add_saved_button" >
+                <property name="toolTip" >
+                 <string>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Liberation Sans'; font-size:11pt; font-weight:400; font-style:normal; text-decoration:none;&quot;&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Save current query to list&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Liberation Sans'; font-size:11pt; font-weight:400; font-style:normal; text-decoration:none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">Save current query to list&lt;/p>&lt;/body>&lt;/html></string>
                 </property>
-                <property name="text">
+                <property name="text" >
                  <string>Save</string>
                 </property>
-                <property name="icon">
-                 <iconset resource="../../icons/icons.qrc">
-                  <normaloff>:/add_16px.png</normaloff>:/add_16px.png</iconset>
+                <property name="icon" >
+                 <iconset resource="layResources.qrc" >:/add.png</iconset>
                 </property>
-                <property name="autoRaise">
+                <property name="autoRaise" >
                  <bool>true</bool>
                 </property>
                </widget>
               </item>
-              <item row="4" column="1" rowspan="2">
+              <item rowspan="2" row="4" column="1" >
                <spacer>
-                <property name="orientation">
+                <property name="orientation" >
                  <enum>Qt::Vertical</enum>
                 </property>
-                <property name="sizeHint" stdset="0">
+                <property name="sizeHint" >
                  <size>
                   <width>20</width>
                   <height>20</height>
@@ -732,75 +748,72 @@ p, li { white-space: pre-wrap; }
                 </property>
                </spacer>
               </item>
-              <item row="3" column="1">
-               <widget class="QToolButton" name="rename_saved_button">
-                <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+              <item row="3" column="1" >
+               <widget class="QToolButton" name="rename_saved_button" >
+                <property name="toolTip" >
+                 <string>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Liberation Sans'; font-size:11pt; font-weight:400; font-style:normal; text-decoration:none;&quot;&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Rename saved query&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Liberation Sans'; font-size:11pt; font-weight:400; font-style:normal; text-decoration:none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">Rename saved query&lt;/p>&lt;/body>&lt;/html></string>
                 </property>
-                <property name="text">
+                <property name="text" >
                  <string>...</string>
                 </property>
-                <property name="icon">
-                 <iconset resource="../../icons/icons.qrc">
-                  <normaloff>:/rename_16px.png</normaloff>:/rename_16px.png</iconset>
+                <property name="icon" >
+                 <iconset resource="layResources.qrc" >:/rename.png</iconset>
                 </property>
-                <property name="autoRaise">
+                <property name="autoRaise" >
                  <bool>true</bool>
                 </property>
                </widget>
               </item>
-              <item row="2" column="1">
-               <widget class="QToolButton" name="delete_saved_button">
-                <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+              <item row="2" column="1" >
+               <widget class="QToolButton" name="delete_saved_button" >
+                <property name="toolTip" >
+                 <string>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Liberation Sans'; font-size:11pt; font-weight:400; font-style:normal; text-decoration:none;&quot;&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Remove from list&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Liberation Sans'; font-size:11pt; font-weight:400; font-style:normal; text-decoration:none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">Remove from list&lt;/p>&lt;/body>&lt;/html></string>
                 </property>
-                <property name="text">
+                <property name="text" >
                  <string>...</string>
                 </property>
-                <property name="icon">
-                 <iconset resource="../../icons/icons.qrc">
-                  <normaloff>:/clear_16px.png</normaloff>:/clear_16px.png</iconset>
+                <property name="icon" >
+                 <iconset resource="layResources.qrc" >:/clear.png</iconset>
                 </property>
-                <property name="autoRaise">
+                <property name="autoRaise" >
                  <bool>true</bool>
                 </property>
                </widget>
               </item>
-              <item row="1" column="1">
-               <widget class="QToolButton" name="replace_saved_button">
-                <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+              <item row="1" column="1" >
+               <widget class="QToolButton" name="replace_saved_button" >
+                <property name="toolTip" >
+                 <string>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Liberation Sans'; font-size:11pt; font-weight:400; font-style:normal; text-decoration:none;&quot;&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Replace with current query&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Liberation Sans'; font-size:11pt; font-weight:400; font-style:normal; text-decoration:none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">Replace with current query&lt;/p>&lt;/body>&lt;/html></string>
                 </property>
-                <property name="text">
+                <property name="text" >
                  <string>...</string>
                 </property>
-                <property name="icon">
-                 <iconset resource="../../icons/icons.qrc">
-                  <normaloff>:/left_16px.png</normaloff>:/left_16px.png</iconset>
+                <property name="icon" >
+                 <iconset resource="layResources.qrc" >:/left.png</iconset>
                 </property>
-                <property name="autoRaise">
+                <property name="autoRaise" >
                  <bool>true</bool>
                 </property>
                </widget>
               </item>
-              <item row="0" column="0" rowspan="6">
-               <widget class="QListWidget" name="saved_queries"/>
+              <item rowspan="6" row="0" column="0" >
+               <widget class="QListWidget" name="saved_queries" />
               </item>
              </layout>
             </widget>
            </item>
-           <item row="1" column="0" colspan="2">
-            <widget class="QTextEdit" name="custom_query">
-             <property name="font">
+           <item row="1" column="0" colspan="2" >
+            <widget class="QTextEdit" name="custom_query" >
+             <property name="font" >
               <font>
                <family>Liberation Mono</family>
               </font>
@@ -810,57 +823,61 @@ p, li { white-space: pre-wrap; }
           </layout>
          </widget>
         </widget>
-        <widget class="QFrame" name="frame_3">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+        <widget class="QFrame" name="frame_3" >
+         <property name="sizePolicy" >
+          <sizepolicy>
+           <hsizetype>5</hsizetype>
+           <vsizetype>5</vsizetype>
            <horstretch>1</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
-         <property name="frameShadow">
+         <property name="frameShadow" >
           <enum>QFrame::Raised</enum>
          </property>
-         <layout class="QVBoxLayout">
-          <property name="spacing">
-           <number>6</number>
-          </property>
-          <property name="margin" stdset="0">
+         <layout class="QVBoxLayout" >
+          <property name="margin" >
            <number>0</number>
           </property>
+          <property name="spacing" >
+           <number>6</number>
+          </property>
           <item>
-           <widget class="QFrame" name="frame_5">
-            <property name="frameShape">
+           <widget class="QFrame" name="frame_5" >
+            <property name="frameShape" >
              <enum>QFrame::NoFrame</enum>
             </property>
-            <property name="frameShadow">
+            <property name="frameShadow" >
              <enum>QFrame::Raised</enum>
             </property>
-            <layout class="QHBoxLayout">
-             <property name="spacing">
-              <number>6</number>
-             </property>
-             <property name="margin" stdset="0">
+            <layout class="QHBoxLayout" >
+             <property name="margin" >
               <number>0</number>
              </property>
+             <property name="spacing" >
+              <number>6</number>
+             </property>
              <item>
-              <widget class="QLabel" name="label_8">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+              <widget class="QLabel" name="label_8" >
+               <property name="sizePolicy" >
+                <sizepolicy>
+                 <hsizetype>7</hsizetype>
+                 <vsizetype>5</vsizetype>
                  <horstretch>0</horstretch>
                  <verstretch>0</verstretch>
                 </sizepolicy>
                </property>
-               <property name="text">
+               <property name="text" >
                 <string>Results</string>
                </property>
               </widget>
              </item>
              <item>
-              <widget class="QToolButton" name="export_b">
-               <property name="text">
+              <widget class="QToolButton" name="export_b" >
+               <property name="text" >
                 <string>Export</string>
                </property>
-               <property name="popupMode">
+               <property name="popupMode" >
                 <enum>QToolButton::InstantPopup</enum>
                </property>
               </widget>
@@ -869,118 +886,118 @@ p, li { white-space: pre-wrap; }
            </widget>
           </item>
           <item>
-           <widget class="QStackedWidget" name="results_stack">
-            <property name="currentIndex">
+           <widget class="QStackedWidget" name="results_stack" >
+            <property name="currentIndex" >
              <number>1</number>
             </property>
-            <widget class="QWidget" name="page_9">
-             <layout class="QVBoxLayout">
-              <property name="spacing">
-               <number>6</number>
-              </property>
-              <property name="margin" stdset="0">
+            <widget class="QWidget" name="page_9" >
+             <layout class="QVBoxLayout" >
+              <property name="margin" >
                <number>0</number>
               </property>
+              <property name="spacing" >
+               <number>6</number>
+              </property>
               <item>
-               <widget class="QTreeView" name="results">
-                <property name="alternatingRowColors">
+               <widget class="QTreeView" name="results" >
+                <property name="alternatingRowColors" >
                  <bool>false</bool>
                 </property>
-                <property name="selectionMode">
+                <property name="selectionMode" >
                  <enum>QAbstractItemView::ExtendedSelection</enum>
                 </property>
-                <property name="rootIsDecorated">
+                <property name="rootIsDecorated" >
                  <bool>false</bool>
                 </property>
                </widget>
               </item>
              </layout>
             </widget>
-            <widget class="QWidget" name="page_10">
-             <layout class="QVBoxLayout">
-              <property name="spacing">
-               <number>6</number>
-              </property>
-              <property name="margin" stdset="0">
+            <widget class="QWidget" name="page_10" >
+             <layout class="QVBoxLayout" >
+              <property name="margin" >
                <number>20</number>
               </property>
+              <property name="spacing" >
+               <number>6</number>
+              </property>
               <item>
-               <widget class="QLabel" name="hint_label">
-                <property name="text">
+               <widget class="QLabel" name="hint_label" >
+                <property name="text" >
                  <string>Press 'Find' button to show results</string>
                 </property>
-                <property name="alignment">
+                <property name="alignment" >
                  <set>Qt::AlignCenter</set>
                 </property>
-                <property name="wordWrap">
+                <property name="wordWrap" >
                  <bool>true</bool>
                 </property>
                </widget>
               </item>
              </layout>
             </widget>
-            <widget class="QWidget" name="page_11">
-             <layout class="QVBoxLayout">
-              <property name="spacing">
-               <number>6</number>
-              </property>
-              <property name="margin" stdset="0">
+            <widget class="QWidget" name="page_11" >
+             <layout class="QVBoxLayout" >
+              <property name="margin" >
                <number>20</number>
               </property>
+              <property name="spacing" >
+               <number>6</number>
+              </property>
               <item>
-               <widget class="QLabel" name="label_6">
-                <property name="text">
+               <widget class="QLabel" name="label_6" >
+                <property name="text" >
                  <string>Press 'Delete All' button to delete all selected items
 Press 'Select+Delete' button to show items found, select some and delete them</string>
                 </property>
-                <property name="alignment">
+                <property name="alignment" >
                  <set>Qt::AlignCenter</set>
                 </property>
-                <property name="wordWrap">
+                <property name="wordWrap" >
                  <bool>true</bool>
                 </property>
                </widget>
               </item>
              </layout>
             </widget>
-            <widget class="QWidget" name="page_12">
-             <layout class="QVBoxLayout">
-              <property name="spacing">
-               <number>6</number>
-              </property>
-              <property name="margin" stdset="0">
+            <widget class="QWidget" name="page_12" >
+             <layout class="QVBoxLayout" >
+              <property name="margin" >
                <number>20</number>
               </property>
+              <property name="spacing" >
+               <number>6</number>
+              </property>
               <item>
-               <widget class="QLabel" name="label_7">
-                <property name="text">
+               <widget class="QLabel" name="label_7" >
+                <property name="text" >
                  <string>Press 'Replace All' button to delete all selected items
 Press 'Select+Replace' button to show items found, select some and replace them</string>
                 </property>
-                <property name="alignment">
+                <property name="alignment" >
                  <set>Qt::AlignCenter</set>
                 </property>
-                <property name="wordWrap">
+                <property name="wordWrap" >
                  <bool>true</bool>
                 </property>
                </widget>
               </item>
              </layout>
             </widget>
-            <widget class="QWidget" name="page_13">
-             <layout class="QVBoxLayout">
-              <property name="spacing">
-               <number>6</number>
-              </property>
-              <property name="margin" stdset="0">
+            <widget class="QWidget" name="page_13" >
+             <layout class="QVBoxLayout" >
+              <property name="margin" >
                <number>20</number>
               </property>
+              <property name="spacing" >
+               <number>6</number>
+              </property>
               <item>
-               <widget class="QLabel" name="label_9">
-                <property name="text">
+               <widget class="QLabel" name="label_9" >
+                <property name="text" >
                  <string>Press 'Execute' button to execute the query</string>
                 </property>
-                <property name="alignment">
+                <property name="alignment" >
                  <set>Qt::AlignCenter</set>
                 </property>
                </widget>
@@ -990,77 +1007,75 @@ Press 'Select+Replace' button to show items found, select some and replace them<
            </widget>
           </item>
           <item>
-           <widget class="QFrame" name="execute_panel">
-            <property name="frameShape">
+           <widget class="QFrame" name="execute_panel" >
+            <property name="frameShape" >
              <enum>QFrame::StyledPanel</enum>
             </property>
-            <property name="frameShadow">
+            <property name="frameShadow" >
              <enum>QFrame::Raised</enum>
             </property>
-            <layout class="QGridLayout">
-             <property name="margin" stdset="0">
+            <layout class="QGridLayout" >
+             <property name="margin" >
               <number>9</number>
              </property>
-             <property name="spacing">
+             <property name="spacing" >
               <number>6</number>
              </property>
-             <item row="0" column="0" colspan="5">
-              <widget class="QLabel" name="label_5">
-               <property name="text">
+             <item row="0" column="0" colspan="5" >
+              <widget class="QLabel" name="label_5" >
+               <property name="text" >
                 <string>Apply action ...</string>
                </property>
               </widget>
              </item>
-             <item row="1" column="0" colspan="5">
-              <widget class="QFrame" name="frame_4">
-               <property name="frameShape">
+             <item row="1" column="0" colspan="5" >
+              <widget class="QFrame" name="frame_4" >
+               <property name="frameShape" >
                 <enum>QFrame::NoFrame</enum>
                </property>
-               <property name="frameShadow">
+               <property name="frameShadow" >
                 <enum>QFrame::Raised</enum>
                </property>
-               <layout class="QHBoxLayout">
-                <property name="spacing">
-                 <number>6</number>
-                </property>
-                <property name="margin" stdset="0">
+               <layout class="QHBoxLayout" >
+                <property name="margin" >
                  <number>0</number>
                 </property>
+                <property name="spacing" >
+                 <number>6</number>
+                </property>
                 <item>
-                 <widget class="QPushButton" name="delete_selected_button">
-                  <property name="text">
+                 <widget class="QPushButton" name="delete_selected_button" >
+                  <property name="text" >
                    <string>Delete</string>
                   </property>
-                  <property name="icon">
-                   <iconset resource="../../icons/icons.qrc">
-                    <normaloff>:/execmark_16px.png</normaloff>:/execmark_16px.png</iconset>
+                  <property name="icon" >
+                   <iconset resource="layResources.qrc" >:/execmark.png</iconset>
                   </property>
                  </widget>
                 </item>
                 <item>
-                 <widget class="QPushButton" name="replace_selected_button">
-                  <property name="text">
+                 <widget class="QPushButton" name="replace_selected_button" >
+                  <property name="text" >
                    <string>Replace</string>
                   </property>
-                  <property name="icon">
-                   <iconset resource="../../icons/icons.qrc">
-                    <normaloff>:/execmark_16px.png</normaloff>:/execmark_16px.png</iconset>
+                  <property name="icon" >
+                   <iconset resource="layResources.qrc" >:/execmark.png</iconset>
                   </property>
                  </widget>
                 </item>
                 <item>
-                 <widget class="QPushButton" name="cancel_button">
-                  <property name="text">
+                 <widget class="QPushButton" name="cancel_button" >
+                  <property name="text" >
                    <string>Cancel</string>
                   </property>
                  </widget>
                 </item>
                 <item>
                  <spacer>
-                  <property name="orientation">
+                  <property name="orientation" >
                    <enum>Qt::Horizontal</enum>
                   </property>
-                  <property name="sizeHint" stdset="0">
+                  <property name="sizeHint" >
                    <size>
                     <width>40</width>
                     <height>10</height>
@@ -1082,36 +1097,36 @@ Press 'Select+Replace' button to show items found, select some and replace them<
     </widget>
    </item>
    <item>
-    <widget class="QFrame" name="frame">
-     <property name="frameShape">
+    <widget class="QFrame" name="frame" >
+     <property name="frameShape" >
       <enum>QFrame::NoFrame</enum>
      </property>
-     <property name="frameShadow">
+     <property name="frameShadow" >
       <enum>QFrame::Raised</enum>
      </property>
-     <layout class="QHBoxLayout">
-      <property name="spacing">
-       <number>6</number>
-      </property>
-      <property name="margin" stdset="0">
+     <layout class="QHBoxLayout" >
+      <property name="margin" >
        <number>0</number>
       </property>
+      <property name="spacing" >
+       <number>6</number>
+      </property>
       <item>
-       <widget class="QPushButton" name="configure_button">
-        <property name="text">
+       <widget class="QPushButton" name="configure_button" >
+        <property name="text" >
          <string>Configure</string>
         </property>
-        <property name="autoDefault">
+        <property name="autoDefault" >
          <bool>false</bool>
         </property>
        </widget>
       </item>
       <item>
        <spacer>
-        <property name="orientation">
+        <property name="orientation" >
          <enum>Qt::Horizontal</enum>
         </property>
-        <property name="sizeHint" stdset="0">
+        <property name="sizeHint" >
          <size>
           <width>40</width>
           <height>20</height>
@@ -1120,11 +1135,11 @@ Press 'Select+Replace' button to show items found, select some and replace them<
        </spacer>
       </item>
       <item>
-       <widget class="QPushButton" name="pushButton_2">
-        <property name="text">
+       <widget class="QPushButton" name="pushButton_2" >
+        <property name="text" >
          <string>Close</string>
         </property>
-        <property name="autoDefault">
+        <property name="autoDefault" >
          <bool>false</bool>
         </property>
        </widget>
@@ -1163,7 +1178,7 @@ Press 'Select+Replace' button to show items found, select some and replace them<
   <tabstop>results</tabstop>
  </tabstops>
  <resources>
-  <include location="../../icons/icons.qrc"/>
+  <include location="layResources.qrc" />
  </resources>
  <connections>
   <connection>
@@ -1172,11 +1187,11 @@ Press 'Select+Replace' button to show items found, select some and replace them<
    <receiver>SearchReplaceDialog</receiver>
    <slot>accept()</slot>
    <hints>
-    <hint type="sourcelabel">
+    <hint type="sourcelabel" >
      <x>829</x>
      <y>589</y>
     </hint>
-    <hint type="destinationlabel">
+    <hint type="destinationlabel" >
      <x>748</x>
      <y>671</y>
     </hint>
@@ -1188,11 +1203,11 @@ Press 'Select+Replace' button to show items found, select some and replace them<
    <receiver>find_properties</receiver>
    <slot>setCurrentIndex(int)</slot>
    <hints>
-    <hint type="sourcelabel">
+    <hint type="sourcelabel" >
      <x>149</x>
      <y>79</y>
     </hint>
-    <hint type="destinationlabel">
+    <hint type="destinationlabel" >
      <x>162</x>
      <y>249</y>
     </hint>
@@ -1204,11 +1219,11 @@ Press 'Select+Replace' button to show items found, select some and replace them<
    <receiver>delete_properties</receiver>
    <slot>setCurrentIndex(int)</slot>
    <hints>
-    <hint type="sourcelabel">
+    <hint type="sourcelabel" >
      <x>176</x>
      <y>71</y>
     </hint>
-    <hint type="destinationlabel">
+    <hint type="destinationlabel" >
      <x>190</x>
      <y>232</y>
     </hint>
@@ -1220,11 +1235,11 @@ Press 'Select+Replace' button to show items found, select some and replace them<
    <receiver>find_replace_properties</receiver>
    <slot>setCurrentIndex(int)</slot>
    <hints>
-    <hint type="sourcelabel">
+    <hint type="sourcelabel" >
      <x>141</x>
      <y>75</y>
     </hint>
-    <hint type="destinationlabel">
+    <hint type="destinationlabel" >
      <x>272</x>
      <y>245</y>
     </hint>
@@ -1236,11 +1251,11 @@ Press 'Select+Replace' button to show items found, select some and replace them<
    <receiver>replace_properties</receiver>
    <slot>setCurrentIndex(int)</slot>
    <hints>
-    <hint type="sourcelabel">
+    <hint type="sourcelabel" >
      <x>203</x>
      <y>75</y>
     </hint>
-    <hint type="destinationlabel">
+    <hint type="destinationlabel" >
      <x>226</x>
      <y>357</y>
     </hint>

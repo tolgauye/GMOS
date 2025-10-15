@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -27,16 +27,14 @@
 
 void runtest (tl::TestBase *_this, int mode)
 {
-  std::string force_gc = "true";
+  std::string rs = tl::testsrc ();
+  rs += "/testdata/drc/drcSuiteTests.drc";
 
-  std::string rs = tl::testdata ();
-  rs += "/drc/drcSuiteTests.drc";
+  std::string input = tl::testsrc ();
+  input += "/testdata/drc/drctest.gds";
 
-  std::string input = tl::testdata ();
-  input += "/drc/drctest.gds";
-
-  std::string au = tl::testdata ();
-  au += "/drc/drcSuiteTests_au";
+  std::string au = tl::testsrc ();
+  au += "/testdata/drc/drcSuiteTests_au";
   au += tl::to_string (mode);
   au += ".oas";
 
@@ -46,11 +44,10 @@ void runtest (tl::TestBase *_this, int mode)
     //  Set some variables
     lym::Macro config;
     config.set_text (tl::sprintf (
-        "$drc_force_gc = %s\n"
         "$drc_test_source = '%s'\n"
         "$drc_test_target = '%s'\n"
         "$drc_test_mode = %d\n"
-      , force_gc, input, output, mode)
+      , input, output, mode)
     );
     config.set_interpreter (lym::Macro::Ruby);
     EXPECT_EQ (config.run (), 0);

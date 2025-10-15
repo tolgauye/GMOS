@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@ LibraryController::LibraryController ()
 }
 
 void
-LibraryController::initialize (lay::Dispatcher * /*root*/)
+LibraryController::initialize (lay::PluginRoot * /*root*/)
 {
   //  NOTE: we initialize the libraries in the stage once to have them available for the autorun
   //  macros. We'll do that later again in order to pull in the libraries from the packages.
@@ -53,7 +53,7 @@ LibraryController::initialize (lay::Dispatcher * /*root*/)
 }
 
 void
-LibraryController::initialized (lay::Dispatcher * /*root*/)
+LibraryController::initialized (lay::PluginRoot * /*root*/)
 {
   if (lay::SaltController::instance ()) {
     connect (lay::SaltController::instance (), SIGNAL (salt_changed ()), this, SLOT (sync_with_external_sources ()));
@@ -69,7 +69,7 @@ LibraryController::initialized (lay::Dispatcher * /*root*/)
 }
 
 void
-LibraryController::uninitialize (lay::Dispatcher * /*root*/)
+LibraryController::uninitialize (lay::PluginRoot * /*root*/)
 {
   if (m_file_watcher) {
     disconnect (m_file_watcher, SIGNAL (fileChanged (const QString &)), this, SLOT (file_watcher_triggered ()));
@@ -108,7 +108,7 @@ LibraryController::config_finalize()
 }
 
 bool
-LibraryController::can_exit (lay::Dispatcher * /*root*/) const
+LibraryController::can_exit (lay::PluginRoot * /*root*/) const
 {
   //  .. nothing yet ..
   return true;
@@ -122,7 +122,7 @@ LibraryController::sync_files ()
     m_file_watcher->enable (false);
   }
 
-  std::map<std::string, LibInfo> new_lib_files;
+  std::map<std::string, std::pair<std::string, QDateTime> > new_lib_files;
 
   //  build a list of paths vs. technology
   std::vector<std::pair<std::string, std::string> > paths;
@@ -174,11 +174,11 @@ LibraryController::sync_files ()
           QFileInfo fi (tl::to_qstring (lib_path));
 
           bool needs_load = false;
-          std::map<std::string, LibInfo>::iterator ll = m_lib_files.find (lib_path);
+          std::map<std::string, std::pair<std::string, QDateTime> >::iterator ll = m_lib_files.find (lib_path);
           if (ll == m_lib_files.end ()) {
             needs_load = true;
           } else {
-            if (fi.lastModified () > ll->second.time) {
+            if (fi.lastModified () > ll->second.second) {
               needs_load = true;
             } else {
               new_lib_files.insert (*ll);
@@ -187,11 +187,9 @@ LibraryController::sync_files ()
 
           if (needs_load) {
 
-            std::unique_ptr<db::Library> lib (new db::Library ());
+            std::auto_ptr<db::Library> lib (new db::Library ());
             lib->set_description (filename);
-            if (! p->second.empty ()) {
-              lib->set_technology (p->second);
-            }
+            lib->set_technology (p->second);
             lib->set_name (tl::to_string (QFileInfo (*im).baseName ()));
 
             tl::log << "Reading library '" << lib_path << "'";
@@ -200,27 +198,15 @@ LibraryController::sync_files ()
             reader.read (lib->layout ());
 
             //  Use the libname if there is one
-            db::Layout::meta_info_name_id_type libname_name_id = lib->layout ().meta_info_name_id ("libname");
             for (db::Layout::meta_info_iterator m = lib->layout ().begin_meta (); m != lib->layout ().end_meta (); ++m) {
-              if (m->first == libname_name_id && ! m->second.value.is_nil ()) {
-                lib->set_name (m->second.value.to_string ());
+              if (m->name == "libname" && ! m->value.empty ()) {
+                lib->set_name (m->value);
                 break;
               }
             }
 
-            if (! p->second.empty ()) {
-              tl::log << "Registering as '" << lib->get_name () << "' for tech '" << p->second << "'";
-            } else {
-              tl::log << "Registering as '" << lib->get_name () << "'";
-            }
-
-            LibInfo li;
-            li.name = lib->get_name ();
-            li.time = fi.lastModified ();
-            if (! p->second.empty ()) {
-              li.tech.insert (p->second);
-            }
-            new_lib_files.insert (std::make_pair (lib_path, li));
+            tl::log << "Registering as '" << lib->get_name () << "' for tech '" << lib->get_technology () << "'";
+            new_lib_files.insert (std::make_pair (lib_path, std::make_pair (lib->get_name (), fi.lastModified ())));
 
             db::LibraryManager::instance ().register_lib (lib.release ());
 
@@ -244,14 +230,14 @@ LibraryController::sync_files ()
 
   std::set<std::string> new_names;
 
-  for (std::map<std::string, LibInfo>::const_iterator lf = new_lib_files.begin (); lf != new_lib_files.end (); ++lf) {
-    new_names.insert (lf->second.name);
+  for (std::map<std::string, std::pair<std::string, QDateTime> >::const_iterator lf = new_lib_files.begin (); lf != new_lib_files.end (); ++lf) {
+    new_names.insert (lf->second.first);
   }
 
-  for (std::map<std::string, LibInfo>::const_iterator lf = m_lib_files.begin (); lf != m_lib_files.end (); ++lf) {
-    if (new_names.find (lf->second.name) == new_names.end ()) {
+  for (std::map<std::string, std::pair<std::string, QDateTime> >::const_iterator lf = m_lib_files.begin (); lf != m_lib_files.end (); ++lf) {
+    if (new_names.find (lf->second.first) == new_names.end ()) {
       try {
-        std::pair<bool, db::lib_id_type> li = db::LibraryManager::instance ().lib_by_name (lf->second.name, lf->second.tech);
+        std::pair<bool, db::lib_id_type> li = db::LibraryManager::instance ().lib_by_name (lf->second.first);
         if (li.first) {
           db::LibraryManager::instance ().delete_lib (db::LibraryManager::instance ().lib (li.second));
         }

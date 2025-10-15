@@ -1,5 +1,5 @@
 # KLayout Layout Viewer
-# Copyright (C) 2006-2025 Matthias Koefferlein
+# Copyright (C) 2006-2019 Matthias Koefferlein
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,7 +18,6 @@
 
 import pya
 import unittest
-import math
 import sys
 
 class BoxPCell(pya.PCellDeclaration):
@@ -78,7 +77,7 @@ class PCellTestLib(pya.Library):
     sb_cell = self.layout().cell(sb_index)
     sb_cell.shapes(l10).insert(pya.Box(0, 0, 100, 200))
     
-    # register us with the name "PCellTestLib"
+    # register us with the name "MyLib"
     self.register("PCellTestLib")
 
 
@@ -100,9 +99,6 @@ if "PCellDeclarationHelper" in pya.__dict__:
       # provide a descriptive text for the cell
       return "Box2(L=" + str(self.layer) + ",W=" + ('%.3f' % self.width) + ",H=" + ('%.3f' % self.height) + ")"
     
-    def wants_lazy_evaluation(self):
-      return True
-
     def produce_impl(self):
     
       dbu = self.layout.dbu
@@ -136,61 +132,8 @@ if "PCellDeclarationHelper" in pya.__dict__:
       # create the PCell declarations
       self.layout().register_pcell("Box2", BoxPCell2())
 
-      # register us with the name "PCellTestLib2"
+      # register us with the name "MyLib"
       self.register("PCellTestLib2")
-
-  # A recursive PCell
-
-  class RecursivePCell(pya.PCellDeclarationHelper):
-
-    def __init__(self):
-
-      super(RecursivePCell, self).__init__()
-    
-      self.param("layer", self.TypeLayer, "Layer", default = pya.LayerInfo(0, 0))
-      self.param("line", self.TypeShape, "Line", default = pya.Edge(0, 0, 10000, 0))
-      self.param("level", self.TypeInt, "Level", default = 1)
-      
-    def display_text_impl(self):
-      # provide a descriptive text for the cell
-      return "RecursivePCell(L=" + str(self.layer) + ",E=" + str(pya.CplxTrans(self.layout.dbu) * self.line) + ",LVL=" + str(self.level)
-    
-    def produce_impl(self):
-    
-      # fetch the parameters
-      l = self.layer_layer
-      e = self.line
-
-      if self.level <= 0:
-        self.cell.shapes(l).insert(e)
-        return
-
-      d3 = e.d() * (1.0 / 3.0)
-      d3n = pya.Vector(-d3.y, d3.x)
-
-      e1 = pya.Edge(e.p1, e.p1 + d3)
-      e2 = pya.Edge(e1.p2, e1.p2 + d3 * 0.5 + d3n * math.cos(math.pi / 6))
-      e3 = pya.Edge(e2.p2, e.p1 + d3 * 2.0)
-      e4 = pya.Edge(e3.p2, e.p2)
-
-      for e in [ e1, e2, e3, e4 ]:
-        t = pya.Trans(e.p1 - pya.Point())
-        cc = self.layout.create_cell("RecursivePCell", { "layer": self.layer, "line": t.inverted() * e, "level": self.level - 1 })
-        self.cell.insert(pya.CellInstArray(cc, t))
-      
-  class PCellTestLib3(pya.Library):
-
-    def __init__(self):  
-    
-      # set the description
-      self.description = "PCell test lib3"
-      
-      # create the PCell declarations
-      self.layout().register_pcell("RecursivePCell", RecursivePCell())
-
-      # register us with the name "PCellTestLib3"
-      self.register("PCellTestLib3")
-
 
 
 def inspect_LayerInfo(self):
@@ -216,12 +159,6 @@ def nh(h):
   return "{" + (", ".join(v)) + "}"
 
 class DBPCellTests(unittest.TestCase):
-
-  def test_0(self):
-
-    # PCellDeclarationHelper is inside "pya.__all__"
-    if hasattr(pya, "__all__"):
-      self.assertEqual("PCellDeclarationHelper" in pya.__all__, True)
 
   def test_1(self):
 
@@ -260,7 +197,6 @@ class DBPCellTests(unittest.TestCase):
     self.assertEqual(pcell_var.is_pcell_variant(), True)
     self.assertEqual(pcell_var.display_title(), "PCellTestLib.Box(L=1/0,W=1.000,H=1.000)")
     self.assertEqual(pcell_var.basic_name(), "Box")
-    self.assertEqual(pcell_var.pcell_declaration().wants_lazy_evaluation(), False)
     self.assertEqual(c1.is_pcell_variant(), False)
     self.assertEqual(c1.is_pcell_variant(pcell_inst), True)
     self.assertEqual(pcell_var.pcell_id(), pcell_decl_id)
@@ -407,7 +343,6 @@ class DBPCellTests(unittest.TestCase):
     self.assertEqual(pcell_var.pcell_declaration().__repr__(), pcell_decl.__repr__())
     self.assertEqual(c1.pcell_declaration(pcell_inst).__repr__(), pcell_decl.__repr__())
     self.assertEqual(pcell_inst.pcell_declaration().__repr__(), pcell_decl.__repr__())
-    self.assertEqual(pcell_decl.wants_lazy_evaluation(), True)
 
     li1 = find_layer(ly, "1/0")
     self.assertEqual(li1 == None, False)
@@ -555,26 +490,6 @@ class DBPCellTests(unittest.TestCase):
 
     self.assertEqual(cell.begin_shapes_rec(ly.layer(5, 0)).shape().__str__(), "box (-100,-300;100,300)")
 
-  def test_9(self):
-
-    if not "PCellDeclarationHelper" in pya.__dict__:
-      return
-
-    # instantiate and register the library
-    tl = PCellTestLib3()
-
-    ly = pya.Layout(True)
-
-    li1 = find_layer(ly, "1/0")
-    self.assertEqual(li1 == None, True)
-
-    c1 = ly.create_cell("c1")
-
-    c2 = ly.create_cell("RecursivePCell", "PCellTestLib3", { "layer": pya.LayerInfo(1, 0), "level": 4, "line": pya.Edge(0, 0, 20000, 0) })
-    c1.insert(pya.CellInstArray(c2.cell_index(), pya.Trans()))
-
-    self.assertEqual(c2.display_title(), "PCellTestLib3.RecursivePCell(L=1/0,E=(0,0;20,0),LVL=4")
-    self.assertEqual(str(c1.dbbox()), "(0,0;20,5.774)")
 
 # run unit tests
 if __name__ == '__main__':

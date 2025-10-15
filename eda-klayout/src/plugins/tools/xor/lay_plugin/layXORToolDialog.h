@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -34,7 +34,7 @@ namespace Ui
 
 namespace lay
 {
-  class LayoutViewBase;
+  class LayoutView;
 }
 
 namespace lay
@@ -61,7 +61,7 @@ public:
   XORToolDialog (QWidget *parent);
   ~XORToolDialog ();
 
-  int exec_dialog (lay::LayoutViewBase *view);
+  int exec_dialog (lay::LayoutView *view);
 
 protected:
   void accept ();
@@ -74,7 +74,7 @@ protected slots:
 
 private:
   Ui::XORToolDialog *mp_ui;
-  tl::weak_ptr<lay::LayoutViewBase> mp_view;
+  tl::weak_ptr<lay::LayoutView> mp_view;
 };
 
 }

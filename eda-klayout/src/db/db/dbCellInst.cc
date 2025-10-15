@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -31,12 +31,6 @@ CellInst::box_type
 CellInst::bbox (const db::Layout &g) const
 {
   return g.cell (m_cell_index).bbox ();
-}
-
-CellInst::box_type
-CellInst::bbox_with_empty (const db::Layout &g) const
-{
-  return g.cell (m_cell_index).bbox_with_empty ();
 }
 
 CellInst::box_type

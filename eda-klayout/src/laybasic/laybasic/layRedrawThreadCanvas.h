@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -29,10 +29,13 @@
 #include "dbTrans.h"
 #include "layViewOp.h"
 #include "layBitmapRenderer.h"
-#include "tlPixelBuffer.h"
-#include "tlThreads.h"
 
 #include <vector>
+
+#include <QMutex>
+#include <QColor>
+
+class QImage;
 
 namespace lay {
 
@@ -49,7 +52,7 @@ public:
    *  @brief Constructor
    */
   RedrawThreadCanvas () 
-    : m_resolution (1.0), m_font_resolution (1.0), m_width (0), m_height (0)
+    : m_resolution (1.0), m_width (0), m_height (0)
   { }
 
   /**
@@ -60,7 +63,7 @@ public:
   /**
    *  @brief Signal that a transfer has been done
    *
-   *  This method is called (from the redraw thread) if a transfer has been performed asynchronously
+   *  This method is called (from the redraw thread) if a transfer has been performed ansynchreously
    */
   virtual void signal_transfer_done () { }
 
@@ -91,13 +94,11 @@ public:
    *  @param shifting The shift vector by which the original image should be shifted to form the background or 0 if no shifting is required
    *  @param layers The set of plane indexes to initialize (if null, all planes are initialized). A negative value initializes the drawing planes.
    *  @param resolution The resolution in which the image is drawn
-   *  @param font_resolution The resolution in which the "Default" font is drawn
    *  @param drawings The custom drawing interface which is responsible to draw user objects
    */
-  virtual void prepare (unsigned int /*nlayers*/, unsigned int width, unsigned int height, double resolution, double font_resolution, const db::Vector * /*shift_vector*/, const std::vector<int> * /*planes*/, const lay::Drawings * /*drawings*/)
+  virtual void prepare (unsigned int /*nlayers*/, unsigned int width, unsigned int height, double resolution, const db::Vector * /*shift_vector*/, const std::vector<int> * /*planes*/, const lay::Drawings * /*drawings*/) 
   {
     m_resolution = resolution;
-    m_resolution = font_resolution;
     m_width = width;
     m_height = height;
   }
@@ -151,7 +152,7 @@ public:
   /**
    *  @brief Access to the mutex object
    */
-  tl::Mutex &mutex ()
+  QMutex &mutex () 
   {
     return m_mutex;
   }
@@ -162,14 +163,6 @@ public:
   double resolution () const
   {
     return m_resolution;
-  }
-
-  /**
-   *  @brief Get the font resolution value
-   */
-  double font_resolution () const
-  {
-    return m_font_resolution;
   }
 
   /**
@@ -194,9 +187,8 @@ public:
   virtual lay::Renderer *create_renderer () = 0;
 
 private:
-  tl::Mutex m_mutex;
+  QMutex m_mutex;
   double m_resolution;
-  double m_font_resolution;
   unsigned int m_width, m_height;
 };
 
@@ -282,7 +274,7 @@ public:
    *  This method is called from RedrawThread::start (), not from the
    *  redraw thread.
    */
-  virtual void prepare (unsigned int nlayers, unsigned int width, unsigned int height, double resolution, double font_resolution, const db::Vector *shift_vector, const std::vector<int> *planes, const lay::Drawings *drawings);
+  virtual void prepare (unsigned int nlayers, unsigned int width, unsigned int height, double resolution, const db::Vector *shift_vector, const std::vector<int> *planes, const lay::Drawings *drawings);
   
   /**
    *  @brief Test a plane with the given index for emptiness
@@ -324,18 +316,13 @@ public:
    */
   virtual lay::Renderer *create_renderer () 
   { 
-    return new lay::BitmapRenderer (m_width, m_height, resolution (), font_resolution ());
+    return new lay::BitmapRenderer (m_width, m_height, resolution ()); 
   }
 
   /**
-   *  @brief Transfer the content to a PixelBuffer
+   *  @brief Transfer the content to an QImage 
    */
-  void to_image (const std::vector <lay::ViewOp> &view_ops, const lay::DitherPattern &dp, const lay::LineStyles &ls, double dpr, tl::Color background, tl::Color foreground, tl::Color active, const lay::Drawings *drawings, tl::PixelBuffer &img, unsigned int width, unsigned int height);
-
-  /**
-   *  @brief Transfer the content to a BitmapBuffer (monochrome)
-   */
-  void to_image_mono (const std::vector <lay::ViewOp> &view_ops, const lay::DitherPattern &dp, const lay::LineStyles &ls, double dpr, bool background, bool foreground, bool active, const lay::Drawings *drawings, tl::BitmapBuffer &img, unsigned int width, unsigned int height);
+  void to_image (const std::vector <lay::ViewOp> &view_ops, const lay::DitherPattern &dp, const lay::LineStyles &ls, QColor background, QColor foreground, QColor active, const lay::Drawings *drawings, QImage &img, unsigned int width, unsigned int height);
 
   /**
    *  @brief Gets the current bitmap data as a BitmapCanvasData object

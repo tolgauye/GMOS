@@ -1,4 +1,4 @@
+import klayout.rdbcore
+from klayout.rdbcore import *
 
-from ..rdbcore import __all__
-from ..rdbcore import *
-
+__all__ = klayout.rdbcore.__all__

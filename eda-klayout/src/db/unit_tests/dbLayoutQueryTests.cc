@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -30,8 +30,6 @@
 #include "dbPCellDeclaration.h"
 #include "dbLibrary.h"
 #include "dbLibraryManager.h"
-#include "dbReader.h"
-#include "tlStream.h"
 
 
 static std::string q2s_var (db::Layout &g, const std::string &query, const std::string &pname, const char *sep = ",")
@@ -234,8 +232,6 @@ TEST(1)
     EXPECT_EQ (s, "1,8");
     s = q2s_var (iq, "bbox");
     EXPECT_EQ (s, "(0,1;2,3),()");
-    s = q2s_var (iq, "dbbox");
-    EXPECT_EQ (s, "(0,0.001;0.002,0.003),()");
   }
 
   {
@@ -256,9 +252,9 @@ TEST(1)
     s = q2s_var (iq, "parent_cell_name");
     EXPECT_EQ (s, "nil");
     s = q2s_var (iq, "path_names");
-    EXPECT_EQ (s, "(c2x)");
+    EXPECT_EQ (s, "c2x");
     s = q2s_var (iq, "path");
-    EXPECT_EQ (s, "(1)");
+    EXPECT_EQ (s, "1");
     s = q2s_var (iq, "hier_levels");
     EXPECT_EQ (s, "0");
   }
@@ -294,7 +290,7 @@ TEST(1)
     s = q2s_expr (iq, "parent_cell.name");
     EXPECT_EQ (s, "c2x,c2x,c2x");
     s = q2s_var (iq, "path_names");
-    EXPECT_EQ (s, "(c2x,c1),(c2x,c4),(c2x,c5x)");
+    EXPECT_EQ (s, "c2x,c1,c2x,c4,c2x,c5x");
     s = q2s_var (iq, "hier_levels");
     EXPECT_EQ (s, "1,1,1");
   }
@@ -354,7 +350,7 @@ TEST(1)
     s = q2s_var (iq, "parent_cell_name");
     EXPECT_EQ (s, "nil,c2x,c2x,c2x");
     s = q2s_var (iq, "path_names");
-    EXPECT_EQ (s, "(c2x),(c2x,c1),(c2x,c4),(c2x,c5x)");
+    EXPECT_EQ (s, "c2x,c2x,c1,c2x,c4,c2x,c5x");
     s = q2s_var (iq, "hier_levels");
     EXPECT_EQ (s, "0,1,1,1");
   }
@@ -419,7 +415,7 @@ TEST(1)
     s = q2s_var (iq, "parent_cell_name");
     EXPECT_EQ (s, "c2x,c3");
     s = q2s_var (iq, "path_names");
-    EXPECT_EQ (s, "(c2x,c5x),(c2x,c4,c3,c5x)");
+    EXPECT_EQ (s, "c2x,c5x,c2x,c4,c3,c5x");
     s = q2s_var (iq, "hier_levels");
     EXPECT_EQ (s, "1,3");
   }
@@ -440,7 +436,7 @@ TEST(1)
     s = q2s_var (iq, "parent_cell_name");
     EXPECT_EQ (s, "c2x,c4,c5x,c5x");
     s = q2s_var (iq, "path_names");
-    EXPECT_EQ (s, "(c2x,c1),(c2x,c4,c1),(c2x,c4,c3,c5x,c1),(c2x,c5x,c1)");
+    EXPECT_EQ (s, "c2x,c1,c2x,c4,c1,c2x,c4,c3,c5x,c1,c2x,c5x,c1");
     s = q2s_var (iq, "hier_levels");
     EXPECT_EQ (s, "1,2,4,2");
     s = q2s_var (iq, "references");
@@ -467,7 +463,7 @@ TEST(1)
     s = q2s_var (iq, "parent_cell_name");
     EXPECT_EQ (s, "c2x,c4,c5x,c5x");
     s = q2s_var (iq, "path_names");
-    EXPECT_EQ (s, "(c2x,c1),(c2x,c4,c1),(c2x,c4,c3,c5x,c1),(c2x,c5x,c1)");
+    EXPECT_EQ (s, "c2x,c1,c2x,c4,c1,c2x,c4,c3,c5x,c1,c2x,c5x,c1");
     s = q2s_var (iq, "hier_levels");
     EXPECT_EQ (s, "1,2,4,2");
     s = q2s_var (iq, "references");
@@ -494,7 +490,7 @@ TEST(1)
     s = q2s_var (iq, "parent_cell_name");
     EXPECT_EQ (s, "nil");
     s = q2s_var (iq, "path_names");
-    EXPECT_EQ (s, "(c1)");
+    EXPECT_EQ (s, "c1");
     s = q2s_var (iq, "hier_levels");
     EXPECT_EQ (s, "0");
     s = q2s_var (iq, "references");
@@ -513,14 +509,6 @@ TEST(1)
     db::LayoutQueryIterator iq (q, &g);
     std::string s = q2s_var (iq, "cell_name");
     EXPECT_EQ (s, "c1,c4,c5x");
-  }
-
-  {
-    //  $_ is a placeholder for the current cell
-    db::LayoutQuery q ("$_.*");
-    db::LayoutQueryIterator iq (q, &g, &g.cell (g.cell_by_name ("c4").second));
-    std::string s = q2s_var (iq, "cell_name");
-    EXPECT_EQ (s, "c1,c3"); // child cells of "c4"
   }
 
   {
@@ -580,25 +568,15 @@ TEST(2)
     EXPECT_EQ (s, "c1,c1");
     s = q2s_var (iq, "trans");
     EXPECT_EQ (s, "r0 *1 10,-20,m45 *1 -10,20");
-    s = q2s_var (iq, "dtrans");
-    EXPECT_EQ (s, "r0 *1 0.01,-0.02,m45 *1 -0.01,0.02");
     s = q2s_var (iq, "path_trans");
     EXPECT_EQ (s, "r0 *1 10,-20,m45 *1 -10,20");
-    s = q2s_var (iq, "path_dtrans");
-    EXPECT_EQ (s, "r0 *1 0.01,-0.02,m45 *1 -0.01,0.02");
     s = q2s_var (iq, "inst_bbox");
     EXPECT_EQ (s, "(10,-10;20,10),(0,20;20,30)");
-    s = q2s_var (iq, "inst_dbbox");
-    EXPECT_EQ (s, "(0.01,-0.01;0.02,0.01),(0,0.02;0.02,0.03)");
     s = q2s_var (iq, "inst");
     EXPECT_EQ (s, "cell_index=0 r0 10,-20,cell_index=0 m45 -10,20");
     s = q2s_var (iq, "array_a");
     EXPECT_EQ (s, "nil,nil");
-    s = q2s_var (iq, "array_da");
-    EXPECT_EQ (s, "nil,nil");
     s = q2s_var (iq, "array_b");
-    EXPECT_EQ (s, "nil,nil");
-    s = q2s_var (iq, "array_db");
     EXPECT_EQ (s, "nil,nil");
     s = q2s_var (iq, "array_na");
     EXPECT_EQ (s, "nil,nil");
@@ -625,12 +603,8 @@ TEST(2)
     EXPECT_EQ (s, "cell_index=0 r0 10,-20,cell_index=0 m45 -10,20 array=(1,1,0,2 2x3),cell_index=0 m45 -10,20 array=(1,1,0,2 2x3),cell_index=0 m45 -10,20 array=(1,1,0,2 2x3),cell_index=0 m45 -10,20 array=(1,1,0,2 2x3),cell_index=0 m45 -10,20 array=(1,1,0,2 2x3),cell_index=0 m45 -10,20 array=(1,1,0,2 2x3)");
     s = q2s_var (iq, "array_a");
     EXPECT_EQ (s, "nil,1,1,1,1,1,1,1,1,1,1,1,1");
-    s = q2s_var (iq, "array_da");
-    EXPECT_EQ (s, "nil,0.001,0.001,0.001,0.001,0.001,0.001,0.001,0.001,0.001,0.001,0.001,0.001");
     s = q2s_var (iq, "array_b");
     EXPECT_EQ (s, "nil,0,2,0,2,0,2,0,2,0,2,0,2");
-    s = q2s_var (iq, "array_db");
-    EXPECT_EQ (s, "nil,0,0.002,0,0.002,0,0.002,0,0.002,0,0.002,0,0.002");
     s = q2s_var (iq, "array_na");
     EXPECT_EQ (s, "nil,2,2,2,2,2,2");
     s = q2s_var (iq, "array_nb");
@@ -814,12 +788,6 @@ TEST(3)
     EXPECT_EQ (s, "0,1,1,2");
     s = q2s_var (iq, "bbox");
     EXPECT_EQ (s, "(0,1;2,3),(0,1;2,3),(0,1;2,3),(10,11;10,11)");
-    s = q2s_var (iq, "dbbox");
-    EXPECT_EQ (s, "(0,0.001;0.002,0.003),(0,0.001;0.002,0.003),(0,0.001;0.002,0.003),(0.01,0.011;0.01,0.011)");
-    s = q2s_var (iq, "shape_bbox");
-    EXPECT_EQ (s, "(0,1;2,3),(0,1;2,3),(0,1;2,3),(10,11;10,11)");
-    s = q2s_var (iq, "shape_dbbox");
-    EXPECT_EQ (s, "(0,0.001;0.002,0.003),(0,0.001;0.002,0.003),(0,0.001;0.002,0.003),(0.01,0.011;0.01,0.011)");
   }
 
   {
@@ -1021,39 +989,7 @@ void init_layout (db::Layout &g)
   c2.insert (db::array <db::CellInst, db::Trans> (db::CellInst (c5.cell_index ()), tt));
 }
 
-void init_layout2 (db::Layout &g)
-{
-  g = db::Layout ();
-
-  tl::InputStream stream (tl::testdata () + "/gds/issue-1671.gds");
-  db::Reader reader (stream);
-  reader.read (g, db::LoadLayoutOptions ());
-
-  g.insert_layer (0, db::LayerProperties ("l0"));
-  g.insert_layer (1, db::LayerProperties ("l1"));
-  g.insert_layer (2, db::LayerProperties ("l2"));
-  db::Cell &c1 (g.cell (g.add_cell ("c1")));
-  db::Cell &c2 (g.cell (g.add_cell ("c2")));
-  db::Cell &c3 (g.cell (g.add_cell ("c3")));
-  c2.shapes (0).insert (db::Box (0, 1, 2, 3));
-  c2.shapes (1).insert (db::Polygon (db::Box (0, 1, 2, 3)));
-  c2.shapes (1).insert (db::Edge (db::Point (0, 1), db::Point (2, 3)));
-  c2.shapes (2).insert (db::Text ("hallo", db::Trans (db::Vector (10, 11))));
-  c1.shapes (1).insert (db::Box (0, 10, 10, 30));
-
-  db::FTrans f (1, true);
-  db::Vector p (-10, 20);
-  db::Trans t (f.rot (), p);
-  db::Vector pp (10, -20);
-  db::Trans tt (0, pp);
-
-  c3.insert (db::array <db::CellInst, db::Trans> (db::CellInst (c2.cell_index ()), t));
-  c3.insert (db::array <db::CellInst, db::Trans> (db::CellInst (c2.cell_index ()), tt));
-
-  c2.insert (db::array <db::CellInst, db::Trans> (db::CellInst (c1.cell_index ()), t));
-}
-
-TEST(4)
+TEST(4) 
 {
   db::Layout g;
   init_layout (g);
@@ -1062,49 +998,49 @@ TEST(4)
     db::LayoutQuery q ("select cell_name+'#'+cell_index from *");
     db::LayoutQueryIterator iq (q, &g);
     std::string s = q2s_var (iq, "data");
-    EXPECT_EQ (s, "(c2x#1),(c4#3),(c3#2),(c5x#4),(c1#0)");
+    EXPECT_EQ (s, "c2x#1,c4#3,c3#2,c5x#4,c1#0");
   }
  
   {
     db::LayoutQuery q ("select $1 from 'c(*)'");
     db::LayoutQueryIterator iq (q, &g);
     std::string s = q2s_var (iq, "data");
-    EXPECT_EQ (s, "(2x),(4),(3),(5x),(1)");
+    EXPECT_EQ (s, "2x,4,3,5x,1");
   }
  
   {
     db::LayoutQuery q ("select cell_index+'#'+cell_name from * sorted by cell_name");
     db::LayoutQueryIterator iq (q, &g);
     std::string s = q2s_var (iq, "data");
-    EXPECT_EQ (s, "(0#c1),(1#c2x),(2#c3),(3#c4),(4#c5x)");
+    EXPECT_EQ (s, "0#c1,1#c2x,2#c3,3#c4,4#c5x");
   }
  
   {
     db::LayoutQuery q ("select cell_index+'#'+cell_name from ..* sorted by cell_name");
     db::LayoutQueryIterator iq (q, &g);
     std::string s = q2s_var (iq, "data");
-    EXPECT_EQ (s, "(0#c1),(0#c1),(0#c1),(0#c1),(1#c2x),(2#c3),(3#c4),(4#c5x),(4#c5x)");
+    EXPECT_EQ (s, "0#c1,0#c1,0#c1,0#c1,1#c2x,2#c3,3#c4,4#c5x,4#c5x");
   }
  
   {
     db::LayoutQuery q ("select cell_index+'#'+cell_name from ..* sorted by cell_name unique");
     db::LayoutQueryIterator iq (q, &g);
     std::string s = q2s_var (iq, "data");
-    EXPECT_EQ (s, "(0#c1),(1#c2x),(2#c3),(3#c4),(4#c5x)");
+    EXPECT_EQ (s, "0#c1,1#c2x,2#c3,3#c4,4#c5x");
   }
  
   {
     db::LayoutQuery q ("select cell_index+'#'+cell_name from instances of ..* sorted by cell_name");
     db::LayoutQueryIterator iq (q, &g);
     std::string s = q2s_var (iq, "data");
-    EXPECT_EQ (s, "(0#c1),(0#c1),(0#c1),(0#c1),(0#c1),(0#c1),(0#c1),(0#c1),(0#c1),(0#c1),(0#c1),(0#c1),(0#c1),(0#c1),(0#c1),(0#c1),(0#c1),(0#c1),(0#c1),(0#c1),(0#c1),(0#c1),(0#c1),(0#c1),(1#c2x),(2#c3),(2#c3),(3#c4),(3#c4),(4#c5x),(4#c5x),(4#c5x),(4#c5x),(4#c5x),(4#c5x),(4#c5x),(4#c5x)");
+    EXPECT_EQ (s, "0#c1,0#c1,0#c1,0#c1,0#c1,0#c1,0#c1,0#c1,0#c1,0#c1,0#c1,0#c1,0#c1,0#c1,0#c1,0#c1,0#c1,0#c1,0#c1,0#c1,0#c1,0#c1,0#c1,0#c1,1#c2x,2#c3,2#c3,3#c4,3#c4,4#c5x,4#c5x,4#c5x,4#c5x,4#c5x,4#c5x,4#c5x,4#c5x");
   }
  
   {
     db::LayoutQuery q ("select cell_index+'#'+cell_name from instances of ..* sorted by cell_name unique");
     db::LayoutQueryIterator iq (q, &g);
     std::string s = q2s_var (iq, "data");
-    EXPECT_EQ (s, "(0#c1),(1#c2x),(2#c3),(3#c4),(4#c5x)");
+    EXPECT_EQ (s, "0#c1,1#c2x,2#c3,3#c4,4#c5x");
   }
 }
 
@@ -1120,7 +1056,7 @@ TEST(51a)
     db::LayoutQuery q ("select cell_name+'#'+cell_index from *");
     db::LayoutQueryIterator iq (q, &g);
     std::string s = q2s_var (iq, "data");
-    EXPECT_EQ (s, "(c4#3),(c1#0),(c3#2)");
+    EXPECT_EQ (s, "c4#3,c1#0,c3#2");
   }
 
   {
@@ -1245,8 +1181,7 @@ TEST(53)
 {
   if (! db::default_editable_mode ()) { return; }
 
-  db::Manager m;
-  db::Layout g (&m);
+  db::Layout g;
   init_layout (g);
 
   {
@@ -1254,10 +1189,10 @@ TEST(53)
     std::string s;
     db::LayoutQueryIterator iq (q, &g);
     s = q2s_var (iq, "path_names", ";");
-    EXPECT_EQ (s, "(c2x);(c2x,c1);(c2x,c4);(c2x,c5x);(c2x,c4,c1);(c2x,c4,c3);(c2x,c4,c3,c5x);(c2x,c4,c3,c5x,c1);(c2x,c5x,c1)");
+    EXPECT_EQ (s, "c2x;c2x,c1;c2x,c4;c2x,c5x;c2x,c4,c1;c2x,c4,c3;c2x,c4,c3,c5x;c2x,c4,c3,c5x,c1;c2x,c5x,c1");
     db::LayoutQuery ("delete instances of *.c1").execute (g);
     s = q2s_var (iq, "path_names", ";");
-    EXPECT_EQ (s, "(c1);(c2x);(c2x,c4);(c2x,c5x);(c2x,c4,c3);(c2x,c4,c3,c5x)");
+    EXPECT_EQ (s, "c1;c2x;c2x,c4;c2x,c5x;c2x,c4,c3;c2x,c4,c3,c5x");
   }
 
   init_layout (g);
@@ -1267,7 +1202,7 @@ TEST(53)
     db::LayoutQuery q ("delete instances of *.c1 pass");
     db::LayoutQueryIterator iq (q, &g);
     s = q2s_var (iq, "path_names", ";");
-    EXPECT_EQ (s, "(c2x,c1);(c2x,c1);(c4,c1);(c4,c1);(c5x,c1)");
+    EXPECT_EQ (s, "c2x,c1;c2x,c1;c4,c1;c4,c1;c5x,c1");
   }
 
   init_layout (g);
@@ -1277,10 +1212,10 @@ TEST(53)
     std::string s;
     db::LayoutQueryIterator iq (q, &g);
     s = q2s_var (iq, "path_names", ";");
-    EXPECT_EQ (s, "(c2x);(c2x,c1);(c2x,c4);(c2x,c5x);(c2x,c4,c1);(c2x,c4,c3);(c2x,c4,c3,c5x);(c2x,c4,c3,c5x,c1);(c2x,c5x,c1)");
+    EXPECT_EQ (s, "c2x;c2x,c1;c2x,c4;c2x,c5x;c2x,c4,c1;c2x,c4,c3;c2x,c4,c3,c5x;c2x,c4,c3,c5x,c1;c2x,c5x,c1");
     db::LayoutQuery ("delete instances of c1").execute (g);
     s = q2s_var (iq, "path_names", ";");
-    EXPECT_EQ (s, "(c1);(c2x);(c2x,c4);(c2x,c5x);(c2x,c4,c3);(c2x,c4,c3,c5x)");
+    EXPECT_EQ (s, "c1;c2x;c2x,c4;c2x,c5x;c2x,c4,c3;c2x,c4,c3,c5x");
   }
  
   init_layout (g);
@@ -1290,22 +1225,10 @@ TEST(53)
     std::string s;
     db::LayoutQueryIterator iq (q, &g);
     s = q2s_var (iq, "path_names", ";");
-    EXPECT_EQ (s, "(c2x);(c2x,c1);(c2x,c4);(c2x,c5x);(c2x,c4,c1);(c2x,c4,c3);(c2x,c4,c3,c5x);(c2x,c4,c3,c5x,c1);(c2x,c5x,c1)");
+    EXPECT_EQ (s, "c2x;c2x,c1;c2x,c4;c2x,c5x;c2x,c4,c1;c2x,c4,c3;c2x,c4,c3,c5x;c2x,c4,c3,c5x,c1;c2x,c5x,c1");
     db::LayoutQuery ("delete instances of *").execute (g);
     s = q2s_var (iq, "path_names", ";");
-    EXPECT_EQ (s, "(c1);(c2x);(c3);(c4);(c5x)");
-  }
-
-  init_layout (g);
-
-  {
-    //  triggers issue-1671 (with transaction)
-    db::Transaction trans (&m, "test 53");
-    std::string s;
-    db::LayoutQuery q ("delete instances of ...c1 pass");
-    db::LayoutQueryIterator iq (q, &g);
-    s = q2s_var (iq, "path_names", ";");
-    EXPECT_EQ (s, "(c2x,c1);(c2x,c1);(c2x,c4,c1);(c2x,c4,c1);(c2x,c4,c3,c5x,c1)");
+    EXPECT_EQ (s, "c1;c2x;c3;c4;c5x");
   }
 }
 
@@ -1450,7 +1373,7 @@ TEST(62)
     return;
   }
 
-  db::pcell_id_type text_id = basic_lib->layout ().pcell_by_name ("TEXT").second;
+  size_t text_id = basic_lib->layout ().pcell_by_name ("TEXT").second;
   const db::PCellDeclaration *text_decl = basic_lib->layout ().pcell_declaration (text_id);
 
   std::vector<tl::Variant> values;
@@ -1466,7 +1389,7 @@ TEST(62)
     }
   }
 
-  db::cell_index_type v1t1 = basic_lib->layout ().get_pcell_variant (text_id, values);
+  size_t v1t1 = basic_lib->layout ().get_pcell_variant (text_id, values);
 
   values.clear ();
   for (std::vector<db::PCellParameterDeclaration>::const_iterator p = pd.begin (); p != pd.end (); ++p) {
@@ -1479,13 +1402,13 @@ TEST(62)
     }
   }
 
-  db::cell_index_type v1t2 = basic_lib->layout ().get_pcell_variant (text_id, values);
+  size_t v1t2 = basic_lib->layout ().get_pcell_variant (text_id, values);
 
   db::Layout g;
   init_layout (g);
 
-  size_t c3index = g.get_lib_proxy (basic_lib, v1t1);
-  size_t c4index = g.get_lib_proxy (basic_lib, v1t2);
+  size_t c3index = g.get_lib_proxy (basic_lib, db::cell_index_type (v1t1));
+  size_t c4index = g.get_lib_proxy (basic_lib, db::cell_index_type (v1t2));
 
   db::Cell &c1 (g.cell (g.add_cell ("c1")));
   db::Cell &c2 (g.cell (g.add_cell ("c2")));
@@ -1524,113 +1447,20 @@ TEST(62)
     db::LayoutQuery q ("select inst.pcell_parameters_by_name[\"text\"] from instances of ...* where cell_name ~ \"Basic.*\"");
     db::LayoutQueryIterator iq (q, &g);
     std::string s = q2s_var (iq, "data");
-    EXPECT_EQ (s, "(T2),(T1),(T1)");
+    EXPECT_EQ (s, "T2,T1,T1");
   }
 
   {
     db::LayoutQuery q ("select inst.pcell_parameter(\"text\") from instances of ...* where cell_name ~ \"Basic.*\"");
     db::LayoutQueryIterator iq (q, &g);
     std::string s = q2s_var (iq, "data");
-    EXPECT_EQ (s, "(T2),(T1),(T1)");
+    EXPECT_EQ (s, "T2,T1,T1");
   }
 
   {
     db::LayoutQuery q ("select inst[\"text\"] from instances of ...* where cell_name ~ \"Basic.*\"");
     db::LayoutQueryIterator iq (q, &g);
     std::string s = q2s_var (iq, "data");
-    EXPECT_EQ (s, "(T2),(T1),(T1)");
-  }
-
-  {
-    //  A non-executed query
-    db::LayoutQuery q ("select inst[\"text\"] from instances of ...* where cell_name ~ \"Basic.*\"");
-    db::LayoutQueryIterator iq (q, &g);
-    EXPECT_EQ (true, true);
-  }
-}
-
-TEST(63)
-{
-  db::Layout g;
-
-  //  A failing query must not leave a layout under construction
-  try {
-    db::LayoutQuery q ("!not a valid query");
-    db::LayoutQueryIterator iq (q, &g);
-    std::string s = q2s_var (iq, "data");
-    EXPECT_EQ (true, false);
-  } catch (tl::Exception &ex) {
-    EXPECT_EQ (ex.msg (), "Expected a word or quoted string here: !not a val ..");
-  }
-
-  EXPECT_EQ (g.under_construction (), false);
-}
-
-//  issue-787
-TEST(64)
-{
-  db::Layout g;
-  init_layout (g);
-
-  {
-    db::LayoutQuery q ("select inst.dtrans from instances of .*.*");
-    db::LayoutQueryIterator iq (q, &g);
-    std::string s = q2s_var (iq, "data");
-    EXPECT_EQ (s, "(r0 0.01,-0.02),(m45 -0.01,0.02),(m45 -0.01,0.02),(m45 -0.01,0.02),(r0 0.01,-0.02),(m45 -0.01,0.02)");
-  }
-
-  {
-    db::LayoutQuery q ("select inst.dtrans.disp.x,inst.dtrans.disp.y from instances of .*.*");
-    db::LayoutQueryIterator iq (q, &g);
-    std::string s = q2s_var (iq, "data");
-    EXPECT_EQ (s, "(0.01,-0.02),(-0.01,0.02),(-0.01,0.02),(-0.01,0.02),(0.01,-0.02),(-0.01,0.02)");
-  }
-}
-
-TEST(65)
-{
-  db::Layout g;
-  init_layout (g);
-
-  {
-    db::LayoutQuery q ("instances of cell .*.* where inst.trans.rot == 0");
-    db::LayoutQueryIterator iq (q, &g);
-    std::string s = q2s_var (iq, "data");
-    EXPECT_EQ (s, "nil,nil");
-    s = q2s_var (iq, "cell_name");
-    EXPECT_EQ (s, "c1,c5x");
-    s = q2s_var (iq, "inst_elements");
-    EXPECT_EQ (s, "(cell_index=0 r0 *1 10,-20),(cell_index=4 r0 *1 10,-20)");
-  }
-}
-
-TEST(66)
-{
-  db::Layout g;
-  init_layout (g);
-
-  {
-    db::LayoutQuery q ("instances of cell .*.* where inst.trans.rot == 0");
-    db::LayoutQueryIterator iq (q, &g);
-    std::string s = q2s_var (iq, "data");
-    EXPECT_EQ (s, "nil,nil");
-    s = q2s_var (iq, "cell_name");
-    EXPECT_EQ (s, "c1,c5x");
-    s = q2s_var (iq, "inst_elements");
-    EXPECT_EQ (s, "(cell_index=0 r0 *1 10,-20),(cell_index=4 r0 *1 10,-20)");
-  }
-}
-
-//  Bug: path_dtrans was ICplxTrans on top level
-TEST(67)
-{
-  db::Layout g;
-  init_layout (g);
-
-  {
-    db::LayoutQuery q ("select path_dtrans*shape.dbbox from shapes on layer l1 from instances of .*");
-    db::LayoutQueryIterator iq (q, &g);
-    std::string s = q2s_var (iq, "data");
-    EXPECT_EQ (s, "((0,0.001;0.002,0.003)),((0,0.001;0.002,0.003))");
+    EXPECT_EQ (s, "T2,T1,T1");
   }
 }

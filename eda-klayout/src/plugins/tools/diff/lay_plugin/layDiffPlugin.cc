@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -20,14 +20,12 @@
 
 */
 
+
+
+
 #include "layDiffToolDialog.h"
-#include "layDispatcher.h"
 
 #include "layPlugin.h"
-#include "layLayoutViewBase.h"
-#include "layUtils.h"
-
-#include <QPointer>
 
 namespace lay
 {
@@ -36,26 +34,23 @@ class DiffPlugin
   : public lay::Plugin
 {
 public:
-  DiffPlugin (lay::LayoutViewBase *view)
-    : lay::Plugin (view), mp_view (view)
+  DiffPlugin (Plugin *parent, lay::LayoutView *view)
+    : lay::Plugin (parent), mp_view (view)
   {
-    if (lay::has_gui ()) {
-      mp_dialog = new lay::DiffToolDialog (0);
-    }
+    mp_dialog = new lay::DiffToolDialog (0);
   }
 
   ~DiffPlugin ()
   {
-    if (mp_dialog) {
-      delete mp_dialog.data ();
-    }
+    delete mp_dialog;
+    mp_dialog = 0;
   }
 
   void menu_activated (const std::string &symbol) 
   {
     if (symbol == "lay::diff_tool") {
 
-      if (mp_dialog && mp_dialog->exec_dialog (mp_view)) {
+      if (mp_dialog->exec_dialog (mp_view)) {
 
         // ... implementation is in layDiffToolDialog.cc ...
 
@@ -65,8 +60,8 @@ public:
   }
 
 private:
-  lay::LayoutViewBase *mp_view;
-  QPointer<lay::DiffToolDialog> mp_dialog;
+  lay::LayoutView *mp_view;
+  lay::DiffToolDialog *mp_dialog;
 };
 
 class DiffPluginDeclaration
@@ -96,7 +91,7 @@ public:
   virtual void get_menu_entries (std::vector<lay::MenuEntry> &menu_entries) const
   {
     lay::PluginDeclaration::get_menu_entries (menu_entries);
-    menu_entries.push_back (lay::menu_item ("lay::diff_tool", "diff_tool:edit", "tools_menu.post_verification_group", tl::to_string (QObject::tr ("Diff Tool"))));
+    menu_entries.push_back (lay::MenuEntry ("lay::diff_tool", "diff_tool:edit", "tools_menu.post_verification_group", tl::to_string (QObject::tr ("Diff Tool"))));
   }
 
   virtual bool configure (const std::string & /*name*/, const std::string & /*value*/)
@@ -109,9 +104,9 @@ public:
     // .. nothing yet ..
   }
 
-  lay::Plugin *create_plugin (db::Manager *, lay::Dispatcher *, lay::LayoutViewBase *view) const
+  lay::Plugin *create_plugin (db::Manager *, lay::PluginRoot *root, lay::LayoutView *view) const
   {
-    return new DiffPlugin (view);
+    return new DiffPlugin (root, view);
   }
 };
 

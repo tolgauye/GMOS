@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -153,16 +153,8 @@ struct unit_trans
   /**
    *  @brief Copy ctor (which basically does nothing)
    */
-  unit_trans (const unit_trans<C> &)
-  {
-    // .. nothing else ..
-  }
-
-  /**
-   *  @brief Copy ctor (which basically does nothing)
-   */
   template <class D>
-  unit_trans (const unit_trans<D> &)
+  explicit unit_trans (const unit_trans<D> &)
   {
     // .. nothing else ..
   }
@@ -244,15 +236,6 @@ struct unit_trans
    *  @brief Assignment (which basically does nothing)
    */
   unit_trans &operator= (const unit_trans &) 
-  {
-    return *this;
-  }
-
-  /**
-   *  @brief Assignment (which basically does nothing)
-   */
-  template <class D>
-  unit_trans &operator= (const unit_trans<D> &) 
   {
     return *this;
   }
@@ -377,32 +360,6 @@ public:
   }
 
   /**
-   *  @brief Reduction
-   */
-  template <class T>
-  explicit fixpoint_trans (const T &t)
-    : m_f (0)
-  {
-    *this = t.fp_trans ();
-  }
-
-  /**
-   *  @brief Reduction from a matrix2d
-   */
-  explicit fixpoint_trans (const db::matrix_2d<coord_type> &t)
-  {
-    m_f = ((int (floor (t.angle () / 90.0 + 0.5) + 4)) % 4) + (t.is_mirror () ? 4 : 0);
-  }
-
-  /**
-   *  @brief Reduction from a matrix3d
-   */
-  explicit fixpoint_trans (const db::matrix_3d<coord_type> &t)
-  {
-    m_f = ((int (floor (t.angle () / 90.0 + 0.5) + 4)) % 4) + (t.is_mirror () ? 4 : 0);
-  }
-
-  /**
    *  @brief Returns true, if the transformation is unity
    */
   bool is_unity () const
@@ -446,18 +403,7 @@ public:
     // .. nothing else ..
   }
 
-  /**
-   *  @brief The standard constructor using a code rather than angle and mirror and no displacement
-   *
-   *  @param f The rotation/mirror code (r0 .. m135 constants)
-   */
-  explicit fixpoint_trans (unsigned int f)
-    : m_f (f)
-  {
-    // .. nothing else ..
-  }
-
-  /**
+  /** 
    *  @brief The rotation/mirror codes
    */
   static const int r0   = 0;  //  No rotation
@@ -784,20 +730,11 @@ public:
   /**
    *  @brief The "conversion" from the unit transformation to a displacement
    */
-  disp_trans (unit_trans<C>)
+  explicit disp_trans (unit_trans<C>)
     : m_u ()
   {
     // .. nothing else ..
   }
-
-  /**
-   *  @brief The copy constructor 
-   *
-   *  @param d The source from which to copy
-   */
-  disp_trans (const disp_trans<C> &d)
-    : m_u (d.disp ())
-  { }
 
   /**
    *  @brief The copy constructor that converts also
@@ -808,7 +745,7 @@ public:
    *  @param d The source from which to copy
    */
   template <class D>
-  disp_trans (const disp_trans<D> &d)
+  explicit disp_trans (const disp_trans<D> &d)
     : m_u (d.disp ())
   { }
 
@@ -840,25 +777,6 @@ public:
     : m_u (ct.disp ())
   {
     // .. nothing else ..
-  }
-
-  /**
-   *  @brief Assignment
-   */
-  disp_trans &operator= (const disp_trans<C> &d)
-  {
-    m_u = d.disp ();
-    return *this;
-  }
-
-  /**
-   *  @brief Assignment with type conversion
-   */
-  template <class D>
-  disp_trans &operator= (const disp_trans<D> &d)
-  {
-    m_u = d.disp ();
-    return *this;
   }
 
   /**
@@ -1173,18 +1091,6 @@ public:
   { }
 
   /**
-   *  @brief Assignment
-   *
-   *  @param d The source from which to take the data
-   */
-  simple_trans &operator= (const simple_trans<C> &d)
-  { 
-    fixpoint_trans<C>::operator= (d);
-    m_u = d.disp ();
-    return *this;
-  }
-
-  /**
    *  @brief The copy constructor that converts to a different coordinate type also
    *
    *  The copy constructor allows converting between different
@@ -1196,22 +1102,6 @@ public:
   explicit simple_trans (const simple_trans<D> &d)
     : fixpoint_trans<C> (d.rot ()), m_u (d.disp ())
   { }
-
-  /**
-   *  @brief Assignment which also converts
-   *
-   *  This assignment implementation will also convert
-   *  between different coordinate types if possible.
-   *
-   *  @param d The source from which to take the data
-   */
-  template <class D>
-  simple_trans &operator= (const simple_trans<D> &d)
-  { 
-    fixpoint_trans<C>::operator= (d);
-    m_u = d.disp ();
-    return *this;
-  }
 
   /**
    *  @brief The standard constructor using angle and mirror flag
@@ -1472,10 +1362,10 @@ public:
   /**
    *  @brief String conversion
    */
-  std::string to_string (double dbu = 0.0) const
+  std::string to_string () const
   {
     std::string s1 = fixpoint_trans<C>::to_string ();
-    std::string s2 = m_u.to_string (dbu);
+    std::string s2 = m_u.to_string ();
     if (! s1.empty () && ! s2.empty ()) {
       return s1 + " " + s2;
     } else {
@@ -1688,7 +1578,7 @@ public:
   {
     tl_assert (! m.has_shear ());
     tl_assert (! m.has_perspective ());
-    std::pair<double, double> mag = m.mag2 ();
+    std::pair<double, double> mag = m.mag ();
     tl_assert (fabs (mag.first - mag.second) < 1e-10);
     double rot = m.angle () * M_PI / 180.0;
     m_mag = m.is_mirror () ? -mag.first : mag.first;
@@ -1711,7 +1601,7 @@ public:
     : m_u (u)
   {
     tl_assert (! m.has_shear ());
-    std::pair<double, double> mag = m.mag2 ();
+    std::pair<double, double> mag = m.mag ();
     tl_assert (fabs (mag.first - mag.second) < 1e-10);
     double rot = m.angle () * M_PI / 180.0;
     m_mag = m.is_mirror () ? -mag.first : mag.first;
@@ -2011,15 +1901,6 @@ public:
     m_mag = m_mag < 0.0 ? -m : m;
   }
 
-  /**
-   *  @brief Returns a value indicating whether the transformation is a complex one
-   *  The transformation can safely be converted to a simple transformation if this value is false.
-   */
-  bool is_complex () const
-  {
-    return is_mag () || ! is_ortho ();
-  }
-
   /** 
    *  @brief Test, if the transformation is mirroring
    */
@@ -2243,13 +2124,21 @@ public:
   }
 
   /**
+   *  @brief Default string conversion
+   */
+  std::string to_string () const
+  {
+    return to_string (false);
+  }
+
+  /**
    *  @brief String conversion
    *
    *  The lazy and micron flags allow customization of the output to some degree.
    *  When lazy is set to true, output that is not required (i.e. magnification when 1)
    *  is dropped. If dbu is set, the coordinates are multiplied with this factor to render micron units.
    */
-  std::string to_string (bool lazy = false, double dbu = 0.0) const
+  std::string to_string (bool lazy, double dbu = 0.0) const
   {
     std::string s;
     if (is_mirror ()) {
@@ -2562,7 +2451,7 @@ typedef complex_trans<db::Coord, db::DCoord> CplxTrans;
  *  @brief Specialization: concatenation of CplxTrans
  *
  *  The combination of two of these objects is basically not allowed, since the
- *  output and input types in not compatible. For sake of simplicity however, we
+ *  output and input types in not compatible. For sake of similicity however, we
  *  allow this now.
  */
 inline CplxTrans operator* (const CplxTrans &a, const CplxTrans &b)
@@ -2579,7 +2468,7 @@ typedef complex_trans<db::DCoord, db::Coord> VCplxTrans;
  *  @brief Specialization: concatenation of VCplxTrans
  *
  *  The combination of two of these objects is basically not allowed, since the
- *  output and input types in not compatible. For sake of simplicity however, we
+ *  output and input types in not compatible. For sake of similicity however, we
  *  allow this now.
  */
 inline VCplxTrans operator* (const VCplxTrans &a, const VCplxTrans &b)
@@ -2671,7 +2560,6 @@ namespace tl
   template<> DB_PUBLIC void extractor_impl (tl::Extractor &ex, db::CplxTrans &t);
   template<> DB_PUBLIC void extractor_impl (tl::Extractor &ex, db::VCplxTrans &t);
   template<> DB_PUBLIC void extractor_impl (tl::Extractor &ex, db::DCplxTrans &t);
-  template<> DB_PUBLIC void extractor_impl (tl::Extractor &ex, db::ICplxTrans &t);
 
   template<> DB_PUBLIC bool test_extractor_impl (tl::Extractor &ex, db::UnitTrans &t);
   template<> DB_PUBLIC bool test_extractor_impl (tl::Extractor &ex, db::DUnitTrans &t);
@@ -2684,7 +2572,6 @@ namespace tl
   template<> DB_PUBLIC bool test_extractor_impl (tl::Extractor &ex, db::CplxTrans &t);
   template<> DB_PUBLIC bool test_extractor_impl (tl::Extractor &ex, db::VCplxTrans &t);
   template<> DB_PUBLIC bool test_extractor_impl (tl::Extractor &ex, db::DCplxTrans &t);
-  template<> DB_PUBLIC bool test_extractor_impl (tl::Extractor &ex, db::ICplxTrans &t);
 
 } // namespace tl
 

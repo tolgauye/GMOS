@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -39,7 +39,6 @@ namespace db
 
 class Layout;
 class SaveLayoutOptions;
-class GDS2WriterOptions;
 
 /**
  *  @brief A GDS2 writer abstraction
@@ -123,7 +122,7 @@ protected:
   /**
    *  @brief Write an instance 
    */
-  void write_inst (double sf, const db::Instance &instance, bool normalize, bool resolve_skew_arrays, const db::Layout &layout, db::properties_id_type prop_id);
+  void write_inst (double sf, const db::Instance &instance, bool normalize, const db::Layout &layout, db::properties_id_type prop_id);
 
   /**
    *  @brief Write a shape as box
@@ -167,21 +166,8 @@ protected:
 
 private:
   db::WriterCellNameMap m_cell_name_map;
-  double m_dbu;
-  bool m_resolve_skew_arrays;
-  bool m_multi_xy;
-  bool m_no_zero_length_paths;
-  size_t m_max_vertex_count;
-  bool m_write_cell_properties;
-  bool m_keep_instances;
-  double m_default_text_size;
 
   void write_properties (const db::Layout &layout, db::properties_id_type prop_id);
-  void write_context_cell (db::Layout &layout, const short *time_data, const std::vector<cell_index_type> &cells);
-  void write_context_string (size_t n, const std::string &s);
-  void write_cell (db::Layout &layout, const db::Cell &cref, const std::vector <std::pair <unsigned int, db::LayerProperties> > &layers,
-                   const std::set <db::cell_index_type> &cell_set, double sf, short *time_data);
-  void write_shape (const db::Layout &layout, int layer, int datatype, const db::Shape &shape, double sf);
 };
 
 } // namespace db

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -27,7 +27,9 @@
 
 #include "antCommon.h"
 
-#include "layEditorServiceBase.h"
+#include "layViewObject.h"
+#include "layEditable.h"
+#include "layPlugin.h"
 #include "layDrawing.h"
 #include "laySnap.h"
 #include "layAnnotationShapes.h"
@@ -39,14 +41,9 @@
 #include <map>
 #include <vector>
 
-#if defined (HAVE_QT)
-#  include <QTimer>
-#  include <QObject>
-#endif
-
 namespace ant {
 
-class LayoutViewBase;
+class LayoutView;
 class LayoutCanvas;
 class Service;
 
@@ -182,19 +179,14 @@ private:
 
 // -------------------------------------------------------------
 
-class ANT_PUBLIC Service :
-#if defined (HAVE_QT)
-    public QObject,
-#endif
-    public lay::EditorServiceBase,
+class ANT_PUBLIC Service
+  : public lay::ViewService,
+    public lay::Editable,
+    public lay::Plugin,
     public lay::Drawing,
     public db::Object
 {
-#if defined (HAVE_QT)
-Q_OBJECT
-#endif
-
-public:
+public: 
   typedef lay::AnnotationShapes::iterator obj_iterator;
 
   /**
@@ -208,11 +200,12 @@ public:
    *    MoveP2X - dragging P2.x (if box-like)
    *    MoveP1Y - dragging P1.y (if box-like)
    *    MoveP2Y - dragging P2.y (if box-like)
+   *    MoveRuler - dragging a whole ruler (one)
    *    MoveSelection - dragging a whole ruler (many)
    */
-  enum MoveMode { MoveNone, MoveP1, MoveP2, MoveP12, MoveP21, MoveP1X, MoveP2X, MoveP1Y, MoveP2Y, MoveSelected };
+  enum MoveMode { MoveNone, MoveP1, MoveP2, MoveP12, MoveP21, MoveP1X, MoveP2X, MoveP1Y, MoveP2Y, MoveRuler, MoveSelected };
 
-  Service (db::Manager *manager, lay::LayoutViewBase *view);
+  Service (db::Manager *manager, lay::LayoutView *view);
 
   ~Service ();
 
@@ -267,36 +260,21 @@ public:
   virtual void paste ();
 
   /**
-   *  @brief Indicates whether there are selection objects
-   */
-  virtual bool has_selection ();
-
-  /**
-   *  @brief Indicates how many objects are selected
+   *  @brief Tell the number of selected objects
    */
   virtual size_t selection_size ();
 
-  /**
-   *  @brief Indicates whether there are selection objects in transient mode
-   */
-  virtual bool has_transient_selection ();
-
-  /**
+  /** 
    *  @brief point selection proximity predicate
    */
   virtual double click_proximity (const db::DPoint &pos, lay::Editable::SelectionMode mode);
 
   /**
-   *  @brief Gets the catch distance (for single click)
+   *  @brief Gets the catch distance
    */
   virtual double catch_distance ();
 
-  /**
-   *  @brief Gets the catch distance (for box)
-   */
-  virtual double catch_distance_box ();
-
-  /**
+  /** 
    *  @brief "select" operation
    */
   virtual bool select (const db::DBox &box, lay::Editable::SelectionMode mode);
@@ -353,46 +331,24 @@ public:
   virtual db::DBox selection_bbox ();
 
   /**
-   *  @brief Implementation of the editables API
-   */
-  virtual bool enter_event (bool);
-
-  /**
-   *  @brief Implementation of the editables API
-   */
-  virtual bool leave_event (bool);
-
-  /**
-   *  @brief Implementation of the editables API
-   */
-  virtual void hover_reset ();
-
-  /**
    *  @brief Transform the selection (reimplementation of lay::Editable interface)
    */
   virtual void transform (const db::DCplxTrans &trans);
 
-#if defined(HAVE_QT)
   /**
    *  @brief Create the properties page
    */
-  virtual std::vector<lay::PropertiesPage *> properties_pages (db::Manager *manager, QWidget *parent);
-#endif
+  virtual lay::PropertiesPage *properties_page (db::Manager *manager, QWidget *parent);
 
   /**
-   *  @brief Gets the selection for the properties page
+   *  @brief Get the selection for the properties page
    */
   void get_selection (std::vector <obj_iterator> &selection) const;
 
   /**
-   *  @brief Sets the selection for the properties page
-   */
-  void set_selection (const std::vector <obj_iterator> &selection);
-
-  /**
    *  @brief Direct access to the selection 
    */
-  const std::set<obj_iterator> &selection () const
+  const std::map<obj_iterator, unsigned int> &selection () const
   {
     return m_selected;
   }
@@ -420,7 +376,7 @@ public:
   /**
    *  @brief Color accessor
    */
-  tl::Color color () const
+  QColor color () const
   {
     return m_color;
   }
@@ -460,7 +416,7 @@ public:
   /**
    *  @brief Access to the view object
    */
-  lay::LayoutViewBase *view () const
+  lay::LayoutView *view () const
   {
     return mp_view;
   }
@@ -513,14 +469,6 @@ public:
   ant::Object create_measure_ruler(const db::DPoint &pt, lay::angle_constraint_type ac);
 
   /**
-   *  @brief Gets the annotation templates
-   */
-  const std::vector<ant::Template> &ruler_templates () const
-  {
-    return m_ruler_templates;
-  }
-
-  /**
    *  @brief An event triggered when the annotations changed
    *  When an annotation is added or removed, this event is triggered.
    */
@@ -537,14 +485,9 @@ public:
    */
   tl::Event annotation_selection_changed_event;
 
-#if defined (HAVE_QT)
-public slots:
-  void timeout ();
-#endif
-
 private:
   //  Ruler display and snapping configuration
-  tl::Color m_color;
+  QColor m_color;
   bool m_halo;
   lay::angle_constraint_type m_snap_mode;
   double m_grid;
@@ -556,15 +499,15 @@ private:
   int m_max_number_of_rulers;
 
   //  The layout view that the ruler service is attached to
-  lay::LayoutViewBase *mp_view;
+  lay::LayoutView *mp_view;
 
   //  The ruler view objects representing the selection
   //  and the moved rules in move mode
   std::vector<ant::View *> m_rulers;
   //  The selection
-  std::set<obj_iterator> m_selected;
+  std::map<obj_iterator, unsigned int> m_selected;
   //  The previous selection
-  std::set<obj_iterator> m_previous_selection;
+  std::map<obj_iterator, unsigned int> m_previous_selection;
   //  The reference point in move mode
   db::DPoint m_p1;
   //  The transformation in MoveSelection mode
@@ -581,29 +524,13 @@ private:
   ant::Object m_original;
   //  The current move mode
   MoveMode m_move_mode;
-  //  The currently moving segment
-  size_t m_seg_index;
   //  The ruler template
   std::vector<ant::Template> m_ruler_templates;
   unsigned int m_current_template;
 
-  //  Hover detector
-  bool m_hover;
-  bool m_hover_wait;
-  db::DPoint m_hover_point;
-  unsigned int m_hover_buttons;
-#if defined (HAVE_QT)
-  QTimer m_timer;
-#endif
-
-  bool m_mouse_in_window;
-
   std::pair<bool, db::DPoint> snap1 (const db::DPoint &p, bool obj_snap);
-  lay::PointSnapToObjectResult snap1_details (const db::DPoint &p, bool obj_snap);
-  db::DPoint snap2_visual (const db::DPoint &p1, const db::DPoint &p2, const ant::Object *obj, lay::angle_constraint_type ac);
-  lay::PointSnapToObjectResult snap2_details (const db::DPoint &p1, const db::DPoint &p2, const ant::Object *obj, lay::angle_constraint_type ac);
-  lay::TwoPointSnapToObjectResult auto_measure (const db::DPoint &p, lay::angle_constraint_type ac, const ant::Template &tpl);
-
+  std::pair<bool, db::DPoint> snap2 (const db::DPoint &p1, const db::DPoint &p2, const ant::Object *obj, lay::angle_constraint_type ac);
+  
   const ant::Template &current_template () const;
 
   void show_message ();
@@ -616,10 +543,7 @@ private:
   virtual bool mouse_move_event (const db::DPoint &p, unsigned int buttons, bool prio);
   virtual bool mouse_press_event (const db::DPoint &p, unsigned int buttons, bool prio);
   virtual bool mouse_click_event (const db::DPoint &p, unsigned int buttons, bool prio);
-  virtual bool mouse_double_click_event (const db::DPoint &p, unsigned int buttons, bool prio);
   virtual void deactivated ();
-
-  void snap_rulers (lay::angle_constraint_type ac);
 
   /**
    *  @brief Select a certain ruler
@@ -637,11 +561,6 @@ private:
    *  @brief Limit the number of rulers to this number
    */
   void reduce_rulers (int num);
-
-  /**
-   *  @brief Finishes drawing mode and creates the ruler
-   */
-  void finish_drawing ();
 
   /**
    *  @brief Delete the selected rulers
@@ -667,7 +586,7 @@ private:
   /**
    *  @brief implementation of the "Drawing" interface: configuration
    */
-  std::vector <lay::ViewOp> get_view_ops (lay::RedrawThreadCanvas &canvas, tl::Color background, tl::Color foreground, tl::Color active) const;
+  std::vector <lay::ViewOp> get_view_ops (lay::RedrawThreadCanvas &canvas, QColor background, QColor foreground, QColor active) const;
 
   /**
    *  @brief Update m_rulers to reflect the selection

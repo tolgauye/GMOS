@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -186,25 +186,7 @@ public:
   /**
    *  @brief Add a child node
    */
-  void add_child (ExpressionNode *node);
-
-  /**
-   *  @brief Gets the name
-   *
-   *  The name is used for named arguments for example.
-   */
-  const std::string &name () const
-  {
-    return m_name;
-  }
-
-  /**
-   *  @brief Sets the name
-   */
-  void set_name (const std::string &name)
-  {
-    m_name = name;
-  }
+  void add_child (ExpressionNode *node); 
 
   /**
    *  @brief Execute the node
@@ -219,7 +201,6 @@ public:
 protected:
   std::vector <ExpressionNode *> m_c;
   ExpressionParserContext m_context;
-  std::string m_name;
 
   /**
    *  @brief Sets the expression parent
@@ -263,7 +244,7 @@ public:
    *
    *  If no method of this kind exists, the implementation may throw a NoMethodError.
    */
-  virtual void execute (const ExpressionParserContext &context, tl::Variant &out, tl::Variant &object, const std::string &method, const std::vector<tl::Variant> &args, const std::map<std::string, tl::Variant> *kwargs) const = 0;
+  virtual void execute (const ExpressionParserContext &context, tl::Variant &out, tl::Variant &object, const std::string &method, const std::vector<tl::Variant> &args) const = 0;
 };
 
 /**
@@ -283,18 +264,13 @@ public:
   virtual ~EvalFunction () { }
 
   /**
-   *  @brief Specifies whether keyword parameters are supported
-   */
-  virtual bool supports_keyword_parameters () const { return false; }
-
-  /**
    *  @brief The actual execution method
    *
    *  @param ex The position inside the current expression
    *  @param args The arguments of the method
    *  @return The return value 
    */
-  virtual void execute (const ExpressionParserContext &context, tl::Variant &out, const std::vector<tl::Variant> &args, const std::map<std::string, tl::Variant> *kwargs) const = 0;
+  virtual void execute (const ExpressionParserContext &context, tl::Variant &out, const std::vector<tl::Variant> &args) const = 0;
 };
 
 /**
@@ -355,7 +331,7 @@ public:
 private:
   const char *mp_text;
   std::string m_local_text;
-  std::unique_ptr<ExpressionNode> m_root;
+  std::auto_ptr<ExpressionNode> m_root;
   Eval *mp_eval;
 
   friend class Eval;
@@ -373,7 +349,7 @@ private:
   /**
    *  @brief Accessor to the root node
    */
-  std::unique_ptr<ExpressionNode> &root () 
+  std::auto_ptr<ExpressionNode> &root () 
   {
     return m_root;
   }
@@ -391,16 +367,7 @@ public:
    *  @param parent The parent evaluation context
    *  @param sloppy True to enable sloppy evaluation for pure parsing
    */
-  explicit Eval (Eval *parent = 0, bool sloppy = false);
-
-  /**
-   *  @brief Create a new object for expression evaluation
-   *
-   *  @param global The global evaluation context
-   *  @param parent The parent evaluation context
-   *  @param sloppy True to enable sloppy evaluation for pure parsing
-   */
-  explicit Eval (Eval *global, Eval *parent, bool sloppy = false);
+  Eval (Eval *parent = 0, bool sloppy = false);
 
   /**
    *  @brief virtual dtor to enable dynamic_cast on derived classes.
@@ -449,12 +416,6 @@ public:
   void define_function (const std::string &name, EvalFunction *function);
 
   /**
-   *  @brief Gets the function for the given name
-   *  Returns 0 if there is no such function.
-   */
-  EvalFunction *function (const std::string &name);
-
-  /**
    *  @brief Define a global variable for use within an expression
    */
   static void set_global_var (const std::string &name, const tl::Variant &var)
@@ -466,12 +427,6 @@ public:
    *  @brief Define a variable for use within an expression
    */
   void set_var (const std::string &name, const tl::Variant &var);
-
-  /**
-   *  @brief Gets the function for the given name
-   *  Returns 0 if there is no such function.
-   */
-  tl::Variant *var (const std::string &name);
 
   /**
    *  @brief Parse an expression from the extractor
@@ -555,67 +510,30 @@ public:
     return m_match_substrings;
   }
 
-  /**
-   *  @brief Gets the global context
-   */
-  static tl::Eval &global_context ()
-  {
-    return m_global;
-  }
-
-  /**
-   *  @brief Gets the global context for this context
-   */
-  tl::Eval *global ()
-  {
-    return mp_global;
-  }
-
-  /**
-   *  @brief Gets the parent context for this context
-   */
-  tl::Eval *parent ()
-  {
-    return mp_parent;
-  }
-
-protected:
-  /**
-   *  @brief Resolves a name into a function, a constant value or a variable
-   *
-   *  Can be overloaded to change the resolution scheme
-   */
-  virtual void resolve_name (const std::string &name, const EvalFunction *&function, const tl::Variant *&value, tl::Variant *&var);
-
-  /**
-   *  @brief Resolves a name into a variable
-   *
-   *  Can be overloaded to change the resolution scheme
-   */
-  virtual void resolve_var_name (const std::string &name, tl::Variant *&value);
-
 private:
   friend class Expression;
 
-  Eval *mp_parent, *mp_global;
+  Eval *mp_parent;
   std::map <std::string, tl::Variant> m_local_vars;
   std::map <std::string, EvalFunction *> m_local_functions;
   bool m_sloppy;
   const ContextHandler *mp_ctx_handler;
   std::vector<std::string> m_match_substrings;
 
-  void eval_top (ExpressionParserContext &context, std::unique_ptr<ExpressionNode> &v);
-  void eval_assign (ExpressionParserContext &context, std::unique_ptr<ExpressionNode> &v);
-  void eval_if (ExpressionParserContext &context, std::unique_ptr<ExpressionNode> &v);
-  void eval_boolean (ExpressionParserContext &context, std::unique_ptr<ExpressionNode> &v);
-  void eval_conditional (ExpressionParserContext &context, std::unique_ptr<ExpressionNode> &v);
-  void eval_shift (ExpressionParserContext &context, std::unique_ptr<ExpressionNode> &v);
-  void eval_addsub (ExpressionParserContext &context, std::unique_ptr<ExpressionNode> &v);
-  void eval_product (ExpressionParserContext &context, std::unique_ptr<ExpressionNode> &v);
-  void eval_bitwise (ExpressionParserContext &context, std::unique_ptr<ExpressionNode> &v);
-  void eval_unary (ExpressionParserContext &context, std::unique_ptr<ExpressionNode> &v);
-  void eval_atomic (ExpressionParserContext &context, std::unique_ptr<ExpressionNode> &v, int am);
-  void eval_suffix (ExpressionParserContext &context, std::unique_ptr<ExpressionNode> &v);
+  void eval_top (ExpressionParserContext &context, std::auto_ptr<ExpressionNode> &v);
+  void eval_assign (ExpressionParserContext &context, std::auto_ptr<ExpressionNode> &v);
+  void eval_if (ExpressionParserContext &context, std::auto_ptr<ExpressionNode> &v);
+  void eval_boolean (ExpressionParserContext &context, std::auto_ptr<ExpressionNode> &v);
+  void eval_conditional (ExpressionParserContext &context, std::auto_ptr<ExpressionNode> &v);
+  void eval_shift (ExpressionParserContext &context, std::auto_ptr<ExpressionNode> &v);
+  void eval_addsub (ExpressionParserContext &context, std::auto_ptr<ExpressionNode> &v);
+  void eval_product (ExpressionParserContext &context, std::auto_ptr<ExpressionNode> &v);
+  void eval_bitwise (ExpressionParserContext &context, std::auto_ptr<ExpressionNode> &v);
+  void eval_unary (ExpressionParserContext &context, std::auto_ptr<ExpressionNode> &v);
+  void eval_atomic (ExpressionParserContext &context, std::auto_ptr<ExpressionNode> &v, int am);
+  void eval_suffix (ExpressionParserContext &context, std::auto_ptr<ExpressionNode> &v);
+  void resolve_name (const std::string &name, const EvalFunction *&function, const tl::Variant *&value, tl::Variant *&var);
+  void resolve_var_name (const std::string &name, tl::Variant *&value);
 
   static Eval m_global;
 };

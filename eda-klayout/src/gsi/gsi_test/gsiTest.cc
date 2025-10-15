@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -43,7 +43,7 @@ int _force_link_f ()
 // ----------------------------------------------------------------
 //  Implementation of A
 
-static std::unique_ptr<A> a_inst;
+static std::auto_ptr<A> a_inst;
 static int a_count = 0;
 
 void A::br () 
@@ -62,20 +62,6 @@ A::A (int nn) {
   ++a_count;
   e = Enum (0);
   n = nn; 
-  f = false;
-}
-
-A::A (int n1, int n2) {
-  ++a_count;
-  e = Enum (0);
-  n = n1 + n2;
-  f = false;
-}
-
-A::A (int n1, int n2, double n3) {
-  ++a_count;
-  e = Enum (0);
-  n = (n1 + n2) * n3;
   f = false;
 }
 
@@ -121,249 +107,12 @@ const char *A::a_static ()
   return "static_a"; 
 }
 
-tl::Variant A::new_a_by_variant ()
-{
-  return tl::Variant (A ());
-}
-
-#if defined(HAVE_QT)
-
-std::vector<int>
-A::qba_cref_to_ia (const QByteArray &ba)
-{
-  const char *cp = ba.constData ();
-  size_t n = ba.size ();
-  std::vector<int> ia;
-  for (size_t i = 0; i < n; ++i) {
-    ia.push_back (int (*cp++));
-  }
-  return ia;
-}
-
-QByteArray
-A::ia_cref_to_qba (const std::vector<int> &ia)
-{
-  QByteArray ba;
-  for (std::vector<int>::const_iterator i = ia.begin (); i != ia.end (); ++i) {
-    ba.push_back (char (*i));
-  }
-  return ba;
-}
-
-QByteArray &
-A::ia_cref_to_qba_ref (const std::vector<int> &ia)
-{
-  static QByteArray ba;
-  ba.clear ();
-  for (std::vector<int>::const_iterator i = ia.begin (); i != ia.end (); ++i) {
-    ba.push_back (char (*i));
-  }
-  return ba;
-}
-
-#if QT_VERSION >= 0x60000
-
-std::vector<int>
-A::qbav_cref_to_ia (const QByteArrayView &ba)
-{
-  const char *cp = ba.constData ();
-  size_t n = ba.size ();
-  std::vector<int> ia;
-  for (size_t i = 0; i < n; ++i) {
-    ia.push_back (int (*cp++));
-  }
-  return ia;
-}
-
-QByteArrayView
-A::ia_cref_to_qbav (const std::vector<int> &ia)
-{
-  static QByteArray ba;
-  ba.clear ();
-  for (std::vector<int>::const_iterator i = ia.begin (); i != ia.end (); ++i) {
-    ba.push_back (char (*i));
-  }
-  return ba;
-}
-
-QByteArrayView &
-A::ia_cref_to_qbav_ref (const std::vector<int> &ia)
-{
-  static QByteArray ba;
-  ba.clear ();
-  for (std::vector<int>::const_iterator i = ia.begin (); i != ia.end (); ++i) {
-    ba.push_back (char (*i));
-  }
-  static QByteArrayView bav;
-  bav = ba;
-  return bav;
-}
-
-#endif
-
-std::vector<int>
-A::qs_cref_to_ia (const QString &qs)
-{
-  const QChar *cp = qs.constData ();
-  size_t n = qs.size ();
-  std::vector<int> ia;
-  for (size_t i = 0; i < n; ++i) {
-    ia.push_back ((*cp++).unicode ());
-  }
-  return ia;
-}
-
-QString
-A::ia_cref_to_qs (const std::vector<int> &ia)
-{
-  QString s;
-  for (std::vector<int>::const_iterator i = ia.begin (); i != ia.end (); ++i) {
-    s.push_back (QChar (*i));
-  }
-  return s;
-}
-
-QString &
-A::ia_cref_to_qs_ref (const std::vector<int> &ia)
-{
-  static QString s;
-  s.clear ();
-  for (std::vector<int>::const_iterator i = ia.begin (); i != ia.end (); ++i) {
-    s.push_back (QChar (*i));
-  }
-  return s;
-}
-
-#if QT_VERSION >= 0x50000
-
-std::vector<int>
-A::ql1s_cref_to_ia (const QLatin1String &ql1s)
-{
-  std::vector<int> ia;
-  const char *cp = ql1s.data ();
-  size_t n = ql1s.size ();
-  for (size_t i = 0; i < n; ++i) {
-    ia.push_back ((unsigned char) *cp++);
-  }
-  return ia;
-}
-
-QLatin1String
-A::ia_cref_to_ql1s (const std::vector<int> &ia)
-{
-  static std::string str;
-  str.clear ();
-  for (std::vector<int>::const_iterator i = ia.begin (); i != ia.end (); ++i) {
-    str += char (*i);
-  }
-  return QLatin1String (str.c_str (), str.size ());
-}
-
-QLatin1String &
-A::ia_cref_to_ql1s_ref (const std::vector<int> &ia)
-{
-  static std::string str;
-  str.clear ();
-  for (std::vector<int>::const_iterator i = ia.begin (); i != ia.end (); ++i) {
-    str += char (*i);
-  }
-  static QLatin1String s (0);
-  s = QLatin1String (str.c_str (), str.size ());
-  return s;
-}
-
-#endif
-
-#if QT_VERSION >= 0x60000
-
-std::vector<int>
-A::qsv_cref_to_ia (const QStringView &qs)
-{
-  const QChar *cp = qs.constData ();
-  size_t n = qs.size ();
-  std::vector<int> ia;
-  for (size_t i = 0; i < n; ++i) {
-    ia.push_back ((*cp++).unicode ());
-  }
-  return ia;
-}
-
-QStringView
-A::ia_cref_to_qsv (const std::vector<int> &ia)
-{
-  static QString s;
-  s.clear ();
-  for (std::vector<int>::const_iterator i = ia.begin (); i != ia.end (); ++i) {
-    s.push_back (char (*i));
-  }
-  return s;
-}
-
-QStringView &
-A::ia_cref_to_qsv_ref (const std::vector<int> &ia)
-{
-  static QString s;
-  s.clear ();
-  for (std::vector<int>::const_iterator i = ia.begin (); i != ia.end (); ++i) {
-    s.push_back (char (*i));
-  }
-  static QStringView sv;
-  sv = s;
-  return sv;
-}
-
-#endif
-
-#endif
-
-std::vector<int>
-A::ba_cref_to_ia (const std::vector<char> &ba)
-{
-  std::vector<int> ia;
-  for (std::vector<char>::const_iterator i = ba.begin (); i != ba.end (); ++i) {
-    ia.push_back (int (*i));
-  }
-  return ia;
-}
-
-std::vector<char>
-A::ia_cref_to_ba (const std::vector<int> &ia)
-{
-  std::vector<char> ba;
-  for (std::vector<int>::const_iterator i = ia.begin (); i != ia.end (); ++i) {
-    ba.push_back (char (*i));
-  }
-  return ba;
-}
-
-std::vector<char> &
-A::ia_cref_to_ba_ref (const std::vector<int> &ia)
-{
-  static std::vector<char> ba;
-  ba.clear ();
-  for (std::vector<int>::const_iterator i = ia.begin (); i != ia.end (); ++i) {
-    ba.push_back (char (*i));
-  }
-  return ba;
-}
-
-
 static A *a_ctor (int i)
 {
   return new A (i);
 }
 
-static A *a_ctor2 (int i, int j)
-{
-  return new A (i, j);
-}
-
-static A *a_ctor3 (int i, int j, double f)
-{
-  return new A (i, j, f);
-}
-
-void A::a20 (A *ptr)
+void A::a20 (A *ptr) 
 { 
   if (a_inst.get () != ptr) {
     a_inst.reset (ptr);
@@ -375,88 +124,67 @@ A *A::a20_get ()
   return a_inst.get (); 
 }
 
-static int s_sp = 0;
-
-int A::sp_i_get ()
-{
-  return s_sp;
-}
-
-void A::sp_i_set (int v)
-{
-  s_sp = v + 1;
-}
-
 // ----------------------------------------------------------------
 //  Implementation of B
 
 B *B::b_inst = 0;
-static int b_count = 0;
 
 B::B () 
 { 
-  ++b_count;
-  m_av.push_back (A (100));
-  m_av.push_back (A (121));
-  m_av.push_back (A (144));
-  m_avc_nc.push_back (new A_NC (-3100));
-  m_avc_nc.push_back (new A_NC (-3121));
-  m_av_nc.push_back (new A_NC (7100));
-  m_av_nc.push_back (new A_NC (7121));
-  m_av_nc.push_back (new A_NC (7144));
-  m_av_nc.push_back (new A_NC (7169));
+  av.push_back (A (100));
+  av.push_back (A (121));
+  av.push_back (A (144));
+  avc_nc.push_back (new A_NC (-3100));
+  avc_nc.push_back (new A_NC (-3121));
+  av_nc.push_back (new A_NC (7100));
+  av_nc.push_back (new A_NC (7121));
+  av_nc.push_back (new A_NC (7144));
+  av_nc.push_back (new A_NC (7169));
 }
 
-B::~B ()
+B::~B() 
 {
-  while (! m_av_nc.empty ()) {
-    delete m_av_nc.back ();
-    m_av_nc.pop_back ();
+  while (! av_nc.empty ()) {
+    delete av_nc.back ();
+    av_nc.pop_back ();
   }
-  while (! m_avc_nc.empty ()) {
-    delete const_cast<A_NC *> (m_avc_nc.back ());
-    m_avc_nc.pop_back ();
+  while (! avc_nc.empty ()) {
+    delete const_cast<A_NC *> (avc_nc.back ());
+    avc_nc.pop_back ();
   }
   if (b_inst == this) {
     b_inst = 0;
   }
-  --b_count;
 }
 
 B::B (const B &d)
 {
   operator=(d);
-  ++b_count;
 }
 
-int B::instance_count ()
-{
-  return b_count;
-}
-
-B &B::operator=(const B &d)
+B &B::operator=(const B &d) 
 {
   if (&d == this) {
     return *this;
   }
 
   m = d.m;
-  m_a = d.m_a;
-  m_bv = d.m_bv;
-  m_av = d.m_av;
-  while (! m_av_nc.empty ()) {
-    delete m_av_nc.back ();
-    m_av_nc.pop_back ();
+  a = d.a;
+  bv = d.bv;
+  av = d.av;
+  while (! av_nc.empty ()) {
+    delete av_nc.back ();
+    av_nc.pop_back ();
   }
-  for (std::vector <A_NC *>::const_iterator i = d.m_av_nc.begin (); i != d.m_av_nc.end (); ++i) {
-    m_av_nc.push_back (new A_NC (**i));
+  for (std::vector <A_NC *>::const_iterator i = d.av_nc.begin (); i != d.av_nc.end (); ++i) {
+    av_nc.push_back (new A_NC (**i));
   }
-  while (! m_avc_nc.empty ()) {
-    delete const_cast<A_NC *> (m_avc_nc.back ());
-    m_avc_nc.pop_back ();
+  while (! avc_nc.empty ()) {
+    delete const_cast<A_NC *> (avc_nc.back ());
+    avc_nc.pop_back ();
   }
-  for (std::vector <const A_NC *>::const_iterator i = d.m_avc_nc.begin (); i != d.m_avc_nc.end (); ++i) {
-    m_avc_nc.push_back (new A_NC (**i));
+  for (std::vector <const A_NC *>::const_iterator i = d.avc_nc.begin (); i != d.avc_nc.end (); ++i) {
+    avc_nc.push_back (new A_NC (**i));
   }
   m_var = d.m_var;
   m_vars = d.m_vars;
@@ -485,11 +213,6 @@ bool B::has_inst ()
   return b_inst != 0; 
 }
 
-tl::Variant B::new_b_by_variant ()
-{
-  return tl::Variant (B ());
-}
-
 std::string B::addr () const 
 {
   char c[50];
@@ -497,7 +220,7 @@ std::string B::addr () const
   return c;
 }
 
-static int aptr_to_n_ext (const B *b, A *aptr)
+static int b3_ext (const B *b, A *aptr) 
 { 
   return b->b3 (aptr);
 }
@@ -568,7 +291,7 @@ std::vector<int> C::m_v;
 // ----------------------------------------------------------------
 //  Implementation of E
 
-std::unique_ptr<E> E::e_inst;
+std::auto_ptr<E> E::e_inst;
 int E::e_count = 0;
 
 E::E() : x(0)
@@ -631,7 +354,7 @@ int inst_count();
 // ----------------------------------------------------------------
 //  Implementation of F
 
-std::unique_ptr<F> F::f_inst;
+std::auto_ptr<F> F::f_inst;
 
 const F &F::icref() 
 { 
@@ -672,8 +395,8 @@ F *F::inc()
 // ----------------------------------------------------------------
 //  Implementation of X
 
-std::unique_ptr<X> X::sp_a (new X ("X::a"));
-std::unique_ptr<X> X::sp_b (new X ("X::b"));
+std::auto_ptr<X> X::sp_a (new X ("X::a"));
+std::auto_ptr<X> X::sp_b (new X ("X::b"));
 
 static X *make_x (const char *x) 
 { 
@@ -698,15 +421,6 @@ X::X (const X &x)
 {
   *this = x;
   ++s_xinst;
-}
-
-X &X::operator= (const X &x)
-{
-  gsi::ObjectBase::operator= (x);
-  if (this != &x) {
-    m_s = x.m_s;
-  }
-  return *this;
 }
 
 X::~X ()
@@ -782,8 +496,8 @@ void X::set_si (int v)
 // ----------------------------------------------------------------
 //  Implementation of Y
 
-std::unique_ptr<Y> Y::sp_a (new Y ("Y::a"));
-std::unique_ptr<Y> Y::sp_b (new Y ("Y::b"));
+std::auto_ptr<Y> Y::sp_a (new Y ("Y::a"));
+std::auto_ptr<Y> Y::sp_b (new Y ("Y::b"));
 int Y::s_dyn_count = 0;
 
 static Y *make_y (const char *x)
@@ -1066,90 +780,7 @@ static gsi::QFlagsClass<Enum> decl_qflags_enum ("", "Enums");
 
 static gsi::Class<A> decl_a ("", "A",
   gsi::constructor ("new_a|new", &a_ctor) +
-  gsi::constructor ("new", &a_ctor2) +
-  gsi::constructor ("new", &a_ctor3) +
   gsi::method ("instance_count", &A::instance_count) +
-  gsi::method ("new_a_by_variant", &A::new_a_by_variant) +
-
-#if defined(HAVE_QT)
-
-  gsi::method ("qba_cref_to_ia", &A::qba_cref_to_ia) +
-  gsi::method ("qba_ref_to_ia", &A::qba_ref_to_ia) +
-  gsi::method ("qba_cptr_to_ia", &A::qba_cptr_to_ia) +
-  gsi::method ("qba_ptr_to_ia", &A::qba_ptr_to_ia) +
-  gsi::method ("qba_to_ia", &A::qba_to_ia) +
-  gsi::method ("ia_cref_to_qba", &A::ia_cref_to_qba) +
-  gsi::method ("ia_cref_to_qba_cref", &A::ia_cref_to_qba_cref) +
-  gsi::method ("ia_cref_to_qba_ref", &A::ia_cref_to_qba_ref) +
-  gsi::method ("ia_cref_to_qba_cptr", &A::ia_cref_to_qba_cptr) +
-  gsi::method ("ia_cref_to_qba_ptr", &A::ia_cref_to_qba_ptr) +
-
-  gsi::method ("qs_cref_to_ia", &A::qs_cref_to_ia) +
-  gsi::method ("qs_ref_to_ia", &A::qs_ref_to_ia) +
-  gsi::method ("qs_cptr_to_ia", &A::qs_cptr_to_ia) +
-  gsi::method ("qs_ptr_to_ia", &A::qs_ptr_to_ia) +
-  gsi::method ("qs_to_ia", &A::qs_to_ia) +
-  gsi::method ("ia_cref_to_qs", &A::ia_cref_to_qs) +
-  gsi::method ("ia_cref_to_qs_cref", &A::ia_cref_to_qs_cref) +
-  gsi::method ("ia_cref_to_qs_ref", &A::ia_cref_to_qs_ref) +
-  gsi::method ("ia_cref_to_qs_cptr", &A::ia_cref_to_qs_cptr) +
-  gsi::method ("ia_cref_to_qs_ptr", &A::ia_cref_to_qs_ptr) +
-
-#if QT_VERSION >= 0x50000
-
-  gsi::method ("ql1s_cref_to_ia", &A::ql1s_cref_to_ia) +
-  gsi::method ("ql1s_ref_to_ia", &A::ql1s_ref_to_ia) +
-  gsi::method ("ql1s_cptr_to_ia", &A::ql1s_cptr_to_ia) +
-  gsi::method ("ql1s_ptr_to_ia", &A::ql1s_ptr_to_ia) +
-  gsi::method ("ql1s_to_ia", &A::ql1s_to_ia) +
-  gsi::method ("ia_cref_to_ql1s", &A::ia_cref_to_ql1s) +
-  gsi::method ("ia_cref_to_ql1s_cref", &A::ia_cref_to_ql1s_cref) +
-  gsi::method ("ia_cref_to_ql1s_ref", &A::ia_cref_to_ql1s_ref) +
-  gsi::method ("ia_cref_to_ql1s_cptr", &A::ia_cref_to_ql1s_cptr) +
-  gsi::method ("ia_cref_to_ql1s_ptr", &A::ia_cref_to_ql1s_ptr) +
-
-#endif
-
-#if QT_VERSION >= 0x60000
-
-  gsi::method ("qbav_cref_to_ia", &A::qbav_cref_to_ia) +
-  gsi::method ("qbav_ref_to_ia", &A::qbav_ref_to_ia) +
-  gsi::method ("qbav_cptr_to_ia", &A::qbav_cptr_to_ia) +
-  gsi::method ("qbav_ptr_to_ia", &A::qbav_ptr_to_ia) +
-  gsi::method ("qbav_to_ia", &A::qbav_to_ia) +
-  gsi::method ("ia_cref_to_qbav", &A::ia_cref_to_qbav) +
-  gsi::method ("ia_cref_to_qbav_cref", &A::ia_cref_to_qbav_cref) +
-  gsi::method ("ia_cref_to_qbav_ref", &A::ia_cref_to_qbav_ref) +
-  gsi::method ("ia_cref_to_qbav_cptr", &A::ia_cref_to_qbav_cptr) +
-  gsi::method ("ia_cref_to_qbav_ptr", &A::ia_cref_to_qbav_ptr) +
-
-  gsi::method ("qsv_cref_to_ia", &A::qsv_cref_to_ia) +
-  gsi::method ("qsv_ref_to_ia", &A::qsv_ref_to_ia) +
-  gsi::method ("qsv_cptr_to_ia", &A::qsv_cptr_to_ia) +
-  gsi::method ("qsv_ptr_to_ia", &A::qsv_ptr_to_ia) +
-  gsi::method ("qsv_to_ia", &A::qsv_to_ia) +
-  gsi::method ("ia_cref_to_qsv", &A::ia_cref_to_qsv) +
-  gsi::method ("ia_cref_to_qsv_cref", &A::ia_cref_to_qsv_cref) +
-  gsi::method ("ia_cref_to_qsv_ref", &A::ia_cref_to_qsv_ref) +
-  gsi::method ("ia_cref_to_qsv_cptr", &A::ia_cref_to_qsv_cptr) +
-  gsi::method ("ia_cref_to_qsv_ptr", &A::ia_cref_to_qsv_ptr) +
-
-#endif
-
-#endif
-
-  gsi::method ("ba_cref_to_ia", &A::ba_cref_to_ia) +
-  gsi::method ("ba_ref_to_ia", &A::ba_ref_to_ia) +
-  gsi::method ("ba_cptr_to_ia", &A::ba_cptr_to_ia) +
-  gsi::method ("ba_ptr_to_ia", &A::ba_ptr_to_ia) +
-  gsi::method ("ba_to_ia", &A::ba_to_ia) +
-
-  gsi::method ("ia_cref_to_ba", &A::ia_cref_to_ba) +
-  gsi::method ("ia_cref_to_ba_ref", &A::ia_cref_to_ba_ref) +
-  gsi::method ("ia_cref_to_ba_cref", &A::ia_cref_to_ba_cref) +
-  gsi::method ("ia_cref_to_ba_ptr", &A::ia_cref_to_ba_ptr) +
-  gsi::method ("ia_cref_to_ba_cptr", &A::ia_cref_to_ba_cptr) +
-
   gsi::method ("br", &A::br) +
   gsi::method ("get_e", &A::get_e) +
   gsi::method ("get_eptr", &A::get_eptr) +
@@ -1184,8 +815,8 @@ static gsi::Class<A> decl_a ("", "A",
   gsi::method ("af?|af", &A::af1) +
   gsi::method ("aa", &A::a) +
   gsi::method ("aa", &A::a_static) +
-  gsi::method ("a1|get_n", &A::a1) +
-  gsi::method ("a1c|get_n_const", &A::a1c) +
+  gsi::method ("a1", &A::a1) +
+  gsi::method ("a1c", &A::a1c) +
   gsi::method ("a2", &A::a2) +
   gsi::method ("a3", &A::a3) +
 #if defined(HAVE_QT)
@@ -1265,53 +896,30 @@ static gsi::Class<A> decl_a ("", "A",
   gsi::method ("a9b", &A::a9b) +
   gsi::method ("a20", &A::a20) +
   gsi::method ("a20_get", &A::a20_get) +
-  gsi::method ("sp_i", &A::sp_i_get) +
-  gsi::method ("sp_i=", &A::sp_i_set) +
   gsi::method ("to_s", &A::to_s) +
   gsi::iterator ("a6", &A::a6b, &A::a6e) +
   gsi::iterator ("a7", &A::a7b, &A::a7e) +
-  gsi::iterator ("a8", &A::a8b, &A::a8e) +
-#if defined(HAVE_QT)
-  gsi::method ("ft_qba", &A::ft_qba) +
-  gsi::method ("ft_qs", &A::ft_qs) +
-#endif
-  gsi::method ("ft_str", &A::ft_str) +
-  gsi::method ("ft_cv", &A::ft_cv) +
-  gsi::method ("ft_cptr", &A::ft_cptr) +
-  gsi::method ("ft_var", &A::ft_var)
+  gsi::iterator ("a8", &A::a8b, &A::a8e)
 );
 
 static gsi::Class<A_NC> decl_a_nc (decl_a, "", "A_NC");
 
 static gsi::Class<B> decl_b ("", "B",
-#if __cplusplus >= 201703L
-  gsi::method ("int_to_optional", &B::int_to_optional) +
-  gsi::method ("int_to_optional_a", &B::int_to_optional_a) +
-  gsi::method ("optional_to_int", &B::optional_to_int) +
-  gsi::method ("optional_cref_to_int", &B::optional_cref_to_int) +
-  gsi::method ("optional_ref_to_int", &B::optional_ref_to_int) +
-  gsi::method ("optional_cptr_to_int", &B::optional_cptr_to_int) +
-  gsi::method ("optional_ptr_to_int", &B::optional_ptr_to_int) +
-  gsi::method ("optional_a_to_int", &B::optional_a_to_int) +
-  gsi::method ("optional_a_cref_to_int", &B::optional_a_cref_to_int) +
-  gsi::method ("optional_a_ref_to_int", &B::optional_a_ref_to_int) +
-  gsi::method ("optional_a_cptr_to_int", &B::optional_a_cptr_to_int) +
-  gsi::method ("optional_a_ptr_to_int", &B::optional_a_ptr_to_int) +
-#endif
   gsi::method ("inst", &B::inst) +
   gsi::method ("has_inst", &B::has_inst) +
   gsi::method ("set_inst", &B::set_inst) +
   gsi::method ("del_inst", &B::del_inst) +
-  gsi::method ("instance_count", &B::instance_count) +
-  gsi::method ("new_b_by_variant", &B::new_b_by_variant) +
   gsi::method ("addr", &B::addr) +
-  gsi::method ("always_5", &B::always_5) +
-  gsi::method ("str", &B::str) +
+  gsi::method ("b1|always_5", &B::b1) +
+  gsi::method ("b2|str", &B::str) +
   gsi::method ("set_str", &B::set_str) +
   gsi::method ("str_ccptr", &B::str_ccptr) +
   gsi::method ("set_str_combine", &B::set_str_combine) +
-  gsi::method_ext ("b3|aptr_to_n", &aptr_to_n_ext) +
-  gsi::method ("b4|aref_to_s", &B::aref_to_s) +
+  gsi::method_ext ("b3|aptr_to_n", &b3_ext) +
+  gsi::method ("b4|aref_to_s", &B::b4) +
+  gsi::method ("b5", &B::b5) +
+  gsi::method ("b5a", &B::b5a) +
+  gsi::method ("b5b", &B::b5b) +
   gsi::method ("make_a", &B::make_a) +
   gsi::method ("set_an", &B::set_an) +
   gsi::method ("an", &B::an) +
@@ -1319,32 +927,27 @@ static gsi::Class<B> decl_b ("", "B",
   gsi::method ("an_cref", &B::an_cref) +
   //  implemented by extension below:
   // gsi::iterator_ext ("b10", &b10b_ext, &b10e_ext) +
-  gsi::iterator ("b10_nc|each_a_be_nc", &B::b10b_nc, &B::b10e_nc) +
-  gsi::iterator ("b11|each_a_be_v", &B::b11b, &B::b11e) +
-  gsi::iterator ("b12|each_a_be_p", &B::b12b, &B::b12e) +
-  gsi::iterator ("b13|each_a_be_cp", &B::b13b, &B::b13e) +
+  gsi::iterator ("b10_nc", &B::b10b_nc, &B::b10e_nc) +
+  gsi::iterator ("b11", &B::b11b, &B::b11e) +
+  gsi::iterator ("b12", &B::b12b, &B::b12e) +
+  gsi::iterator ("b13", &B::b13b, &B::b13e) +
   gsi::method ("amember_or_nil_alt|amember_or_nil", &B::amember_or_nil) +
   gsi::method ("amember_ptr_alt|amember_ptr", &B::amember_ptr) +
   gsi::method ("xxx|amember_cptr", &B::amember_cptr) +
   gsi::method ("yyy|amember_cref", &B::amember_cref) +
   gsi::method ("zzz|amember_ref", &B::amember_ref) +
-  gsi::method ("b15|arg_is_not_nil", &B::arg_is_not_nil) +
-  gsi::method ("b16a|av", &B::av) +
-  gsi::method ("b16b|av_cref", &B::av_cref) +
-  gsi::method ("b16c|av_ref", &B::av_ref) +
-  gsi::method ("push_a", &B::push_a) +
-  gsi::method ("push_a_cref", &B::push_a_cref) +
-  gsi::method ("push_a_cptr", &B::push_a_cptr) +
-  gsi::method ("push_a_ref", &B::push_a_ref) +
-  gsi::method ("push_a_ptr", &B::push_a_ptr) +
-  gsi::method ("b17a|av_cref=", &B::set_av_cref) +
-  gsi::method ("b17b|av_ref=", &B::set_av_ref) +
-  gsi::method ("b17c|av=", &B::set_av) +
-  gsi::method ("b17d|av_cptr=", &B::set_av_cptr) +
-  gsi::method ("b17e|av_ptr=", &B::set_av_ptr) +
-  gsi::iterator ("b18|each_a", &B::b18) +
-  gsi::iterator ("b18b|each_a_ref", &B::b18b) +
-  gsi::iterator ("b18c|each_a_ptr", &B::b18c) +
+  gsi::method ("b15|arg_is_not_nil", &B::b15) +
+  gsi::method ("b16a|av", &B::b16a) +
+  gsi::method ("b16b|av_cref", &B::b16b) +
+  gsi::method ("b16c|av_ref", &B::b16c) +
+  gsi::method ("b17a|av_cref=", &B::b17a) +
+  gsi::method ("b17b|av_ref=", &B::b17b) +
+  gsi::method ("b17c|av=", &B::b17c) +
+  gsi::method ("b17d|av_cptr=", &B::b17d) +
+  gsi::method ("b17e|av_ptr=", &B::b17e) +
+  gsi::iterator ("b18", &B::b18) +
+  gsi::iterator ("b18b", &B::b18b) +
+  gsi::iterator ("b18c", &B::b18b) +
   gsi::method ("b20a|var_is_nil", &B::b20a) +
   gsi::method ("b20b|var_is_double", &B::b20b) +
   gsi::method ("b20c|var_is_long", &B::b20c) +
@@ -1466,8 +1069,8 @@ static gsi::Class<B> decl_b ("", "B",
 
 //  extending B
 static gsi::ClassExt<B> b_ext ( 
-  gsi::iterator_ext ("b10|each_a_be", &b10b_ext, &b10e_ext) +
-  gsi::iterator_ext ("b10p|each_a_be_pp", &b10bp_ext, &b10ep_ext)
+  gsi::iterator_ext ("b10", &b10b_ext, &b10e_ext) +
+  gsi::iterator_ext ("b10p", &b10bp_ext, &b10ep_ext) 
 );
 
 CopyDetector *new_cd (int x)
@@ -1716,39 +1319,6 @@ static gsi::Class<GFactory_P> decl_gfactory (decl_gfactory_base, "", "GFactory",
   gsi::method_ext ("f", &f_org) +
   gsi::factory_callback ("f", &GFactory_P::f, &GFactory_P::f_cb)
 );
-
-static gsi::Class<B1> decl_b1 ("", "B1",
-  gsi::method ("get1", &B1::get1) +
-  gsi::method ("set1", &B1::set1) +
-  gsi::constant ("C1", 42)
-);
-
-static gsi::Class<B2> decl_b2 ("", "B2",
-  gsi::constant ("C2", 17)
-);
-
-static gsi::Class<B3> decl_b3 ("", "B3",
-  gsi::constant ("C3", -1)
-);
-
-gsi::EnumIn<B3, B3::E> enum_in_b3 ("", "E",
-  gsi::enum_const ("E3A", B3::E3A) +
-  gsi::enum_const ("E3B", B3::E3B) +
-  gsi::enum_const ("E3C", B3::E3C)
-);
-
-static std::string d4 (BB *, int a, std::string b, double c, B3::E d, tl::Variant e)
-{
-  return tl::sprintf ("%d,%s,%.12g,%d,%s", a, b, c, int (d), e.to_string ());
-}
-
-//  3 base classes and enums
-static gsi::Class<BB> decl_bb (decl_b1, "", "BB",
-  gsi::method ("d3", &BB::d3) +
-  gsi::method_ext ("d4", &d4, gsi::arg ("a"), gsi::arg ("b"), gsi::arg ("c"), gsi::arg ("d", B3::E3A, "E3A"), gsi::arg ("e", tl::Variant (), "nil"), "")
-);
-gsi::ClassExt<BB> b2_in_bb (decl_b2);
-gsi::ClassExt<BB> b3_in_bb (decl_b3);
 
 }
 

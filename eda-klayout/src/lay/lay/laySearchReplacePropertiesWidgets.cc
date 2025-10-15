@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -200,7 +200,7 @@ add_orientation_condition (std::string &expr, QComboBox *op, QComboBox *value, c
     expr += attribute;
     expr += " ";
     expr += tl::to_string (op->currentText ());
-    expr += " Trans." + v + ".rot";
+    expr += " Trans." + v;
 
   }
 }
@@ -308,7 +308,6 @@ add_orientation_assignment (std::string &expr, QComboBox *value, const char *att
     expr += attribute;
     expr += " = Trans.";
     expr += v;
-    expr += ".rot";
 
   }
 }
@@ -320,13 +319,13 @@ class SearchInstanceProperties
     private Ui::SearchPropertiesInstance
 {
 public:
-  SearchInstanceProperties (QStackedWidget *sw, lay::LayoutViewBase * /*view*/, int /*cv_index*/)
+  SearchInstanceProperties (QStackedWidget *sw, lay::LayoutView * /*view*/, int /*cv_index*/)
     : SearchPropertiesWidget (sw)
   {
     setupUi (this);
   }
 
-  void restore_state (const std::string &pfx, lay::Dispatcher *config_root) const
+  void restore_state (const std::string &pfx, lay::PluginRoot *config_root) const
   {
     std::string v;
     if (config_root->config_get (pfx + cfg_suffix_instance_cellname_op, v)) {
@@ -337,7 +336,7 @@ public:
     }
   }
 
-  void save_state (const std::string &pfx, lay::Dispatcher *config_root) const
+  void save_state (const std::string &pfx, lay::PluginRoot *config_root) const
   {
     config_root->config_set (pfx + cfg_suffix_instance_cellname_op, tl::to_string (instance_cellname_op->currentText ()));
     config_root->config_set (pfx + cfg_suffix_instance_cellname_value, tl::to_string (instance_cellname_value->text ()));
@@ -377,7 +376,7 @@ class SearchShapeProperties
     protected Ui::SearchPropertiesShape
 {
 public:
-  SearchShapeProperties (QStackedWidget *sw, lay::LayoutViewBase *view, int cv_index)
+  SearchShapeProperties (QStackedWidget *sw, lay::LayoutView *view, int cv_index)
     : SearchPropertiesWidget (sw)
   {
     setupUi (this);
@@ -387,7 +386,7 @@ public:
     shape_layer->set_new_layer_enabled (false);
   }
 
-  void restore_state (const std::string &pfx, lay::Dispatcher *config_root) const
+  void restore_state (const std::string &pfx, lay::PluginRoot *config_root) const
   {
     std::string v;
     if (config_root->config_get (pfx + cfg_suffix_shape_layer, v)) {
@@ -407,7 +406,7 @@ public:
     }
   }
 
-  void save_state (const std::string &pfx, lay::Dispatcher *config_root) const
+  void save_state (const std::string &pfx, lay::PluginRoot *config_root) const
   {
     config_root->config_set (pfx + cfg_suffix_shape_layer, tl::to_string (shape_layer->currentText ()));
     config_root->config_set (pfx + cfg_suffix_shape_area_op, tl::to_string (shape_area_op->currentText ()));
@@ -449,13 +448,13 @@ class SearchPolygonProperties
   : public SearchShapeProperties
 {
 public:
-  SearchPolygonProperties (QStackedWidget *sw, lay::LayoutViewBase *view, int cv_index)
+  SearchPolygonProperties (QStackedWidget *sw, lay::LayoutView *view, int cv_index)
     : SearchShapeProperties (sw, view, cv_index)
   {
     //  .. nothing yet ..
   }
 
-  void restore_state (const std::string &pfx, lay::Dispatcher *config_root) const
+  void restore_state (const std::string &pfx, lay::PluginRoot *config_root) const
   {
     std::string v;
     if (config_root->config_get (pfx + cfg_suffix_polygon_layer, v)) {
@@ -475,7 +474,7 @@ public:
     }
   }
 
-  void save_state (const std::string &pfx, lay::Dispatcher *config_root) const
+  void save_state (const std::string &pfx, lay::PluginRoot *config_root) const
   {
     config_root->config_set (pfx + cfg_suffix_polygon_layer, tl::to_string (shape_layer->currentText ()));
     config_root->config_set (pfx + cfg_suffix_polygon_area_op, tl::to_string (shape_area_op->currentText ()));
@@ -518,7 +517,7 @@ class SearchBoxProperties
     private Ui::SearchPropertiesBox
 {
 public:
-  SearchBoxProperties (QStackedWidget *sw, lay::LayoutViewBase *view, int cv_index)
+  SearchBoxProperties (QStackedWidget *sw, lay::LayoutView *view, int cv_index)
     : SearchPropertiesWidget (sw)
   {
     setupUi (this);
@@ -528,7 +527,7 @@ public:
     box_layer->set_new_layer_enabled (false);
   }
 
-  void restore_state (const std::string &pfx, lay::Dispatcher *config_root) const
+  void restore_state (const std::string &pfx, lay::PluginRoot *config_root) const
   {
     std::string v;
     if (config_root->config_get (pfx + cfg_suffix_box_layer, v)) {
@@ -548,7 +547,7 @@ public:
     }
   }
 
-  void save_state (const std::string &pfx, lay::Dispatcher *config_root) const
+  void save_state (const std::string &pfx, lay::PluginRoot *config_root) const
   {
     config_root->config_set (pfx + cfg_suffix_box_layer, tl::to_string (box_layer->currentText ()));
     config_root->config_set (pfx + cfg_suffix_box_width_op, tl::to_string (box_width_op->currentText ()));
@@ -593,7 +592,7 @@ class SearchPathProperties
     private Ui::SearchPropertiesPath
 {
 public:
-  SearchPathProperties (QStackedWidget *sw, lay::LayoutViewBase *view, int cv_index)
+  SearchPathProperties (QStackedWidget *sw, lay::LayoutView *view, int cv_index)
     : SearchPropertiesWidget (sw)
   {
     setupUi (this);
@@ -603,7 +602,7 @@ public:
     path_layer->set_new_layer_enabled (false);
   }
 
-  void restore_state (const std::string &pfx, lay::Dispatcher *config_root) const
+  void restore_state (const std::string &pfx, lay::PluginRoot *config_root) const
   {
     std::string v;
     if (config_root->config_get (pfx + cfg_suffix_path_layer, v)) {
@@ -623,7 +622,7 @@ public:
     }
   }
 
-  void save_state (const std::string &pfx, lay::Dispatcher *config_root) const
+  void save_state (const std::string &pfx, lay::PluginRoot *config_root) const
   {
     config_root->config_set (pfx + cfg_suffix_path_layer, tl::to_string (path_layer->currentText ()));
     config_root->config_set (pfx + cfg_suffix_path_width_op, tl::to_string (path_width_op->currentText ()));
@@ -666,7 +665,7 @@ class SearchTextProperties
     private Ui::SearchPropertiesText
 {
 public:
-  SearchTextProperties (QStackedWidget *sw, lay::LayoutViewBase *view, int cv_index)
+  SearchTextProperties (QStackedWidget *sw, lay::LayoutView *view, int cv_index)
     : SearchPropertiesWidget (sw)
   {
     setupUi (this);
@@ -676,7 +675,7 @@ public:
     text_layer->set_new_layer_enabled (false);
   }
 
-  void restore_state (const std::string &pfx, lay::Dispatcher *config_root) const
+  void restore_state (const std::string &pfx, lay::PluginRoot *config_root) const
   {
     std::string v;
     if (config_root->config_get (pfx + cfg_suffix_text_layer, v)) {
@@ -702,7 +701,7 @@ public:
     }
   }
 
-  void save_state (const std::string &pfx, lay::Dispatcher *config_root) const
+  void save_state (const std::string &pfx, lay::PluginRoot *config_root) const
   {
     config_root->config_set (pfx + cfg_suffix_text_layer, tl::to_string (text_layer->currentText ()));
     config_root->config_set (pfx + cfg_suffix_text_string_op, tl::to_string (text_string_op->currentText ()));
@@ -748,13 +747,13 @@ class ReplaceInstanceProperties
     private Ui::ReplacePropertiesInstance
 {
 public:
-  ReplaceInstanceProperties (QStackedWidget *sw, lay::LayoutViewBase * /*view*/, int /*cv_index*/)
+  ReplaceInstanceProperties (QStackedWidget *sw, lay::LayoutView * /*view*/, int /*cv_index*/)
     : ReplacePropertiesWidget (sw)
   {
     setupUi (this);
   }
 
-  void restore_state (const std::string &pfx, lay::Dispatcher *config_root) const
+  void restore_state (const std::string &pfx, lay::PluginRoot *config_root) const
   {
     std::string v;
     if (config_root->config_get (pfx + cfg_suffix_instance_cellname_value, v)) {
@@ -762,7 +761,7 @@ public:
     }
   }
 
-  void save_state (const std::string &pfx, lay::Dispatcher *config_root) const
+  void save_state (const std::string &pfx, lay::PluginRoot *config_root) const
   {
     config_root->config_set (pfx + cfg_suffix_instance_cellname_value, tl::to_string (instance_cellname->text ()));
   }
@@ -787,7 +786,7 @@ class ReplaceShapeProperties
     protected Ui::ReplacePropertiesShape
 {
 public:
-  ReplaceShapeProperties (QStackedWidget *sw, lay::LayoutViewBase *view, int cv_index)
+  ReplaceShapeProperties (QStackedWidget *sw, lay::LayoutView *view, int cv_index)
     : ReplacePropertiesWidget (sw)
   {
     setupUi (this);
@@ -796,7 +795,7 @@ public:
     shape_layer->set_no_layer_available (true);
   }
 
-  void restore_state (const std::string &pfx, lay::Dispatcher *config_root) const
+  void restore_state (const std::string &pfx, lay::PluginRoot *config_root) const
   {
     std::string v;
     if (config_root->config_get (pfx + cfg_suffix_shape_layer, v)) {
@@ -804,7 +803,7 @@ public:
     }
   }
 
-  void save_state (const std::string &pfx, lay::Dispatcher *config_root) const
+  void save_state (const std::string &pfx, lay::PluginRoot *config_root) const
   {
     config_root->config_set (pfx + cfg_suffix_shape_layer, tl::to_string (shape_layer->currentText ()));
   }
@@ -828,13 +827,13 @@ class ReplacePolygonProperties
   : public ReplaceShapeProperties
 {
 public:
-  ReplacePolygonProperties (QStackedWidget *sw, lay::LayoutViewBase *view, int cv_index)
+  ReplacePolygonProperties (QStackedWidget *sw, lay::LayoutView *view, int cv_index)
     : ReplaceShapeProperties (sw, view, cv_index)
   {
     //  .. nothing yet ..
   }
 
-  void restore_state (const std::string &pfx, lay::Dispatcher *config_root) const
+  void restore_state (const std::string &pfx, lay::PluginRoot *config_root) const
   {
     std::string v;
     if (config_root->config_get (pfx + cfg_suffix_polygon_layer, v)) {
@@ -842,7 +841,7 @@ public:
     }
   }
 
-  void save_state (const std::string &pfx, lay::Dispatcher *config_root) const
+  void save_state (const std::string &pfx, lay::PluginRoot *config_root) const
   {
     config_root->config_set (pfx + cfg_suffix_polygon_layer, tl::to_string (shape_layer->currentText ()));
   }
@@ -867,7 +866,7 @@ class ReplaceBoxProperties
     private Ui::ReplacePropertiesBox
 {
 public:
-  ReplaceBoxProperties (QStackedWidget *sw, lay::LayoutViewBase *view, int cv_index)
+  ReplaceBoxProperties (QStackedWidget *sw, lay::LayoutView *view, int cv_index)
     : ReplacePropertiesWidget (sw)
   {
     setupUi (this);
@@ -876,7 +875,7 @@ public:
     box_layer->set_no_layer_available (true);
   }
 
-  void restore_state (const std::string &pfx, lay::Dispatcher *config_root) const
+  void restore_state (const std::string &pfx, lay::PluginRoot *config_root) const
   {
     std::string v;
     if (config_root->config_get (pfx + cfg_suffix_box_layer, v)) {
@@ -890,7 +889,7 @@ public:
     }
   }
 
-  void save_state (const std::string &pfx, lay::Dispatcher *config_root) const
+  void save_state (const std::string &pfx, lay::PluginRoot *config_root) const
   {
     config_root->config_set (pfx + cfg_suffix_box_layer, tl::to_string (box_layer->currentText ()));
     config_root->config_set (pfx + cfg_suffix_box_width_value, tl::to_string (box_width->text ()));
@@ -919,7 +918,7 @@ class ReplacePathProperties
     private Ui::ReplacePropertiesPath
 {
 public:
-  ReplacePathProperties (QStackedWidget *sw, lay::LayoutViewBase *view, int cv_index)
+  ReplacePathProperties (QStackedWidget *sw, lay::LayoutView *view, int cv_index)
     : ReplacePropertiesWidget (sw)
   {
     setupUi (this);
@@ -928,7 +927,7 @@ public:
     path_layer->set_no_layer_available (true);
   }
 
-  void restore_state (const std::string &pfx, lay::Dispatcher *config_root) const
+  void restore_state (const std::string &pfx, lay::PluginRoot *config_root) const
   {
     std::string v;
     if (config_root->config_get (pfx + cfg_suffix_path_layer, v)) {
@@ -939,7 +938,7 @@ public:
     }
   }
 
-  void save_state (const std::string &pfx, lay::Dispatcher *config_root) const
+  void save_state (const std::string &pfx, lay::PluginRoot *config_root) const
   {
     config_root->config_set (pfx + cfg_suffix_path_layer, tl::to_string (path_layer->currentText ()));
     config_root->config_set (pfx + cfg_suffix_path_width_value, tl::to_string (path_width->text ()));
@@ -966,7 +965,7 @@ class ReplaceTextProperties
     private Ui::ReplacePropertiesText
 {
 public:
-  ReplaceTextProperties (QStackedWidget *sw, lay::LayoutViewBase *view, int cv_index)
+  ReplaceTextProperties (QStackedWidget *sw, lay::LayoutView *view, int cv_index)
     : ReplacePropertiesWidget (sw)
   {
     setupUi (this);
@@ -975,7 +974,7 @@ public:
     text_layer->set_no_layer_available (true);
   }
 
-  void restore_state (const std::string &pfx, lay::Dispatcher *config_root) const
+  void restore_state (const std::string &pfx, lay::PluginRoot *config_root) const
   {
     std::string v;
     if (config_root->config_get (pfx + cfg_suffix_text_layer, v)) {
@@ -992,7 +991,7 @@ public:
     }
   }
 
-  void save_state (const std::string &pfx, lay::Dispatcher *config_root) const
+  void save_state (const std::string &pfx, lay::PluginRoot *config_root) const
   {
     config_root->config_set (pfx + cfg_suffix_text_layer, tl::to_string (text_layer->currentText ()));
     config_root->config_set (pfx + cfg_suffix_text_string_value, tl::to_string (text_string->text ()));
@@ -1018,7 +1017,7 @@ public:
 
 // ----------------------------------------------------------------------------
 
-void fill_find_pages (QStackedWidget *sw, lay::LayoutViewBase *view, int cv_index)
+void fill_find_pages (QStackedWidget *sw, lay::LayoutView *view, int cv_index)
 {
   while (sw->count () > 0) {
     sw->removeWidget (sw->widget (0));
@@ -1031,7 +1030,7 @@ void fill_find_pages (QStackedWidget *sw, lay::LayoutViewBase *view, int cv_inde
   sw->addWidget (new SearchTextProperties (sw, view, cv_index));
 }
 
-void fill_replace_pages (QStackedWidget *sw, lay::LayoutViewBase *view, int cv_index)
+void fill_replace_pages (QStackedWidget *sw, lay::LayoutView *view, int cv_index)
 {
   while (sw->count () > 0) {
     sw->removeWidget (sw->widget (0));

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -33,15 +33,14 @@ namespace gsi
 //  point binding
 
 template <class C>
-struct point_defs
+struct point_defs 
 {
   typedef typename C::coord_type coord_type;
-  typedef typename C::vector_type vector_type;
 
   static C *from_string (const char *s)
   {
     tl::Extractor ex (s);
-    std::unique_ptr<C> c (new C ());
+    std::auto_ptr<C> c (new C ());
     ex.read (*c.get ());
     return c.release ();
   }
@@ -95,29 +94,7 @@ struct point_defs
 
   static size_t hash_value (const C *pt)
   {
-    return tl::hfunc (*pt);
-  }
-
-  static C move_d (C *p, const vector_type &d)
-  {
-    *p += d;
-    return *p;
-  }
-
-  static C move_xy (C *p, coord_type dx, coord_type dy)
-  {
-    *p += vector_type (dx, dy);
-    return *p;
-  }
-
-  static C moved_d (const C *p, const vector_type &d)
-  {
-    return *p + d;
-  }
-
-  static C moved_xy (const C *p, coord_type dx, coord_type dy)
-  {
-    return *p + vector_type (dx, dy);
+    return std::hfunc (*pt);
   }
 
   static gsi::Methods methods ()
@@ -126,14 +103,16 @@ struct point_defs
     constructor ("new", &new_v,
       "@brief Default constructor: creates a point at 0,0"
     ) +
-    constructor ("new", &new_vec, gsi::arg ("v"),
+    constructor ("new", &new_vec,
       "@brief Default constructor: creates a point at from an vector\n"
+      "@args v\n"
       "This constructor is equivalent to computing point(0,0)+v.\n"
       "This method has been introduced in version 0.25."
     ) +
-    constructor ("new", &new_xy, gsi::arg ("x"), gsi::arg ("y"),
+    constructor ("new", &new_xy,
       "@brief Constructor for a point from two coordinate values\n"
       "\n"
+      "@args x, y\n"
     ) +
     method_ext ("to_v", &to_vector,
       "@brief Turns the point into a vector\n"
@@ -143,49 +122,47 @@ struct point_defs
     method_ext ("-@", &negate,
       "@brief Compute the negative of a point\n"
       "\n"
+      "@args p\n"
       "\n"
       "Returns a new point with -x, -y.\n"
       "\n"
       "This method has been added in version 0.23."
     ) +
-    method ("+", (C (C::*) (const db::vector<coord_type> &) const) &C::add, gsi::arg ("v"),
+    method ("+", (C (C::*) (const db::vector<coord_type> &) const) &C::add,
       "@brief Adds a vector to a point\n"
       "\n"
+      "@args v\n"
       "\n"
       "Adds vector v to self by adding the coordinates.\n"
       "\n"
       "Starting with version 0.25, this method expects a vector argument."
     ) +
-    method ("-", (db::vector<coord_type> (C::*) (const C &) const) &C::subtract, gsi::arg ("p"),
+    method ("-", (db::vector<coord_type> (C::*) (const C &) const) &C::subtract,
       "@brief Subtract one point from another\n"
       "\n"
+      "@args p\n"
       "\n"
       "Subtract point p from self by subtracting the coordinates. This renders a vector.\n"
       "\n"
       "Starting with version 0.25, this method renders a vector."
     ) +
-    method ("-", (C (C::*) (const db::vector<coord_type> &) const) &C::subtract, gsi::arg ("v"),
-      "@brief Subtract one vector from a point\n"
-      "\n"
-      "\n"
-      "Subtract vector v from from self by subtracting the coordinates. This renders a point.\n"
-      "\n"
-      "This method has been added in version 0.27."
-    ) +
-    method ("<", &C::less, gsi::arg ("p"),
+    method ("<", &C::less,
       "@brief \"less\" comparison operator\n"
       "\n"
+      "@args p\n"
       "\n"
       "This operator is provided to establish a sorting\n"
       "order\n"
     ) +
-    method ("==", &C::equal, gsi::arg ("p"),
+    method ("==", &C::equal,
       "@brief Equality test operator\n"
       "\n"
+      "@args p\n"
     ) +
-    method ("!=", &C::not_equal, gsi::arg ("p"),
+    method ("!=", &C::not_equal,
       "@brief Inequality test operator\n"
       "\n"
+      "@args p\n"
     ) +
     method_ext ("hash", &hash_value,
       "@brief Computes a hash value\n"
@@ -193,105 +170,63 @@ struct point_defs
       "\n"
       "This method has been introduced in version 0.25.\n"
     ) +
-    method_ext ("move", &move_d, gsi::arg ("v"),
-      "@brief Moves the point.\n"
-      "\n"
-      "This method is equivalent to '+='. It was introduced to harmonize the API "
-      "with the other objects. The point is modified.\n"
-      "\n"
-      "@param v The distance to move the point.\n"
-      "\n"
-      "@return The moved point.\n"
-      "\n"
-      "This method has been introduced in version 0.29.9."
-    ) +
-    method_ext ("move", &move_xy, gsi::arg ("dx", 0), gsi::arg ("dy", 0),
-      "@brief Moves the point.\n"
-      "\n"
-      "Moves the point by the given offset and returns the \n"
-      "moved point. The point is modified.\n"
-      "\n"
-      "@param dx The x distance to move the point.\n"
-      "@param dy The y distance to move the point.\n"
-      "\n"
-      "@return The moved point.\n"
-      "\n"
-      "This method has been introduced in version 0.29.9."
-    ) +
-    method_ext ("moved", &moved_d, gsi::arg ("v"),
-      "@brief Returns the moved point.\n"
-      "\n"
-      "This method is equivalent to '+'. It was introduced to harmonize the API "
-      "with the other objects. The point is not modified.\n"
-      "\n"
-      "@param v The distance to move the point.\n"
-      "\n"
-      "@return The moved point.\n"
-      "\n"
-      "This method has been introduced in version 0.29.9."
-    ) +
-    method_ext ("moved", &moved_xy, gsi::arg ("dx", 0), gsi::arg ("dy", 0),
-      "@brief Returns the moved point.\n"
-      "\n"
-      "Moves the point by the given offset and returns the \n"
-      "moved point. The point is not modified.\n"
-      "\n"
-      "@param dx The x distance to move the point.\n"
-      "@param dy The y distance to move the point.\n"
-      "\n"
-      "@return The moved point.\n"
-      "\n"
-      "This method has been introduced in version 0.29.9."
-    ) +
     method ("x", &C::x,
       "@brief Accessor to the x coordinate\n"
     ) +
     method ("y", &C::y,
       "@brief Accessor to the y coordinate\n"
     ) +
-    method ("x=", &C::set_x, gsi::arg ("coord"),
+    method ("x=", &C::set_x,
       "@brief Write accessor to the x coordinate\n"
+      "@args coord\n"
     ) +
-    method ("y=", &C::set_y, gsi::arg ("coord"),
+    method ("y=", &C::set_y,
       "@brief Write accessor to the y coordinate\n"
+      "@args coord\n"
     ) +
-    method_ext ("*", &scale, gsi::arg ("f"),
+    method_ext ("*", &scale,
       "@brief Scaling by some factor\n"
       "\n"
+      "@args f\n"
       "\n"
       "Returns the scaled object. All coordinates are multiplied with the given factor and if "
       "necessary rounded."
     ) +
-    method_ext ("*=", &iscale, gsi::arg ("f"),
+    method_ext ("*=", &iscale,
       "@brief Scaling by some factor\n"
       "\n"
+      "@args f\n"
       "\n"
       "Scales object in place. All coordinates are multiplied with the given factor and if "
       "necessary rounded."
     ) +
-    method_ext ("/", &divide, gsi::arg ("d"),
+    method_ext ("/", &divide,
       "@brief Division by some divisor\n"
       "\n"
+      "@args d\n"
       "\n"
       "Returns the scaled object. All coordinates are divided with the given divisor and if "
       "necessary rounded."
     ) +
-    method_ext ("/=", &idiv, gsi::arg ("d"),
+    method_ext ("/=", &idiv,
       "@brief Division by some divisor\n"
       "\n"
+      "@args d\n"
       "\n"
       "Divides the object in place. All coordinates are divided with the given divisor and if "
       "necessary rounded."
     ) +
-    method ("distance", (double (C::*) (const C &) const) &C::double_distance, gsi::arg ("d"),
+    method ("distance", (double (C::*) (const C &) const) &C::double_distance,
       "@brief The Euclidian distance to another point\n"
       "\n"
+      "@args d\n"
       "\n"
       "@param d The other point to compute the distance to.\n"
     ) +
-    method ("sq_distance", (double (C::*) (const C &) const) &C::sq_double_distance, gsi::arg ("d"),
+    method ("sq_distance", (double (C::*) (const C &) const) &C::sq_double_distance,
       "@brief The square Euclidian distance to another point\n"
       "\n"
+      "@args d\n"
       "\n"
       "@param d The other point to compute the distance to.\n"
     ) +
@@ -309,17 +244,15 @@ struct point_defs
       "\n"
       "This method has been introduced in version 0.23."
     ) +
-    constructor ("from_s", &from_string, gsi::arg ("s"),
+    constructor ("from_s", &from_string,
       "@brief Creates an object from a string\n"
+      "@args s\n"
       "Creates the object from a string representation (as returned by \\to_s)\n"
       "\n"
       "This method has been added in version 0.23.\n"
     ) +
-    method ("to_s", &C::to_string, gsi::arg ("dbu", 0.0),
-      "@brief String conversion.\n"
-      "If a DBU is given, the output units will be micrometers.\n"
-      "\n"
-      "The DBU argument has been added in version 0.27.6.\n"
+    method ("to_s", (std::string (C::*) () const) &C::to_string,
+      "@brief String conversion\n"
     );
   }
 
@@ -396,3 +329,4 @@ Class<db::Point> decl_Point ("db", "Point",
 );
 
 }
+

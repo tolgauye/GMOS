@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -32,7 +32,7 @@ static size_t obj_count = 0;
 struct MyClass1 : public tl::list_node<MyClass1>
 {
   MyClass1 (int _n) : n (_n) { ++obj_count; }
-  MyClass1 (const MyClass1 &other) : tl::list_node<MyClass1> (), n (other.n) { ++obj_count; }
+  MyClass1 (const MyClass1 &other) : n (other.n) { ++obj_count; }
   ~MyClass1 () { --obj_count; }
   int n;
   bool operator== (const MyClass1 &other) const { return n == other.n; }
@@ -51,6 +51,15 @@ public:
   bool operator< (const MyClass2 &other) const { return n < other.n; }
 };
 
+}
+
+namespace tl
+{
+  template <>
+  struct type_traits<MyClass2> : public tl::type_traits<void>
+  {
+    typedef tl::false_tag has_copy_constructor;
+  };
 }
 
 template <class C>
@@ -403,70 +412,3 @@ TEST(2_BasicNoCopy)
 
   EXPECT_EQ (obj_count, size_t (0)); // mc2 gone as well
 }
-
-TEST(3_Insert)
-{
-  obj_count = 0;
-
-  tl::list<MyClass1> l1;
-  tl::list<MyClass1>::iterator i1;
-
-  EXPECT_EQ (l1.empty (), true);
-  EXPECT_EQ (l1.size (), size_t (0));
-  EXPECT_EQ (l2s (l1), "");
-
-  l1.push_back (MyClass1 (42));
-  EXPECT_EQ (l2s (l1), "42");
-  EXPECT_EQ (l1.size (), size_t (1));
-
-  i1 = l1.insert_before (l1.end (), MyClass1 (17));
-  EXPECT_EQ (l2s (l1), "42,17");
-  EXPECT_EQ (i1->n, 17);
-  EXPECT_EQ (l1.size (), size_t (2));
-
-  i1 = l1.insert_before (i1, MyClass1 (11));
-  EXPECT_EQ (l2s (l1), "42,11,17");
-  EXPECT_EQ (i1->n, 11);
-  EXPECT_EQ (l1.size (), size_t (3));
-
-  i1 = l1.insert (i1, MyClass1 (12));
-  EXPECT_EQ (l2s (l1), "42,11,12,17");
-  EXPECT_EQ (i1->n, 12);
-  EXPECT_EQ (l1.size (), size_t (4));
-
-  MyClass1 arr[3] = { MyClass1 (1), MyClass1 (2), MyClass1 (3) };
-
-  i1 = l1.insert (i1, arr + 0, arr + 0);
-  EXPECT_EQ (l2s (l1), "42,11,12,17");
-  EXPECT_EQ (i1->n, 12);
-  EXPECT_EQ (l1.size (), size_t (4));
-
-  i1 = l1.insert (i1, arr + 0, arr + 3);
-  EXPECT_EQ (l2s (l1), "42,11,12,1,2,3,17");
-  EXPECT_EQ (i1->n, 1);
-  EXPECT_EQ (l1.size (), size_t (7));
-
-  l1.clear ();
-  l1.push_back (MyClass1 (42));
-  i1 = l1.insert_before (l1.end (), MyClass1 (17));
-  EXPECT_EQ (l2s (l1), "42,17");
-  EXPECT_EQ (i1->n, 17);
-  EXPECT_EQ (l1.size (), size_t (2));
-
-  i1 = l1.insert_before (i1, arr + 0, arr + 0);
-  EXPECT_EQ (l2s (l1), "42,17");
-  EXPECT_EQ (i1->n, 17);
-  EXPECT_EQ (l1.size (), size_t (2));
-
-  i1 = l1.insert_before (i1, arr + 0, arr + 3);
-  EXPECT_EQ (l2s (l1), "42,1,2,3,17");
-  EXPECT_EQ (i1->n, 1);
-  EXPECT_EQ (l1.size (), size_t (5));
-
-  //  test erase range
-  l1.erase (i1, l1.end ());
-  EXPECT_EQ (l2s (l1), "42");
-  EXPECT_EQ (l1.size (), size_t (1));
-}
-
-

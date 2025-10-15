@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,6 @@
 
 
 #include "layCrashMessage.h"
-#include "layQtTools.h"
 
 #include <QPushButton>
 
@@ -35,7 +34,6 @@ CrashMessage::CrashMessage (QWidget *parent, bool can_resume, const QString &t)
   setupUi (this);
   m_cancel_pressed = false;
 
-  text->setFont (monospace_font ());
   text->setPlainText (t);
   set_can_resume (can_resume);
 

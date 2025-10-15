@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -79,37 +79,37 @@ EmptyEdges::processed_to_polygons (const EdgeToPolygonProcessorBase &) const
 }
 
 EdgePairsDelegate *
-EmptyEdges::width_check (db::Coord, const db::EdgesCheckOptions &) const
+EmptyEdges::width_check (db::Coord, bool, metrics_type, double, distance_type, distance_type) const
 {
   return new EmptyEdgePairs ();
 }
 
 EdgePairsDelegate *
-EmptyEdges::space_check (db::Coord, const db::EdgesCheckOptions &) const
+EmptyEdges::space_check (db::Coord, bool, metrics_type, double, distance_type, distance_type) const
 {
   return new EmptyEdgePairs ();
 }
 
 EdgePairsDelegate *
-EmptyEdges::enclosing_check (const Edges &, db::Coord, const db::EdgesCheckOptions &) const
+EmptyEdges::enclosing_check (const Edges &, db::Coord, bool, metrics_type, double, distance_type, distance_type) const
 {
   return new EmptyEdgePairs ();
 }
 
 EdgePairsDelegate *
-EmptyEdges::overlap_check (const Edges &, db::Coord, const db::EdgesCheckOptions &) const
+EmptyEdges::overlap_check (const Edges &, db::Coord, bool, metrics_type, double, distance_type, distance_type) const
 {
   return new EmptyEdgePairs ();
 }
 
 EdgePairsDelegate *
-EmptyEdges::separation_check (const Edges &, db::Coord, const db::EdgesCheckOptions &) const
+EmptyEdges::separation_check (const Edges &, db::Coord, bool, metrics_type, double, distance_type, distance_type) const
 {
   return new EmptyEdgePairs ();
 }
 
 EdgePairsDelegate *
-EmptyEdges::inside_check (const Edges &, db::Coord, const db::EdgesCheckOptions &) const
+EmptyEdges::inside_check (const Edges &, db::Coord, bool, metrics_type, double, distance_type, distance_type) const
 {
   return new EmptyEdgePairs ();
 }

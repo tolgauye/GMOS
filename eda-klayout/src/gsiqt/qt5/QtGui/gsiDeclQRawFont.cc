@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -36,6 +36,7 @@
 #include <QTransform>
 #include "gsiQt.h"
 #include "gsiQtGuiCommon.h"
+#include "gsiDeclQtGuiTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -290,21 +291,6 @@ static void _call_f_boundingRect_c1098 (const qt_gsi::GenericMethod * /*decl*/, 
   tl::Heap heap;
   quint32 arg1 = gsi::arg_reader<quint32 >() (args, heap);
   ret.write<QRectF > ((QRectF)((QRawFont *)cls)->boundingRect (arg1));
-}
-
-
-// double QRawFont::capHeight()
-
-
-static void _init_f_capHeight_c0 (qt_gsi::GenericMethod *decl)
-{
-  decl->set_return<double > ();
-}
-
-static void _call_f_capHeight_c0 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  ret.write<double > ((double)((QRawFont *)cls)->capHeight ());
 }
 
 
@@ -845,7 +831,6 @@ static gsi::Methods methods_QRawFont () {
   methods += new qt_gsi::GenericMethod ("ascent", "@brief Method double QRawFont::ascent()\n", true, &_init_f_ascent_c0, &_call_f_ascent_c0);
   methods += new qt_gsi::GenericMethod ("averageCharWidth", "@brief Method double QRawFont::averageCharWidth()\n", true, &_init_f_averageCharWidth_c0, &_call_f_averageCharWidth_c0);
   methods += new qt_gsi::GenericMethod ("boundingRect", "@brief Method QRectF QRawFont::boundingRect(quint32 glyphIndex)\n", true, &_init_f_boundingRect_c1098, &_call_f_boundingRect_c1098);
-  methods += new qt_gsi::GenericMethod ("capHeight", "@brief Method double QRawFont::capHeight()\n", true, &_init_f_capHeight_c0, &_call_f_capHeight_c0);
   methods += new qt_gsi::GenericMethod ("descent", "@brief Method double QRawFont::descent()\n", true, &_init_f_descent_c0, &_call_f_descent_c0);
   methods += new qt_gsi::GenericMethod ("familyName", "@brief Method QString QRawFont::familyName()\n", true, &_init_f_familyName_c0, &_call_f_familyName_c0);
   methods += new qt_gsi::GenericMethod ("fontTable", "@brief Method QByteArray QRawFont::fontTable(const char *tagName)\n", true, &_init_f_fontTable_c1731, &_call_f_fontTable_c1731);
@@ -867,7 +852,7 @@ static gsi::Methods methods_QRawFont () {
   methods += new qt_gsi::GenericMethod ("style", "@brief Method QFont::Style QRawFont::style()\n", true, &_init_f_style_c0, &_call_f_style_c0);
   methods += new qt_gsi::GenericMethod ("styleName", "@brief Method QString QRawFont::styleName()\n", true, &_init_f_styleName_c0, &_call_f_styleName_c0);
   methods += new qt_gsi::GenericMethod ("supportedWritingSystems", "@brief Method QList<QFontDatabase::WritingSystem> QRawFont::supportedWritingSystems()\n", true, &_init_f_supportedWritingSystems_c0, &_call_f_supportedWritingSystems_c0);
-  methods += new qt_gsi::GenericMethod ("supportsCharacter_ucs4", "@brief Method bool QRawFont::supportsCharacter(unsigned int ucs4)\n", true, &_init_f_supportsCharacter_c1772, &_call_f_supportsCharacter_c1772);
+  methods += new qt_gsi::GenericMethod ("supportsCharacter", "@brief Method bool QRawFont::supportsCharacter(unsigned int ucs4)\n", true, &_init_f_supportsCharacter_c1772, &_call_f_supportsCharacter_c1772);
   methods += new qt_gsi::GenericMethod ("supportsCharacter", "@brief Method bool QRawFont::supportsCharacter(QChar character)\n", true, &_init_f_supportsCharacter_c899, &_call_f_supportsCharacter_c899);
   methods += new qt_gsi::GenericMethod ("swap", "@brief Method void QRawFont::swap(QRawFont &other)\n", false, &_init_f_swap_1404, &_call_f_swap_1404);
   methods += new qt_gsi::GenericMethod ("underlinePosition", "@brief Method double QRawFont::underlinePosition()\n", true, &_init_f_underlinePosition_c0, &_call_f_underlinePosition_c0);

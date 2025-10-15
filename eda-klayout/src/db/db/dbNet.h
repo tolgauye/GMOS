@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -25,7 +25,6 @@
 
 #include "dbCommon.h"
 #include "dbNetlistObject.h"
-#include "dbMemStatistics.h"
 
 #include "tlObject.h"
 
@@ -42,7 +41,6 @@ class Circuit;
 class DeviceTerminalDefinition;
 class DeviceClass;
 class Pin;
-class Netlist;
 
 /**
  *  @brief A reference to a terminal of a device
@@ -235,7 +233,6 @@ public:
 
 private:
   friend class Net;
-  friend class Circuit;
 
   size_t m_pin_id;
   Net *mp_net;
@@ -246,14 +243,6 @@ private:
   void set_net (Net *net)
   {
     mp_net = net;
-  }
-
-  /**
-   *  @brief Sets the pin ID
-   */
-  void set_pin_id (size_t id)
-  {
-    m_pin_id = id;
   }
 };
 
@@ -352,7 +341,6 @@ public:
 
 private:
   friend class Net;
-  friend class SubCircuit;
 
   size_t m_pin_id;
   SubCircuit *mp_subcircuit;
@@ -364,14 +352,6 @@ private:
   void set_net (Net *net)
   {
     mp_net = net;
-  }
-
-  /**
-   *  @brief Sets the pin ID
-   */
-  void set_pin_id (size_t pin)
-  {
-    m_pin_id = pin;
   }
 };
 
@@ -437,18 +417,6 @@ public:
   {
     return mp_circuit;
   }
-
-  /**
-   *  @brief Gets the netlist the net lives in
-   *  This pointer is 0 if the net is not part of a netlist.
-   */
-  Netlist *netlist ();
-
-  /**
-   *  @brief Gets the netlist the net lives in (const version)
-   *  This pointer is 0 if the net is not part of a netlist.
-   */
-  const Netlist *netlist () const;
 
   /**
    *  @brief Clears the circuit
@@ -683,21 +651,6 @@ public:
     return m_terminals.size ();
   }
 
-  /**
-   *  @brief Generate memory statistics
-   */
-  void mem_stat (MemStatistics *stat, MemStatistics::purpose_t purpose, int cat, bool no_self = false, void *parent = 0) const
-  {
-    if (! no_self) {
-      stat->add (typeid (*this), (void *) this, sizeof (*this), sizeof (*this), parent, purpose, cat);
-    }
-
-    db::mem_stat (stat, purpose, cat, m_name, true, (void *) this);
-    db::mem_stat (stat, purpose, cat, m_terminals, true, (void *) this);
-    db::mem_stat (stat, purpose, cat, m_pins, true, (void *) this);
-    db::mem_stat (stat, purpose, cat, m_subcircuit_pins, true, (void *) this);
-  }
-
 private:
   friend class Circuit;
 
@@ -710,14 +663,6 @@ private:
 
   void set_circuit (Circuit *circuit);
 };
-
-/**
- *  @brief Memory statistics for Net
- */
-inline void mem_stat (MemStatistics *stat, MemStatistics::purpose_t purpose, int cat, const Net &x, bool no_self, void *parent)
-{
-  x.mem_stat (stat, purpose, cat, no_self, parent);
-}
 
 }
 

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -27,15 +27,12 @@
 #include "tlCommon.h"
 
 #include <string>
-#include <sstream>
-#include <typeinfo>
 #include <stdexcept>
 #include <stdint.h>
 #include <stdarg.h>
 
 #include "tlException.h"
 #include "tlVariant.h"
-#include "tlTypeTraits.h"
 
 #if defined(HAVE_QT)
 class QImage;
@@ -43,29 +40,9 @@ class QImage;
 
 namespace tl {
 
-/**
- *  @brief An exception indicating that string extraction is not available for a certain type
- */
-class TL_PUBLIC ExtractorNotImplementedException
-  : public tl::Exception
-{
-public:
-  ExtractorNotImplementedException (const std::type_info &ti);
-};
-
-/**
- *  @brief An exception indicating that string conversion is not available for a certain type
- */
-class TL_PUBLIC StringConversionException
-  : public tl::Exception
-{
-public:
-  StringConversionException (const std::type_info &ti);
-};
-
 class Extractor;
-template <class T> void extractor_impl (tl::Extractor &, T &) { throw ExtractorNotImplementedException (typeid (T)); }
-template <class T> bool test_extractor_impl (tl::Extractor &, T &) { throw ExtractorNotImplementedException (typeid (T)); }
+template <class T> void extractor_impl (tl::Extractor &, T &);
+template <class T> bool test_extractor_impl (tl::Extractor &, T &);
 
 /**
  *  @brief Another string class
@@ -289,11 +266,7 @@ TL_PUBLIC std::string to_string (const char *cp, int length);
 TL_PUBLIC std::string to_string_from_local (const char *cp);
 TL_PUBLIC std::string to_local (const std::string &s);
 
-template <class T, bool> struct __redirect_to_string;
-template <class T> struct __redirect_to_string<T, true> { static std::string to_string (const T &t) { return t.to_string (); } };
-template <class T> struct __redirect_to_string<T, false> { static std::string to_string  (const T &) { throw StringConversionException (typeid (T)); } };
-template <class T> inline std::string to_string (const T &o) { return __redirect_to_string<T, tl::has_to_string<T>::value>::to_string (o); }
-
+template <class T> inline std::string to_string (const T &o) { return o.to_string (); }
 template <> inline std::string to_string (const double &d) { return to_string (d, 12); }
 template <> inline std::string to_string (const float &d) { return to_string (d, 6); }
 template <> TL_PUBLIC std::string to_string (const int &d);
@@ -344,7 +317,7 @@ TL_PUBLIC std::string to_quoted_string (const std::string &s);
  *  @brief Escape special characters in a string
  *
  *  Special characters are replaced by escape sequences with a backslash.
- *  The format of the sequence is \xxx where x is the octal number of the 
+ *  The format of the sequence is \xxx where x is the ocal number of the 
  *  character and \r, \n and \t representing the CR, LF and TAB character.
  */
 TL_PUBLIC std::string escape_string (const std::string &value);
@@ -353,7 +326,7 @@ TL_PUBLIC std::string escape_string (const std::string &value);
  *  @brief Remove escape sequences from a string
  *
  *  Special characters are replaced by escape sequences with a backslash.
- *  The format of the sequence is \xxx where x is the octal number of the 
+ *  The format of the sequence is \xxx where x is the ocal number of the 
  *  character and \r, \n and \t representing the CR, LF and TAB character.
  */
 TL_PUBLIC std::string unescape_string (const std::string &value);
@@ -389,7 +362,7 @@ TL_PUBLIC std::string escaped_to_html (const std::string &in, bool replace_newli
 
 /**
  *  @brief Replaces the "before" string by "after" in the "subject" string and returns the new string
- *  All occurrences are replaced.
+ *  All occurances are replaced.
  */
 TL_PUBLIC std::string replaced (const std::string &subject, const std::string &before, const std::string &after);
 
@@ -485,7 +458,7 @@ public:
   /**
    *  @brief Read an unsigned integer
    *
-   *  A helper method to implement parsers on the character-by-character basis.
+   *  A helper method to implement parsers on the chararacter-by-character basis.
    *  This method reads an unsigned integer and returns the value past the last
    *  valid character. It skips blanks at the beginning but not at the end.
    *  On error, an exception is thrown.
@@ -494,11 +467,6 @@ public:
    *  @param value Where the value is stored
    */
   Extractor &read (unsigned int &value);
-
-  /**
-   *  @brief Read an unsigned char int (see read of an unsigned int)
-   */
-  Extractor &read (unsigned char &value);
 
   /**
    *  @brief Read an unsigned long (see read of an unsigned int)
@@ -514,11 +482,6 @@ public:
    *  @brief Read a double (see read of an unsigned int)
    */
   Extractor &read (double &value);
-
-  /**
-   *  @brief Read a float (see read of an unsigned int)
-   */
-  Extractor &read (float &value);
 
   /**
    *  @brief Read a signed int (see read of an unsigned int)
@@ -614,11 +577,6 @@ public:
   bool try_read (int &value);
 
   /**
-   *  @brief Try to read an unsigned char int (see try to read an unsigned int)
-   */
-  bool try_read (unsigned char &value);
-
-  /**
    *  @brief Try to read an unsigned long (see try to read an unsigned int)
    */
   bool try_read (unsigned long &value);
@@ -642,11 +600,6 @@ public:
    *  @brief Try to read a double (see try to read an unsigned int)
    */
   bool try_read (double &value);
-
-  /**
-   *  @brief Try to read a float (see try to read an unsigned int)
-   */
-  bool try_read (float &value);
 
   /**
    *  @brief Try to read a boolean value (see try to read an unsigned int)
@@ -740,7 +693,7 @@ public:
   /**
    *  @brief Skip blanks
    *
-   *  A helper method to implement parsers on the character-by-character basis.
+   *  A helper method to implement parsers on the chararacter-by-character basis.
    *  
    *  @param cp The current pointer (is being moved)
    *  @return The value of cp on return
@@ -834,14 +787,6 @@ TL_PUBLIC void from_string (const std::string &s, unsigned long &v);
 TL_PUBLIC void from_string (const std::string &s, unsigned long long &v);
 TL_PUBLIC void from_string (const std::string &s, bool &b);
 
-TL_PUBLIC void from_string_ext (const std::string &s, double &v);
-TL_PUBLIC void from_string_ext (const std::string &s, int &v);
-TL_PUBLIC void from_string_ext (const std::string &s, long &v);
-TL_PUBLIC void from_string_ext (const std::string &s, long long &v);
-TL_PUBLIC void from_string_ext (const std::string &s, unsigned int &v);
-TL_PUBLIC void from_string_ext (const std::string &s, unsigned long &v);
-TL_PUBLIC void from_string_ext (const std::string &s, unsigned long long &v);
-
 inline void from_string (const std::string &s, std::string &v) { v = s; }
 
 template <class T> inline void from_string (const std::string &s, T &t)
@@ -931,34 +876,7 @@ inline std::string sprintf (const std::string &fmt, const tl::Variant &a1, const
 
 TL_PUBLIC std::string trim (const std::string &s);
 TL_PUBLIC std::vector<std::string> split (const std::string &s, const std::string &sep);
-
-/**
- *  @brief Joins a generic iterated list into a single string using the given separator
- */
-template <class Iter>
-TL_PUBLIC_TEMPLATE std::string join (Iter from, Iter to, const std::string &sep)
-{
-  std::ostringstream r;
-
-  bool first = true;
-  for (Iter i = from; i != to; ++i) {
-    if (!first) {
-      r << sep;
-    }
-    first = false;
-    r << tl::to_string (*i);
-  }
-
-  return r.str ();
-}
-
-/**
- *  @brief Joins a vector of strings into a single string using the given separator
- */
-inline std::string join (const std::vector<std::string> &strings, const std::string &sep)
-{
-  return join (strings.begin (), strings.end (), sep);
-}
+TL_PUBLIC std::string join (const std::vector<std::string> &strings, const std::string &sep);
 
 /**
  *  @brief Returns the lower-case character for a wchar_t
@@ -983,40 +901,9 @@ TL_PUBLIC uint32_t utf32_upcase (uint32_t c32);
 /**
  *  @brief Parses the next UTF32 character from an UTF-8 string
  *  @param cp The input character's position, will be set to the next character.
- *  @param cpe The end of the string of 0 for "no end"
+ *  @paran cpe The end of the string of 0 for "no end"
  */
 TL_PUBLIC uint32_t utf32_from_utf8 (const char *&cp, const char *cpe = 0);
-
-/**
- *  @brief Checks if the next characters are CR, LF or CR+LF and skips them
- *
- *  This function returns true, if a line separated was found and skipped
- */
-TL_PUBLIC bool skip_newline (const char *&cp);
-
-/**
- *  @brief checks if the given character is a CR character
- */
-inline bool is_cr (char c)
-{
-  return c == '\015';
-}
-
-/**
- *  @brief checks if the given character is a LF character
- */
-inline bool is_lf (char c)
-{
-  return c == '\012';
-}
-
-/**
- *  @brief checks if the given character is a CR or LF character
- */
-inline bool is_newline (char c)
-{
-  return is_cr (c) || is_lf (c);
-}
 
 } // namespace tl
 

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -23,7 +23,6 @@
 #include "gsiDecl.h"
 #include "gsiSignals.h"
 #include "layMainWindow.h"
-#include "layConfig.h"
 
 #if defined(HAVE_QTBINDINGS)
 # include "gsiQtGuiExternals.h"
@@ -44,417 +43,10 @@ void enable_edits (lay::MainWindow * /*main_window*/, bool enable)
   }
 }
 
-//  NOTE: match this with the cm_method_decl's below
-static const char *cm_symbols[] = {
-  "cm_reset_window_state",
-  "cm_select_all",
-  "cm_unselect_all",
-  "cm_undo",
-  "cm_redo",
-  "cm_undo_list",
-  "cm_redo_list",
-  "cm_delete",
-  "cm_show_properties",
-  "cm_copy",
-  "cm_paste",
-  "cm_cut",
-  "cm_zoom_fit_sel",
-  "cm_zoom_fit",
-  "cm_zoom_in",
-  "cm_zoom_out",
-  "cm_pan_up",
-  "cm_pan_down",
-  "cm_pan_left",
-  "cm_pan_right",
-  "cm_save_session",
-  "cm_restore_session",
-  "cm_setup",
-  "cm_save_as",
-  "cm_save",
-  "cm_save_all",
-  "cm_reload",
-  "cm_close",
-  "cm_close_all",
-  "cm_clone",
-  "cm_layout_props",
-  "cm_inc_max_hier",
-  "cm_dec_max_hier",
-  "cm_max_hier",
-  "cm_max_hier_0",
-  "cm_max_hier_1",
-  "cm_prev_display_state|#cm_last_display_state",
-  "cm_next_display_state",
-  "cm_cancel",
-  "cm_redraw",
-  "cm_screenshot",
-  "cm_screenshot_to_clipboard",
-  "cm_save_layer_props",
-  "cm_load_layer_props",
-  "cm_save_bookmarks",
-  "cm_load_bookmarks",
-  "cm_select_cell",
-  "cm_select_current_cell",
-  "cm_print",
-  "cm_exit",
-  "cm_view_log",
-  "cm_bookmark_view",
-  "cm_manage_bookmarks",
-  "cm_macro_editor",
-  "cm_goto_position",
-  "cm_help_about",
-  "cm_technologies",
-  "cm_packages",
-  "cm_open_too",
-  "cm_open_new_view",
-  "cm_open",
-  "cm_pull_in",
-  "cm_reader_options",
-  "cm_new_layout",
-  "cm_new_panel",
-  "cm_adjust_origin",
-  "cm_new_cell",
-  "cm_new_layer",
-  "cm_clear_layer",
-  "cm_delete_layer",
-  "cm_edit_layer",
-  "cm_copy_layer",
-  "cm_sel_flip_x",
-  "cm_sel_flip_y",
-  "cm_sel_rot_cw",
-  "cm_sel_rot_ccw",
-  "cm_sel_free_rot",
-  "cm_sel_scale",
-  "cm_sel_move",
-  "cm_sel_move_to",
-  "cm_lv_new_tab",
-  "cm_lv_remove_tab",
-  "cm_lv_rename_tab",
-  "cm_lv_hide",
-  "cm_lv_hide_all",
-  "cm_lv_show",
-  "cm_lv_show_all",
-  "cm_lv_show_only",
-  "cm_lv_rename",
-  "cm_lv_select_all",
-  "cm_lv_delete",
-  "cm_lv_insert",
-  "cm_lv_group",
-  "cm_lv_ungroup",
-  "cm_lv_source",
-  "cm_lv_sort_by_name",
-  "cm_lv_sort_by_ild",
-  "cm_lv_sort_by_idl",
-  "cm_lv_sort_by_ldi",
-  "cm_lv_sort_by_dli",
-  "cm_lv_regroup_by_index",
-  "cm_lv_regroup_by_datatype",
-  "cm_lv_regroup_by_layer",
-  "cm_lv_regroup_flatten",
-  "cm_lv_expand_all",
-  "cm_lv_add_missing",
-  "cm_lv_remove_unused",
-  "cm_cell_delete",
-  "cm_cell_rename",
-  "cm_cell_copy",
-  "cm_cell_cut",
-  "cm_cell_paste",
-  "cm_cell_select",
-  "cm_open_current_cell",
-  "cm_save_current_cell_as",
-  "cm_cell_hide",
-  "cm_cell_flatten",
-  "cm_cell_show",
-  "cm_cell_show_all",
-  "cm_navigator_close",
-  "cm_navigator_freeze"
-};
-
-template <unsigned int NUM>
-void call_cm_method (lay::MainWindow *mw)
-{
-  tl_assert (NUM < sizeof (cm_symbols) / sizeof (cm_symbols [0]));
-  mw->menu_activated (cm_symbols [NUM]);
-}
-
-template <unsigned int NUM>
-gsi::Methods cm_method_decl ()
-{
-  tl_assert (NUM < sizeof (cm_symbols) / sizeof (cm_symbols [0]));
-  return gsi::method_ext (std::string ("#") + cm_symbols [NUM], &call_cm_method<NUM>,
-    std::string ("@brief '") + cm_symbols[NUM] + "' action.\n"
-      "This method is deprecated in version 0.27.\n"
-      "Use \"call_menu('" + std::string (cm_symbols[NUM]) + "')\" instead.");
-}
-
-//  NOTE: this avoids an issue with binding: C++ (at least clang
-//  will resolve lay::MainWindow::menu to lay::Dispatcher::menu,
-//  the method declaration will be based on "lay::Dispatcher", and
-//  calling this on a MainWindow object fails, because Dispatcher
-//  is not the first base class.
-static lay::AbstractMenu *menu (lay::MainWindow *mw)
-{
-  return mw->dispatcher ()->menu ();
-}
-
-static void clear_config (lay::MainWindow *mw)
-{
-  mw->dispatcher ()->clear_config ();
-}
-
-static bool write_config (lay::MainWindow *mw, const std::string &config_file)
-{
-  return mw->dispatcher ()->write_config (config_file);
-}
-
-static bool read_config (lay::MainWindow *mw, const std::string &config_file)
-{
-  return mw->dispatcher ()->read_config (config_file);
-}
-
-static tl::Variant get_config (lay::MainWindow *mw, const std::string &name)
-{
-  std::string value;
-  if (mw->dispatcher ()->config_get (name, value)) {
-    return tl::Variant (value);
-  } else {
-    return tl::Variant ();
-  }
-}
-
-static void set_config (lay::MainWindow *mw, const std::string &name, const std::string &value)
-{
-  mw->dispatcher ()->config_set (name, value);
-}
-
-static std::vector<std::string>
-get_config_names (lay::MainWindow *mw)
-{
-  std::vector<std::string> names;
-  mw->dispatcher ()->get_config_names (names);
-  return names;
-}
-
-static void
-config_end (lay::MainWindow *mw)
-{
-  mw->dispatcher ()->config_end ();
-}
-
-static void
-set_key_bindings (lay::MainWindow *mw, const std::map<std::string, std::string> &bindings)
-{
-  std::map<std::string, std::string> b = mw->menu ()->get_shortcuts (false);
-  std::map<std::string, std::string> b_def = mw->menu ()->get_shortcuts (true);
-
-  for (std::map<std::string, std::string>::const_iterator i = bindings.begin (); i != bindings.end (); ++i) {
-    b[i->first] = i->second;
-  }
-
-  //  cfg_key_bindings needs a special notation: lay::Action::no_shortcut () to force "none" instead of default
-  //  and and empty string to restore default.
-  for (std::map<std::string, std::string>::iterator i = b.begin (); i != b.end (); ++i) {
-    std::map<std::string, std::string>::const_iterator j = b_def.find (i->first);
-    if (j != b_def.end ()) {
-      if (i->second != j->second) {
-        if (i->second.empty ()) {
-          i->second = lay::Action::no_shortcut ();
-        }
-      } else {
-        i->second.clear ();
-      }
-    }
-  }
-
-  std::vector<std::pair<std::string, std::string> > bv (b.begin (), b.end ());
-  mw->dispatcher ()->config_set (lay::cfg_key_bindings, lay::pack_key_binding (bv));
-}
-
-static std::map<std::string, std::string>
-get_key_bindings (lay::MainWindow *mw)
-{
-  return mw->menu ()->get_shortcuts (false);
-}
-
-static std::map<std::string, std::string>
-get_default_key_bindings (lay::MainWindow *mw)
-{
-  return mw->menu ()->get_shortcuts (true);
-}
-
-
-static std::map<std::string, bool>
-get_menu_items_hidden (lay::MainWindow *mw)
-{
-  std::map<std::string, std::string> kb = get_key_bindings (mw);
-  std::map<std::string, bool> h;
-
-  if (mw->dispatcher ()->menu ()) {
-    for (std::map<std::string, std::string>::const_iterator i = kb.begin (); i != kb.end (); ++i) {
-      lay::Action *a = mw->dispatcher ()->menu ()->action (i->first);
-      if (a) {
-        h.insert (std::make_pair (i->first, a->is_hidden ()));
-      }
-    }
-  }
-
-  return h;
-}
-
-static std::map<std::string, bool>
-get_default_menu_items_hidden (lay::MainWindow *mw)
-{
-  std::map<std::string, std::string> kb = get_key_bindings (mw);
-
-  //  currently, all menu items are visible by default
-  std::map<std::string, bool> h;
-  for (std::map<std::string, std::string>::const_iterator i = kb.begin (); i != kb.end (); ++i) {
-    h.insert (std::make_pair (i->first, false));
-  }
-
-  return h;
-}
-
-static void
-set_menu_items_hidden (lay::MainWindow *mw, const std::map<std::string, bool> &hidden)
-{
-  std::map<std::string, bool> h = get_menu_items_hidden (mw);
-  for (std::map<std::string, bool>::const_iterator i = hidden.begin (); i != hidden.end (); ++i) {
-    h[i->first] = i->second;
-  }
-
-  std::vector<std::pair<std::string, bool> > hv;
-  hv.insert (hv.end (), h.begin (), h.end ());
-  mw->dispatcher ()->config_set (lay::cfg_menu_items_hidden, lay::pack_menu_items_hidden (hv));
-}
-
 Class<lay::MainWindow> decl_MainWindow (QT_EXTERNAL_BASE (QMainWindow) "lay", "MainWindow",
 
-  //  Dispatcher interface and convenience functions
-  method ("dispatcher", &lay::MainWindow::dispatcher,
-    "@brief Gets the dispatcher interface (the plugin root configuration space)\n"
-    "This method has been introduced in version 0.27."
-  ) +
-  method_ext ("clear_config", &clear_config,
-    "@brief Clears the configuration parameters\n"
-    "This method is provided for using MainWindow without an Application object. "
-    "It's a convience method which is equivalent to 'dispatcher().clear_config()'. See \\Dispatcher#clear_config for details.\n"
-    "\n"
-    "This method has been introduced in version 0.27.\n"
-  ) +
-  method_ext ("write_config", &write_config, gsi::arg ("file_name"),
-    "@brief Writes configuration to a file\n"
-    "This method is provided for using MainWindow without an Application object. "
-    "It's a convience method which is equivalent to 'dispatcher().write_config(...)'. See \\Dispatcher#write_config for details.\n"
-    "\n"
-    "This method has been introduced in version 0.27.\n"
-  ) +
-  method_ext ("read_config", &read_config, gsi::arg ("file_name"),
-    "@brief Reads the configuration from a file\n"
-    "This method is provided for using MainWindow without an Application object. "
-    "It's a convience method which is equivalent to 'dispatcher().read_config(...)'. See \\Dispatcher#read_config for details.\n"
-    "\n"
-    "This method has been introduced in version 0.27.\n"
-  ) +
-  method_ext ("get_config", &get_config, gsi::arg ("name"),
-    "@brief Gets the value of a local configuration parameter\n"
-    "This method is provided for using MainWindow without an Application object. "
-    "It's a convience method which is equivalent to 'dispatcher().get_config(...)'. See \\Dispatcher#get_config for details.\n"
-    "\n"
-    "This method has been introduced in version 0.27.\n"
-  ) +
-  method_ext ("set_config", &set_config, gsi::arg ("name"), gsi::arg ("value"),
-    "@brief Set a local configuration parameter with the given name to the given value\n"
-    "This method is provided for using MainWindow without an Application object. "
-    "It's a convience method which is equivalent to 'dispatcher().set_config(...)'. See \\Dispatcher#set_config for details.\n"
-    "\n"
-    "This method has been introduced in version 0.27.\n"
-  ) +
-  method_ext ("get_config_names", &get_config_names,
-    "@brief Gets the configuration parameter names\n"
-    "This method is provided for using MainWindow without an Application object. "
-    "It's a convience method which is equivalent to 'dispatcher().get_config_names(...)'. See \\Dispatcher#get_config_names for details.\n"
-    "\n"
-    "This method has been introduced in version 0.27.\n"
-  ) +
-  method_ext ("commit_config", &config_end,
-    "@brief Commits the configuration settings\n"
-    "This method is provided for using MainWindow without an Application object. "
-    "It's a convience method which is equivalent to 'dispatcher().commit_config(...)'. See \\Dispatcher#commit_config for details.\n"
-    "\n"
-    "This method has been introduced in version 0.27.\n"
-  ) +
-
-  //  key binding configuration
-  gsi::method_ext ("get_key_bindings", &get_key_bindings,
-    "@brief Gets the current key bindings\n"
-    "This method returns a hash with the key binding vs. menu item path.\n"
-    "\n"
-    "This method has been introduced in version 0.27.\n"
-  ) +
-  gsi::method_ext ("get_default_key_bindings", &get_default_key_bindings,
-    "@brief Gets the default key bindings\n"
-    "This method returns a hash with the default key binding vs. menu item path.\n"
-    "You can use this hash with \\set_key_bindings to reset all key bindings to the default ones.\n"
-    "\n"
-    "This method has been introduced in version 0.27.\n"
-  ) +
-  gsi::method_ext ("set_key_bindings", &set_key_bindings, gsi::arg ("bindings"),
-    "@brief Sets key bindings.\n"
-    "Sets the given key bindings. "
-    "Pass a hash listing the key bindings per menu item paths. Key strings follow the usual notation, e.g. 'Ctrl+A', 'Shift+X' or just 'F2'.\n"
-    "Use an empty value to remove a key binding from a menu entry.\n"
-    "\n"
-    "\\get_key_bindings will give you the current key bindings, \\get_default_key_bindings will give you the default ones.\n"
-    "\n"
-    "Examples:\n"
-    "\n"
-    "@code\n"
-    "# reset all key bindings to default:\n"
-    "mw = RBA::MainWindow.instance()\n"
-    "mw.set_key_bindings(mw.get_default_key_bindings())\n"
-    "\n"
-    "# disable key binding for 'copy':\n"
-    "RBA::MainWindow.instance.set_key_bindings({ \"edit_menu.copy\" => \"\" })\n"
-    "\n"
-    "# configure 'copy' to use Shift+K and 'cut' to use Ctrl+K:\n"
-    "RBA::MainWindow.instance.set_key_bindings({ \"edit_menu.copy\" => \"Shift+K\", \"edit_menu.cut\" => \"Ctrl+K\" })\n"
-    "@/code\n"
-    "\n"
-    "This method has been introduced in version 0.27.\n"
-  ) +
-  gsi::method_ext ("get_menu_items_hidden", &get_menu_items_hidden,
-    "@brief Gets the flags indicating whether menu items are hidden\n"
-    "This method returns a hash with the hidden flag vs. menu item path.\n"
-    "You can use this hash with \\set_menu_items_hidden.\n"
-    "\n"
-    "This method has been introduced in version 0.27.\n"
-  ) +
-  gsi::method_ext ("get_default_menu_items_hidden", &get_default_menu_items_hidden,
-    "@brief Gets the flags indicating whether menu items are hidden by default\n"
-    "You can use this hash with \\set_menu_items_hidden to restore the visibility of all menu items.\n"
-    "\n"
-    "This method has been introduced in version 0.27.\n"
-  ) +
-  gsi::method_ext ("set_menu_items_hidden", &set_menu_items_hidden, gsi::arg ("flags"),
-    "@brief sets the flags indicating whether menu items are hidden\n"
-    "This method allows hiding certain menu items. It takes a hash with hidden flags vs. menu item paths. "
-    "\n"
-    "Examples:\n"
-    "\n"
-    "@code\n"
-    "# show all menu items:\n"
-    "mw = RBA::MainWindow.instance()\n"
-    "mw.set_menu_items_hidden(mw.get_default_menu_items_hidden())\n"
-    "\n"
-    "# hide the 'copy' entry from the 'Edit' menu:\n"
-    "RBA::MainWindow.instance().set_menu_items_hidden({ \"edit_menu.copy\" => true })\n"
-    "@/code\n"
-    "\n"
-    "This method has been introduced in version 0.27.\n"
-  ) +
-
   //  QMainWindow interface
-  gsi::method_ext ("menu", &menu,
+  gsi::method ("menu", &lay::MainWindow::menu,
     "@brief Returns a reference to the abstract menu\n"
     "\n"
     "@return A reference to an \\AbstractMenu object representing the menu system"
@@ -474,19 +66,21 @@ Class<lay::MainWindow> decl_MainWindow (QT_EXTERNAL_BASE (QMainWindow) "lay", "M
     "\n"
     "This method has been added in version 0.24."
   ) +
-  gsi::method ("message", &lay::MainWindow::message, gsi::arg ("message"), gsi::arg ("time", -1, "infinite"),
+  gsi::method ("message", &lay::MainWindow::message,
     "@brief Displays a message in the status bar\n"
     "\n"
+    "@args message,time\n"
     "@param message The message to display\n"
-    "@param time The time how long to display the message in ms. A negative value means 'infinitely'.\n"
+    "@param time The time how long to display the message in ms\n"
     "\n"
     "This given message is shown in the status bar for the given time.\n" 
     "\n"
-    "This method has been added in version 0.18. The 'time' parameter was made optional in version 0.28.10."
+    "This method has been added in version 0.18."
   ) +
-  gsi::method ("resize", (void (lay::MainWindow::*)(int, int)) &lay::MainWindow::resize, gsi::arg ("width"), gsi::arg ("height"),
+  gsi::method ("resize", (void (lay::MainWindow::*)(int, int)) &lay::MainWindow::resize,
     "@brief Resizes the window\n"
     "\n"
+    "@args width, height\n"
     "@param width The new width of the window\n"
     "@param height The new width of the window\n"
     "\n"
@@ -520,9 +114,10 @@ Class<lay::MainWindow> decl_MainWindow (QT_EXTERNAL_BASE (QMainWindow) "lay", "M
     "\n"
     "This method has been added in version 0.22.\n"
   ) +
-  gsi::method ("create_layout", (lay::CellViewRef (lay::MainWindow::*) (int)) &lay::MainWindow::create_layout, gsi::arg ("mode"),
+  gsi::method ("create_layout", (lay::CellViewRef (lay::MainWindow::*) (int)) &lay::MainWindow::create_layout,
     "@brief Creates a new, empty layout\n"
     "\n"
+    "@args mode\n"
     "@param mode An integer value of 0, 1 or 2 that determines how the layout is created\n"
     "@return The cellview of the layout that was created\n"
     "\n"
@@ -534,9 +129,10 @@ Class<lay::MainWindow> decl_MainWindow (QT_EXTERNAL_BASE (QMainWindow) "lay", "M
     "\n"
     "Starting with version 0.25, this method returns a cellview object that can be modified to configure the cellview.\n"
   ) +
-  gsi::method ("create_layout", (lay::CellViewRef (lay::MainWindow::*) (const std::string &, int)) &lay::MainWindow::create_layout, gsi::arg ("tech"), gsi::arg ("mode"),
+  gsi::method ("create_layout", (lay::CellViewRef (lay::MainWindow::*) (const std::string &, int)) &lay::MainWindow::create_layout,
     "@brief Creates a new, empty layout with the given technology\n"
     "\n"
+    "@args tech, mode\n"
     "@param mode An integer value of 0, 1 or 2 that determines how the layout is created\n"
     "@param tech The name of the technology to use for that layout.\n"
     "@return The cellview of the layout that was created\n"
@@ -550,9 +146,10 @@ Class<lay::MainWindow> decl_MainWindow (QT_EXTERNAL_BASE (QMainWindow) "lay", "M
     "This version was introduced in version 0.22.\n"
     "Starting with version 0.25, this method returns a cellview object that can be modified to configure the cellview.\n"
   ) +
-  gsi::method ("load_layout", (lay::CellViewRef (lay::MainWindow::*) (const std::string &, int)) &lay::MainWindow::load_layout, gsi::arg ("filename"), gsi::arg ("mode", 1),
+  gsi::method ("load_layout", (lay::CellViewRef (lay::MainWindow::*) (const std::string &, int)) &lay::MainWindow::load_layout,
     "@brief Loads a new layout\n"
     "\n"
+    "@args filename, mode\n"
     "@param filename The name of the file to load\n"
     "@param mode An integer value of 0, 1 or 2 that determines how the file is loaded\n"
     "@return The cellview into which the layout was loaded\n"
@@ -564,11 +161,12 @@ Class<lay::MainWindow> decl_MainWindow (QT_EXTERNAL_BASE (QMainWindow) "lay", "M
     "This version will use the initial technology and the default reader options. "
     "Others versions are provided which allow specification of technology and reader options explicitly.\n"
     "\n"
-    "Starting with version 0.25, this method returns a cellview object that can be modified to configure the cellview. The 'mode' argument has been made optional in version 0.28.\n"
+    "Starting with version 0.25, this method returns a cellview object that can be modified to configure the cellview.\n"
   ) +
-  gsi::method ("load_layout", (lay::CellViewRef (lay::MainWindow::*) (const std::string &, const std::string &, int)) &lay::MainWindow::load_layout, gsi::arg ("filename"), gsi::arg ("tech"), gsi::arg ("mode", 1),
+  gsi::method ("load_layout", (lay::CellViewRef (lay::MainWindow::*) (const std::string &, const std::string &, int)) &lay::MainWindow::load_layout,
     "@brief Loads a new layout and associate it with the given technology\n"
     "\n"
+    "@args filename, tech, mode\n"
     "@param filename The name of the file to load\n"
     "@param tech The name of the technology to use for that layout.\n"
     "@param mode An integer value of 0, 1 or 2 that determines how the file is loaded\n"
@@ -578,14 +176,15 @@ Class<lay::MainWindow> decl_MainWindow (QT_EXTERNAL_BASE (QMainWindow) "lay", "M
     "into a new view (mode 1) or adding the layout to the current view (mode 2).\n"
     "In mode 1, the new view is made the current one.\n"
     "\n"
-    "If the technology name is not a valid technology name, the default technology will be used. The 'mode' argument has been made optional in version 0.28.\n"
+    "If the technology name is not a valid technology name, the default technology will be used.\n"
     "\n"
     "This version was introduced in version 0.22.\n"
     "Starting with version 0.25, this method returns a cellview object that can be modified to configure the cellview.\n"
   ) +
-  gsi::method ("load_layout", (lay::CellViewRef (lay::MainWindow::*) (const std::string &, const db::LoadLayoutOptions &, int)) &lay::MainWindow::load_layout, gsi::arg ("filename"), gsi::arg ("options"), gsi::arg ("mode", 1),
+  gsi::method ("load_layout", (lay::CellViewRef (lay::MainWindow::*) (const std::string &, const db::LoadLayoutOptions &, int)) &lay::MainWindow::load_layout,
     "@brief Loads a new layout with the given options\n"
     "\n"
+    "@args filename, options, mode\n"
     "@param filename The name of the file to load\n"
     "@param options The reader options to use.\n"
     "@param mode An integer value of 0, 1 or 2 that determines how the file is loaded\n"
@@ -596,11 +195,12 @@ Class<lay::MainWindow> decl_MainWindow (QT_EXTERNAL_BASE (QMainWindow) "lay", "M
     "In mode 1, the new view is made the current one.\n"
     "\n"
     "This version was introduced in version 0.22.\n"
-    "Starting with version 0.25, this method returns a cellview object that can be modified to configure the cellview. The 'mode' argument has been made optional in version 0.28.\n"
+    "Starting with version 0.25, this method returns a cellview object that can be modified to configure the cellview.\n"
   ) +
-  gsi::method ("load_layout", (lay::CellViewRef (lay::MainWindow::*) (const std::string &, const db::LoadLayoutOptions &, const std::string &, int)) &lay::MainWindow::load_layout, gsi::arg ("filename"), gsi::arg ("options"), gsi::arg ("tech"), gsi::arg ("mode", 1),
+  gsi::method ("load_layout", (lay::CellViewRef (lay::MainWindow::*) (const std::string &, const db::LoadLayoutOptions &, const std::string &, int)) &lay::MainWindow::load_layout,
     "@brief Loads a new layout with the given options and associate it with the given technology\n"
     "\n"
+    "@args filename, options, tech, mode\n"
     "@param filename The name of the file to load\n"
     "@param options The reader options to use.\n"
     "@param tech The name of the technology to use for that layout.\n"
@@ -614,14 +214,15 @@ Class<lay::MainWindow> decl_MainWindow (QT_EXTERNAL_BASE (QMainWindow) "lay", "M
     "If the technology name is not a valid technology name, the default technology will be used.\n"
     "\n"
     "This version was introduced in version 0.22.\n"
-    "Starting with version 0.25, this method returns a cellview object that can be modified to configure the cellview. The 'mode' argument has been made optional in version 0.28.\n"
+    "Starting with version 0.25, this method returns a cellview object that can be modified to configure the cellview.\n"
   ) +
   gsi::method ("clone_current_view", &lay::MainWindow::clone_current_view,
     "@brief Clones the current view and make it current\n"
   ) +
-  gsi::method ("save_session", &lay::MainWindow::save_session, gsi::arg ("fn"),
+  gsi::method ("save_session", &lay::MainWindow::save_session,
     "@brief Saves the session to the given file\n"
     "\n"
+    "@args fn\n"
     "@param fn The path to the session file\n"
     "\n"
     "The session is saved to the given session file. Any existing layout edits are not automatically saved together with "
@@ -630,9 +231,10 @@ Class<lay::MainWindow> decl_MainWindow (QT_EXTERNAL_BASE (QMainWindow) "lay", "M
     "\n"
     "This method was added in version 0.18."
   ) +
-  gsi::method ("restore_session", &lay::MainWindow::restore_session, gsi::arg ("fn"),
+  gsi::method ("restore_session", &lay::MainWindow::restore_session,
     "@brief Restores a session from the given file\n"
     "\n"
+    "@args fn\n"
     "@param fn The path to the session file\n"
     "\n"
     "The session stored in the given session file is restored. All existing views are closed and all "
@@ -640,47 +242,25 @@ Class<lay::MainWindow> decl_MainWindow (QT_EXTERNAL_BASE (QMainWindow) "lay", "M
     "\n"
     "This method was added in version 0.18."
   ) +
-  gsi::method_ext ("#enable_edits", &enable_edits, gsi::arg ("enable"),
+  gsi::method_ext ("#enable_edits", &enable_edits,
     "@brief Enables or disables editing\n"
     "\n"
+    "@args enable\n"
     "@param enable Enable edits if set to true\n"
     "\n"
     "Starting from version 0.25, this method enables/disables edits on the current view only. \n"
     "Use LayoutView#enable_edits instead.\n"
   ) +
-  gsi::method ("synchronous=|#synchronous", &lay::MainWindow::set_synchronous, gsi::arg ("sync_mode"),
+  gsi::method ("synchronous=|#synchroneous", &lay::MainWindow::set_synchronous,
     "@brief Puts the main window into synchronous mode\n"
     "\n"
+    "@args sync_mode\n"
     "@param sync_mode 'true' if the application should behave synchronously\n"
     "\n"
     "In synchronous mode, an application is allowed to block on redraw. While redrawing, "
     "no user interactions are possible. Although this is not desirable for smooth operation, "
     "it can be beneficial for test or automation purposes, i.e. if a screenshot needs to be "
     "produced once the application has finished drawing."
-  ) +
-  gsi::method ("synchronous", &lay::MainWindow::synchronous,
-    "@brief Gets a value indicating whether synchronous mode is activated\n"
-    "See \\synchronous= for details about this attribute\n"
-    "\n"
-    "This property getter was introduced in version 0.29."
-  ) +
-  gsi::method ("title=", &lay::MainWindow::set_title, gsi::arg ("title"),
-    "@brief Sets the window title\n"
-    "If the window title is not empty, it will be used for the application window's title. Otherwise "
-    "the default title is used. The title string is subject to expression interpolation. So it is "
-    "possible to implement the default scheme of adding the current view using the following code:\n"
-    "\n"
-    "@code\n"
-    "add_view_info = \"$(var view=LayoutView.current; view ? ' - ' + (view.is_dirty ? '[+] ' : '') + view.title : '')\"\n"
-    "RBA::MainWindow.instance.title = \"Custom Title\" + add_view_info\n"
-    "@/code\n"
-    "\n"
-    "This property was introduced in version 0.29."
-  ) +
-  gsi::method ("title", &lay::MainWindow::title,
-    "@brief Gets the window title\n"
-    "See \\title= for a description of this property.\n"
-    "This property was introduced in version 0.29."
   ) +
   gsi::method ("close_all", &lay::MainWindow::close_all,
     "@brief Closes all views\n"
@@ -712,9 +292,10 @@ Class<lay::MainWindow> decl_MainWindow (QT_EXTERNAL_BASE (QMainWindow) "lay", "M
     "This method does not immediately exit the application but sends an exit request "
     "to the application which will cause a clean shutdown of the GUI. "
   ) +
-  gsi::method ("current_view_index=|#select_view", &lay::MainWindow::select_view, gsi::arg ("index"),
+  gsi::method ("current_view_index=|#select_view", &lay::MainWindow::select_view,
     "@brief Selects the view with the given index\n"
     "\n"
+    "@args index\n"
     "@param index The index of the view to select (0 is the first)\n"
     "\n"
     "This method will make the view with the given index the current (front) view.\n"
@@ -738,8 +319,9 @@ Class<lay::MainWindow> decl_MainWindow (QT_EXTERNAL_BASE (QMainWindow) "lay", "M
     "\n"
     "@return The number of views available so far.\n"
   ) +
-  gsi::method ("view", (lay::LayoutView *(lay::MainWindow::*)(int)) &lay::MainWindow::view, gsi::arg ("n"),
+  gsi::method ("view", (lay::LayoutView *(lay::MainWindow::*)(int)) &lay::MainWindow::view,
     "@brief Returns a reference to a view object by index\n"
+    "@args n\n"
     "\n"
     "@return The view object's reference for the view with the given index.\n"
   ) +
@@ -750,13 +332,14 @@ Class<lay::MainWindow> decl_MainWindow (QT_EXTERNAL_BASE (QMainWindow) "lay", "M
     "\n"
     "This method was added in version 0.22."
   ) +
-  gsi::method ("initial_technology=", &lay::MainWindow::set_initial_technology, gsi::arg ("tech"),
+  gsi::method ("initial_technology=", &lay::MainWindow::set_initial_technology,
     "@brief Sets the technology used for creating or loading layouts (unless explicitly specified)\n"
     "\n"
     "Setting the technology will have an effect on the next load_layout or create_layout operation which does not explicitly specify the technology but "
     "might not be reflected correctly in the reader options dialog and changes will be reset when the "
     "application is restarted."
     "\n"
+    "@args tech\n"
     "@param tech The new initial technology\n"
     "\n"
     "This method was added in version 0.22."
@@ -769,8 +352,9 @@ Class<lay::MainWindow> decl_MainWindow (QT_EXTERNAL_BASE (QMainWindow) "lay", "M
     "Before version 0.25 this event was based on the observer pattern obsolete now. The corresponding methods "
     "(add_current_view_observer/remove_current_view_observer) have been removed in 0.25.\n"
   ) +
-  gsi::event ("on_view_created", &lay::MainWindow::view_created_event, gsi::arg ("index"),
+  gsi::event ("on_view_created", &lay::MainWindow::view_created_event,
     "@brief An event indicating that a new view was created\n"
+    "@args index\n"
     "@param index The index of the view that was created\n"
     "\n"
     "This event is triggered after a new view was created. For example, if a layout is loaded into a new panel.\n"
@@ -778,23 +362,14 @@ Class<lay::MainWindow> decl_MainWindow (QT_EXTERNAL_BASE (QMainWindow) "lay", "M
     "Before version 0.25 this event was based on the observer pattern obsolete now. The corresponding methods "
     "(add_new_view_observer/remove_new_view_observer) have been removed in 0.25.\n"
   ) +
-  gsi::event ("on_view_closed", &lay::MainWindow::view_closed_event, gsi::arg ("index"),
+  gsi::event ("on_view_closed", &lay::MainWindow::view_closed_event,
     "@brief An event indicating that a view was closed\n"
+    "@args index\n"
     "@param index The index of the view that was closed\n"
     "\n"
     "This event is triggered after a view was closed. For example, because the tab was closed.\n"
     "\n"
     "This event has been added in version 0.25.\n"
-  ) +
-  gsi::event ("on_session_about_to_be_restored", &lay::MainWindow::begin_restore_session,
-    "@brief An event indicating that a session is about to be restored\n"
-    "\n"
-    "This event has been added in version 0.28.8.\n"
-  ) +
-  gsi::event ("on_session_restored", &lay::MainWindow::end_restore_session,
-    "@brief An event indicating that a session was restored\n"
-    "\n"
-    "This event has been added in version 0.28.8.\n"
   ) +
   gsi::method ("show_macro_editor", &lay::MainWindow::show_macro_editor, gsi::arg ("cat", std::string ()), gsi::arg ("add", false),
     "@brief Shows the macro editor\n"
@@ -803,138 +378,405 @@ Class<lay::MainWindow> decl_MainWindow (QT_EXTERNAL_BASE (QMainWindow) "lay", "M
     "\n"
     "This method has been introduced in version 0.26.\n"
   ) +
-  gsi::method ("call_menu", &lay::MainWindow::menu_activated, gsi::arg ("symbol"),
-    "@brief Calls the menu item with the provided symbol.\n"
-    "To obtain all symbols, use menu_symbols.\n"
+  gsi::method ("cm_reset_window_state", &lay::MainWindow::cm_reset_window_state,
+    "@brief 'cm_reset_window_state' action (bound to a menu)"
     "\n"
-    "This method has been introduced in version 0.27 and replaces the previous cm_... methods. "
-    "Instead of calling a specific cm_... method, use LayoutView#call_menu with 'cm_...' as the symbol."
+    "This method has been added in version 0.25.\n"
   ) +
-  gsi::method ("menu_symbols", &lay::MainWindow::menu_symbols,
-    "@brief Gets all available menu symbols (see \\call_menu).\n"
-    "NOTE: currently this method delivers a superset of all available symbols. Depending on the context, no all symbols may trigger actual functionality.\n"
+  gsi::method ("cm_select_all", &lay::MainWindow::cm_select_all,
+    "@brief 'cm_select_all' action (bound to a menu)"
     "\n"
-    "This method has been introduced in version 0.27."
+    "This method has been added in version 0.22.\n"
   ) +
-  //  backward compatibility (cm_... methods, deprecated)
-  cm_method_decl<0> () +
-  cm_method_decl<1> () +
-  cm_method_decl<2> () +
-  cm_method_decl<3> () +
-  cm_method_decl<4> () +
-  cm_method_decl<5> () +
-  cm_method_decl<6> () +
-  cm_method_decl<7> () +
-  cm_method_decl<8> () +
-  cm_method_decl<9> () +
-  cm_method_decl<10> () +
-  cm_method_decl<11> () +
-  cm_method_decl<12> () +
-  cm_method_decl<13> () +
-  cm_method_decl<14> () +
-  cm_method_decl<15> () +
-  cm_method_decl<16> () +
-  cm_method_decl<17> () +
-  cm_method_decl<18> () +
-  cm_method_decl<19> () +
-  cm_method_decl<20> () +
-  cm_method_decl<21> () +
-  cm_method_decl<22> () +
-  cm_method_decl<23> () +
-  cm_method_decl<24> () +
-  cm_method_decl<25> () +
-  cm_method_decl<26> () +
-  cm_method_decl<27> () +
-  cm_method_decl<28> () +
-  cm_method_decl<29> () +
-  cm_method_decl<30> () +
-  cm_method_decl<31> () +
-  cm_method_decl<32> () +
-  cm_method_decl<33> () +
-  cm_method_decl<34> () +
-  cm_method_decl<35> () +
-  cm_method_decl<36> () +
-  cm_method_decl<37> () +
-  cm_method_decl<38> () +
-  cm_method_decl<39> () +
-  cm_method_decl<40> () +
-  cm_method_decl<41> () +
-  cm_method_decl<42> () +
-  cm_method_decl<43> () +
-  cm_method_decl<44> () +
-  cm_method_decl<45> () +
-  cm_method_decl<46> () +
-  cm_method_decl<47> () +
-  cm_method_decl<48> () +
-  cm_method_decl<49> () +
-  cm_method_decl<50> () +
-  cm_method_decl<51> () +
-  cm_method_decl<52> () +
-  cm_method_decl<53> () +
-  cm_method_decl<54> () +
-  cm_method_decl<55> () +
-  cm_method_decl<56> () +
-  cm_method_decl<57> () +
-  cm_method_decl<58> () +
-  cm_method_decl<59> () +
-  cm_method_decl<60> () +
-  cm_method_decl<61> () +
-  cm_method_decl<62> () +
-  cm_method_decl<63> () +
-  cm_method_decl<64> () +
-  cm_method_decl<65> () +
-  cm_method_decl<66> () +
-  cm_method_decl<67> () +
-  cm_method_decl<68> () +
-  cm_method_decl<69> () +
-  cm_method_decl<70> () +
-  cm_method_decl<71> () +
-  cm_method_decl<72> () +
-  cm_method_decl<73> () +
-  cm_method_decl<74> () +
-  cm_method_decl<75> () +
-  cm_method_decl<76> () +
-  cm_method_decl<77> () +
-  cm_method_decl<78> () +
-  cm_method_decl<79> () +
-  cm_method_decl<80> () +
-  cm_method_decl<81> () +
-  cm_method_decl<82> () +
-  cm_method_decl<83> () +
-  cm_method_decl<84> () +
-  cm_method_decl<85> () +
-  cm_method_decl<86> () +
-  cm_method_decl<87> () +
-  cm_method_decl<88> () +
-  cm_method_decl<89> () +
-  cm_method_decl<90> () +
-  cm_method_decl<91> () +
-  cm_method_decl<92> () +
-  cm_method_decl<93> () +
-  cm_method_decl<94> () +
-  cm_method_decl<95> () +
-  cm_method_decl<96> () +
-  cm_method_decl<97> () +
-  cm_method_decl<98> () +
-  cm_method_decl<99> () +
-  cm_method_decl<100> () +
-  cm_method_decl<101> () +
-  cm_method_decl<102> () +
-  cm_method_decl<103> () +
-  cm_method_decl<104> () +
-  cm_method_decl<105> () +
-  cm_method_decl<106> () +
-  cm_method_decl<107> () +
-  cm_method_decl<108> () +
-  cm_method_decl<109> () +
-  cm_method_decl<110> () +
-  cm_method_decl<111> () +
-  cm_method_decl<112> () +
-  cm_method_decl<113> () +
-  cm_method_decl<114> () +
-  cm_method_decl<115> () +
-  cm_method_decl<116> () +
-  cm_method_decl<117> (),
+  gsi::method ("cm_unselect_all", &lay::MainWindow::cm_unselect_all,
+    "@brief 'cm_unselect_all' action (bound to a menu)"
+    "\n"
+    "This method has been added in version 0.22.\n"
+  ) +
+  gsi::method ("cm_undo", &lay::MainWindow::cm_undo,
+    "@brief 'cm_undo' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_redo", &lay::MainWindow::cm_redo,
+    "@brief 'cm_redo' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_delete", &lay::MainWindow::cm_delete,
+    "@brief 'cm_delete' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_show_properties", &lay::MainWindow::cm_show_properties,
+    "@brief 'cm_show_properties' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_copy", &lay::MainWindow::cm_copy,
+    "@brief 'cm_copy' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_paste", &lay::MainWindow::cm_paste,
+    "@brief 'cm_paste' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_cut", &lay::MainWindow::cm_cut,
+    "@brief 'cm_cut' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_zoom_fit_sel", &lay::MainWindow::cm_zoom_fit,
+    "@brief 'cm_zoom_fit_sel' action (bound to a menu)"
+    "\nThis method has been added in version 0.18."
+  ) +
+  gsi::method ("cm_zoom_fit", &lay::MainWindow::cm_zoom_fit,
+    "@brief 'cm_zoom_fit' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_zoom_in", &lay::MainWindow::cm_zoom_in,
+    "@brief 'cm_zoom_in' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_zoom_out", &lay::MainWindow::cm_zoom_out,
+    "@brief 'cm_zoom_out' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_pan_up", &lay::MainWindow::cm_pan_up,
+    "@brief 'cm_pan_up' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_pan_down", &lay::MainWindow::cm_pan_down,
+    "@brief 'cm_pan_down' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_pan_left", &lay::MainWindow::cm_pan_left,
+    "@brief 'cm_pan_left' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_pan_right", &lay::MainWindow::cm_pan_right,
+    "@brief 'cm_pan_right' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_save_session", &lay::MainWindow::cm_save_session,
+    "@brief 'cm_save_session' action (bound to a menu)"
+    "\nThis method has been added in version 0.18."
+  ) +
+  gsi::method ("cm_restore_session", &lay::MainWindow::cm_restore_session,
+    "@brief 'cm_restore_session' action (bound to a menu)"
+    "\nThis method has been added in version 0.18."
+  ) +
+  gsi::method ("cm_setup", &lay::MainWindow::cm_setup,
+    "@brief 'cm_setup' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_save_as", &lay::MainWindow::cm_save_as,
+    "@brief 'cm_save_as' action (bound to a menu)"
+    "\nThis method has been added in version 0.18."
+  ) +
+  gsi::method ("cm_save", &lay::MainWindow::cm_save,
+    "@brief 'cm_save' action (bound to a menu)"
+    "\nThis method has been added in version 0.18."
+  ) +
+  gsi::method ("cm_save_all", &lay::MainWindow::cm_save_all,
+    "@brief 'cm_save_all' action (bound to a menu)\n"
+    "This method has been added in version 0.24.\n"
+  ) +
+  gsi::method ("cm_reload", &lay::MainWindow::cm_reload,
+    "@brief 'cm_reload' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_close", &lay::MainWindow::cm_close,
+    "@brief 'cm_close' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_close_all", &lay::MainWindow::cm_close_all,
+    "@brief 'cm_close_all' action (bound to a menu)\n"
+    "This method has been added in version 0.24.\n"
+  ) +
+  gsi::method ("cm_clone", &lay::MainWindow::cm_clone,
+    "@brief 'cm_clone' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_layout_props", &lay::MainWindow::cm_layout_props,
+    "@brief 'cm_layout_props' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_inc_max_hier", &lay::MainWindow::cm_inc_max_hier,
+    "@brief 'cm_inc_max_hier' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_dec_max_hier", &lay::MainWindow::cm_dec_max_hier,
+    "@brief 'cm_dec_max_hier' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_max_hier", &lay::MainWindow::cm_max_hier,
+    "@brief 'cm_max_hier' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_max_hier_0", &lay::MainWindow::cm_max_hier_0,
+    "@brief 'cm_max_hier_0' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_max_hier_1", &lay::MainWindow::cm_max_hier_1,
+    "@brief 'cm_max_hier_1' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_prev_display_state|#cm_last_display_state", &lay::MainWindow::cm_prev_display_state,
+    "@brief 'cm_prev_display_state' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_next_display_state", &lay::MainWindow::cm_next_display_state,
+    "@brief 'cm_next_display_state' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_cancel", &lay::MainWindow::cm_cancel,
+    "@brief 'cm_cancel' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_redraw", &lay::MainWindow::cm_redraw,
+    "@brief 'cm_redraw' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_screenshot", &lay::MainWindow::cm_screenshot,
+    "@brief 'cm_screenshot' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_save_layer_props", &lay::MainWindow::cm_save_layer_props,
+    "@brief 'cm_save_layer_props' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_load_layer_props", &lay::MainWindow::cm_load_layer_props,
+    "@brief 'cm_load_layer_props' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_save_bookmarks", &lay::MainWindow::cm_save_bookmarks,
+    "@brief 'cm_save_bookmarks' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_load_bookmarks", &lay::MainWindow::cm_load_bookmarks,
+    "@brief 'cm_load_bookmarks' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_select_cell", &lay::MainWindow::cm_select_cell,
+    "@brief 'cm_select_cell' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_select_current_cell", &lay::MainWindow::cm_select_current_cell,
+    "@brief 'cm_select_current_cell' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_print", &lay::MainWindow::cm_print,
+    "@brief 'cm_print' action (bound to a menu)\n"
+    "This method has been added in version 0.21.13."
+  ) +
+  gsi::method ("cm_exit", &lay::MainWindow::cm_exit,
+    "@brief 'cm_exit' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_view_log", &lay::MainWindow::cm_view_log,
+    "@brief 'cm_view_log' action (bound to a menu)"
+    "\nThis method has been added in version 0.20."
+  ) +
+  gsi::method ("cm_bookmark_view", &lay::MainWindow::cm_bookmark_view,
+    "@brief 'cm_bookmark_view' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_manage_bookmarks", &lay::MainWindow::cm_manage_bookmarks,
+    "@brief 'cm_manage_bookmarks' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_macro_editor", &lay::MainWindow::cm_macro_editor,
+    "@brief 'cm_macro_editor' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_goto_position", &lay::MainWindow::cm_goto_position,
+    "@brief 'cm_goto_position' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_help_about", &lay::MainWindow::cm_help_about,
+    "@brief 'cm_help_about' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_technologies", &lay::MainWindow::cm_technologies,
+    "@brief 'cm_technologies' action (bound to a menu)"
+    "\nThis method has been added in version 0.22."
+  ) +
+  gsi::method ("cm_packages", &lay::MainWindow::cm_packages,
+    "@brief 'cm_packages' action (bound to a menu)"
+    "\nThis method has been added in version 0.25."
+  ) +
+  gsi::method ("cm_open_too", &lay::MainWindow::cm_open_too,
+    "@brief 'cm_open_too' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_open_new_view", &lay::MainWindow::cm_open_new_view,
+    "@brief 'cm_open_new_view' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_open", &lay::MainWindow::cm_open,
+    "@brief 'cm_open' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_pull_in", &lay::MainWindow::cm_pull_in,
+    "@brief 'cm_pull_in' action (bound to a menu)"
+    "\nThis method has been added in version 0.20."
+  ) +
+  gsi::method ("cm_reader_options", &lay::MainWindow::cm_reader_options,
+    "@brief 'cm_reader_options' action (bound to a menu)"
+    "\nThis method has been added in version 0.18."
+  ) +
+  gsi::method ("cm_new_layout", &lay::MainWindow::cm_new_layout,
+    "@brief 'cm_new_layout' action (bound to a menu)"
+    "\nThis method has been added in version 0.18."
+  ) +
+  gsi::method ("cm_new_panel", &lay::MainWindow::cm_new_panel,
+    "@brief 'cm_new_panel' action (bound to a menu)"
+    "\nThis method has been added in version 0.20."
+  ) +
+  gsi::method ("cm_adjust_origin", &lay::MainWindow::cm_adjust_origin,
+    "@brief 'cm_adjust_origin' action (bound to a menu)"
+    "\nThis method has been added in version 0.18."
+  ) +
+  gsi::method ("cm_new_cell", &lay::MainWindow::cm_new_cell,
+    "@brief 'cm_new_cell' action (bound to a menu)"
+    "\nThis method has been added in version 0.18."
+  ) +
+  gsi::method ("cm_new_layer", &lay::MainWindow::cm_new_layer,
+    "@brief 'cm_new_layer' action (bound to a menu)"
+    "\nThis method has been added in version 0.18."
+  ) +
+  gsi::method ("cm_clear_layer", &lay::MainWindow::cm_clear_layer,
+    "@brief 'cm_clear_layer' action (bound to a menu)"
+    "\nThis method has been added in version 0.18."
+  ) +
+  gsi::method ("cm_delete_layer", &lay::MainWindow::cm_delete_layer,
+    "@brief 'cm_delete_layer' action (bound to a menu)"
+    "\nThis method has been added in version 0.18."
+  ) +
+  gsi::method ("cm_edit_layer", &lay::MainWindow::cm_edit_layer,
+    "@brief 'cm_edit_layer' action (bound to a menu)"
+    "\nThis method has been added in version 0.18."
+  ) +
+  gsi::method ("cm_copy_layer", &lay::MainWindow::cm_copy_layer,
+    "@brief 'cm_copy_layer' action (bound to a menu)"
+    "\nThis method has been added in version 0.22."
+  ) +
+  gsi::method ("cm_sel_flip_x", &lay::MainWindow::cm_sel_flip_x,
+    "@brief 'cm_sel_flip_x' action (bound to a menu)"
+    "\nThis method has been added in version 0.18."
+  ) +
+  gsi::method ("cm_sel_flip_y", &lay::MainWindow::cm_sel_flip_y,
+    "@brief 'cm_sel_flip_y' action (bound to a menu)"
+    "\nThis method has been added in version 0.18."
+  ) +
+  gsi::method ("cm_sel_rot_cw", &lay::MainWindow::cm_sel_rot_cw,
+    "@brief 'cm_sel_rot_cw' action (bound to a menu)"
+    "\nThis method has been added in version 0.18."
+  ) +
+  gsi::method ("cm_sel_rot_ccw", &lay::MainWindow::cm_sel_rot_ccw,
+    "@brief 'cm_sel_rot_ccw' action (bound to a menu)"
+    "\nThis method has been added in version 0.18."
+  ) +
+  gsi::method ("cm_sel_free_rot", &lay::MainWindow::cm_sel_free_rot,
+    "@brief 'cm_sel_free_rot' action (bound to a menu)"
+    "\nThis method has been added in version 0.18."
+  ) +
+  gsi::method ("cm_sel_scale", &lay::MainWindow::cm_sel_scale,
+    "@brief 'cm_sel_scale' action (bound to a menu)"
+    "\nThis method has been added in version 0.18."
+  ) +
+  gsi::method ("cm_sel_move", &lay::MainWindow::cm_sel_move,
+    "@brief 'cm_sel_move' action (bound to a menu)"
+    "\nThis method has been added in version 0.18."
+  ) +
+  gsi::method ("cm_sel_move_to", &lay::MainWindow::cm_sel_move_to,
+    "@brief 'cm_sel_move_to' action (bound to a menu)"
+    "\nThis method has been added in version 0.24."
+  ) +
+  gsi::method ("cm_lv_new_tab", &lay::MainWindow::cm_lv_new_tab,
+    "@brief 'cm_lv_new_tab' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_lv_remove_tab", &lay::MainWindow::cm_lv_remove_tab,
+    "@brief 'cm_lv_remove_tab' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_lv_rename_tab", &lay::MainWindow::cm_lv_rename_tab,
+    "@brief 'cm_lv_rename_tab' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_lv_hide", &lay::MainWindow::cm_lv_hide,
+    "@brief 'cm_lv_hide' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_lv_hide_all", &lay::MainWindow::cm_lv_hide_all,
+    "@brief 'cm_lv_hide_all' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_lv_show", &lay::MainWindow::cm_lv_show,
+    "@brief 'cm_lv_show' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_lv_show_all", &lay::MainWindow::cm_lv_show_all,
+    "@brief 'cm_lv_show_all' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_lv_show_only", &lay::MainWindow::cm_lv_show_only,
+    "@brief 'cm_lv_show_only' action (bound to a menu)"
+    "\nThis method has been added in version 0.20."
+  ) +
+  gsi::method ("cm_lv_rename", &lay::MainWindow::cm_lv_rename,
+    "@brief 'cm_lv_rename' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_lv_select_all", &lay::MainWindow::cm_lv_select_all,
+    "@brief 'cm_lv_select_all' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_lv_delete", &lay::MainWindow::cm_lv_delete,
+    "@brief 'cm_lv_delete' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_lv_insert", &lay::MainWindow::cm_lv_insert,
+    "@brief 'cm_lv_insert' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_lv_group", &lay::MainWindow::cm_lv_group,
+    "@brief 'cm_lv_group' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_lv_ungroup", &lay::MainWindow::cm_lv_ungroup,
+    "@brief 'cm_lv_ungroup' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_lv_source", &lay::MainWindow::cm_lv_source,
+    "@brief 'cm_lv_source' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_lv_sort_by_name", &lay::MainWindow::cm_lv_sort_by_name,
+    "@brief 'cm_lv_sort_by_name' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_lv_sort_by_ild", &lay::MainWindow::cm_lv_sort_by_ild,
+    "@brief 'cm_lv_sort_by_ild' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_lv_sort_by_idl", &lay::MainWindow::cm_lv_sort_by_idl,
+    "@brief 'cm_lv_sort_by_idl' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_lv_sort_by_ldi", &lay::MainWindow::cm_lv_sort_by_ldi,
+    "@brief 'cm_lv_sort_by_ldi' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_lv_sort_by_dli", &lay::MainWindow::cm_lv_sort_by_dli,
+    "@brief 'cm_lv_sort_by_dli' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_lv_regroup_by_index", &lay::MainWindow::cm_lv_regroup_by_index,
+    "@brief 'cm_lv_regroup_by_index' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_lv_regroup_by_datatype", &lay::MainWindow::cm_lv_regroup_by_datatype,
+    "@brief 'cm_lv_regroup_by_datatype' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_lv_regroup_by_layer", &lay::MainWindow::cm_lv_regroup_by_layer,
+    "@brief 'cm_lv_regroup_by_layer' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_lv_regroup_flatten", &lay::MainWindow::cm_lv_regroup_flatten,
+    "@brief 'cm_lv_regroup_flatten' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_lv_expand_all", &lay::MainWindow::cm_lv_expand_all,
+    "@brief 'cm_lv_expand_all' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_lv_add_missing", &lay::MainWindow::cm_lv_add_missing,
+    "@brief 'cm_lv_add_missing' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_lv_remove_unused", &lay::MainWindow::cm_lv_remove_unused,
+    "@brief 'cm_lv_remove_unused' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_cell_delete", &lay::MainWindow::cm_cell_delete,
+    "@brief 'cm_cell_delete' action (bound to a menu)"
+    "\nThis method has been added in version 0.18."
+  ) +
+  gsi::method ("cm_cell_rename", &lay::MainWindow::cm_cell_rename,
+    "@brief 'cm_cell_rename' action (bound to a menu)"
+    "\nThis method has been added in version 0.18."
+  ) +
+  gsi::method ("cm_cell_copy", &lay::MainWindow::cm_cell_copy,
+    "@brief 'cm_cell_copy' action (bound to a menu)"
+    "\nThis method has been added in version 0.20."
+  ) +
+  gsi::method ("cm_cell_cut", &lay::MainWindow::cm_cell_cut,
+    "@brief 'cm_cell_cut' action (bound to a menu)"
+    "\nThis method has been added in version 0.20."
+  ) +
+  gsi::method ("cm_cell_paste", &lay::MainWindow::cm_cell_paste,
+    "@brief 'cm_cell_paste' action (bound to a menu)"
+    "\nThis method has been added in version 0.20."
+  ) +
+  gsi::method ("cm_cell_select", &lay::MainWindow::cm_cell_select,
+    "@brief 'cm_cell_select' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_open_current_cell", &lay::MainWindow::cm_open_current_cell,
+    "@brief 'cm_open_current_cell' action (bound to a menu)"
+    "\nThis method has been added in version 0.18."
+  ) +
+  gsi::method ("cm_save_current_cell_as", &lay::MainWindow::cm_save_current_cell_as,
+    "@brief 'cm_save_current_cell_as' action (bound to a menu)"
+    "\nThis method has been added in version 0.18."
+  ) +
+  gsi::method ("cm_cell_hide", &lay::MainWindow::cm_cell_hide,
+    "@brief 'cm_cell_hide' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_cell_flatten", &lay::MainWindow::cm_cell_flatten,
+    "@brief 'cm_cell_flatten' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_cell_show", &lay::MainWindow::cm_cell_show,
+    "@brief 'cm_cell_show' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_cell_show_all", &lay::MainWindow::cm_cell_show_all,
+    "@brief 'cm_cell_show_all' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_navigator_close", &lay::MainWindow::cm_navigator_close,
+    "@brief 'cm_navigator_close' action (bound to a menu)"
+  ) +
+  gsi::method ("cm_navigator_freeze", &lay::MainWindow::cm_navigator_freeze,
+    "@brief 'cm_navigator_freeze' action (bound to a menu)"
+  ),
+
   "@brief The main application window and central controller object\n"
   "\n"
   "This object first is the main window but also the main controller. The main controller "
@@ -942,23 +784,5 @@ Class<lay::MainWindow> decl_MainWindow (QT_EXTERNAL_BASE (QMainWindow) "lay", "M
   "of the program."
 );
 
-//  extend lay::LayoutView with a "close" method
-
-static void lv_close (lay::LayoutView *view)
-{
-  int index = lay::MainWindow::instance ()->index_of (view);
-  if (index >= 0) {
-    lay::MainWindow::instance ()->close_view (index);
-  }
 }
 
-static
-gsi::ClassExt<lay::LayoutView> ext_layout_view (
-  gsi::method_ext ("close", &lv_close,
-    "@brief Closes the view\n"
-    "\nThis method has been added in version 0.27.\n"
-  ),
-  ""
-);
-
-}

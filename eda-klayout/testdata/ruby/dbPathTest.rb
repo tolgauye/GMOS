@@ -1,7 +1,7 @@
 # encoding: UTF-8
 
 # KLayout Layout Viewer
-# Copyright (C) 2006-2025 Matthias Koefferlein
+# Copyright (C) 2006-2019 Matthias Koefferlein
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -119,14 +119,14 @@ class DBPath_TestClass < TestBase
 
     a = RBA::Path::new
     assert_equal( a.to_s, "() w=0 bx=0 ex=0 r=false" )
-    assert_equal( a.area.to_f.to_s, "0.0" )
+    assert_equal( a.area.to_s, "0" )
     assert_equal( a.length.to_s, "0" )
     assert_equal( RBA::Path::from_s(a.to_s).to_s, a.to_s )
 
     b = a.dup 
     a = RBA::Path::new( [ RBA::Point::new( 0, 10 ), RBA::Point::new( 10, 50 ) ], 25 )
     assert_equal( a.to_s, "(0,10;10,50) w=25 bx=0 ex=0 r=false" )
-    assert_equal( a.area.to_f.to_s, "1025.0" )
+    assert_equal( a.area.to_s, "1025" )
     assert_equal( a.length.to_s, "41" )
     assert_equal( RBA::Path::from_s(a.to_s).to_s, a.to_s )
     c = a.dup 
@@ -326,46 +326,6 @@ class DBPath_TestClass < TestBase
     assert_equal(h[p3d], "p3d")
     assert_equal(h[p4a], "p4a")
     assert_equal(h[p4b], "p4b")
-
-  end
-
-  def test_pathWithProperties
-
-    s = RBA::PathWithProperties::new
-    assert_equal(s.to_s, "() w=0 bx=0 ex=0 r=false props={}")
-
-    s = RBA::PathWithProperties::new(RBA::Path::new([ [0,0], [100, 0] ], 100), { 1 => "one" })
-    assert_equal(s.to_s, "(0,0;100,0) w=100 bx=0 ex=0 r=false props={1=>one}")
-
-    pid = RBA::Layout::properties_id({ 1 => "one" })
-    s = RBA::PathWithProperties::new(RBA::Path::new([ [0,0], [100, 0] ], 100), pid)
-    assert_equal(s.to_s, "(0,0;100,0) w=100 bx=0 ex=0 r=false props={1=>one}")
-    assert_equal((RBA::CplxTrans::new(0.001) * s).to_s, "(0,0;0.1,0) w=0.1 bx=0 ex=0 r=false props={1=>one}")
-    assert_equal(s.property(1), "one")
-    assert_equal(s.properties, { 1 => "one" })
-    s.set_property(1, "xxx")
-    assert_equal(s.to_s, "(0,0;100,0) w=100 bx=0 ex=0 r=false props={1=>xxx}")
-    s.delete_property(1)
-    assert_equal(s.to_s, "(0,0;100,0) w=100 bx=0 ex=0 r=false props={}")
-    assert_equal(s.property(1), nil)
-
-    s = RBA::DPathWithProperties::new
-    assert_equal(s.to_s, "() w=0 bx=0 ex=0 r=false props={}")
-
-    s = RBA::DPathWithProperties::new(RBA::DPath::new([ [0,0], [100, 0] ], 100), { 1 => "one" })
-    assert_equal(s.to_s, "(0,0;100,0) w=100 bx=0 ex=0 r=false props={1=>one}")
-
-    pid = RBA::Layout::properties_id({ 1 => "one" })
-    s = RBA::DPathWithProperties::new(RBA::DPath::new([ [0,0], [100, 0] ], 100), pid)
-    assert_equal(s.to_s, "(0,0;100,0) w=100 bx=0 ex=0 r=false props={1=>one}")
-    assert_equal((RBA::VCplxTrans::new(2.5) * s).to_s, "(0,0;250,0) w=250 bx=0 ex=0 r=false props={1=>one}")
-    assert_equal(s.property(1), "one")
-    assert_equal(s.properties, { 1 => "one" })
-    s.set_property(1, "xxx")
-    assert_equal(s.to_s, "(0,0;100,0) w=100 bx=0 ex=0 r=false props={1=>xxx}")
-    s.delete_property(1)
-    assert_equal(s.to_s, "(0,0;100,0) w=100 bx=0 ex=0 r=false props={}")
-    assert_equal(s.property(1), nil)
 
   end
 

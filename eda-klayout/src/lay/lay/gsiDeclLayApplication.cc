@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -24,7 +24,6 @@
 #include "layMainWindow.h"
 #include "laySignalHandler.h"
 #include "gsiDecl.h"
-#include "gsiSignals.h"
 #include "tlArch.h"
 
 #if defined(HAVE_QTBINDINGS)
@@ -83,32 +82,21 @@ static std::string arch (C *)
 }
 
 template <class C>
-static std::string version (C *)
-{
-  return C::version ();
-}
-
-template <class C>
-static void add_macro_category (C *c, const std::string &name, const std::string &description, const std::vector<std::string> &folders)
-{
-  c->add_macro_category (name, description, folders);
-}
-
-template <class C>
 static gsi::Methods application_methods ()
 {
   return
-    method<int> ("crash_me", &crash_me, gsi::arg ("mode"), "@hide") +
-    method<QString, const QString &, size_t> ("symname", &lay::get_symbol_name_from_address, gsi::arg ("mod_name"), gsi::arg ("addr"), "@hide") +
+    method<int> ("crash_me", &crash_me, "@hide") +
+    method<QString, const QString &, size_t> ("symname", &lay::get_symbol_name_from_address, "@hide") +
     method<C, bool> ("is_editable?", &C::is_editable,
       "@brief Returns true if the application is in editable mode\n"
     ) +
-    //  TODO: basically this method belongs to Dispatcher (aka MainWindow).
-    //  There is separate declaration for Dispatcher which we have to synchronize
+    //  TODO: basically this method belongs to PluginRoot (aka MainWindow).
+    //  There is separate declaration for PluginRoot which we have to synchronize
     //  with this method.
-    method<C, std::string, const std::string &> ("get_config", &C::get_config, gsi::arg ("name"),
+    method<C, std::string, const std::string &> ("get_config", &C::get_config,
       "@brief Gets the value for a configuration parameter\n"
       "\n"
+      "@args name\n"
       "@param name The name of the configuration parameter whose value shall be obtained (a string)\n"
       "\n"
       "@return The value of the parameter\n"
@@ -121,8 +109,8 @@ static gsi::Methods application_methods ()
       "to the configuration parameter. The values delivered by this method correspond to the values stored "
       "in the configuration file "
     ) +
-    //  TODO: basically this method belongs to Dispatcher (aka MainWindow).
-    //  There is separate declaration for Dispatcher which we have to synchronize
+    //  TODO: basically this method belongs to PluginRoot (aka MainWindow).
+    //  There is separate declaration for PluginRoot which we have to synchronize
     //  with this method.
     method<C, std::vector<std::string> > ("get_config_names", &C::get_config_names,
       "@brief Gets the configuration parameter names\n"
@@ -132,12 +120,13 @@ static gsi::Methods application_methods ()
       "This method returns the names of all known configuration parameters. These names can be used to "
       "get and set configuration parameter values."
     ) +
-    //  TODO: basically this method belongs to Dispatcher (aka MainWindow).
-    //  There is separate declaration for Dispatcher which we have to synchronize
+    //  TODO: basically this method belongs to PluginRoot (aka MainWindow).
+    //  There is separate declaration for PluginRoot which we have to synchronize
     //  with this method.
-    method<C, const std::string &, const std::string &> ("set_config", &C::set_config, gsi::arg ("name"), gsi::arg ("value"),
+    method<C, const std::string &, const std::string &> ("set_config", &C::set_config,
       "@brief Sets a configuration parameter with the given name to the given value\n"
       "\n"
+      "@args name, value\n"
       "@param name The name of the configuration parameter to set\n"
       "@param value The value to which to set the configuration parameter\n"
       "\n"
@@ -149,8 +138,8 @@ static gsi::Methods application_methods ()
       "It is possible to write an arbitrary name/value pair into the configuration database which then is "
       "written to the configuration file."
     ) +
-    //  TODO: basically this method belongs to Dispatcher (aka MainWindow).
-    //  There is separate declaration for Dispatcher which we have to synchronize
+    //  TODO: basically this method belongs to PluginRoot (aka MainWindow).
+    //  There is separate declaration for PluginRoot which we have to synchronize
     //  with this method.
     method<C> ("commit_config", &C::config_end,
       "@brief Commits the configuration settings\n"
@@ -161,24 +150,26 @@ static gsi::Methods application_methods ()
       "\n"
       "This method has been introduced in version 0.25.\n"
     ) +
-    //  TODO: basically this method belongs to Dispatcher (aka MainWindow).
-    //  There is separate declaration for Dispatcher which we have to synchronize
+    //  TODO: basically this method belongs to PluginRoot (aka MainWindow).
+    //  There is separate declaration for PluginRoot which we have to synchronize
     //  with this method.
-    method<C, bool, const std::string &> ("write_config", &C::write_config, gsi::arg ("file_name"),
+    method<C, bool, const std::string &> ("write_config", &C::write_config,
       "@brief Writes configuration to a file\n"
+      "@args file_name\n"
       "@return A value indicating whether the operation was successful\n"
       "\n"
       "If the configuration file cannot be written, \n"
       "is returned but no exception is thrown.\n"
     ) +
-    //  TODO: basically this method belongs to Dispatcher (aka MainWindow).
-    //  There is separate declaration for Dispatcher which we have to synchronize
+    //  TODO: basically this method belongs to PluginRoot (aka MainWindow).
+    //  There is separate declaration for PluginRoot which we have to synchronize
     //  with this method.
-    method<C, bool, const std::string &> ("read_config", &C::read_config, gsi::arg ("file_name"),
+    method<C, bool, const std::string &> ("read_config", &C::read_config,
       "@brief Reads the configuration from a file\n"
+      "@args file_name\n"
       "@return A value indicating whether the operation was successful\n"
       "\n"
-      "This method silently does nothing, if the config file does not\n"
+      "This method siletly does nothing, if the config file does not\n"
       "exist. If it does and an error occurred, the error message is printed\n"
       "on stderr. In both cases, false is returned.\n"
     ) +
@@ -217,7 +208,8 @@ static gsi::Methods application_methods ()
       "\n"
       "This method has been added in version 0.22."
     ) +
-    method<C, int> ("exit", &C::exit, gsi::arg ("result"),
+    method<C, int> ("exit", &C::exit,
+      "@args result\n"
       "@brief Ends the application with the given exit status\n"
       "\n"
       "This method should be called instead of simply shutting down the process. It performs some "
@@ -226,32 +218,18 @@ static gsi::Methods application_methods ()
       "\n"
       "This method has been added in version 0.22."
     ) +
-    method_ext<C, std::string> ("version", &version<C>,
+    method<C, std::string> ("version", &C::version,
       "@brief Returns the application's version string\n"
     ) +
     method_ext<C, std::string> ("arch", &arch<C>,
       "@brief Returns the architecture string\n"
       "This method has been introduced in version 0.25."
     ) +
-    method_ext<C, const std::string &, const std::string &, const std::vector<std::string> &> ("add_macro_category", &add_macro_category<C>, gsi::arg ("name"), gsi::arg ("description"), gsi::arg ("folders"),
-      "@brief Creates a new macro category\n"
-      "Creating a new macro category is only possible during the autorun_early stage. "
-      "The new macro category must correspond to an interpreter registered at the same stage.\n"
-      "This method has been introduced in version 0.28."
-    ) +
     method<C *> ("instance", &C::instance,
       "@brief Return the singleton instance of the application\n"
       "\n"
       "There is exactly one instance of the application. This instance can be obtained with this "
       "method."
-    ) +
-    event<C> ("on_salt_changed", &C::salt_changed_event,
-      "@brief This event is triggered when the package status changes.\n"
-      "\n"
-      "Register to this event if you are interested in package changes - i.e. installation or removal of packages or "
-      "package updates.\n"
-      "\n"
-      "This event has been introduced in version 0.28."
     )
   ;
 }
@@ -275,8 +253,8 @@ static std::string application_doc ()
 void
 LAY_PUBLIC make_application_decl (bool non_gui_mode)
 {
-  static std::unique_ptr<Class<lay::GuiApplication> > gui_app_decl;
-  static std::unique_ptr<Class<lay::NonGuiApplication> > non_gui_app_decl;
+  static std::auto_ptr<Class<lay::GuiApplication> > gui_app_decl;
+  static std::auto_ptr<Class<lay::NonGuiApplication> > non_gui_app_decl;
 
   if (non_gui_mode) {
 
@@ -308,3 +286,4 @@ LAY_PUBLIC make_application_decl (bool non_gui_mode)
 }
 
 }
+

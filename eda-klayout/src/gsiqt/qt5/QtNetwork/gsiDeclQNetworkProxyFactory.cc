@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -32,6 +32,7 @@
 #include <QNetworkProxyQuery>
 #include "gsiQt.h"
 #include "gsiQtNetworkCommon.h"
+#include "gsiDeclQtNetworkTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -134,21 +135,6 @@ static void _call_f_systemProxyForQuery_3220 (const qt_gsi::GenericStaticMethod 
 }
 
 
-// static bool QNetworkProxyFactory::usesSystemConfiguration()
-
-
-static void _init_f_usesSystemConfiguration_0 (qt_gsi::GenericStaticMethod *decl)
-{
-  decl->set_return<bool > ();
-}
-
-static void _call_f_usesSystemConfiguration_0 (const qt_gsi::GenericStaticMethod * /*decl*/, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  ret.write<bool > ((bool)QNetworkProxyFactory::usesSystemConfiguration ());
-}
-
-
 namespace gsi
 {
 
@@ -159,7 +145,6 @@ static gsi::Methods methods_QNetworkProxyFactory () {
   methods += new qt_gsi::GenericStaticMethod ("setApplicationProxyFactory", "@brief Static method void QNetworkProxyFactory::setApplicationProxyFactory(QNetworkProxyFactory *factory)\nThis method is static and can be called without an instance.", &_init_f_setApplicationProxyFactory_2723, &_call_f_setApplicationProxyFactory_2723);
   methods += new qt_gsi::GenericStaticMethod ("setUseSystemConfiguration", "@brief Static method void QNetworkProxyFactory::setUseSystemConfiguration(bool enable)\nThis method is static and can be called without an instance.", &_init_f_setUseSystemConfiguration_864, &_call_f_setUseSystemConfiguration_864);
   methods += new qt_gsi::GenericStaticMethod ("systemProxyForQuery", "@brief Static method QList<QNetworkProxy> QNetworkProxyFactory::systemProxyForQuery(const QNetworkProxyQuery &query)\nThis method is static and can be called without an instance.", &_init_f_systemProxyForQuery_3220, &_call_f_systemProxyForQuery_3220);
-  methods += new qt_gsi::GenericStaticMethod ("usesSystemConfiguration", "@brief Static method bool QNetworkProxyFactory::usesSystemConfiguration()\nThis method is static and can be called without an instance.", &_init_f_usesSystemConfiguration_0, &_call_f_usesSystemConfiguration_0);
   return methods;
 }
 
@@ -250,8 +235,8 @@ gsi::Class<QNetworkProxyFactory> &qtdecl_QNetworkProxyFactory ();
 static gsi::Methods methods_QNetworkProxyFactory_Adaptor () {
   gsi::Methods methods;
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QNetworkProxyFactory::QNetworkProxyFactory()\nThis method creates an object of class QNetworkProxyFactory.", &_init_ctor_QNetworkProxyFactory_Adaptor_0, &_call_ctor_QNetworkProxyFactory_Adaptor_0);
-  methods += new qt_gsi::GenericMethod ("queryProxy", "@brief Virtual method QList<QNetworkProxy> QNetworkProxyFactory::queryProxy(const QNetworkProxyQuery &query)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_queryProxy_3220_1, &_call_cbs_queryProxy_3220_1);
-  methods += new qt_gsi::GenericMethod ("queryProxy", "@hide", false, &_init_cbs_queryProxy_3220_1, &_call_cbs_queryProxy_3220_1, &_set_callback_cbs_queryProxy_3220_1);
+  methods += new qt_gsi::GenericMethod ("queryProxy", "@hide", false, &_init_cbs_queryProxy_3220_1, &_call_cbs_queryProxy_3220_1);
+  methods += new qt_gsi::GenericMethod ("queryProxy", "@brief Virtual method QList<QNetworkProxy> QNetworkProxyFactory::queryProxy(const QNetworkProxyQuery &query)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_queryProxy_3220_1, &_call_cbs_queryProxy_3220_1, &_set_callback_cbs_queryProxy_3220_1);
   return methods;
 }
 

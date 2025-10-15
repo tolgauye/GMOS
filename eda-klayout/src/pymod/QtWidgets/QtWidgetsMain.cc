@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -22,5 +22,8 @@
 
 #include "../pymodHelper.h"
 
-#include "QtWidgetsMain.h"
+//  To force linking of the QtWidgets module
+#include "../../gsiqt/qtbasic/gsiQtWidgetsExternals.h"
+FORCE_LINK_GSI_QTWIDGETS
+
 DEFINE_PYMOD(QtWidgets, "QtWidgets", "KLayout/Qt module 'QtWidgets'")

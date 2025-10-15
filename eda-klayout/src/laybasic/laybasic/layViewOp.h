@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -26,19 +26,20 @@
 #define HDR_layViewOp
 
 #include "laybasicCommon.h"
-#include "tlColor.h"
 
 #include <stdint.h>
 
 namespace lay
 {
 
+typedef unsigned int color_t; 
+
 const unsigned int wordlen  = 32;
 const unsigned int wordbits = 5;
 const unsigned int wordones = 0xffffffff;
 
 /**
- *  @brief The operator that describes how a bitmap is combined with the others on the stack
+ *  @brief The operator that decribes how a bitmap is combined with the others on the stack
  *
  *  Each operator is described by these properties:
  *    - a mode (copy, or, and, xor) which describes what boolean operation to use
@@ -47,7 +48,7 @@ const unsigned int wordones = 0xffffffff;
  *    - a bitmap index
  *  
  *  The bitmap index describes which bitmap to take the data from.
- *  Usually bitmaps and combination operators are organized in two vectors: one for the
+ *  Usually bitmaps and combination operators are organised in two vectors: one for the
  *  bitmaps and one for the operators. By default, each operator is associated with the
  *  corresponding bitmap. 
  *
@@ -80,12 +81,12 @@ public:
   /**
    *  @brief The constructor given all the parameters to describe the operator
    */
-  ViewOp (tl::color_t color, Mode mode, unsigned int line_style_index, unsigned int dither_index, unsigned int dither_offset, Shape shape = Rect, int width = 1, int bitmap_index = -1);
+  ViewOp (color_t color, Mode mode, unsigned int line_style_index, unsigned int dither_index, unsigned int dither_offset, Shape shape = Rect, int width = 1, int bitmap_index = -1);
   
   /**
    *  @brief Internal: provide the mask for the "or" part of the operation
    */
-  tl::color_t ormask () const
+  color_t ormask () const
   { 
     return m_or; 
   }
@@ -93,7 +94,7 @@ public:
   /**
    *  @brief Internal: provide the mask for the "and" part of the operation
    */
-  tl::color_t andmask () const
+  color_t andmask () const
   { 
     return m_and; 
   }
@@ -101,7 +102,7 @@ public:
   /**
    *  @brief Internal: provide the mask for the "xor" part of the operation
    */
-  tl::color_t xormask () const
+  color_t xormask () const
   { 
     return m_xor; 
   }
@@ -237,16 +238,16 @@ public:
   }
 
 private:
-  tl::color_t m_or;
-  tl::color_t m_and;
-  tl::color_t m_xor;
+  color_t m_or;
+  color_t m_and;
+  color_t m_xor;
   unsigned int m_line_style_index;
   unsigned int m_dither_index, m_dither_offset;
   Shape m_shape;
   int m_width;
   int m_bitmap_index;
 
-  void init (tl::color_t color, Mode mode);
+  void init (color_t color, Mode mode);
 };
 
 } // namespace lay

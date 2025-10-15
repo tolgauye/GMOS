@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -61,12 +61,21 @@ public:
   /**
    *  @brief Increment the reference counter
    */
-  void add_ref ();
+  void add_ref () 
+  {
+     ++m_ref_count;
+  }
  
   /**
    *  @brief Decrement the reference counter and remove the object when it reaches 0
    */
-  void remove_ref ();
+  void remove_ref ()
+  {
+     --m_ref_count;
+     if (m_ref_count == 0) {
+       delete this;
+     }
+  }
 
   /**
    *  @brief Assignment of a std::string object
@@ -93,6 +102,14 @@ public:
     return m_value;
   }
 
+  /**
+   *  @brief Access to the repository the strings are in
+   */
+  const StringRepository *rep () const
+  {
+    return mp_rep;
+  }
+
   void mem_stat (MemStatistics *stat, MemStatistics::purpose_t purpose, int cat, bool no_self = false, void *parent = 0) const
   {
     if (! no_self) {
@@ -103,15 +120,15 @@ public:
 
 private:
   friend class StringRepository;
-
+  StringRepository *mp_rep;
   std::string m_value;
   size_t m_ref_count;
 
   /**
    *  @brief Hidden constructor attaching the reference to a repository
    */
-  StringRef ()
-    : m_ref_count (0)
+  StringRef (StringRepository *rep)
+    : mp_rep (rep), m_ref_count (0)
   {
     //  .. nothing yet ..
   }
@@ -142,18 +159,25 @@ inline void mem_stat (MemStatistics *stat, MemStatistics::purpose_t purpose, int
 class DB_PUBLIC StringRepository
 {
 public:
-  typedef std::set<StringRef *> string_refs_type;
-  typedef string_refs_type::const_iterator iterator;
-
   /**
    *  @brief Constructor
    */
-  StringRepository ();
+  StringRepository ()
+  {
+    //  .. nothing yet ..
+  }
 
   /**
    *  @brief Destructor
    */
-  ~StringRepository ();
+  ~StringRepository ()
+  {
+    std::set<StringRef *> st;
+    m_string_refs.swap (st);
+    for (std::set<StringRef *>::const_iterator s = st.begin (); s != st.end (); ++s) {
+      delete *s;
+    }
+  }
 
   /** 
    *  @brief Create a string reference object.
@@ -169,27 +193,38 @@ public:
    *  A string reference's text can be set by using the change_string_ref
    *  method.
    */
-  const StringRef *create_string_ref ();
+  const StringRef *create_string_ref ()
+  {
+    StringRef *ref = new StringRef (this);
+    m_string_refs.insert (ref);
+    return ref;
+  }
 
   /**
    *  @brief Change the string associated with a StringRef
    */
-  static void change_string_ref (const StringRef *ref, const std::string &s)
+  void change_string_ref (const StringRef *ref, const std::string &s)
   {
     *(const_cast<StringRef *> (ref)) = s;
   }
 
   /**
-   *  @brief The singleton instance of the string repository
+   *  @brief For debugging purposes: get the number of entries
    */
-  static StringRepository *instance ();
-
-  /**
-   *  @brief For testing purposes: size of the repository
-   */
-  size_t size ()
+  size_t size () const
   {
     return m_string_refs.size ();
+  }
+
+  void mem_stat (MemStatistics *stat, MemStatistics::purpose_t purpose, int cat, bool no_self = false, void *parent = 0) const
+  {
+    if (! no_self) {
+      stat->add (typeid (*this), (void *) this, sizeof (*this), sizeof (*this), parent, purpose, cat);
+    }
+    db::mem_stat (stat, purpose, cat, &m_string_refs, true, (void *) this);
+    for (std::set<StringRef *>::const_iterator r = m_string_refs.begin (); r != m_string_refs.end (); ++r) {
+      db::mem_stat (stat, purpose, cat, **r, true, parent);
+    }
   }
 
 private:
@@ -197,8 +232,21 @@ private:
 
   std::set<StringRef *> m_string_refs;
 
-  void unregister_ref (StringRef *ref);
+  void unregister_ref (StringRef *ref)
+  {
+    if (! m_string_refs.empty ()) {
+      m_string_refs.erase (ref);
+    }
+  }
 };
+
+/**
+ *  @brief Collect memory statistics
+ */
+inline void mem_stat (MemStatistics *stat, MemStatistics::purpose_t purpose, int cat, const StringRepository &x, bool no_self = false, void *parent = 0)
+{
+  x.mem_stat (stat, purpose, cat, no_self, parent);
+}
 
 /**
  *  @brief A text object
@@ -209,7 +257,7 @@ private:
  */
 
 template <class C>
-class DB_PUBLIC text
+class DB_PUBLIC_TEMPLATE text
 {
 public:
   typedef C coord_type;
@@ -390,16 +438,23 @@ public:
    */
   void translate (const text<C> &d, db::generic_repository<C> &, db::ArrayRepository &)
   {
-    *this = d;
+    //  don't use StringRef's on translate - since those live in the source layout, we must not copy them
+    m_trans = d.m_trans;
+    m_size = d.m_size;
+    m_font = d.m_font;
+    m_halign = d.m_halign;
+    m_valign = d.m_valign;
+
+    string (d.string ());
   }
 
   /**
    *  @brief The (dummy) translation operator with transformation
    */
   template <class T>
-  void translate (const text<C> &d, const T &t, db::generic_repository<C> &, db::ArrayRepository &)
+  void translate (const text<C> &d, const T &t, db::generic_repository<C> &r, db::ArrayRepository &a)
   {
-    *this = d;
+    translate (d, r, a);
     transform (t);
   }
 
@@ -505,21 +560,6 @@ public:
   }
 
   /**
-   *  @brief Gets the StringRef object is there is one
-   *
-   *  If the string is a plain text kept internally, this method returns 0.
-   */
-  const StringRef *string_ref () const
-  {
-    size_t p = (size_t) mp_ptr;
-    if (p & 1) {
-      return reinterpret_cast<const StringRef *> (p - 1);
-    } else {
-      return 0;
-    }
-  }
-
-  /**
    *  @brief The transformation write accessor
    */
   void trans (const trans_type &t) 
@@ -614,8 +654,7 @@ public:
   text<C> &transform (const Tr &t)
   {
     typedef typename Tr::target_coord_type target_coord_type;
-    fixpoint_trans<coord_type> fp (t);
-    m_trans = simple_trans<target_coord_type> ((fp * m_trans.fp_trans ()).rot (), t (point_type () + m_trans.disp ()) - point<target_coord_type> ());
+    m_trans = simple_trans<target_coord_type> ((t.fp_trans () * m_trans.fp_trans ()).rot (), t (point_type () + m_trans.disp ()) - point<target_coord_type> ());
     m_size = t.ctrans (m_size);
     return *this;
   }
@@ -635,25 +674,14 @@ public:
   text<typename Tr::target_coord_type> transformed (const Tr &t) const
   {
     typedef typename Tr::target_coord_type target_coord_type;
-    fixpoint_trans<coord_type> fp (t);
     size_t p = (size_t) mp_ptr;
     if (p & 1) {
-      return text<target_coord_type> (reinterpret_cast<StringRef *> (p - 1), simple_trans<target_coord_type> ((fp * m_trans.fp_trans ()).rot (), t (point_type () + m_trans.disp ()) - point<target_coord_type> ()), t.ctrans (m_size), m_font, m_halign, m_valign);
+      return text<target_coord_type> (reinterpret_cast<StringRef *> (p - 1), simple_trans<target_coord_type> ((t.fp_trans () * m_trans.fp_trans ()).rot (), t (point_type () + m_trans.disp ()) - point<target_coord_type> ()), t.ctrans (m_size), m_font, m_halign, m_valign);
     } else if (mp_ptr) {
-      return text<target_coord_type> (mp_ptr, simple_trans<target_coord_type> ((fp * m_trans.fp_trans ()).rot (), t (point_type () + m_trans.disp ()) - point<target_coord_type> ()), t.ctrans (m_size), m_font, m_halign, m_valign);
+      return text<target_coord_type> (mp_ptr, simple_trans<target_coord_type> ((t.fp_trans () * m_trans.fp_trans ()).rot (), t (point_type () + m_trans.disp ()) - point<target_coord_type> ()), t.ctrans (m_size), m_font, m_halign, m_valign);
     } else {
-      return text<target_coord_type> (simple_trans<target_coord_type> ((fp * m_trans.fp_trans ()).rot (), t (point_type () + m_trans.disp ()) - point<target_coord_type> ()), t.ctrans (m_size), m_font, m_halign, m_valign);
+      return text<target_coord_type> (simple_trans<target_coord_type> ((t.fp_trans () * m_trans.fp_trans ()).rot (), t (point_type () + m_trans.disp ()) - point<target_coord_type> ()), t.ctrans (m_size), m_font, m_halign, m_valign);
     }
-  }
-
-  /**
-   *  @brief Returns the scaled path
-   */
-  db::text<db::DCoord>
-  scaled (double s) const
-  {
-    db::complex_trans<C, db::DCoord> ct (s);
-    return this->transformed (ct);
   }
 
   /**
@@ -693,7 +721,10 @@ public:
   /**
    *  @brief String conversion
    */
-  std::string to_string (double dbu = 0.0) const;
+  std::string to_string () const
+  {
+    return std::string ("(") + tl::to_quoted_string (string ()) + "," + m_trans.to_string () + ")";
+  }
 
   /**
    *  @brief Reduce the text
@@ -790,11 +821,24 @@ private:
       if (c != 0) {
         return c < 0;
       }
-    } else if (mp_ptr != b.mp_ptr) {
-      //  if references are present, use their pointers rather than the strings
-      return mp_ptr < b.mp_ptr;
+    } else {
+      if (mp_ptr != b.mp_ptr) {
+        //  if references are present, use their pointers rather than the strings
+        //  if they belong to the same collection
+        const StringRef *r1 = reinterpret_cast<const StringRef *> (mp_ptr - 1);
+        const StringRef *r2 = reinterpret_cast<const StringRef *> (b.mp_ptr - 1);
+        if (r1->rep () != r2->rep ()) {
+          int c = strcmp (r1->value ().c_str (), r2->value ().c_str ());
+          if (c != 0) {
+            return c < 0;
+          }
+        } else {
+          return mp_ptr < b.mp_ptr;
+        }
+      }
     }
 
+#if 1
     //  Compare size and presentation flags - without that, the text repository does not work properly.
     if (m_size != b.m_size) {
       return m_size < b.m_size;
@@ -808,6 +852,7 @@ private:
     if (m_valign != b.m_valign) {
       return m_valign < b.m_valign;
     }
+#endif
 
     return false;
   }
@@ -822,16 +867,33 @@ private:
       if (c != 0) {
         return false;
       }
-    } else if (mp_ptr != b.mp_ptr) {
-      //  if references are present, use their pointers rather than the strings
-      return false;
+    } else {
+      if (mp_ptr != b.mp_ptr) {
+        //  if references are present, use their pointers rather than the strings
+        //  if they belong to the same collection
+        const StringRef *r1 = reinterpret_cast<const StringRef *> (mp_ptr - 1);
+        const StringRef *r2 = reinterpret_cast<const StringRef *> (b.mp_ptr - 1);
+        if (r1->rep () != r2->rep ()) {
+          int c = strcmp (r1->value ().c_str (), r2->value ().c_str ());
+          if (c != 0) {
+            return false;
+          }
+        } else {
+          return false;
+        }
+      }
     }
 
+#if 1
     //  Compare size and presentation flags - without that, the text repository does not work properly.
     if (m_size != b.m_size) {
       return false;
     }
     return m_font == b.m_font && m_halign == b.m_halign && m_valign == b.m_valign;
+#else
+    //  Don't compare size, font and alignment
+    return true;
+#endif
   }
 };
 
@@ -934,6 +996,19 @@ struct text_ref
     // .. nothing yet ..
   }
 
+  /**
+   *  @brief The transformation translation constructor
+   *  
+   *  This constructor allows one to copy a text reference with a certain transformation
+   *  to one with another transformation
+   */
+  template <class TransIn>
+  text_ref (const text_ref<Text, TransIn> &ref)
+    : shape_ref<Text, Trans> (ref.ptr (), Trans (ref.trans ()))
+  {
+    // .. nothing yet ..
+  }
+
   /** 
    *  @brief Return the transformed object
    * 
@@ -942,18 +1017,9 @@ struct text_ref
   template <class TargetTrans>
   text_ref<Text, TargetTrans> transformed (const TargetTrans &t) const
   {
-    text_ref<Text, TargetTrans> tref (this->ptr (), this->trans ());
+    text_ref<Text, TargetTrans> tref (*this);
     tref.transform (t);
     return tref;
-  }
-
-  /**
-   *  @brief A dummy implementation of the "scaled" function for API compatibility
-   */
-  text_ref<Text, Trans> scaled (double) const
-  {
-    tl_assert (false); // not implemented
-    return *this;
   }
 };
 
@@ -983,10 +1049,11 @@ operator* (const TargetTr &t, const text_ref<Text, Tr> &p)
  *  @return The scaled text
  */
 template <class C>
-inline text<db::DCoord>
+inline text<double>
 operator* (const text<C> &t, double s)
 {
-  return t.scaled (s);
+  db::complex_trans<C, double> ct (s);
+  return ct * t;
 }
 
 /**
@@ -1022,6 +1089,15 @@ inline void mem_stat (MemStatistics *stat, MemStatistics::purpose_t purpose, int
 
 namespace tl 
 {
+  template <class C>
+  struct type_traits <db::text<C> > : public type_traits<void> 
+  {
+    typedef true_tag supports_extractor;
+    typedef true_tag supports_to_string;
+    typedef true_tag has_less_operator;
+    typedef true_tag has_equal_operator;
+  };
+
   template<> void DB_PUBLIC extractor_impl (tl::Extractor &ex, db::Text &p);
   template<> void DB_PUBLIC extractor_impl (tl::Extractor &ex, db::DText &p);
 

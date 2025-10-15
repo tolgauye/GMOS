@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -40,7 +40,7 @@ TEST(1)
   id = tl::id_of (0);
   EXPECT_EQ (id, tl::id_type (0));
 
-  std::unique_ptr<MyClass> ptr;
+  std::auto_ptr<MyClass> ptr;
   ptr.reset (new MyClass ());
   id0 = id = tl::id_of (ptr.get ());
   EXPECT_NE (id, tl::id_type (0));

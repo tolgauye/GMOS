@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -56,11 +56,6 @@ public:
    *  @brief Constructor
    */
   FileSystemWatcher (QObject *parent = 0);
-
-  /**
-   *  @brief Global enable/disable
-   */
-  static void global_enable (bool en);
 
   /**
    *  @brief Enables or disables the file watcher
@@ -136,26 +131,8 @@ private:
   QTimer *m_timer;
   size_t m_batch_size;
   std::map<std::string, FileEntry> m_files;
-  std::set<std::string> m_files_removed;
   size_t m_index;
   std::map<std::string, FileEntry>::iterator m_iter;
-};
-
-/**
- *  @brief A class employing RIIA for locking the file system watcher
- */
-class TL_PUBLIC FileSystemWatcherDisabled
-{
-public:
-  FileSystemWatcherDisabled ()
-  {
-    tl::FileSystemWatcher::global_enable (false);
-  }
-
-  ~FileSystemWatcherDisabled ()
-  {
-    tl::FileSystemWatcher::global_enable (true);
-  }
 };
 
 }

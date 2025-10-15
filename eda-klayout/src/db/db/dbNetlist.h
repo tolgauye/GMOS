@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -47,7 +47,6 @@ public:
   virtual ~NetlistManipulationCallbacks () { }
 
   virtual size_t link_net_to_parent_circuit (const db::Net *subcircuit_net, db::Circuit *parent_circuit, const db::DCplxTrans &trans) = 0;
-  virtual void link_nets (const db::Net *net, const db::Net *with) = 0;
 };
 
 /**
@@ -101,19 +100,6 @@ public:
    *  @brief Clears the netlist
    */
   void clear ();
-
-  /**
-   *  @brief Returns a value indicating whether the netlist names are case sensitive
-   */
-  bool is_case_sensitive () const
-  {
-    return m_case_sensitive;
-  }
-
-  /**
-   *  @brief Sets a value indicating whether the netlist names are case sensitive
-   */
-  void set_case_sensitive (bool f);
 
   /**
    *  @brief Returns a parsable string representation of the netlist
@@ -238,7 +224,7 @@ public:
    */
   Circuit *circuit_by_name (const std::string &name)
   {
-    return m_circuit_by_name.object_by (normalize_name (name));
+    return m_circuit_by_name.object_by (name);
   }
 
   /**
@@ -248,7 +234,7 @@ public:
    */
   const Circuit *circuit_by_name (const std::string &name) const
   {
-    return m_circuit_by_name.object_by (normalize_name (name));
+    return m_circuit_by_name.object_by (name);
   }
 
   /**
@@ -270,32 +256,6 @@ public:
   {
     return m_circuit_by_cell_index.object_by (cell_index);
   }
-
-  /**
-   *  @brief Gets the top circuit if there is one
-   *  This method will assert if there is more than a single top circuit.
-   *  It will return 0 if there is no top circuit.
-   */
-  Circuit *top_circuit ();
-
-  /**
-   *  @brief Gets the top circuit if there is one (const version)
-   *  This method will assert if there is more than a single top circuit.
-   *  It will return 0 if there is no top circuit.
-   */
-  const Circuit *top_circuit () const;
-
-  /**
-   *  @brief Gets the top circuits
-   *  This convenience method will return a list of top circuits.
-   */
-  std::vector<Circuit *> top_circuits ();
-
-  /**
-   *  @brief Gets the top circuits (const version)
-   *  This convenience method will return a list of top circuits.
-   */
-  std::vector<const Circuit *> top_circuits () const;
 
   /**
    *  @brief Gets the top-down circuits iterator (begin)
@@ -468,7 +428,7 @@ public:
    */
   DeviceAbstract *device_abstract_by_name (const std::string &name)
   {
-    return m_device_abstract_by_name.object_by (normalize_name (name));
+    return m_device_abstract_by_name.object_by (name);
   }
 
   /**
@@ -478,7 +438,7 @@ public:
    */
   const DeviceAbstract *device_abstract_by_name (const std::string &name) const
   {
-    return m_device_abstract_by_name.object_by (normalize_name (name));
+    return m_device_abstract_by_name.object_by (name);
   }
 
   /**
@@ -507,14 +467,6 @@ public:
    *  This method will purge all nets which return "floating".
    */
   void purge_nets ();
-
-  /**
-   *  @brief Purges invalid devices
-   *
-   *  This method will purge all invalid devices, i.e. those
-   *  whose terminals are all connected to the same net.
-   */
-  void purge_devices ();
 
   /**
    *  @brief Creates pins for top-level circuits
@@ -549,29 +501,10 @@ public:
    */
   void combine_devices ();
 
-  /**
-   *  @brief Normalizes a name with the given case sensitivity
-   */
-  static std::string normalize_name (bool case_sensitive, const std::string &n);
-
-  /**
-   *  @brief Normalizes a name with the given case sensitivity of the netlist
-   */
-  std::string normalize_name (const std::string &n) const
-  {
-    return normalize_name (is_case_sensitive (), n);
-  }
-
-  /**
-   *  @brief Generate memory statistics
-   */
-  void mem_stat (MemStatistics *stat, MemStatistics::purpose_t purpose, int cat, bool no_self = false, void *parent = 0) const;
-
 private:
   friend class Circuit;
   friend class DeviceAbstract;
 
-  bool m_case_sensitive;
   tl::weak_ptr<db::NetlistManipulationCallbacks> mp_callbacks;
   circuit_list m_circuits;
   device_class_list m_device_classes;
@@ -600,14 +533,6 @@ private:
   const tl::vector<Circuit *> &child_circuits (Circuit *circuit);
   const tl::vector<Circuit *> &parent_circuits (Circuit *circuit);
 };
-
-/**
- *  @brief Memory statistics for LayoutToNetlist
- */
-inline void mem_stat (MemStatistics *stat, MemStatistics::purpose_t purpose, int cat, const Netlist &x, bool no_self, void *parent)
-{
-  x.mem_stat (stat, purpose, cat, no_self, parent);
-}
 
 /**
  *  @brief A helper class using RAII for safe locking/unlocking

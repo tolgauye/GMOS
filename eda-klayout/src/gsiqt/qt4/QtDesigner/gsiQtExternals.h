@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -35,9 +35,17 @@
 
 class QAbstractFormBuilder;
 
+namespace tl { template <> struct type_traits<QAbstractFormBuilder> : public type_traits<void> {
+  typedef tl::false_tag has_copy_constructor;
+}; }
+
 namespace gsi { GSI_QTDESIGNER_PUBLIC gsi::Class<QAbstractFormBuilder> &qtdecl_QAbstractFormBuilder (); }
 
 class QFormBuilder;
+
+namespace tl { template <> struct type_traits<QFormBuilder> : public type_traits<void> {
+  typedef tl::false_tag has_copy_constructor;
+}; }
 
 namespace gsi { GSI_QTDESIGNER_PUBLIC gsi::Class<QFormBuilder> &qtdecl_QFormBuilder (); }
 

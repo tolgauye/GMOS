@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -32,7 +32,7 @@ db::DEdge compute_shifted (const db::edge<C> &e, C dx, C dy, double ext, int nsi
 {
   tl_assert (! e.is_degenerate ()); // no coincident points allowed
 
-  //  Compute the unit vector of the line and its normal (times width)
+  //  Compute the unit vector of the line and it's normal (times width)
   db::DVector ec (e.d ());
   ec *= 1.0 / ec.double_length ();
   db::DVector nc (-ec.y (), ec.x ());
@@ -47,7 +47,7 @@ db::DEdge compute_shifted (const db::edge<C> &e, C dx, C dy, double ext, int nsi
 
 /**
  *  @brief Smart multiplication of a vector with a distance
- *  This function tries to keep the length of the vector on grid if its
+ *  This function tries to keep the length of the vector on grid if it's 
  *  a 45 degree or horizontal/vertical one.
  */
 template <class C>
@@ -130,7 +130,7 @@ compute_normals (const db::vector<C> &d, C dx, C dy, int nsign, db::DVector &ed,
 
 /**
  *  @brief Provides a special DVector vprod sign for the purpose of representing integer-coordinate vectors
- *  The "zero" criterion is somewhat tighter than that of the normal integer value vectors.
+ *  The "zero" criterion is somewhat tigher than that of the normal integer value vectors.
  *  Hence, parallelity is somewhat more strict which makes the size function produce a
  *  better approximation to the desired target contour.
  */
@@ -158,7 +158,7 @@ vprod_sign_for (const db::DVector &a, const db::DVector &b, const db::DVector &)
 
 /**
  *  @brief Provides a special DVector sprod sign for the purpose of representing integer-coordinate vectors
- *  The "zero" criterion is somewhat tighter than that of the normal integer value vectors.
+ *  The "zero" criterion is somewhat tigher than that of the normal integer value vectors.
  *  Hence, orthogonality is somewhat more strict which makes the size function produce a
  *  better approximation to the desired target contour.
  */
@@ -513,8 +513,6 @@ template<class C> DB_PUBLIC bool _test_extractor_impl (tl::Extractor &ex, db::po
   std::vector <point_type> points;
 
   if (ex.test ("(")) {
-
-    p.clear ();
 
     point_type pt;
     while (ex.try_read (pt)) {

@@ -1,7 +1,7 @@
 # encoding: UTF-8
 
 # KLayout Layout Viewer
-# Copyright (C) 2006-2025 Matthias Koefferlein
+# Copyright (C) 2006-2019 Matthias Koefferlein
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -118,17 +118,6 @@ class DBSimplePolygon_TestClass < TestBase
     
     p = RBA::DSimplePolygon::ellipse( RBA::DBox::new(-10000, -20000, 30000, 40000), 4 )
     assert_equal(p.to_s, "(10000,-20000;-10000,10000;10000,40000;30000,10000)")
-
-    # halfmanhattan variants
-    p = RBA::DSimplePolygon::new([ RBA::DPoint::new( 0, 0 ), RBA::DPoint::new( 0, 100 ), RBA::DPoint::new( 100, 100 ) ])
-    assert_equal(p.is_halfmanhattan?, true)
-    assert_equal(p.is_rectilinear?, false)
-    p = RBA::DSimplePolygon::new([ RBA::DPoint::new( 0, 0 ), RBA::DPoint::new( 0, 100 ), RBA::DPoint::new( 100, 101 ) ])
-    assert_equal(p.is_halfmanhattan?, false)
-    assert_equal(p.is_rectilinear?, false)
-    p = RBA::DSimplePolygon::new([ RBA::DPoint::new( 0, 0 ), RBA::DPoint::new( 0, 100 ), RBA::DPoint::new( 100, 100 ), RBA::DPoint::new( 100, 0) ])
-    assert_equal(p.is_halfmanhattan?, true)
-    assert_equal(p.is_rectilinear?, true)
 
   end
 
@@ -255,17 +244,6 @@ class DBSimplePolygon_TestClass < TestBase
     
     p = RBA::SimplePolygon::ellipse( RBA::Box::new(-10000, -20000, 30000, 40000), 4 )
     assert_equal(p.to_s, "(10000,-20000;-10000,10000;10000,40000;30000,10000)")
-
-    # halfmanhattan variants
-    p = RBA::SimplePolygon::new([ RBA::Point::new( 0, 0 ), RBA::Point::new( 0, 100 ), RBA::Point::new( 100, 100 ) ])
-    assert_equal(p.is_halfmanhattan?, true)
-    assert_equal(p.is_rectilinear?, false)
-    p = RBA::SimplePolygon::new([ RBA::Point::new( 0, 0 ), RBA::Point::new( 0, 100 ), RBA::Point::new( 100, 101 ) ])
-    assert_equal(p.is_halfmanhattan?, false)
-    assert_equal(p.is_rectilinear?, false)
-    p = RBA::SimplePolygon::new([ RBA::Point::new( 0, 0 ), RBA::Point::new( 0, 100 ), RBA::Point::new( 100, 100 ), RBA::Point::new( 100, 0) ])
-    assert_equal(p.is_halfmanhattan?, true)
-    assert_equal(p.is_rectilinear?, true)
 
   end
 
@@ -418,51 +396,6 @@ class DBSimplePolygon_TestClass < TestBase
 
   end
 
-  def test_triangulation
-
-    p = RBA::SimplePolygon::new(RBA::Box::new(0, 0, 1000, 100))
-    assert_equal(p.delaunay.to_s, "(0,0;0,100;1000,100);(0,0;1000,100;1000,0)")
-
-    assert_equal(p.delaunay(0.0, 0.5).to_s, "(0,0;0,100;250,0);(250,0;500,100;500,0);(250,0;0,100;500,100);(750,0;1000,100;1000,0);(500,0;500,100;750,0);(750,0;500,100;1000,100)")
-    assert_equal(p.delaunay(20000, 0.0).to_s, "(0,0;250,50;500,0);(500,0;250,50;500,100);(250,50;0,100;500,100);(0,0;0,100;250,50);(500,0;500,100;750,50);(500,0;750,50;1000,0);(1000,0;750,50;1000,100);(750,50;500,100;1000,100)")
-
-    assert_equal(p.delaunay([ RBA::Point::new(50, 50) ]).to_s, "(0,0;0,100;50,50);(50,50;0,100;1000,100);(1000,0;50,50;1000,100);(0,0;50,50;1000,0)")
-
-    assert_equal(p.delaunay(20000, 0.0).each.collect(&:to_s).join(";"), "(0,0;250,50;500,0) props={};(500,0;250,50;500,100) props={};(250,50;0,100;500,100) props={};(0,0;0,100;250,50) props={};(500,0;500,100;750,50) props={};(500,0;750,50;1000,0) props={};(1000,0;750,50;1000,100) props={};(750,50;500,100;1000,100) props={}")
-    assert_equal(p.delaunay.each.collect(&:to_s).join(";"), "(0,0;0,100;1000,100) props={};(0,0;1000,100;1000,0) props={}")
-
-    assert_equal(p.delaunay(0.0, 0.5).each.collect(&:to_s).join(";"), "(0,0;0,100;250,0) props={};(250,0;500,100;500,0) props={};(250,0;0,100;500,100) props={};(750,0;1000,100;1000,0) props={};(500,0;500,100;750,0) props={};(750,0;500,100;1000,100) props={}")
-    assert_equal(p.delaunay(20000, 0.0).each.collect(&:to_s).join(";"), "(0,0;250,50;500,0) props={};(500,0;250,50;500,100) props={};(250,50;0,100;500,100) props={};(0,0;0,100;250,50) props={};(500,0;500,100;750,50) props={};(500,0;750,50;1000,0) props={};(1000,0;750,50;1000,100) props={};(750,50;500,100;1000,100) props={}")
-
-    assert_equal(p.delaunay([ RBA::DPoint::new(50, 50) ]).each.collect(&:to_s).join(";"), "(0,0;0,100;50,50) props={};(50,50;0,100;1000,100) props={};(1000,0;50,50;1000,100) props={};(0,0;50,50;1000,0) props={}")
-
-  end
-
-  def sorted_polygons(arr)
-    arr.each.collect { |p| p.downcast.to_s }.sort.join(";")
-  end
-
-  def sorted_dpolygons(arr)
-    arr.each.collect { |p| p.to_s }.sort.join(";")
-  end
-
-  def test_hm_decomposition
-
-    p = RBA::SimplePolygon::new([ [0, 0], [0, 100], [1000, 100], [1000, 1000], [1100, 1000], [1100, 100], [2200, 100], [2200, 0] ])
-    assert_equal(sorted_polygons(p.hm_decomposition(false, false)), "(0,0;0,100;1000,100);(0,0;1000,100;1100,100);(0,0;1100,100;2200,100;2200,0);(1000,100;1000,1000;1100,1000;1100,100)")
-    assert_equal(sorted_polygons(p.hm_decomposition(true, false)), "(0,0;0,100;1000,100;1000,0);(1000,0;1000,100;1100,100;1100,0);(1000,100;1000,1000;1100,1000;1100,100);(1100,0;1100,100;2200,100;2200,0)")
-    assert_equal(sorted_polygons(p.hm_decomposition(false, true)), "(0,0;0,100;1000,100;1100,100;2200,100;2200,0);(1000,100;1000,1000;1100,1000;1100,100)")
-    assert_equal(sorted_polygons(p.hm_decomposition(true, true)), "(0,0;0,100;1000,100;1000,0);(1000,0;1000,100;1000,1000;1100,1000;1100,100;1100,0);(1100,0;1100,100;2200,100;2200,0)")
-    assert_equal(sorted_polygons(p.hm_decomposition(false, false, 0.0, 0.5)), "(0,0;0,100;500,100;1000,100;1100,0;825,0;550,0;275,0);(1000,100;1000,550;1000,775;1000,1000;1100,1000;1100,550;1100,325;1100,100);(1100,0;1000,100;1100,100);(1100,0;1100,100;1650,100;1925,100;2200,100;2200,0;1650,0;1375,0)")
-
-    p = RBA::DSimplePolygon::new([ [0, 0], [0, 100], [1000, 100], [1000, 1000], [1100, 1000], [1100, 100], [2200, 100], [2200, 0] ])
-    assert_equal(sorted_dpolygons(p.hm_decomposition(false, false)), "(0,0;0,100;1000,100);(0,0;1000,100;1100,100);(0,0;1100,100;2200,100;2200,0);(1000,100;1000,1000;1100,1000;1100,100)")
-    assert_equal(sorted_dpolygons(p.hm_decomposition(true, false)), "(0,0;0,100;1000,100;1000,0);(1000,0;1000,100;1100,100;1100,0);(1000,100;1000,1000;1100,1000;1100,100);(1100,0;1100,100;2200,100;2200,0)")
-    assert_equal(sorted_dpolygons(p.hm_decomposition(false, true)), "(0,0;0,100;1000,100;1100,100;2200,100;2200,0);(1000,100;1000,1000;1100,1000;1100,100)")
-    assert_equal(sorted_dpolygons(p.hm_decomposition(true, true)), "(0,0;0,100;1000,100;1000,0);(1000,0;1000,100;1000,1000;1100,1000;1100,100;1100,0);(1100,0;1100,100;2200,100;2200,0)")
-    assert_equal(sorted_dpolygons(p.hm_decomposition(false, false, 0.0, 0.5)), "(0,0;0,100;500,100;1000,100;1100,0;825,0;550,0;275,0);(1000,100;1000,550;1000,775;1000,1000;1100,1000;1100,550;1100,325;1100,100);(1100,0;1000,100;1100,100);(1100,0;1100,100;1650,100;1925,100;2200,100;2200,0;1650,0;1375,0)")
-
-  end
 end
 
 load("test_epilogue.rb")

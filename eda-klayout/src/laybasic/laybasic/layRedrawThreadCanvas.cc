@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -26,6 +26,8 @@
 #include "layBitmapsToImage.h"
 #include "layDrawing.h"
 #include "layBitmap.h"
+
+#include <QImage>
 
 namespace lay
 {
@@ -242,9 +244,9 @@ shift_bitmap (const lay::Bitmap *from, lay::Bitmap *to, int dx, int dy)
 }
 
 void 
-BitmapRedrawThreadCanvas::prepare (unsigned int nlayers, unsigned int width, unsigned int height, double resolution, double font_resolution, const db::Vector *shift_vector, const std::vector<int> *planes, const lay::Drawings *drawings)
+BitmapRedrawThreadCanvas::prepare (unsigned int nlayers, unsigned int width, unsigned int height, double resolution, const db::Vector *shift_vector, const std::vector<int> *planes, const lay::Drawings *drawings)
 {
-  RedrawThreadCanvas::prepare (nlayers, width, height, resolution, font_resolution, shift_vector, planes, drawings);
+  RedrawThreadCanvas::prepare (nlayers, width, height, resolution, shift_vector, planes, drawings);
 
   lock ();
 
@@ -256,7 +258,7 @@ BitmapRedrawThreadCanvas::prepare (unsigned int nlayers, unsigned int width, uns
 
     for (size_t i = 0; i < mp_plane_buffers.size (); ++i) {
       lay::Bitmap *from = mp_plane_buffers [i];
-      lay::Bitmap *to   = mp_plane_buffers [i] = new lay::Bitmap (width, height, resolution, font_resolution);
+      lay::Bitmap *to   = mp_plane_buffers [i] = new lay::Bitmap (width, height, resolution);
       shift_bitmap (from, to, shift_vector->x (), shift_vector->y ());
       delete from;
     }
@@ -265,7 +267,7 @@ BitmapRedrawThreadCanvas::prepare (unsigned int nlayers, unsigned int width, uns
     for (lay::Drawings::const_iterator d = drawings->begin (); d != drawings->end (); ++d, ++di) {
       for (unsigned int i = 0; i < d->num_planes (); ++i) {
         lay::Bitmap *from = mp_drawing_plane_buffers[di][i];
-        lay::Bitmap *to   = mp_drawing_plane_buffers[di][i] = new lay::Bitmap (width, height, resolution, font_resolution);
+        lay::Bitmap *to   = mp_drawing_plane_buffers[di][i] = new lay::Bitmap (width, height, resolution);
         shift_bitmap (from, to, shift_vector->x (), shift_vector->y ());
         delete from;
       }
@@ -305,13 +307,13 @@ BitmapRedrawThreadCanvas::prepare (unsigned int nlayers, unsigned int width, uns
     clear_planes ();
 
     for (unsigned int i = 0; i < nlayers; ++i) {
-      mp_plane_buffers.push_back (new lay::Bitmap (width, height, resolution, font_resolution));
+      mp_plane_buffers.push_back (new lay::Bitmap (width, height, resolution));
     }
 
     for (lay::Drawings::const_iterator d = drawings->begin (); d != drawings->end (); ++d) {
       mp_drawing_plane_buffers.push_back (std::vector <lay::Bitmap *> ());
       for (unsigned int i = 0; i < d->num_planes (); ++i) {
-        mp_drawing_plane_buffers.back ().push_back (new lay::Bitmap (width, height, resolution, font_resolution));
+        mp_drawing_plane_buffers.back ().push_back (new lay::Bitmap (width, height, resolution));
       }
     }
 
@@ -364,7 +366,7 @@ BitmapRedrawThreadCanvas::clear_planes ()
 lay::CanvasPlane *
 BitmapRedrawThreadCanvas::create_drawing_plane ()
 {
-  return new lay::Bitmap(m_width, m_height, resolution (), font_resolution ());
+  return new lay::Bitmap(m_width, m_height, resolution ());
 }
 
 void 
@@ -391,46 +393,18 @@ BitmapRedrawThreadCanvas::initialize_plane (lay::CanvasPlane *plane, unsigned in
   unlock ();
 }
 
-void
-BitmapRedrawThreadCanvas::to_image (const std::vector <lay::ViewOp> &view_ops, const lay::DitherPattern &dp, const lay::LineStyles &ls, double dpr, tl::Color background, tl::Color foreground, tl::Color active, const lay::Drawings *drawings, tl::PixelBuffer &img, unsigned int width, unsigned int height)
+void 
+BitmapRedrawThreadCanvas::to_image (const std::vector <lay::ViewOp> &view_ops, const lay::DitherPattern &dp, const lay::LineStyles &ls, QColor background, QColor foreground, QColor active, const lay::Drawings *drawings, QImage &img, unsigned int width, unsigned int height)
 {
-  if (width > m_width) {
-    width = m_width;
-  }
-  if (height > m_height) {
-    height = m_height;
-  }
-
   //  convert the plane data to image data
-  bitmaps_to_image (view_ops, mp_plane_buffers, dp, ls, dpr, &img, width, height, true, &mutex ());
+  bitmaps_to_image (view_ops, mp_plane_buffers, dp, ls, &img, width, height, true, &mutex ());
 
   //  convert the planes of the "drawing" objects too:
   std::vector <std::vector <lay::Bitmap *> >::const_iterator bt = mp_drawing_plane_buffers.begin ();
   for (lay::Drawings::const_iterator d = drawings->begin (); d != drawings->end () && bt != mp_drawing_plane_buffers.end (); ++d, ++bt) {
-    bitmaps_to_image (d->get_view_ops (*this, background, foreground, active), *bt, dp, ls, dpr, &img, width, height, true, &mutex ());
-  }
-}
-
-void
-BitmapRedrawThreadCanvas::to_image_mono (const std::vector <lay::ViewOp> &view_ops, const lay::DitherPattern &dp, const lay::LineStyles &ls, double dpr, bool background, bool foreground, bool active, const lay::Drawings *drawings, tl::BitmapBuffer &img, unsigned int width, unsigned int height)
-{
-  if (width > m_width) {
-    width = m_width;
-  }
-  if (height > m_height) {
-    height = m_height;
-  }
-
-  unsigned int all_one = 0xffffffff;
-
-  //  convert the plane data to image data
-  bitmaps_to_image (view_ops, mp_plane_buffers, dp, ls, dpr, &img, width, height, true, &mutex ());
-
-  //  convert the planes of the "drawing" objects too:
-  std::vector <std::vector <lay::Bitmap *> >::const_iterator bt = mp_drawing_plane_buffers.begin ();
-  for (lay::Drawings::const_iterator d = drawings->begin (); d != drawings->end () && bt != mp_drawing_plane_buffers.end (); ++d, ++bt) {
-    bitmaps_to_image (d->get_view_ops (*this, background ? all_one : 0, foreground ? all_one : 0, active ? all_one : 0), *bt, dp, ls, dpr, &img, width, height, true, &mutex ());
+    bitmaps_to_image (d->get_view_ops (*this, background, foreground, active), *bt, dp, ls, &img, width, height, true, &mutex ());
   }
 }
 
 }
+

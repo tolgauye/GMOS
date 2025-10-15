@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -26,7 +26,6 @@
 #include "dbNetlistSpiceWriter.h"
 #include "dbNetlistReader.h"
 #include "dbNetlistSpiceReader.h"
-#include "dbNetlistSpiceReaderDelegate.h"
 #include "tlException.h"
 #include "tlInternational.h"
 #include "tlStream.h"
@@ -113,7 +112,7 @@ static size_t get_other_terminal_id (const db::DeviceReconnectedTerminal *obj)
   return obj->other_terminal_id;
 }
 
-static void set_other_terminal_id (db::DeviceReconnectedTerminal *obj, unsigned int other_terminal_id)
+static void set_other_terminal_id (db::DeviceReconnectedTerminal *obj, size_t other_terminal_id)
 {
   obj->other_terminal_id = other_terminal_id;
 }
@@ -198,11 +197,11 @@ static bool is_combined_device (const db::Device *device)
   return ! device->reconnected_terminals ().empty ();
 }
 
-static std::vector<db::DeviceReconnectedTerminal> empty;
-
 static std::vector<db::DeviceReconnectedTerminal>::const_iterator begin_reconnected_terminals_for (const db::Device *device, size_t terminal_id)
 {
-  const std::vector<db::DeviceReconnectedTerminal> *ti = device->reconnected_terminals_for ((unsigned int) terminal_id);
+  static std::vector<db::DeviceReconnectedTerminal> empty;
+
+  const std::vector<db::DeviceReconnectedTerminal> *ti = device->reconnected_terminals_for (terminal_id);
   if (! ti) {
     return empty.begin ();
   } else {
@@ -212,7 +211,9 @@ static std::vector<db::DeviceReconnectedTerminal>::const_iterator begin_reconnec
 
 static std::vector<db::DeviceReconnectedTerminal>::const_iterator end_reconnected_terminals_for (const db::Device *device, size_t terminal_id)
 {
-  const std::vector<db::DeviceReconnectedTerminal> *ti = device->reconnected_terminals_for ((unsigned int) terminal_id);
+  static std::vector<db::DeviceReconnectedTerminal> empty;
+
+  const std::vector<db::DeviceReconnectedTerminal> *ti = device->reconnected_terminals_for (terminal_id);
   if (! ti) {
     return empty.end ();
   } else {
@@ -227,7 +228,7 @@ static void clear_reconnected_terminals (db::Device *device)
 
 static void add_reconnected_terminals (db::Device *device, size_t outer_terminal, const db::DeviceReconnectedTerminal &t)
 {
-  device->reconnected_terminals () [(unsigned int) outer_terminal].push_back (t);
+  device->reconnected_terminals () [outer_terminal].push_back (t);
 }
 
 static std::vector<db::DeviceAbstractRef>::const_iterator begin_other_abstracts (const db::Device *device)
@@ -250,42 +251,6 @@ static void add_other_abstracts (db::Device *device, const db::DeviceAbstractRef
   device->other_abstracts ().push_back (ref);
 }
 
-static const db::Net *net_for_terminal_by_name_const (const db::Device *device, const std::string &name)
-{
-  if (! device->device_class () || ! device->device_class ()->has_terminal_with_name (name)) {
-    return 0;
-  } else {
-    return device->net_for_terminal (device->device_class ()->terminal_id_for_name (name));
-  }
-}
-
-static db::Net *net_for_terminal_by_name (db::Device *device, const std::string &name)
-{
-  if (! device->device_class () || ! device->device_class ()->has_terminal_with_name (name)) {
-    return 0;
-  } else {
-    return device->net_for_terminal (device->device_class ()->terminal_id_for_name (name));
-  }
-}
-
-static const db::NetTerminalRef *terminal_ref_by_name_const (const db::Device *device, const std::string &name)
-{
-  if (! device->device_class () || ! device->device_class ()->has_terminal_with_name (name)) {
-    return 0;
-  } else {
-    return device->terminal_ref_for_terminal (device->device_class ()->terminal_id_for_name (name));
-  }
-}
-
-static db::NetTerminalRef *terminal_ref_by_name (db::Device *device, const std::string &name)
-{
-  if (! device->device_class () || ! device->device_class ()->has_terminal_with_name (name)) {
-    return 0;
-  } else {
-    return device->terminal_ref_for_terminal (device->device_class ()->terminal_id_for_name (name));
-  }
-}
-
 Class<db::Device> decl_dbDevice (decl_dbNetlistObject, "db", "Device",
   gsi::method ("device_class", &db::Device::device_class,
     "@brief Gets the device class the device belongs to.\n"
@@ -294,7 +259,7 @@ Class<db::Device> decl_dbDevice (decl_dbNetlistObject, "db", "Device",
     "@brief Gets the device abstract for this device instance.\n"
     "See \\DeviceAbstract for more details.\n"
   ) +
-  gsi::method ("device_abstract=", &db::Device::set_device_abstract, gsi::arg ("device_abstract"),
+  gsi::method ("device_abstract=", &db::Device::set_device_abstract,
     "@hide\n"
     "Provided for test purposes mainly. Be careful with pointers!"
   ) +
@@ -330,11 +295,6 @@ Class<db::Device> decl_dbDevice (decl_dbNetlistObject, "db", "Device",
   gsi::method ("circuit", (const db::Circuit *(db::Device::*) () const) &db::Device::circuit,
     "@brief Gets the circuit the device lives in."
   ) +
-  gsi::method ("circuit", (db::Circuit *(db::Device::*) ()) &db::Device::circuit,
-    "@brief Gets the circuit the device lives in (non-const version)."
-    "\n\n"
-    "This constness variant has been introduced in version 0.26.8"
-  ) +
   gsi::method ("id", &db::Device::id,
     "@brief Gets the device ID.\n"
     "The ID is a unique integer which identifies the device.\n"
@@ -365,56 +325,6 @@ Class<db::Device> decl_dbDevice (decl_dbNetlistObject, "db", "Device",
   gsi::method ("net_for_terminal", (const db::Net *(db::Device::*) (size_t) const) &db::Device::net_for_terminal, gsi::arg ("terminal_id"),
     "@brief Gets the net connected to the specified terminal.\n"
     "If the terminal is not connected, nil is returned for the net."
-  ) +
-  gsi::method ("net_for_terminal", (db::Net *(db::Device::*) (size_t)) &db::Device::net_for_terminal, gsi::arg ("terminal_id"),
-    "@brief Gets the net connected to the specified terminal (non-const version).\n"
-    "If the terminal is not connected, nil is returned for the net."
-    "\n\n"
-    "This constness variant has been introduced in version 0.26.8"
-  ) +
-  gsi::method_ext ("net_for_terminal", &net_for_terminal_by_name_const, gsi::arg ("terminal_name"),
-    "@brief Gets the net connected to the specified terminal.\n"
-    "If the terminal is not connected, nil is returned for the net."
-    "\n\n"
-    "This convenience method has been introduced in version 0.27.3.\n"
-  ) +
-  gsi::method_ext ("net_for_terminal", &net_for_terminal_by_name, gsi::arg ("terminal_name"),
-    "@brief Gets the net connected to the specified terminal (non-const version).\n"
-    "If the terminal is not connected, nil is returned for the net."
-    "\n\n"
-    "This convenience method has been introduced in version 0.27.3.\n"
-  ) +
-  gsi::method ("terminal_ref", (const db::NetTerminalRef *(db::Device::*) (size_t) const) &db::Device::terminal_ref_for_terminal, gsi::arg ("terminal_id"),
-    "@brief Gets the terminal refeference for a specific terminal.\n"
-    "The terminal ref is the connector between a net and a device terminal. "
-    "It knows the net the terminal is connected to and is useful to obtain the shapes making the terminal of the device. "
-    "If the terminal is not connected, nil is returned for the net.\n"
-    "\n"
-    "This method has been introduced in version 0.30."
-  ) +
-  gsi::method ("terminal_ref", (db::NetTerminalRef *(db::Device::*) (size_t)) &db::Device::terminal_ref_for_terminal, gsi::arg ("terminal_id"),
-    "@brief Gets the terminal refeference for a specific terminal (non-const version).\n"
-    "The terminal ref is the connector between a net and a device terminal. "
-    "It knows the net the terminal is connected to and is useful to obtain the shapes making the terminal of the device. "
-    "If the terminal is not connected, nil is returned for the net.\n"
-    "\n"
-    "This method has been introduced in version 0.30."
-  ) +
-  gsi::method_ext ("terminal_ref", &terminal_ref_by_name_const, gsi::arg ("terminal_name"),
-    "@brief Gets the terminal refeference for a specific terminal where the terminal is given by name.\n"
-    "The terminal ref is the connector between a net and a device terminal. "
-    "It knows the net the terminal is connected to and is useful to obtain the shapes making the terminal of the device. "
-    "If the terminal is not connected, nil is returned for the net.\n"
-    "\n"
-    "This method has been introduced in version 0.30."
-  ) +
-  gsi::method_ext ("terminal_ref", &terminal_ref_by_name, gsi::arg ("terminal_name"),
-    "@brief Gets the terminal refeference for a specific terminal where the terminal is given by name (non-const version).\n"
-    "The terminal ref is the connector between a net and a device terminal. "
-    "It knows the net the terminal is connected to and is useful to obtain the shapes making the terminal of the device. "
-    "If the terminal is not connected, nil is returned for the net.\n"
-    "\n"
-    "This method has been introduced in version 0.30."
   ) +
   gsi::method ("connect_terminal", &db::Device::connect_terminal, gsi::arg ("terminal_id"), gsi::arg ("net"),
     "@brief Connects the given terminal to the specified net.\n"
@@ -468,11 +378,6 @@ Class<db::DeviceAbstract> decl_dbDeviceAbstract ("db", "DeviceAbstract",
   gsi::method ("netlist", (const db::Netlist *(db::DeviceAbstract::*) () const) &db::DeviceAbstract::netlist,
     "@brief Gets the netlist the device abstract lives in."
   ) +
-  gsi::method ("netlist", (db::Netlist *(db::DeviceAbstract::*) ()) &db::DeviceAbstract::netlist,
-    "@brief Gets the netlist the device abstract lives in (non-const version)."
-    "\n\n"
-    "This constness variant has been introduced in version 0.26.8"
-  ) +
   gsi::method ("device_class", &db::DeviceAbstract::device_class,
     "@brief Gets the device class of the device."
   ) +
@@ -522,20 +427,9 @@ Class<db::SubCircuit> decl_dbSubCircuit (decl_dbNetlistObject, "db", "SubCircuit
   gsi::method ("circuit_ref", (const db::Circuit *(db::SubCircuit::*) () const) &db::SubCircuit::circuit_ref,
     "@brief Gets the circuit referenced by the subcircuit.\n"
   ) +
-  gsi::method ("circuit_ref", (db::Circuit *(db::SubCircuit::*) ()) &db::SubCircuit::circuit_ref,
-    "@brief Gets the circuit referenced by the subcircuit (non-const version).\n"
-    "\n\n"
-    "This constness variant has been introduced in version 0.26.8"
-  ) +
   gsi::method ("circuit", (const db::Circuit *(db::SubCircuit::*) () const) &db::SubCircuit::circuit,
     "@brief Gets the circuit the subcircuit lives in.\n"
     "This is NOT the circuit which is referenced. For getting the circuit that the subcircuit references, use \\circuit_ref."
-  ) +
-  gsi::method ("circuit", (db::Circuit *(db::SubCircuit::*) ()) &db::SubCircuit::circuit,
-    "@brief Gets the circuit the subcircuit lives in (non-const version).\n"
-    "This is NOT the circuit which is referenced. For getting the circuit that the subcircuit references, use \\circuit_ref."
-    "\n\n"
-    "This constness variant has been introduced in version 0.26.8"
   ) +
   gsi::method ("id", &db::SubCircuit::id,
     "@brief Gets the subcircuit ID.\n"
@@ -559,12 +453,6 @@ Class<db::SubCircuit> decl_dbSubCircuit (decl_dbNetlistObject, "db", "SubCircuit
     "@brief Gets the net connected to the specified pin of the subcircuit.\n"
     "If the pin is not connected, nil is returned for the net."
   ) +
-  gsi::method ("net_for_pin", (db::Net *(db::SubCircuit::*) (size_t)) &db::SubCircuit::net_for_pin, gsi::arg ("pin_id"),
-    "@brief Gets the net connected to the specified pin of the subcircuit (non-const version).\n"
-    "If the pin is not connected, nil is returned for the net."
-    "\n\n"
-    "This constness variant has been introduced in version 0.26.8"
-  ) +
   gsi::method ("connect_pin", &db::SubCircuit::connect_pin, gsi::arg ("pin_id"), gsi::arg ("net"),
     "@brief Connects the given pin to the specified net.\n"
   ) +
@@ -578,21 +466,6 @@ Class<db::SubCircuit> decl_dbSubCircuit (decl_dbNetlistObject, "db", "SubCircuit
   gsi::method_ext ("disconnect_pin", &gsi::subcircuit_disconnect_pin1, gsi::arg ("pin"),
     "@brief Disconnects the given pin from any net.\n"
     "This version takes a \\Pin reference instead of a pin ID."
-  ) +
-  gsi::method ("trans", &db::SubCircuit::trans,
-    "@brief Gets the physical transformation for the subcircuit.\n"
-    "\n"
-    "This property applies to subcircuits derived from a layout. It specifies the "
-    "placement of the respective cell.\n"
-    "\n"
-    "This property has been introduced in version 0.27."
-  ) +
-  gsi::method ("trans=", &db::SubCircuit::set_trans, gsi::arg ("trans"),
-    "@brief Sets the physical transformation for the subcircuit.\n"
-    "\n"
-    "See \\trans for details about this property.\n"
-    "\n"
-    "This property has been introduced in version 0.27."
   ),
   "@brief A subcircuit inside a circuit.\n"
   "Circuits may instantiate other circuits as subcircuits similar to cells "
@@ -617,19 +490,8 @@ Class<db::NetTerminalRef> decl_dbNetTerminalRef ("db", "NetTerminalRef",
     "@brief Gets the device reference.\n"
     "Gets the device object that this connection is made to."
   ) +
-  gsi::method ("device", (db::Device *(db::NetTerminalRef::*) ()) &db::NetTerminalRef::device,
-    "@brief Gets the device reference (non-const version).\n"
-    "Gets the device object that this connection is made to."
-    "\n\n"
-    "This constness variant has been introduced in version 0.26.8"
-  ) +
   gsi::method ("net", (const db::Net *(db::NetTerminalRef::*) () const) &db::NetTerminalRef::net,
-    "@brief Gets the net this terminal reference is attached to."
-  ) +
-  gsi::method ("net", (db::Net *(db::NetTerminalRef::*) ()) &db::NetTerminalRef::net,
-    "@brief Gets the net this terminal reference is attached to (non-const version)."
-    "\n\n"
-    "This constness variant has been introduced in version 0.26.8"
+    "@brief Gets the net this terminal reference is attached to"
   ) +
   gsi::method ("device_class", (const db::DeviceClass *(db::NetTerminalRef::*) () const) &db::NetTerminalRef::device_class,
     "@brief Gets the class of the device which is addressed."
@@ -651,12 +513,7 @@ Class<db::NetPinRef> decl_dbNetPinRef ("db", "NetPinRef",
     "@brief Gets the \\Pin object of the pin the connection is made to."
   ) +
   gsi::method ("net", (const db::Net *(db::NetPinRef::*) () const) &db::NetPinRef::net,
-    "@brief Gets the net this pin reference is attached to."
-  ) +
-  gsi::method ("net", (db::Net *(db::NetPinRef::*) ()) &db::NetPinRef::net,
-    "@brief Gets the net this pin reference is attached to (non-const version)."
-    "\n\n"
-    "This constness variant has been introduced in version 0.26.8"
+    "@brief Gets the net this pin reference is attached to"
   ),
   "@brief A connection to an outgoing pin of the circuit.\n"
   "This object is used inside a net (see \\Net) to describe the connections a net makes.\n"
@@ -676,20 +533,8 @@ Class<db::NetSubcircuitPinRef> decl_dbNetSubcircuitPinRef ("db", "NetSubcircuitP
     "This attribute indicates the subcircuit the net attaches to. The "
     "subcircuit lives in the same circuit than the net. "
   ) +
-  gsi::method ("subcircuit", (db::SubCircuit *(db::NetSubcircuitPinRef::*) ()) &db::NetSubcircuitPinRef::subcircuit,
-    "@brief Gets the subcircuit reference (non-const version).\n"
-    "This attribute indicates the subcircuit the net attaches to. The "
-    "subcircuit lives in the same circuit than the net. "
-    "\n\n"
-    "This constness variant has been introduced in version 0.26.8"
-  ) +
   gsi::method ("net", (const db::Net *(db::NetSubcircuitPinRef::*) () const) &db::NetSubcircuitPinRef::net,
-    "@brief Gets the net this pin reference is attached to."
-  ) +
-  gsi::method ("net", (db::Net *(db::NetSubcircuitPinRef::*) ()) &db::NetSubcircuitPinRef::net,
-    "@brief Gets the net this pin reference is attached to (non-const version)."
-    "\n\n"
-    "This constness variant has been introduced in version 0.26.8"
+    "@brief Gets the net this pin reference is attached to"
   ),
   "@brief A connection to a pin of a subcircuit.\n"
   "This object is used inside a net (see \\Net) to describe the connections a net makes.\n"
@@ -706,7 +551,7 @@ Class<db::Net> decl_dbNet (decl_dbNetlistObject, "db", "Net",
   ) +
   gsi::method ("name=", &db::Net::set_name, gsi::arg ("name"),
     "@brief Sets the name of the net.\n"
-    "The name of the net is used for naming the net in schematic files for example. "
+    "The name of the net is used for nameing the net in schematic files for example. "
     "The name of the net has to be unique."
   ) +
   gsi::method ("name", &db::Net::name,
@@ -736,36 +581,15 @@ Class<db::Net> decl_dbNet (decl_dbNetlistObject, "db", "Net",
     "Pin connections are described by \\NetPinRef objects. Pin connections "
     "are connections to outgoing pins of the circuit the net lives in."
   ) +
-  gsi::iterator ("each_pin", gsi::return_reference (), (db::Net::pin_iterator (db::Net::*) ()) &db::Net::begin_pins, (db::Net::pin_iterator (db::Net::*) ()) &db::Net::end_pins,
-    "@brief Iterates over all outgoing pins the net connects (non-const version).\n"
-    "Pin connections are described by \\NetPinRef objects. Pin connections "
-    "are connections to outgoing pins of the circuit the net lives in."
-    "\n\n"
-    "This constness variant has been introduced in version 0.26.8"
-  ) +
   gsi::iterator ("each_subcircuit_pin", gsi::return_reference (), (db::Net::const_subcircuit_pin_iterator (db::Net::*) () const) &db::Net::begin_subcircuit_pins, (db::Net::const_subcircuit_pin_iterator (db::Net::*) () const) &db::Net::end_subcircuit_pins,
     "@brief Iterates over all subcircuit pins the net connects.\n"
     "Subcircuit pin connections are described by \\NetSubcircuitPinRef objects. These are "
     "connections to specific pins of subcircuits."
   ) +
-  gsi::iterator ("each_subcircuit_pin", gsi::return_reference (), (db::Net::subcircuit_pin_iterator (db::Net::*) ()) &db::Net::begin_subcircuit_pins, (db::Net::subcircuit_pin_iterator (db::Net::*) ()) &db::Net::end_subcircuit_pins,
-    "@brief Iterates over all subcircuit pins the net connects (non-const version).\n"
-    "Subcircuit pin connections are described by \\NetSubcircuitPinRef objects. These are "
-    "connections to specific pins of subcircuits."
-    "\n\n"
-    "This constness variant has been introduced in version 0.26.8"
-  ) +
   gsi::iterator ("each_terminal", gsi::return_reference (), (db::Net::const_terminal_iterator (db::Net::*) () const) &db::Net::begin_terminals, (db::Net::const_terminal_iterator (db::Net::*) () const) &db::Net::end_terminals,
     "@brief Iterates over all terminals the net connects.\n"
     "Terminals connect devices. Terminal connections are described by \\NetTerminalRef "
     "objects."
-  ) +
-  gsi::iterator ("each_terminal", gsi::return_reference (), (db::Net::terminal_iterator (db::Net::*) ()) &db::Net::begin_terminals, (db::Net::terminal_iterator (db::Net::*) ()) &db::Net::end_terminals,
-    "@brief Iterates over all terminals the net connects (non-const version).\n"
-    "Terminals connect devices. Terminal connections are described by \\NetTerminalRef "
-    "objects."
-    "\n\n"
-    "This constness variant has been introduced in version 0.26.8"
   ) +
   gsi::method ("is_floating?", &db::Net::is_floating,
     "@brief Returns true, if the net is floating.\n"
@@ -840,20 +664,19 @@ Class<db::DeviceTerminalDefinition> decl_dbDeviceTerminalDefinition ("db", "Devi
   "This class has been added in version 0.26."
 );
 
-static db::DeviceParameterDefinition *new_parameter_definition (const std::string &name, const std::string &description, double default_value, bool is_primary, double si_scaling, double geo_scaling_exponent)
+static db::DeviceParameterDefinition *new_parameter_definition (const std::string &name, const std::string &description, double default_value, bool is_primary, double si_scaling)
 {
-  return new db::DeviceParameterDefinition (name, description, default_value, is_primary, si_scaling, geo_scaling_exponent);
+  return new db::DeviceParameterDefinition (name, description, default_value, is_primary, si_scaling);
 }
 
 Class<db::DeviceParameterDefinition> decl_dbDeviceParameterDefinition ("db", "DeviceParameterDefinition",
-  gsi::constructor ("new", &gsi::new_parameter_definition, gsi::arg ("name"), gsi::arg ("description", std::string ()), gsi::arg ("default_value", 0.0), gsi::arg ("is_primary", true), gsi::arg ("si_scaling", 1.0), gsi::arg ("geo_scaling_exponent", 0.0),
-    "@brief Creates a new parameter definition.\n"
+  gsi::constructor ("new", &gsi::new_parameter_definition, gsi::arg ("name"), gsi::arg ("description", std::string ()), gsi::arg ("default_value", 0.0), gsi::arg ("is_primary", true), gsi::arg ("si_scaling", 1.0),
+    "@brief Creates a new parameter definition."
     "@param name The name of the parameter\n"
     "@param description The human-readable description\n"
     "@param default_value The initial value\n"
     "@param is_primary True, if the parameter is a primary parameter (see \\is_primary=)\n"
     "@param si_scaling The scaling factor to SI units\n"
-    "@param geo_scaling_exponent Indicates how the parameter scales with geometrical scaling (0: no scaling, 1.0: linear, 2.0: quadratic)\n"
   ) +
   gsi::method ("name", &db::DeviceParameterDefinition::name,
     "@brief Gets the name of the parameter."
@@ -885,26 +708,7 @@ Class<db::DeviceParameterDefinition> decl_dbDeviceParameterDefinition ("db", "De
   ) +
   gsi::method ("si_scaling", &db::DeviceParameterDefinition::si_scaling,
     "@brief Gets the scaling factor to SI units.\n"
-    "For parameters in micrometers - for example W and L of MOS devices - this factor can be set to 1e-6 to reflect "
-    "the unit."
-  ) +
-  gsi::method ("si_scaling=", &db::DeviceParameterDefinition::set_si_scaling, gsi::arg ("flag"),
-    "@brief Sets the scaling factor to SI units.\n"
-    "\n"
-    "This setter has been added in version 0.28.6."
-  ) +
-  gsi::method ("geo_scaling_exponent", &db::DeviceParameterDefinition::geo_scaling_exponent,
-    "@brief Gets the geometry scaling exponent.\n"
-    "This value is used when applying '.options scale' in the SPICE reader for example. "
-    "It is zero for 'no scaling', 1.0 for linear scaling and 2.0 for quadratic scaling.\n"
-    "\n"
-    "This attribute has been added in version 0.28.6."
-  ) +
-  gsi::method ("geo_scaling_exponent=", &db::DeviceParameterDefinition::set_geo_scaling_exponent, gsi::arg ("expo"),
-    "@brief Sets the geometry scaling exponent.\n"
-    "See \\geo_scaling_exponent for details.\n"
-    "\n"
-    "This attribute has been added in version 0.28.6."
+    "For parameters in micrometers for example, this factor will be 1e-6."
   ) +
   gsi::method ("id", &db::DeviceParameterDefinition::id,
     "@brief Gets the ID of the parameter.\n"
@@ -942,32 +746,16 @@ public:
     }
   }
 
-  gsi::Callback cb_less;
-};
-
-/**
- *  @brief A DeviceCombiner implementation that allows reimplementation of the virtual methods
- */
-class GenericDeviceCombiner
-  : public db::DeviceCombiner
-{
-public:
-  GenericDeviceCombiner ()
-    : db::DeviceCombiner ()
+  virtual bool equal (const db::Device &a, const db::Device &b) const
   {
-    //  .. nothing yet ..
-  }
-
-  virtual bool combine_devices (db::Device *a, db::Device *b) const
-  {
-    if (cb_combine.can_issue ()) {
-      return cb_combine.issue<db::DeviceCombiner, bool, db::Device *, db::Device *> (&db::DeviceCombiner::combine_devices, a, b);
+    if (cb_equal.can_issue ()) {
+      return cb_equal.issue<db::EqualDeviceParameters, bool, const db::Device &, const db::Device &> (&db::EqualDeviceParameters::equal, a, b);
     } else {
-      return false;
+      return db::EqualDeviceParameters::equal (a, b);
     }
   }
 
-  gsi::Callback cb_combine;
+  gsi::Callback cb_less, cb_equal;
 };
 
 }
@@ -975,11 +763,6 @@ public:
 db::EqualDeviceParameters *make_equal_dp (size_t param_id, double absolute, double relative)
 {
   return new db::EqualDeviceParameters (param_id, absolute, relative);
-}
-
-db::EqualDeviceParameters *make_ignore_dp (size_t param_id)
-{
-  return new db::EqualDeviceParameters (param_id, true);
 }
 
 Class<db::EqualDeviceParameters> decl_dbEqualDeviceParameters ("db", "EqualDeviceParameters",
@@ -995,15 +778,6 @@ Class<db::EqualDeviceParameters> decl_dbEqualDeviceParameters ("db", "EqualDevic
     "For example, when comparing parameter values of 40 and 60, a relative deviation of 0.35 means an absolute "
     "deviation of 17.5 (= 0.35 * average of 40 and 60) which does not make both values match."
   ) +
-  gsi::constructor ("ignore", &make_ignore_dp, gsi::arg ("param_id"),
-    "@brief Creates a device parameter comparer which ignores the parameter.\n"
-    "\n"
-    "This specification can be used to make a parameter ignored. Starting with version 0.27.4, all primary parameters "
-    "are compared. Before 0.27.4, giving a tolerance meant only those parameters are compared. To exclude a primary "
-    "parameter from the compare, use the 'ignore' specification for that parameter.\n"
-    "\n"
-    "This constructor has been introduced in version 0.27.4.\n"
-  ) +
   gsi::method ("+", &db::EqualDeviceParameters::operator+, gsi::arg ("other"),
     "@brief Combines two parameters for comparison.\n"
     "The '+' operator will join the parameter comparers and produce one that checks the combined parameters.\n"
@@ -1011,8 +785,7 @@ Class<db::EqualDeviceParameters> decl_dbEqualDeviceParameters ("db", "EqualDevic
   gsi::method ("+=", &db::EqualDeviceParameters::operator+, gsi::arg ("other"),
     "@brief Combines two parameters for comparison (in-place).\n"
     "The '+=' operator will join the parameter comparers and produce one that checks the combined parameters.\n"
-  ) +
-  gsi::method ("to_string", &db::EqualDeviceParameters::to_string, "@hide"),
+  ),
   "@brief A device parameter equality comparer.\n"
   "Attach this object to a device class with \\DeviceClass#equal_parameters= to make the device "
   "class use this comparer:\n"
@@ -1033,12 +806,13 @@ Class<db::EqualDeviceParameters> decl_dbEqualDeviceParameters ("db", "EqualDevic
 );
 
 Class<GenericDeviceParameterCompare> decl_GenericDeviceParameterCompare (decl_dbEqualDeviceParameters, "db", "GenericDeviceParameterCompare",
+  gsi::callback ("equal", &GenericDeviceParameterCompare::equal, &GenericDeviceParameterCompare::cb_equal, gsi::arg ("device_a"), gsi::arg ("device_b"),
+    "@brief Compares the parameters of two devices for equality. "
+    "Returns true, if the parameters of device a and b are considered equal."
+  ) +
   gsi::callback ("less", &GenericDeviceParameterCompare::less, &GenericDeviceParameterCompare::cb_less, gsi::arg ("device_a"), gsi::arg ("device_b"),
     "@brief Compares the parameters of two devices for a begin less than b. "
     "Returns true, if the parameters of device a are considered less than those of device b."
-    "The 'less' implementation needs to ensure strict weak ordering. Specifically, less(a,b) == false and less(b,a) implies that a is equal to b and "
-    "less(a,b) == true implies that less(b,a) is false and vice versa. If not, an internal error "
-    "will be encountered on netlist compare."
   ),
   "@brief A class implementing the comparison of device parameters.\n"
   "Reimplement this class to provide a custom device parameter compare scheme.\n"
@@ -1048,30 +822,7 @@ Class<GenericDeviceParameterCompare> decl_GenericDeviceParameterCompare (decl_db
   "This class is intended for special cases. In most scenarios it is easier to use \\EqualDeviceParameters instead of "
   "implementing a custom comparer class.\n"
   "\n"
-  "This class has been added in version 0.26. The 'equal' method has been dropped in 0.27.1 as it can be expressed as !less(a,b) && !less(b,a)."
-);
-
-Class<GenericDeviceCombiner> decl_GenericDeviceCombiner ("db", "GenericDeviceCombiner",
-  gsi::callback ("combine_devices", &GenericDeviceCombiner::combine_devices, &GenericDeviceCombiner::cb_combine, gsi::arg ("device_a"), gsi::arg ("device_b"),
-    "@brief Combines two devices if possible.\n"
-    "This method needs to test, whether the two devices can be combined. Both devices "
-    "are guaranteed to share the same device class. "
-    "If they cannot be combined, this method shall do nothing and return false. "
-    "If they can be combined, this method shall reconnect the nets of the first "
-    "device and entirely disconnect the nets of the second device. "
-    "The second device will be deleted afterwards. "
-  ),
-  "@brief A class implementing the combination of two devices (parallel or serial mode).\n"
-  "Reimplement this class to provide a custom device combiner.\n"
-  "Device combination requires 'supports_paralell_combination' or 'supports_serial_combination' to be set "
-  "to true for the device class. In the netlist device combination step, the algorithm will try to identify "
-  "devices which can be combined into single devices and use the combiner object to implement the actual "
-  "joining of such devices.\n"
-  "\n"
-  "Attach this object to a device class with \\DeviceClass#combiner= to make the device "
-  "class use this combiner.\n"
-  "\n"
-  "This class has been added in version 0.27.3."
+  "This class has been added in version 0.26."
 );
 
 static tl::id_type id_of_device_class (const db::DeviceClass *cls)
@@ -1082,65 +833,6 @@ static tl::id_type id_of_device_class (const db::DeviceClass *cls)
 static void equal_parameters (db::DeviceClass *cls, db::EqualDeviceParameters *comparer)
 {
   cls->set_parameter_compare_delegate (comparer);
-}
-
-static db::EqualDeviceParameters *get_equal_parameters (db::DeviceClass *cls)
-{
-  return dynamic_cast<db::EqualDeviceParameters *> (cls->parameter_compare_delegate ());
-}
-
-static void set_combiner (db::DeviceClass *cls, GenericDeviceCombiner *combiner)
-{
-  cls->set_device_combiner (combiner);
-}
-
-static GenericDeviceCombiner *get_combiner (db::DeviceClass *cls)
-{
-  return dynamic_cast<GenericDeviceCombiner *> (cls->device_combiner ());
-}
-
-static void enable_parameter (db::DeviceClass *cls, size_t id, bool en)
-{
-  db::DeviceParameterDefinition *pd = cls->parameter_definition_non_const (id);
-  if (pd) {
-    pd->set_is_primary (en);
-  }
-}
-
-static void enable_parameter2 (db::DeviceClass *cls, const std::string &name, bool en)
-{
-  if (! cls->has_parameter_with_name (name)) {
-    return;
-  }
-
-  size_t id = cls->parameter_id_for_name (name);
-  db::DeviceParameterDefinition *pd = cls->parameter_definition_non_const (id);
-  if (pd) {
-    pd->set_is_primary (en);
-  }
-}
-
-static const db::DeviceParameterDefinition *parameter_definition2 (const db::DeviceClass *cls, const std::string &name)
-{
-  if (! cls->has_parameter_with_name (name)) {
-    return 0;
-  } else {
-    return cls->parameter_definition (cls->parameter_id_for_name (name));
-  }
-}
-
-static void dc_add_terminal_definition (db::DeviceClass *cls, db::DeviceTerminalDefinition *terminal_def)
-{
-  if (terminal_def) {
-    *terminal_def = cls->add_terminal_definition (*terminal_def);
-  }
-}
-
-static void dc_add_parameter_definition (db::DeviceClass *cls, db::DeviceParameterDefinition *parameter_def)
-{
-  if (parameter_def) {
-    *parameter_def = cls->add_parameter_definition (*parameter_def);
-  }
 }
 
 Class<db::DeviceClass> decl_dbDeviceClass ("db", "DeviceClass",
@@ -1197,33 +889,6 @@ Class<db::DeviceClass> decl_dbDeviceClass ("db", "DeviceClass",
     "Parameter definition IDs are used in some places to reference a specific parameter of a device. "
     "This method obtains the corresponding definition object."
   ) +
-  gsi::method_ext ("parameter_definition", &parameter_definition2, gsi::arg ("parameter_name"),
-    "@brief Gets the parameter definition object for a given ID.\n"
-    "Parameter definition IDs are used in some places to reference a specific parameter of a device. "
-    "This method obtains the corresponding definition object."
-    "\n"
-    "This version accepts a parameter name.\n"
-    "\n"
-    "This method has been introduced in version 0.27.3.\n"
-  ) +
-  gsi::method_ext ("enable_parameter", &enable_parameter, gsi::arg ("parameter_id"), gsi::arg ("enable"),
-    "@brief Enables or disables a parameter.\n"
-    "Some parameters are 'secondary' parameters which are extracted but not handled in device compare and are not shown in the netlist browser. "
-    "For example, the 'W' parameter of the resistor is such a secondary parameter. This method allows turning a parameter in a primary one ('enable') or "
-    "into a secondary one ('disable').\n"
-    "\n"
-    "This method has been introduced in version 0.27.3.\n"
-  ) +
-  gsi::method_ext ("enable_parameter", &enable_parameter2, gsi::arg ("parameter_name"), gsi::arg ("enable"),
-    "@brief Enables or disables a parameter.\n"
-    "Some parameters are 'secondary' parameters which are extracted but not handled in device compare and are not shown in the netlist browser. "
-    "For example, the 'W' parameter of the resistor is such a secondary parameter. This method allows turning a parameter in a primary one ('enable') or "
-    "into a secondary one ('disable').\n"
-    "\n"
-    "This version accepts a parameter name.\n"
-    "\n"
-    "This method has been introduced in version 0.27.3.\n"
-  ) +
   gsi::method ("has_parameter?", &db::DeviceClass::has_parameter_with_name, gsi::arg ("name"),
     "@brief Returns true, if the device class has a parameter with the given name.\n"
   ) +
@@ -1240,12 +905,6 @@ Class<db::DeviceClass> decl_dbDeviceClass ("db", "DeviceClass",
     "An exception is thrown if there is no terminal with the given name. Use \\has_terminal to check "
     "whether the name is a valid terminal name."
   ) +
-  gsi::method_ext ("equal_parameters", &get_equal_parameters,
-    "@brief Gets the device parameter comparer for netlist verification or nil if no comparer is registered.\n"
-    "See \\equal_parameters= for the setter.\n"
-    "\n"
-    "This method has been moved from 'GenericDeviceClass' to 'DeviceClass' in version 0.27.3.\n"
-  ) +
   gsi::method_ext ("equal_parameters=", &equal_parameters, gsi::arg ("comparer"),
     "@brief Specifies a device parameter comparer for netlist verification.\n"
     "By default, all devices are compared with all parameters. If you want to select only certain parameters "
@@ -1253,87 +912,7 @@ Class<db::DeviceClass> decl_dbDeviceClass ("db", "DeviceClass",
     "to the device class of one netlist. You can also chain multiple \\EqualDeviceParameters objects with the '+' operator "
     "for specifying multiple parameters in the equality check.\n"
     "\n"
-    "You can assign nil for the parameter comparer to remove it.\n"
-    "\n"
-    "In special cases, you can even implement a custom compare scheme by deriving your own comparer from the \\GenericDeviceParameterCompare class.\n"
-    "\n"
-    "This method has been moved from 'GenericDeviceClass' to 'DeviceClass' in version 0.27.3.\n"
-  ) +
-  gsi::method_ext ("add_terminal", &gsi::dc_add_terminal_definition, gsi::arg ("terminal_def"),
-    "@brief Adds the given terminal definition to the device class\n"
-    "This method will define a new terminal. The new terminal is added at the end of existing terminals. "
-    "The terminal definition object passed as the argument is modified to contain the "
-    "new ID of the terminal.\n"
-    "\n"
-    "The terminal is copied into the device class. Modifying the terminal object later "
-    "does not have the effect of changing the terminal definition.\n"
-    "\n"
-    "This method has been moved from 'GenericDeviceClass' to 'DeviceClass' in version 0.27.3.\n"
-  ) +
-  gsi::method ("clear_terminals", &db::DeviceClass::clear_terminal_definitions,
-    "@brief Clears the list of terminals\n"
-    "\n"
-    "This method has been moved from 'GenericDeviceClass' to 'DeviceClass' in version 0.27.3.\n"
-  ) +
-  gsi::method_ext ("add_parameter", &gsi::dc_add_parameter_definition, gsi::arg ("parameter_def"),
-    "@brief Adds the given parameter definition to the device class\n"
-    "This method will define a new parameter. The new parameter is added at the end of existing parameters. "
-    "The parameter definition object passed as the argument is modified to contain the "
-    "new ID of the parameter."
-    "\n"
-    "The parameter is copied into the device class. Modifying the parameter object later "
-    "does not have the effect of changing the parameter definition.\n"
-    "\n"
-    "This method has been moved from 'GenericDeviceClass' to 'DeviceClass' in version 0.27.3.\n"
-  ) +
-  gsi::method ("clear_parameters", &db::DeviceClass::clear_parameter_definitions,
-    "@brief Clears the list of parameters\n"
-    "\n"
-    "This method has been added in version 0.27.3.\n"
-  ) +
-  gsi::method_ext ("combiner=", &set_combiner, gsi::arg ("combiner"),
-    "@brief Specifies a device combiner (parallel or serial device combination).\n"
-    "\n"
-    "You can assign nil for the combiner to remove it.\n"
-    "\n"
-    "In special cases, you can even implement a custom combiner by deriving your own comparer from the \\GenericDeviceCombiner class.\n"
-    "\n"
-    "This method has been added in version 0.27.3.\n"
-  ) +
-  gsi::method_ext ("combiner", &get_combiner,
-    "@brief Gets a device combiner or nil if none is registered.\n"
-    "\n"
-    "This method has been added in version 0.27.3.\n"
-  ) +
-  gsi::method ("supports_parallel_combination=", &db::DeviceClass::set_supports_parallel_combination, gsi::arg ("f"),
-    "@brief Specifies whether the device supports parallel device combination.\n"
-    "Parallel device combination means that all terminals of two combination candidates are connected to the same nets. "
-    "If the device does not support this combination mode, this predicate can be set to false. This will make the device "
-    "extractor skip the combination test in parallel mode and improve performance somewhat.\n"
-    "\n"
-    "This method has been moved from 'GenericDeviceClass' to 'DeviceClass' in version 0.27.3.\n"
-  ) +
-  gsi::method ("supports_serial_combination=", &db::DeviceClass::set_supports_serial_combination, gsi::arg ("f"),
-    "@brief Specifies whether the device supports serial device combination.\n"
-    "Serial device combination means that the devices are connected by internal nodes. "
-    "If the device does not support this combination mode, this predicate can be set to false. This will make the device "
-    "extractor skip the combination test in serial mode and improve performance somewhat.\n"
-    "\n"
-    "This method has been moved from 'GenericDeviceClass' to 'DeviceClass' in version 0.27.3.\n"
-  ) +
-  gsi::method ("equivalent_terminal_id", &db::DeviceClass::equivalent_terminal_id, gsi::arg ("original_id"), gsi::arg ("equivalent_id"),
-    "@brief Specifies a terminal to be equivalent to another.\n"
-    "Use this method to specify two terminals to be exchangeable. For example to make S and D of a MOS transistor equivalent, "
-    "call this method with S and D terminal IDs. In netlist matching, S will be translated to D and thus made equivalent to D.\n"
-    "\n"
-    "Note that terminal equivalence is not effective if the device class operates in strict mode (see \\DeviceClass#strict=).\n"
-    "\n"
-    "This method has been moved from 'GenericDeviceClass' to 'DeviceClass' in version 0.27.3.\n"
-  ) +
-  gsi::method ("clear_equivalent_terminal_ids", &db::DeviceClass::clear_equivalent_terminal_ids,
-    "@brief Clears all equivalent terminal ids\n"
-    "\n"
-    "This method has been added in version 0.27.3.\n"
+    "In special cases, you can even implement a custom compare scheme by deriving your own comparer from the \\GenericDeviceParameterCompare class."
   ),
   "@brief A class describing a specific type of device.\n"
   "Device class objects live in the context of a \\Netlist object. After a "
@@ -1343,8 +922,7 @@ Class<db::DeviceClass> decl_dbDeviceClass ("db", "DeviceClass",
   "\n"
   "The \\DeviceClass class is the base class for other device classes.\n"
   "\n"
-  "This class has been added in version 0.26. In version 0.27.3, the 'GenericDeviceClass' has been integrated with \\DeviceClass "
-  "and the device class was made writeable in most respects. This enables manipulating built-in device classes."
+  "This class has been added in version 0.26."
 );
 
 namespace {
@@ -1419,6 +997,87 @@ private:
 
 }
 
+static void gdc_add_terminal_definition (GenericDeviceClass *cls, db::DeviceTerminalDefinition *terminal_def)
+{
+  if (terminal_def) {
+    *terminal_def = cls->add_terminal_definition (*terminal_def);
+  }
+}
+
+static void gdc_add_parameter_definition (GenericDeviceClass *cls, db::DeviceParameterDefinition *parameter_def)
+{
+  if (parameter_def) {
+    *parameter_def = cls->add_parameter_definition (*parameter_def);
+  }
+}
+
+Class<GenericDeviceClass> decl_GenericDeviceClass (decl_dbDeviceClass, "db", "GenericDeviceClass",
+  gsi::method_ext ("add_terminal", &gsi::gdc_add_terminal_definition, gsi::arg ("terminal_def"),
+    "@brief Adds the given terminal definition to the device class\n"
+    "This method will define a new terminal. The new terminal is added at the end of existing terminals. "
+    "The terminal definition object passed as the argument is modified to contain the "
+    "new ID of the terminal.\n"
+    "\n"
+    "The terminal is copied into the device class. Modifying the terminal object later "
+    "does not have the effect of changing the terminal definition."
+  ) +
+  gsi::method ("clear_terminals", &GenericDeviceClass::clear_terminal_definitions,
+    "@brief Clears the list of terminals\n"
+  ) +
+  gsi::method_ext ("add_parameter", &gsi::gdc_add_parameter_definition, gsi::arg ("parameter_def"),
+    "@brief Adds the given parameter definition to the device class\n"
+    "This method will define a new parameter. The new parameter is added at the end of existing parameters. "
+    "The parameter definition object passed as the argument is modified to contain the "
+    "new ID of the parameter."
+    "\n"
+    "The parameter is copied into the device class. Modifying the parameter object later "
+    "does not have the effect of changing the parameter definition."
+  ) +
+  gsi::method ("clear_parameters", &GenericDeviceClass::clear_parameter_definitions,
+    "@brief Clears the list of parameters\n"
+  ) +
+  gsi::callback ("combine_devices", &GenericDeviceClass::combine_devices, &GenericDeviceClass::cb_combine_devices, gsi::arg ("a"), gsi::arg ("b"),
+    "@brief Combines two devices.\n"
+    "This method shall test, whether the two devices can be combined. Both devices "
+    "are guaranteed to share the same device class (self). "
+    "If they cannot be combined, this method shall do nothing and return false. "
+    "If they can be combined, this method shall reconnect the nets of the first "
+    "device and entirely disconnect the nets of the second device. "
+    "It shall combine the parameters of both devices into the first. "
+    "The second device will be deleted afterwards.\n"
+  ) +
+  gsi::method ("supports_parallel_combination=", &GenericDeviceClass::set_supports_parallel_combination, gsi::arg ("f"),
+    "@brief Specifies whether the device supports parallel device combination.\n"
+    "Parallel device combination means that all terminals of two combination candidates are connected to the same nets. "
+    "If the device does not support this combination mode, this predicate can be set to false. This will make the device "
+    "extractor skip the combination test in parallel mode and improve performance somewhat."
+  ) +
+  gsi::method ("supports_serial_combination=", &GenericDeviceClass::set_supports_serial_combination, gsi::arg ("f"),
+    "@brief Specifies whether the device supports serial device combination.\n"
+    "Serial device combination means that the devices are connected by internal nodes. "
+    "If the device does not support this combination mode, this predicate can be set to false. This will make the device "
+    "extractor skip the combination test in serial mode and improve performance somewhat."
+  ) +
+  gsi::method ("equivalent_terminal_id", &GenericDeviceClass::equivalent_terminal_id, gsi::arg ("original_id"), gsi::arg ("equivalent_id"),
+    "@brief Specifies a terminal to be equivalent to another.\n"
+    "Use this method to specify two terminals to be exchangeable. For example to make S and D of a MOS transistor equivalent, "
+    "call this method with S and D terminal IDs. In netlist matching, S will be translated to D and thus made equivalent to D.\n"
+    "\n"
+    "Note that terminal equivalence is not effective if the device class operates in strict mode (see \\DeviceClass#strict=)."
+  ),
+  "@brief A generic device class\n"
+  "This class allows building generic device classes. Specificially, terminals can be defined "
+  "by adding terminal definitions. Terminal definitions should not be added dynamically. To create "
+  "your own device, instantiate the \\GenericDeviceClass object, set name and description and "
+  "specify the terminals. Then add this new device class to the \\Netlist object where it will live "
+  "and be used to define device instances (\\Device objects).\n"
+  "\n"
+  "In addition, parameters can be defined which correspond to values stored inside the "
+  "specific device instance (\\Device object)."
+  "\n"
+  "This class has been added in version 0.26."
+);
+
 static db::Net *create_net (db::Circuit *c, const std::string &name)
 {
   db::Net *n = new db::Net ();
@@ -1441,12 +1100,7 @@ static db::SubCircuit *create_subcircuit1 (db::Circuit *c, db::Circuit *cc, cons
   return sc;
 }
 
-static db::Net *circuit_net_for_pin (db::Circuit *c, const db::Pin *pin)
-{
-  return pin ? c->net_for_pin (pin->id ()) : 0;
-}
-
-static const db::Net *circuit_net_for_pin_const (const db::Circuit *c, const db::Pin *pin)
+static const db::Net *circuit_net_for_pin (const db::Circuit *c, const db::Pin *pin)
 {
   return pin ? c->net_for_pin (pin->id ()) : 0;
 }
@@ -1470,121 +1124,25 @@ static void circuit_disconnect_pin1 (db::Circuit *c, const db::Pin *pin)
   }
 }
 
-static db::Pin *create_pin (db::Circuit *circuit, const std::string &name)
-{
-  return & circuit->add_pin (name);
-}
-
-static std::vector<db::Net *>
-nets_non_const (const std::vector<const db::Net *> &nc)
-{
-  std::vector<db::Net *> n;
-  n.reserve (nc.size ());
-  for (auto i = nc.begin (); i != nc.end (); ++i) {
-    n.push_back (const_cast<db::Net *> (*i));
-  }
-
-  return n;
-}
-
-static std::vector<const db::Net *>
-nets_by_name_const (const db::Circuit *circuit, const std::string &name_pattern, const tl::Variant &cs)
-{
-  std::vector<const db::Net *> res;
-  if (! circuit) {
-    return res;
-  }
-
-  tl::GlobPattern glob (name_pattern);
-  if (! cs.is_nil ()) {
-    glob.set_case_sensitive (cs.to_bool ());
-  } else if (circuit->netlist ()) {
-    glob.set_case_sensitive (circuit->netlist ()->is_case_sensitive ());
-  }
-  for (db::Circuit::const_net_iterator n = circuit->begin_nets (); n != circuit->end_nets (); ++n) {
-    const db::Net *net = n.operator-> ();
-    if (!net->name ().empty () && glob.match (net->name ())) {
-      res.push_back (net);
-    }
-  }
-
-  return res;
-}
-
-static std::vector<db::Net *>
-nets_by_name (db::Circuit *circuit, const std::string &name_pattern, const tl::Variant &cs)
-{
-  return nets_non_const (nets_by_name_const (circuit, name_pattern, cs));
-}
-
-static std::vector<const db::Net *>
-nets_by_name_const_from_netlist (const db::Netlist *netlist, const std::string &name_pattern, const tl::Variant &cs)
-{
-  std::vector<const db::Net *> res;
-  if (! netlist) {
-    return res;
-  }
-
-  tl::GlobPattern glob (name_pattern);
-  glob.set_case_sensitive (cs.is_nil () ? netlist->is_case_sensitive () : cs.to_bool ());
-  for (auto c = netlist->begin_circuits (); c != netlist->end_circuits (); ++c) {
-    bool is_top = (c->begin_parents () == c->end_parents ());
-    for (auto n = c->begin_nets (); n != c->end_nets (); ++n) {
-      const db::Net *net = n.operator-> ();
-      //  NOTE: we only pick root nets (pin_count == 0 or in top cell)
-      if ((is_top || net->pin_count () == 0) && !net->name ().empty () && glob.match (net->name ())) {
-        res.push_back (net);
-      }
-    }
-  }
-
-  return res;
-}
-
-static std::vector<db::Net *>
-nets_by_name_from_netlist (db::Netlist *netlist, const std::string &name_pattern, const tl::Variant &cs)
-{
-  return nets_non_const (nets_by_name_const_from_netlist (netlist, name_pattern, cs));
-}
-
 Class<db::Circuit> decl_dbCircuit (decl_dbNetlistObject, "db", "Circuit",
-  gsi::method_ext ("create_pin", &create_pin, gsi::arg ("name"),
+  gsi::method ("create_pin", (const db::Pin &(db::Circuit::*) (const std::string &)) &db::Circuit::add_pin, gsi::arg ("name"),
     "@brief Creates a new \\Pin object inside the circuit\n"
     "This object will describe a pin of the circuit. A circuit connects "
     "to the outside through such a pin. The pin is added after all existing "
     "pins. For more details see the \\Pin class."
-    "\n\n"
-    "Starting with version 0.26.8, this method returns a reference to a \\Pin object rather than a copy."
   ) +
   gsi::method ("remove_pin", &db::Circuit::remove_pin, gsi::arg ("id"),
     "@brief Removes the pin with the given ID from the circuit\n"
     "\n"
     "This method has been introduced in version 0.26.2.\n"
   ) +
-  gsi::method ("rename_pin", &db::Circuit::rename_pin, gsi::arg ("id"), gsi::arg ("new_name"),
-    "@brief Renames the pin with the given ID to 'new_name'\n"
-    "\n"
-    "This method has been introduced in version 0.26.8.\n"
-  ) +
   gsi::iterator ("each_child", (db::Circuit::child_circuit_iterator (db::Circuit::*) ()) &db::Circuit::begin_children, (db::Circuit::child_circuit_iterator (db::Circuit::*) ()) &db::Circuit::end_children,
     "@brief Iterates over the child circuits of this circuit\n"
     "Child circuits are the ones that are referenced from this circuit via subcircuits."
   ) +
-  gsi::iterator ("each_child", (db::Circuit::const_child_circuit_iterator (db::Circuit::*) () const) &db::Circuit::begin_children, (db::Circuit::const_child_circuit_iterator (db::Circuit::*) () const) &db::Circuit::end_children,
-    "@brief Iterates over the child circuits of this circuit (const version)\n"
-    "Child circuits are the ones that are referenced from this circuit via subcircuits."
-    "\n\n"
-    "This constness variant has been introduced in version 0.26.8"
-  ) +
   gsi::iterator ("each_parent", (db::Circuit::parent_circuit_iterator (db::Circuit::*) ()) &db::Circuit::begin_parents, (db::Circuit::parent_circuit_iterator (db::Circuit::*) ()) &db::Circuit::end_parents,
     "@brief Iterates over the parent circuits of this circuit\n"
     "Child circuits are the ones that are referencing this circuit via subcircuits."
-  ) +
-  gsi::iterator ("each_parent", (db::Circuit::const_parent_circuit_iterator (db::Circuit::*) () const) &db::Circuit::begin_parents, (db::Circuit::const_parent_circuit_iterator (db::Circuit::*) () const) &db::Circuit::end_parents,
-    "@brief Iterates over the parent circuits of this circuit (const version)\n"
-    "Child circuits are the ones that are referencing this circuit via subcircuits."
-    "\n\n"
-    "This constness variant has been introduced in version 0.26.8"
   ) +
   gsi::method ("has_refs?", &db::Circuit::has_refs,
     "@brief Returns a value indicating whether the circuit has references\n"
@@ -1593,58 +1151,24 @@ Class<db::Circuit> decl_dbCircuit (decl_dbNetlistObject, "db", "Circuit",
   gsi::iterator ("each_ref", (db::Circuit::refs_iterator (db::Circuit::*) ()) &db::Circuit::begin_refs, (db::Circuit::refs_iterator (db::Circuit::*) ()) &db::Circuit::end_refs,
     "@brief Iterates over the subcircuit objects referencing this circuit\n"
   ) +
-  gsi::iterator ("each_ref", (db::Circuit::const_refs_iterator (db::Circuit::*) () const) &db::Circuit::begin_refs, (db::Circuit::const_refs_iterator (db::Circuit::*) () const) &db::Circuit::end_refs,
-    "@brief Iterates over the subcircuit objects referencing this circuit (const version)\n"
-    "\n\n"
-    "This constness variant has been introduced in version 0.26.8"
-  ) +
   gsi::iterator ("each_pin", (db::Circuit::pin_iterator (db::Circuit::*) ()) &db::Circuit::begin_pins, (db::Circuit::pin_iterator (db::Circuit::*) ()) &db::Circuit::end_pins,
     "@brief Iterates over the pins of the circuit"
-  ) +
-  gsi::iterator ("each_pin", (db::Circuit::const_pin_iterator (db::Circuit::*) () const) &db::Circuit::begin_pins, (db::Circuit::const_pin_iterator (db::Circuit::*) () const) &db::Circuit::end_pins,
-    "@brief Iterates over the pins of the circuit (const version)"
-    "\n\n"
-    "This constness variant has been introduced in version 0.26.8"
   ) +
   gsi::method ("device_by_id", (db::Device *(db::Circuit::*) (size_t)) &db::Circuit::device_by_id, gsi::arg ("id"),
     "@brief Gets the device object for a given ID.\n"
     "If the ID is not a valid device ID, nil is returned."
   ) +
-  gsi::method ("device_by_id", (const db::Device *(db::Circuit::*) (size_t) const) &db::Circuit::device_by_id, gsi::arg ("id"),
-    "@brief Gets the device object for a given ID (const version).\n"
-    "If the ID is not a valid device ID, nil is returned."
-    "\n\n"
-    "This constness variant has been introduced in version 0.26.8"
-  ) +
   gsi::method ("device_by_name", (db::Device *(db::Circuit::*) (const std::string &)) &db::Circuit::device_by_name, gsi::arg ("name"),
     "@brief Gets the device object for a given name.\n"
     "If the ID is not a valid device name, nil is returned."
-  ) +
-  gsi::method ("device_by_name", (const db::Device *(db::Circuit::*) (const std::string &) const) &db::Circuit::device_by_name, gsi::arg ("name"),
-    "@brief Gets the device object for a given name (const version).\n"
-    "If the ID is not a valid device name, nil is returned."
-    "\n\n"
-    "This constness variant has been introduced in version 0.26.8"
   ) +
   gsi::method ("subcircuit_by_id", (db::SubCircuit *(db::Circuit::*) (size_t)) &db::Circuit::subcircuit_by_id, gsi::arg ("id"),
     "@brief Gets the subcircuit object for a given ID.\n"
     "If the ID is not a valid subcircuit ID, nil is returned."
   ) +
-  gsi::method ("subcircuit_by_id", (const db::SubCircuit *(db::Circuit::*) (size_t) const) &db::Circuit::subcircuit_by_id, gsi::arg ("id"),
-    "@brief Gets the subcircuit object for a given ID (const version).\n"
-    "If the ID is not a valid subcircuit ID, nil is returned."
-    "\n\n"
-    "This constness variant has been introduced in version 0.26.8"
-  ) +
   gsi::method ("subcircuit_by_name", (db::SubCircuit *(db::Circuit::*) (const std::string &)) &db::Circuit::subcircuit_by_name, gsi::arg ("name"),
     "@brief Gets the subcircuit object for a given name.\n"
     "If the ID is not a valid subcircuit name, nil is returned."
-  ) +
-  gsi::method ("subcircuit_by_name", (const db::SubCircuit *(db::Circuit::*) (const std::string &) const) &db::Circuit::subcircuit_by_name, gsi::arg ("name"),
-    "@brief Gets the subcircuit object for a given name (const version).\n"
-    "If the ID is not a valid subcircuit name, nil is returned."
-    "\n\n"
-    "This constness variant has been introduced in version 0.26.8"
   ) +
   gsi::method ("net_by_cluster_id", (db::Net *(db::Circuit::*) (size_t)) &db::Circuit::net_by_cluster_id, gsi::arg ("cluster_id"),
     "@brief Gets the net object corresponding to a specific cluster ID\n"
@@ -1654,51 +1178,13 @@ Class<db::Circuit> decl_dbCircuit (decl_dbNetlistObject, "db", "Circuit",
     "@brief Gets the net object for a given name.\n"
     "If the ID is not a valid net name, nil is returned."
   ) +
-  gsi::method ("net_by_name", (const db::Net *(db::Circuit::*) (const std::string &) const) &db::Circuit::net_by_name, gsi::arg ("name"),
-    "@brief Gets the net object for a given name (const version).\n"
-    "If the ID is not a valid net name, nil is returned."
-    "\n\n"
-    "This constness variant has been introduced in version 0.26.8"
-  ) +
-  gsi::method_ext ("nets_by_name", &nets_by_name, gsi::arg ("name_pattern"), gsi::arg ("case_sensitive", tl::Variant (), "default"),
-    "@brief Gets the net objects for a given name filter.\n"
-    "The name filter is a glob pattern. This method will return all \\Net objects matching the glob pattern.\n"
-    "The 'case_sensitive' argument will control whether the name is looked up in a case sensitive way or not. Note that "
-    "with case insensitive search on a netlist that is case sensitive, the same name may render more than one hit. By "
-    "default, case sensitivity is taken from the netlist.\n"
-    "\n"
-    "This method has been introduced in version 0.27.3.\n"
-    "The 'case_sensitive' argument has been added in version 0.30.2."
-  ) +
-  gsi::method_ext ("nets_by_name", &nets_by_name_const, gsi::arg ("name_pattern"), gsi::arg ("case_sensitive", tl::Variant (), "default"),
-    "@brief Gets the net objects for a given name filter (const version).\n"
-    "The name filter is a glob pattern. This method will return all \\Net objects matching the glob pattern.\n"
-    "The 'case_sensitive' argument will control whether the name is looked up in a case sensitive way or not. Note that "
-    "with case insensitive search on a netlist that is case sensitive, the same name may render more than one hit. By "
-    "default, case sensitivity is taken from the netlist.\n"
-    "\n"
-    "This constness variant has been introduced in version 0.27.3.\n"
-    "The 'case_sensitive' argument has been added in version 0.30.2."
-  ) +
   gsi::method ("pin_by_id", (db::Pin *(db::Circuit::*) (size_t)) &db::Circuit::pin_by_id, gsi::arg ("id"),
     "@brief Gets the \\Pin object corresponding to a specific ID\n"
     "If the ID is not a valid pin ID, nil is returned."
   ) +
-  gsi::method ("pin_by_id", (const db::Pin *(db::Circuit::*) (size_t) const) &db::Circuit::pin_by_id, gsi::arg ("id"),
-    "@brief Gets the \\Pin object corresponding to a specific ID (const version)\n"
-    "If the ID is not a valid pin ID, nil is returned."
-    "\n\n"
-    "This constness variant has been introduced in version 0.26.8"
-  ) +
   gsi::method ("pin_by_name", (db::Pin *(db::Circuit::*) (const std::string &)) &db::Circuit::pin_by_name, gsi::arg ("name"),
     "@brief Gets the \\Pin object corresponding to a specific name\n"
     "If the ID is not a valid pin name, nil is returned."
-  ) +
-  gsi::method ("pin_by_name", (const db::Pin *(db::Circuit::*) (const std::string &) const) &db::Circuit::pin_by_name, gsi::arg ("name"),
-    "@brief Gets the \\Pin object corresponding to a specific name (const version)\n"
-    "If the ID is not a valid pin name, nil is returned."
-    "\n\n"
-    "This constness variant has been introduced in version 0.26.8"
   ) +
   gsi::method ("pin_count", &db::Circuit::pin_count,
     "@brief Gets the number of pins in the circuit"
@@ -1715,20 +1201,8 @@ Class<db::Circuit> decl_dbCircuit (decl_dbNetlistObject, "db", "Circuit",
   gsi::method ("remove_net", &db::Circuit::remove_net, gsi::arg ("net"),
     "@brief Removes the given net from the circuit\n"
   ) +
-  gsi::method ("join_nets", &db::Circuit::join_nets, gsi::arg ("net"), gsi::arg ("with"),
-    "@brief Joins (connects) two nets into one\n"
-    "This method will connect the 'with' net with 'net' and remove 'with'.\n"
-    "\n"
-    "This method has been introduced in version 0.26.4. Starting with version 0.28.13, "
-    "net names will be formed from both input names, combining them with as a comma-separated list."
-  ) +
   gsi::iterator ("each_net", (db::Circuit::net_iterator (db::Circuit::*) ()) &db::Circuit::begin_nets, (db::Circuit::net_iterator (db::Circuit::*) ()) &db::Circuit::end_nets,
     "@brief Iterates over the nets of the circuit"
-  ) +
-  gsi::iterator ("each_net", (db::Circuit::const_net_iterator (db::Circuit::*) () const) &db::Circuit::begin_nets, (db::Circuit::const_net_iterator (db::Circuit::*) () const) &db::Circuit::end_nets,
-    "@brief Iterates over the nets of the circuit (const version)"
-    "\n\n"
-    "This constness variant has been introduced in version 0.26.8"
   ) +
   gsi::method_ext ("create_device", &gsi::create_device1, gsi::arg ("device_class"), gsi::arg ("name", std::string ()),
     "@brief Creates a new bound \\Device object inside the circuit\n"
@@ -1744,11 +1218,6 @@ Class<db::Circuit> decl_dbCircuit (decl_dbNetlistObject, "db", "Circuit",
   gsi::iterator ("each_device", (db::Circuit::device_iterator (db::Circuit::*) ()) &db::Circuit::begin_devices, (db::Circuit::device_iterator (db::Circuit::*) ()) &db::Circuit::end_devices,
     "@brief Iterates over the devices of the circuit"
   ) +
-  gsi::iterator ("each_device", (db::Circuit::const_device_iterator (db::Circuit::*) () const) &db::Circuit::begin_devices, (db::Circuit::const_device_iterator (db::Circuit::*) () const) &db::Circuit::end_devices,
-    "@brief Iterates over the devices of the circuit (const version)"
-    "\n\n"
-    "This constness variant has been introduced in version 0.26.8"
-  ) +
   gsi::method_ext ("create_subcircuit", &gsi::create_subcircuit1, gsi::arg ("circuit"), gsi::arg ("name", std::string ()),
     "@brief Creates a new bound \\SubCircuit object inside the circuit\n"
     "This object describes an instance of another circuit inside the circuit. The subcircuit is already attached "
@@ -1762,16 +1231,11 @@ Class<db::Circuit> decl_dbCircuit (decl_dbNetlistObject, "db", "Circuit",
   ) +
   gsi::method ("flatten_subcircuit", &db::Circuit::flatten_subcircuit, gsi::arg ("subcircuit"),
     "@brief Flattens a subcircuit\n"
-    "This method will substitute the given subcircuit by its contents. The subcircuit is removed "
+    "This method will substitute the given subcircuit by it's contents. The subcircuit is removed "
     "after this."
   ) +
   gsi::iterator ("each_subcircuit", (db::Circuit::subcircuit_iterator (db::Circuit::*) ()) &db::Circuit::begin_subcircuits, (db::Circuit::subcircuit_iterator (db::Circuit::*) ()) &db::Circuit::end_subcircuits,
     "@brief Iterates over the subcircuits of the circuit"
-  ) +
-  gsi::iterator ("each_subcircuit", (db::Circuit::const_subcircuit_iterator (db::Circuit::*) () const) &db::Circuit::begin_subcircuits, (db::Circuit::const_subcircuit_iterator (db::Circuit::*) () const) &db::Circuit::end_subcircuits,
-    "@brief Iterates over the subcircuits of the circuit (const version)"
-    "\n\n"
-    "This constness variant has been introduced in version 0.26.8"
   ) +
   gsi::method ("blank", &db::Circuit::blank,
     "@brief Blanks out the circuit\n"
@@ -1783,11 +1247,6 @@ Class<db::Circuit> decl_dbCircuit (decl_dbNetlistObject, "db", "Circuit",
   ) +
   gsi::method ("netlist", (db::Netlist *(db::Circuit::*) ()) &db::Circuit::netlist,
     "@brief Gets the netlist object the circuit lives in"
-  ) +
-  gsi::method ("netlist", (const db::Netlist *(db::Circuit::*) () const) &db::Circuit::netlist,
-    "@brief Gets the netlist object the circuit lives in (const version)"
-    "\n\n"
-    "This constness variant has been introduced in version 0.26.8"
   ) +
   gsi::method ("name=", &db::Circuit::set_name, gsi::arg ("name"),
     "@brief Sets the name of the circuit"
@@ -1823,24 +1282,10 @@ Class<db::Circuit> decl_dbCircuit (decl_dbNetlistObject, "db", "Circuit",
     "This is the net object inside the circuit which attaches to the given outward-bound pin.\n"
     "This method returns nil if the pin is not connected or the pin ID is invalid."
   ) +
-  gsi::method ("net_for_pin", (const db::Net *(db::Circuit::*) (size_t) const) &db::Circuit::net_for_pin, gsi::arg ("pin_id"),
-    "@brief Gets the net object attached to a specific pin (const version).\n"
-    "This is the net object inside the circuit which attaches to the given outward-bound pin.\n"
-    "This method returns nil if the pin is not connected or the pin ID is invalid."
-    "\n\n"
-    "This constness variant has been introduced in version 0.26.8"
-  ) +
   gsi::method_ext ("net_for_pin", &gsi::circuit_net_for_pin, gsi::arg ("pin"),
     "@brief Gets the net object attached to a specific pin.\n"
     "This is the net object inside the circuit which attaches to the given outward-bound pin.\n"
     "This method returns nil if the pin is not connected or the pin object is nil."
-  ) +
-  gsi::method_ext ("net_for_pin", &gsi::circuit_net_for_pin_const, gsi::arg ("pin"),
-    "@brief Gets the net object attached to a specific pin (const version).\n"
-    "This is the net object inside the circuit which attaches to the given outward-bound pin.\n"
-    "This method returns nil if the pin is not connected or the pin object is nil."
-    "\n\n"
-    "This constness variant has been introduced in version 0.26.8"
   ) +
   gsi::method ("connect_pin", &db::Circuit::connect_pin, gsi::arg ("pin_id"), gsi::arg ("net"),
     "@brief Connects the given pin with the given net.\n"
@@ -1868,12 +1313,6 @@ Class<db::Circuit> decl_dbCircuit (decl_dbNetlistObject, "db", "Circuit",
     "to their device classes 'combine_devices' method.\n"
     "For example, serial or parallel resistors can be combined into "
     "a single resistor.\n"
-  ) +
-  gsi::method ("purge_devices", &db::Circuit::purge_devices,
-    "@brief Purges invalid devices.\n"
-    "Purges devices which are considered invalid. Such devices are for example those whose terminals are all connected to a single net.\n"
-    "\n"
-    "This method has been added in version 0.29.7."
   ) +
   gsi::method ("purge_nets", &db::Circuit::purge_nets,
     "@brief Purges floating nets.\n"
@@ -1973,57 +1412,7 @@ static void blank_circuit_by_name (db::Netlist *nl, const std::string &name_patt
   }
 }
 
-static std::vector<db::Circuit *>
-circuits_by_name (db::Netlist *netlist, const std::string &name_pattern, const tl::Variant &cs)
-{
-  std::vector<db::Circuit *> res;
-  if (! netlist) {
-    return res;
-  }
-
-  tl::GlobPattern glob (name_pattern);
-  glob.set_case_sensitive (cs.is_nil () ? netlist->is_case_sensitive () : cs.to_bool ());
-
-  for (db::Netlist::circuit_iterator c = netlist->begin_circuits (); c != netlist->end_circuits (); ++c) {
-    db::Circuit *circuit = c.operator-> ();
-    if (glob.match (circuit->name ())) {
-      res.push_back (circuit);
-    }
-  }
-
-  return res;
-}
-
-static std::vector<const db::Circuit *>
-circuits_by_name_const (const db::Netlist *netlist, const std::string &name_pattern, const tl::Variant &cs)
-{
-  std::vector<const db::Circuit *> res;
-  if (! netlist) {
-    return res;
-  }
-
-  tl::GlobPattern glob (name_pattern);
-  glob.set_case_sensitive (cs.is_nil () ? netlist->is_case_sensitive () : cs.to_bool ());
-
-  for (db::Netlist::const_circuit_iterator c = netlist->begin_circuits (); c != netlist->end_circuits (); ++c) {
-    const db::Circuit *circuit = c.operator-> ();
-    if (glob.match (circuit->name ())) {
-      res.push_back (circuit);
-    }
-  }
-
-  return res;
-}
-
 Class<db::Netlist> decl_dbNetlist ("db", "Netlist",
-  gsi::method ("is_case_sensitive?", &db::Netlist::is_case_sensitive,
-    "@brief Returns a value indicating whether the netlist names are case sensitive\n"
-    "This method has been added in version 0.27.3.\n"
-  ) +
-  gsi::method ("case_sensitive=", &db::Netlist::set_case_sensitive, gsi::arg ("cs"),
-    "@brief Sets a value indicating whether the netlist names are case sensitive\n"
-    "This method has been added in version 0.27.3.\n"
-  ) +
   gsi::method_ext ("add", &gsi::add_circuit, gsi::arg ("circuit"),
     "@brief Adds the circuit to the netlist\n"
     "This method will add the given circuit object to the netlist. "
@@ -2045,7 +1434,7 @@ Class<db::Netlist> decl_dbNetlist ("db", "Netlist",
     "@brief Flattens all circuits of the netlist\n"
     "After calling this method, only the top circuits will remain."
   ) +
-  gsi::method ("flatten_circuits", &db::Netlist::flatten_circuits, gsi::arg ("circuits"),
+  gsi::method ("flatten_circuits", &db::Netlist::flatten_circuits,
     "@brief Flattens all given circuits of the netlist\n"
     "This method is equivalent to calling \\flatten_circuit for all given circuits, but more efficient.\n"
     "\n"
@@ -2053,7 +1442,7 @@ Class<db::Netlist> decl_dbNetlist ("db", "Netlist",
   ) +
   gsi::method ("flatten_circuit", &db::Netlist::flatten_circuit, gsi::arg ("circuit"),
     "@brief Flattens a subcircuit\n"
-    "This method will substitute all instances (subcircuits) of the given circuit by its "
+    "This method will substitute all instances (subcircuits) of the given circuit by it's "
     "contents. After this, the circuit is removed."
   ) +
   gsi::method_ext ("flatten_circuit", &flatten_circuit_by_name, gsi::arg ("pattern"),
@@ -2067,7 +1456,7 @@ Class<db::Netlist> decl_dbNetlist ("db", "Netlist",
     "This method will erase everything from inside the circuits matching the given pattern. It will only leave pins which are "
     "not connected to any net. Hence, this method forms 'abstract' or black-box circuits which can be instantiated through "
     "subcircuits like the former ones, but are empty shells.\n"
-    "The name pattern is a glob expression. For example, 'blank_circuit(\"np*\")' will blank out all circuits with names "
+    "The name pattern is a glob expression. For example, 'flatten_circuit(\"np*\")' will blank out all circuits with names "
     "starting with 'np'.\n"
     "\n"
     "For more details see \\Circuit#blank which is the corresponding method on the actual object."
@@ -2076,111 +1465,19 @@ Class<db::Netlist> decl_dbNetlist ("db", "Netlist",
     "@brief Gets the circuit object for a given cell index.\n"
     "If the cell index is not valid or no circuit is registered with this index, nil is returned."
   ) +
-  gsi::method ("circuit_by_cell_index", (const db::Circuit *(db::Netlist::*) (db::cell_index_type) const) &db::Netlist::circuit_by_cell_index, gsi::arg ("cell_index"),
-    "@brief Gets the circuit object for a given cell index (const version).\n"
-    "If the cell index is not valid or no circuit is registered with this index, nil is returned."
-    "\n\n"
-    "This constness variant has been introduced in version 0.26.8."
-  ) +
   gsi::method ("circuit_by_name", (db::Circuit *(db::Netlist::*) (const std::string &)) &db::Netlist::circuit_by_name, gsi::arg ("name"),
     "@brief Gets the circuit object for a given name.\n"
     "If the name is not a valid circuit name, nil is returned."
-  ) +
-  gsi::method ("circuit_by_name", (const db::Circuit *(db::Netlist::*) (const std::string &) const) &db::Netlist::circuit_by_name, gsi::arg ("name"),
-    "@brief Gets the circuit object for a given name (const version).\n"
-    "If the name is not a valid circuit name, nil is returned."
-    "\n\n"
-    "This constness variant has been introduced in version 0.26.8."
-  ) +
-  gsi::method_ext ("circuits_by_name", &circuits_by_name, gsi::arg ("name_pattern"), gsi::arg ("case_sensitive", tl::Variant (), "default"),
-    "@brief Gets the circuit objects for a given name filter.\n"
-    "The name filter is a glob pattern. This method will return all \\Circuit objects matching the glob pattern.\n"
-    "The 'case_sensitive' argument will control whether the name is looked up in a case sensitive way or not. Note that "
-    "with case insensitive search on a netlist that is case sensitive, the same name may render more than one hit. By "
-    "default, case sensitivity is taken from the netlist.\n"
-    "\n"
-    "This method has been introduced in version 0.26.4.\n"
-    "The 'case_sensitive' argument has been added in version 0.30.2."
-  ) +
-  gsi::method_ext ("circuits_by_name", &circuits_by_name_const, gsi::arg ("name_pattern"), gsi::arg ("case_sensitive", tl::Variant (), "default"),
-    "@brief Gets the circuit objects for a given name filter (const version).\n"
-    "The name filter is a glob pattern. This method will return all \\Circuit objects matching the glob pattern.\n"
-    "The 'case_sensitive' argument will control whether the name is looked up in a case sensitive way or not. Note that "
-    "with case insensitive search on a netlist that is case sensitive, the same name may render more than one hit. By "
-    "default, case sensitivity is taken from the netlist.\n"
-    "\n"
-    "This constness variant has been introduced in version 0.26.8."
-    "The 'case_sensitive' argument has been added in version 0.30.2."
-  ) +
-  gsi::method_ext ("nets_by_name", &nets_by_name_from_netlist, gsi::arg ("name_pattern"), gsi::arg ("case_sensitive", tl::Variant (), "default"),
-    "@brief Gets the net objects for a given name filter.\n"
-    "The name filter is a glob pattern. This method will return all \\Net objects matching the glob pattern.\n"
-    "The 'case_sensitive' argument will control whether the name is looked up in a case sensitive way or not. Note that "
-    "with case insensitive search on a netlist that is case sensitive, the same name may render more than one hit. By "
-    "default, case sensitivity is taken from the netlist.\n"
-    "\n"
-    "This method has been introduced in version 0.28.4.\n"
-    "The 'case_sensitive' argument has been added in version 0.30.2."
-  ) +
-  gsi::method_ext ("nets_by_name", &nets_by_name_const_from_netlist, gsi::arg ("name_pattern"), gsi::arg ("case_sensitive", tl::Variant (), "default"),
-    "@brief Gets the net objects for a given name filter (const version).\n"
-    "The name filter is a glob pattern. This method will return all \\Net objects matching the glob pattern.\n"
-    "The 'case_sensitive' argument will control whether the name is looked up in a case sensitive way or not. Note that "
-    "with case insensitive search on a netlist that is case sensitive, the same name may render more than one hit. By "
-    "default, case sensitivity is taken from the netlist.\n"
-    "\n"
-    "This constness variant has been introduced in version 0.28.4."
-    "The 'case_sensitive' argument has been added in version 0.30.2."
-  ) +
-  gsi::method ("top_circuit", static_cast<db::Circuit *(db::Netlist::*) ()> (&db::Netlist::top_circuit),
-    "@brief Gets the top circuit.\n"
-    "This method will return nil, if there is no top circuit. It will raise an error, if there is more than "
-    "a single top circuit.\n"
-    "\n"
-    "This convenience method has been added in version 0.29.5."
-  ) +
-  gsi::method ("top_circuit", static_cast<const db::Circuit *(db::Netlist::*) () const> (&db::Netlist::top_circuit),
-    "@brief Gets the top circuit (const version).\n"
-    "This method will return nil, if there is no top circuit. It will raise an error, if there is more than "
-    "a single top circuit.\n"
-    "\n"
-    "This convenience method has been added in version 0.29.5."
-  ) +
-  gsi::method ("top_circuits", static_cast<std::vector<db::Circuit *> (db::Netlist::*) ()> (&db::Netlist::top_circuits),
-    "@brief Gets the top circuits.\n"
-    "Returns a list of top circuits.\n"
-    "\n"
-    "This convenience method has been added in version 0.29.5."
-  ) +
-  gsi::method ("top_circuits", static_cast<std::vector<const db::Circuit *> (db::Netlist::*) () const> (&db::Netlist::top_circuits),
-    "@brief Gets the top circuits.\n"
-    "Returns a list of top circuits.\n"
-    "\n"
-    "This convenience method has been added in version 0.29.5."
   ) +
   gsi::iterator ("each_circuit_top_down", (db::Netlist::top_down_circuit_iterator (db::Netlist::*) ()) &db::Netlist::begin_top_down, (db::Netlist::top_down_circuit_iterator (db::Netlist::*) ()) &db::Netlist::end_top_down,
     "@brief Iterates over the circuits top-down\n"
     "Iterating top-down means the parent circuits come before the child circuits. "
     "The first \\top_circuit_count circuits are top circuits - i.e. those which are not referenced by other circuits."
   ) +
-  gsi::iterator ("each_circuit_top_down", (db::Netlist::const_top_down_circuit_iterator (db::Netlist::*) () const) &db::Netlist::begin_top_down, (db::Netlist::const_top_down_circuit_iterator (db::Netlist::*) () const) &db::Netlist::end_top_down,
-    "@brief Iterates over the circuits top-down (const version)\n"
-    "Iterating top-down means the parent circuits come before the child circuits. "
-    "The first \\top_circuit_count circuits are top circuits - i.e. those which are not referenced by other circuits."
-    "\n\n"
-    "This constness variant has been introduced in version 0.26.8."
-  ) +
   gsi::iterator ("each_circuit_bottom_up", (db::Netlist::bottom_up_circuit_iterator (db::Netlist::*) ()) &db::Netlist::begin_bottom_up, (db::Netlist::bottom_up_circuit_iterator (db::Netlist::*) ()) &db::Netlist::end_bottom_up,
     "@brief Iterates over the circuits bottom-up\n"
     "Iterating bottom-up means the parent circuits come after the child circuits. "
     "This is the basically the reverse order as delivered by \\each_circuit_top_down."
-  ) +
-  gsi::iterator ("each_circuit_bottom_up", (db::Netlist::const_bottom_up_circuit_iterator (db::Netlist::*) () const) &db::Netlist::begin_bottom_up, (db::Netlist::const_bottom_up_circuit_iterator (db::Netlist::*) () const) &db::Netlist::end_bottom_up,
-    "@brief Iterates over the circuits bottom-up (const version)\n"
-    "Iterating bottom-up means the parent circuits come after the child circuits. "
-    "This is the basically the reverse order as delivered by \\each_circuit_top_down."
-    "\n\n"
-    "This constness variant has been introduced in version 0.26.8."
   ) +
   gsi::method ("top_circuit_count", &db::Netlist::top_circuit_count,
     "@brief Gets the number of top circuits.\n"
@@ -2189,11 +1486,6 @@ Class<db::Netlist> decl_dbNetlist ("db", "Netlist",
   ) +
   gsi::iterator ("each_circuit", (db::Netlist::circuit_iterator (db::Netlist::*) ()) &db::Netlist::begin_circuits, (db::Netlist::circuit_iterator (db::Netlist::*) ()) &db::Netlist::end_circuits,
     "@brief Iterates over the circuits of the netlist"
-  ) +
-  gsi::iterator ("each_circuit", (db::Netlist::const_circuit_iterator (db::Netlist::*) () const) &db::Netlist::begin_circuits, (db::Netlist::const_circuit_iterator (db::Netlist::*) () const) &db::Netlist::end_circuits,
-    "@brief Iterates over the circuits of the netlist (const version)"
-    "\n\n"
-    "This constness variant has been introduced in version 0.26.8."
   ) +
   gsi::method_ext ("add", &gsi::add_device_class, gsi::arg ("device_class"),
     "@brief Adds the device class to the netlist\n"
@@ -2210,19 +1502,8 @@ Class<db::Netlist> decl_dbNetlist ("db", "Netlist",
     "@brief Gets the device class for a given name.\n"
     "If the name is not a valid device class name, nil is returned."
   ) +
-  gsi::method ("device_class_by_name", (const db::DeviceClass *(db::Netlist::*) (const std::string &) const) &db::Netlist::device_class_by_name, gsi::arg ("name"),
-    "@brief Gets the device class for a given name (const version).\n"
-    "If the name is not a valid device class name, nil is returned."
-    "\n\n"
-    "This constness variant has been introduced in version 0.26.8."
-  ) +
   gsi::iterator ("each_device_class", (db::Netlist::device_class_iterator (db::Netlist::*) ()) &db::Netlist::begin_device_classes, (db::Netlist::device_class_iterator (db::Netlist::*) ()) &db::Netlist::end_device_classes,
     "@brief Iterates over the device classes of the netlist"
-  ) +
-  gsi::iterator ("each_device_class", (db::Netlist::const_device_class_iterator (db::Netlist::*) () const) &db::Netlist::begin_device_classes, (db::Netlist::const_device_class_iterator (db::Netlist::*) () const) &db::Netlist::end_device_classes,
-    "@brief Iterates over the device classes of the netlist (const version)"
-    "\n\n"
-    "This constness variant has been introduced in version 0.26.8."
   ) +
   gsi::method ("to_s", &db::Netlist::to_string,
     "@brief Converts the netlist to a string representation.\n"
@@ -2258,18 +1539,12 @@ Class<db::Netlist> decl_dbNetlist ("db", "Netlist",
     "Floating nets can be created as effect of reconnections of devices or pins. "
     "This method will eliminate all nets that make less than two connections."
   ) +
-  gsi::method ("purge_devices", &db::Netlist::purge_devices,
-    "@brief Purges invalid devices.\n"
-    "Purges devices which are considered invalid. Such devices are for example those whose terminals are all connected to a single net.\n"
-    "\n"
-    "This method has been added in version 0.29.7."
-  ) +
   gsi::method ("simplify", &db::Netlist::simplify,
-    "@brief Convenience method that combines the simplification.\n"
+    "@brief Convience method that combines the simplification.\n"
     "This method is a convenience method that runs \\make_top_level_pins, \\purge, \\combine_devices and \\purge_nets."
   ) +
   gsi::method_ext ("read", &read_netlist, gsi::arg ("file"), gsi::arg ("reader"),
-    "@brief Reads the netlist from the given file using the given reader object to parse the file\n"
+    "@brief Writes the netlist to the given file using the given reader object to parse the file\n"
     "See \\NetlistSpiceReader for an example for a parser. "
   ) +
   gsi::method_ext ("write", &write_netlist, gsi::arg ("file"), gsi::arg ("writer"), gsi::arg ("description", std::string ()),
@@ -2316,7 +1591,7 @@ public:
     reimpl_write_device_intro (const_cast<db::DeviceClass &> (ccls));
   }
 
-  //  NOTE: we pass non-const refs to Ruby/Python - everything else is a bit of a nightmare.
+  //  NOTE: we pass non-const refs to Ruby/Python - everthing else is a bit of a nightmare.
   //  Still that's not really clean. Just say, the implementation promises not to change the objects.
   void reimpl_write_device_intro (db::DeviceClass &cls) const
   {
@@ -2437,17 +1712,14 @@ db::NetlistSpiceWriter *new_spice_writer2 (NetlistSpiceWriterDelegateImpl *deleg
 
 Class<db::NetlistWriter> db_NetlistWriter ("db", "NetlistWriter",
   gsi::Methods (),
-  "@brief Base class for netlist writers\n"
-  "This class is provided as a base class for netlist writers. It is not intended for reimplementation on script level, but used internally as an interface.\n"
-  "\n"
-  "This class has been introduced in version 0.26."
+  "@hide\n"
 );
 
 Class<db::NetlistSpiceWriter> db_NetlistSpiceWriter (db_NetlistWriter, "db", "NetlistSpiceWriter",
   gsi::constructor ("new", &new_spice_writer,
     "@brief Creates a new writer without delegate.\n"
   ) +
-  gsi::constructor ("new", &new_spice_writer2, gsi::arg ("delegate"),
+  gsi::constructor ("new", &new_spice_writer2,
     "@brief Creates a new writer with a delegate.\n"
   ) +
   gsi::method ("use_net_names=", &db::NetlistSpiceWriter::set_use_net_names, gsi::arg ("f"),
@@ -2530,59 +1802,8 @@ Class<db::NetlistSpiceWriter> db_NetlistSpiceWriter (db_NetlistWriter, "db", "Ne
 
 Class<db::NetlistReader> db_NetlistReader ("db", "NetlistReader",
   gsi::Methods (),
-  "@brief Base class for netlist readers\n"
-  "This class is provided as a base class for netlist readers. It is not intended for reimplementation on script level, but used internally as an interface.\n"
-  "\n"
-  "This class has been introduced in version 0.26."
+  "@hide\n"
 );
-
-/**
- *  @brief A helper class wrapping the return values for NetlistSpiceReaderDelegateImpl::parse_element
- */
-class ParseElementData
-{
-public:
-  ParseElementData () : m_value (0.0) { }
-
-  const std::string &model_name () const { return m_model; }
-  std::string &model_name_nc () { return m_model; }
-  void set_model_name (const std::string &model) { m_model = model; }
-  double value () const { return m_value; }
-  double &value_nc () { return m_value; }
-  void set_value (double value) { m_value = value; }
-  const std::vector<std::string> &net_names () const { return m_net_names; }
-  std::vector<std::string> &net_names_nc () { return m_net_names; }
-  void set_net_names (const std::vector<std::string> &nn) { m_net_names = nn; }
-  const db::NetlistSpiceReader::parameters_type &parameters () const { return m_parameters; }
-  db::NetlistSpiceReader::parameters_type &parameters_nc () { return m_parameters; }
-  void set_parameters (const db::NetlistSpiceReader::parameters_type &parameters) { m_parameters = parameters; }
-
-private:
-  std::string m_model;
-  double m_value;
-  std::vector<std::string> m_net_names;
-  db::NetlistSpiceReader::parameters_type m_parameters;
-};
-
-/**
- *  @brief A helper class for the return values of NetlistSpiceReaderDelegateImpl::parse_element_components
- */
-class ParseElementComponentsData
-{
-public:
-  ParseElementComponentsData () { }
-
-  const std::vector<std::string> &strings () const { return m_strings; }
-  std::vector<std::string> &strings_nc () { return m_strings; }
-  void set_strings (const std::vector<std::string> &nn) { m_strings = nn; }
-  const db::NetlistSpiceReader::parameters_type &parameters () const { return m_parameters; }
-  db::NetlistSpiceReader::parameters_type &parameters_nc () { return m_parameters; }
-  void set_parameters (const db::NetlistSpiceReader::parameters_type &parameters) { m_parameters = parameters; }
-
-private:
-  std::vector<std::string> m_strings;
-  db::NetlistSpiceReader::parameters_type m_parameters;
-};
 
 /**
  *  @brief A SPICE reader delegate base class for reimplementation
@@ -2592,7 +1813,7 @@ class NetlistSpiceReaderDelegateImpl
 {
 public:
   NetlistSpiceReaderDelegateImpl ()
-    : db::NetlistSpiceReaderDelegate (), mp_variables (0)
+    : db::NetlistSpiceReaderDelegate ()
   {
     //  .. nothing yet ..
   }
@@ -2642,25 +1863,6 @@ public:
     }
   }
 
-  virtual bool control_statement (const std::string &line)
-  {
-    try {
-      m_error.clear ();
-      if (cb_control_statement.can_issue ()) {
-        return cb_control_statement.issue<db::NetlistSpiceReaderDelegate, bool, const std::string &> (&db::NetlistSpiceReaderDelegate::control_statement, line);
-      } else {
-        return db::NetlistSpiceReaderDelegate::control_statement (line);
-      }
-    } catch (tl::Exception &) {
-      if (! m_error.empty ()) {
-        db::NetlistSpiceReaderDelegate::error (m_error);
-      } else {
-        throw;
-      }
-      return false;
-    }
-  }
-
   virtual bool wants_subcircuit (const std::string &circuit_name)
   {
     try {
@@ -2680,72 +1882,12 @@ public:
     }
   }
 
-  virtual std::string translate_net_name (const std::string &nn)
-  {
-    try {
-      m_error.clear ();
-      if (cb_translate_net_name.can_issue ()) {
-        return cb_translate_net_name.issue<db::NetlistSpiceReaderDelegate, std::string, const std::string &> (&db::NetlistSpiceReaderDelegate::translate_net_name, nn);
-      } else {
-        return db::NetlistSpiceReaderDelegate::translate_net_name (nn);
-      }
-    } catch (tl::Exception &) {
-      if (! m_error.empty ()) {
-        db::NetlistSpiceReaderDelegate::error (m_error);
-      } else {
-        throw;
-      }
-      return std::string ();
-    }
-  }
-
-  ParseElementData parse_element_helper (const std::string &s, const std::string &element)
-  {
-    ParseElementData data;
-    db::NetlistSpiceReaderDelegate::parse_element (s, element, data.model_name_nc (), data.value_nc (), data.net_names_nc (), data.parameters_nc (), variables ());
-    return data;
-  }
-
-  virtual void parse_element (const std::string &s, const std::string &element, std::string &model, double &value, std::vector<std::string> &nn, db::NetlistSpiceReader::parameters_type &pv, const db::NetlistSpiceReader::parameters_type &variables)
-  {
-    try {
-
-      m_error.clear ();
-      mp_variables = &variables;
-
-      ParseElementData data;
-      if (cb_parse_element.can_issue ()) {
-        data = cb_parse_element.issue<NetlistSpiceReaderDelegateImpl, ParseElementData, const std::string &, const std::string &> (&NetlistSpiceReaderDelegateImpl::parse_element_helper, s, element);
-      } else {
-        data = parse_element_helper (s, element);
-      }
-
-      model = data.model_name ();
-      value = data.value ();
-      nn = data.net_names ();
-      pv = data.parameters ();
-
-      mp_variables = 0;
-
-    } catch (tl::Exception &) {
-      mp_variables = 0;
-      if (! m_error.empty ()) {
-        db::NetlistSpiceReaderDelegate::error (m_error);
-      } else {
-        throw;
-      }
-    } catch (...) {
-      mp_variables = 0;
-      throw;
-    }
-  }
-
-  virtual bool element (db::Circuit *circuit, const std::string &element, const std::string &name, const std::string &model, double value, const std::vector<db::Net *> &nets, const db::NetlistSpiceReader::parameters_type &params)
+  virtual bool element (db::Circuit *circuit, const std::string &element, const std::string &name, const std::string &model, double value, const std::vector<db::Net *> &nets, const std::map<std::string, double> &params)
   {
     try {
       m_error.clear ();
       if (cb_element.can_issue ()) {
-        return cb_element.issue<db::NetlistSpiceReaderDelegate, bool, db::Circuit *, const std::string &, const std::string &, const std::string &, double, const std::vector<db::Net *> &, const db::NetlistSpiceReader::parameters_type &> (&db::NetlistSpiceReaderDelegate::element, circuit, element, name, model, value, nets, params);
+        return cb_element.issue<db::NetlistSpiceReaderDelegate, bool, db::Circuit *, const std::string &, const std::string &, const std::string &, double, const std::vector<db::Net *> &, const std::map<std::string, double> &> (&db::NetlistSpiceReaderDelegate::element, circuit, element, name, model, value, nets, params);
       } else {
         return db::NetlistSpiceReaderDelegate::element (circuit, element, name, model, value, nets, params);
       }
@@ -2759,139 +1901,33 @@ public:
     }
   }
 
-  const db::NetlistSpiceReader::parameters_type &variables () const
-  {
-    static db::NetlistSpiceReader::parameters_type empty;
-    return mp_variables ? *mp_variables : empty;
-  }
-
   gsi::Callback cb_start;
   gsi::Callback cb_finish;
-  gsi::Callback cb_control_statement;
   gsi::Callback cb_wants_subcircuit;
-  gsi::Callback cb_translate_net_name;
   gsi::Callback cb_element;
-  gsi::Callback cb_parse_element;
 
 private:
   std::string m_error;
-  const db::NetlistSpiceReader::parameters_type *mp_variables;
 };
 
-static void start_fb (NetlistSpiceReaderDelegateImpl *delegate, db::Netlist *netlist)
+static void start_fb (db::NetlistSpiceReaderDelegate *delegate, db::Netlist *netlist)
 {
   delegate->db::NetlistSpiceReaderDelegate::start (netlist);
 }
 
-static void finish_fb (NetlistSpiceReaderDelegateImpl *delegate, db::Netlist *netlist)
+static void finish_fb (db::NetlistSpiceReaderDelegate *delegate, db::Netlist *netlist)
 {
   delegate->db::NetlistSpiceReaderDelegate::finish (netlist);
 }
 
-static bool wants_subcircuit_fb (NetlistSpiceReaderDelegateImpl *delegate, const std::string &model)
+static bool wants_subcircuit_fb (db::NetlistSpiceReaderDelegate *delegate, const std::string &model)
 {
   return delegate->db::NetlistSpiceReaderDelegate::wants_subcircuit (model);
 }
 
-static bool control_statement_fb (NetlistSpiceReaderDelegateImpl *delegate, const std::string &line)
-{
-  return delegate->db::NetlistSpiceReaderDelegate::control_statement (line);
-}
-
-static std::string translate_net_name_fb (NetlistSpiceReaderDelegateImpl *delegate, const std::string &name)
-{
-  return delegate->db::NetlistSpiceReaderDelegate::translate_net_name (name);
-}
-
-static bool element_fb (NetlistSpiceReaderDelegateImpl *delegate, db::Circuit *circuit, const std::string &element, const std::string &name, const std::string &model, double value, const std::vector<db::Net *> &nets, const db::NetlistSpiceReader::parameters_type &params)
+static bool element_fb (db::NetlistSpiceReaderDelegate *delegate, db::Circuit *circuit, const std::string &element, const std::string &name, const std::string &model, double value, const std::vector<db::Net *> &nets, const std::map<std::string, double> &params)
 {
   return delegate->db::NetlistSpiceReaderDelegate::element (circuit, element, name, model, value, nets, params);
-}
-
-static ParseElementData parse_element_fb (NetlistSpiceReaderDelegateImpl *delegate, const std::string &s, const std::string &element)
-{
-  return delegate->parse_element_helper (s, element);
-}
-
-static tl::Variant value_from_string (NetlistSpiceReaderDelegateImpl * /*delegate*/, const std::string &s, const db::NetlistSpiceReader::parameters_type &variables)
-{
-  tl::Variant res;
-  double v = 0.0;
-  if (db::NetlistSpiceReaderDelegate::try_read_value (s, v, variables)) {
-    res = v;
-  }
-  return res;
-}
-
-static ParseElementComponentsData parse_element_components (NetlistSpiceReaderDelegateImpl *delegate, const std::string &s, const db::NetlistSpiceReader::parameters_type &variables)
-{
-  ParseElementComponentsData data;
-  delegate->parse_element_components (s, data.strings_nc (), data.parameters_nc (), variables);
-  return data;
-}
-
-Class<ParseElementComponentsData> db_ParseElementComponentsData ("db", "ParseElementComponentsData",
-  gsi::method ("strings", &ParseElementComponentsData::strings,
-    "@brief Gets the (unnamed) string parameters\n"
-    "These parameters are typically net names or model name."
-  ) +
-  gsi::method ("strings=", &ParseElementComponentsData::set_strings, gsi::arg ("list"),
-    "@brief Sets the (unnamed) string parameters\n"
-  ) +
-  gsi::method ("parameters", &ParseElementComponentsData::parameters,
-    "@brief Gets the (named) parameters\n"
-    "Named parameters are typically (but not neccessarily) numerical, like 'w=0.15u'."
-  ) +
-  gsi::method ("parameters=", &ParseElementComponentsData::set_parameters, gsi::arg ("dict"),
-    "@brief Sets the (named) parameters\n"
-  ),
-  "@brief Supplies the return value for \\NetlistSpiceReaderDelegate#parse_element_components.\n"
-  "This is a structure with two members: 'strings' for the string arguments and 'parameters' for the "
-  "named arguments.\n"
-  "\n"
-  "This helper class has been introduced in version 0.27.1. Starting with version 0.28.6, named parameters can be string types too.\n"
-);
-
-Class<ParseElementData> db_ParseElementData ("db", "ParseElementData",
-  gsi::method ("value", &ParseElementData::value,
-    "@brief Gets the value\n"
-  ) +
-  gsi::method ("value=", &ParseElementData::set_value, gsi::arg ("v"),
-    "@brief Sets the value\n"
-  ) +
-  gsi::method ("model_name", &ParseElementData::model_name,
-    "@brief Gets the model name\n"
-  ) +
-  gsi::method ("model_name=", &ParseElementData::set_model_name, gsi::arg ("m"),
-    "@brief Sets the model name\n"
-  ) +
-  gsi::method ("net_names", &ParseElementData::net_names,
-    "@brief Gets the net names\n"
-  ) +
-  gsi::method ("net_names=", &ParseElementData::set_net_names, gsi::arg ("list"),
-    "@brief Sets the net names\n"
-  ) +
-  gsi::method ("parameters", &ParseElementData::parameters,
-    "@brief Gets the (named) parameters\n"
-  ) +
-  gsi::method ("parameters=", &ParseElementData::set_parameters, gsi::arg ("dict"),
-    "@brief Sets the (named) parameters\n"
-  ),
-  "@brief Supplies the return value for \\NetlistSpiceReaderDelegate#parse_element.\n"
-  "This is a structure with four members: 'model_name' for the model name, 'value' for the default numerical value, 'net_names' for the net names and 'parameters' for the "
-  "named parameters.\n"
-  "\n"
-  "This helper class has been introduced in version 0.27.1. Starting with version 0.28.6, named parameters can be string types too.\n"
-);
-
-static double get_delegate_scale (const db::NetlistSpiceReaderDelegate *delegate)
-{
-  return delegate->options ().scale;
-}
-
-static void apply_parameter_scaling (const db::NetlistSpiceReaderDelegate *delegate, db::Device *device)
-{
-  delegate->apply_parameter_scaling (device);
 }
 
 Class<NetlistSpiceReaderDelegateImpl> db_NetlistSpiceReaderDelegate ("db", "NetlistSpiceReaderDelegate",
@@ -2899,9 +1935,6 @@ Class<NetlistSpiceReaderDelegateImpl> db_NetlistSpiceReaderDelegate ("db", "Netl
   gsi::method_ext ("finish", &finish_fb, "@hide") +
   gsi::method_ext ("wants_subcircuit", &wants_subcircuit_fb, "@hide") +
   gsi::method_ext ("element", &element_fb, "@hide") +
-  gsi::method_ext ("parse_element", &parse_element_fb, "@hide") +
-  gsi::method_ext ("control_statement", &control_statement_fb, "@hide") +
-  gsi::method_ext ("translate_net_name", &translate_net_name_fb, "@hide") +
   gsi::callback ("start", &NetlistSpiceReaderDelegateImpl::start, &NetlistSpiceReaderDelegateImpl::cb_start, gsi::arg ("netlist"),
     "@brief This method is called when the reader starts reading a netlist\n"
   ) +
@@ -2912,43 +1945,6 @@ Class<NetlistSpiceReaderDelegateImpl> db_NetlistSpiceReaderDelegate ("db", "Netl
     "@brief Returns true, if the delegate wants subcircuit elements with this name\n"
     "The name is always upper case.\n"
   ) +
-  gsi::callback ("control_statement", &NetlistSpiceReaderDelegateImpl::control_statement, &NetlistSpiceReaderDelegateImpl::cb_control_statement, gsi::arg ("line"),
-    "@brief Receives control statements not understood by the standard reader\n"
-    "When the reader encounters a control statement not understood by the parser, it will pass the line to the delegate using this method.\n"
-    "The delegate can decide if it wants to read this statement. It should return true in this case.\n"
-    "\n"
-    "This method has been introduced in version 0.27.1\n"
-  ) +
-  gsi::callback ("translate_net_name", &NetlistSpiceReaderDelegateImpl::translate_net_name, &NetlistSpiceReaderDelegateImpl::cb_translate_net_name, gsi::arg ("net_name"),
-    "@brief Translates a net name from the raw net name to the true net name\n"
-    "The default implementation will replace backslash sequences by the corresponding character.\n"
-    "'translate_net_name' is called before a net name is turned into a net object.\n"
-    "The method can be reimplemented to supply a different translation scheme for net names. For example, to translate special characters.\n"
-    "\n"
-    "This method has been introduced in version 0.27.1\n"
-  ) +
-  gsi::method ("variables", &NetlistSpiceReaderDelegateImpl::variables,
-    "@brief Gets the variables defined inside the SPICE file during execution of 'parse_element'\n"
-    "In order to evaluate formulas, this method allows accessing the variables that are "
-    "present during the execution of the SPICE reader.\n"
-    "\n"
-    "This method has been introduced in version 0.28.6."
-  ) +
-  gsi::callback ("parse_element", &NetlistSpiceReaderDelegateImpl::parse_element_helper, &NetlistSpiceReaderDelegateImpl::cb_parse_element,
-    gsi::arg ("s"), gsi::arg ("element"),
-    "@brief Parses an element card\n"
-    "@param s The specification part of the element line (the part after element code and name).\n"
-    "@param element The upper-case element code (\"M\", \"R\", ...).\n"
-    "@return A \\ParseElementData object with the parts of the element.\n"
-    "\n"
-    "This method receives a string with the element specification and the element code. It is supposed to "
-    "parse the element line and return a model name, a value, a list of net names and a parameter value dictionary.\n"
-    "\n"
-    "'parse_element' is called on every element card. The results of this call go into the \\element method "
-    "to actually create the device. This method can be reimplemented to support other flavors of SPICE.\n"
-    "\n"
-    "This method has been introduced in version 0.27.1\n"
-  ) +
   gsi::callback ("element", &NetlistSpiceReaderDelegateImpl::element, &NetlistSpiceReaderDelegateImpl::cb_element,
     gsi::arg ("circuit"), gsi::arg ("element"), gsi::arg ("name"), gsi::arg ("model"), gsi::arg ("value"), gsi::arg ("nets"), gsi::arg ("parameters"),
     "@brief Makes a device from an element line\n"
@@ -2956,7 +1952,7 @@ Class<NetlistSpiceReaderDelegateImpl> db_NetlistSpiceReaderDelegate ("db", "Netl
     "@param element The upper-case element code (\"M\", \"R\", ...).\n"
     "@param name The element's name.\n"
     "@param model The upper-case model name (may be empty).\n"
-    "@param value The default value (e.g. resistance for resistors) and may be zero.\n"
+    "@param value The default value (e.g. registance for resistors) and may be zero.\n"
     "@param nets The nets given in the element line.\n"
     "@param parameters The parameters of the element statement (parameter names are upper case).\n"
     "\n"
@@ -2964,48 +1960,10 @@ Class<NetlistSpiceReaderDelegateImpl> db_NetlistSpiceReaderDelegate ("db", "Netl
     "some known elements using the Spice writer's parameter conventions.\n"
     "\n"
     "The method must return true, if the element was was understood and false otherwise.\n"
-    "\n"
-    "Starting with version 0.28.6, the parameter values can be strings too."
   ) +
   gsi::method ("error", &NetlistSpiceReaderDelegateImpl::error, gsi::arg ("msg"),
     "@brief Issues an error with the given message.\n"
     "Use this method to generate an error."
-  ) +
-  gsi::method_ext ("get_scale", &get_delegate_scale,
-    "@brief Gets the scale factor set with '.options scale=...'\n"
-    "This method has been introduced in version 0.28.6."
-  ) +
-  gsi::method_ext ("apply_parameter_scaling", &apply_parameter_scaling, gsi::arg ("device"),
-    "@brief Applies parameter scaling to the given device\n"
-    "Applies SI scaling (according to the parameter's si_scaling attribute) and "
-    "geometry scaling (according to the parameter's geo_scale_exponent attribute) to "
-    "the device parameters. Use this method of finish the device when you have created "
-    "a custom device yourself.\n"
-    "\n"
-    "The geometry scale is taken from the '.options scale=...' control statement.\n"
-    "\n"
-    "This method has been introduced in version 0.28.6."
-  ) +
-  gsi::method_ext ("value_from_string", &value_from_string, gsi::arg ("s"), gsi::arg ("variables", db::NetlistSpiceReader::parameters_type (), "{}"),
-    "@brief Translates a string into a value\n"
-    "This function simplifies the implementation of SPICE readers by providing a translation of a unit-annotated string "
-    "into double values. For example, '1k' is translated to 1000.0. In addition, simple formula evaluation is supported, e.g "
-    "'(1+3)*2' is translated into 8.0.\n"
-    "\n"
-    "The variables dictionary defines named variables with the given values.\n"
-    "\n"
-    "This method has been introduced in version 0.27.1. The variables argument has been added in version 0.28.6.\n"
-  ) +
-  gsi::method_ext ("parse_element_components", &parse_element_components, gsi::arg ("s"), gsi::arg ("variables", db::NetlistSpiceReader::parameters_type (), "{}"),
-    "@brief Parses a string into string and parameter components.\n"
-    "This method is provided to simplify the implementation of 'parse_element'. It takes a string and splits it into "
-    "string arguments and parameter values. For example, 'a b c=6' renders two string arguments in 'nn' and one parameter ('C'->6.0). "
-    "It returns data \\ParseElementComponentsData object with the strings and parameters.\n"
-    "The parameter names are already translated to upper case.\n"
-    "\n"
-    "The variables dictionary defines named variables with the given values.\n"
-    "\n"
-    "This method has been introduced in version 0.27.1. The variables argument has been added in version 0.28.6.\n"
   ),
   "@brief Provides a delegate for the SPICE reader for translating device statements\n"
   "Supply a customized class to provide a specialized reading scheme for devices. "
@@ -3058,7 +2016,7 @@ Class<db::NetlistSpiceReader> db_NetlistSpiceReader (db_NetlistReader, "db", "Ne
   "Use the SPICE reader like this:\n"
   "\n"
   "@code\n"
-  "reader = RBA::NetlistSpiceReader::new\n"
+  "writer = RBA::NetlistSpiceReader::new\n"
   "netlist = RBA::Netlist::new\n"
   "netlist.read(path, reader)\n"
   "@/code\n"
@@ -3121,21 +2079,7 @@ Class<db::NetlistSpiceReader> db_NetlistSpiceReader (db_NetlistReader, "db", "Ne
   "nl.read(input_file, reader)\n"
   "@/code\n"
   "\n"
-  "A somewhat contrived example for using the delegate to translate net names is this:\n"
-  "\n"
-  "@code\n"
-  "class MyDelegate < RBA::NetlistSpiceReaderDelegate\n"
-  "\n"
-  "  # translates 'VDD' to 'VXX' and leave all other net names as is:\n"
-  "  alias translate_net_name_org translate_net_name\n"
-  "  def translate_net_name(n)\n"
-  "    return n == \"VDD\" ? \"VXX\" : translate_net_name_org(n)}\n"
-  "  end\n"
-  "\n"
-  "end\n"
-  "@/code\n"
-  "\n"
-  "This class has been introduced in version 0.26. It has been extended in version 0.27.1."
+  "This class has been introduced in version 0.26."
 );
 
 }

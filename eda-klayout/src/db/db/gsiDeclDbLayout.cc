@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,6 @@
 
 
 #include "gsiDecl.h"
-#include "gsiDeclDbMetaInfo.h"
 #include "dbLayout.h"
 #include "dbClip.h"
 #include "dbRecursiveShapeIterator.h"
@@ -34,16 +33,8 @@
 #include "dbPCellDeclaration.h"
 #include "dbHash.h"
 #include "dbRegion.h"
-#include "dbEdges.h"
-#include "dbEdgePairs.h"
-#include "dbTexts.h"
-#include "dbLayoutUtils.h"
-#include "dbLayerMapping.h"
-#include "dbCellMapping.h"
-#include "dbTechnology.h"
 #include "dbLayoutUtils.h"
 #include "tlStream.h"
-#include "tlGlobPattern.h"
 
 namespace gsi
 {
@@ -115,31 +106,18 @@ db::LayerProperties *ctor_layer_info_name (const std::string &name)
 }
 
 static
-db::LayerProperties li_from_string (const char *s, bool as_target)
+db::LayerProperties li_from_string (const char *s)
 {
   tl::Extractor ex (s);
   db::LayerProperties lp;
-  lp.read (ex, as_target);
+  lp.read (ex);
   return lp;
 }
 
 static
 size_t hash_value (const db::LayerProperties *l)
 {
-  return tl::hfunc (*l);
-}
-
-static bool log_equal_ext (const db::LayerProperties *lp1, const db::LayerProperties &lp2)
-{
-  if (lp1->log_equal (lp2)) {
-    return true;
-  }
-  //  compare by name as fallback if one argument is named and the other is not
-  //  (this gives a way to look up
-  if ((lp1->is_named () || lp2.is_named()) && ! lp1->name.empty () && ! lp2.name.empty ()) {
-    return lp1->name == lp2.name;
-  }
-  return false;
+  return std::hfunc (*l);
 }
 
 //  since there already exists a "LayerProperties" object, we call this one "LayerInfo"
@@ -150,23 +128,26 @@ Class<db::LayerProperties> decl_LayerInfo ("db", "LayerInfo",
     "\n"
     "This method was added in version 0.18.\n"
   ) +
-  gsi::constructor ("new", &ctor_layer_info_ld, gsi::arg ("layer"), gsi::arg ("datatype"),
+  gsi::constructor ("new", &ctor_layer_info_ld, 
     "@brief The constructor for a layer/datatype pair.\n"
+    "@args layer,datatype\n"
     "Creates a \\LayerInfo object representing a layer and datatype.\n"
     "@param layer The layer number\n"
     "@param datatype The datatype number\n"
     "\n"
     "This method was added in version 0.18.\n"
   ) +
-  gsi::constructor ("new", &ctor_layer_info_name, gsi::arg ("name"),
+  gsi::constructor ("new", &ctor_layer_info_name, 
     "@brief The constructor for a named layer.\n"
+    "@args name\n"
     "Creates a \\LayerInfo object representing a named layer.\n"
     "@param name The name\n"
     "\n"
     "This method was added in version 0.18.\n"
   ) +
-  gsi::constructor ("new", &ctor_layer_info_ldn, gsi::arg ("layer"), gsi::arg ("datatype"), gsi::arg ("name"),
+  gsi::constructor ("new", &ctor_layer_info_ldn, 
     "@brief The constructor for a named layer with layer and datatype.\n"
+    "@args layer,datatype,name\n"
     "Creates a \\LayerInfo object representing a named layer with layer and datatype.\n"
     "@param layer The layer number\n"
     "@param datatype The datatype number\n"
@@ -174,65 +155,46 @@ Class<db::LayerProperties> decl_LayerInfo ("db", "LayerInfo",
     "\n"
     "This method was added in version 0.18.\n"
   ) +
-  gsi::method ("from_string", &li_from_string, gsi::arg ("s"), gsi::arg ("as_target", false),
+  gsi::method ("from_string", &li_from_string, 
     "@brief Create a layer info object from a string\n"
+    "@args s\n"
     "@param The string\n"
     "@return The LayerInfo object\n"
-    "\n"
-    "If 'as_target' is true, relative specifications such as '*+1' for layer or datatype are permitted.\n"
     "\n"
     "This method will take strings as produced by \\to_s and create a \\LayerInfo object from them. "
     "The format is either \"layer\", \"layer/datatype\", \"name\" or \"name (layer/datatype)\".\n"
     "\n"
     "This method was added in version 0.23.\n"
-    "The 'as_target' argument has been added in version 0.26.5.\n"
   ) +
-  gsi::method ("to_s", &db::LayerProperties::to_string, gsi::arg ("as_target", false),
+  gsi::method ("to_s", &db::LayerProperties::to_string, 
     "@brief Convert the layer info object to a string\n"
     "@return The string\n"
     "\n"
-    "If 'as_target' is true, wildcard and relative specifications are formatted such such.\n"
-    "\n"
     "This method was added in version 0.18.\n"
-    "The 'as_target' argument has been added in version 0.26.5.\n"
   ) +
-  gsi::method ("==", &db::LayerProperties::operator==, gsi::arg ("b"),
+  gsi::method ("==", &db::LayerProperties::operator==, 
     "@brief Compares two layer info objects\n"
     "@return True, if both are equal\n"
+    "@args b\n"
     "\n"
     "This method was added in version 0.18.\n"
   ) +
-  gsi::method ("!=", &db::LayerProperties::operator!=, gsi::arg ("b"),
+  gsi::method ("!=", &db::LayerProperties::operator!=, 
     "@brief Compares two layer info objects\n"
     "@return True, if both are not equal\n"
+    "@args b\n"
     "\n"
     "This method was added in version 0.18.\n"
   ) +
-  gsi::method_ext ("is_equivalent?", &log_equal_ext, gsi::arg ("b"),
+  gsi::method ("is_equivalent?", &db::LayerProperties::log_equal, 
     "@brief Equivalence of two layer info objects\n"
     "@return True, if both are equivalent\n"
+    "@args b\n"
     "\n"
-    "First, layer and datatype are compared. The name is of second order and used only if no layer or datatype is given "
-    "for one of the operands.\n"
-    "This is basically a weak comparison that reflects the search preferences. It is the basis for \\Layout#find_layer.\n"
-    "Here are some examples:\n"
+    "First, layer and datatype are compared. The name is of second order and used only if no layer or datatype is given.\n"
+    "This is basically a weak comparison that reflects the search preferences.\n"
     "\n"
-    "@code\n"
-    "# no match as layer/datatypes or names differ:\n"
-    "RBA::LayerInfo::new(1, 17).is_equivalent?(RBA::LayerInfo::new(1, 18)) -> false\n"
-    "RBA::LayerInfo::new('metal1').is_equivalent?(RBA::LayerInfo::new('m1')) -> false\n"
-    "# exact match for numbered or named layers:\n"
-    "RBA::LayerInfo::new(1, 17).is_equivalent?(RBA::LayerInfo::new(1, 17)) -> true\n"
-    "RBA::LayerInfo::new('metal1').is_equivalent?(RBA::LayerInfo::new('metal1')) -> true\n"
-    "# match as names are second priority over layer/datatypes:\n"
-    "RBA::LayerInfo::new(1, 17, 'metal1').is_equivalent?(RBA::LayerInfo::new(1, 17, 'm1')) -> true\n"
-    "# match as name matching is fallback:\n"
-    "RBA::LayerInfo::new(1, 17, 'metal1').is_equivalent?(RBA::LayerInfo::new('metal1')) -> true\n"
-    "# no match as neither names or layer/datatypes match:\n"
-    "RBA::LayerInfo::new(1, 17, 'metal1').is_equivalent?(RBA::LayerInfo::new('m1')) -> false\n"
-    "@/code\n"
-    "\n"
-    "This method was added in version 0.18 and modified to compare non-named vs. named layers in version 0.28.11.\n"
+    "This method was added in version 0.18.\n"
   ) +
   gsi::method_ext ("hash", &hash_value,
     "@brief Computes a hash value\n"
@@ -252,21 +214,24 @@ Class<db::LayerProperties> decl_LayerInfo ("db", "LayerInfo",
     "\n"
     "This method was added in version 0.18.\n"
   ) +
-  gsi::method_ext ("name=", &lp_set_name, gsi::arg ("name"),
+  gsi::method_ext ("name=", &lp_set_name, 
     "@brief Set the layer name\n"
     "The name is set on OASIS input for example, if the layer has a name.\n"
+    "@args name"
   ) +
   gsi::method_ext ("name", &lp_get_name, 
     "@brief Gets the layer name\n"
   ) +
-  gsi::method_ext ("layer=", &lp_set_layer, gsi::arg ("layer"),
+  gsi::method_ext ("layer=", &lp_set_layer, 
     "@brief Sets the layer number\n"
+    "@args layer\n"
   ) +
   gsi::method_ext ("layer", &lp_get_layer, 
     "@brief Gets the layer number\n"
   ) +
-  gsi::method_ext ("datatype=", &lp_set_datatype, gsi::arg ("datatype"),
+  gsi::method_ext ("datatype=", &lp_set_datatype, 
     "@brief Set the datatype\n"
+    "@args datatype"
   ) +
   gsi::method_ext ("datatype", &lp_get_datatype, 
     "@brief Gets the datatype\n"
@@ -307,44 +272,64 @@ static void delete_layout_property (db::Layout *l, const tl::Variant &key)
   //  TODO: check if is editable
 
   db::properties_id_type id = l->prop_id ();
+  if (id == 0) {
+    return;
+  }
 
-  db::PropertiesSet props = db::properties (id);
-  props.erase (key);
-  l->prop_id (db::properties_id (props));
+  std::pair<bool, db::property_names_id_type> nid = l->properties_repository ().get_id_of_name (key);
+  if (! nid.first) {
+    return;
+  }
+
+  db::PropertiesRepository::properties_set props = l->properties_repository ().properties (id);
+  db::PropertiesRepository::properties_set::iterator p = props.find (nid.second);
+  if (p != props.end ()) {
+    props.erase (p);
+  }
+
+  l->prop_id (l->properties_repository ().properties_id (props));
 }
 
 static void set_layout_property (db::Layout *l, const tl::Variant &key, const tl::Variant &value)
 {
+  //  TODO: check if is editable
+
   db::properties_id_type id = l->prop_id ();
 
-  db::PropertiesSet props = db::properties (id);
-  props.erase (key);
-  props.insert (key, value);
-  l->prop_id (db::properties_id (props));
+  db::property_names_id_type nid = l->properties_repository ().prop_name_id (key);
+
+  db::PropertiesRepository::properties_set props = l->properties_repository ().properties (id);
+  db::PropertiesRepository::properties_set::iterator p = props.find (nid);
+  if (p != props.end ()) {
+    p->second = value;
+  } else {
+    props.insert (std::make_pair (nid, value));
+  }
+
+  l->prop_id (l->properties_repository ().properties_id (props));
 }
 
-static void set_layout_properties (db::Layout *l, const std::map<tl::Variant, tl::Variant> &dict)
+static tl::Variant get_layout_property (db::Layout *l, const tl::Variant &key)
 {
-  l->prop_id (db::properties_id (dict));
-}
-
-static void clear_layout_properties (db::Layout *l)
-{
-  l->prop_id (0);
-}
-
-static tl::Variant get_layout_property (const db::Layout *l, const tl::Variant &key)
-{
+  //  TODO: check if is editable
+  
   db::properties_id_type id = l->prop_id ();
+  if (id == 0) {
+    return tl::Variant ();
+  }
 
-  const db::PropertiesSet &props = db::properties (id);
-  return props.value (key);
-}
+  std::pair<bool, db::property_names_id_type> nid = l->properties_repository ().get_id_of_name (key);
+  if (! nid.first) {
+    return tl::Variant ();
+  }
 
-static tl::Variant get_layout_properties (const db::Layout *layout)
-{
-  const db::PropertiesSet &props = db::properties (layout->prop_id ());
-  return props.to_dict_var ();
+  const db::PropertiesRepository::properties_set &props = l->properties_repository ().properties (id);
+  db::PropertiesRepository::properties_set::const_iterator p = props.find (nid.second);
+  if (p != props.end ()) {
+    return p->second;
+  } else {
+    return tl::Variant ();
+  }
 }
 
 static db::cell_index_type cell_by_name (db::Layout *l, const char *name)
@@ -365,33 +350,6 @@ static db::cell_index_type clip (db::Layout *l, db::cell_index_type c, const db:
   return cc [0];
 }
 
-static db::cell_index_type clip_dbox (db::Layout *l, db::cell_index_type c, const db::DBox &box)
-{
-  std::vector <db::Box> boxes;
-  boxes.push_back (db::CplxTrans (l->dbu ()).inverted () * box);
-  std::vector <db::cell_index_type> cc = db::clip_layout(*l, *l, c, boxes, true);
-  tl_assert (! cc.empty ());
-  return cc [0];
-}
-
-static db::Cell *clip_cell_dbox (db::Layout *l, const db::Cell &c, const db::DBox &box)
-{
-  std::vector <db::Box> boxes;
-  boxes.push_back (db::CplxTrans (l->dbu ()).inverted () * box);
-  std::vector <db::cell_index_type> cc = db::clip_layout(*l, *l, c.cell_index (), boxes, true);
-  tl_assert (! cc.empty ());
-  return &l->cell (cc [0]);
-}
-
-static db::Cell *clip_cell (db::Layout *l, const db::Cell &c, const db::Box &box)
-{
-  std::vector <db::Box> boxes;
-  boxes.push_back (box);
-  std::vector <db::cell_index_type> cc = db::clip_layout(*l, *l, c.cell_index (), boxes, true);
-  tl_assert (! cc.empty ());
-  return &l->cell (cc [0]);
-}
-
 static db::cell_index_type clip_into (const db::Layout *l, db::cell_index_type c, db::Layout *t, const db::Box &box)
 {
   std::vector <db::Box> boxes;
@@ -401,92 +359,14 @@ static db::cell_index_type clip_into (const db::Layout *l, db::cell_index_type c
   return cc [0];
 }
 
-static db::cell_index_type clip_into_dbox (const db::Layout *l, db::cell_index_type c, db::Layout *t, const db::DBox &box)
-{
-  std::vector <db::Box> boxes;
-  boxes.push_back (db::CplxTrans (l->dbu ()).inverted () * box);
-  std::vector <db::cell_index_type> cc = db::clip_layout(*l, *t, c, boxes, true);
-  tl_assert (! cc.empty ());
-  return cc [0];
-}
-
-static db::Cell *clip_into_cell (const db::Layout *l, const db::Cell &c, db::Layout *t, const db::Box &box)
-{
-  std::vector <db::Box> boxes;
-  boxes.push_back (box);
-  std::vector <db::cell_index_type> cc = db::clip_layout(*l, *t, c.cell_index (), boxes, true);
-  tl_assert (! cc.empty ());
-  return &t->cell (cc [0]);
-}
-
-static db::Cell *clip_into_cell_dbox (const db::Layout *l, const db::Cell &c, db::Layout *t, const db::DBox &box)
-{
-  std::vector <db::Box> boxes;
-  boxes.push_back (db::CplxTrans (l->dbu ()).inverted () * box);
-  std::vector <db::cell_index_type> cc = db::clip_layout(*l, *t, c.cell_index (), boxes, true);
-  tl_assert (! cc.empty ());
-  return &t->cell (cc [0]);
-}
-
-static std::vector<db::Box> transform_boxes (const db::Layout *l, const std::vector<db::DBox> &boxes)
-{
-  std::vector<db::Box> result;
-  result.reserve (boxes.size ());
-  db::VCplxTrans t = db::CplxTrans (l->dbu ()).inverted ();
-  for (std::vector<db::DBox>::const_iterator i = boxes.begin (); i != boxes.end (); ++i) {
-    result.push_back (t * *i);
-  }
-  return result;
-}
-
-static std::vector<db::Cell *> to_cell_refs (db::Layout *l, const std::vector<db::cell_index_type> &cell_indexes)
-{
-  std::vector<db::Cell *> result;
-  result.reserve (cell_indexes.size ());
-  for (std::vector<db::cell_index_type>::const_iterator i = cell_indexes.begin (); i != cell_indexes.end (); ++i) {
-    result.push_back (&l->cell (*i));
-  }
-  return result;
-}
-
 static std::vector<db::cell_index_type> multi_clip (db::Layout *l, db::cell_index_type c, const std::vector<db::Box> &boxes)
 {
-  return db::clip_layout (*l, *l, c, boxes, true);
-}
-
-static std::vector<db::Cell *> multi_clip_cells (db::Layout *l, const db::Cell &c, const std::vector<db::Box> &boxes)
-{
-  return to_cell_refs (l, db::clip_layout (*l, *l, c.cell_index (), boxes, true));
-}
-
-static std::vector<db::cell_index_type> multi_clip_dboxes (db::Layout *l, db::cell_index_type c, const std::vector<db::DBox> &boxes)
-{
-  return db::clip_layout (*l, *l, c, transform_boxes (l, boxes), true);
-}
-
-static std::vector<db::Cell *> multi_clip_cells_dboxes (db::Layout *l, const db::Cell &c, const std::vector<db::DBox> &boxes)
-{
-  return to_cell_refs (l, db::clip_layout (*l, *l, c.cell_index (), transform_boxes (l, boxes), true));
+  return db::clip_layout(*l, *l, c, boxes, true);
 }
 
 static std::vector<db::cell_index_type> multi_clip_into (db::Layout *l, db::cell_index_type c, db::Layout *t, const std::vector<db::Box> &boxes)
 {
-  return db::clip_layout (*l, *t, c, boxes, true);
-}
-
-static std::vector<db::Cell *> multi_clip_into_cells (db::Layout *l, const db::Cell &c, db::Layout *t, const std::vector<db::Box> &boxes)
-{
-  return to_cell_refs (l, db::clip_layout (*l, *t, c.cell_index (), boxes, true));
-}
-
-static std::vector<db::cell_index_type> multi_clip_into_dboxes (db::Layout *l, db::cell_index_type c, db::Layout *t, const std::vector<db::DBox> &boxes)
-{
-  return db::clip_layout (*l, *t, c, transform_boxes (l, boxes), true);
-}
-
-static std::vector<db::Cell *> multi_clip_into_cells_dboxes (db::Layout *l, const db::Cell &c, db::Layout *t, const std::vector<db::DBox> &boxes)
-{
-  return to_cell_refs (l, db::clip_layout (*l, *t, c.cell_index (), transform_boxes (l, boxes), true));
+  return db::clip_layout(*l, *t, c, boxes, true);
 }
 
 static unsigned int get_layer0 (db::Layout *l)
@@ -515,15 +395,9 @@ static tl::Variant find_layer (db::Layout *l, const db::LayerProperties &lp)
     //  for a null layer info always return nil
     return tl::Variant ();
   } else {
-    //  if we have a layer with the requested properties already, return this one.
-    //  first pass: exact match
-    int index = l->get_layer_maybe (lp);
-    if (index >= 0) {
-      return tl::Variant ((unsigned int) index);
-    }
-    //  second pass: relaxed match
+    //  if we have a layer with the requested properties already, return this.
     for (db::Layout::layer_iterator li = l->begin_layers (); li != l->end_layers (); ++li) {
-      if (log_equal_ext ((*li).second, lp)) {
+      if ((*li).second->log_equal (lp)) {
         return tl::Variant ((*li).first);
       }
     }
@@ -547,7 +421,7 @@ static tl::Variant find_layer3 (db::Layout *l, int ln, int dn, const std::string
   return find_layer (l, db::LayerProperties (ln, dn, name));
 }
 
-static std::vector<unsigned int> layer_indexes (const db::Layout *l)
+static std::vector<unsigned int> layer_indices (const db::Layout *l)
 {
   std::vector<unsigned int> layers;
   for (unsigned int i = 0; i < l->layers (); ++i) {
@@ -569,65 +443,43 @@ static std::vector<db::LayerProperties> layer_infos (const db::Layout *l)
   return layers;
 }
 
-static db::properties_id_type properties_id_from_list (const std::vector<tl::Variant> &properties)
+static db::properties_id_type properties_id (db::Layout *layout, const std::vector<tl::Variant> &properties)
 {
-  db::PropertiesSet props;
+  db::PropertiesRepository::properties_set props;
 
   for (std::vector<tl::Variant>::const_iterator v = properties.begin (); v != properties.end (); ++v) {
     if (! v->is_list () || v->get_list ().size () != 2) {
       throw tl::Exception (tl::to_string (tr ("Expected a list of pairs of variants (found at least one that is not a pair)")));
     }
-    props.insert (v->get_list ()[0], v->get_list () [1]);
+    db::property_names_id_type name_id = layout->properties_repository ().prop_name_id (v->get_list ()[0]);
+    props.insert (std::make_pair (name_id, v->get_list () [1]));
   }
 
-  return db::properties_id (props);
+  return layout->properties_repository ().properties_id (props);
 }
 
-//  for backward compatibility
-static db::properties_id_type properties_id_from_list_meth (const db::Layout *, const std::vector<tl::Variant> &properties)
+static std::vector<tl::Variant> properties (const db::Layout *layout, db::properties_id_type id)
 {
-  return properties_id_from_list (properties);
+  std::vector<tl::Variant> ret;
+
+  if (layout->properties_repository ().is_valid_properties_id (id)) {
+
+    const db::PropertiesRepository::properties_set &props = layout->properties_repository ().properties (id);
+    ret.reserve (props.size ());
+
+    for (db::PropertiesRepository::properties_set::const_iterator p = props.begin (); p != props.end (); ++p) {
+      ret.push_back (tl::Variant::empty_list ());
+      ret.back ().get_list ().reserve (2);
+      ret.back ().get_list ().push_back (layout->properties_repository ().prop_name (p->first));
+      ret.back ().get_list ().push_back (p->second);
+    }
+
+  }
+
+  return ret;
 }
 
-static db::properties_id_type properties_id_from_dict (const std::map<tl::Variant, tl::Variant> &properties)
-{
-  return db::properties_id (properties);
-}
-
-//  for backward compatibility
-static db::properties_id_type properties_id_from_dict_meth (const db::Layout *, const std::map<tl::Variant, tl::Variant> &properties)
-{
-  return properties_id_from_dict (properties);
-}
-
-static tl::Variant get_properties_list (db::properties_id_type id)
-{
-  return db::properties (id).to_list_var ();
-}
-
-//  for backward compatibility
-static tl::Variant get_properties_list_meth (const db::Layout *, db::properties_id_type id)
-{
-  return db::properties (id).to_list_var ();
-}
-
-static tl::Variant get_properties_dict (db::properties_id_type id)
-{
-  return db::properties (id).to_dict_var ();
-}
-
-//  for backward compatibility
-static tl::Variant get_properties_dict_meth (const db::Layout *, db::properties_id_type id)
-{
-  return db::properties (id).to_dict_var ();
-}
-
-static tl::Variant get_property_from_id (db::properties_id_type id, const tl::Variant &key)
-{
-  return db::properties (id).value (key);
-}
-
-static void
+static void 
 delete_cells (db::Layout *layout, const std::vector<db::cell_index_type> &cell_indices)
 {
   layout->delete_cells (cell_indices.begin (), cell_indices.end ());
@@ -684,34 +536,15 @@ write_options2 (db::Layout *layout, const std::string &filename, bool /*gzip*/, 
   write_options1 (layout, filename, options);
 }
 
-static std::vector<char>
-write_bytes (db::Layout *layout, const db::SaveLayoutOptions &options)
-{
-  tl::OutputMemoryStream byte_stream;
-
-  {
-    db::Writer writer (options);
-    tl::OutputStream stream (byte_stream);
-    writer.write (*layout, stream);
-  }
-
-  return std::vector<char> (byte_stream.data (), byte_stream.data () + byte_stream.size ());
-}
-
-static void check_layer (const db::Layout *layout, unsigned int layer)
-{
-  if (! layout->is_valid_layer (layer) && ! layout->is_special_layer (layer)) {
-    throw tl::Exception (tl::to_string (tr ("Invalid layer index")));
-  }
-}
-
-static db::RecursiveShapeIterator
+static db::RecursiveShapeIterator 
 begin_shapes (const db::Layout *layout, db::cell_index_type starting_cell, unsigned int layer)
 {
   if (! layout->is_valid_layer (layer)) {
     throw tl::Exception (tl::to_string (tr ("Invalid layer index")));
   }
-  check_layer (layout, layer);
+  if (! layout->is_valid_cell_index (starting_cell)) {
+    throw tl::Exception (tl::to_string (tr ("Invalid cell index")));
+  }
   return db::RecursiveShapeIterator (*layout, layout->cell (starting_cell), layer);
 }
 
@@ -724,7 +557,9 @@ begin_shapes2 (const db::Layout *layout, const db::Cell *cell, unsigned int laye
 static db::RecursiveShapeIterator 
 begin_shapes_touching (const db::Layout *layout, db::cell_index_type starting_cell, unsigned int layer, db::Box region)
 {
-  check_layer (layout, layer);
+  if (! layout->is_valid_layer (layer)) {
+    throw tl::Exception (tl::to_string (tr ("Invalid layer index")));
+  }
   if (! layout->is_valid_cell_index (starting_cell)) {
     throw tl::Exception (tl::to_string (tr ("Invalid cell index")));
   }
@@ -740,7 +575,9 @@ begin_shapes_touching2 (const db::Layout *layout, const db::Cell *cell, unsigned
 static db::RecursiveShapeIterator 
 begin_shapes_overlapping (const db::Layout *layout, db::cell_index_type starting_cell, unsigned int layer, db::Box region)
 {
-  check_layer (layout, layer);
+  if (! layout->is_valid_layer (layer)) {
+    throw tl::Exception (tl::to_string (tr ("Invalid layer index")));
+  }
   if (! layout->is_valid_cell_index (starting_cell)) {
     throw tl::Exception (tl::to_string (tr ("Invalid cell index")));
   }
@@ -756,7 +593,9 @@ begin_shapes_overlapping2 (const db::Layout *layout, const db::Cell *cell, unsig
 static db::RecursiveShapeIterator
 begin_shapes_touching_um (const db::Layout *layout, db::cell_index_type starting_cell, unsigned int layer, db::DBox region)
 {
-  check_layer (layout, layer);
+  if (! layout->is_valid_layer (layer)) {
+    throw tl::Exception (tl::to_string (tr ("Invalid layer index")));
+  }
   if (! layout->is_valid_cell_index (starting_cell)) {
     throw tl::Exception (tl::to_string (tr ("Invalid cell index")));
   }
@@ -772,7 +611,9 @@ begin_shapes_touching2_um (const db::Layout *layout, const db::Cell *cell, unsig
 static db::RecursiveShapeIterator
 begin_shapes_overlapping_um (const db::Layout *layout, db::cell_index_type starting_cell, unsigned int layer, db::DBox region)
 {
-  check_layer (layout, layer);
+  if (! layout->is_valid_layer (layer)) {
+    throw tl::Exception (tl::to_string (tr ("Invalid layer index")));
+  }
   if (! layout->is_valid_cell_index (starting_cell)) {
     throw tl::Exception (tl::to_string (tr ("Invalid cell index")));
   }
@@ -855,11 +696,6 @@ static db::Cell *cell_from_index (db::Layout *ly, db::cell_index_type ci)
   return &ly->cell (ci);
 }
 
-static const db::Cell *cell_from_index_const (const db::Layout *layout, db::cell_index_type ci)
-{
-  return cell_from_index (const_cast <db::Layout *> (layout), ci);
-}
-
 static db::Cell *cell_from_name (db::Layout *ly, const std::string &name)
 {
   std::pair<bool, db::cell_index_type> cn = ly->cell_by_name (name.c_str ());
@@ -868,33 +704,6 @@ static db::Cell *cell_from_name (db::Layout *ly, const std::string &name)
   } else {
     return 0;
   }
-}
-
-static const db::Cell *cell_from_name_const (const db::Layout *layout, const std::string &name)
-{
-  return cell_from_name (const_cast <db::Layout *> (layout), name);
-}
-
-static std::vector<db::Cell *> cells_from_name (db::Layout *layout, const std::string &filter)
-{
-  tl::GlobPattern gp (filter);
-
-  std::vector<db::Cell *> result;
-  db::Layout::top_down_iterator td = layout->begin_top_down ();
-  while (td != layout->end_top_down ()) {
-    if (gp.match (layout->cell_name (*td))) {
-      result.push_back (&layout->cell (*td));
-    }
-    ++td;
-  }
-
-  return result;
-}
-
-static std::vector<const db::Cell *> cells_from_name_const (const db::Layout *layout, const std::string &filter)
-{
-  std::vector<db::Cell *> tcs = cells_from_name (const_cast <db::Layout *> (layout), filter);
-  return std::vector<const db::Cell *> (tcs.begin (), tcs.end ());
 }
 
 static std::vector<db::Cell *> top_cells (db::Layout *layout)
@@ -906,12 +715,6 @@ static std::vector<db::Cell *> top_cells (db::Layout *layout)
     ++td;
   }
   return tc;
-}
-
-static std::vector<const db::Cell *> top_cells_const (const db::Layout *layout)
-{
-  std::vector<db::Cell *> tcs = top_cells (const_cast <db::Layout *> (layout));
-  return std::vector<const db::Cell *> (tcs.begin (), tcs.end ());
 }
 
 static db::Cell *top_cell (db::Layout *layout)
@@ -927,11 +730,6 @@ static db::Cell *top_cell (db::Layout *layout)
     ++td;
   }
   return tc;
-}
-
-static const db::Cell *top_cell_const (const db::Layout *layout)
-{
-  return top_cell (const_cast <db::Layout *> (layout));
 }
 
 static db::Cell *create_cell (db::Layout *layout, const std::string &name)
@@ -951,7 +749,7 @@ static db::Cell *create_cell2 (db::Layout *layout, const std::string &name, cons
 
 static db::Cell *create_cell3 (db::Layout *layout, const std::string &name, const std::string &libname)
 {
-  db::Library *lib = db::LibraryManager::instance ().lib_ptr_by_name (libname, layout->technology_name ());
+  db::Library *lib = db::LibraryManager::instance ().lib_ptr_by_name (libname);
   if (! lib) {
     return 0;
   }
@@ -966,7 +764,7 @@ static db::Cell *create_cell3 (db::Layout *layout, const std::string &name, cons
 
 static db::Cell *create_cell4 (db::Layout *layout, const std::string &name, const std::string &libname, const std::map<std::string, tl::Variant> &params)
 {
-  db::Library *lib = db::LibraryManager::instance ().lib_ptr_by_name (libname, layout->technology_name ());
+  db::Library *lib = db::LibraryManager::instance ().lib_ptr_by_name (libname);
   if (! lib) {
     return 0;
   }
@@ -980,30 +778,39 @@ static db::Cell *create_cell4 (db::Layout *layout, const std::string &name, cons
   return &layout->cell (layout->get_lib_proxy (lib, lib_cell));
 }
 
-static void layout_add_meta_info (db::Layout *layout, const MetaInfo &mi)
+static db::MetaInfo *layout_meta_info_ctor (const std::string &name, const std::string &value, const std::string &description)
 {
-  layout->add_meta_info (mi.name, db::MetaInfo (mi.description, mi.value, mi.persisted));
+  return new db::MetaInfo (name, description, value);
 }
 
-static MetaInfo *layout_get_meta_info (db::Layout *layout, const std::string &name)
+static void layout_meta_set_name (db::MetaInfo *mi, const std::string &n)
 {
-  if (layout->has_meta_info (name)) {
-    const db::MetaInfo &value = layout->meta_info (name);
-    return new MetaInfo (name, value);
-  } else {
-    return 0;
-  }
+  mi->name = n;
 }
 
-static const tl::Variant &layout_get_meta_info_value (db::Layout *layout, const std::string &name)
+static const std::string &layout_meta_get_name (const db::MetaInfo *mi)
 {
-  const db::MetaInfo &value = layout->meta_info (name);
-  return value.value;
+  return mi->name;
 }
 
-static MetaInfoIterator layout_each_meta_info (const db::Layout *layout)
+static void layout_meta_set_value (db::MetaInfo *mi, const std::string &n)
 {
-  return MetaInfoIterator (layout, layout->begin_meta (), layout->end_meta ());
+  mi->value = n;
+}
+
+static const std::string &layout_meta_get_value (const db::MetaInfo *mi)
+{
+  return mi->value;
+}
+
+static void layout_meta_set_description (db::MetaInfo *mi, const std::string &n)
+{
+  mi->description = n;
+}
+
+static const std::string &layout_meta_get_description (const db::MetaInfo *mi)
+{
+  return mi->description;
 }
 
 static void scale_and_snap1 (db::Layout *layout, db::Cell &cell, db::Coord g, db::Coord m, db::Coord d)
@@ -1016,55 +823,44 @@ static void scale_and_snap2 (db::Layout *layout, db::cell_index_type ci, db::Coo
   scale_and_snap (*layout, layout->cell (ci), g, m, d);
 }
 
-static void copy_tree_shapes2 (db::Layout *layout, const db::Layout &source_layout, const db::CellMapping &cm)
-{
-  if (layout == &source_layout) {
-    throw tl::Exception (tl::to_string (tr ("Cannot copy shapes within the same layout")));
-  }
-
-  db::ICplxTrans trans (source_layout.dbu () / layout->dbu ());
-
-  db::LayerMapping lm;
-  lm.create_full (*layout, source_layout);
-
-  db::copy_shapes (*layout, source_layout, trans, cm.source_cells (), cm.table (), lm.table ());
-}
-
-static void copy_tree_shapes3 (db::Layout *layout, const db::Layout &source_layout, const db::CellMapping &cm, const db::LayerMapping &lm)
-{
-  if (layout == &source_layout) {
-    throw tl::Exception (tl::to_string (tr ("Cannot copy shapes within the same layout")));
-  }
-
-  db::ICplxTrans trans (source_layout.dbu () / layout->dbu ());
-
-  db::copy_shapes (*layout, source_layout, trans, cm.source_cells (), cm.table (), lm.table ());
-}
-
-static void move_tree_shapes2 (db::Layout *layout, db::Layout &source_layout, const db::CellMapping &cm)
-{
-  if (layout == &source_layout) {
-    throw tl::Exception (tl::to_string (tr ("Cannot copy shapes within the same layout")));
-  }
-
-  db::ICplxTrans trans (source_layout.dbu () / layout->dbu ());
-
-  db::LayerMapping lm;
-  lm.create_full (*layout, source_layout);
-
-  db::move_shapes (*layout, source_layout, trans, cm.source_cells (), cm.table (), lm.table ());
-}
-
-static void move_tree_shapes3 (db::Layout *layout, db::Layout &source_layout, const db::CellMapping &cm, const db::LayerMapping &lm)
-{
-  if (layout == &source_layout) {
-    throw tl::Exception (tl::to_string (tr ("Cannot copy shapes within the same layout")));
-  }
-
-  db::ICplxTrans trans (source_layout.dbu () / layout->dbu ());
-
-  db::move_shapes (*layout, source_layout, trans, cm.source_cells (), cm.table (), lm.table ());
-}
+Class<db::MetaInfo> decl_LayoutMetaInfo ("db", "LayoutMetaInfo",
+  gsi::constructor ("new", &layout_meta_info_ctor, gsi::arg ("name"), gsi::arg ("value"), gsi::arg ("description", std::string ()),
+    "@brief Creates a layout meta info object\n"
+    "@param name The name\n"
+    "@param value The value\n"
+    "@param description An optional description text\n"
+  ) +
+  gsi::method_ext ("name", &layout_meta_get_name,
+    "@brief Gets the name of the layout meta info object\n"
+  ) +
+  gsi::method_ext ("name=", &layout_meta_set_name,
+    "@brief Sets the name of the layout meta info object\n"
+  ) +
+  gsi::method_ext ("value", &layout_meta_get_value,
+    "@brief Gets the value of the layout meta info object\n"
+  ) +
+  gsi::method_ext ("value=", &layout_meta_set_value,
+    "@brief Sets the value of the layout meta info object\n"
+  ) +
+  gsi::method_ext ("description", &layout_meta_get_description,
+    "@brief Gets the description of the layout meta info object\n"
+  ) +
+  gsi::method_ext ("description=", &layout_meta_set_description,
+    "@brief Sets the description of the layout meta info object\n"
+  ),
+  "@brief A piece of layout meta information\n"
+  "Layout meta information is basically additional data that can be attached to a layout. "
+  "Layout readers may generate meta information and some writers will add layout information to "
+  "the layout object. Some writers will also read meta information to determine certain attributes.\n"
+  "\n"
+  "Multiple layout meta information objects can be attached to one layout using \\Layout#add_meta. "
+  "Meta information is identified by a unique name and carries a string value plus an optional description string. "
+  "The description string is for information only and is not evaluated by code.\n"
+  "\n"
+  "See also \\Layout#each_meta_info and \\Layout#meta_info_value and \\Layout#remove_meta_info"
+  "\n"
+  "This class has been introduced in version 0.25."
+);
 
 static void dtransform (db::Layout *layout, const db::DTrans &trans)
 {
@@ -1078,59 +874,10 @@ static void dtransform_cplx (db::Layout *layout, const db::DCplxTrans &trans)
   layout->transform (dbu_trans.inverted () * trans * dbu_trans);
 }
 
-static db::LayerProperties get_properties (const db::Layout *layout, unsigned int index)
-{
-  if (layout->is_valid_layer (index)) {
-    return layout->get_properties (index);
-  } else {
-    return db::LayerProperties ();
-  }
-}
-
-static void set_properties (db::Layout *layout, unsigned int index, const db::LayerProperties &props)
-{
-  if (layout->is_valid_layer (index)) {
-    layout->set_properties (index, props);
-  }
-}
-
-void break_polygons2 (db::Layout *layout, unsigned int layer, size_t max_vertex_count, double max_area_ratio)
-{
-  db::break_polygons (*layout, layer, max_vertex_count, max_area_ratio);
-}
-
-void break_polygons1 (db::Layout *layout, size_t max_vertex_count, double max_area_ratio)
-{
-  db::break_polygons (*layout, max_vertex_count, max_area_ratio);
-}
-
-void delete_layer_from_info (db::Layout *layout, const db::LayerProperties &info)
-{
-  int li = layout->get_layer_maybe (info);
-  if (li >= 0) {
-    layout->delete_layer ((unsigned int) li);
-  }
-}
-
-void clear_layer_from_info (db::Layout *layout, const db::LayerProperties &info)
-{
-  int li = layout->get_layer_maybe (info);
-  if (li >= 0) {
-    layout->clear_layer ((unsigned int) li);
-  }
-}
-
-void clear_layer_from_info_with_flags (db::Layout *layout, const db::LayerProperties &info, unsigned int flags)
-{
-  int li = layout->get_layer_maybe (info);
-  if (li >= 0) {
-    layout->clear_layer ((unsigned int) li, flags);
-  }
-}
-
 Class<db::Layout> decl_Layout ("db", "Layout",
-  gsi::constructor ("new", &layout_ctor_with_manager, gsi::arg ("manager"),
+  gsi::constructor ("new", &layout_ctor_with_manager,
     "@brief Creates a layout object attached to a manager\n"
+    "@args manager\n"
     "\n"
     "This constructor specifies a manager object which is used to "
     "store undo information for example.\n"
@@ -1146,140 +893,58 @@ Class<db::Layout> decl_Layout ("db", "Layout",
     "always editable. Before that version, they inherited the editable flag from "
     "the application."
   ) +
-  gsi::constructor ("new", &editable_layout_ctor_with_manager, gsi::arg ("editable"), gsi::arg ("manager"),
+  gsi::constructor ("new", &editable_layout_ctor_with_manager,
     "@brief Creates a layout object attached to a manager\n"
+    "@args editable,manager\n"
     "\n"
     "This constructor specifies a manager object which is used to "
     "store undo information for example. It also allows one to specify whether "
-    "the layout is editable. In editable mode, some optimizations are disabled "
+    "the layout is editable. In editable mode, some optimisations are disabled "
     "and the layout can be manipulated through a variety of methods.\n"
     "\n"
     "This method was introduced in version 0.22.\n"
   ) +
-  gsi::constructor ("new", &editable_layout_default_ctor, gsi::arg ("editable"),
+  gsi::constructor ("new", &editable_layout_default_ctor,
     "@brief Creates a layout object\n"
+    "@args editable\n"
     "\n"
     "This constructor specifies whether "
-    "the layout is editable. In editable mode, some optimizations are disabled "
+    "the layout is editable. In editable mode, some optimisations are disabled "
     "and the layout can be manipulated through a variety of methods.\n"
     "\n"
     "This method was introduced in version 0.22.\n"
   ) +
-  gsi::method ("library", &db::Layout::library,
-    "@brief Gets the library this layout lives in or nil if the layout is not part of a library\n"
-    "This attribute has been introduced in version 0.27.5."
-  ) +
-  gsi::method ("refresh", &db::Layout::refresh,
-    "@brief Calls \\Cell#refresh on all cells inside this layout\n"
-    "This method is useful to recompute all PCells from a layout. Note that this does not "
-    "update PCells which are linked from a library. To recompute PCells from a library, you need "
-    "to use \\Library#refresh on the library object from which the PCells are imported.\n"
-    "\n"
-    "This method has been introduced in version 0.27.9."
-  ) +
-  gsi::method_ext ("add_meta_info", &layout_add_meta_info, gsi::arg ("info"),
+  gsi::method ("add_meta_info", &db::Layout::add_meta_info, gsi::arg ("info"),
     "@brief Adds meta information to the layout\n"
     "See \\LayoutMetaInfo for details about layouts and meta information."
     "\n"
     "This method has been introduced in version 0.25."
   ) +
-  gsi::method ("merge_meta_info", static_cast<void (db::Layout::*) (const db::Layout &)> (&db::Layout::merge_meta_info), gsi::arg ("other"),
-    "@brief Merges the meta information from the other layout into this layout\n"
-    "See \\LayoutMetaInfo for details about cells and meta information.\n"
-    "Existing keys in this layout will be overwritten by the respective values from the other layout.\n"
-    "New keys will be added.\n"
-    "\n"
-    "This method has been introduced in version 0.28.16."
-  ) +
-  gsi::method ("merge_meta_info", static_cast<void (db::Layout::*) (const db::Layout &, const db::CellMapping &cm)> (&db::Layout::merge_meta_info), gsi::arg ("other"), gsi::arg ("cm"),
-    "@brief Merges the meta information from the other layout into this layout for the cells given by the cell mapping\n"
-    "See \\LayoutMetaInfo for details about cells and meta information.\n"
-    "This method will use the source/target cell pairs from the cell mapping object and merge the meta information "
-    "from each source cell from the 'other' layout into the mapped cell inside self.\n"
-    "This method can be used with '\\copy_tree_shapes' and similar to copy meta information in addition to the shapes.\n"
-    "Existing cell-specific keys in this layout will be overwritten by the respective values from the other layout.\n"
-    "New keys will be added.\n"
-    "\n"
-    "This method has been introduced in version 0.28.16."
-  ) +
-  gsi::method ("copy_meta_info", static_cast<void (db::Layout::*) (const db::Layout &)> (&db::Layout::copy_meta_info), gsi::arg ("other"),
-    "@brief Copies the meta information from the other layout into this layout\n"
-    "See \\LayoutMetaInfo for details about cells and meta information.\n"
-    "The meta information from this layout will be replaced by the meta information from the other layout.\n"
-    "\n"
-    "This method has been introduced in version 0.28.16."
-  ) +
-  gsi::method ("copy_meta_info", static_cast<void (db::Layout::*) (const db::Layout &, const db::CellMapping &cm)> (&db::Layout::copy_meta_info), gsi::arg ("other"), gsi::arg ("cm"),
-    "@brief Copies the meta information from the other layout into this layout for the cells given by the cell mapping\n"
-    "See \\LayoutMetaInfo for details about cells and meta information.\n"
-    "This method will use the source/target cell pairs from the cell mapping object and merge the meta information "
-    "from each source cell from the 'other' layout into the mapped cell inside self.\n"
-    "This method can be used with '\\copy_tree_shapes' and similar to copy meta information in addition to the shapes.\n"
-    "All cell-specific keys in this layout will be replaced by the respective values from the other layout.\n"
-    "\n"
-    "This method has been introduced in version 0.28.16."
-  ) +
-  gsi::method ("clear_meta_info", static_cast<void (db::Layout::*) ()> (&db::Layout::clear_meta),
-    "@brief Clears the meta information of the layout\n"
-    "See \\LayoutMetaInfo for details about layouts and meta information."
-    "\n"
-    "This method has been introduced in version 0.28.8."
-  ) +
-  gsi::method ("clear_all_meta_info", static_cast<void (db::Layout::*) ()> (&db::Layout::clear_all_meta),
-    "@brief Clears all meta information of the layout (cell specific and global)\n"
-    "See \\LayoutMetaInfo for details about layouts and meta information."
-    "\n"
-    "This method has been introduced in version 0.28.16."
-  ) +
-  gsi::method ("remove_meta_info", static_cast<void (db::Layout::*) (const std::string &name)> (&db::Layout::remove_meta_info), gsi::arg ("name"),
+  gsi::method ("remove_meta_info", &db::Layout::remove_meta_info, gsi::arg ("name"),
     "@brief Removes meta information from the layout\n"
     "See \\LayoutMetaInfo for details about layouts and meta information."
     "\n"
     "This method has been introduced in version 0.25."
   ) +
-  gsi::method_ext ("meta_info_value", &layout_get_meta_info_value, gsi::arg ("name"),
+  gsi::method ("meta_info_value", &db::Layout::meta_info_value, gsi::arg ("name"),
     "@brief Gets the meta information value for a given name\n"
     "See \\LayoutMetaInfo for details about layouts and meta information.\n"
     "\n"
-    "If no meta information with the given name exists, a nil value will be returned.\n"
-    "A more generic version that delivers all fields of the meta information is \\meta_info.\n"
+    "If no meta information with the given name exists, an empty string will be returned.\n"
     "\n"
-    "This method has been introduced in version 0.25. Starting with version 0.28.8, the value is of variant type instead of string only.\n"
+    "This method has been introduced in version 0.25."
   ) +
-  gsi::factory_ext ("meta_info", &layout_get_meta_info, gsi::arg ("name"),
-    "@brief Gets the meta information for a given name\n"
-    "See \\LayoutMetaInfo for details about layouts and meta information.\n"
-    "\n"
-    "If no meta information with the given name exists, nil is returned.\n"
-    "\n"
-    "This method has been introduced in version 0.28.8.\n"
-  ) +
-  gsi::iterator_ext ("each_meta_info", &layout_each_meta_info,
+  gsi::iterator ("each_meta_info", &db::Layout::begin_meta, &db::Layout::end_meta,
     "@brief Iterates over the meta information of the layout\n"
     "See \\LayoutMetaInfo for details about layouts and meta information.\n"
     "\n"
     "This method has been introduced in version 0.25."
   ) +
-  gsi::method ("technology_name", &db::Layout::technology_name,
-    "@brief Gets the name of the technology this layout is associated with\n"
-    "This method has been introduced in version 0.27. Before that, the technology has been kept in the 'technology' meta data element."
-  ) +
-  gsi::method ("technology", &db::Layout::technology,
-    "@brief Gets the \\Technology object of the technology this layout is associated with or nil if the layout is not associated with a technology\n"
-    "This method has been introduced in version 0.27. Before that, the technology has been kept in the 'technology' meta data element."
-  ) +
-  gsi::method ("technology_name=", &db::Layout::set_technology_name, gsi::arg ("name"),
-    "@brief Sets the name of the technology this layout is associated with\n"
-    "Changing the technology name will re-assess all library references because libraries can be technology specified. "
-    "Cell layouts may be substituted during this re-assessment.\n"
-    "\n"
-    "This method has been introduced in version 0.27."
-  ) +
   gsi::method ("is_editable?", &db::Layout::is_editable,
     "@brief Returns a value indicating whether the layout is editable.\n"
     "@return True, if the layout is editable.\n"
     "If a layout is editable, in general manipulation methods are enabled and "
-    "some optimizations are disabled (i.e. shape arrays are expanded).\n"
+    "some optimisations are disabled (i.e. shape arrays are expanded).\n"
     "\n"
     "This method has been introduced in version 0.22.\n"
   ) +
@@ -1293,8 +958,9 @@ Class<db::Layout> decl_Layout ("db", "Layout",
     "\n"
     "This method has been introduced in version 0.24."
   ) +
-  method ("prop_id=", (void (db::Layout::*) (db::properties_id_type)) &db::Layout::prop_id, gsi::arg ("id"),
+  method ("prop_id=", (void (db::Layout::*) (db::properties_id_type)) &db::Layout::prop_id,
     "@brief Sets the properties ID associated with the layout\n"
+    "@args id\n"
     "This method is provided, if a properties ID has been derived already. Usually it's more convenient "
     "to use \\delete_property, \\set_property or \\property.\n"
     "\n"
@@ -1305,8 +971,9 @@ Class<db::Layout> decl_Layout ("db", "Layout",
     "\n"
     "This method has been introduced in version 0.24."
   ) +
-  gsi::method_ext ("delete_property", &delete_layout_property, gsi::arg ("key"),
+  gsi::method_ext ("delete_property", &delete_layout_property,
     "@brief Deletes the user property with the given key\n"
+    "@args key\n"
     "This method is a convenience method that deletes the property with the given key. "
     "It does nothing if no property with that key exists. Using that method is more "
     "convenient than creating a new property set with a new ID and assigning that properties ID.\n"
@@ -1314,155 +981,50 @@ Class<db::Layout> decl_Layout ("db", "Layout",
     "\n"
     "This method has been introduced in version 0.24."
   ) + 
-  gsi::method_ext ("set_property", &set_layout_property, gsi::arg ("key"), gsi::arg ("value"),
-    "@brief Sets the user property with the given key to the given value\n"
+  gsi::method_ext ("set_property", &set_layout_property,
+    "@brief Set the user property with the given key to the given value\n"
+    "@args key, value\n"
     "This method is a convenience method that sets the property with the given key to the given value. "
     "If no property with that key exists, it will create one. Using that method is more "
     "convenient than creating a new property set with a new ID and assigning that properties ID.\n"
     "This method may change the properties ID. "
-    "Note: GDS only supports integer keys. OASIS supports numeric and string keys. "
     "\n"
     "This method has been introduced in version 0.24."
   ) + 
-  gsi::method_ext ("set_properties", &set_layout_properties, gsi::arg ("dict"),
-    "@brief Sets all user properties from the given dict\n"
-    "This method is a convenience method that replaces all user properties of the layout object. Using that method is more "
-    "convenient than creating a new property set with a new ID and assigning that properties ID.\n"
-    "This method may change the properties ID. "
-    "Note: GDS only supports integer keys. OASIS supports numeric and string keys. "
-    "\n"
-    "This method has been introduced in version 0.30.3."
-  ) +
-  gsi::method_ext ("clear_properties", &clear_layout_properties,
-    "@brief Clears all user properties\n"
-    "This method will remove all user properties. After it has been called, \\has_prop_id? will return false.\n"
-    "It is equivalent to setting the properties ID to zero.\n"
-    "\n"
-    "This method has been introduced in version 0.30.3."
-  ) +
-  gsi::method_ext ("property", &get_layout_property, gsi::arg ("key"),
-    "@brief Gets the Layout's user property with the given key\n"
+  gsi::method_ext ("property", &get_layout_property,
+    "@brief Gets the user property with the given key\n"
+    "@args key\n"
     "This method is a convenience method that gets the property with the given key. "
     "If no property with that key exists, it will return nil. Using that method is more "
     "convenient than using the properties ID to retrieve the property value. "
     "\n"
     "This method has been introduced in version 0.24."
   ) + 
-  gsi::method_ext ("properties", &get_layout_properties,
-    "@brief Gets the Layout's user properties as a hash\n"
-    "This method is a convenience method that gets all user properties of the Layout object as a single hash.\n"
-    "\n"
-    "This method has been introduced in version 0.29.5."
-  ) +
-  //  backward-compatible version as method
-  gsi::method_ext ("properties_id", &properties_id_from_list_meth, gsi::arg ("properties"),
-    "@hide"
-  ) +
-  gsi::method ("properties_id", &properties_id_from_list, gsi::arg ("properties"),
+  gsi::method_ext ("properties_id", &properties_id, 
     "@brief Gets the properties ID for a given properties set\n"
+    "@args properties\n"
     "\n"
-    "In most places within the system, properties are stored as properties IDs. These are numbers representative for "
-    "a specific set of properties. This method allows deriving a properties ID from a list of key/value pairs.\n"
-    "It delivers a unique number for this set. A variant exists that takes a dict object instead of a list of key/value pairs.\n"
-    "\n"
-    "The \\properties_array and \\properties_hash methods allow converting the properties ID back into a list or dict object.\n"
-    "Individual values for a given key can be extracted using \\property in the static (class) method variant.\n"
-    "\n"
-    "@code\n"
-    "pid = RBA::Layout::properties_id([[1, \"one\"], [\"key\", \"value\"]])\n"
-    "# same as:\n"
-    "# pid = RBA::Layout::properties_id({ 1 => \"one\", \"key\" => \"value\" })\n"
-    "\n"
-    "RBA::Layout::properties_hash(pid)  # -> { 1 => \"one\", \"key\" => \"value\" }\n"
-    "RBA::Layout::property(pid, 1)      # -> \"one\"\n"
-    "@/code\n"
-    "\n"
-    "In previous versions, these function were methods of the Layout object. Since version 0.30, they are static (class) methods. "
-    "This means, that they provide a universal way of converting property sets into IDs and back, without need for a Layout object.\n"
+    "Before a set of properties can be attached to a shape, it must be converted into an ID that "
+    "is unique for that set. The properties set must be given as a list of pairs of variants, "
+    "each pair describing a name and a value. The name acts as the key for the property and does not need to be a string (it can be an integer or double value as well).\n"
+    "The backward conversion can be performed with the 'properties' method.\n"
     "\n"
     "@param properties The array of pairs of variants (both elements can be integer, double or string)\n"
     "@return The unique properties ID for that set"
   ) +
-  //  backward-compatible version as method
-  gsi::method_ext ("properties_id", &properties_id_from_dict_meth, gsi::arg ("properties"),
-    "@hide"
-  ) +
-  gsi::method ("properties_id", &properties_id_from_dict, gsi::arg ("properties"),
-    "@brief Gets the properties ID for a given properties set\n"
-    "\n"
-    "This variant accepts a hash of value vs. key for the properties instead of array of key/value pairs. "
-    "Apart from this, it behaves like the other \\properties_id variant.\n"
-    "\n"
-    "@param properties A hash of property keys/values (both keys and values can be integer, double or string)\n"
-    "@return The unique properties ID for that set\n"
-    "\n"
-    "This variant has been introduced in version 0.29.7 and was turned in a static (class) method in 0.30."
-  ) +
-  gsi::method ("property", &get_property_from_id, gsi::arg ("properties_id"), gsi::arg ("key"),
-    "@brief Extracts a property value for a given key from the properties ID\n"
-    "\n"
-    "From a given properties ID, retrieves the value for a given key. If no value for this particular "
-    "key exists, 'nil' is returned.\n"
-    "\n"
-    "For details about the properties ID concept see \\properties_id.\n"
-    "\n"
-    "Note, that this is a static (class) method that provides a universal way of extracting property values "
-    "from IDs without need for a Layout object.\n"
-    "\n"
-    "This method has been introduced in version 0.30."
-  ) +
-  //  backward-compatible version as method
-  gsi::method_ext ("properties_array|properties", &get_properties_list_meth, gsi::arg ("properties_id"),
-    "@hide"
-  ) +
-  gsi::method ("properties_array", &get_properties_list, gsi::arg ("properties_id"),
+  gsi::method_ext ("properties", &properties, 
     "@brief Gets the properties set for a given properties ID\n"
+    "@args properties_id\n"
     "\n"
-    "Basically this method performs the backward conversion of the 'properties_id' method. "
-    "Given a properties ID, it returns the properties set as an array. "
-    "In this array, each key and the value is stored as a pair (an array with two elements).\n"
+    "Basically performs the backward conversion of the 'properties_id' method. "
+    "Given a properties ID, returns the properties set as an array of pairs of "
+    "variants. In this array, each key and the value are stored as pairs (arrays with two elements).\n"
     "If the properties ID is not valid, an empty array is returned.\n"
-    "A version that returns a hash instead of pairs of key/values, is \\properties_hash.\n"
-    "\n"
-    "For details about the properties ID concept see \\properties_id.\n"
     "\n"
     "@param properties_id The properties ID to get the properties for\n"
-    "@return An array of key/value pairs (see \\properties_id)\n"
-    "\n"
-    "The 'properties_array' alias was introduced in version 0.29.7 and the plain 'properties' alias was deprecated. "
-    "In version 0.30, this method was turned into a static (class method), providing universal conversions without need for a Layout object."
+    "@return The array of variants (see \\properties_id)\n"
   ) +
-  //  backward-compatible version as method
-  gsi::method_ext ("properties_hash", &get_properties_dict_meth, gsi::arg ("properties_id"),
-    "@hide"
-  ) +
-  gsi::method ("properties_hash", &get_properties_dict, gsi::arg ("properties_id"),
-    "@brief Gets the properties set for a given properties ID as a hash\n"
-    "\n"
-    "Returns the properties for a given properties ID as a hash.\n"
-    "It is a convenient alternative to \\properties_array, which returns "
-    "an array of key/value pairs.\n"
-    "\n"
-    "For details about the properties ID concept see \\properties_id.\n"
-    "\n"
-    "@param properties_id The properties ID to get the properties for\n"
-    "@return The hash representing the properties for the given ID (values vs. key)\n"
-    "\n"
-    "This method has been introduced in version 0.29.7. "
-    "In version 0.30, this method was turned into a static (class method), providing universal conversions without need for a Layout object."
-  ) +
-  gsi::method ("unique_cell_name", &db::Layout::uniquify_cell_name, gsi::arg ("name"),
-    "@brief Creates a new unique cell name from the given name\n"
-    "@return A unique name derived from the argument\n"
-    "\n"
-    "If a cell with the given name exists, a suffix will be added to make the name unique. "
-    "Otherwise, the argument will be returned unchanged.\n"
-    "\n"
-    "The returned name can be used to rename cells without risk of creating name clashes.\n"
-    "\n"
-    "This method has been introduced in version 0.28."
-  ) +
-  gsi::method_ext ("top_cell", &top_cell,
+  gsi::method_ext ("top_cell", &top_cell, 
     "@brief Returns the top cell object\n"
     "@return The \\Cell object of the top cell\n"
     "If the layout has a single top cell, this method returns the top cell's \\Cell object.\n"
@@ -1471,16 +1033,7 @@ Class<db::Layout> decl_Layout ("db", "Layout",
     "\n"
     "This method has been introduced in version 0.23."
   ) + 
-  gsi::method_ext ("top_cell", &top_cell_const,
-    "@brief Returns the top cell object (const version)\n"
-    "@return The \\Cell object of the top cell\n"
-    "If the layout has a single top cell, this method returns the top cell's \\Cell object.\n"
-    "If the layout does not have a top cell, this method returns \"nil\". If the layout has multiple\n"
-    "top cells, this method raises an error.\n"
-    "\n"
-    "This variant has been introduced in version 0.29.6."
-  ) +
-  gsi::method_ext ("top_cells", &top_cells,
+  gsi::method_ext ("top_cells", &top_cells, 
     "@brief Returns the top cell objects\n"
     "@return The \\Cell objects of the top cells\n"
     "This method returns and array of \\Cell objects representing the top cells of the layout.\n"
@@ -1488,31 +1041,27 @@ Class<db::Layout> decl_Layout ("db", "Layout",
     "\n"
     "This method has been introduced in version 0.23."
   ) + 
-  gsi::method_ext ("top_cells", &top_cells_const,
-    "@brief Returns the top cell objects (const version)\n"
-    "@return The \\Cell objects of the top cells\n"
-    "This method returns and array of \\Cell objects representing the top cells of the layout.\n"
-    "This array can be empty, if the layout does not have a top cell (i.e. no cell at all).\n"
-    "\n"
-    "This variant has been introduced in version 0.29.6."
-  ) +
-  gsi::method ("has_cell?", &db::Layout::has_cell, gsi::arg ("name"),
+  gsi::method ("has_cell?", &db::Layout::has_cell, 
     "@brief Returns true if a cell with a given name exists\n"
+    "@args name\n"
     "Returns true, if the layout has a cell with the given name"
   ) +
-  gsi::method_ext ("#cell_by_name", &cell_by_name, gsi::arg ("name"),
+  gsi::method_ext ("#cell_by_name", &cell_by_name, 
     "@brief Gets the cell index for a given name\n"
+    "@args name\n"
     "Returns the cell index for the cell with the given name. If no cell with this "
     "name exists, an exception is thrown."
     "\n"
     "From version 0.23 on, a version of the \\cell method is provided which returns a \\Cell object for the cell with the given name "
     "or \"nil\" if the name is not valid. This method replaces \\cell_by_name and \\has_cell?\n"
   ) +
-  gsi::method ("cell_name", &db::Layout::cell_name, gsi::arg ("index"),
+  gsi::method ("cell_name", &db::Layout::cell_name, 
     "@brief Gets the name for a cell with the given index\n"
+    "@args index\n"
   ) +
-  gsi::method_ext ("create_cell", &create_cell, gsi::arg ("name"),
+  gsi::method_ext ("create_cell", &create_cell, 
     "@brief Creates a cell with the given name\n"
+    "@args name\n"
     "@param name The name of the cell to create\n"
     "@return The \\Cell object of the newly created cell.\n"
     "\n"
@@ -1521,77 +1070,64 @@ Class<db::Layout> decl_Layout ("db", "Layout",
     "\n"
     "This method has been introduce in version 0.23 and replaces \\add_cell.\n"
   ) +
-  gsi::method_ext ("create_cell", &create_cell2, gsi::arg ("pcell_name"), gsi::arg ("params"),
-    "@brief Creates a cell as a PCell variant for the PCell with the given name\n"
-    "@param pcell_name The name of the PCell and also the name of the cell to create\n"
+  gsi::method_ext ("create_cell", &create_cell2, 
+    "@brief Creates a cell as a PCell variant with the given name\n"
+    "@args name, params\n"
+    "@param name The name of the PCell and the name of the cell to create\n"
     "@param params The PCell parameters (key/value dictionary)\n"
-    "@return The \\Cell object of the newly created cell or an existing cell if the PCell has already been used with these parameters.\n"
+    "@return The \\Cell object of the newly created cell.\n"
     "\n"
-    "PCells are instantiated by creating a PCell variant. A PCell variant is linked to the PCell and represents "
-    "this PCell with a particular parameter set.\n"
-    "\n"
-    "This method will look up the PCell by the PCell name and create a new PCell variant "
-    "for the given parameters. If the PCell has already been instantiated with the same parameters, the "
-    "original variant will be returned. Hence this method is not strictly creating a cell - only if the required variant has "
-    "not been created yet.\n"
-    "\n"
-    "The parameters are specified as a key/value dictionary with "
+    "This method will look up the PCell by the given name and create a new PCell variant "
+    "with the given parameters. The parameters are specified as a key/value dictionary with "
     "the names being the ones from the PCell declaration.\n"
     "\n"
     "If no PCell with the given name exists, nil is returned.\n"
     "\n"
     "This method has been introduce in version 0.24.\n"
   ) +
-  gsi::method_ext ("create_cell", &create_cell3, gsi::arg ("name"), gsi::arg ("lib_name"),
+  gsi::method_ext ("create_cell", &create_cell3, 
     "@brief Creates a cell with the given name\n"
+    "@args name, lib_name\n"
     "@param name The name of the library cell and the name of the cell to create\n"
     "@param lib_name The name of the library where to take the cell from\n"
-    "@return The \\Cell object of the newly created cell or an existing cell if the library cell has already been used in this layout.\n"
+    "@return The \\Cell object of the newly created cell.\n"
     "\n"
-    "Library cells are imported by creating a 'library proxy'. This is a cell which represents "
-    "the library cell in the framework of the current layout. The library proxy is linked to the "
-    "library and will be updated if the library cell is changed.\n"
-    "\n"
-    "This method will look up the cell by the given name in the specified library and create a new library proxy for this cell.\n"
-    "If the same library cell has already been used, the original library proxy is returned. Hence, strictly speaking this "
-    "method does not always create a new cell but may return a reference to an existing cell.\n"
-    "\n"
+    "This method will look up the cell by the given name in the specified library and create a new library proxy to this cell.\n"
     "If the library name is not valid, nil is returned.\n"
     "\n"
     "This method has been introduce in version 0.24.\n"
   ) +
-  gsi::method_ext ("create_cell", &create_cell4, gsi::arg ("pcell_name"), gsi::arg ("lib_name"), gsi::arg ("params"),
-    "@brief Creates a cell for a PCell with the given PCell name from the given library\n"
-    "@param pcell_name The name of the PCell and also the name of the cell to create\n"
+  gsi::method_ext ("create_cell", &create_cell4, 
+    "@brief Creates a cell with the given name\n"
+    "@args name, lib_name, params\n"
+    "@param name The name of the PCell and the name of the cell to create\n"
     "@param lib_name The name of the library where to take the PCell from\n"
     "@param params The PCell parameters (key/value dictionary)\n"
-    "@return The \\Cell object of the newly created cell or an existing cell if this PCell has already been used with the given parameters\n"
+    "@return The \\Cell object of the newly created cell.\n"
     "\n"
-    "This method will look up the PCell by the PCell name in the specified library and create a new PCell variant "
-    "for the given parameters plus the library proxy. The parameters must be specified as a key/value dictionary with "
+    "This method will look up the PCell by the given name in the specified library and create a new PCell variant "
+    "with the given parameters. The parameters are specified as a key/value dictionary with "
     "the names being the ones from the PCell declaration.\n"
     "\n"
-    "If no PCell with the given name exists or the library name is not valid, nil is returned. Note that "
-    "this function - despite the name - may not always create a new cell, but return an existing cell if the "
-    "PCell from the library has already been used with the given parameters.\n"
+    "If no PCell with the given name exists or the library name is not valid, nil is returned.\n"
     "\n"
     "This method has been introduce in version 0.24.\n"
   ) +
-  gsi::method ("#add_cell", &db::Layout::add_cell, gsi::arg ("name"),
+  gsi::method ("#add_cell", &db::Layout::add_cell, 
     "@brief Adds a cell with the given name\n"
+    "@args name\n"
     "@return The index of the newly created cell.\n"
     "\n"
     "From version 0.23 on this method is deprecated because another method exists which is more convenient because "
     "is returns a \\Cell object (\\create_cell).\n"
   ) +
-  gsi::method ("rename_cell", &db::Layout::rename_cell, gsi::arg ("index"), gsi::arg ("name"),
-    "@brief Renames the cell with given index\n"
-    "The cell with the given index is renamed to the given name. NOTE: it is not ensured that the name is unique. "
-    "This method allows assigning identical names to different cells which usually breaks things.\n"
-    "Consider using \\unique_cell_name to generate truely unique names.\n"
+  gsi::method ("rename_cell", &db::Layout::rename_cell, 
+    "@brief name\n"
+    "@args index, name\n"
   ) +
-  gsi::method ("delete_cell", &db::Layout::delete_cell, gsi::arg ("cell_index"),
+  gsi::method ("delete_cell", &db::Layout::delete_cell,
     "@brief Deletes a cell \n"
+    "@args cell_index\n"
     "\n"
     "This deletes a cell but not the sub cells of the cell.\n"
     "These subcells will likely become new top cells unless they are used\n"
@@ -1604,8 +1140,9 @@ Class<db::Layout> decl_Layout ("db", "Layout",
     "\n"
     "This method has been introduced in version 0.20.\n"
   ) +
-  gsi::method_ext ("delete_cells", &delete_cells, gsi::arg ("cell_index_list"),
+  gsi::method_ext ("delete_cells", &delete_cells,
     "@brief Deletes multiple cells\n"
+    "@args cell_index_list\n"
     "\n"
     "This deletes the cells but not the sub cells of these cells.\n"
     "These subcells will likely become new top cells unless they are used\n"
@@ -1616,8 +1153,9 @@ Class<db::Layout> decl_Layout ("db", "Layout",
     "\n"
     "This method has been introduced in version 0.20.\n"
   ) +
-  gsi::method_ext ("prune_subcells", &prune_subcells, gsi::arg ("cell_index"), gsi::arg ("levels"),
+  gsi::method_ext ("prune_subcells", &prune_subcells,
     "@brief Deletes all sub cells of the cell which are not used otherwise down to the specified level of hierarchy\n"
+    "@args cell_index, levels\n"
     "\n"
     "This deletes all sub cells of the cell which are not used otherwise.\n"
     "All instances of the deleted cells are deleted as well.\n"
@@ -1628,8 +1166,9 @@ Class<db::Layout> decl_Layout ("db", "Layout",
     "\n"
     "This method has been introduced in version 0.20.\n"
   ) +
-  gsi::method_ext ("prune_cell", &prune_cell, gsi::arg ("cell_index"), gsi::arg ("levels"),
+  gsi::method_ext ("prune_cell", &prune_cell,
     "@brief Deletes a cell plus subcells not used otherwise\n"
+    "@args cell_index, levels\n"
     "\n"
     "This deletes a cell and also all sub cells of the cell which are not used otherwise.\n"
     "The number of hierarchy levels to consider can be specified as well. One level of hierarchy means that "
@@ -1641,8 +1180,9 @@ Class<db::Layout> decl_Layout ("db", "Layout",
     "\n"
     "This method has been introduced in version 0.20.\n"
   ) +
-  gsi::method ("delete_cell_rec", &db::Layout::delete_cell_rec, gsi::arg ("cell_index"),
+  gsi::method ("delete_cell_rec", &db::Layout::delete_cell_rec,
     "@brief Deletes a cell plus all subcells\n"
+    "@args cell_index\n"
     "\n"
     "This deletes a cell and also all sub cells of the cell.\n"
     "In contrast to \\prune_cell, all cells are deleted together with their instances even if they are used otherwise.\n"
@@ -1657,7 +1197,7 @@ Class<db::Layout> decl_Layout ("db", "Layout",
     "If the region is (conceptionally) a flat region, it will be inserted into the cell's shapes "
     "list as a flat sequence of polygons.\n"
     "If the region is a deep (hierarchical) region, it will create a subhierarchy below the given "
-    "cell and its shapes will be put into the respective cells. Suitable subcells will be picked "
+    "cell and it's shapes will be put into the respective cells. Suitable subcells will be picked "
     "for inserting the shapes. If a hierarchy already exists below the given cell, the algorithm will "
     "try to reuse this hierarchy.\n"
     "\n"
@@ -1669,38 +1209,15 @@ Class<db::Layout> decl_Layout ("db", "Layout",
     "If the edge collection is (conceptionally) flat, it will be inserted into the cell's shapes "
     "list as a flat sequence of edges.\n"
     "If the edge collection is deep (hierarchical), it will create a subhierarchy below the given "
-    "cell and its edges will be put into the respective cells. Suitable subcells will be picked "
+    "cell and it's edges will be put into the respective cells. Suitable subcells will be picked "
     "for inserting the edges. If a hierarchy already exists below the given cell, the algorithm will "
     "try to reuse this hierarchy.\n"
     "\n"
     "This method has been introduced in version 0.26.\n"
   ) +
-  gsi::method ("insert", (void (db::Layout::*) (db::cell_index_type, int, const db::EdgePairs &)) &db::Layout::insert,
-    gsi::arg ("cell_index"), gsi::arg ("layer"), gsi::arg ("edge_pairs"),
-    "@brief Inserts an edge pair collection into the given cell and layer\n"
-    "If the edge pair collection is (conceptionally) flat, it will be inserted into the cell's shapes "
-    "list as a flat sequence of edge pairs.\n"
-    "If the edge pair collection is deep (hierarchical), it will create a subhierarchy below the given "
-    "cell and its edge pairs will be put into the respective cells. Suitable subcells will be picked "
-    "for inserting the edge pairs. If a hierarchy already exists below the given cell, the algorithm will "
-    "try to reuse this hierarchy.\n"
-    "\n"
-    "This method has been introduced in version 0.27.\n"
-  ) +
-  gsi::method ("insert", (void (db::Layout::*) (db::cell_index_type, int, const db::Texts &)) &db::Layout::insert,
-    gsi::arg ("cell_index"), gsi::arg ("layer"), gsi::arg ("texts"),
-    "@brief Inserts an text collection into the given cell and layer\n"
-    "If the text collection is (conceptionally) flat, it will be inserted into the cell's shapes "
-    "list as a flat sequence of texts.\n"
-    "If the text collection is deep (hierarchical), it will create a subhierarchy below the given "
-    "cell and its texts will be put into the respective cells. Suitable subcells will be picked "
-    "for inserting the texts. If a hierarchy already exists below the given cell, the algorithm will "
-    "try to reuse this hierarchy.\n"
-    "\n"
-    "This method has been introduced in version 0.27.\n"
-  ) +
-  gsi::method_ext ("flatten", &flatten, gsi::arg ("cell_index"), gsi::arg ("levels"), gsi::arg ("prune"),
+  gsi::method_ext ("flatten", &flatten,
     "@brief Flattens the given cell\n"
+    "@args cell_index, levels, prune\n"
     "\n"
     "This method propagates all shapes and instances from the specified number of hierarchy levels below into the given cell.\n"
     "It also removes the instances of the cells from which the shapes came from, but does not remove the cells themselves if prune is set to false.\n"
@@ -1712,8 +1229,9 @@ Class<db::Layout> decl_Layout ("db", "Layout",
     "\n"
     "This method has been introduced in version 0.20.\n"
   ) +
-  gsi::method_ext ("flatten_into", &flatten_into, gsi::arg ("source_cell_index"), gsi::arg ("target_cell_index"), gsi::arg ("trans"), gsi::arg ("levels"),
+  gsi::method_ext ("flatten_into", &flatten_into,
     "@brief Flattens the given cell into another cell\n"
+    "@args source_cell_index, target_cell_index, trans, levels\n"
     "\n"
     "This method works like 'flatten', but allows specification of a target cell which can be different from the source cell plus "
     "a transformation which is applied for all shapes and instances in the target cell.\n"
@@ -1758,31 +1276,23 @@ Class<db::Layout> decl_Layout ("db", "Layout",
     "is ongoing or the layout is brought into invalid state by\n"
     "\"start_changes\".\n"
   ) +
-  gsi::method ("update_needed", &db::Layout::update_needed,
-    "@brief Gets a value indicating whether the Layout object needs an update\n"
-    "If this method returns false, \\update will not do anything. This is useful to force an update at "
-    "specific times during 'under_construction' conditions.\n"
-    "\n"
-    "This method has been introduced in version 0.30.4."
-  ) +
   gsi::method ("update", (void (db::Layout::*) ()) &db::Layout::force_update,
     "@brief Updates the internals of the layout\n"
     "This method updates the internal state of the layout. Usually this is done automatically\n"
     "This method is provided to ensure this explicitly. This can be useful while using \\start_changes and \\end_changes to wrap a performance-critical operation. "
     "See \\start_changes for more details."
   ) +
-  gsi::method ("cleanup", &db::Layout::cleanup, gsi::arg ("cell_indexes_to_keep", std::set<db::cell_index_type> (), "[]"),
+  gsi::method ("cleanup", &db::Layout::cleanup,
     "@brief Cleans up the layout\n"
     "This method will remove proxy objects that are no longer in use. After changing PCell parameters such "
-    "proxy objects may still be present in the layout and are cached for later reuse. Usually they are cleaned up automatically, "
+    "proxy objects may still be present in the layout and are cached for later reuse. Usually they are cleaned up automatically occasionally, "
     "but in a scripting context it may be useful to clean up these cells explicitly.\n"
-    "\n"
-    "Use 'cell_indexes_to_keep' for specifying a list of cell indexes of PCell variants or library proxies you don't want to be cleaned up.\n"
     "\n"
     "This method has been introduced in version 0.25.\n"
   ) +
-  gsi::method ("dbu=", (void (db::Layout::*) (double)) &db::Layout::dbu, gsi::arg ("dbu"),
+  gsi::method ("dbu=", (void (db::Layout::*) (double)) &db::Layout::dbu,
     "@brief Sets the database unit\n"
+    "@args dbu\n"
     "\n"
     "See \\dbu for a description of the database unit.\n"
   ) +
@@ -1806,8 +1316,9 @@ Class<db::Layout> decl_Layout ("db", "Layout",
     "\n"
     "This method has been introduced in version 0.25.\n"
   ) +
-  gsi::method ("layer", &db::Layout::get_layer, gsi::arg ("info"),
+  gsi::method ("layer", &db::Layout::get_layer,
     "@brief Finds or creates a layer with the given properties\n"
+    "@args info\n"
     "\n"
     "If a layer with the given properties already exists, this method will return the index of that layer."
     "If no such layer exists, a new one with these properties will be created and its index will be returned. "
@@ -1815,90 +1326,77 @@ Class<db::Layout> decl_Layout ("db", "Layout",
     "\n"
     "This method has been introduced in version 0.23.\n"
   ) +
-  gsi::method_ext ("layer", &get_layer1, gsi::arg ("name"),
+  gsi::method_ext ("layer", &get_layer1,
     "@brief Finds or creates a layer with the given name\n"
+    "@args name\n"
     "\n"
     "If a layer with the given name already exists, this method will return the index of that layer."
-    "If no such layer exists, a new one with this name will be created and its index will be returned.\n"
+    "If no such layer exists, a new one with theis name will be created and its index will be returned.\n"
     "\n"
     "This method has been introduced in version 0.23.\n"
   ) +
-  gsi::method_ext ("layer", &get_layer2, gsi::arg ("layer"), gsi::arg ("datatype"),
+  gsi::method_ext ("layer", &get_layer2,
     "@brief Finds or creates a layer with the given layer and datatype number\n"
+    "@args layer, datatype\n"
     "\n"
     "If a layer with the given layer/datatype already exists, this method will return the index of that layer."
     "If no such layer exists, a new one with these properties will be created and its index will be returned.\n"
     "\n"
     "This method has been introduced in version 0.23.\n"
   ) +
-  gsi::method_ext ("layer", &get_layer3, gsi::arg ("layer"), gsi::arg ("datatype"), gsi::arg ("name"),
+  gsi::method_ext ("layer", &get_layer3,
     "@brief Finds or creates a layer with the given layer and datatype number and name\n"
+    "@args layer, datatype, name\n"
     "\n"
     "If a layer with the given layer/datatype/name already exists, this method will return the index of that layer."
     "If no such layer exists, a new one with these properties will be created and its index will be returned.\n"
     "\n"
     "This method has been introduced in version 0.23.\n"
   ) +
-  gsi::method_ext ("find_layer", &find_layer, gsi::arg ("info"),
+  gsi::method_ext ("find_layer", &find_layer,
     "@brief Finds a layer with the given properties\n"
+    "@args info\n"
     "\n"
     "If a layer with the given properties already exists, this method will return the index of that layer."
     "If no such layer exists, it will return nil.\n"
     "\n"
-    "In contrast to \\layer, this method will also find layers matching by name only. "
-    "For example:\n"
-    "\n"
-    "@code\n"
-    "# finds layer '17/0' and 'name (17/0)':\n"
-    "index = layout.find_layer(RBA::LayerInfo::new(17, 0))\n"
-    "# finds layer 'name' (first priority), but also 'name (17/0)' (second priority):\n"
-    "index = layout.find_layer(RBA::LayerInfo::new('name'))\n"
-    "# note that this will not match layer 'name (17/0)' and create a new name-only layer:\n"
-    "index = layout.layer(RBA::LayerInfo::new('name'))\n"
-    "@/code\n"
-    "\n"
-    "This method has been introduced in version 0.23 and has been extended to name queries in version 0.28.11.\n"
+    "This method has been introduced in version 0.23.\n"
   ) +
-  gsi::method_ext ("find_layer", &find_layer1, gsi::arg ("name"),
+  gsi::method_ext ("find_layer", &find_layer1,
     "@brief Finds a layer with the given name\n"
+    "@args name\n"
     "\n"
     "If a layer with the given name already exists, this method will return the index of that layer."
     "If no such layer exists, it will return nil.\n"
     "\n"
-    "In contrast to \\layer, this method will also find numbered layers if the name matches. "
-    "For example:\n"
-    "\n"
-    "@code\n"
-    "# finds layer 'name' (first priority), but also 'name (17/0)' (second priority):\n"
-    "index = layout.find_layer('name')\n"
-    "# note that this will not match layer 'name (17/0)' and create a new name-only layer:\n"
-    "index = layout.layer('name')\n"
-    "@/code\n"
-    "\n"
-    "This method has been introduced in version 0.23 and has been extended to name queries in version 0.28.11.\n"
+    "This method has been introduced in version 0.23.\n"
   ) +
-  gsi::method_ext ("find_layer", &find_layer2, gsi::arg ("layer"), gsi::arg ("datatype"),
+  gsi::method_ext ("find_layer", &find_layer2,
     "@brief Finds a layer with the given layer and datatype number\n"
+    "@args layer, datatype\n"
     "\n"
     "If a layer with the given layer/datatype already exists, this method will return the index of that layer."
     "If no such layer exists, it will return nil.\n"
     "\n"
     "This method has been introduced in version 0.23.\n"
   ) +
-  gsi::method_ext ("find_layer", &find_layer3, gsi::arg ("layer"), gsi::arg ("datatype"), gsi::arg ("name"),
+  gsi::method_ext ("find_layer", &find_layer3,
     "@brief Finds a layer with the given layer and datatype number and name\n"
+    "@args layer, datatype, name\n"
     "\n"
     "If a layer with the given layer/datatype/name already exists, this method will return the index of that layer."
     "If no such layer exists, it will return nil.\n"
     "\n"
     "This method has been introduced in version 0.23.\n"
   ) +
-  gsi::method ("insert_layer", (unsigned int (db::Layout::*) (const db::LayerProperties &)) &db::Layout::insert_layer, gsi::arg ("props"),
+  gsi::method ("insert_layer", (unsigned int (db::Layout::*) (const db::LayerProperties &)) &db::Layout::insert_layer,
     "@brief Inserts a new layer with the given properties\n"
+    "@args props\n"
     "@return The index of the newly created layer\n"
   ) +
-  gsi::method ("insert_layer_at", (void (db::Layout::*) (unsigned int, const db::LayerProperties &)) &db::Layout::insert_layer, gsi::arg ("index"), gsi::arg ("props"),
+  gsi::method ("insert_layer_at", (void (db::Layout::*) (unsigned int, const db::LayerProperties &)) &db::Layout::insert_layer,
     "@brief Inserts a new layer with the given properties at the given index\n"
+    "@args index, props\n"
     "This method will associate the given layer info with the given layer index. If a layer with that index already "
     "exists, this method will change the properties of the layer with that index. Otherwise a new layer is created."
   ) +
@@ -1908,57 +1406,37 @@ Class<db::Layout> decl_Layout ("db", "Layout",
     "\n"
     "This method has been added in version 0.22.\n"
   ) +
-  gsi::method ("error_layer", &db::Layout::error_layer,
-    "@brief Returns the index of the error layer\n"
-    "The error layer is used to place error texts on it, for example when a PCell evaluation fails.\n"
-    "\n"
-    "This method has been added in version 0.23.13.\n"
-  ) +
-  gsi::method ("insert_special_layer", (unsigned int (db::Layout::*) (const db::LayerProperties &)) &db::Layout::insert_special_layer, gsi::arg ("props"),
+  gsi::method ("insert_special_layer", (unsigned int (db::Layout::*) (const db::LayerProperties &)) &db::Layout::insert_special_layer,
     "@brief Inserts a new special layer with the given properties\n"
+    "@args props\n"
     "\n"
     "Special layers can be used to represent objects that should not participate in normal viewing or other "
     "related operations. Special layers are not reported as valid layers.\n"
     "\n"
     "@return The index of the newly created layer\n"
   ) +
-  gsi::method ("insert_special_layer_at", (void (db::Layout::*) (unsigned int, const db::LayerProperties &)) &db::Layout::insert_special_layer, gsi::arg ("index"), gsi::arg ("props"),
+  gsi::method ("insert_special_layer_at", (void (db::Layout::*) (unsigned int, const db::LayerProperties &)) &db::Layout::insert_special_layer,
     "@brief Inserts a new special layer with the given properties at the given index\n"
+    "@args index, props\n"
     "\n"
     "See \\insert_special_layer for a description of special layers."
   ) +
-  gsi::method_ext ("set_info", &set_properties, gsi::arg ("index"), gsi::arg ("props"),
+  gsi::method ("set_info", &db::Layout::set_properties,
     "@brief Sets the info structure for a specified layer\n"
+    "@args index, props\n"
   ) +
-  gsi::method_ext ("get_info", &get_properties, gsi::arg ("index"),
+  gsi::method ("get_info", &db::Layout::get_properties,
     "@brief Gets the info structure for a specified layer\n"
-    "If the layer index is not a valid layer index, an empty LayerProperties object will be returned."
+    "@args index\n"
   ) +
   gsi::method ("cells", &db::Layout::cells,
     "@brief Returns the number of cells\n"
     "\n"
     "@return The number of cells (the maximum cell index)\n"
   ) +
-  gsi::method_ext ("cells", &cells_from_name, gsi::arg ("name_filter"),
-    "@brief Gets the cell objects for a given name filter\n"
-    "\n"
-    "@param name_filter The cell name filter (glob pattern)\n"
-    "@return A list of \\Cell object of the cells matching the pattern\n"
-    "\n"
-    "This method has been introduced in version 0.27.3.\n"
-  ) +
-  gsi::method_ext ("cells", &cells_from_name_const, gsi::arg ("name_filter"),
-    "@brief Gets the cell objects for a given name filter (const version)\n"
-    "\n"
-    "@param name_filter The cell name filter (glob pattern)\n"
-    "@return A list of \\Cell object of the cells matching the pattern\n"
-    "\n"
-    "This method has been introduced in version 0.27.3.\n"
-    "\n"
-    "This variant has been introduced in version 0.29.6."
-  ) +
-  gsi::method_ext ("cell", &cell_from_name, gsi::arg ("name"),
+  gsi::method_ext ("cell", &cell_from_name,
     "@brief Gets a cell object from the cell name\n"
+    "@args name\n"
     "\n"
     "@param name The cell name\n"
     "@return A reference to the cell (a \\Cell object)\n"
@@ -1966,36 +1444,15 @@ Class<db::Layout> decl_Layout ("db", "Layout",
     "If name is not a valid cell name, this method will return \"nil\".\n"
     "This method has been introduced in version 0.23 and replaces \\cell_by_name.\n"
   ) +
-  gsi::method_ext ("cell", &cell_from_name_const, gsi::arg ("name"),
-    "@brief Gets a cell object from the cell name (const version)\n"
-    "\n"
-    "@param name The cell name\n"
-    "@return A reference to the cell (a \\Cell object)\n"
-    "\n"
-    "If name is not a valid cell name, this method will return \"nil\".\n"
-    "This method has been introduced in version 0.23 and replaces \\cell_by_name.\n"
-    "\n"
-    "This variant has been introduced in version 0.29.6."
-  ) +
-  gsi::method_ext ("cell", &cell_from_index, gsi::arg ("i"),
+  gsi::method_ext ("cell", &cell_from_index,
     "@brief Gets a cell object from the cell index\n"
+    "@args i\n"
     "\n"
     "@param i The cell index\n"
     "@return A reference to the cell (a \\Cell object)\n"
     "\n"
     "If the cell index is not a valid cell index, this method will raise an error. "
     "Use \\is_valid_cell_index? to test whether a given cell index is valid.\n"
-  ) +
-  gsi::method_ext ("cell", &cell_from_index_const, gsi::arg ("i"),
-    "@brief Gets a cell object from the cell index (const version)\n"
-    "\n"
-    "@param i The cell index\n"
-    "@return A reference to the cell (a \\Cell object)\n"
-    "\n"
-    "If the cell index is not a valid cell index, this method will raise an error. "
-    "Use \\is_valid_cell_index? to test whether a given cell index is valid.\n"
-    "\n"
-    "This variant has been introduced in version 0.29.6."
   ) +
   gsi::iterator ("each_cell", (db::Layout::iterator (db::Layout::*) ()) &db::Layout::begin, (db::Layout::iterator (db::Layout::*) ()) &db::Layout::end,
     "@brief Iterates the unsorted cell list\n"
@@ -2023,8 +1480,9 @@ Class<db::Layout> decl_Layout ("db", "Layout",
     "A layout may have an arbitrary number of top cells. The usual case however is that there is one "
     "top cell."
   ) +
-  gsi::method ("swap_layers", &db::Layout::swap_layers, gsi::arg ("a"), gsi::arg ("b"),
+  gsi::method ("swap_layers", &db::Layout::swap_layers,
     "@brief Swap two layers\n"
+    "@args a, b\n"
     "\n"
     "Swaps the shapes of both layers.\n"
     "\n"
@@ -2033,110 +1491,50 @@ Class<db::Layout> decl_Layout ("db", "Layout",
     "@param a The first of the layers to swap.\n"
     "@param b The second of the layers to swap.\n"
   ) +
-  gsi::method ("move_layer", static_cast<void (db::Layout::*) (unsigned int, unsigned int)> (&db::Layout::move_layer), gsi::arg ("src"), gsi::arg ("dest"),
+  gsi::method ("move_layer", &db::Layout::move_layer,
     "@brief Moves a layer\n"
-    "\n"
-    "Moves a layer from the source to the destination layer. The target is not cleared before, so that this method \n"
-    "merges shapes from the source with the destination layer. The source layer is empty after that operation.\n"
-    "\n"
-    "@param src The layer index of the source layer.\n"
-    "@param dest The layer index of the destination layer.\n"
+    "@args src, dest\n"
     "\n"
     "This method was introduced in version 0.19.\n"
-  ) +
-  gsi::method ("move_layer", static_cast<void (db::Layout::*) (unsigned int, unsigned int, unsigned int)> (&db::Layout::move_layer), gsi::arg ("src"), gsi::arg ("dest"), gsi::arg ("flags"),
-    "@brief Moves a layer (selected shape types only)\n"
     "\n"
-    "Moves a layer from the source to the destination layer. The target is not cleared before, so that this method \n"
-    "merges shapes from the source with the destination layer. The copied shapes are removed from the source layer.\n"
+    "Move a layer from the source to the target. The target is not cleared before, so that this method \n"
+    "merges shapes from the source with the target layer. The source layer is empty after that operation.\n"
     "\n"
     "@param src The layer index of the source layer.\n"
     "@param dest The layer index of the destination layer.\n"
-    "@param flags A combination of the shape type flags from \\Shapes, S... constants\n"
-    "\n"
-    "This method variant has been introduced in version 0.28.9.\n"
   ) +
-  gsi::method ("copy_layer", static_cast<void (db::Layout::*) (unsigned int, unsigned int)> (&db::Layout::copy_layer), gsi::arg ("src"), gsi::arg ("dest"),
+  gsi::method ("copy_layer", &db::Layout::copy_layer,
     "@brief Copies a layer\n"
-    "\n"
-    "Copies a layer from the source to the destination layer. The destination layer is not cleared before, so that this method \n"
-    "merges shapes from the source with the destination layer.\n"
-    "\n"
-    "@param src The layer index of the source layer.\n"
-    "@param dest The layer index of the destination layer.\n"
+    "@args src, dest\n"
     "\n"
     "This method was introduced in version 0.19.\n"
-  ) +
-  gsi::method ("copy_layer", static_cast<void (db::Layout::*) (unsigned int, unsigned int, unsigned int)> (&db::Layout::copy_layer), gsi::arg ("src"), gsi::arg ("dest"), gsi::arg ("flags"),
-    "@brief Copies a layer (selected shape types only)\n"
     "\n"
-    "Copies a layer from the source to the destination layer. The destination layer is not cleared before, so that this method \n"
-    "merges shapes from the source with the destination layer.\n"
+    "Copy a layer from the source to the target. The target is not cleared before, so that this method \n"
+    "merges shapes from the source with the target layer.\n"
     "\n"
     "@param src The layer index of the source layer.\n"
     "@param dest The layer index of the destination layer.\n"
-    "@param flags A combination of the shape type flags from \\Shapes, S... constants\n"
-    "\n"
-    "This method variant has been introduced in version 0.28.9.\n"
   ) +
-  gsi::method ("clear_layer", static_cast<void (db::Layout::*) (unsigned int)> (&db::Layout::clear_layer), gsi::arg ("layer_index"),
+  gsi::method ("clear_layer", &db::Layout::clear_layer,
     "@brief Clears a layer\n"
+    "@args layer_index\n"
     "\n"
     "Clears the layer: removes all shapes.\n"
     "\n"
     "This method was introduced in version 0.19.\n"
     "\n"
-    "@param layer_index The index of the layer to clear.\n"
-  ) +                               
-  gsi::method_ext ("clear_layer", &clear_layer_from_info, gsi::arg ("layer"),
-    "@brief Clears a layer\n"
-    "\n"
-    "This variant takes a \\LayerInfo object to address the layer.\n"
-    "It does nothing if no layer with these attributes exists.\n"
-    "\n"
-    "This variant was introduced in version 0.26.7.\n"
-    "\n"
-    "@param layer The attributes of the layer to clear.\n"
+    "@param layer_index The index of the layer to delete.\n"
   ) +
-  gsi::method ("clear_layer", static_cast<void (db::Layout::*) (unsigned int, unsigned int)> (&db::Layout::clear_layer), gsi::arg ("layer_index"), gsi::arg ("flags"),
-    "@brief Clears a layer (given shape types only)\n"
-    "\n"
-    "Clears the layer: removes all shapes for the given shape types.\n"
-    "\n"
-    "This method was introduced in version 0.28.9.\n"
-    "\n"
-    "@param layer_index The index of the layer to clear.\n"
-    "@param flags The type selector for the shapes to delete (see \\Shapes class, S... constants).\n"
-  ) +
-  gsi::method_ext ("clear_layer", &clear_layer_from_info_with_flags, gsi::arg ("layer"), gsi::arg ("flags"),
-    "@brief Clears a layer (given shape types only)\n"
-    "\n"
-    "This variant takes a \\LayerInfo object to address the layer.\n"
-    "It does nothing if no layer with these attributes exists.\n"
-    "\n"
-    "This variant was introduced in version 0.26.7.\n"
-    "\n"
-    "@param layer The attributes of the layer to clear.\n"
-  ) +
-  gsi::method ("delete_layer", &db::Layout::delete_layer, gsi::arg ("layer_index"),
+  gsi::method ("delete_layer", &db::Layout::delete_layer,
     "@brief Deletes a layer\n"
+    "@args layer_index\n"
     "\n"
     "This method frees the memory allocated for the shapes of this layer and remembers the\n"
     "layer's index for reuse when the next layer is allocated.\n"
     "\n"
     "@param layer_index The index of the layer to delete.\n"
   ) +
-  gsi::method_ext ("delete_layer", &delete_layer_from_info, gsi::arg ("layer"),
-    "@brief Deletes a layer\n"
-    "\n"
-    "This variant takes a \\LayerInfo object to address the layer.\n"
-    "It does nothing if no layer with these attributes exists.\n"
-    "\n"
-    "This variant was introduced in version 0.26.7.\n"
-    "\n"
-    "@param layer The attributes of the layer to delete.\n"
-  ) +
-  gsi::method_ext ("layer_indexes|#layer_indices", &layer_indexes,
+  gsi::method_ext ("layer_indexes|#layer_indices", &layer_indices,
     "@brief Gets a list of valid layer's indices\n"
     "This method returns an array with layer indices representing valid layers.\n"
     "\n"
@@ -2154,49 +1552,6 @@ Class<db::Layout> decl_Layout ("db", "Layout",
     "The number of layers reports the maximum (plus 1) layer index used so far. Not all of the layers with "
     "an index in the range of 0 to layers-1 needs to be a valid layer. These layers can be either valid, "
     "special or unused. Use \\is_valid_layer? and \\is_special_layer? to test for the first two states.\n"
-  ) +
-  gsi::method_ext ("copy_tree_shapes", &copy_tree_shapes2, gsi::arg ("source_layout"), gsi::arg ("cell_mapping"),
-    "@brief Copies the shapes for all given mappings in the \\CellMapping object\n"
-    "@param source_layout The layout where to take the shapes from\n"
-    "@param cell_mapping The cell mapping object that determines how cells are identified between source and target layout\n"
-    "\n"
-    "Provide a \\CellMapping object to specify pairs of cells which are mapped from the source layout to this "
-    "layout. When constructing such a cell mapping object for example with \\CellMapping#for_multi_cells_full, use self "
-    "as the target layout. During the cell mapping construction, the cell mapper will usually create a suitable target "
-    "hierarchy already. After having completed the cell mapping, use \\copy_tree_shapes to copy over the shapes from "
-    "the source to the target layout.\n"
-    "\n"
-    "This method has been added in version 0.26.8.\n"
-  ) +
-  gsi::method_ext ("copy_tree_shapes", &copy_tree_shapes3, gsi::arg ("source_layout"), gsi::arg ("cell_mapping"), gsi::arg ("layer_mapping"),
-    "@brief Copies the shapes for all given mappings in the \\CellMapping object using the given layer mapping\n"
-    "@param source_layout The layout where to take the shapes from\n"
-    "@param cell_mapping The cell mapping object that determines how cells are identified between source and target layout\n"
-    "@param layer_mapping Specifies which layers are copied from the source layout to the target layout\n"
-    "\n"
-    "Provide a \\CellMapping object to specify pairs of cells which are mapped from the source layout to this "
-    "layout. When constructing such a cell mapping object for example with \\CellMapping#for_multi_cells_full, use self "
-    "as the target layout. During the cell mapping construction, the cell mapper will usually create a suitable target "
-    "hierarchy already. After having completed the cell mapping, use \\copy_tree_shapes to copy over the shapes from "
-    "the source to the target layout.\n"
-    "\n"
-    "This method has been added in version 0.26.8.\n"
-  ) +
-  gsi::method_ext ("move_tree_shapes", &move_tree_shapes2, gsi::arg ("source_layout"), gsi::arg ("cell_mapping"),
-    "@brief Moves the shapes for all given mappings in the \\CellMapping object\n"
-    "\n"
-    "This method acts like the corresponding \\copy_tree_shapes method, but removes the shapes from the source layout "
-    "after they have been copied.\n"
-    "\n"
-    "This method has been added in version 0.26.8.\n"
-  ) +
-  gsi::method_ext ("move_tree_shapes", &move_tree_shapes3, gsi::arg ("source_layout"), gsi::arg ("cell_mapping"), gsi::arg ("layer_mapping"),
-    "@brief Moves the shapes for all given mappings in the \\CellMapping object using the given layer mapping\n"
-    "\n"
-    "This method acts like the corresponding \\copy_tree_shapes method, but removes the shapes from the source layout "
-    "after they have been copied.\n"
-    "\n"
-    "This method has been added in version 0.26.8.\n"
   ) +
   gsi::method_ext ("scale_and_snap", &scale_and_snap1, gsi::arg ("cell"), gsi::arg ("grid"), gsi::arg ("mult"), gsi::arg ("div"),
     "@brief Scales and snaps the layout below a given cell by the given rational factor and snaps to the given grid\n"
@@ -2217,40 +1572,15 @@ Class<db::Layout> decl_Layout ("db", "Layout",
     "\n"
     "This method has been introduced in version 0.26.1.\n"
   ) +
-  gsi::method_ext ("break_polygons", &break_polygons1, gsi::arg ("max_vertex_count"), gsi::arg ("max_area_ratio"),
-    "@brief Breaks the polygons of the layout into smaller ones\n"
-    "\n"
-    "There are two criteria for splitting a polygon: a polygon is split into parts with less then "
-    "'max_vertex_count' points and an bounding box-to-polygon area ratio less than 'max_area_ratio'. "
-    "The area ratio is supposed to render polygons whose bounding box is a better approximation. "
-    "This applies for example to 'L' shape polygons.\n"
-    "\n"
-    "Using a value of 0 for either limit means that the respective limit isn't checked. "
-    "Breaking happens by cutting the polygons into parts at 'good' locations. The "
-    "algorithm does not have a specific goal to minimize the number of parts for example. "
-    "The only goal is to achieve parts within the given limits.\n"
-    "\n"
-    "Breaking also applies to paths if their polygon representation satisfies the breaking criterion. "
-    "In that case, paths are converted to polygons and broken into smaller parts.\n"
-    "\n"
-    "This variant applies breaking to all cells and layers.\n"
-    "\n"
-    "This method has been introduced in version 0.29.5."
-  ) +
-  gsi::method_ext ("break_polygons", &break_polygons2, gsi::arg ("layer"), gsi::arg ("max_vertex_count"), gsi::arg ("max_area_ratio"),
-    "@brief Breaks the polygons of the layer into smaller ones\n"
-    "\n"
-    "This variant applies breaking to all cells and the given layer.\n"
-    "\n"
-    "This method has been introduced in version 0.29.5."
-  ) +
-  gsi::method ("transform", (void (db::Layout::*) (const db::Trans &t)) &db::Layout::transform, gsi::arg ("trans"),
+  gsi::method ("transform", (void (db::Layout::*) (const db::Trans &t)) &db::Layout::transform,
     "@brief Transforms the layout with the given transformation\n"
+    "@args trans\n"
     "\n"
     "This method has been introduced in version 0.23.\n"
   ) +
-  gsi::method ("transform", (void (db::Layout::*) (const db::ICplxTrans &t)) &db::Layout::transform, gsi::arg ("trans"),
+  gsi::method ("transform", (void (db::Layout::*) (const db::ICplxTrans &t)) &db::Layout::transform,
     "@brief Transforms the layout with the given complex integer transformation\n"
+    "@args trans\n"
     "\n"
     "This method has been introduced in version 0.23.\n"
   ) +
@@ -2268,31 +1598,36 @@ Class<db::Layout> decl_Layout ("db", "Layout",
     "\n"
     "This method has been introduced in version 0.23.\n"
   ) +
-  gsi::method ("is_valid_cell_index?", &db::Layout::is_valid_cell_index, gsi::arg ("cell_index"),
+  gsi::method ("is_valid_cell_index?", &db::Layout::is_valid_cell_index,
     "@brief Returns true, if a cell index is a valid index\n"
+    "@args cell_index\n"
     "\n"
     "@return true, if this is the case\n"
     "This method has been added in version 0.20.\n"
   ) +
-  gsi::method ("is_valid_layer?", &db::Layout::is_valid_layer, gsi::arg ("layer_index"),
+  gsi::method ("is_valid_layer?", &db::Layout::is_valid_layer,
     "@brief Returns true, if a layer index is a valid normal layout layer index\n"
+    "@args layer_index\n"
     "\n"
     "@return true, if this is the case\n"
   ) +
-  gsi::method ("is_free_layer?", &db::Layout::is_free_layer, gsi::arg ("layer_index"),
+  gsi::method ("is_free_layer?", &db::Layout::is_free_layer,
     "@brief Returns true, if a layer index is a free (unused) layer index\n"
+    "@args layer_index\n"
     "\n"
     "@return true, if this is the case\n"
     "\n"
     "This method has been introduced in version 0.26."
   ) +
-  gsi::method ("is_special_layer?", &db::Layout::is_special_layer, gsi::arg ("layer_index"),
+  gsi::method ("is_special_layer?", &db::Layout::is_special_layer,
     "@brief Returns true, if a layer index is a special layer index\n"
+    "@args layer_index\n"
     "\n"
     "@return true, if this is the case\n"
   ) +
-  gsi::method_ext ("begin_shapes", &begin_shapes2, gsi::arg ("cell"), gsi::arg ("layer"),
+  gsi::method_ext ("begin_shapes", &begin_shapes2, 
     "@brief Delivers a recursive shape iterator for the shapes below the given cell on the given layer\n"
+    "@args cell,layer\n"
     "@param cell The cell object of the initial (top) cell\n"
     "@param layer The layer from which to get the shapes\n"
     "@return A suitable iterator\n"
@@ -2300,24 +1635,22 @@ Class<db::Layout> decl_Layout ("db", "Layout",
     "For details see the description of the \\RecursiveShapeIterator class.\n"
     "This version is convenience overload which takes a cell object instead of a cell index.\n"
     "\n"
-    "This method is deprecated. Use \\Cell#begin_shapes_rec instead.\n"
-    "\n"
     "This method has been added in version 0.24.\n"
   ) +
-  gsi::method_ext ("#begin_shapes", &begin_shapes, gsi::arg ("cell_index"), gsi::arg ("layer"),
+  gsi::method_ext ("begin_shapes", &begin_shapes, 
     "@brief Delivers a recursive shape iterator for the shapes below the given cell on the given layer\n"
+    "@args cell_index,layer\n"
     "@param cell_index The index of the initial (top) cell\n"
     "@param layer The layer from which to get the shapes\n"
     "@return A suitable iterator\n"
     "\n"
     "For details see the description of the \\RecursiveShapeIterator class.\n"
     "\n"
-    "This method is deprecated. Use \\Cell#begin_shapes_rec instead.\n"
-    "\n"
     "This method has been added in version 0.18.\n"
   ) +
-  gsi::method_ext ("#begin_shapes_touching", &begin_shapes_touching, gsi::arg ("cell_index"), gsi::arg ("layer"), gsi::arg ("region"),
+  gsi::method_ext ("begin_shapes_touching", &begin_shapes_touching, 
     "@brief Delivers a recursive shape iterator for the shapes below the given cell on the given layer using a region search\n"
+    "@args cell_index,layer,region\n"
     "@param cell_index The index of the starting cell\n"
     "@param layer The layer from which to get the shapes\n"
     "@param region The search region\n"
@@ -2326,12 +1659,11 @@ Class<db::Layout> decl_Layout ("db", "Layout",
     "For details see the description of the \\RecursiveShapeIterator class.\n"
     "This version gives an iterator delivering shapes whose bounding box touches the given region.\n"
     "\n"
-    "This method is deprecated. Use \\Cell#begin_shapes_rec_touching instead.\n"
-    "\n"
     "This method has been added in version 0.18.\n"
   ) +
-  gsi::method_ext ("#begin_shapes_touching", &begin_shapes_touching2, gsi::arg ("cell"), gsi::arg ("layer"), gsi::arg ("region"),
+  gsi::method_ext ("begin_shapes_touching", &begin_shapes_touching2, 
     "@brief Delivers a recursive shape iterator for the shapes below the given cell on the given layer using a region search\n"
+    "@args cell,layer,region\n"
     "@param cell The cell object for the starting cell\n"
     "@param layer The layer from which to get the shapes\n"
     "@param region The search region\n"
@@ -2340,13 +1672,12 @@ Class<db::Layout> decl_Layout ("db", "Layout",
     "For details see the description of the \\RecursiveShapeIterator class.\n"
     "This version gives an iterator delivering shapes whose bounding box touches the given region.\n"
     "It is convenience overload which takes a cell object instead of a cell index.\n"
-    "\n"
-    "This method is deprecated. Use \\Cell#begin_shapes_rec_touching instead.\n"
     "\n"
     "This method has been added in version 0.24.\n"
   ) +
-  gsi::method_ext ("#begin_shapes_overlapping", &begin_shapes_overlapping, gsi::arg ("cell_index"), gsi::arg ("layer"), gsi::arg ("region"),
+  gsi::method_ext ("begin_shapes_overlapping", &begin_shapes_overlapping, 
     "@brief Delivers a recursive shape iterator for the shapes below the given cell on the given layer using a region search\n"
+    "@args cell_index,layer,region\n"
     "@param cell_index The index of the starting cell\n"
     "@param layer The layer from which to get the shapes\n"
     "@param region The search region\n"
@@ -2354,13 +1685,12 @@ Class<db::Layout> decl_Layout ("db", "Layout",
     "\n"
     "For details see the description of the \\RecursiveShapeIterator class.\n"
     "This version gives an iterator delivering shapes whose bounding box overlaps the given region.\n"
-    "\n"
-    "This method is deprecated. Use \\Cell#begin_shapes_rec_overlapping instead.\n"
     "\n"
     "This method has been added in version 0.18.\n"
   ) +
-  gsi::method_ext ("#begin_shapes_overlapping", &begin_shapes_overlapping2, gsi::arg ("cell_index"), gsi::arg ("layer"), gsi::arg ("region"),
+  gsi::method_ext ("begin_shapes_overlapping", &begin_shapes_overlapping2, 
     "@brief Delivers a recursive shape iterator for the shapes below the given cell on the given layer using a region search\n"
+    "@args cell_index,layer,region\n"
     "@param cell The cell object for the starting cell\n"
     "@param layer The layer from which to get the shapes\n"
     "@param region The search region\n"
@@ -2370,11 +1700,9 @@ Class<db::Layout> decl_Layout ("db", "Layout",
     "This version gives an iterator delivering shapes whose bounding box overlaps the given region.\n"
     "It is convenience overload which takes a cell object instead of a cell index.\n"
     "\n"
-    "This method is deprecated. Use \\Cell#begin_shapes_rec_overlapping instead.\n"
-    "\n"
     "This method has been added in version 0.24.\n"
   ) +
-  gsi::method_ext ("#begin_shapes_touching", &begin_shapes_touching_um, gsi::arg ("cell_index"), gsi::arg ("layer"), gsi::arg ("region"),
+  gsi::method_ext ("begin_shapes_touching", &begin_shapes_touching_um, gsi::arg ("cell_index"), gsi::arg ("layer"), gsi::arg ("region"),
     "@brief Delivers a recursive shape iterator for the shapes below the given cell on the given layer using a region search, the region given in micrometer units\n"
     "@param cell_index The index of the starting cell\n"
     "@param layer The layer from which to get the shapes\n"
@@ -2384,11 +1712,9 @@ Class<db::Layout> decl_Layout ("db", "Layout",
     "For details see the description of the \\RecursiveShapeIterator class.\n"
     "This version gives an iterator delivering shapes whose bounding box touches the given region.\n"
     "\n"
-    "This method is deprecated. Use \\Cell#begin_shapes_rec_touching instead.\n"
-    "\n"
     "This variant has been added in version 0.25.\n"
   ) +
-  gsi::method_ext ("#begin_shapes_touching", &begin_shapes_touching2_um, gsi::arg ("cell"), gsi::arg ("layer"), gsi::arg ("region"),
+  gsi::method_ext ("begin_shapes_touching", &begin_shapes_touching2_um, gsi::arg ("cell"), gsi::arg ("layer"), gsi::arg ("region"),
     "@brief Delivers a recursive shape iterator for the shapes below the given cell on the given layer using a region search, the region given in micrometer units\n"
     "@param cell The cell object for the starting cell\n"
     "@param layer The layer from which to get the shapes\n"
@@ -2399,11 +1725,9 @@ Class<db::Layout> decl_Layout ("db", "Layout",
     "This version gives an iterator delivering shapes whose bounding box touches the given region.\n"
     "It is convenience overload which takes a cell object instead of a cell index.\n"
     "\n"
-    "This method is deprecated. Use \\Cell#begin_shapes_rec_touching instead.\n"
-    "\n"
     "This variant has been added in version 0.25.\n"
   ) +
-  gsi::method_ext ("#begin_shapes_overlapping", &begin_shapes_overlapping_um, gsi::arg ("cell_index"), gsi::arg ("layer"), gsi::arg ("region"),
+  gsi::method_ext ("begin_shapes_overlapping", &begin_shapes_overlapping_um, gsi::arg ("cell_index"), gsi::arg ("layer"), gsi::arg ("region"),
     "@brief Delivers a recursive shape iterator for the shapes below the given cell on the given layer using a region search, the region given in micrometer units\n"
     "@param cell_index The index of the starting cell\n"
     "@param layer The layer from which to get the shapes\n"
@@ -2413,11 +1737,9 @@ Class<db::Layout> decl_Layout ("db", "Layout",
     "For details see the description of the \\RecursiveShapeIterator class.\n"
     "This version gives an iterator delivering shapes whose bounding box overlaps the given region.\n"
     "\n"
-    "This method is deprecated. Use \\Cell#begin_shapes_rec_overlapping instead.\n"
-    "\n"
     "This variant has been added in version 0.25.\n"
   ) +
-  gsi::method_ext ("#begin_shapes_overlapping", &begin_shapes_overlapping2_um, gsi::arg ("cell"), gsi::arg ("layer"), gsi::arg ("region"),
+  gsi::method_ext ("begin_shapes_overlapping", &begin_shapes_overlapping2_um, gsi::arg ("cell"), gsi::arg ("layer"), gsi::arg ("region"),
     "@brief Delivers a recursive shape iterator for the shapes below the given cell on the given layer using a region search, the region given in micrometer units\n"
     "@param cell The cell object for the starting cell\n"
     "@param layer The layer from which to get the shapes\n"
@@ -2428,12 +1750,11 @@ Class<db::Layout> decl_Layout ("db", "Layout",
     "This version gives an iterator delivering shapes whose bounding box overlaps the given region.\n"
     "It is convenience overload which takes a cell object instead of a cell index.\n"
     "\n"
-    "This method is deprecated. Use \\Cell#begin_shapes_rec_overlapping instead.\n"
-    "\n"
     "This variant has been added in version 0.25.\n"
   ) +
-  gsi::method_ext ("#write", &write_options2, gsi::arg ("filename"), gsi::arg ("gzip"), gsi::arg ("options"),
+  gsi::method_ext ("#write", &write_options2,
     "@brief Writes the layout to a stream file\n"
+    "@args filename, gzip, options\n"
     "@param filename The file to which to write the layout\n"
     "@param gzip Ignored\n"
     "@param options The option set to use for writing. See \\SaveLayoutOptions for details\n"
@@ -2442,8 +1763,9 @@ Class<db::Layout> decl_Layout ("db", "Layout",
     "variant with two parameters automatically determines the compression mode from the file name. "
     "The gzip parameter is ignored staring with version 0.23.\n"
   ) +
-  gsi::method_ext ("write", &write_options1, gsi::arg ("filename"), gsi::arg ("options"),
+  gsi::method_ext ("write", &write_options1,
     "@brief Writes the layout to a stream file\n"
+    "@args filename, options\n"
     "@param filename The file to which to write the layout\n"
     "@param options The option set to use for writing. See \\SaveLayoutOptions for details\n"
     "\n"
@@ -2452,22 +1774,14 @@ Class<db::Layout> decl_Layout ("db", "Layout",
     "\n"
     "This variant has been introduced in version 0.23.\n"
   ) +
-  gsi::method_ext ("write", &write_simple, gsi::arg ("filename"),
+  gsi::method_ext ("write", &write_simple,
     "@brief Writes the layout to a stream file\n"
+    "@args filename\n"
     "@param filename The file to which to write the layout\n"
   ) + 
-  gsi::method_ext ("write_bytes", &write_bytes, gsi::arg ("options"),
-    "@brief Writes the layout to a binary string\n"
-    "@param options The option set to use for writing. See \\SaveLayoutOptions for details. Options are used specifically to define the format to use.\n"
-    "\n"
-    "Instead of writing a file, this function generates a binary string. As there is no filename, the "
-    "format cannot be determined from the suffix. It needs to be specified in the options. A "
-    "function that reads bytes is \\read_bytes.\n"
-    "\n"
-    "This method has been introduced in version 0.29.9.\n"
-  ) +
-  gsi::method_ext ("clip", &clip, gsi::arg ("cell"), gsi::arg ("box"),
+  gsi::method_ext ("clip", &clip,
     "@brief Clips the given cell by the given rectangle and produce a new cell with the clip\n"
+    "@args cell, box\n"
     "@param cell The cell index of the cell to clip\n"
     "@param box The clip box in database units\n"
     "@return The index of the new cell\n"
@@ -2479,32 +1793,9 @@ Class<db::Layout> decl_Layout ("db", "Layout",
     "\n"
     "This method has been added in version 0.21.\n"
   ) + 
-  gsi::method_ext ("clip", &clip_dbox, gsi::arg ("cell"), gsi::arg ("box"),
+  gsi::method_ext ("clip_into", &clip_into,
     "@brief Clips the given cell by the given rectangle and produce a new cell with the clip\n"
-    "@param cell The cell index of the cell to clip\n"
-    "@param box The clip box in micrometer units\n"
-    "@return The index of the new cell\n"
-    "\n"
-    "This variant which takes a micrometer-unit box has been added in version 0.28."
-  ) +
-  gsi::method_ext ("clip", &clip_cell, gsi::arg ("cell"), gsi::arg ("box"),
-    "@brief Clips the given cell by the given rectangle and produce a new cell with the clip\n"
-    "@param cell The cell reference of the cell to clip\n"
-    "@param box The clip box in database units\n"
-    "@return The reference to the new cell\n"
-    "\n"
-    "This variant which takes cell references instead of cell indexes has been added in version 0.28."
-  ) +
-  gsi::method_ext ("clip", &clip_cell_dbox, gsi::arg ("cell"), gsi::arg ("box"),
-    "@brief Clips the given cell by the given rectangle and produce a new cell with the clip\n"
-    "@param cell The cell reference of the cell to clip\n"
-    "@param box The clip box in micrometer units\n"
-    "@return The reference to the new cell\n"
-    "\n"
-    "This variant which takes a micrometer-unit box and cell references has been added in version 0.28."
-  ) +
-  gsi::method_ext ("clip_into", &clip_into, gsi::arg ("cell"), gsi::arg ("target"), gsi::arg ("box"),
-    "@brief Clips the given cell by the given rectangle and produce a new cell with the clip\n"
+    "@args cell, target, box\n"
     "@param cell The cell index of the cell to clip\n"
     "@param box The clip box in database units\n"
     "@param target The target layout\n"
@@ -2522,35 +1813,9 @@ Class<db::Layout> decl_Layout ("db", "Layout",
     "\n"
     "This method has been added in version 0.21.\n"
   ) + 
-  gsi::method_ext ("clip_into", &clip_into_dbox, gsi::arg ("cell"), gsi::arg ("target"), gsi::arg ("box"),
-    "@brief Clips the given cell by the given rectangle and produce a new cell with the clip\n"
-    "@param cell The cell index of the cell to clip\n"
-    "@param box The clip box in micrometer units\n"
-    "@param target The target layout\n"
-    "@return The index of the new cell in the target layout\n"
-    "\n"
-    "This variant which takes a micrometer-unit box has been added in version 0.28."
-  ) +
-  gsi::method_ext ("clip_into", &clip_into_cell, gsi::arg ("cell"), gsi::arg ("target"), gsi::arg ("box"),
-    "@brief Clips the given cell by the given rectangle and produce a new cell with the clip\n"
-    "@param cell The reference to the cell to clip\n"
-    "@param box The clip box in database units\n"
-    "@param target The target layout\n"
-    "@return The reference to the new cell in the target layout\n"
-    "\n"
-    "This variant which takes cell references instead of cell indexes has been added in version 0.28."
-  ) +
-  gsi::method_ext ("clip_into", &clip_into_cell_dbox, gsi::arg ("cell"), gsi::arg ("target"), gsi::arg ("box"),
-    "@brief Clips the given cell by the given rectangle and produce a new cell with the clip\n"
-    "@param cell The reference to the cell to clip\n"
-    "@param box The clip box in micrometer units\n"
-    "@param target The target layout\n"
-    "@return The reference to the new cell in the target layout\n"
-    "\n"
-    "This variant which takes a micrometer-unit box and cell references has been added in version 0.28."
-  ) +
-  gsi::method_ext ("multi_clip", &multi_clip, gsi::arg ("cell"), gsi::arg ("boxes"),
-    "@brief Clips the given cell by the given rectangles and produces new cells with the clips, one for each rectangle.\n"
+  gsi::method_ext ("multi_clip", &multi_clip,
+    "@brief Clips the given cell by the given rectangles and produce new cells with the clips, one for each rectangle.\n"
+    "@args cell, boxes\n"
     "@param cell The cell index of the cell to clip\n"
     "@param boxes The clip boxes in database units\n"
     "@return The indexes of the new cells\n"
@@ -2563,32 +1828,9 @@ Class<db::Layout> decl_Layout ("db", "Layout",
     "\n"
     "This method has been added in version 0.21.\n"
   ) + 
-  gsi::method_ext ("multi_clip", &multi_clip_dboxes, gsi::arg ("cell"), gsi::arg ("boxes"),
-    "@brief Clips the given cell by the given rectangles and produces new cells with the clips, one for each rectangle.\n"
-    "@param cell The cell index of the cell to clip\n"
-    "@param boxes The clip boxes in micrometer units\n"
-    "@return The indexes of the new cells\n"
-    "\n"
-    "This variant which takes micrometer-unit boxes has been added in version 0.28."
-  ) +
-  gsi::method_ext ("multi_clip", &multi_clip_cells, gsi::arg ("cell"), gsi::arg ("boxes"),
-    "@brief Clips the given cell by the given rectangles and produces new cells with the clips, one for each rectangle.\n"
-    "@param cell The reference to the cell to clip\n"
-    "@param boxes The clip boxes in database units\n"
-    "@return The references to the new cells\n"
-    "\n"
-    "This variant which takes cell references has been added in version 0.28."
-  ) +
-  gsi::method_ext ("multi_clip", &multi_clip_cells_dboxes, gsi::arg ("cell"), gsi::arg ("boxes"),
-    "@brief Clips the given cell by the given rectangles and produces new cells with the clips, one for each rectangle.\n"
-    "@param cell The reference to the cell to clip\n"
-    "@param boxes The clip boxes in micrometer units\n"
-    "@return The references to the new cells\n"
-    "\n"
-    "This variant which takes cell references and micrometer-unit boxes has been added in version 0.28."
-  ) +
-  gsi::method_ext ("multi_clip_into", &multi_clip_into, gsi::arg ("cell"), gsi::arg ("target"), gsi::arg ("boxes"),
-    "@brief Clips the given cell by the given rectangles and produces new cells with the clips, one for each rectangle.\n"
+  gsi::method_ext ("multi_clip_into", &multi_clip_into,
+    "@brief Clips the given cell by the given rectangles and produce new cells with the clips, one for each rectangle.\n"
+    "@args cell, target, boxes\n"
     "@param cell The cell index of the cell to clip\n"
     "@param boxes The clip boxes in database units\n"
     "@param target The target layout\n"
@@ -2607,35 +1849,9 @@ Class<db::Layout> decl_Layout ("db", "Layout",
     "\n"
     "This method has been added in version 0.21.\n"
   ) +
-  gsi::method_ext ("multi_clip_into", &multi_clip_into_dboxes, gsi::arg ("cell"), gsi::arg ("target"), gsi::arg ("boxes"),
-    "@brief Clips the given cell by the given rectangles and produces new cells with the clips, one for each rectangle.\n"
-    "@param cell The cell index of the cell to clip\n"
-    "@param boxes The clip boxes in database units\n"
-    "@param target The target layout\n"
-    "@return The indexes of the new cells\n"
-    "\n"
-    "This variant which takes micrometer-unit boxes has been added in version 0.28."
-  ) +
-  gsi::method_ext ("multi_clip_into", &multi_clip_into_cells, gsi::arg ("cell"), gsi::arg ("target"), gsi::arg ("boxes"),
-    "@brief Clips the given cell by the given rectangles and produces new cells with the clips, one for each rectangle.\n"
-    "@param cell The reference the cell to clip\n"
-    "@param boxes The clip boxes in database units\n"
-    "@param target The target layout\n"
-    "@return The references to the new cells\n"
-    "\n"
-    "This variant which takes cell references boxes has been added in version 0.28."
-  ) +
-  gsi::method_ext ("multi_clip_into", &multi_clip_into_cells_dboxes, gsi::arg ("cell"), gsi::arg ("target"), gsi::arg ("boxes"),
-    "@brief Clips the given cell by the given rectangles and produces new cells with the clips, one for each rectangle.\n"
-    "@param cell The reference the cell to clip\n"
-    "@param boxes The clip boxes in micrometer units\n"
-    "@param target The target layout\n"
-    "@return The references to the new cells\n"
-    "\n"
-    "This variant which takes cell references and micrometer-unit boxes has been added in version 0.28."
-  ) +
-  gsi::method ("convert_cell_to_static", &db::Layout::convert_cell_to_static, gsi::arg ("cell_index"),
+  gsi::method ("convert_cell_to_static", &db::Layout::convert_cell_to_static,
     "@brief Converts a PCell or library cell to a usual (static) cell\n"
+    "@args cell_index\n"
     "@return The index of the new cell\n"
     "This method will create a new cell which contains the static representation of the "
     "PCell or library proxy given by \"cell_index\". If that cell is not a PCell or library "
@@ -2643,8 +1859,9 @@ Class<db::Layout> decl_Layout ("db", "Layout",
     "\n"
     "This method has been added in version 0.23.\n"
   ) +
-  gsi::method ("add_lib_cell", &db::Layout::get_lib_proxy, gsi::arg ("library"), gsi::arg ("lib_cell_index"),
+  gsi::method ("add_lib_cell", &db::Layout::get_lib_proxy,
     "@brief Imports a cell from the library\n"
+    "@args library, lib_cell_index\n"
     "@param library The reference to the library from which to import the cell\n"
     "@param lib_cell_index The index of the imported cell in the library\n"
     "@return The cell index of the new proxy cell in this layout\n"
@@ -2655,8 +1872,9 @@ Class<db::Layout> decl_Layout ("db", "Layout",
     "\n"
     "This method has been introduced in version 0.22.\n"
   ) +
-  gsi::method ("add_pcell_variant", &db::Layout::get_pcell_variant_dict, gsi::arg ("pcell_id"), gsi::arg ("parameters"),
+  gsi::method ("add_pcell_variant", &db::Layout::get_pcell_variant_dict,
     "@brief Creates a PCell variant for the given PCell ID with the parameters given as a name/value dictionary\n"
+    "@args pcell_id, parameters\n"
     "@return The cell index of the pcell variant proxy cell\n"
     "This method will create a PCell variant proxy for a local PCell definition.\n"
     "It will create the PCell variant for the given parameters. Note that this method \n"
@@ -2674,8 +1892,9 @@ Class<db::Layout> decl_Layout ("db", "Layout",
     "\n"
     "This method has been introduced in version 0.22.\n"
   ) +  
-  gsi::method ("add_pcell_variant", &db::Layout::get_pcell_variant, gsi::arg ("pcell_id"), gsi::arg ("parameters"),
+  gsi::method ("add_pcell_variant", &db::Layout::get_pcell_variant,
     "@brief Creates a PCell variant for the given PCell ID with the given parameters\n"
+    "@args pcell_id, parameters\n"
     "@return The cell index of the pcell variant proxy cell\n"
     "This method will create a PCell variant proxy for a local PCell definition.\n"
     "It will create the PCell variant for the given parameters. Note that this method \n"
@@ -2690,8 +1909,9 @@ Class<db::Layout> decl_Layout ("db", "Layout",
     "\n"
     "This method has been introduced in version 0.22.\n"
   ) +  
-  gsi::method_ext ("add_pcell_variant", &add_lib_pcell_variant_dict, gsi::arg ("library"), gsi::arg ("pcell_id"), gsi::arg ("parameters"),
+  gsi::method_ext ("add_pcell_variant", &add_lib_pcell_variant_dict,
     "@brief Creates a PCell variant for a PCell located in an external library with the parameters given as a name/value dictionary\n"
+    "@args library, pcell_id, parameters\n"
     "@return The cell index of the new proxy cell in this layout\n"
     "This method will import a PCell from a library and create a variant for the \n"
     "given parameter set.\n"
@@ -2709,8 +1929,9 @@ Class<db::Layout> decl_Layout ("db", "Layout",
     "\n"
     "This method has been introduced in version 0.22.\n"
   ) +  
-  gsi::method_ext ("add_pcell_variant", &add_lib_pcell_variant, gsi::arg ("library"), gsi::arg ("pcell_id"), gsi::arg ("parameters"),
+  gsi::method_ext ("add_pcell_variant", &add_lib_pcell_variant,
     "@brief Creates a PCell variant for a PCell located in an external library\n"
+    "@args library, pcell_id, parameters\n"
     "@return The cell index of the new proxy cell in this layout\n"
     "This method will import a PCell from a library and create a variant for the \n"
     "given parameter set.\n"
@@ -2737,14 +1958,16 @@ Class<db::Layout> decl_Layout ("db", "Layout",
     "\n"
     "This method has been introduced in version 0.24.\n"
   ) +  
-  gsi::method_ext ("pcell_id", &pcell_id, gsi::arg ("name"),
+  gsi::method_ext ("pcell_id", &pcell_id,
     "@brief Gets the ID of the PCell with the given name\n"
+    "@args name\n"
     "This method is equivalent to 'pcell_declaration(name).id'.\n"
     "\n"
     "This method has been introduced in version 0.22.\n"
   ) +  
-  gsi::method_ext ("pcell_declaration", &pcell_declaration, gsi::arg ("name"),
+  gsi::method_ext ("pcell_declaration", &pcell_declaration,
     "@brief Gets a reference to the PCell declaration for the PCell with the given name\n"
+    "@args name\n"
     "Returns a reference to the local PCell declaration with the given name. If the name\n"
     "is not a valid PCell name, this method returns nil.\n"
     "\n"
@@ -2754,8 +1977,9 @@ Class<db::Layout> decl_Layout ("db", "Layout",
     "\n"
     "This method has been introduced in version 0.22.\n"
   ) +  
-  gsi::method ("pcell_declaration", &db::Layout::pcell_declaration, gsi::arg ("pcell_id"),
+  gsi::method ("pcell_declaration", &db::Layout::pcell_declaration,
     "@brief Gets a reference to the PCell declaration for the PCell with the given PCell ID.\n"
+    "@args pcell_id\n"
     "Returns a reference to the local PCell declaration with the given PCell id. If the parameter\n"
     "is not a valid PCell ID, this method returns nil. The PCell ID is the number returned \n"
     "by \\register_pcell for example.\n"
@@ -2766,8 +1990,9 @@ Class<db::Layout> decl_Layout ("db", "Layout",
     "\n"
     "This method has been introduced in version 0.22.\n"
   ) +  
-  gsi::method ("register_pcell", &db::Layout::register_pcell, gsi::arg ("name"), gsi::arg ("declaration"),
+  gsi::method ("register_pcell", &db::Layout::register_pcell,
     "@brief Registers a PCell declaration under the given name\n"
+    "@args name, declaration\n"
     "Registers a local PCell in the current layout. If a declaration with that name\n"
     "already exists, it is replaced with the new declaration.\n"
     "\n"
@@ -2834,8 +2059,9 @@ Class<db::SaveLayoutOptions> decl_SaveLayoutOptions ("db", "SaveLayoutOptions",
     "\"same as original\" and all layers are selected as well as all cells.\n"
     "The default format is GDS2."
   ) +
-  gsi::method_ext ("set_format_from_filename", &set_format_from_filename, gsi::arg ("filename"),
+  gsi::method_ext ("set_format_from_filename", &set_format_from_filename,
     "@brief Select a format from the given file name\n"
+    "@args filename\n"
     "\n"
     "This method will set the format according to the file's extension.\n"
     "\n"
@@ -2844,8 +2070,9 @@ Class<db::SaveLayoutOptions> decl_SaveLayoutOptions ("db", "SaveLayoutOptions",
     "only consumer for the return value, Layout#write, now ignores that "
     "parameter and automatically determines the compression mode from the file name.\n"
   ) +
-  gsi::method ("format=", &db::SaveLayoutOptions::set_format, gsi::arg ("format"),
+  gsi::method ("format=", &db::SaveLayoutOptions::set_format,
     "@brief Select a format\n"
+    "@args format\n"
     "The format string can be either \"GDS2\", \"OASIS\", \"CIF\" or \"DXF\". Other formats may be available if\n"
     "a suitable plugin is installed."
   ) +
@@ -2854,9 +2081,10 @@ Class<db::SaveLayoutOptions> decl_SaveLayoutOptions ("db", "SaveLayoutOptions",
     "\n"
     "See \\format= for a description of that method.\n"
   ) + 
-  gsi::method ("add_layer", &db::SaveLayoutOptions::add_layer, gsi::arg ("layer_index"), gsi::arg ("properties"),
+  gsi::method ("add_layer", &db::SaveLayoutOptions::add_layer,
     "@brief Add a layer to be saved \n"
     "\n"
+    "@args layer_index, properties\n"
     "\n"
     "Adds the layer with the given index to the layer list that will be written.\n"
     "If all layers have been selected previously, all layers will \n"
@@ -2879,18 +2107,20 @@ Class<db::SaveLayoutOptions> decl_SaveLayoutOptions ("db", "SaveLayoutOptions",
     "This method will clear all layers selected with \\add_layer so far and clear the 'select all layers' flag.\n"
     "Using this method is the only way to save a layout without any layers."
   ) + 
-  gsi::method ("select_cell", &db::SaveLayoutOptions::select_cell, gsi::arg ("cell_index"),
+  gsi::method ("select_cell", &db::SaveLayoutOptions::select_cell,
     "@brief Selects a cell to be saved (plus hierarchy below)\n"
     "\n"
+    "@args cell_index\n"
     "\n"
     "This method is basically a convenience method that combines \\clear_cells and \\add_cell.\n"
     "This method clears the 'select all cells' flag.\n"
     "\n"
     "This method has been added in version 0.22.\n"
   ) + 
-  gsi::method ("select_this_cell", &db::SaveLayoutOptions::select_this_cell, gsi::arg ("cell_index"),
+  gsi::method ("select_this_cell", &db::SaveLayoutOptions::select_this_cell,
     "@brief Selects a cell to be saved\n"
     "\n"
+    "@args cell_index\n"
     "\n"
     "This method is basically a convenience method that combines \\clear_cells and \\add_this_cell.\n"
     "This method clears the 'select all cells' flag.\n"
@@ -2905,9 +2135,10 @@ Class<db::SaveLayoutOptions> decl_SaveLayoutOptions ("db", "SaveLayoutOptions",
     "\n"
     "This method has been added in version 0.22.\n"
   ) + 
-  gsi::method ("add_this_cell", &db::SaveLayoutOptions::add_this_cell, gsi::arg ("cell_index"),
+  gsi::method ("add_this_cell", &db::SaveLayoutOptions::add_this_cell,
     "@brief Adds a cell to be saved\n"
     "\n"
+    "@args cell_index\n"
     "\n"
     "The index of the cell must be a valid index in the context of the layout that will be saved.\n"
     "This method clears the 'select all cells' flag.\n"
@@ -2915,9 +2146,10 @@ Class<db::SaveLayoutOptions> decl_SaveLayoutOptions ("db", "SaveLayoutOptions",
     "\n"
     "This method has been added in version 0.23.\n"
   ) + 
-  gsi::method ("add_cell", &db::SaveLayoutOptions::add_cell, gsi::arg ("cell_index"),
+  gsi::method ("add_cell", &db::SaveLayoutOptions::add_cell,
     "@brief Add a cell (plus hierarchy) to be saved\n"
     "\n"
+    "@args cell_index\n"
     "\n"
     "The index of the cell must be a valid index in the context of the layout that will be saved.\n"
     "This method clears the 'select all cells' flag.\n"
@@ -2931,8 +2163,9 @@ Class<db::SaveLayoutOptions> decl_SaveLayoutOptions ("db", "SaveLayoutOptions",
     "This method will clear all cells specified with \\add_cells so far and set the 'select all cells' flag.\n"
     "This is the default.\n"
   ) + 
-  gsi::method ("write_context_info=", &db::SaveLayoutOptions::set_write_context_info, gsi::arg ("flag"),
+  gsi::method ("write_context_info=", &db::SaveLayoutOptions::set_write_context_info,
     "@brief Enables or disables context information\n"
+    "@args flag\n"
     "\n"
     "If this flag is set to false, no context information for PCell or library cell instances is written. "
     "Those cells will be converted to plain cells and KLayout will not be able to restore the identity of "
@@ -2951,8 +2184,9 @@ Class<db::SaveLayoutOptions> decl_SaveLayoutOptions ("db", "SaveLayoutOptions",
     "\n"
     "This method was introduced in version 0.23.\n"
   ) +
-  gsi::method ("keep_instances=", &db::SaveLayoutOptions::set_keep_instances, gsi::arg ("flag"),
+  gsi::method ("keep_instances=", &db::SaveLayoutOptions::set_keep_instances,
     "@brief Enables or disables instances for dropped cells\n"
+    "@args flag\n"
     "\n"
     "If this flag is set to true, instances for cells will be written, even if the cell is dropped. "
     "That may happen, if cells are selected with \\select_this_cell or \\add_this_cell or \\no_empty_cells is used. "
@@ -2971,8 +2205,9 @@ Class<db::SaveLayoutOptions> decl_SaveLayoutOptions ("db", "SaveLayoutOptions",
     "\n"
     "This method was introduced in version 0.23.\n"
   ) +
-  gsi::method ("dbu=", &db::SaveLayoutOptions::set_dbu, gsi::arg ("dbu"),
+  gsi::method ("dbu=", &db::SaveLayoutOptions::set_dbu,
     "@brief Set the database unit to be used in the stream file\n"
+    "@args dbu\n"
     "\n"
     "By default, the database unit of the layout is used. This method allows one to explicitly use a different\n"
     "database unit. A scale factor is introduced automatically which scales all layout objects accordingly so their physical dimensions remain the same. "
@@ -2984,8 +2219,9 @@ Class<db::SaveLayoutOptions> decl_SaveLayoutOptions ("db", "SaveLayoutOptions",
     "\n"
     "See \\dbu= for a description of that attribute.\n"
   ) + 
-  gsi::method ("no_empty_cells=", &db::SaveLayoutOptions::set_dont_write_empty_cells, gsi::arg ("flag"),
+  gsi::method ("no_empty_cells=", &db::SaveLayoutOptions::set_dont_write_empty_cells,
     "@brief Don't write empty cells if this flag is set\n"
+    "@args flag\n"
     "\n"
     "By default, all cells are written (no_empty_cells is false).\n"
     "This applies to empty cells which do not contain shapes for the specified layers "
@@ -2994,8 +2230,9 @@ Class<db::SaveLayoutOptions> decl_SaveLayoutOptions ("db", "SaveLayoutOptions",
   gsi::method ("no_empty_cells?", &db::SaveLayoutOptions::dont_write_empty_cells,
     "@brief Returns a flag indicating whether empty cells are not written.\n"
   ) + 
-  gsi::method ("scale_factor=", &db::SaveLayoutOptions::set_scale_factor, gsi::arg ("scale_factor"),
+  gsi::method ("scale_factor=", &db::SaveLayoutOptions::set_scale_factor,
     "@brief Set the scaling factor for the saving \n"
+    "@args scale_factor\n"
     "\n"
     "Using a scaling factor will scale all objects accordingly. "
     "This scale factor adds to a potential scaling implied by using an explicit database unit.\n"
@@ -3025,3 +2262,4 @@ Class<db::SaveLayoutOptions> decl_SaveLayoutOptions ("db", "SaveLayoutOptions",
 );
 
 }
+

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,6 @@
 
 
 #include "dbGDS2ReaderBase.h"
-#include "dbGDS2Format.h"
 #include "dbGDS2.h"
 #include "dbArray.h"
 
@@ -34,11 +33,43 @@ namespace db
 {
 
 // ---------------------------------------------------------------
+
+/**
+ *  @brief A utility class that maps the layers for the proxy cell recovery
+ */
+class GDS2ReaderLayerMapping
+  : public db::ImportLayerMapping
+{
+public:
+  GDS2ReaderLayerMapping (db::GDS2ReaderBase *reader, db::Layout *layout, bool create)
+    : mp_reader (reader), mp_layout (layout), m_create (create)
+  {
+    //  .. nothing yet .. 
+  }
+
+  std::pair<bool, unsigned int> map_layer (const db::LayerProperties &lprops)
+  {
+    //  named layers that are imported from a library are ignored
+    if (lprops.is_named ()) {
+      return std::make_pair (false, 0);
+    } else {
+      return mp_reader->open_dl (*mp_layout, LDPair (lprops.layer, lprops.datatype), m_create);
+    }
+  }
+
+private:
+  db::GDS2ReaderBase *mp_reader;
+  db::Layout *mp_layout;
+  bool m_create;
+};
+
+// ---------------------------------------------------------------
 //  GDS2ReaderBase
 
 GDS2ReaderBase::GDS2ReaderBase ()
   : m_dbu (0.001), 
     m_dbuu (1.0), 
+    m_create_layers (true), 
     m_read_texts (true),
     m_read_properties (true),
     m_allow_multi_xy_records (false),
@@ -52,18 +83,23 @@ GDS2ReaderBase::~GDS2ReaderBase ()
   // .. nothing yet ..
 }
 
-void
-GDS2ReaderBase::init (const db::LoadLayoutOptions &options)
+const LayerMap &
+GDS2ReaderBase::basic_read (db::Layout &layout, const LayerMap &layer_map, bool create_other_layers, bool enable_text_objects, bool enable_properties, bool allow_multi_xy_records, unsigned int box_mode)
 {
-  CommonReader::init (options);
+  m_layer_map = layer_map;
+  m_layer_map.prepare (layout);
+  m_read_texts = enable_text_objects;
+  m_read_properties = enable_properties;
 
-  db::CommonReaderOptions common_options = options.get_options<db::CommonReaderOptions> ();
-  m_read_texts = common_options.enable_text_objects;
-  m_read_properties = common_options.enable_properties;
+  m_allow_multi_xy_records = allow_multi_xy_records;
+  m_box_mode = box_mode;
+  m_create_layers = create_other_layers;
 
-  db::GDS2ReaderOptions gds2_options = options.get_options<db::GDS2ReaderOptions> ();
-  m_allow_multi_xy_records = gds2_options.allow_multi_xy_records;
-  m_box_mode = gds2_options.box_mode;
+  layout.start_changes ();
+  do_read (layout);
+  layout.end_changes ();
+
+  return m_layer_map;
 }
 
 void
@@ -93,12 +129,12 @@ GDS2ReaderBase::finish_element ()
 
 
 std::pair <bool, db::properties_id_type> 
-GDS2ReaderBase::finish_element_with_props ()
+GDS2ReaderBase::finish_element (db::PropertiesRepository &rep)
 {
   bool any = false;
   long attr = 0;
 
-  db::PropertiesSet properties;
+  db::PropertiesRepository::properties_set properties;
 
   while (true) {
 
@@ -112,7 +148,9 @@ GDS2ReaderBase::finish_element_with_props ()
 
       const char *value = get_string ();
       if (m_read_properties) {
-        properties.insert (tl::Variant (attr), tl::Variant (value));
+        properties.insert (std::make_pair (rep.prop_name_id (tl::Variant (attr)), 
+                                           tl::Variant (value)));
+
         any = true;
       }
 
@@ -128,12 +166,40 @@ GDS2ReaderBase::finish_element_with_props ()
   } 
 
   if (any) {
-    return std::make_pair (true, db::properties_id (properties));
+    return std::make_pair (true, rep.properties_id (properties));
   } else {
     return std::make_pair (false, 0);
   }
 }
 
+
+std::pair <bool, unsigned int> 
+GDS2ReaderBase::open_dl (db::Layout &layout, const LDPair &dl, bool create) 
+{
+  std::pair<bool, unsigned int> ll = m_layer_map.logical (dl);
+  if (ll.first) {
+
+    return ll;
+
+  } else if (! create) {
+
+    //  layer not mapped and no layer create is requested
+    return ll;
+
+  } else {
+
+    //  and create the layer
+    db::LayerProperties lp;
+    lp.layer = dl.layer;
+    lp.datatype = dl.datatype;
+
+    unsigned int ll = layout.insert_layer (lp);
+    m_layer_map.map (dl, ll, lp);
+
+    return std::make_pair (true, ll);
+
+  }
+}
 
 inline db::Point 
 pt_conv (const GDS2XY &p) 
@@ -167,8 +233,11 @@ eq_y (const GDS2XY &a, const GDS2XY &b)
 void 
 GDS2ReaderBase::do_read (db::Layout &layout) 
 {
+  tl::SelfTimer timer (tl::verbosity () >= 21, "File read");
+
   m_cellname = "";
   m_libname = "";
+  m_mapped_cellnames.clear ();
 
   //  read header
   if (get_record () != sHEADER) {
@@ -181,11 +250,11 @@ GDS2ReaderBase::do_read (db::Layout &layout)
   unsigned int mod_time[6] = { 0, 0, 0, 0, 0, 0 };
   unsigned int access_time[6] = { 0, 0, 0, 0, 0, 0 };
   get_time (mod_time, access_time);
-  layout.add_meta_info ("mod_time", MetaInfo (tl::to_string (tr ("Modification Time")), tl::sprintf ("%d/%d/%d %d:%02d:%02d", mod_time[1], mod_time[2], mod_time[0], mod_time[3], mod_time[4], mod_time[5])));
-  layout.add_meta_info ("access_time", MetaInfo (tl::to_string (tr ("Access Time")), tl::sprintf ("%d/%d/%d %d:%02d:%02d", access_time[1], access_time[2], access_time[0], access_time[3], access_time[4], access_time[5])));
+  layout.add_meta_info (MetaInfo ("mod_time", tl::to_string (tr ("Modification Time")), tl::sprintf ("%d/%d/%d %d:%02d:%02d", mod_time[1], mod_time[2], mod_time[0], mod_time[3], mod_time[4], mod_time[5])));
+  layout.add_meta_info (MetaInfo ("access_time", tl::to_string (tr ("Access Time")), tl::sprintf ("%d/%d/%d %d:%02d:%02d", access_time[1], access_time[2], access_time[0], access_time[3], access_time[4], access_time[5])));
 
   long attr = 0;
-  db::PropertiesSet layout_properties;
+  db::PropertiesRepository::properties_set layout_properties;
 
   //  read until 
   short rec_id = 0;
@@ -221,7 +290,7 @@ GDS2ReaderBase::do_read (db::Layout &layout)
 
       const char *value = get_string ();
       if (m_read_properties) {
-        layout_properties.insert (tl::Variant (attr), tl::Variant (value));
+        layout_properties.insert (std::make_pair (layout.properties_repository ().prop_name_id (tl::Variant (attr)), tl::Variant (value)));
       }
 
     } else if (rec_id == sUNITS) {
@@ -230,13 +299,12 @@ GDS2ReaderBase::do_read (db::Layout &layout)
       double dbuu = get_double ();
       double dbum = get_double ();
       
-      layout.add_meta_info ("dbuu", MetaInfo (tl::to_string (tr ("Database unit in user units")), tl::to_string (dbuu)));
-      layout.add_meta_info ("dbum", MetaInfo (tl::to_string (tr ("Database unit in meter")), tl::to_string (dbum)));
-      layout.add_meta_info ("libname", MetaInfo (tl::to_string (tr ("Library name")), m_libname));
+      layout.add_meta_info (MetaInfo ("dbuu", tl::to_string (tr ("Database unit in user units")), tl::to_string (dbuu)));
+      layout.add_meta_info (MetaInfo ("dbum", tl::to_string (tr ("Database unit in meter")), tl::to_string (dbum)));
+      layout.add_meta_info (MetaInfo ("libname", tl::to_string (tr ("Library name")), m_libname));
 
       m_dbuu = dbuu;
       m_dbu = dbum * 1e6; /*in micron*/
-      check_dbu (m_dbu);
       layout.dbu (m_dbu);
 
     } else {
@@ -247,7 +315,7 @@ GDS2ReaderBase::do_read (db::Layout &layout)
 
   //  set the layout properties
   if (! layout_properties.empty ()) {
-    layout.prop_id (db::properties_id (layout_properties));
+    layout.prop_id (layout.properties_repository ().properties_id (layout_properties));
   }
 
   //  this container has been found to grow quite a lot.
@@ -275,10 +343,6 @@ GDS2ReaderBase::do_read (db::Layout &layout)
 
     get_string (m_cellname);
 
-    if (m_cellname.empty ()) {
-      error (tl::to_string (tr ("Empty cell name")));
-    }
-
     //  if the first cell is the dummy cell containing the context information
     //  read this cell in a special way and store the context information separately.
     if (first_cell && m_cellname == "$$$CONTEXT_INFO$$$") {
@@ -287,31 +351,23 @@ GDS2ReaderBase::do_read (db::Layout &layout)
 
     } else {
 
-      db::cell_index_type cell_index = make_cell (layout, m_cellname);
+      db::cell_index_type cell_index = make_cell (layout, m_cellname.c_str (), false);
 
-      bool ignore_cell = false;
-      auto ctx = m_context_info.find (m_cellname);
+      db::Cell *cell = &layout.cell (cell_index);
+
+      std::map <tl::string, std::vector <std::string> >::const_iterator ctx = m_context_info.find (m_cellname);
       if (ctx != m_context_info.end ()) {
-
-        CommonReaderLayerMapping layer_mapping (this, &layout);
-        LayoutOrCellContextInfo ci = LayoutOrCellContextInfo::deserialize (ctx->second.begin (), ctx->second.end ());
-
-        if (ci.has_proxy_info () && layout.recover_proxy_as (cell_index, ci, &layer_mapping)) {
+        GDS2ReaderLayerMapping layer_mapping (this, &layout, m_create_layers);
+        if (layout.recover_proxy_as (cell_index, ctx->second.begin (), ctx->second.end (), &layer_mapping)) {
           //  ignore everything in that cell since it is created by the import:
-          ignore_cell = true;
+          cell = 0;
+          //  marks the cell for begin addressed by REF's despite being a proxy:
+          m_mapped_cellnames.insert (std::make_pair (m_cellname, m_cellname));
         }
-
-        layout.fill_meta_info_from_context (cell_index, ci);
-
       }
       
-      db::Cell *cell = 0;
-      if (! ignore_cell) {
-        cell = &layout.cell (cell_index);
-      }
-
       long attr = 0;
-      db::PropertiesSet cell_properties;
+      db::PropertiesRepository::properties_set cell_properties;
 
       //  read cell content
       while ((rec_id = get_record ()) != sENDSTR) { 
@@ -330,7 +386,7 @@ GDS2ReaderBase::do_read (db::Layout &layout)
 
           const char *value = get_string ();
           if (m_read_properties) {
-            cell_properties.insert (tl::Variant (attr), tl::Variant (value));
+            cell_properties.insert (std::make_pair (layout.properties_repository ().prop_name_id (tl::Variant (attr)), tl::Variant (value)));
           }
 
         } else if (rec_id == sBOUNDARY) {
@@ -383,7 +439,7 @@ GDS2ReaderBase::do_read (db::Layout &layout)
 
       //  set the cell properties
       if (! cell_properties.empty ()) {
-        cell->prop_id (db::properties_id (cell_properties));
+        cell->prop_id (layout.properties_repository ().properties_id (cell_properties));
       }
 
     }
@@ -391,13 +447,6 @@ GDS2ReaderBase::do_read (db::Layout &layout)
     m_cellname = "";
     first_cell = false;
 
-  }
-
-  //  deserialize global context information
-  auto ctx = m_context_info.find (std::string ());
-  if (ctx != m_context_info.end ()) {
-    LayoutOrCellContextInfo ci = LayoutOrCellContextInfo::deserialize (ctx->second.begin (), ctx->second.end ());
-    layout.fill_meta_info_from_context (ci);
   }
 
   //  check, if the last record is a ENDLIB
@@ -410,15 +459,11 @@ void
 GDS2ReaderBase::read_context_info_cell ()
 {
   short rec_id = 0;
-  std::string cn;
 
   //  read cell content
   while ((rec_id = get_record ()) != sENDSTR) { 
 
     progress_checkpoint ();
-
-    bool valid_hook = false;
-    cn.clear ();
 
     if (rec_id == sSREF) {
 
@@ -429,7 +474,7 @@ GDS2ReaderBase::read_context_info_cell ()
         error (tl::to_string (tr ("SNAME record expected")));
       }
 
-      cn = get_string ();
+      std::string cn = get_string ();
 
       rec_id = get_record ();
       while (rec_id == sSTRANS || rec_id == sANGLE || rec_id == sMAG) {
@@ -439,26 +484,7 @@ GDS2ReaderBase::read_context_info_cell ()
         error (tl::to_string (tr ("XY record expected")));
       }
 
-      valid_hook = true;
-
-    } else if (rec_id == sBOUNDARY) {
-
-      rec_id = get_record ();
-      while (rec_id == sLAYER || rec_id == sDATATYPE) {
-        rec_id = get_record ();
-      }
-      if (rec_id != sXY) {
-        error (tl::to_string (tr ("XY record expected")));
-      }
-
-      valid_hook = true;
-
-    }
-
-    if (valid_hook) {
-
       std::vector <std::string> &strings = m_context_info.insert (std::make_pair (cn, std::vector <std::string> ())).first->second;
-      std::map <size_t, std::vector<std::string> > strings_ex;
 
       size_t attr = 0;
 
@@ -472,60 +498,16 @@ GDS2ReaderBase::read_context_info_cell ()
           attr = size_t (get_ushort ());
         } else if (rec_id == sPROPVALUE) {
 
-          const char *str = get_string ();
-
-          //  To embed long strings and more than 64k attributes, a separate notation is used:
-          //    "#<n>,<p>:<string>"
-          //  where <n> is a string index and <p> is the part index (zero-based).
-          //  For such properties, the PROPATTR value is ignored. This means however, that the
-          //  attribute numbers may not be unique.
-          //  See issue #1794.
-
-          if (str[0] == '#') {
-
-            tl::Extractor ex (str + 1);
-            size_t n = 0, p = 0;
-            if (ex.try_read (n) && ex.test (",") && ex.try_read (p) && ex.test (":")) {
-              if (strings.size () <= n) {
-                strings.resize (n + 1, std::string ());
-              }
-              std::vector<std::string> &sv = strings_ex[n];
-              if (sv.size () <= p) {
-                sv.resize (p + 1, std::string ());
-              }
-              sv[p] = ex.get ();
-            }
-
-          } else {
-
-            if (strings.size () <= attr) {
-              strings.resize (attr + 1, std::string ());
-            }
-            strings [attr] = str;
-
+          if (strings.size () <= attr) {
+            strings.resize (attr + 1, std::string ());
           }
+          strings [attr] = get_string ();
 
         } else {
           error (tl::to_string (tr ("ENDEL, PROPATTR or PROPVALUE record expected")));
         }
 
-      }
-
-      //  combine the multipart strings (#1794)
-      for (auto es = strings_ex.begin (); es != strings_ex.end (); ++es) {
-        if (es->first < strings.size ()) {
-          std::string &s = strings [es->first];
-          s.clear ();
-          size_t sz = 0;
-          for (auto i = es->second.begin (); i != es->second.end (); ++i) {
-            sz += i->size ();
-          }
-          s.reserve (sz);
-          for (auto i = es->second.begin (); i != es->second.end (); ++i) {
-            s += *i;
-          }
-        }
-      }
+      } 
 
     } else {
       error (tl::to_string (tr ("Invalid record inside a context info cell")));
@@ -568,7 +550,7 @@ GDS2ReaderBase::read_boundary (db::Layout &layout, db::Cell &cell, bool from_box
   unsigned int xy_length = 0;
   GDS2XY *xy_data = get_xy_data (xy_length);
 
-  std::pair<bool, unsigned int> ll = open_dl (layout, ld);
+  std::pair<bool, unsigned int> ll = open_dl (layout, ld, m_create_layers);
   if (ll.first) {
 
     //  create a box object if possible
@@ -600,7 +582,7 @@ GDS2ReaderBase::read_boundary (db::Layout &layout, db::Cell &cell, bool from_box
         }
       }
 
-      std::pair<bool, db::properties_id_type> pp = finish_element_with_props ();
+      std::pair<bool, db::properties_id_type> pp = finish_element (layout.properties_repository ());
       if (pp.first) {
         cell.shapes (ll.second).insert (db::BoxWithProperties (db::Box (p1, p2), pp.second));
       } else {
@@ -659,7 +641,7 @@ GDS2ReaderBase::read_boundary (db::Layout &layout, db::Cell &cell, bool from_box
         finish_element ();
       } else {
         //  this will copy the polyon:
-        std::pair<bool, db::properties_id_type> pp = finish_element_with_props ();
+        std::pair<bool, db::properties_id_type> pp = finish_element (layout.properties_repository ());
         if (pp.first) {
           cell.shapes (ll.second).insert (db::SimplePolygonRefWithProperties (db::SimplePolygonRef (poly, layout.shape_repository ()), pp.second));
         } else {
@@ -749,7 +731,7 @@ GDS2ReaderBase::read_path (db::Layout &layout, db::Cell &cell)
   unsigned int xy_length = 0;
   GDS2XY *xy_data = get_xy_data (xy_length);
 
-  std::pair<bool, unsigned int> ll = open_dl (layout, ld);
+  std::pair<bool, unsigned int> ll = open_dl (layout, ld, m_create_layers);
   if (ll.first) {
 
     //  this will copy the path:
@@ -796,7 +778,7 @@ GDS2ReaderBase::read_path (db::Layout &layout, db::Cell &cell)
       if (path.points () < 2 && type != 1) {
         warn (tl::to_string (tr ("PATH with less than two points encountered - interpretation may be different in other tools")));
       }
-      std::pair<bool, db::properties_id_type> pp = finish_element_with_props ();
+      std::pair<bool, db::properties_id_type> pp = finish_element (layout.properties_repository ());
       if (pp.first) {
         cell.shapes (ll.second).insert (db::PathRefWithProperties (db::PathRef (path, layout.shape_repository ()), pp.second));
       } else {
@@ -840,7 +822,7 @@ GDS2ReaderBase::read_text (db::Layout &layout, db::Cell &cell)
   std::pair<bool, unsigned int> ll (false, 0);
 
   if (m_read_texts) {
-    ll = open_dl (layout, ld);
+    ll = open_dl (layout, ld, m_create_layers);
   }
 
   rec_id = get_record ();
@@ -932,7 +914,7 @@ GDS2ReaderBase::read_text (db::Layout &layout, db::Cell &cell)
     //  Create the text
     db::Text text (get_string (), t, size, font, ha, va);
 
-    std::pair<bool, db::properties_id_type> pp = finish_element_with_props ();
+    std::pair<bool, db::properties_id_type> pp = finish_element (layout.properties_repository ());
     if (pp.first) {
       cell.shapes (ll.second).insert (db::TextRefWithProperties (db::TextRef (text, layout.shape_repository ()), pp.second));
     } else {
@@ -962,7 +944,7 @@ GDS2ReaderBase::read_box (db::Layout &layout, db::Cell &cell)
   }
   ld.datatype = get_ushort ();
 
-  std::pair<bool, unsigned int> ll = open_dl (layout, ld);
+  std::pair<bool, unsigned int> ll = open_dl (layout, ld, m_create_layers);
 
   if (get_record () != sXY) {
     error (tl::to_string (tr ("XY record expected")));
@@ -979,7 +961,7 @@ GDS2ReaderBase::read_box (db::Layout &layout, db::Cell &cell)
       box += pt_conv (*xy++);
     }
 
-    std::pair<bool, db::properties_id_type> pp = finish_element_with_props ();
+    std::pair<bool, db::properties_id_type> pp = finish_element (layout.properties_repository ());
     if (! box.empty ()) {
       if (pp.first) {
         cell.shapes (ll.second).insert (db::BoxWithProperties (box, pp.second));
@@ -991,6 +973,54 @@ GDS2ReaderBase::read_box (db::Layout &layout, db::Cell &cell)
   } else {
     finish_element ();
   }
+}
+
+db::cell_index_type
+GDS2ReaderBase::make_cell (db::Layout &layout, const char *cn, bool for_instance)
+{
+  db::cell_index_type ci = 0;
+
+  //  map to the real name which maybe a different one due to localization
+  //  of proxy cells (they are not to be reopened)
+  bool is_mapped = false;
+  if (! m_mapped_cellnames.empty ()) {
+    std::map<tl::string, tl::string>::const_iterator n = m_mapped_cellnames.find (cn);
+    if (n != m_mapped_cellnames.end ()) {
+      cn = n->second.c_str ();
+      is_mapped = true;
+    }
+  }
+
+  std::pair<bool, db::cell_index_type> c = layout.cell_by_name (cn);
+  if (c.first && (is_mapped || ! layout.cell (c.second).is_proxy ())) {
+
+    //  cell already there: just add instance (cell might have been created through forward reference)
+    //  NOTE: we don't address "reopened" proxies as proxies are always local to a layout
+
+    ci = c.second;
+
+    //  mark the cell as read
+    if (! for_instance) {
+      layout.cell (ci).set_ghost_cell (false);
+    }
+
+  } else {
+
+    ci = layout.add_cell (cn);
+
+    if (for_instance) {
+      //  mark this cell a "ghost cell" until it's actually read
+      layout.cell (ci).set_ghost_cell (true);
+    }
+
+    if (c.first) {
+      //  this cell has been given a new name: remember this name for localization
+      m_mapped_cellnames.insert (std::make_pair (cn, layout.cell_name (ci)));
+    }
+
+  }
+
+  return ci;
 }
 
 void 
@@ -1005,7 +1035,7 @@ GDS2ReaderBase::read_ref (db::Layout &layout, db::Cell & /*cell*/, bool array, t
     error (tl::to_string (tr ("SNAME record expected")));
   }
 
-  db::cell_index_type ci = cell_for_instance (layout, get_string ());
+  db::cell_index_type ci = make_cell (layout, get_string (), true);
 
   bool mirror = false;
   int angle = 0;
@@ -1092,7 +1122,7 @@ GDS2ReaderBase::read_ref (db::Layout &layout, db::Cell & /*cell*/, bool array, t
       rows = 1;
     }
 
-    std::pair<bool, db::properties_id_type> pp = finish_element_with_props ();
+    std::pair<bool, db::properties_id_type> pp = finish_element (layout.properties_repository ());
 
     bool split_cols = false, split_rows = false;
 
@@ -1231,7 +1261,7 @@ GDS2ReaderBase::read_ref (db::Layout &layout, db::Cell & /*cell*/, bool array, t
       inst = db::CellInstArray (db::CellInst (ci), db::Trans (angle, mirror, xy));
     }
 
-    std::pair<bool, db::properties_id_type> pp = finish_element_with_props ();
+    std::pair<bool, db::properties_id_type> pp = finish_element (layout.properties_repository ());
     if (pp.first) {
       instances_with_props.push_back (db::CellInstArrayWithProperties (inst, pp.second));
     } else {

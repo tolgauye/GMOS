@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -24,7 +24,6 @@
 #include "tlFileUtils.h"
 #include "tlTimer.h"
 #include "tlStream.h"
-#include "tlEnv.h"
 
 #include <cmath>
 
@@ -86,25 +85,17 @@ void set_debug_mode (bool f)
 
 std::string testsrc ()
 {
-  std::string ts = tl::get_env ("TESTSRC");
-  if (ts.empty ()) {
-    tl::warn << "TESTSRC undefined";
-    ts = ".";
+  const char *ts = getenv ("TESTSRC");
+  if (! ts) {
+    throw tl::Exception ("TESTSRC undefined");
   }
   return ts;
 }
 
-std::string testdata ()
-{
-  return tl::combine_path (tl::testsrc (), "testdata");
-}
-
-std::string testdata_private ()
+std::string testsrc_private ()
 {
   std::string pp = tl::combine_path (tl::testsrc (), "private");
-  pp = tl::combine_path (pp, "testdata");
   if (! tl::file_exists (pp)) {
-    tl::warn << "Cancelling test as private test data is not available.";
     throw tl::CancelException ();
   }
   return pp;
@@ -113,8 +104,8 @@ std::string testdata_private ()
 std::string testtmp ()
 {
   //  Ensures the test temp directory is present
-  std::string tt = tl::get_env ("TESTTMP");
-  if (tt.empty ()) {
+  const char *tt = getenv ("TESTTMP");
+  if (! tt) {
     throw tl::Exception ("TESTTMP undefined");
   }
   return tt;
@@ -154,15 +145,6 @@ CaptureChannel::CaptureChannel ()
   tl::info.add (this, false);
   tl::error.add (this, false);
   tl::warn.add (this, false);
-
-  //  Because we don't want to capture logger messages, we switch verbosity to "silent" during capturing
-  m_saved_verbosity = tl::verbosity ();
-  tl::verbosity (0);
-}
-
-CaptureChannel::~CaptureChannel ()
-{
-  tl::verbosity (m_saved_verbosity);
 }
 
 void CaptureChannel::puts (const char *s)
@@ -240,7 +222,6 @@ bool TestBase::do_test (bool editable, bool slow)
 {
   m_editable = editable;
   m_slow = slow;
-  m_any_failed = false;
 
   //  Ensures the test temp directory is present
   std::string tmpdir = tl::combine_path (tl::absolute_file_path (testtmp ()), m_testdir);
@@ -266,17 +247,7 @@ bool TestBase::do_test (bool editable, bool slow)
 
   reset_checkpoint ();
 
-  try {
-    execute (this);
-  } catch (tl::CancelException &) {
-    throw;
-  } catch (tl::Exception &ex) {
-    raise (std::string ("Exception caught: ") + ex.msg ());
-  } catch (std::runtime_error &ex) {
-    raise (std::string ("std::runtime_error caught: ") + ex.what ());
-  } catch (...) {
-    raise (std::string ("unspecific exception caught: "));
-  }
+  execute (this);
 
   m_testtmp.clear ();
 

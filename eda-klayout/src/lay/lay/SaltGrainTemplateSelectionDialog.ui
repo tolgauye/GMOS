@@ -18,6 +18,7 @@
     <widget class="QLabel" name="label">
      <property name="font">
       <font>
+       <weight>75</weight>
        <bold>true</bold>
       </font>
      </property>
@@ -74,6 +75,7 @@
     <widget class="QLabel" name="label_2">
      <property name="font">
       <font>
+       <weight>75</weight>
        <bold>true</bold>
       </font>
      </property>
@@ -115,8 +117,8 @@
          <string>...</string>
         </property>
         <property name="icon">
-         <iconset resource="../../icons/icons.qrc">
-          <normaloff>:/warn_16px.png</normaloff>:/warn_16px.png</iconset>
+         <iconset resource="layResources.qrc">
+          <normaloff>:/warn.png</normaloff>:/warn.png</iconset>
         </property>
         <property name="autoRaise">
          <bool>true</bool>
@@ -130,6 +132,7 @@
     <widget class="QLabel" name="label_3">
      <property name="font">
       <font>
+       <weight>50</weight>
        <italic>true</italic>
        <bold>false</bold>
       </font>
@@ -152,8 +155,8 @@
   </layout>
   <action name="actionNew">
    <property name="icon">
-    <iconset resource="../../icons/icons.qrc">
-     <normaloff>:/add_16px.png</normaloff>:/add_16px.png</iconset>
+    <iconset resource="layResources.qrc">
+     <normaloff>:/add.png</normaloff>:/add.png</iconset>
    </property>
    <property name="text">
     <string>New</string>
@@ -164,8 +167,8 @@
   </action>
   <action name="actionDelete">
    <property name="icon">
-    <iconset resource="../../icons/icons.qrc">
-     <normaloff>:/clear_16px.png</normaloff>:/clear_16px.png</iconset>
+    <iconset resource="layResources.qrc">
+     <normaloff>:/clear.png</normaloff>:/clear.png</iconset>
    </property>
    <property name="text">
     <string>Delete</string>
@@ -176,8 +179,8 @@
   </action>
   <action name="actionImport">
    <property name="icon">
-    <iconset resource="../../icons/icons.qrc">
-     <normaloff>:/import_16px.png</normaloff>:/import_16px.png</iconset>
+    <iconset resource="layResources.qrc">
+     <normaloff>:/import.png</normaloff>:/import.png</iconset>
    </property>
    <property name="text">
     <string>Import</string>
@@ -195,7 +198,7 @@
   </customwidget>
  </customwidgets>
  <resources>
-  <include location="../../icons/icons.qrc"/>
+  <include location="layResources.qrc"/>
  </resources>
  <connections>
   <connection>

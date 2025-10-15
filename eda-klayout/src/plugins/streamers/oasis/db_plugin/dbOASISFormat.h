@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -60,7 +60,7 @@ public:
   /**
    *  @brief Indicates that the reader expects strict mode or note
    *
-   *  This is mainly a debugging an testing option but it may be used to verify
+   *  This is mainly a debugging an testing option but it may be used to verifiy
    *  the compliance of a file with string or non-strict mode.
    *
    *  The values are:
@@ -101,8 +101,7 @@ public:
    *  @brief The constructor
    */
   OASISWriterOptions ()
-    : compression_level (2), write_cblocks (true), strict_mode (true), recompress (false), permissive (false),
-      write_std_properties (1), subst_char ("*"), tables_at_end (false)
+    : compression_level (2), write_cblocks (false), strict_mode (false), recompress (false), permissive (false), write_std_properties (1), subst_char ("*")
   {
     //  .. nothing yet ..
   }
@@ -166,11 +165,6 @@ public:
    *  substituting invalid characters in a-strings and n-strings.
    */
   std::string subst_char;
-
-  /**
-   *  @brief Hidden option, for testing mainly: write tables at end to force forward references
-   */
-  bool tables_at_end;
 
   /** 
    *  @brief Implementation of FormatSpecificWriterOptions

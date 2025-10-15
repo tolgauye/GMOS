@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -89,15 +89,6 @@ public:
    *  computed before.
    */
   box_type bbox (const Layout &g) const;
-
-  /**
-   *  @brief Compute the bounding box, including empty cells
-   *
-   *  This method computes the bbox of the cell instance.
-   *  As a requirement, the cell's bounding box must have been
-   *  computed before.
-   */
-  box_type bbox_with_empty (const Layout &g) const;
 
   /**
    *  @brief Compute the bounding box

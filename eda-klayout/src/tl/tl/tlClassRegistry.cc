@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -23,36 +23,35 @@
  
 #include "tlClassRegistry.h"
 
-#include <unordered_map>
-#include <typeinfo>
-#include <typeindex>
+#include <map>
 
 namespace tl
 {
 
-typedef std::map<std::type_index, RegistrarBase *> inst_map_type;
+struct ti_compare_f
+{
+  bool operator() (const std::type_info *a, const std::type_info *b) const
+  {
+    return a->before (*b);
+  }
+};
 
-// Used to fix https://en.cppreference.com/w/cpp/language/siof segfault
-// on some systems.
-inst_map_type& s_inst_map() {
-  static inst_map_type s_inst_map;
-  return s_inst_map;
-}
+typedef std::map<const std::type_info *, RegistrarBase *, ti_compare_f> inst_map_type;
+static inst_map_type s_inst_map;
 
 TL_PUBLIC void set_registrar_instance_by_type (const std::type_info &ti, RegistrarBase *rb)
 {
   if (rb) {
-    s_inst_map()[std::type_index(ti)] = rb;
+    s_inst_map[&ti] = rb;
   } else {
-    s_inst_map().erase (std::type_index(ti));
+    s_inst_map.erase (&ti);
   }
 }
 
 TL_PUBLIC RegistrarBase *registrar_instance_by_type (const std::type_info &ti)
 {
-  inst_map_type map = s_inst_map();
-  inst_map_type::const_iterator im = map.find (std::type_index(ti));
-  if (im != map.end ()) {
+  inst_map_type::const_iterator im = s_inst_map.find (&ti);
+  if (im != s_inst_map.end ()) {
     return im->second;
   } else {
     return 0;

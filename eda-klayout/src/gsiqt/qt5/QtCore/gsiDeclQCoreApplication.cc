@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -33,6 +33,7 @@
 #include <QTranslator>
 #include "gsiQt.h"
 #include "gsiQtCoreCommon.h"
+#include "gsiDeclQtCoreTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -68,6 +69,28 @@ static void _call_f_installNativeEventFilter_3266 (const qt_gsi::GenericMethod *
   QAbstractNativeEventFilter *arg1 = gsi::arg_reader<QAbstractNativeEventFilter * >() (args, heap);
   __SUPPRESS_UNUSED_WARNING(ret);
   ((QCoreApplication *)cls)->installNativeEventFilter (arg1);
+}
+
+
+// bool QCoreApplication::notify(QObject *, QEvent *)
+
+
+static void _init_f_notify_2411 (qt_gsi::GenericMethod *decl)
+{
+  static gsi::ArgSpecBase argspec_0 ("arg1");
+  decl->add_arg<QObject * > (argspec_0);
+  static gsi::ArgSpecBase argspec_1 ("arg2");
+  decl->add_arg<QEvent * > (argspec_1);
+  decl->set_return<bool > ();
+}
+
+static void _call_f_notify_2411 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
+{
+  __SUPPRESS_UNUSED_WARNING(args);
+  tl::Heap heap;
+  QObject *arg1 = gsi::arg_reader<QObject * >() (args, heap);
+  QEvent *arg2 = gsi::arg_reader<QEvent * >() (args, heap);
+  ret.write<bool > ((bool)((QCoreApplication *)cls)->notify (arg1, arg2));
 }
 
 
@@ -581,7 +604,7 @@ static void _call_f_sendEvent_2411 (const qt_gsi::GenericStaticMethod * /*decl*/
 
 static void _init_f_sendPostedEvents_1961 (qt_gsi::GenericStaticMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("receiver", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("receiver", true, "0");
   decl->add_arg<QObject * > (argspec_0);
   static gsi::ArgSpecBase argspec_1 ("event_type", true, "0");
   decl->add_arg<int > (argspec_1);
@@ -592,7 +615,7 @@ static void _call_f_sendPostedEvents_1961 (const qt_gsi::GenericStaticMethod * /
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (nullptr, heap);
+  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (0, heap);
   int arg2 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (0, heap);
   __SUPPRESS_UNUSED_WARNING(ret);
   QCoreApplication::sendPostedEvents (arg1, arg2);
@@ -823,7 +846,7 @@ static void _init_f_tr_4013 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("s");
   decl->add_arg<const char * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("c", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("c", true, "__null");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("n", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -835,7 +858,7 @@ static void _call_f_tr_4013 (const qt_gsi::GenericStaticMethod * /*decl*/, gsi::
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (__null, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QCoreApplication::tr (arg1, arg2, arg3));
 }
@@ -848,7 +871,7 @@ static void _init_f_trUtf8_4013 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("s");
   decl->add_arg<const char * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("c", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("c", true, "__null");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("n", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -860,7 +883,7 @@ static void _call_f_trUtf8_4013 (const qt_gsi::GenericStaticMethod * /*decl*/, g
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (__null, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QCoreApplication::trUtf8 (arg1, arg2, arg3));
 }
@@ -875,7 +898,7 @@ static void _init_f_translate_5636 (qt_gsi::GenericStaticMethod *decl)
   decl->add_arg<const char * > (argspec_0);
   static gsi::ArgSpecBase argspec_1 ("key");
   decl->add_arg<const char * > (argspec_1);
-  static gsi::ArgSpecBase argspec_2 ("disambiguation", true, "nullptr");
+  static gsi::ArgSpecBase argspec_2 ("disambiguation", true, "0");
   decl->add_arg<const char * > (argspec_2);
   static gsi::ArgSpecBase argspec_3 ("n", true, "-1");
   decl->add_arg<int > (argspec_3);
@@ -888,7 +911,7 @@ static void _call_f_translate_5636 (const qt_gsi::GenericStaticMethod * /*decl*/
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
   const char *arg2 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg3 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg3 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (0, heap);
   int arg4 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QCoreApplication::translate (arg1, arg2, arg3, arg4));
 }
@@ -901,12 +924,11 @@ static gsi::Methods methods_QCoreApplication () {
   gsi::Methods methods;
   methods += new qt_gsi::GenericStaticMethod ("staticMetaObject", "@brief Obtains the static MetaObject for this class.", &_init_smo, &_call_smo);
   methods += new qt_gsi::GenericMethod ("installNativeEventFilter", "@brief Method void QCoreApplication::installNativeEventFilter(QAbstractNativeEventFilter *filterObj)\n", false, &_init_f_installNativeEventFilter_3266, &_call_f_installNativeEventFilter_3266);
+  methods += new qt_gsi::GenericMethod ("notify", "@brief Method bool QCoreApplication::notify(QObject *, QEvent *)\n", false, &_init_f_notify_2411, &_call_f_notify_2411);
   methods += new qt_gsi::GenericMethod ("removeNativeEventFilter", "@brief Method void QCoreApplication::removeNativeEventFilter(QAbstractNativeEventFilter *filterObj)\n", false, &_init_f_removeNativeEventFilter_3266, &_call_f_removeNativeEventFilter_3266);
-  methods += gsi::qt_signal ("aboutToQuit()", "aboutToQuit", "@brief Signal declaration for QCoreApplication::aboutToQuit()\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal ("applicationNameChanged()", "applicationNameChanged", "@brief Signal declaration for QCoreApplication::applicationNameChanged()\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal ("applicationVersionChanged()", "applicationVersionChanged", "@brief Signal declaration for QCoreApplication::applicationVersionChanged()\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<QObject * > ("destroyed(QObject *)", "destroyed", gsi::arg("arg1"), "@brief Signal declaration for QCoreApplication::destroyed(QObject *)\nYou can bind a procedure to this signal.");
-  methods += gsi::qt_signal<const QString & > ("objectNameChanged(const QString &)", "objectNameChanged", gsi::arg("objectName"), "@brief Signal declaration for QCoreApplication::objectNameChanged(const QString &objectName)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal ("organizationDomainChanged()", "organizationDomainChanged", "@brief Signal declaration for QCoreApplication::organizationDomainChanged()\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal ("organizationNameChanged()", "organizationNameChanged", "@brief Signal declaration for QCoreApplication::organizationNameChanged()\nYou can bind a procedure to this signal.");
   methods += new qt_gsi::GenericStaticMethod ("addLibraryPath", "@brief Static method void QCoreApplication::addLibraryPath(const QString &)\nThis method is static and can be called without an instance.", &_init_f_addLibraryPath_2025, &_call_f_addLibraryPath_2025);
@@ -1013,12 +1035,6 @@ public:
     return QCoreApplication::senderSignalIndex();
   }
 
-  //  [emitter impl] void QCoreApplication::aboutToQuit()
-  void emitter_QCoreApplication_aboutToQuit_3584()
-  {
-    throw tl::Exception ("Can't emit private signal 'void QCoreApplication::aboutToQuit()'");
-  }
-
   //  [emitter impl] void QCoreApplication::applicationNameChanged()
   void emitter_QCoreApplication_applicationNameChanged_0()
   {
@@ -1037,26 +1053,34 @@ public:
     emit QCoreApplication::destroyed(arg1);
   }
 
-  //  [adaptor impl] bool QCoreApplication::eventFilter(QObject *watched, QEvent *event)
-  bool cbs_eventFilter_2411_0(QObject *watched, QEvent *event)
+  //  [adaptor impl] bool QCoreApplication::eventFilter(QObject *, QEvent *)
+  bool cbs_eventFilter_2411_0(QObject *arg1, QEvent *arg2)
   {
-    return QCoreApplication::eventFilter(watched, event);
+    return QCoreApplication::eventFilter(arg1, arg2);
   }
 
-  virtual bool eventFilter(QObject *watched, QEvent *event)
+  virtual bool eventFilter(QObject *arg1, QEvent *arg2)
   {
     if (cb_eventFilter_2411_0.can_issue()) {
-      return cb_eventFilter_2411_0.issue<QCoreApplication_Adaptor, bool, QObject *, QEvent *>(&QCoreApplication_Adaptor::cbs_eventFilter_2411_0, watched, event);
+      return cb_eventFilter_2411_0.issue<QCoreApplication_Adaptor, bool, QObject *, QEvent *>(&QCoreApplication_Adaptor::cbs_eventFilter_2411_0, arg1, arg2);
     } else {
-      return QCoreApplication::eventFilter(watched, event);
+      return QCoreApplication::eventFilter(arg1, arg2);
     }
   }
 
-  //  [emitter impl] void QCoreApplication::objectNameChanged(const QString &objectName)
-  void emitter_QCoreApplication_objectNameChanged_4567(const QString &objectName)
+  //  [adaptor impl] bool QCoreApplication::notify(QObject *, QEvent *)
+  bool cbs_notify_2411_0(QObject *arg1, QEvent *arg2)
   {
-    __SUPPRESS_UNUSED_WARNING (objectName);
-    throw tl::Exception ("Can't emit private signal 'void QCoreApplication::objectNameChanged(const QString &objectName)'");
+    return QCoreApplication::notify(arg1, arg2);
+  }
+
+  virtual bool notify(QObject *arg1, QEvent *arg2)
+  {
+    if (cb_notify_2411_0.can_issue()) {
+      return cb_notify_2411_0.issue<QCoreApplication_Adaptor, bool, QObject *, QEvent *>(&QCoreApplication_Adaptor::cbs_notify_2411_0, arg1, arg2);
+    } else {
+      return QCoreApplication::notify(arg1, arg2);
+    }
   }
 
   //  [emitter impl] void QCoreApplication::organizationDomainChanged()
@@ -1071,33 +1095,33 @@ public:
     emit QCoreApplication::organizationNameChanged();
   }
 
-  //  [adaptor impl] void QCoreApplication::childEvent(QChildEvent *event)
-  void cbs_childEvent_1701_0(QChildEvent *event)
+  //  [adaptor impl] void QCoreApplication::childEvent(QChildEvent *)
+  void cbs_childEvent_1701_0(QChildEvent *arg1)
   {
-    QCoreApplication::childEvent(event);
+    QCoreApplication::childEvent(arg1);
   }
 
-  virtual void childEvent(QChildEvent *event)
+  virtual void childEvent(QChildEvent *arg1)
   {
     if (cb_childEvent_1701_0.can_issue()) {
-      cb_childEvent_1701_0.issue<QCoreApplication_Adaptor, QChildEvent *>(&QCoreApplication_Adaptor::cbs_childEvent_1701_0, event);
+      cb_childEvent_1701_0.issue<QCoreApplication_Adaptor, QChildEvent *>(&QCoreApplication_Adaptor::cbs_childEvent_1701_0, arg1);
     } else {
-      QCoreApplication::childEvent(event);
+      QCoreApplication::childEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QCoreApplication::customEvent(QEvent *event)
-  void cbs_customEvent_1217_0(QEvent *event)
+  //  [adaptor impl] void QCoreApplication::customEvent(QEvent *)
+  void cbs_customEvent_1217_0(QEvent *arg1)
   {
-    QCoreApplication::customEvent(event);
+    QCoreApplication::customEvent(arg1);
   }
 
-  virtual void customEvent(QEvent *event)
+  virtual void customEvent(QEvent *arg1)
   {
     if (cb_customEvent_1217_0.can_issue()) {
-      cb_customEvent_1217_0.issue<QCoreApplication_Adaptor, QEvent *>(&QCoreApplication_Adaptor::cbs_customEvent_1217_0, event);
+      cb_customEvent_1217_0.issue<QCoreApplication_Adaptor, QEvent *>(&QCoreApplication_Adaptor::cbs_customEvent_1217_0, arg1);
     } else {
-      QCoreApplication::customEvent(event);
+      QCoreApplication::customEvent(arg1);
     }
   }
 
@@ -1131,22 +1155,23 @@ public:
     }
   }
 
-  //  [adaptor impl] void QCoreApplication::timerEvent(QTimerEvent *event)
-  void cbs_timerEvent_1730_0(QTimerEvent *event)
+  //  [adaptor impl] void QCoreApplication::timerEvent(QTimerEvent *)
+  void cbs_timerEvent_1730_0(QTimerEvent *arg1)
   {
-    QCoreApplication::timerEvent(event);
+    QCoreApplication::timerEvent(arg1);
   }
 
-  virtual void timerEvent(QTimerEvent *event)
+  virtual void timerEvent(QTimerEvent *arg1)
   {
     if (cb_timerEvent_1730_0.can_issue()) {
-      cb_timerEvent_1730_0.issue<QCoreApplication_Adaptor, QTimerEvent *>(&QCoreApplication_Adaptor::cbs_timerEvent_1730_0, event);
+      cb_timerEvent_1730_0.issue<QCoreApplication_Adaptor, QTimerEvent *>(&QCoreApplication_Adaptor::cbs_timerEvent_1730_0, arg1);
     } else {
-      QCoreApplication::timerEvent(event);
+      QCoreApplication::timerEvent(arg1);
     }
   }
 
   gsi::Callback cb_eventFilter_2411_0;
+  gsi::Callback cb_notify_2411_0;
   gsi::Callback cb_childEvent_1701_0;
   gsi::Callback cb_customEvent_1217_0;
   gsi::Callback cb_disconnectNotify_2394_0;
@@ -1155,20 +1180,6 @@ public:
 };
 
 QCoreApplication_Adaptor::~QCoreApplication_Adaptor() { }
-
-// emitter void QCoreApplication::aboutToQuit()
-
-static void _init_emitter_aboutToQuit_3584 (qt_gsi::GenericMethod *decl)
-{
-  decl->set_return<void > ();
-}
-
-static void _call_emitter_aboutToQuit_3584 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs & /*ret*/) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  ((QCoreApplication_Adaptor *)cls)->emitter_QCoreApplication_aboutToQuit_3584 ();
-}
-
 
 // emitter void QCoreApplication::applicationNameChanged()
 
@@ -1198,11 +1209,11 @@ static void _call_emitter_applicationVersionChanged_0 (const qt_gsi::GenericMeth
 }
 
 
-// void QCoreApplication::childEvent(QChildEvent *event)
+// void QCoreApplication::childEvent(QChildEvent *)
 
 static void _init_cbs_childEvent_1701_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QChildEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1222,11 +1233,11 @@ static void _set_callback_cbs_childEvent_1701_0 (void *cls, const gsi::Callback 
 }
 
 
-// void QCoreApplication::customEvent(QEvent *event)
+// void QCoreApplication::customEvent(QEvent *)
 
 static void _init_cbs_customEvent_1217_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1250,7 +1261,7 @@ static void _set_callback_cbs_customEvent_1217_0 (void *cls, const gsi::Callback
 
 static void _init_emitter_destroyed_1302 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("arg1", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("arg1", true, "0");
   decl->add_arg<QObject * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1259,7 +1270,7 @@ static void _call_emitter_destroyed_1302 (const qt_gsi::GenericMethod * /*decl*/
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (nullptr, heap);
+  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (0, heap);
   ((QCoreApplication_Adaptor *)cls)->emitter_QCoreApplication_destroyed_1302 (arg1);
 }
 
@@ -1311,13 +1322,13 @@ static void _set_callback_cbs_event_1217_0 (void *cls, const gsi::Callback &cb)
 }
 
 
-// bool QCoreApplication::eventFilter(QObject *watched, QEvent *event)
+// bool QCoreApplication::eventFilter(QObject *, QEvent *)
 
 static void _init_cbs_eventFilter_2411_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("watched");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QObject * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("event");
+  static gsi::ArgSpecBase argspec_1 ("arg2");
   decl->add_arg<QEvent * > (argspec_1);
   decl->set_return<bool > ();
 }
@@ -1355,21 +1366,29 @@ static void _call_fp_isSignalConnected_c2394 (const qt_gsi::GenericMethod * /*de
 }
 
 
-// emitter void QCoreApplication::objectNameChanged(const QString &objectName)
+// bool QCoreApplication::notify(QObject *, QEvent *)
 
-static void _init_emitter_objectNameChanged_4567 (qt_gsi::GenericMethod *decl)
+static void _init_cbs_notify_2411_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("objectName");
-  decl->add_arg<const QString & > (argspec_0);
-  decl->set_return<void > ();
+  static gsi::ArgSpecBase argspec_0 ("arg1");
+  decl->add_arg<QObject * > (argspec_0);
+  static gsi::ArgSpecBase argspec_1 ("arg2");
+  decl->add_arg<QEvent * > (argspec_1);
+  decl->set_return<bool > ();
 }
 
-static void _call_emitter_objectNameChanged_4567 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs & /*ret*/) 
+static void _call_cbs_notify_2411_0 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  const QString &arg1 = gsi::arg_reader<const QString & >() (args, heap);
-  ((QCoreApplication_Adaptor *)cls)->emitter_QCoreApplication_objectNameChanged_4567 (arg1);
+  QObject *arg1 = args.read<QObject * > (heap);
+  QEvent *arg2 = args.read<QEvent * > (heap);
+  ret.write<bool > ((bool)((QCoreApplication_Adaptor *)cls)->cbs_notify_2411_0 (arg1, arg2));
+}
+
+static void _set_callback_cbs_notify_2411_0 (void *cls, const gsi::Callback &cb)
+{
+  ((QCoreApplication_Adaptor *)cls)->cb_notify_2411_0 = cb;
 }
 
 
@@ -1447,11 +1466,11 @@ static void _call_fp_senderSignalIndex_c0 (const qt_gsi::GenericMethod * /*decl*
 }
 
 
-// void QCoreApplication::timerEvent(QTimerEvent *event)
+// void QCoreApplication::timerEvent(QTimerEvent *)
 
 static void _init_cbs_timerEvent_1730_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QTimerEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1478,29 +1497,29 @@ gsi::Class<QCoreApplication> &qtdecl_QCoreApplication ();
 
 static gsi::Methods methods_QCoreApplication_Adaptor () {
   gsi::Methods methods;
-  methods += new qt_gsi::GenericMethod ("emit_aboutToQuit", "@brief Emitter for signal void QCoreApplication::aboutToQuit()\nCall this method to emit this signal.", false, &_init_emitter_aboutToQuit_3584, &_call_emitter_aboutToQuit_3584);
   methods += new qt_gsi::GenericMethod ("emit_applicationNameChanged", "@brief Emitter for signal void QCoreApplication::applicationNameChanged()\nCall this method to emit this signal.", false, &_init_emitter_applicationNameChanged_0, &_call_emitter_applicationNameChanged_0);
   methods += new qt_gsi::GenericMethod ("emit_applicationVersionChanged", "@brief Emitter for signal void QCoreApplication::applicationVersionChanged()\nCall this method to emit this signal.", false, &_init_emitter_applicationVersionChanged_0, &_call_emitter_applicationVersionChanged_0);
-  methods += new qt_gsi::GenericMethod ("*childEvent", "@brief Virtual method void QCoreApplication::childEvent(QChildEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0);
-  methods += new qt_gsi::GenericMethod ("*childEvent", "@hide", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0, &_set_callback_cbs_childEvent_1701_0);
-  methods += new qt_gsi::GenericMethod ("*customEvent", "@brief Virtual method void QCoreApplication::customEvent(QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*customEvent", "@hide", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0, &_set_callback_cbs_customEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*childEvent", "@hide", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0);
+  methods += new qt_gsi::GenericMethod ("*childEvent", "@brief Virtual method void QCoreApplication::childEvent(QChildEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0, &_set_callback_cbs_childEvent_1701_0);
+  methods += new qt_gsi::GenericMethod ("*customEvent", "@hide", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*customEvent", "@brief Virtual method void QCoreApplication::customEvent(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0, &_set_callback_cbs_customEvent_1217_0);
   methods += new qt_gsi::GenericMethod ("emit_destroyed", "@brief Emitter for signal void QCoreApplication::destroyed(QObject *)\nCall this method to emit this signal.", false, &_init_emitter_destroyed_1302, &_call_emitter_destroyed_1302);
-  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@brief Virtual method void QCoreApplication::disconnectNotify(const QMetaMethod &signal)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0);
-  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@hide", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0, &_set_callback_cbs_disconnectNotify_2394_0);
-  methods += new qt_gsi::GenericMethod ("*event", "@brief Virtual method bool QCoreApplication::event(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0);
-  methods += new qt_gsi::GenericMethod ("*event", "@hide", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0, &_set_callback_cbs_event_1217_0);
-  methods += new qt_gsi::GenericMethod ("eventFilter", "@brief Virtual method bool QCoreApplication::eventFilter(QObject *watched, QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0);
-  methods += new qt_gsi::GenericMethod ("eventFilter", "@hide", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0, &_set_callback_cbs_eventFilter_2411_0);
+  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@hide", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0);
+  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@brief Virtual method void QCoreApplication::disconnectNotify(const QMetaMethod &signal)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0, &_set_callback_cbs_disconnectNotify_2394_0);
+  methods += new qt_gsi::GenericMethod ("*event", "@hide", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0);
+  methods += new qt_gsi::GenericMethod ("*event", "@brief Virtual method bool QCoreApplication::event(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0, &_set_callback_cbs_event_1217_0);
+  methods += new qt_gsi::GenericMethod ("eventFilter", "@hide", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0);
+  methods += new qt_gsi::GenericMethod ("eventFilter", "@brief Virtual method bool QCoreApplication::eventFilter(QObject *, QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0, &_set_callback_cbs_eventFilter_2411_0);
   methods += new qt_gsi::GenericMethod ("*isSignalConnected", "@brief Method bool QCoreApplication::isSignalConnected(const QMetaMethod &signal)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_isSignalConnected_c2394, &_call_fp_isSignalConnected_c2394);
-  methods += new qt_gsi::GenericMethod ("emit_objectNameChanged", "@brief Emitter for signal void QCoreApplication::objectNameChanged(const QString &objectName)\nCall this method to emit this signal.", false, &_init_emitter_objectNameChanged_4567, &_call_emitter_objectNameChanged_4567);
+  methods += new qt_gsi::GenericMethod ("notify", "@hide", false, &_init_cbs_notify_2411_0, &_call_cbs_notify_2411_0);
+  methods += new qt_gsi::GenericMethod ("notify", "@brief Virtual method bool QCoreApplication::notify(QObject *, QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_notify_2411_0, &_call_cbs_notify_2411_0, &_set_callback_cbs_notify_2411_0);
   methods += new qt_gsi::GenericMethod ("emit_organizationDomainChanged", "@brief Emitter for signal void QCoreApplication::organizationDomainChanged()\nCall this method to emit this signal.", false, &_init_emitter_organizationDomainChanged_0, &_call_emitter_organizationDomainChanged_0);
   methods += new qt_gsi::GenericMethod ("emit_organizationNameChanged", "@brief Emitter for signal void QCoreApplication::organizationNameChanged()\nCall this method to emit this signal.", false, &_init_emitter_organizationNameChanged_0, &_call_emitter_organizationNameChanged_0);
   methods += new qt_gsi::GenericMethod ("*receivers", "@brief Method int QCoreApplication::receivers(const char *signal)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_receivers_c1731, &_call_fp_receivers_c1731);
   methods += new qt_gsi::GenericMethod ("*sender", "@brief Method QObject *QCoreApplication::sender()\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_sender_c0, &_call_fp_sender_c0);
   methods += new qt_gsi::GenericMethod ("*senderSignalIndex", "@brief Method int QCoreApplication::senderSignalIndex()\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_senderSignalIndex_c0, &_call_fp_senderSignalIndex_c0);
-  methods += new qt_gsi::GenericMethod ("*timerEvent", "@brief Virtual method void QCoreApplication::timerEvent(QTimerEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0);
-  methods += new qt_gsi::GenericMethod ("*timerEvent", "@hide", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0, &_set_callback_cbs_timerEvent_1730_0);
+  methods += new qt_gsi::GenericMethod ("*timerEvent", "@hide", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0);
+  methods += new qt_gsi::GenericMethod ("*timerEvent", "@brief Virtual method void QCoreApplication::timerEvent(QTimerEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0, &_set_callback_cbs_timerEvent_1730_0);
   return methods;
 }
 

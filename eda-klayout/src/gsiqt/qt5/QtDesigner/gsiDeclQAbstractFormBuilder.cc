@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -33,6 +33,7 @@
 #include <QWidget>
 #include "gsiQt.h"
 #include "gsiQtDesignerCommon.h"
+#include "gsiDeclQtDesignerTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -75,7 +76,7 @@ static void _init_f_load_2654 (qt_gsi::GenericMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("dev");
   decl->add_arg<QIODevice * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("parentWidget", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("parentWidget", true, "0");
   decl->add_arg<QWidget * > (argspec_1);
   decl->set_return_new<QWidget * > ();
 }
@@ -85,7 +86,7 @@ static void _call_f_load_2654 (const qt_gsi::GenericMethod * /*decl*/, void *cls
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   QIODevice *arg1 = gsi::arg_reader<QIODevice * >() (args, heap);
-  QWidget *arg2 = args ? gsi::arg_reader<QWidget * >() (args, heap) : gsi::arg_maker<QWidget * >() (nullptr, heap);
+  QWidget *arg2 = args ? gsi::arg_reader<QWidget * >() (args, heap) : gsi::arg_maker<QWidget * >() (0, heap);
   ret.write<QWidget * > ((QWidget *)((QAbstractFormBuilder *)cls)->load (arg1, arg2));
 }
 

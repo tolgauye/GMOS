@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -41,6 +41,7 @@
 #include <QSizeF>
 #include "gsiQt.h"
 #include "gsiQtPrintSupportCommon.h"
+#include "gsiDeclQtPrintSupportTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -522,21 +523,6 @@ static void _call_f_paperSource_c0 (const qt_gsi::GenericMethod * /*decl*/, void
 {
   __SUPPRESS_UNUSED_WARNING(args);
   ret.write<qt_gsi::Converter<QPrinter::PaperSource>::target_type > ((qt_gsi::Converter<QPrinter::PaperSource>::target_type)qt_gsi::CppToQtAdaptor<QPrinter::PaperSource>(((QPrinter *)cls)->paperSource ()));
-}
-
-
-// QPagedPaintDevice::PdfVersion QPrinter::pdfVersion()
-
-
-static void _init_f_pdfVersion_c0 (qt_gsi::GenericMethod *decl)
-{
-  decl->set_return<qt_gsi::Converter<QPagedPaintDevice::PdfVersion>::target_type > ();
-}
-
-static void _call_f_pdfVersion_c0 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  ret.write<qt_gsi::Converter<QPagedPaintDevice::PdfVersion>::target_type > ((qt_gsi::Converter<QPagedPaintDevice::PdfVersion>::target_type)qt_gsi::CppToQtAdaptor<QPagedPaintDevice::PdfVersion>(((QPrinter *)cls)->pdfVersion ()));
 }
 
 
@@ -1130,26 +1116,6 @@ static void _call_f_setPaperSource_2502 (const qt_gsi::GenericMethod * /*decl*/,
 }
 
 
-// void QPrinter::setPdfVersion(QPagedPaintDevice::PdfVersion version)
-
-
-static void _init_f_setPdfVersion_3238 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("version");
-  decl->add_arg<const qt_gsi::Converter<QPagedPaintDevice::PdfVersion>::target_type & > (argspec_0);
-  decl->set_return<void > ();
-}
-
-static void _call_f_setPdfVersion_3238 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const qt_gsi::Converter<QPagedPaintDevice::PdfVersion>::target_type & arg1 = gsi::arg_reader<const qt_gsi::Converter<QPagedPaintDevice::PdfVersion>::target_type & >() (args, heap);
-  __SUPPRESS_UNUSED_WARNING(ret);
-  ((QPrinter *)cls)->setPdfVersion (qt_gsi::QtToCppAdaptor<QPagedPaintDevice::PdfVersion>(arg1).cref());
-}
-
-
 // void QPrinter::setPrintProgram(const QString &)
 
 
@@ -1345,7 +1311,6 @@ static gsi::Methods methods_QPrinter () {
   methods += new qt_gsi::GenericMethod (":paperSize", "@brief Method QPagedPaintDevice::PageSize QPrinter::paperSize()\n", true, &_init_f_paperSize_c0, &_call_f_paperSize_c0);
   methods += new qt_gsi::GenericMethod ("paperSize", "@brief Method QSizeF QPrinter::paperSize(QPrinter::Unit unit)\n", true, &_init_f_paperSize_c1789, &_call_f_paperSize_c1789);
   methods += new qt_gsi::GenericMethod (":paperSource", "@brief Method QPrinter::PaperSource QPrinter::paperSource()\n", true, &_init_f_paperSource_c0, &_call_f_paperSource_c0);
-  methods += new qt_gsi::GenericMethod (":pdfVersion", "@brief Method QPagedPaintDevice::PdfVersion QPrinter::pdfVersion()\n", true, &_init_f_pdfVersion_c0, &_call_f_pdfVersion_c0);
   methods += new qt_gsi::GenericMethod ("printEngine", "@brief Method QPrintEngine *QPrinter::printEngine()\n", true, &_init_f_printEngine_c0, &_call_f_printEngine_c0);
   methods += new qt_gsi::GenericMethod (":printProgram", "@brief Method QString QPrinter::printProgram()\n", true, &_init_f_printProgram_c0, &_call_f_printProgram_c0);
   methods += new qt_gsi::GenericMethod (":printRange", "@brief Method QPrinter::PrintRange QPrinter::printRange()\n", true, &_init_f_printRange_c0, &_call_f_printRange_c0);
@@ -1376,7 +1341,6 @@ static gsi::Methods methods_QPrinter () {
   methods += new qt_gsi::GenericMethod ("setPaperSize|paperSize=", "@brief Method void QPrinter::setPaperSize(QPagedPaintDevice::PageSize)\n", false, &_init_f_setPaperSize_3006, &_call_f_setPaperSize_3006);
   methods += new qt_gsi::GenericMethod ("setPaperSize", "@brief Method void QPrinter::setPaperSize(const QSizeF &paperSize, QPrinter::Unit unit)\n", false, &_init_f_setPaperSize_3556, &_call_f_setPaperSize_3556);
   methods += new qt_gsi::GenericMethod ("setPaperSource|paperSource=", "@brief Method void QPrinter::setPaperSource(QPrinter::PaperSource)\n", false, &_init_f_setPaperSource_2502, &_call_f_setPaperSource_2502);
-  methods += new qt_gsi::GenericMethod ("setPdfVersion|pdfVersion=", "@brief Method void QPrinter::setPdfVersion(QPagedPaintDevice::PdfVersion version)\n", false, &_init_f_setPdfVersion_3238, &_call_f_setPdfVersion_3238);
   methods += new qt_gsi::GenericMethod ("setPrintProgram|printProgram=", "@brief Method void QPrinter::setPrintProgram(const QString &)\n", false, &_init_f_setPrintProgram_2025, &_call_f_setPrintProgram_2025);
   methods += new qt_gsi::GenericMethod ("setPrintRange|printRange=", "@brief Method void QPrinter::setPrintRange(QPrinter::PrintRange range)\n", false, &_init_f_setPrintRange_2391, &_call_f_setPrintRange_2391);
   methods += new qt_gsi::GenericMethod ("setPrinterName|printerName=", "@brief Method void QPrinter::setPrinterName(const QString &)\n", false, &_init_f_setPrinterName_2025, &_call_f_setPrinterName_2025);
@@ -1892,25 +1856,25 @@ static gsi::Methods methods_QPrinter_Adaptor () {
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QPrinter::QPrinter(const QPrinterInfo &printer, QPrinter::PrinterMode mode)\nThis method creates an object of class QPrinter.", &_init_ctor_QPrinter_Adaptor_4924, &_call_ctor_QPrinter_Adaptor_4924);
   methods += new qt_gsi::GenericMethod ("*devicePageLayout", "@brief Method QPageLayout QPrinter::devicePageLayout()\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_devicePageLayout_c0, &_call_fp_devicePageLayout_c0);
   methods += new qt_gsi::GenericMethod ("*devicePageLayout", "@brief Method QPageLayout &QPrinter::devicePageLayout()\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_devicePageLayout_0, &_call_fp_devicePageLayout_0);
-  methods += new qt_gsi::GenericMethod ("*initPainter", "@brief Virtual method void QPrinter::initPainter(QPainter *painter)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_initPainter_c1426_0, &_call_cbs_initPainter_c1426_0);
-  methods += new qt_gsi::GenericMethod ("*initPainter", "@hide", true, &_init_cbs_initPainter_c1426_0, &_call_cbs_initPainter_c1426_0, &_set_callback_cbs_initPainter_c1426_0);
-  methods += new qt_gsi::GenericMethod ("*metric", "@brief Virtual method int QPrinter::metric(QPaintDevice::PaintDeviceMetric)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_metric_c3445_0, &_call_cbs_metric_c3445_0);
-  methods += new qt_gsi::GenericMethod ("*metric", "@hide", true, &_init_cbs_metric_c3445_0, &_call_cbs_metric_c3445_0, &_set_callback_cbs_metric_c3445_0);
-  methods += new qt_gsi::GenericMethod ("newPage", "@brief Virtual method bool QPrinter::newPage()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_newPage_0_0, &_call_cbs_newPage_0_0);
-  methods += new qt_gsi::GenericMethod ("newPage", "@hide", false, &_init_cbs_newPage_0_0, &_call_cbs_newPage_0_0, &_set_callback_cbs_newPage_0_0);
-  methods += new qt_gsi::GenericMethod ("paintEngine", "@brief Virtual method QPaintEngine *QPrinter::paintEngine()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_paintEngine_c0_0, &_call_cbs_paintEngine_c0_0);
-  methods += new qt_gsi::GenericMethod ("paintEngine", "@hide", true, &_init_cbs_paintEngine_c0_0, &_call_cbs_paintEngine_c0_0, &_set_callback_cbs_paintEngine_c0_0);
-  methods += new qt_gsi::GenericMethod ("*redirected", "@brief Virtual method QPaintDevice *QPrinter::redirected(QPoint *offset)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_redirected_c1225_0, &_call_cbs_redirected_c1225_0);
-  methods += new qt_gsi::GenericMethod ("*redirected", "@hide", true, &_init_cbs_redirected_c1225_0, &_call_cbs_redirected_c1225_0, &_set_callback_cbs_redirected_c1225_0);
+  methods += new qt_gsi::GenericMethod ("*initPainter", "@hide", true, &_init_cbs_initPainter_c1426_0, &_call_cbs_initPainter_c1426_0);
+  methods += new qt_gsi::GenericMethod ("*initPainter", "@brief Virtual method void QPrinter::initPainter(QPainter *painter)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_initPainter_c1426_0, &_call_cbs_initPainter_c1426_0, &_set_callback_cbs_initPainter_c1426_0);
+  methods += new qt_gsi::GenericMethod ("*metric", "@hide", true, &_init_cbs_metric_c3445_0, &_call_cbs_metric_c3445_0);
+  methods += new qt_gsi::GenericMethod ("*metric", "@brief Virtual method int QPrinter::metric(QPaintDevice::PaintDeviceMetric)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_metric_c3445_0, &_call_cbs_metric_c3445_0, &_set_callback_cbs_metric_c3445_0);
+  methods += new qt_gsi::GenericMethod ("newPage", "@hide", false, &_init_cbs_newPage_0_0, &_call_cbs_newPage_0_0);
+  methods += new qt_gsi::GenericMethod ("newPage", "@brief Virtual method bool QPrinter::newPage()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_newPage_0_0, &_call_cbs_newPage_0_0, &_set_callback_cbs_newPage_0_0);
+  methods += new qt_gsi::GenericMethod ("paintEngine", "@hide", true, &_init_cbs_paintEngine_c0_0, &_call_cbs_paintEngine_c0_0);
+  methods += new qt_gsi::GenericMethod ("paintEngine", "@brief Virtual method QPaintEngine *QPrinter::paintEngine()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_paintEngine_c0_0, &_call_cbs_paintEngine_c0_0, &_set_callback_cbs_paintEngine_c0_0);
+  methods += new qt_gsi::GenericMethod ("*redirected", "@hide", true, &_init_cbs_redirected_c1225_0, &_call_cbs_redirected_c1225_0);
+  methods += new qt_gsi::GenericMethod ("*redirected", "@brief Virtual method QPaintDevice *QPrinter::redirected(QPoint *offset)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_redirected_c1225_0, &_call_cbs_redirected_c1225_0, &_set_callback_cbs_redirected_c1225_0);
   methods += new qt_gsi::GenericMethod ("*setEngines", "@brief Method void QPrinter::setEngines(QPrintEngine *printEngine, QPaintEngine *paintEngine)\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_setEngines_3527, &_call_fp_setEngines_3527);
-  methods += new qt_gsi::GenericMethod ("setMargins", "@brief Virtual method void QPrinter::setMargins(const QPagedPaintDevice::Margins &m)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setMargins_3812_0, &_call_cbs_setMargins_3812_0);
-  methods += new qt_gsi::GenericMethod ("setMargins", "@hide", false, &_init_cbs_setMargins_3812_0, &_call_cbs_setMargins_3812_0, &_set_callback_cbs_setMargins_3812_0);
-  methods += new qt_gsi::GenericMethod ("setPageSize", "@brief Virtual method void QPrinter::setPageSize(QPagedPaintDevice::PageSize size)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setPageSize_3006_0, &_call_cbs_setPageSize_3006_0);
-  methods += new qt_gsi::GenericMethod ("setPageSize", "@hide", false, &_init_cbs_setPageSize_3006_0, &_call_cbs_setPageSize_3006_0, &_set_callback_cbs_setPageSize_3006_0);
-  methods += new qt_gsi::GenericMethod ("setPageSizeMM", "@brief Virtual method void QPrinter::setPageSizeMM(const QSizeF &size)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setPageSizeMM_1875_0, &_call_cbs_setPageSizeMM_1875_0);
-  methods += new qt_gsi::GenericMethod ("setPageSizeMM", "@hide", false, &_init_cbs_setPageSizeMM_1875_0, &_call_cbs_setPageSizeMM_1875_0, &_set_callback_cbs_setPageSizeMM_1875_0);
-  methods += new qt_gsi::GenericMethod ("*sharedPainter", "@brief Virtual method QPainter *QPrinter::sharedPainter()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_sharedPainter_c0_0, &_call_cbs_sharedPainter_c0_0);
-  methods += new qt_gsi::GenericMethod ("*sharedPainter", "@hide", true, &_init_cbs_sharedPainter_c0_0, &_call_cbs_sharedPainter_c0_0, &_set_callback_cbs_sharedPainter_c0_0);
+  methods += new qt_gsi::GenericMethod ("setMargins", "@hide", false, &_init_cbs_setMargins_3812_0, &_call_cbs_setMargins_3812_0);
+  methods += new qt_gsi::GenericMethod ("setMargins", "@brief Virtual method void QPrinter::setMargins(const QPagedPaintDevice::Margins &m)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setMargins_3812_0, &_call_cbs_setMargins_3812_0, &_set_callback_cbs_setMargins_3812_0);
+  methods += new qt_gsi::GenericMethod ("setPageSize", "@hide", false, &_init_cbs_setPageSize_3006_0, &_call_cbs_setPageSize_3006_0);
+  methods += new qt_gsi::GenericMethod ("setPageSize", "@brief Virtual method void QPrinter::setPageSize(QPagedPaintDevice::PageSize size)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setPageSize_3006_0, &_call_cbs_setPageSize_3006_0, &_set_callback_cbs_setPageSize_3006_0);
+  methods += new qt_gsi::GenericMethod ("setPageSizeMM", "@hide", false, &_init_cbs_setPageSizeMM_1875_0, &_call_cbs_setPageSizeMM_1875_0);
+  methods += new qt_gsi::GenericMethod ("setPageSizeMM", "@brief Virtual method void QPrinter::setPageSizeMM(const QSizeF &size)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setPageSizeMM_1875_0, &_call_cbs_setPageSizeMM_1875_0, &_set_callback_cbs_setPageSizeMM_1875_0);
+  methods += new qt_gsi::GenericMethod ("*sharedPainter", "@hide", true, &_init_cbs_sharedPainter_c0_0, &_call_cbs_sharedPainter_c0_0);
+  methods += new qt_gsi::GenericMethod ("*sharedPainter", "@brief Virtual method QPainter *QPrinter::sharedPainter()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_sharedPainter_c0_0, &_call_cbs_sharedPainter_c0_0, &_set_callback_cbs_sharedPainter_c0_0);
   return methods;
 }
 

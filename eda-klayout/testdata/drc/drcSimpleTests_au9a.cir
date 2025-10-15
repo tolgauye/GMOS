@@ -100,7 +100,7 @@ M$4 10 5 2 9 LVNMOS L=0.25U W=0.95U AS=0.21375P AD=0.40375P PS=1.4U PD=2.75U
 * net 5 IN
 * net 7 BULK
 * cell instance $1 r0 *1 0.3,5.05
-X$1 5 1 2 PMOS3
+X$1 5 2 1 PMOS3
 * cell instance $2 r0 *1 0.3,1.66
 X$2 5 2 3 NMOS2
 * cell instance $3 r0 *1 0.6,3.1
@@ -111,20 +111,41 @@ M$1 1 5 2 4 LVPMOS L=0.25U W=1.5U AS=0.6375P AD=0.6375P PS=3.85U PD=3.85U
 M$2 3 5 2 7 LVNMOS L=0.25U W=0.95U AS=0.40375P AD=0.40375P PS=2.75U PD=2.75U
 .ENDS INVX1
 
-.SUBCKT M1M2 $1
+* cell M1M2
+* pin 
+.SUBCKT M1M2 1
 .ENDS M1M2
 
-.SUBCKT TIE $1 $2
+* cell TIE
+* pin VDD
+* pin BULK,VSS
+.SUBCKT TIE 2 3
+* net 2 VDD
+* net 3 BULK,VSS
 .ENDS TIE
 
-.SUBCKT EMPTY $1 $2 $3
+* cell EMPTY
+* pin 
+* pin 
+* pin 
+.SUBCKT EMPTY 1 2 3
 .ENDS EMPTY
 
-.SUBCKT POLYM1 $1
+* cell POLYM1
+* pin 
+.SUBCKT POLYM1 1
 .ENDS POLYM1
 
-.SUBCKT NMOS2 $1 $2 $3
+* cell NMOS2
+* pin 
+* pin 
+* pin 
+.SUBCKT NMOS2 1 2 3
 .ENDS NMOS2
 
-.SUBCKT PMOS3 $1 $2 $3
+* cell PMOS3
+* pin 
+* pin 
+* pin 
+.SUBCKT PMOS3 1 2 3
 .ENDS PMOS3

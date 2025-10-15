@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -54,7 +54,7 @@ class OASISWriter;
  *  This object will collect objects  of the given kind and create
  *  OASIS repetitions then. For this, it creates a hash map collecting all 
  *  equivalent objects on "add" and their displacements. When "emit" is called,
- *  these displacements are converted to OASIS repetitions and
+ *  these displacements are converted to OASIS repetions and
  *  emitted to the writer.
  */
 
@@ -203,20 +203,17 @@ private:
   const db::Cell *mp_cell;
   int m_layer;
   int m_datatype;
-  bool m_write_context_info;
   std::vector<db::Vector> m_pointlist;
   tl::OutputMemoryStream m_cblock_buffer;
   tl::OutputMemoryStream m_cblock_compressed;
   bool m_in_cblock;
-  uint64_t m_propname_id;
-  uint64_t m_propstring_id;
-  uint64_t m_textstring_id;
+  unsigned long m_propname_id;
+  unsigned long m_propstring_id;
   bool m_proptables_written;
 
-  std::map <std::string, uint64_t> m_textstrings;
-  std::map <std::string, uint64_t> m_propnames;
-  std::map <std::string, uint64_t> m_propstrings;
-  std::map <db::cell_index_type, std::string> m_cell_nstrings;
+  std::map <std::string, unsigned long> m_textstrings;
+  std::map <std::string, unsigned long> m_propnames;
+  std::map <std::string, unsigned long> m_propstrings;
 
   typedef std::vector<tl::Variant> property_value_list;
 
@@ -224,23 +221,23 @@ private:
   modal_variable<db::cell_index_type> mm_placement_cell;
   modal_variable<db::Coord> mm_placement_x;
   modal_variable<db::Coord> mm_placement_y;
-  modal_variable<uint32_t> mm_layer;
-  modal_variable<uint32_t> mm_datatype;
-  modal_variable<uint32_t> mm_textlayer;
-  modal_variable<uint32_t> mm_texttype;
+  modal_variable<unsigned int> mm_layer;
+  modal_variable<unsigned int> mm_datatype;
+  modal_variable<unsigned int> mm_textlayer;
+  modal_variable<unsigned int> mm_texttype;
   modal_variable<db::Coord> mm_text_x;
   modal_variable<db::Coord> mm_text_y;
   modal_variable<std::string> mm_text_string;
   modal_variable<db::Coord> mm_geometry_x;
   modal_variable<db::Coord> mm_geometry_y;
-  modal_variable<db::coord_traits<db::Coord>::distance_type> mm_geometry_w;
-  modal_variable<db::coord_traits<db::Coord>::distance_type> mm_geometry_h;
+  modal_variable<db::Coord> mm_geometry_w;
+  modal_variable<db::Coord> mm_geometry_h;
   modal_variable< std::vector<db::Vector> > mm_polygon_point_list;
   modal_variable<db::Coord> mm_path_halfwidth;
   modal_variable<db::Coord> mm_path_start_extension;
   modal_variable<db::Coord> mm_path_end_extension;
   modal_variable< std::vector<db::Vector> > mm_path_point_list;
-  modal_variable<uint32_t> mm_ctrapezoid_type;
+  modal_variable<unsigned int> mm_ctrapezoid_type;
   modal_variable<db::Coord> mm_circle_radius;
   modal_variable<std::string> mm_last_property_name;
   modal_variable<bool> mm_last_property_is_sprop;
@@ -248,9 +245,6 @@ private:
 
   OASISWriterOptions m_options;
   tl::AbsoluteProgress m_progress;
-
-  void create_cell_nstrings (const db::Layout &layout, const std::set <db::cell_index_type> &cell_set);
-  const char *cell_nstring(db::cell_index_type cell_index);
 
   void write_record_id (char b);
   void write_byte (char b);
@@ -277,17 +271,19 @@ private:
 
   void write (double d);
   void write (float d);
-  void write (int64_t n);
-  void write (uint64_t n);
+  void write (long n);
+  void write (unsigned long n);
+  void write (long long n);
+  void write (unsigned long long n);
 
-  void write (int32_t n)
+  void write (int n)
   {
-    write (int64_t (n));
+    write (long (n));
   }
 
-  void write (uint32_t n)
+  void write (unsigned int n)
   {
-    write ((uint64_t) (n));
+    write ((unsigned long) (n));
   }
 
   void write (const Repetition &rep);
@@ -312,12 +308,6 @@ private:
   void write_pointlist (const std::vector<db::Vector> &pointlist, bool for_polygons);
 
   void write_inst_with_rep (const db::CellInstArray &inst, db::properties_id_type prop_id, const db::Vector &disp, const db::Repetition &rep);
-
-  void write_propname_table (size_t &propnames_table_pos, const std::vector<db::cell_index_type> &cells, const Layout &layout, const std::vector<std::pair<unsigned int, LayerProperties> > &layers);
-  void write_propstring_table (size_t &propstrings_table_pos, const std::vector<db::cell_index_type> &cells, const Layout &layout, const std::vector<std::pair<unsigned int, LayerProperties> > &layers);
-  void write_cellname_table (size_t &cellnames_table_pos, const std::vector<db::cell_index_type> &cells_by_index, const std::map<cell_index_type, size_t> *cell_positions, const Layout &layout);
-  void write_textstring_table (size_t &textstrings_table_pos, const std::vector<db::cell_index_type> &cells, const Layout &layout, const std::vector<std::pair<unsigned int, LayerProperties> > &layers);
-  void write_layername_table (size_t &layernames_table_pos, const std::vector<std::pair<unsigned int, LayerProperties> > &layers);
 };
 
 } // namespace db

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -20,7 +20,6 @@
 
 */
 
-#if defined(HAVE_QT)
 
 #include "laybasicConfig.h"
 #include "layMarker.h"
@@ -49,9 +48,9 @@ Navigator::Navigator (QWidget *parent)
 }
 
 img::Object *
-Navigator::setup (lay::Dispatcher *root, img::Object *img)
+Navigator::setup (lay::PluginRoot *root, img::Object *img)
 {
-  mp_view = new lay::LayoutViewWidget (0, false, root, this, lay::LayoutView::LV_Naked + lay::LayoutView::LV_NoZoom + lay::LayoutView::LV_NoServices + lay::LayoutView::LV_NoGrid);
+  mp_view = new lay::LayoutView (0, false, root, this, "img_navigator_view", lay::LayoutView::LV_Naked + lay::LayoutView::LV_NoZoom + lay::LayoutView::LV_NoServices + lay::LayoutView::LV_NoGrid);
   mp_view->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Expanding);
   mp_view->setMinimumWidth (100);
   mp_view->setMinimumHeight (100);
@@ -59,18 +58,18 @@ Navigator::setup (lay::Dispatcher *root, img::Object *img)
   QVBoxLayout *layout = new QVBoxLayout (this);
   layout->addWidget (mp_view);
   layout->setStretchFactor (mp_view, 1);
-  layout->setContentsMargins (0, 0, 0, 0);
+  layout->setMargin (0);
   layout->setSpacing (0);
   setLayout (layout);
 
-  mp_zoom_service = new lay::ZoomService (view ());
+  mp_zoom_service = new lay::ZoomService (mp_view);
 
-  img::Service *img_target = view ()->get_plugin<img::Service> ();
+  img::Service *img_target = mp_view->get_plugin<img::Service> ();
   if (img_target) {
     img_target->clear_images ();
     img::Object *img_object = img_target->insert_image (*img);
     img_object->set_matrix (db::Matrix3d (1.0));
-    view ()->zoom_fit ();
+    mp_view->zoom_fit ();
     return img_object;
   } else {
     return 0;
@@ -90,15 +89,10 @@ Navigator::~Navigator ()
   }
 }
 
-lay::LayoutView *Navigator::view ()
-{
-  return mp_view->view ();
-}
-
 void 
 Navigator::activate_service (lay::ViewService *service)
 {
-  view ()->canvas ()->activate (service);
+  mp_view->view_object_widget ()->activate (service);
 }
 
 void
@@ -119,4 +113,3 @@ Navigator::background_color (QColor c)
 
 }
 
-#endif

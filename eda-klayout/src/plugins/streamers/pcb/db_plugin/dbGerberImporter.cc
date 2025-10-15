@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -108,7 +108,7 @@ static std::string format_to_string (int l, int t, bool tz)
 // ---------------------------------------------------------------------------------------
 //  Implementation of GerberFile
 
-GerberFileReader::GerberFileReader (int warn_level)
+GerberFileReader::GerberFileReader ()
   : m_circle_points (64), m_digits_before (-1), m_digits_after (-1), m_omit_leading_zeroes (true),
     m_merge (false), m_inverse (false),
     m_dbu (0.001), m_unit (1000.0),
@@ -117,8 +117,7 @@ GerberFileReader::GerberFileReader (int warn_level)
     m_orot (0.0), m_os (1.0), m_omx (false), m_omy (false),
     m_ep (true /*report progress*/),
     mp_layout (0), mp_top_cell (0), mp_stream (0),
-    m_progress (tl::to_string (tr ("Reading Gerber file")), 10000),
-    m_warn_level (warn_level)
+    m_progress (tl::to_string (tr ("Reading Gerber file")), 10000)
 {
   m_progress.set_format (tl::to_string (tr ("%.0f MB")));
   m_progress.set_unit (1024 * 1024);
@@ -197,12 +196,8 @@ GerberFileReader::format_string () const
 }
 
 void 
-GerberFileReader::warn (const std::string &warning, int wl)
+GerberFileReader::warn (const std::string &warning)
 {
-  if (m_warn_level < wl) {
-    return;
-  }
-
   tl::warn << warning << tl::to_string (tr (" in line ")) << mp_stream->line_number () << tl::to_string (tr (" (file ")) << mp_stream->source () << ")";
 }
 
@@ -420,7 +415,7 @@ GerberFileReader::collect (db::Region &region)
 }
 
 void
-GerberFileReader::flush (const std::string &net_name)
+GerberFileReader::flush ()
 {
   process_clear_polygons ();
 
@@ -430,35 +425,14 @@ GerberFileReader::flush (const std::string &net_name)
     m_polygons.swap (merged_polygons);
   }
 
-  std::string nn = net_name;
   for (std::vector <unsigned int>::const_iterator t = m_target_layers.begin (); t != m_target_layers.end (); ++t) {
-
     db::Shapes &shapes = mp_top_cell->shapes (*t);
-
     for (std::vector<db::Polygon>::const_iterator p = m_polygons.begin (); p != m_polygons.end (); ++p) {
-
       shapes.insert (*p);
-
-      if (! nn.empty () && p->hull ().begin () != p->hull ().end ()) {
-        db::Point pt = *p->hull ().begin ();
-        shapes.insert (db::Text (nn, db::Trans (pt - db::Point ())));
-        nn.clear ();
-      }
-
     }
-
     for (std::vector<db::Path>::const_iterator p = m_lines.begin (); p != m_lines.end (); ++p) {
-
       shapes.insert (*p);
-
-      if (! nn.empty () && p->begin () != p->end ()) {
-        db::Point pt = *p->begin ();
-        shapes.insert (db::Text (nn, db::Trans (pt - db::Point ())));
-        nn.clear ();
-      }
-
     }
-
   }
 
   m_polygons.clear ();
@@ -546,18 +520,18 @@ GerberFile::layers_string () const
 //  Implementation of GerberImporter
 
 //  TODO: generalize this:
-std::vector <tl::shared_ptr<db::GerberFileReader> > get_readers (int warn_level)
+std::vector <tl::shared_ptr<db::GerberFileReader> > get_readers ()
 {
   std::vector <tl::shared_ptr<db::GerberFileReader> > readers;
-  readers.push_back (new db::GerberDrillFileReader (warn_level));
-  readers.push_back (new db::RS274XReader (warn_level));
+  readers.push_back (new db::GerberDrillFileReader ());
+  readers.push_back (new db::RS274XReader ());
   return readers;
 }
 
-GerberImporter::GerberImporter (int warn_level)
+GerberImporter::GerberImporter ()
   : m_cell_name ("PCB"), m_dbu (0.001), m_merge (false), 
     m_invert_negative_layers (false), m_border (5000), 
-    m_circle_points (64), m_warn_level (warn_level)
+    m_circle_points (64)
 {
   // .. nothing yet ..
 }
@@ -598,7 +572,7 @@ GerberImporter::scan (tl::TextInputStream &stream)
 {
   try {
 
-    std::vector <tl::shared_ptr<db::GerberFileReader> > readers = get_readers (0);
+    std::vector <tl::shared_ptr<db::GerberFileReader> > readers = get_readers ();
 
     //  determine the reader to use:
     for (std::vector <tl::shared_ptr<db::GerberFileReader> >::iterator r = readers.begin (); r != readers.end (); ++r) {
@@ -1015,7 +989,7 @@ GerberImporter::do_read (db::Layout &layout, db::cell_index_type cell_index)
       tl::InputStream input_file (fp);
       tl::TextInputStream stream (input_file);
 
-      std::vector <tl::shared_ptr<db::GerberFileReader> > readers = get_readers (m_warn_level);
+      std::vector <tl::shared_ptr<db::GerberFileReader> > readers = get_readers ();
 
       //  determine the reader to use:
       db::GerberFileReader *reader = 0;
@@ -1120,16 +1094,14 @@ public:
     //  .. nothing yet ..
   }
 
-  virtual const db::LayerMap &read (db::Layout &layout)
+  virtual const db::LayerMap &read (db::Layout &layout, const db::LoadLayoutOptions & /*options*/)
   {
-    return read (layout, db::LoadLayoutOptions ());
+    //  TODO: too simple, should provide at least a layer filtering.
+    return read (layout);
   }
 
-  virtual const db::LayerMap &read (db::Layout &layout, const db::LoadLayoutOptions &options)
+  virtual const db::LayerMap &read (db::Layout &layout)
   {
-    init (options);
-
-    //  TODO: too simple, should provide at least a layer filtering.
     db::GerberImportData data;
 
     std::string fn (m_stream.source ());
@@ -1139,16 +1111,14 @@ public:
 
     data.load (m_stream);
 
-    db::GerberImporter importer (warn_level ());
+    db::GerberImporter importer;
     data.setup_importer (&importer);
-
-    check_dbu (data.dbu);
 
     importer.read (layout);
 
     std::string lyr_file = data.get_layer_properties_file ();
     if (! lyr_file.empty ()) {
-      layout.add_meta_info ("layer-properties-file", db::MetaInfo ("Layer Properties File", lyr_file));
+      layout.add_meta_info (db::MetaInfo ("layer-properties-file", "Layer Properties File", lyr_file));
     }
 
     return m_layers;
@@ -1170,7 +1140,7 @@ class GerberFormatDeclaration
   virtual std::string format_name () const { return "GerberPCB"; }
   virtual std::string format_desc () const { return "Gerber PCB"; }
   virtual std::string format_title () const { return "Gerber PCB (project files)"; }
-  virtual std::string file_format () const { return "Gerber PCB project files (*.pcb *.PCB)"; }
+  virtual std::string file_format () const { return "Gerber PCB project files (*.pcb)"; }
 
   virtual bool detect (tl::InputStream &stream) const
   {

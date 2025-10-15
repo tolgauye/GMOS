@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -37,6 +37,7 @@
 #include <QTimerEvent>
 #include "gsiQt.h"
 #include "gsiQtCoreCommon.h"
+#include "gsiDeclQtCoreTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -345,7 +346,7 @@ static void _init_f_tr_4013 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("s");
   decl->add_arg<const char * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("c", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("c", true, "__null");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("n", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -357,7 +358,7 @@ static void _call_f_tr_4013 (const qt_gsi::GenericStaticMethod * /*decl*/, gsi::
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (__null, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QAbstractAnimation::tr (arg1, arg2, arg3));
 }
@@ -370,7 +371,7 @@ static void _init_f_trUtf8_4013 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("s");
   decl->add_arg<const char * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("c", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("c", true, "__null");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("n", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -382,7 +383,7 @@ static void _call_f_trUtf8_4013 (const qt_gsi::GenericStaticMethod * /*decl*/, g
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (__null, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QAbstractAnimation::trUtf8 (arg1, arg2, arg3));
 }
@@ -415,7 +416,6 @@ static gsi::Methods methods_QAbstractAnimation () {
   methods += gsi::qt_signal<QObject * > ("destroyed(QObject *)", "destroyed", gsi::arg("arg1"), "@brief Signal declaration for QAbstractAnimation::destroyed(QObject *)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<const qt_gsi::Converter<QAbstractAnimation::Direction>::target_type & > ("directionChanged(QAbstractAnimation::Direction)", "directionChanged", gsi::arg("arg1"), "@brief Signal declaration for QAbstractAnimation::directionChanged(QAbstractAnimation::Direction)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal ("finished()", "finished", "@brief Signal declaration for QAbstractAnimation::finished()\nYou can bind a procedure to this signal.");
-  methods += gsi::qt_signal<const QString & > ("objectNameChanged(const QString &)", "objectNameChanged", gsi::arg("objectName"), "@brief Signal declaration for QAbstractAnimation::objectNameChanged(const QString &objectName)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<const qt_gsi::Converter<QAbstractAnimation::State>::target_type &, const qt_gsi::Converter<QAbstractAnimation::State>::target_type & > ("stateChanged(QAbstractAnimation::State, QAbstractAnimation::State)", "stateChanged", gsi::arg("newState"), gsi::arg("oldState"), "@brief Signal declaration for QAbstractAnimation::stateChanged(QAbstractAnimation::State newState, QAbstractAnimation::State oldState)\nYou can bind a procedure to this signal.");
   methods += new qt_gsi::GenericStaticMethod ("tr", "@brief Static method QString QAbstractAnimation::tr(const char *s, const char *c, int n)\nThis method is static and can be called without an instance.", &_init_f_tr_4013, &_call_f_tr_4013);
   methods += new qt_gsi::GenericStaticMethod ("trUtf8", "@brief Static method QString QAbstractAnimation::trUtf8(const char *s, const char *c, int n)\nThis method is static and can be called without an instance.", &_init_f_trUtf8_4013, &_call_f_trUtf8_4013);
@@ -504,18 +504,18 @@ public:
     }
   }
 
-  //  [adaptor impl] bool QAbstractAnimation::eventFilter(QObject *watched, QEvent *event)
-  bool cbs_eventFilter_2411_0(QObject *watched, QEvent *event)
+  //  [adaptor impl] bool QAbstractAnimation::eventFilter(QObject *, QEvent *)
+  bool cbs_eventFilter_2411_0(QObject *arg1, QEvent *arg2)
   {
-    return QAbstractAnimation::eventFilter(watched, event);
+    return QAbstractAnimation::eventFilter(arg1, arg2);
   }
 
-  virtual bool eventFilter(QObject *watched, QEvent *event)
+  virtual bool eventFilter(QObject *arg1, QEvent *arg2)
   {
     if (cb_eventFilter_2411_0.can_issue()) {
-      return cb_eventFilter_2411_0.issue<QAbstractAnimation_Adaptor, bool, QObject *, QEvent *>(&QAbstractAnimation_Adaptor::cbs_eventFilter_2411_0, watched, event);
+      return cb_eventFilter_2411_0.issue<QAbstractAnimation_Adaptor, bool, QObject *, QEvent *>(&QAbstractAnimation_Adaptor::cbs_eventFilter_2411_0, arg1, arg2);
     } else {
-      return QAbstractAnimation::eventFilter(watched, event);
+      return QAbstractAnimation::eventFilter(arg1, arg2);
     }
   }
 
@@ -525,46 +525,39 @@ public:
     emit QAbstractAnimation::finished();
   }
 
-  //  [emitter impl] void QAbstractAnimation::objectNameChanged(const QString &objectName)
-  void emitter_QAbstractAnimation_objectNameChanged_4567(const QString &objectName)
-  {
-    __SUPPRESS_UNUSED_WARNING (objectName);
-    throw tl::Exception ("Can't emit private signal 'void QAbstractAnimation::objectNameChanged(const QString &objectName)'");
-  }
-
   //  [emitter impl] void QAbstractAnimation::stateChanged(QAbstractAnimation::State newState, QAbstractAnimation::State oldState)
   void emitter_QAbstractAnimation_stateChanged_5680(QAbstractAnimation::State newState, QAbstractAnimation::State oldState)
   {
     emit QAbstractAnimation::stateChanged(newState, oldState);
   }
 
-  //  [adaptor impl] void QAbstractAnimation::childEvent(QChildEvent *event)
-  void cbs_childEvent_1701_0(QChildEvent *event)
+  //  [adaptor impl] void QAbstractAnimation::childEvent(QChildEvent *)
+  void cbs_childEvent_1701_0(QChildEvent *arg1)
   {
-    QAbstractAnimation::childEvent(event);
+    QAbstractAnimation::childEvent(arg1);
   }
 
-  virtual void childEvent(QChildEvent *event)
+  virtual void childEvent(QChildEvent *arg1)
   {
     if (cb_childEvent_1701_0.can_issue()) {
-      cb_childEvent_1701_0.issue<QAbstractAnimation_Adaptor, QChildEvent *>(&QAbstractAnimation_Adaptor::cbs_childEvent_1701_0, event);
+      cb_childEvent_1701_0.issue<QAbstractAnimation_Adaptor, QChildEvent *>(&QAbstractAnimation_Adaptor::cbs_childEvent_1701_0, arg1);
     } else {
-      QAbstractAnimation::childEvent(event);
+      QAbstractAnimation::childEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QAbstractAnimation::customEvent(QEvent *event)
-  void cbs_customEvent_1217_0(QEvent *event)
+  //  [adaptor impl] void QAbstractAnimation::customEvent(QEvent *)
+  void cbs_customEvent_1217_0(QEvent *arg1)
   {
-    QAbstractAnimation::customEvent(event);
+    QAbstractAnimation::customEvent(arg1);
   }
 
-  virtual void customEvent(QEvent *event)
+  virtual void customEvent(QEvent *arg1)
   {
     if (cb_customEvent_1217_0.can_issue()) {
-      cb_customEvent_1217_0.issue<QAbstractAnimation_Adaptor, QEvent *>(&QAbstractAnimation_Adaptor::cbs_customEvent_1217_0, event);
+      cb_customEvent_1217_0.issue<QAbstractAnimation_Adaptor, QEvent *>(&QAbstractAnimation_Adaptor::cbs_customEvent_1217_0, arg1);
     } else {
-      QAbstractAnimation::customEvent(event);
+      QAbstractAnimation::customEvent(arg1);
     }
   }
 
@@ -598,18 +591,18 @@ public:
     }
   }
 
-  //  [adaptor impl] void QAbstractAnimation::timerEvent(QTimerEvent *event)
-  void cbs_timerEvent_1730_0(QTimerEvent *event)
+  //  [adaptor impl] void QAbstractAnimation::timerEvent(QTimerEvent *)
+  void cbs_timerEvent_1730_0(QTimerEvent *arg1)
   {
-    QAbstractAnimation::timerEvent(event);
+    QAbstractAnimation::timerEvent(arg1);
   }
 
-  virtual void timerEvent(QTimerEvent *event)
+  virtual void timerEvent(QTimerEvent *arg1)
   {
     if (cb_timerEvent_1730_0.can_issue()) {
-      cb_timerEvent_1730_0.issue<QAbstractAnimation_Adaptor, QTimerEvent *>(&QAbstractAnimation_Adaptor::cbs_timerEvent_1730_0, event);
+      cb_timerEvent_1730_0.issue<QAbstractAnimation_Adaptor, QTimerEvent *>(&QAbstractAnimation_Adaptor::cbs_timerEvent_1730_0, arg1);
     } else {
-      QAbstractAnimation::timerEvent(event);
+      QAbstractAnimation::timerEvent(arg1);
     }
   }
 
@@ -677,7 +670,7 @@ QAbstractAnimation_Adaptor::~QAbstractAnimation_Adaptor() { }
 
 static void _init_ctor_QAbstractAnimation_Adaptor_1302 (qt_gsi::GenericStaticMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("parent", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("parent", true, "0");
   decl->add_arg<QObject * > (argspec_0);
   decl->set_return_new<QAbstractAnimation_Adaptor> ();
 }
@@ -686,16 +679,16 @@ static void _call_ctor_QAbstractAnimation_Adaptor_1302 (const qt_gsi::GenericSta
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (nullptr, heap);
+  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (0, heap);
   ret.write<QAbstractAnimation_Adaptor *> (new QAbstractAnimation_Adaptor (arg1));
 }
 
 
-// void QAbstractAnimation::childEvent(QChildEvent *event)
+// void QAbstractAnimation::childEvent(QChildEvent *)
 
 static void _init_cbs_childEvent_1701_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QChildEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -733,11 +726,11 @@ static void _call_emitter_currentLoopChanged_767 (const qt_gsi::GenericMethod * 
 }
 
 
-// void QAbstractAnimation::customEvent(QEvent *event)
+// void QAbstractAnimation::customEvent(QEvent *)
 
 static void _init_cbs_customEvent_1217_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -761,7 +754,7 @@ static void _set_callback_cbs_customEvent_1217_0 (void *cls, const gsi::Callback
 
 static void _init_emitter_destroyed_1302 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("arg1", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("arg1", true, "0");
   decl->add_arg<QObject * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -770,7 +763,7 @@ static void _call_emitter_destroyed_1302 (const qt_gsi::GenericMethod * /*decl*/
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (nullptr, heap);
+  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (0, heap);
   ((QAbstractAnimation_Adaptor *)cls)->emitter_QAbstractAnimation_destroyed_1302 (arg1);
 }
 
@@ -859,13 +852,13 @@ static void _set_callback_cbs_event_1217_0 (void *cls, const gsi::Callback &cb)
 }
 
 
-// bool QAbstractAnimation::eventFilter(QObject *watched, QEvent *event)
+// bool QAbstractAnimation::eventFilter(QObject *, QEvent *)
 
 static void _init_cbs_eventFilter_2411_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("watched");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QObject * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("event");
+  static gsi::ArgSpecBase argspec_1 ("arg2");
   decl->add_arg<QEvent * > (argspec_1);
   decl->set_return<bool > ();
 }
@@ -914,24 +907,6 @@ static void _call_fp_isSignalConnected_c2394 (const qt_gsi::GenericMethod * /*de
   tl::Heap heap;
   const QMetaMethod &arg1 = gsi::arg_reader<const QMetaMethod & >() (args, heap);
   ret.write<bool > ((bool)((QAbstractAnimation_Adaptor *)cls)->fp_QAbstractAnimation_isSignalConnected_c2394 (arg1));
-}
-
-
-// emitter void QAbstractAnimation::objectNameChanged(const QString &objectName)
-
-static void _init_emitter_objectNameChanged_4567 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("objectName");
-  decl->add_arg<const QString & > (argspec_0);
-  decl->set_return<void > ();
-}
-
-static void _call_emitter_objectNameChanged_4567 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs & /*ret*/) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const QString &arg1 = gsi::arg_reader<const QString & >() (args, heap);
-  ((QAbstractAnimation_Adaptor *)cls)->emitter_QAbstractAnimation_objectNameChanged_4567 (arg1);
 }
 
 
@@ -1002,11 +977,11 @@ static void _call_emitter_stateChanged_5680 (const qt_gsi::GenericMethod * /*dec
 }
 
 
-// void QAbstractAnimation::timerEvent(QTimerEvent *event)
+// void QAbstractAnimation::timerEvent(QTimerEvent *)
 
 static void _init_cbs_timerEvent_1730_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QTimerEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -1109,36 +1084,35 @@ gsi::Class<QAbstractAnimation> &qtdecl_QAbstractAnimation ();
 static gsi::Methods methods_QAbstractAnimation_Adaptor () {
   gsi::Methods methods;
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QAbstractAnimation::QAbstractAnimation(QObject *parent)\nThis method creates an object of class QAbstractAnimation.", &_init_ctor_QAbstractAnimation_Adaptor_1302, &_call_ctor_QAbstractAnimation_Adaptor_1302);
-  methods += new qt_gsi::GenericMethod ("*childEvent", "@brief Virtual method void QAbstractAnimation::childEvent(QChildEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0);
-  methods += new qt_gsi::GenericMethod ("*childEvent", "@hide", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0, &_set_callback_cbs_childEvent_1701_0);
+  methods += new qt_gsi::GenericMethod ("*childEvent", "@hide", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0);
+  methods += new qt_gsi::GenericMethod ("*childEvent", "@brief Virtual method void QAbstractAnimation::childEvent(QChildEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0, &_set_callback_cbs_childEvent_1701_0);
   methods += new qt_gsi::GenericMethod ("emit_currentLoopChanged", "@brief Emitter for signal void QAbstractAnimation::currentLoopChanged(int currentLoop)\nCall this method to emit this signal.", false, &_init_emitter_currentLoopChanged_767, &_call_emitter_currentLoopChanged_767);
-  methods += new qt_gsi::GenericMethod ("*customEvent", "@brief Virtual method void QAbstractAnimation::customEvent(QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*customEvent", "@hide", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0, &_set_callback_cbs_customEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*customEvent", "@hide", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*customEvent", "@brief Virtual method void QAbstractAnimation::customEvent(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0, &_set_callback_cbs_customEvent_1217_0);
   methods += new qt_gsi::GenericMethod ("emit_destroyed", "@brief Emitter for signal void QAbstractAnimation::destroyed(QObject *)\nCall this method to emit this signal.", false, &_init_emitter_destroyed_1302, &_call_emitter_destroyed_1302);
   methods += new qt_gsi::GenericMethod ("emit_directionChanged", "@brief Emitter for signal void QAbstractAnimation::directionChanged(QAbstractAnimation::Direction)\nCall this method to emit this signal.", false, &_init_emitter_directionChanged_3310, &_call_emitter_directionChanged_3310);
-  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@brief Virtual method void QAbstractAnimation::disconnectNotify(const QMetaMethod &signal)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0);
-  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@hide", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0, &_set_callback_cbs_disconnectNotify_2394_0);
-  methods += new qt_gsi::GenericMethod ("duration", "@brief Virtual method int QAbstractAnimation::duration()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_duration_c0_0, &_call_cbs_duration_c0_0);
-  methods += new qt_gsi::GenericMethod ("duration", "@hide", true, &_init_cbs_duration_c0_0, &_call_cbs_duration_c0_0, &_set_callback_cbs_duration_c0_0);
-  methods += new qt_gsi::GenericMethod ("*event", "@brief Virtual method bool QAbstractAnimation::event(QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0);
-  methods += new qt_gsi::GenericMethod ("*event", "@hide", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0, &_set_callback_cbs_event_1217_0);
-  methods += new qt_gsi::GenericMethod ("eventFilter", "@brief Virtual method bool QAbstractAnimation::eventFilter(QObject *watched, QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0);
-  methods += new qt_gsi::GenericMethod ("eventFilter", "@hide", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0, &_set_callback_cbs_eventFilter_2411_0);
+  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@hide", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0);
+  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@brief Virtual method void QAbstractAnimation::disconnectNotify(const QMetaMethod &signal)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0, &_set_callback_cbs_disconnectNotify_2394_0);
+  methods += new qt_gsi::GenericMethod ("duration", "@hide", true, &_init_cbs_duration_c0_0, &_call_cbs_duration_c0_0);
+  methods += new qt_gsi::GenericMethod ("duration", "@brief Virtual method int QAbstractAnimation::duration()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_duration_c0_0, &_call_cbs_duration_c0_0, &_set_callback_cbs_duration_c0_0);
+  methods += new qt_gsi::GenericMethod ("*event", "@hide", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0);
+  methods += new qt_gsi::GenericMethod ("*event", "@brief Virtual method bool QAbstractAnimation::event(QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0, &_set_callback_cbs_event_1217_0);
+  methods += new qt_gsi::GenericMethod ("eventFilter", "@hide", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0);
+  methods += new qt_gsi::GenericMethod ("eventFilter", "@brief Virtual method bool QAbstractAnimation::eventFilter(QObject *, QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0, &_set_callback_cbs_eventFilter_2411_0);
   methods += new qt_gsi::GenericMethod ("emit_finished", "@brief Emitter for signal void QAbstractAnimation::finished()\nCall this method to emit this signal.", false, &_init_emitter_finished_0, &_call_emitter_finished_0);
   methods += new qt_gsi::GenericMethod ("*isSignalConnected", "@brief Method bool QAbstractAnimation::isSignalConnected(const QMetaMethod &signal)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_isSignalConnected_c2394, &_call_fp_isSignalConnected_c2394);
-  methods += new qt_gsi::GenericMethod ("emit_objectNameChanged", "@brief Emitter for signal void QAbstractAnimation::objectNameChanged(const QString &objectName)\nCall this method to emit this signal.", false, &_init_emitter_objectNameChanged_4567, &_call_emitter_objectNameChanged_4567);
   methods += new qt_gsi::GenericMethod ("*receivers", "@brief Method int QAbstractAnimation::receivers(const char *signal)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_receivers_c1731, &_call_fp_receivers_c1731);
   methods += new qt_gsi::GenericMethod ("*sender", "@brief Method QObject *QAbstractAnimation::sender()\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_sender_c0, &_call_fp_sender_c0);
   methods += new qt_gsi::GenericMethod ("*senderSignalIndex", "@brief Method int QAbstractAnimation::senderSignalIndex()\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_senderSignalIndex_c0, &_call_fp_senderSignalIndex_c0);
   methods += new qt_gsi::GenericMethod ("emit_stateChanged", "@brief Emitter for signal void QAbstractAnimation::stateChanged(QAbstractAnimation::State newState, QAbstractAnimation::State oldState)\nCall this method to emit this signal.", false, &_init_emitter_stateChanged_5680, &_call_emitter_stateChanged_5680);
-  methods += new qt_gsi::GenericMethod ("*timerEvent", "@brief Virtual method void QAbstractAnimation::timerEvent(QTimerEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0);
-  methods += new qt_gsi::GenericMethod ("*timerEvent", "@hide", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0, &_set_callback_cbs_timerEvent_1730_0);
-  methods += new qt_gsi::GenericMethod ("*updateCurrentTime", "@brief Virtual method void QAbstractAnimation::updateCurrentTime(int currentTime)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_updateCurrentTime_767_0, &_call_cbs_updateCurrentTime_767_0);
-  methods += new qt_gsi::GenericMethod ("*updateCurrentTime", "@hide", false, &_init_cbs_updateCurrentTime_767_0, &_call_cbs_updateCurrentTime_767_0, &_set_callback_cbs_updateCurrentTime_767_0);
-  methods += new qt_gsi::GenericMethod ("*updateDirection", "@brief Virtual method void QAbstractAnimation::updateDirection(QAbstractAnimation::Direction direction)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_updateDirection_3310_0, &_call_cbs_updateDirection_3310_0);
-  methods += new qt_gsi::GenericMethod ("*updateDirection", "@hide", false, &_init_cbs_updateDirection_3310_0, &_call_cbs_updateDirection_3310_0, &_set_callback_cbs_updateDirection_3310_0);
-  methods += new qt_gsi::GenericMethod ("*updateState", "@brief Virtual method void QAbstractAnimation::updateState(QAbstractAnimation::State newState, QAbstractAnimation::State oldState)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_updateState_5680_0, &_call_cbs_updateState_5680_0);
-  methods += new qt_gsi::GenericMethod ("*updateState", "@hide", false, &_init_cbs_updateState_5680_0, &_call_cbs_updateState_5680_0, &_set_callback_cbs_updateState_5680_0);
+  methods += new qt_gsi::GenericMethod ("*timerEvent", "@hide", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0);
+  methods += new qt_gsi::GenericMethod ("*timerEvent", "@brief Virtual method void QAbstractAnimation::timerEvent(QTimerEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0, &_set_callback_cbs_timerEvent_1730_0);
+  methods += new qt_gsi::GenericMethod ("*updateCurrentTime", "@hide", false, &_init_cbs_updateCurrentTime_767_0, &_call_cbs_updateCurrentTime_767_0);
+  methods += new qt_gsi::GenericMethod ("*updateCurrentTime", "@brief Virtual method void QAbstractAnimation::updateCurrentTime(int currentTime)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_updateCurrentTime_767_0, &_call_cbs_updateCurrentTime_767_0, &_set_callback_cbs_updateCurrentTime_767_0);
+  methods += new qt_gsi::GenericMethod ("*updateDirection", "@hide", false, &_init_cbs_updateDirection_3310_0, &_call_cbs_updateDirection_3310_0);
+  methods += new qt_gsi::GenericMethod ("*updateDirection", "@brief Virtual method void QAbstractAnimation::updateDirection(QAbstractAnimation::Direction direction)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_updateDirection_3310_0, &_call_cbs_updateDirection_3310_0, &_set_callback_cbs_updateDirection_3310_0);
+  methods += new qt_gsi::GenericMethod ("*updateState", "@hide", false, &_init_cbs_updateState_5680_0, &_call_cbs_updateState_5680_0);
+  methods += new qt_gsi::GenericMethod ("*updateState", "@brief Virtual method void QAbstractAnimation::updateState(QAbstractAnimation::State newState, QAbstractAnimation::State oldState)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_updateState_5680_0, &_call_cbs_updateState_5680_0, &_set_callback_cbs_updateState_5680_0);
   return methods;
 }
 

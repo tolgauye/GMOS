@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -669,26 +669,6 @@ static tl::Variant get_dbox (const db::Shape *s)
   }
 }
 
-static tl::Variant get_rectangle (const db::Shape *s)
-{
-  db::Shape::box_type b = s->rectangle ();
-  if (! b.empty ()) {
-    return tl::Variant (b);
-  } else {
-    return tl::Variant ();
-  }
-}
-
-static tl::Variant get_drectangle (const db::Shape *s)
-{
-  db::Shape::box_type b = s->rectangle ();
-  if (! b.empty ()) {
-    return tl::Variant (db::CplxTrans (shape_dbu (s)) * b);
-  } else {
-    return tl::Variant ();
-  }
-}
-
 static tl::Variant get_edge (const db::Shape *s)
 {
   db::Shape::edge_type p;
@@ -723,26 +703,6 @@ static tl::Variant get_dedge_pair (const db::Shape *s)
 {
   db::Shape::edge_pair_type p;
   if (s->edge_pair (p)) {
-    return tl::Variant (db::CplxTrans (shape_dbu (s)) * p);
-  } else {
-    return tl::Variant ();
-  }
-}
-
-static tl::Variant get_point (const db::Shape *s)
-{
-  db::Shape::point_type p;
-  if (s->point (p)) {
-    return tl::Variant (p);
-  } else {
-    return tl::Variant ();
-  }
-}
-
-static tl::Variant get_dpoint (const db::Shape *s)
-{
-  db::Shape::point_type p;
-  if (s->point (p)) {
     return tl::Variant (db::CplxTrans (shape_dbu (s)) * p);
   } else {
     return tl::Variant ();
@@ -823,7 +783,7 @@ static void set_shape_layer_index (db::Shape *s, unsigned int layer)
     throw tl::Exception (tl::to_string (tr ("Shape does not belong to a layout")));
   }
 
-  if (! layout->is_valid_layer (layer) && ! layout->is_special_layer (layer)) {
+  if (! layout->is_valid_layer (layer)) {
     throw tl::Exception (tl::to_string (tr ("Layer index does not point to a valid layer")));
   }
 
@@ -939,46 +899,69 @@ static void delete_property (db::Shape *s, const tl::Variant &key)
     return;
   }
 
-  db::PropertiesSet props = db::properties (id);
-  props.erase (key);
-  set_prop_id (s, db::properties_id (props));
+  db::Layout *layout = layout_ptr (s);
+  if (! layout) {
+    throw tl::Exception (tl::to_string (tr ("Shape does not reside inside a layout - cannot delete properties")));
+  }
+
+  std::pair<bool, db::property_names_id_type> nid = layout->properties_repository ().get_id_of_name (key);
+  if (! nid.first) {
+    return;
+  }
+
+  db::PropertiesRepository::properties_set props = layout->properties_repository ().properties (id);
+  db::PropertiesRepository::properties_set::iterator p = props.find (nid.second);
+  if (p != props.end ()) {
+    props.erase (p);
+  }
+  set_prop_id (s, layout->properties_repository ().properties_id (props));
 }
 
 static void set_property (db::Shape *s, const tl::Variant &key, const tl::Variant &value)
 {
   db::properties_id_type id = s->prop_id ();
 
-  db::PropertiesSet props = db::properties (id);
-  props.erase (key);
-  props.insert (key, value);
-  set_prop_id (s, db::properties_id (props));
-}
+  db::Layout *layout = layout_ptr (s);
+  if (! layout) {
+    throw tl::Exception (tl::to_string (tr ("Shape does not reside inside a layout - cannot set properties")));
+  }
 
-static void set_properties (db::Shape *shape, const std::map<tl::Variant, tl::Variant> &dict)
-{
-  set_prop_id (shape, db::properties_id (dict));
-}
+  db::property_names_id_type nid = layout->properties_repository ().prop_name_id (key);
 
-static void clear_properties (db::Shape *shape)
-{
-  db::Shapes *shapes = shapes_checked (shape);
-  *shape = shapes->clear_properties (*shape);
+  db::PropertiesRepository::properties_set props = layout->properties_repository ().properties (id);
+  db::PropertiesRepository::properties_set::iterator p = props.find (nid);
+  if (p != props.end ()) {
+    p->second = value;
+  } else {
+    props.insert (std::make_pair (nid, value));
+  }
+  set_prop_id (s, layout->properties_repository ().properties_id (props));
 }
 
 static tl::Variant get_property (const db::Shape *s, const tl::Variant &key)
 {
   db::properties_id_type id = s->prop_id ();
+  if (id == 0) {
+    return tl::Variant ();
+  }
 
-  const db::PropertiesSet &props = db::properties (id);
-  return props.value (key);
-}
+  const db::Layout *layout = layout_ptr_const (s);
+  if (! layout) {
+    throw tl::Exception (tl::to_string (tr ("Shape does not reside inside a layout - cannot retrieve properties")));
+  }
 
-static tl::Variant get_properties (const db::Shape *s)
-{
-  db::properties_id_type id = s->prop_id ();
+  std::pair<bool, db::property_names_id_type> nid = layout->properties_repository ().get_id_of_name (key);
+  if (! nid.first) {
+    return tl::Variant ();
+  }
 
-  const db::PropertiesSet &props = db::properties (id);
-  return props.to_dict_var ();
+  const db::PropertiesRepository::properties_set &props = layout->properties_repository ().properties (id);
+  db::PropertiesRepository::properties_set::const_iterator p = props.find (nid.second);
+  if (p != props.end ()) {
+    return p->second;
+  } else {
+    return tl::Variant ();
+  }
 }
 
 namespace
@@ -1125,7 +1108,6 @@ static int t_simplePolygonPtrArray ()       { return db::Shape::SimplePolygonPtr
 static int t_simplePolygonPtrArrayMember () { return db::Shape::SimplePolygonPtrArrayMember; }
 static int t_edge ()                        { return db::Shape::Edge; }
 static int t_edge_pair ()                   { return db::Shape::EdgePair; }
-static int t_point ()                       { return db::Shape::Point; }
 static int t_path ()                        { return db::Shape::Path; }
 static int t_pathRef ()                     { return db::Shape::PathRef; }
 static int t_pathPtrArray ()                { return db::Shape::PathPtrArray; }
@@ -1148,7 +1130,7 @@ Class<db::Shape> decl_Shape ("db", "Shape",
     "\n"
     "The \\Layout object can be used to retrieve the actual properties associated with the ID."
   ) +
-  gsi::method_ext ("prop_id=", &set_prop_id, gsi::arg ("id"),
+  gsi::method_ext ("prop_id=", &set_prop_id,
     "@brief Sets the properties ID of this shape\n"
     "\n"
     "The \\Layout object can be used to retrieve an ID for a given set of properties. "
@@ -1174,8 +1156,9 @@ Class<db::Shape> decl_Shape ("db", "Shape",
     "\n"
     "This method has been introduced in version 0.22."
   ) +
-  gsi::method_ext ("cell=", &set_cell_ptr, gsi::arg ("cell"),
+  gsi::method_ext ("cell=", &set_cell_ptr,
     "@brief Moves the shape to a different cell\n"
+    "@args cell\n"
     "\n"
     "Both the current and the target cell must reside in the same layout.\n"
     "\n"
@@ -1188,8 +1171,9 @@ Class<db::Shape> decl_Shape ("db", "Shape",
     "\n"
     "This method has been introduced in version 0.22."
   ) +
-  gsi::method_ext ("box=", &set_shape<db::Box>, gsi::arg ("box"),
+  gsi::method_ext ("box=", &set_shape<db::Box>,
     "@brief Replaces the shape by the given box\n"
+    "@args box\n"
     "This method replaces the shape by the given box. This method can only be called "
     "for editable layouts. It does not change the user properties of the shape.\n"
     "Calling this method will invalidate any iterators. It should not be called inside a "
@@ -1204,8 +1188,9 @@ Class<db::Shape> decl_Shape ("db", "Shape",
     "\n"
     "This method has been introduced in version 0.25."
   ) +
-  gsi::method_ext ("path=", &set_shape<db::Path>, gsi::arg ("box"),
+  gsi::method_ext ("path=", &set_shape<db::Path>,
     "@brief Replaces the shape by the given path object\n"
+    "@args box\n"
     "This method replaces the shape by the given path object. This method can only be called "
     "for editable layouts. It does not change the user properties of the shape.\n"
     "Calling this method will invalidate any iterators. It should not be called inside a "
@@ -1220,8 +1205,9 @@ Class<db::Shape> decl_Shape ("db", "Shape",
     "\n"
     "This method has been introduced in version 0.25."
   ) +
-  gsi::method_ext ("polygon=", &set_shape<db::Polygon>, gsi::arg ("box"),
+  gsi::method_ext ("polygon=", &set_shape<db::Polygon>,
     "@brief Replaces the shape by the given polygon object\n"
+    "@args box\n"
     "This method replaces the shape by the given polygon object. This method can only be called "
     "for editable layouts. It does not change the user properties of the shape.\n"
     "Calling this method will invalidate any iterators. It should not be called inside a "
@@ -1236,8 +1222,9 @@ Class<db::Shape> decl_Shape ("db", "Shape",
     "\n"
     "This method has been introduced in version 0.25."
   ) +
-  gsi::method_ext ("text=", &set_shape<db::Text>, gsi::arg ("box"),
+  gsi::method_ext ("text=", &set_shape<db::Text>,
     "@brief Replaces the shape by the given text object\n"
+    "@args box\n"
     "This method replaces the shape by the given text object. This method can only be called "
     "for editable layouts. It does not change the user properties of the shape.\n"
     "Calling this method will invalidate any iterators. It should not be called inside a "
@@ -1254,6 +1241,7 @@ Class<db::Shape> decl_Shape ("db", "Shape",
   ) +
   gsi::method_ext ("edge=", &set_shape<db::Edge>, gsi::arg("edge"),
     "@brief Replaces the shape by the given edge\n"
+    "@args box\n"
     "This method replaces the shape by the given edge. This method can only be called "
     "for editable layouts. It does not change the user properties of the shape.\n"
     "Calling this method will invalidate any iterators. It should not be called inside a "
@@ -1268,24 +1256,9 @@ Class<db::Shape> decl_Shape ("db", "Shape",
     "\n"
     "This method has been introduced in version 0.25."
   ) +
-  gsi::method_ext ("point=", &set_shape<db::Point>, gsi::arg("point"),
-    "@brief Replaces the shape by the given point\n"
-    "This method replaces the shape by the given point. This method can only be called "
-    "for editable layouts. It does not change the user properties of the shape.\n"
-    "Calling this method will invalidate any iterators. It should not be called inside a "
-    "loop iterating over shapes.\n"
-    "\n"
-    "This method has been introduced in version 0.28."
-  ) +
-  gsi::method_ext ("point=|dpoint=", &set_dshape<db::DPoint>, gsi::arg("point"),
-    "@brief Replaces the shape by the given point (in micrometer units)\n"
-    "This method replaces the shape by the given point, like \\point= with a \\Point argument does. "
-    "This version translates the point from micrometer units to database units internally.\n"
-    "\n"
-    "This method has been introduced in version 0.28."
-  ) +
   gsi::method_ext ("edge_pair=", &set_shape<db::EdgePair>, gsi::arg("edge_pair"),
     "@brief Replaces the shape by the given edge pair\n"
+    "@args box\n"
     "This method replaces the shape by the given edge pair. This method can only be called "
     "for editable layouts. It does not change the user properties of the shape.\n"
     "Calling this method will invalidate any iterators. It should not be called inside a "
@@ -1300,8 +1273,9 @@ Class<db::Shape> decl_Shape ("db", "Shape",
     "\n"
     "This method has been introduced in version 0.26."
   ) +
-  gsi::method_ext ("delete_property", &delete_property, gsi::arg ("key"),
+  gsi::method_ext ("delete_property", &delete_property,
     "@brief Deletes the user property with the given key\n"
+    "@args key\n"
     "This method is a convenience method that deletes the property with the given key. "
     "It does nothing if no property with that key exists. Using that method is more "
     "convenient than creating a new property set with a new ID and assigning that properties ID.\n"
@@ -1311,51 +1285,27 @@ Class<db::Shape> decl_Shape ("db", "Shape",
     "\n"
     "This method has been introduced in version 0.22."
   ) + 
-  gsi::method_ext ("set_property", &set_property, gsi::arg ("key"), gsi::arg ("value"),
+  gsi::method_ext ("set_property", &set_property,
     "@brief Sets the user property with the given key to the given value\n"
+    "@args key, value\n"
     "This method is a convenience method that sets the property with the given key to the given value. "
     "If no property with that key exists, it will create one. Using that method is more "
     "convenient than creating a new property set with a new ID and assigning that properties ID.\n"
     "This method may change the properties ID. "
-    "Note: GDS only supports integer keys. OASIS supports numeric and string keys. "
     "Calling this method will invalidate any iterators. It should not be called inside a "
     "loop iterating over shapes.\n"
     "\n"
     "This method has been introduced in version 0.22."
   ) + 
-  gsi::method_ext ("set_properties", &set_properties, gsi::arg ("dict"),
-    "@brief Sets all user properties from the given dict\n"
-    "This method is a convenience method that replaces all user properties of the shape. Using that method is more "
-    "convenient than creating a new property set with a new ID and assigning that properties ID.\n"
-    "This method may change the properties ID. "
-    "Note: GDS only supports integer keys. OASIS supports numeric and string keys. "
-    "Calling this method may invalidate any iterators. It should not be called inside a "
-    "loop iterating over instances.\n"
-    "\n"
-    "This method has been introduced in version 0.30.3."
-  ) +
-  gsi::method_ext ("clear_properties", &clear_properties,
-    "@brief Clears all user properties\n"
-    "This method will remove all user properties. After it has been called, \\has_prop_id? will return false.\n"
-    "Calling this method may invalidate any iterators. It should not be called inside a "
-    "loop iterating over instances.\n"
-    "\n"
-    "This method has been introduced in version 0.30.3."
-  ) +
-  gsi::method_ext ("property", &get_property, gsi::arg ("key"),
+  gsi::method_ext ("property", &get_property,
     "@brief Gets the user property with the given key\n"
+    "@args key\n"
     "This method is a convenience method that gets the property with the given key. "
-    "If no property with that key exists, it will return nil. Using that method is more "
-    "convenient than using the layout object and the properties ID to retrieve the property value.\n"
+    "If no property with that key does not exist, it will return nil. Using that method is more "
+    "convenient than using the layout object and the properties ID to retrieve the property value. "
     "\n"
     "This method has been introduced in version 0.22."
   ) + 
-  gsi::method_ext ("properties", &get_properties,
-    "@brief Gets the user properties\n"
-    "This method is a convenience method that gets the properties of the shape as a single hash.\n"
-    "\n"
-    "This method has been introduced in version 0.29.5."
-  ) +
   gsi::iterator ("each_point", &db::Shape::begin_point, &db::Shape::end_point,
     "@brief Iterates over all points of the object\n"
     "\n"
@@ -1386,8 +1336,9 @@ Class<db::Shape> decl_Shape ("db", "Shape",
     "\n"
     "This method has been introduced in version 0.25."
   ) +
-  gsi::iterator ("each_point_hole", &db::Shape::begin_hole, &db::Shape::end_hole, gsi::arg ("hole_index"),
+  gsi::iterator ("each_point_hole", &db::Shape::begin_hole, &db::Shape::end_hole,
     "@brief Iterates over the points of a hole contour\n"
+    "@args hole_index\n"
     "\n"
     "This method applies to polygons and delivers all points of the respective hole contour.\n"
     "It will throw an exception for other objects.\n"
@@ -1460,8 +1411,9 @@ Class<db::Shape> decl_Shape ("db", "Shape",
     "\n"
     "This method has been introduced in version 0.25.\n"
   ) +
-  gsi::method_ext ("box_width=", &set_box_width, gsi::arg ("w"),
+  gsi::method_ext ("box_width=", &set_box_width,
     "@brief Sets the width of the box\n"
+    "@args w\n"
     "\n"
     "Applies to boxes only. Changes the width of the box and throws an exception if the shape is not a box.\n"
     "\n"
@@ -1469,6 +1421,7 @@ Class<db::Shape> decl_Shape ("db", "Shape",
   ) +
   gsi::method_ext ("box_dwidth=", &set_box_dwidth, gsi::arg ("w"),
     "@brief Sets the width of the box in micrometer units\n"
+    "@args w\n"
     "\n"
     "Applies to boxes only. Changes the width of the box to the value given in micrometer units and throws an exception if the shape is not a box.\n"
     "Translation to database units happens internally.\n"
@@ -1489,8 +1442,9 @@ Class<db::Shape> decl_Shape ("db", "Shape",
     "\n"
     "This method has been introduced in version 0.25.\n"
   ) +
-  gsi::method_ext ("box_height=", &set_box_height, gsi::arg ("h"),
+  gsi::method_ext ("box_height=", &set_box_height,
     "@brief Sets the height of the box\n"
+    "@args h\n"
     "\n"
     "Applies to boxes only. Changes the height of the box and throws an exception if the shape is not a box.\n"
     "\n"
@@ -1647,7 +1601,7 @@ Class<db::Shape> decl_Shape ("db", "Shape",
   gsi::method_ext ("dsimple_polygon", &get_dsimple_polygon,
     "@brief Returns the simple polygon object in micrometer units\n"
     "\n"
-    "Returns the simple polygon object that this shape refers to or converts the object to a simple polygon. "
+    "Returns the simplep olygon object that this shape refers to or converts the object to a simplepolygon. "
     "The method returns the same object than \\simple_polygon, but translates it to micrometer units internally.\n"
     "\n"
     "This method has been introduced in version 0.25.\n"
@@ -1701,8 +1655,9 @@ Class<db::Shape> decl_Shape ("db", "Shape",
     "\n"
     "Applies to paths only. Will throw an exception if the object is not a path.\n"
   ) +
-  gsi::method_ext ("round_path=", &set_round_path, gsi::arg ("r"),
+  gsi::method_ext ("round_path=", &set_round_path,
     "@brief The path will be a round-ended path if this property is set to true\n"
+    "@args r\n"
     "\n"
     "Applies to paths only. Will throw an exception if the object is not a path.\n"
     "Please note that the extensions will apply as well. To get a path with circular ends, set the begin and "
@@ -1819,23 +1774,6 @@ Class<db::Shape> decl_Shape ("db", "Shape",
     "\n"
     "This method has been added in version 0.26.\n"
   ) +
-  gsi::method ("is_point?", &db::Shape::is_point,
-    "@brief Returns true, if the object is an point\n"
-    "\n"
-    "This method has been introduced in version 0.28.\n"
-  ) +
-  gsi::method_ext ("point", &get_point,
-    "@brief Returns the point object\n"
-    "\n"
-    "This method has been introduced in version 0.28.\n"
-  ) +
-  gsi::method_ext ("dpoint", &get_dpoint,
-    "@brief Returns the point object as a \\DPoint object in micrometer units\n"
-    "See \\point for a description of this method. This method returns the point after translation to "
-    "micrometer units.\n"
-    "\n"
-    "This method has been introduced in version 0.28.\n"
-  ) +
   gsi::method ("is_text?", &db::Shape::is_text,
     "@brief Returns true, if the object is a text\n"
   ) +
@@ -1856,8 +1794,9 @@ Class<db::Shape> decl_Shape ("db", "Shape",
     "\n"
     "Applies to texts only. Will throw an exception if the object is not a text.\n"
   ) +
-  gsi::method_ext ("text_string=", &set_text_string, gsi::arg ("string"),
+  gsi::method_ext ("text_string=", &set_text_string,
     "@brief Sets the text string\n"
+    "@args string\n"
     "\n"
     "Applies to texts only. Will throw an exception if the object is not a text.\n"
     "\n"
@@ -1868,8 +1807,9 @@ Class<db::Shape> decl_Shape ("db", "Shape",
     "\n"
     "Applies to texts only. Will throw an exception if the object is not a text.\n"
   ) +
-  gsi::method_ext ("text_rot=", &set_text_rot, gsi::arg ("o"),
+  gsi::method_ext ("text_rot=", &set_text_rot,
     "@brief Sets the text's orientation code (see \\Trans)\n"
+    "@args o\n"
     "\n"
     "Applies to texts only. Will throw an exception if the object is not a text.\n"
   ) +
@@ -1933,6 +1873,7 @@ Class<db::Shape> decl_Shape ("db", "Shape",
   ) +
   gsi::method_ext ("text_size=", &set_text_size, gsi::arg ("size"),
     "@brief Sets the text size\n"
+    "@args size\n"
     "\n"
     "Applies to texts only. Will throw an exception if the object is not a text.\n"
     "\n"
@@ -1940,6 +1881,7 @@ Class<db::Shape> decl_Shape ("db", "Shape",
   ) +
   gsi::method_ext ("text_dsize=", &set_text_dsize, gsi::arg ("size"),
     "@brief Sets the text size in micrometer units\n"
+    "@args size\n"
     "\n"
     "Applies to texts only. Will throw an exception if the object is not a text.\n"
     "\n"
@@ -1950,8 +1892,9 @@ Class<db::Shape> decl_Shape ("db", "Shape",
     "\n"
     "Applies to texts only. Will throw an exception if the object is not a text.\n"
   ) +
-  gsi::method_ext ("text_font=", &set_text_font, gsi::arg ("font"),
+  gsi::method_ext ("text_font=", &set_text_font,
     "@brief Sets the text's font\n"
+    "@args font\n"
     "\n"
     "Applies to texts only. Will throw an exception if the object is not a text.\n"
     "\n"
@@ -1965,8 +1908,9 @@ Class<db::Shape> decl_Shape ("db", "Shape",
     "\n"
     "This method has been introduced in version 0.22.\n"
   ) +
-  gsi::method_ext ("text_halign=", &set_text_halign, gsi::arg ("a"),
+  gsi::method_ext ("text_halign=", &set_text_halign,
     "@brief Sets the text's horizontal alignment\n"
+    "@args a\n"
     "\n"
     "Applies to texts only. Will throw an exception if the object is not a text.\n"
     "See \\text_halign for a description of that property.\n"
@@ -1981,8 +1925,9 @@ Class<db::Shape> decl_Shape ("db", "Shape",
     "\n"
     "This method has been introduced in version 0.22.\n"
   ) +
-  gsi::method_ext ("text_valign=", &set_text_valign, gsi::arg ("a"),
+  gsi::method_ext ("text_valign=", &set_text_valign,
     "@brief Sets the text's vertical alignment\n"
+    "@args a\n"
     "\n"
     "Applies to texts only. Will throw an exception if the object is not a text.\n"
     "See \\text_valign for a description of that property.\n"
@@ -2003,22 +1948,6 @@ Class<db::Shape> decl_Shape ("db", "Shape",
     "micrometer units.\n"
     "\n"
     "This method has been added in version 0.25.\n"
-  ) +
-  gsi::method_ext ("rectangle", &get_rectangle,
-    "@brief Gets the rectangle if the object represents one or nil if not\n"
-    "\n"
-    "If the shape represents a rectangle - i.e. a box or box polygon, a path with two points and no round ends - "
-    "this method returns the box. If not, nil is returned.\n"
-    "\n"
-    "This method has been introduced in version 0.29."
-  ) +
-  gsi::method_ext ("drectangle", &get_drectangle,
-    "@brief Gets the rectangle in micron units if the object represents one or nil if not\n"
-    "\n"
-    "If the shape represents a rectangle - i.e. a box or box polygon, a path with two points and no round ends - "
-    "this method returns the box. If not, nil is returned.\n"
-    "\n"
-    "This method has been introduced in version 0.29."
   ) +
   gsi::method ("is_user_object?", &db::Shape::is_user_object,
     "@brief Returns true if the shape is a user defined object\n"
@@ -2107,8 +2036,9 @@ Class<db::Shape> decl_Shape ("db", "Shape",
     "\n"
     "This method has been added in version 0.23.\n"
   ) +
-  gsi::method_ext ("layer_info=", &set_shape_layer, gsi::arg ("layer_info"),
+  gsi::method_ext ("layer_info=", &set_shape_layer,
     "@brief Moves the shape to a layer given by a \\LayerInfo object\n"
+    "@args layer_info\n"
     "If no layer with the given properties exists, an exception is thrown.\n"
     "\n"
     "This method has been added in version 0.23.\n"
@@ -2119,34 +2049,22 @@ Class<db::Shape> decl_Shape ("db", "Shape",
     "\n"
     "This method has been added in version 0.23.\n"
   ) +
-  gsi::method_ext ("layer=", &set_shape_layer_index, gsi::arg ("layer_index"),
+  gsi::method_ext ("layer=", &set_shape_layer_index,
     "@brief Moves the shape to a layer given by the layer index object\n"
+    "@args layer_index\n"
     "\n"
     "This method has been added in version 0.23.\n"
   ) +
-  gsi::method ("!=", &db::Shape::operator!=, gsi::arg ("other"),
+  gsi::method ("!=", &db::Shape::operator!=,
     "@brief Inequality operator\n"
+    "@args other\n"
   ) +
-  gsi::method ("==", &db::Shape::operator==, gsi::arg ("other"),
+  gsi::method ("==", &db::Shape::operator==,
     "@brief Equality operator\n"
+    "@args other\n"
     "\n"
     "Equality of shapes is not specified by the identity of the objects but by the\n"
     "identity of the pointers - both shapes must refer to the same object.\n"
-  ) +
-  gsi::method ("<", &db::Shape::operator<, gsi::arg ("other"),
-    "@brief Less operator\n"
-    "\n"
-    "The less operator implementation is based on pointers and not strictly reproducible."
-    "However, it is good enough so Shape objects can serve as keys in hashes (see also \\hash).\n"
-    "\n"
-    "This method has been introduced in version 0.29.1."
-  ) +
-  gsi::method ("hash", &db::Shape::hash_value,
-    "@brief Hash function\n"
-    "\n"
-    "The hash function enables Shape objects as keys in hashes.\n"
-    "\n"
-    "This method has been introduced in version 0.29.1."
   ) +
   gsi::method ("to_s", &db::Shape::to_string,
     "@brief Create a string showing the contents of the reference\n"
@@ -2164,7 +2082,6 @@ Class<db::Shape> decl_Shape ("db", "Shape",
   gsi::method ("TSimplePolygonPtrArrayMember|#t_simple_polygon_ptr_array_member", &t_simplePolygonPtrArrayMember) +
   gsi::method ("TEdge|#t_edge", &t_edge) +
   gsi::method ("TEdgePair|#t_edge_pair", &t_edge_pair) +
-  gsi::method ("TPoint|#t_point", &t_point) +
   gsi::method ("TPath|#t_path", &t_path) +
   gsi::method ("TPathRef|#t_path_ref", &t_pathRef) +
   gsi::method ("TPathPtrArray|#t_path_ptr_array", &t_pathPtrArray) +
@@ -2195,3 +2112,4 @@ Class<db::Shape> decl_Shape ("db", "Shape",
 );
 
 }
+

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@
 #include <QAbstractUndoItem>
 #include "gsiQt.h"
 #include "gsiQtGuiCommon.h"
+#include "gsiDeclQtGuiTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -196,10 +197,10 @@ gsi::Class<QAbstractUndoItem> &qtdecl_QAbstractUndoItem ();
 static gsi::Methods methods_QAbstractUndoItem_Adaptor () {
   gsi::Methods methods;
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QAbstractUndoItem::QAbstractUndoItem()\nThis method creates an object of class QAbstractUndoItem.", &_init_ctor_QAbstractUndoItem_Adaptor_0, &_call_ctor_QAbstractUndoItem_Adaptor_0);
-  methods += new qt_gsi::GenericMethod ("redo", "@brief Virtual method void QAbstractUndoItem::redo()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_redo_0_0, &_call_cbs_redo_0_0);
-  methods += new qt_gsi::GenericMethod ("redo", "@hide", false, &_init_cbs_redo_0_0, &_call_cbs_redo_0_0, &_set_callback_cbs_redo_0_0);
-  methods += new qt_gsi::GenericMethod ("undo", "@brief Virtual method void QAbstractUndoItem::undo()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_undo_0_0, &_call_cbs_undo_0_0);
-  methods += new qt_gsi::GenericMethod ("undo", "@hide", false, &_init_cbs_undo_0_0, &_call_cbs_undo_0_0, &_set_callback_cbs_undo_0_0);
+  methods += new qt_gsi::GenericMethod ("redo", "@hide", false, &_init_cbs_redo_0_0, &_call_cbs_redo_0_0);
+  methods += new qt_gsi::GenericMethod ("redo", "@brief Virtual method void QAbstractUndoItem::redo()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_redo_0_0, &_call_cbs_redo_0_0, &_set_callback_cbs_redo_0_0);
+  methods += new qt_gsi::GenericMethod ("undo", "@hide", false, &_init_cbs_undo_0_0, &_call_cbs_undo_0_0);
+  methods += new qt_gsi::GenericMethod ("undo", "@brief Virtual method void QAbstractUndoItem::undo()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_undo_0_0, &_call_cbs_undo_0_0, &_set_callback_cbs_undo_0_0);
   return methods;
 }
 

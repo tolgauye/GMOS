@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -32,6 +32,7 @@
 #include <QMatrix4x4>
 #include "gsiQt.h"
 #include "gsiQtGuiCommon.h"
+#include "gsiDeclQtGuiTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -799,52 +800,52 @@ static void _call_f_normal_6204 (const qt_gsi::GenericStaticMethod * /*decl*/, g
 
 //  bool ::operator==(const QVector3D &v1, const QVector3D &v2)
 static bool op_QVector3D_operator_eq__eq__4172(const QVector3D *_self, const QVector3D &v2) {
-  return operator==(*_self, v2);
+  return ::operator==(*_self, v2);
 }
 
 //  bool ::operator!=(const QVector3D &v1, const QVector3D &v2)
 static bool op_QVector3D_operator_excl__eq__4172(const QVector3D *_self, const QVector3D &v2) {
-  return operator!=(*_self, v2);
+  return ::operator!=(*_self, v2);
 }
 
 //  const QVector3D ::operator+(const QVector3D &v1, const QVector3D &v2)
 static const QVector3D op_QVector3D_operator_plus__4172(const QVector3D *_self, const QVector3D &v2) {
-  return operator+(*_self, v2);
+  return ::operator+(*_self, v2);
 }
 
 //  const QVector3D ::operator-(const QVector3D &v1, const QVector3D &v2)
 static const QVector3D op_QVector3D_operator_minus__4172(const QVector3D *_self, const QVector3D &v2) {
-  return operator-(*_self, v2);
+  return ::operator-(*_self, v2);
 }
 
 //  const QVector3D ::operator*(const QVector3D &vector, float factor)
 static const QVector3D op_QVector3D_operator_star__3002(const QVector3D *_self, float factor) {
-  return operator*(*_self, factor);
+  return ::operator*(*_self, factor);
 }
 
 //  const QVector3D ::operator*(const QVector3D &v1, const QVector3D &v2)
 static const QVector3D op_QVector3D_operator_star__4172(const QVector3D *_self, const QVector3D &v2) {
-  return operator*(*_self, v2);
+  return ::operator*(*_self, v2);
 }
 
 //  const QVector3D ::operator-(const QVector3D &vector)
 static const QVector3D op_QVector3D_operator_minus__2140(const QVector3D *_self) {
-  return operator-(*_self);
+  return ::operator-(*_self);
 }
 
 //  const QVector3D ::operator/(const QVector3D &vector, float divisor)
 static const QVector3D op_QVector3D_operator_slash__3002(const QVector3D *_self, float divisor) {
-  return operator/(*_self, divisor);
+  return ::operator/(*_self, divisor);
 }
 
 //  const QVector3D ::operator/(const QVector3D &vector, const QVector3D &divisor)
 static const QVector3D op_QVector3D_operator_slash__4172(const QVector3D *_self, const QVector3D &divisor) {
-  return operator/(*_self, divisor);
+  return ::operator/(*_self, divisor);
 }
 
 //  QVector3D ::operator*(const QVector3D &vector, const QMatrix4x4 &matrix)
 static QVector3D op_QVector3D_operator_star__4279u1(const QVector3D *_self, const QMatrix4x4 &matrix) {
-  return operator*(*_self, matrix);
+  return ::operator*(*_self, matrix);
 }
 
 

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -27,10 +27,8 @@
 
 #include "laybasicCommon.h"
 
-#if defined(HAVE_QT)
-#  include <QObject>
-#  include <QBitmap>
-#endif
+#include <QObject>
+#include <QBitmap>
 
 #include "dbObject.h"
 
@@ -39,7 +37,6 @@
 #include <vector>
 #include <string>
 #include <map>
-#include <memory>
 
 namespace lay
 {
@@ -144,16 +141,13 @@ public:
     return m_pattern;
   }
 
-#if defined(HAVE_QT)
   /**
    *  @brief Get a monochrome bitmap object for this pattern
    *
    *  @param width The desired width (-1 for default)
    *  @param height The desired height (-1 for default)
-   *  @param The intended frame width in pixels
    */
-  QBitmap get_bitmap (int width = -1, int height = -1, int frame_width = 1) const;
-#endif
+  QBitmap get_bitmap (int width = -1, int height = -1) const;
 
   /**
    *  @brief Replaces the pattern string
@@ -169,11 +163,6 @@ public:
    *  Each bit is stretch into n bits.
    */
   void scale_pattern (unsigned int n);
-
-  /**
-   *  @brief Gets a scaled version of the pattern
-   */
-  const LineStyleInfo &scaled (unsigned int n) const;
 
   /**
    *  @brief Gets the pattern stride
@@ -216,9 +205,6 @@ private:
   unsigned int m_pattern_stride;
   unsigned int m_order_index;
   std::string m_name;
-  mutable std::unique_ptr<std::map<unsigned int, LineStyleInfo> > m_scaled_pattern;
-
-  void assign_no_lock (const LineStyleInfo &other);
 };
 
 /**
@@ -229,9 +215,11 @@ private:
  *  replaced with a new pattern, except for the first styles which
  *  cannot be changed. 
  */
-class LAYBASIC_PUBLIC LineStyles :
-    public db::Object
+class LAYBASIC_PUBLIC LineStyles
+  : public QObject, public db::Object
 {
+Q_OBJECT
+
 public:
   typedef std::vector<LineStyleInfo> pattern_vector;
   typedef pattern_vector::const_iterator iterator;
@@ -364,6 +352,12 @@ public:
    */
   static const LineStyles &default_style ();
 
+signals:
+  /**
+   *  @brief This signal is emitted if a style is changed 
+   */
+  void changed ();
+  
 private:
   std::vector<LineStyleInfo> m_styles;
 };

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -30,8 +30,8 @@ namespace lay
 // ----------------------------------------------------------------------------------------------
 //  BitmapRenderer implementation
 
-BitmapRenderer::BitmapRenderer (unsigned int width, unsigned int height, double resolution, double font_resolution)
-  : Renderer (width, height, resolution, font_resolution),
+BitmapRenderer::BitmapRenderer (unsigned int width, unsigned int height, double resolution)
+  : Renderer (width, height, resolution),
     m_xmin (0.0), m_xmax (0.0), m_ymin (0.0), m_ymax (0.0),
     m_ortho (true)
 {
@@ -53,8 +53,8 @@ BitmapRenderer::reserve_texts (size_t n)
 void 
 BitmapRenderer::clear ()
 {
-  //  this implementation is efficient but does not free memory - 
-  //  the idea is to let the BitmapRenderer object manage its workspace.
+  //  this implementation is efficent but does not free memory - 
+  //  the idea is to let the BitmapRenderer object manage it's workspace.
   m_edges.erase (m_edges.begin (), m_edges.end ());
   //  might be manhattan
   m_ortho = true;
@@ -151,7 +151,7 @@ BitmapRenderer::insert (const db::DEdge &e)
     m_ymax = std::max (m_ymax, std::max (e.y1 (), e.y2 ()));
   }
 
-  //  check, if the edge is neither horizontal nor vertical - 
+  //  check, if the edge is neigther horizontal nor vertical - 
   //  reset the orthogonal flag in this case.
   if (m_ortho && fabs (e.x1 () - e.x2 ()) > render_epsilon 
               && fabs (e.y1 () - e.y2 ()) > render_epsilon) {
@@ -386,12 +386,12 @@ BitmapRenderer::draw (const db::Shape &shape, const db::CplxTrans &trans,
     if (m_draw_texts && text) {
 
       db::DFTrans fp (db::DFTrans::r0);
-      db::DCoord h = trans.mag () * m_default_text_size;
+      db::DCoord h = trans.ctrans (m_default_text_size);
       db::Font font = shape.text_font () == db::NoFont ? m_font : shape.text_font ();
 
       if (m_apply_text_trans && font != db::NoFont && font != db::DefaultFont) {
         fp = db::DFTrans (trans.fp_trans () * shape.text_trans ());
-        h = trans.mag () * (shape.text_size () > 0 ? shape.text_size () : m_default_text_size);
+        h = trans.ctrans (shape.text_size () > 0 ? shape.text_size () : m_default_text_size);
       }
 
       db::HAlign halign = shape.text_halign ();
@@ -427,7 +427,7 @@ BitmapRenderer::draw (const db::Shape &shape, const db::CplxTrans &trans,
     db::Box bbox = shape.bbox ();
     double threshold = 1.0 / trans.mag ();
 
-    if (bbox.width () <= threshold && bbox.height () <= threshold && !shape.is_point ()) {
+    if (bbox.width () <= threshold && bbox.height () <= threshold) {
 
       db::DPoint dc = trans * bbox.center ();
       if (fill && ! shape.is_edge ()) {
@@ -440,7 +440,7 @@ BitmapRenderer::draw (const db::Shape &shape, const db::CplxTrans &trans,
         render_dot (dc.x (), dc.y (), vertices);
       }
 
-    } else if (shape.is_box () || shape.is_point ()) {
+    } else if (shape.is_box ()) {
 
       draw (bbox, trans, fill, frame, vertices, text);
 
@@ -1087,12 +1087,12 @@ BitmapRenderer::draw (const db::Text &txt, const db::CplxTrans &trans,
   if (m_draw_texts && text) {
 
     db::DFTrans fp (db::DFTrans::r0);
-    db::DCoord h = trans.mag () * m_default_text_size;
+    db::DCoord h = trans.ctrans (m_default_text_size);
     db::Font font = txt.font () == db::NoFont ? m_font : txt.font ();
 
     if (m_apply_text_trans && font != db::NoFont && font != db::DefaultFont) {
       fp = db::DFTrans (trans.fp_trans () * txt.trans ());
-      h = trans.mag () * (txt.size () > 0 ? txt.size () : m_default_text_size);
+      h = trans.ctrans (txt.size () > 0 ? txt.size () : m_default_text_size);
     }
 
     double fy = 0.0;

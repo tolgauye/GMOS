@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -22,5 +22,8 @@
 
 #include "../pymodHelper.h"
 
-#include "QtSvgMain.h"
+//  To force linking of the QtSvg module
+#include "../../gsiqt/qtbasic/gsiQtSvgExternals.h"
+FORCE_LINK_GSI_QTSVG
+
 DEFINE_PYMOD(QtSvg, "QtSvg", "KLayout/Qt module 'QtSvg'")

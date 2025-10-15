@@ -1,5 +1,5 @@
 # KLayout Layout Viewer
-# Copyright (C) 2006-2025 Matthias Koefferlein
+# Copyright (C) 2006-2019 Matthias Koefferlein
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-import testprep
+
 import klayout.QtCore as QtCore
 import klayout.QtNetwork as QtNetwork
 import unittest
@@ -31,7 +31,7 @@ class BasicTest(unittest.TestCase):
   def test_2(self):
     q = QtNetwork.QNetworkRequest()
     q.setRawHeader("abc", "xyz")
-    self.assertEqual(q.rawHeader("abc"), b"xyz")
+    self.assertEqual(q.rawHeader("abc"), "xyz")
 
 # run unit tests
 if __name__ == '__main__':

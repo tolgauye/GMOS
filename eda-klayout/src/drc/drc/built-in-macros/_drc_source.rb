@@ -22,27 +22,13 @@ module DRC
       @layout_var = layout_var
       @path = path
       @cell = cell
+      @inside = nil
       @box = nil
+      @layers = nil
       @sel = []
       @clip = false
       @overlapping = false
       @tmp_layers = []
-      @global_trans = RBA::DCplxTrans::new
-    end
-
-    # Conceptual deep copy (not including the temp layers)
-    def dup
-      d = DRCSource::new(@engine, @layout, @layout_var, @cell, @path)
-      d._init_internal(@box ? @box.dup : nil, @sel.dup, @clip, @overlapping)
-      d
-    end
-
-    # internal copy initialization
-    def _init_internal(box, sel, clip, overlapping)
-      @box = box
-      @sel = sel
-      @clip = clip
-      @overlapping = overlapping
     end
         
     # %DRC%
@@ -71,56 +57,28 @@ module DRC
     def cell_obj
       @cell
     end
-
-    def inplace_global_transform(*args)
-      gt = RBA::DCplxTrans::new
-      args.each do |a|
-        if a.is_a?(RBA::DVector) || a.is_a?(RBA::DTrans)
-          gt = RBA::DCplxTrans::new(a) * gt
-        elsif a.is_a?(RBA::DCplxTrans)
-          gt = a * gt
-        else
-          raise("Expected a transformation spec instead of #{a.inspect}")
-        end
-      end
-      @global_trans = gt
-    end
-
-    def global_transformation
-      @global_trans
-    end
     
     def finish
-      @tmp_layers.each do |layout,li|
-        layout.delete_layer(li)
+      @tmp_layers.each do |li|
+        @layout.delete_layer(li)
       end
-      @tmp_layers = []
     end
 
     def set_box(method, *args)
-
-      @engine._context(method) do
-
-        box = nil
-        if args.size == 0
-          # unclip
-        elsif args.size == 1
-          box = args[0]
-          box.is_a?(RBA::DBox) || raise("Method requires a box specification")
-        elsif args.size == 2
-          (args[0].is_a?(RBA::DPoint) && args[1].is_a?(RBA::DPoint)) || raise("Method requires a box specification with two points")
-          box = RBA::DBox::new(args[0], args[1])
-        elsif args.size == 4
-          box = RBA::DBox::new(*args)
-        else 
-          raise("Invalid number of arguments (1, 2 or 4 expected)")
-        end
-        @box = box && RBA::Box::from_dbox(box * (1.0 / @layout.dbu))
-
-        self
-
+      box = nil
+      if args.size == 1
+        box = args[0]
+        box.is_a?(RBA::DBox) || raise("'#{method}' method requires a box specification")
+      elsif args.size == 2
+        (args[0].is_a?(RBA::DPoint) && args[1].is_a?(RBA::DPoint)) || raise("'#{method}' method requires a box specification with two points")
+        box = RBA::DBox::new(args[0], args[1])
+      elsif args.size == 4
+        box = RBA::DBox::new(*args)
+      else 
+        raise("Invalid number of arguments for '#{method}' method")
       end
-
+      @box = RBA::Box::from_dbox(box * (1.0 / @layout.dbu))
+      self
     end
     
     def inplace_clip(*args)
@@ -142,31 +100,25 @@ module DRC
     end
     
     def inplace_cell(arg)
-      @engine._context("inplace_cell") do
-        @cell = layout.cell(arg)
-        @cell ||= layout.create_cell(arg)
-        self  
-      end
+      @cell = layout.cell(arg)
+      @cell ||= layout.create_cell(arg)
+      self  
     end
     
     def inplace_select(*args)
-      @engine._context("inplace_select") do
-        args.each do |a|
-          a.is_a?(String) || raise("Invalid arguments - must be strings")
-          @sel.push(a)
-        end
-        self
+      args.each do |a|
+        a.is_a?(String) || raise("Invalid arguments to 'select' method - must be strings")
+        @sel.push(a)
       end
+      self
     end
     
     # %DRC%
     # @name select
     # @brief Adds cell name expressions to the cell filters
-    # @synopsis new_source = source.select(filter1, filter2, ...)
+    # @synopsis source.select(filter1, filter2, ...)
     # This method will construct a new source object with the given cell filters 
-    # applied. Note that there is a global version of "select" which does not 
-    # create a new source, but acts on the default source.
-    #
+    # applied.
     # Cell filters will enable or disable cells plus their subtree.
     # Cells can be switched on and off, which makes the hierarchy traversal
     # stop or begin delivering shapes at the given cell. The arguments of 
@@ -187,34 +139,19 @@ module DRC
     # code:
     #
     # @code
-    # source_with_selection = source.select("-TOP", "+B")
-    # l1 = source_with_selection.input(1, 0)
+    # layout_with_selection = layout.select("-TOP", "+B")
+    # l1 = layout_with_selection.input(1, 0)
     # ...
     # @/code
     #
     # Please note that the sample above will deliver the children of "B" because there is 
-    # nothing said about how to proceed with cells other than "TOP" or "B". Conceptually,
-    # the instantiation path of a cell will be matched against the different filters in the
-    # order they are given.
-    # A matching negative expression will disable the cell, a matching positive expression
-    # will enable the cell. Hence, every cell that has a "B" in the instantiation path 
-    # is enabled.
-    #
-    # The following code will just select "B" without its children, because in the 
+    # nothing said about how to proceed with cells other than "TOP" or "B".
+    # The following code will just select "B" without it's children, because in the 
     # first "-*" selection, all cells including the children of "B" are disabled:
     #
     # @code
-    # source_with_selection = source.select("-*", "+B")
-    # l1 = source_with_selection.input(1, 0)
-    # ...
-    # @/code
-    # 
-    # The short form "-" will disable the top cell. This code is identical to the first example
-    # and will start with a disabled top cell regardless of its name:
-    # 
-    # @code
-    # source_with_selection = source.select("-", "+B")
-    # l1 = source_with_selection.input(1, 0)
+    # layout_with_selection = layout.select("-*", "+B")
+    # l1 = layout_with_selection.input(1, 0)
     # ...
     # @/code
     
@@ -269,113 +206,44 @@ module DRC
     # \touching is a similar method which delivers shapes touching
     # the search region with their bounding box (without the requirement to overlap)
     
-    # %DRC%
-    # @name global_transform
-    # @brief Gets or sets a global transformation
-    # @synopsis global_transform
-    # @synopsis global_transform([ transformations ])
-    #
-    # This method returns a new source representing the transformed layout. It is provided in the spritit of 
-    # \Source#clip and similar methods.
-    #
-    # The transformation
-    # is either given as a RBA::DTrans, RBA::DVector or RBA::DCplxTrans object or as one of the 
-    # following specifications:
-    #
-    # @ul
-    # @li "shift(x, y)": shifts the input layout horizontally by x and vertically by y micrometers @/li
-    # @li "rotate(a)": rotates the input layout by a degree counter-clockwise @/li
-    # @li "magnify(m)": magnifies the input layout by the factor m (NOTE: using fractional scale factors may result in small gaps due to grid snapping) @/li
-    # @li "mirror_x": mirrors the input layout at the x axis @/li
-    # @li "mirror_y": mirrors the input layout at the y axis @/li
-    # @/ul
-    #
-    # Multiple transformation specs can be given. In that case the transformations are applied right to left.
-    # Using "global_transform" will reset any global transformation present already.
-    # Without an argument, the global transformation is reset.
-    #
-    # The following example rotates the layout by 90 degree at the origin (0, 0) and then shifts it up by 
-    # 100 micrometers:
-    #
-    # @code
-    # source.global_transform(shift(0, 100.um), rotate(90.0))
-    # @/code
-
     # export inplace_* as * out-of-place
-    %w(select cell clip touching overlapping global_transform).each do |f|
+    %w(select cell clip touching overlapping).each do |f|
       eval <<"CODE"
         def #{f}(*args)
-          @engine._context("#{f}") do
-            s = self.dup
-            s.inplace_#{f}(*args)
-            s
-          end
+          s = self.dup
+          s.inplace_#{f}(*args)
+          s
         end
 CODE
     end
 
     # %DRC%
     # @name extent
-    # @brief Returns a layer with the bounding box of the selected layout or cells
+    # @brief Returns a layer with the bounding box of the selected layout
     # @synopsis source.extent
-    # @synopsis source.extent(cell_filter)
-    #
-    # Without an argument, the extent method returns a layer with the bounding box
-    # of the top cell. With a cell filter argument, the method returns a layer
-    # with the bounding boxes of the selected cells. The cell filter is a glob
-    # pattern.
-    # 
     # The extent function is useful to invert a layer:
     # 
     # @code
     # inverse_1 = extent.sized(100.0) - input(1, 0)
     # @/code
-    #
-    # The following example returns the bounding boxes of all cells whose
-    # names start with "A":
-    #
-    # @code
-    # a_cells = extent("A*")
-    # @/code
     
-    def extent(cell_filter = nil)
-
-      @engine._context("extent") do
-
-        if cell_filter
-          cell_filter.is_a?(String) || raise("Invalid cell filter argument - must be a string")
-        end
-
-        if cell_filter
-          tmp = @layout_var.insert_layer(RBA::LayerInfo::new)
-          @tmp_layers << [ @layout_var, tmp ]
-          @layout_var.cells(cell_filter).each do |cell|
-            cell.shapes(tmp).insert(cell.bbox)
-          end
-          layer = DRCLayer::new(@engine, @engine._cmd(@engine, :_input, @layout_var, @cell.cell_index, [tmp], @sel, @box, @clip, @overlapping, RBA::Shapes::SAll, @global_trans, [], RBA::Region))
-        else
-          layer = input
-          layer.insert((RBA::DBox::from_ibox(@cell.bbox) * @layout.dbu).transformed(@global_trans))
-          if @box
-            layer.data &= RBA::Region::new(@box)
-          end
-        end
-
-        layer
-
+    def extent
+      layer = input
+      if @box
+        layer.insert(RBA::DBox::from_ibox(@box) * @layout.dbu)
+      else
+        layer.insert(RBA::DBox::from_ibox(@cell.bbox) * @layout.dbu)
       end
-
+      layer
     end
           
     # %DRC%
     # @name input
     # @brief Specifies input from a source
-    # @synopsis source.input
     # @synopsis source.input(layer)
     # @synopsis source.input(layer, datatype)
-    # @synopsis source.input(layer_info)
+    # @synopsis source.input(layer_into)
     # @synopsis source.input(filter, ...)
-    # @synopsis source.input(props_spec, ...)
     # Creates a layer with the shapes from the given layer of the source.
     # The layer can be specified by layer and optionally datatype, by a RBA::LayerInfo
     # object or by a sequence of filters. 
@@ -383,24 +251,18 @@ CODE
     # of layers and/or datatype numbers or layer names. Multiple filters
     # can be given and all layers matching at least one of these filter
     # expressions are joined to render the input layer for the DRC engine.
-    # For the syntax of the filter expressions see RBA::LayerMap#map (look for
-    # the version that uses a map expression).
     #
     # Some filter expressions are:
     #
     # @ul
     # @li @tt 1/0-255 @/tt: Datatypes 0 to 255 for layer 1 @/li
-    # @li @tt 1/* @/tt: All datatypes for layer 1 @/li
-    # @li @tt 1/0,5,10 @/tt: Datatypes 0, 5 and 10 for layer 1 @/li
-    # @li @tt 1/0;2/17 @/tt: Layer 1, datatype 0 and layer 2, datatype 17 @/li
     # @li @tt 1-10 @/tt: Layers 1 to 10, datatype 0 @/li
     # @li @tt METAL @/tt: A layer named "METAL" @/li
-    # @li @tt METAL;VIA @/tt: A layer named "METAL" and the layer named "VIA" @/li
-    # @li @tt METAL;17/0 @/tt: A layer named "METAL" and layer 17, datatype 0 @/li
-    # @li @tt '17' @/tt: A layer named "17". Note the quotes which indicate a string, not a layer number @/li
+    # @li @tt METAL (17/0) @/tt: A layer named "METAL" or layer 17, datatype 0 (for GDS, which does
+    #           not have names)@/li
     # @/ul
     #
-    # Layers created with "input" may contain both texts (labels) and polygons. There is a subtle
+    # Layers created with "input" contain both texts and polygons. There is a subtle
     # difference between flat and deep mode: in flat mode, texts are not visible in polygon
     # operations. In deep mode, texts appear as small 2x2 DBU rectangles. In flat mode, 
     # some operations such as clipping are not fully supported for texts. Also, texts will
@@ -411,71 +273,39 @@ CODE
     # If you don't want to see texts, use \polygons to create an input layer with polygon data
     # only. If you only want to see texts, use \labels to create an input layer with texts only.
     #
-    # \labels also produces a true "text layer" which contains text objects. A variety of 
-    # operations is available for these objects, such as boolean "and" and "not" with a polygon layer.
-    # True text layers should be preferred over mixed polygon/text layers if text object processing
-    # is required.
-    #
-    # "input" without any arguments will create a new, empty original layer.
-    #
-    # If you want to use user properties - for example with properties constraints in DRC checks -
-    # you need to enable properties on input:
-    #
-    # @code
-    # input1_with_props = input(1, 0, enable_props)
-    # @/code
-    #
-    # You can also filter or map property keys, similar to the functions available on
-    # layers (\DRCLayer#map_props, \DRCLayer#select_props). For example to select
-    # property values with key 17 (numerical) only, use:
-    #
-    # @code
-    # input1_with_props = input(1, 0, select_props(17))
-    # @/code
-    #
     # Use the global version of "input" without a source object to address the default source.
     
     def input(*args)
-      @engine._context("input") do
-        layers, prop_selectors = parse_input_layers(*args)
-        DRCLayer::new(@engine, @engine._cmd(@engine, :_input, @layout_var, @cell.cell_index, layers, @sel, @box, @clip, @overlapping, RBA::Shapes::SAll, @global_trans, prop_selectors, RBA::Region))
-      end
+      layers = parse_input_layers(*args)
+      DRCLayer::new(@engine, @engine._cmd(@engine, :_input, @layout_var, @cell.cell_index, layers, @sel, @box, @clip, @overlapping, RBA::Shapes::SAll))
     end
 
     # %DRC%
     # @name labels
     # @brief Gets the labels (texts) from an input layer
-    # @synopsis source.labels
     # @synopsis source.labels(layer)
     # @synopsis source.labels(layer, datatype)
-    # @synopsis source.labels(layer_info)
+    # @synopsis source.labels(layer_into)
     # @synopsis source.labels(filter, ...)
     #
-    # Creates a true text layer with the labels from the given layer of the source.
+    # Creates a layer with the labels from the given layer of the source.
     # 
     # This method is identical to \input, but takes only texts from the given input
-    # layer. Starting with version 0.27, the result is no longer a polygon layer that tries
-    # to provide text support but a layer type which is provided for carrying text objects
-    # explicitly.
-    #
-    # "labels" without any arguments will create a new, empty original layer.
+    # layer.
     #
     # Use the global version of "labels" without a source object to address the default source.
     
     def labels(*args)
-      @engine._context("labels") do
-        layers, prop_selectors = parse_input_layers(*args)
-        DRCLayer::new(@engine, @engine._cmd(@engine, :_input, @layout_var, @cell.cell_index, layers, @sel, @box, @clip, @overlapping, RBA::Shapes::STexts, @global_trans, prop_selectors, RBA::Texts))
-      end
+      layers = parse_input_layers(*args)
+      DRCLayer::new(@engine, @engine._cmd(@engine, :_input, @layout_var, @cell.cell_index, layers, @sel, @box, @clip, @overlapping, RBA::Shapes::STexts))
     end
 
     # %DRC%
     # @name polygons
     # @brief Gets the polygon shapes (or shapes that can be converted polygons) from an input layer
-    # @synopsis source.polygons
     # @synopsis source.polygons(layer)
     # @synopsis source.polygons(layer, datatype)
-    # @synopsis source.polygons(layer_info)
+    # @synopsis source.polygons(layer_into)
     # @synopsis source.polygons(filter, ...)
     #
     # Creates a layer with the polygon shapes from the given layer of the source.
@@ -484,86 +314,22 @@ CODE
     # 
     # This method is identical to \input with respect to the options supported.
     #
-    # "polygons" without any arguments will create a new, empty original layer.
-    #
     # Use the global version of "polygons" without a source object to address the default source.
     
     def polygons(*args)
-      @engine._context("polygons") do
-        layers, prop_selectors = parse_input_layers(*args)
-        DRCLayer::new(@engine, @engine._cmd(@engine, :_input, @layout_var, @cell.cell_index, layers, @sel, @box, @clip, @overlapping, RBA::Shapes::SBoxes | RBA::Shapes::SPaths | RBA::Shapes::SPolygons | RBA::Shapes::SEdgePairs, @global_trans, prop_selectors, RBA::Region))
-      end
-    end
-
-    # %DRC%
-    # @name edges
-    # @brief Gets the edge shapes (or shapes that can be converted edges) from an input layer
-    # @synopsis source.edges
-    # @synopsis source.edges(layer)
-    # @synopsis source.edges(layer, datatype)
-    # @synopsis source.edges(layer_info)
-    # @synopsis source.edges(filter, ...)
-    #
-    # Creates a layer with the edges from the given layer of the source.
-    # Edge layers are formed from shapes by decomposing the shapes into edges: polygons
-    # for example are decomposed into their outline edges. Some file formats support egdes
-    # as native objects. 
-    # 
-    # This method is identical to \input with respect to the options supported.
-    #
-    # Use the global version of "edges" without a source object to address the default source.
-    # 
-    # "edges" without any arguments will create a new, empty original layer.
-    #
-    # This method has been introduced in version 0.27.
-    
-    def edges(*args)
-      @engine._context("edges") do
-        layers, prop_selectors = parse_input_layers(*args)
-        DRCLayer::new(@engine, @engine._cmd(@engine, :_input, @layout_var, @cell.cell_index, layers, @sel, @box, @clip, @overlapping, RBA::Shapes::SBoxes | RBA::Shapes::SPaths | RBA::Shapes::SPolygons | RBA::Shapes::SEdgePairs | RBA::Shapes::SEdges, @global_trans, prop_selectors, RBA::Edges))
-      end
-    end
-
-    # %DRC%
-    # @name edge_pairs
-    # @brief Gets the edge pairs from an input layer
-    # @synopsis source.edge_pairs
-    # @synopsis source.edge_pairs(layer)
-    # @synopsis source.edge_pairs(layer, datatype)
-    # @synopsis source.edge_pairs(layer_info)
-    # @synopsis source.edge_pairs(filter, ...)
-    #
-    # Creates a layer with the edge_pairs from the given layer of the source.
-    # Edge pairs are not supported by layout formats so far. So except if the source is
-    # a custom-built layout object, this method has little use. It is provided for future 
-    # extensions which may include edge pairs in file streams.
-    # 
-    # This method is identical to \input with respect to the options supported.
-    #
-    # Use the global version of "edge_pairs" without a source object to address the default source.
-    # 
-    # "edge_pairs" without any arguments will create a new, empty original layer.
-    #
-    # This method has been introduced in version 0.27.
-    
-    def edge_pairs(*args)
-      @engine._context("edge_pairs") do
-        layers, prop_selectors = parse_input_layers(*args)
-        DRCLayer::new(@engine, @engine._cmd(@engine, :_input, @layout_var, @cell.cell_index, layers, @sel, @box, @clip, @overlapping, RBA::Shapes::SEdgePairs, @global_trans, prop_selectors, RBA::EdgePairs))
-      end
+      layers = parse_input_layers(*args)
+      DRCLayer::new(@engine, @engine._cmd(@engine, :_input, @layout_var, @cell.cell_index, layers, @sel, @box, @clip, @overlapping, RBA::Shapes::SBoxes | RBA::Shapes::SPaths | RBA::Shapes::SPolygons | RBA::Shapes::SEdgePairs))
     end
 
     # %DRC%
     # @name make_layer
     # @brief Creates an empty polygon layer based on the hierarchy of the layout
     # @synopsis make_layer
-    # This method delivers a new empty original layer. It is provided to keep old code working.
-    # Use "input" without arguments instead.
+    # This method delivers a new empty original layer.
 
     def make_layer
       layers = []
-      prop_selectors = []
-      DRCLayer::new(@engine, @engine._cmd(@engine, :_input, @layout_var, @cell.cell_index, layers, @sel, @box, @clip, @overlapping, RBA::Shapes::SAll, @global_trans, prop_selectors, RBA::Region))
+      DRCLayer::new(@engine, @engine._cmd(@engine, :_input, @layout_var, @cell.cell_index, layers, @sel, @box, @clip, @overlapping, RBA::Shapes::SAll))
     end
 
     # %DRC%
@@ -605,15 +371,12 @@ CODE
     def parse_input_layers(*args)
 
       layers = []
-      prop_selectors = args.select { |a| a.is_a?(DRCPropertySelector) }
-
-      args = args.select { |a| !a.is_a?(DRCPropertySelector) }
-
+     
       if args.size == 0
       
         li = @layout.insert_layer(RBA::LayerInfo::new)
         li && layers.push(li)
-        li && @tmp_layers.push([ @layout, li ])
+        li && @tmp_layers.push(li)
       
       elsif (args.size == 1 && args[0].is_a?(RBA::LayerInfo))
 
@@ -642,7 +405,7 @@ CODE
         
       end
 
-      [ layers, prop_selectors ]
+      layers
 
     end
 

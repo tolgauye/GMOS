@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -31,37 +31,37 @@
 #include "tlTimer.h"
 #include "tlList.h"
 
-#include <set>
-
 class QWidget;
 
 namespace tl
 {
 
 class Progress;
-class ProgressAdaptor;
-class RelativeProgress;
-class AbstractProgress;
-class AbsoluteProgress;
 
 /**
- *  @brief A helper class to clean up pending progress objects
+ *  @brief The receivers for progress reports
  *
- *  Pending progress objects may be created in scripts. If scripts are aborted
- *  (e.g. in the debugger), progress objects may stay behind a block the application.
- *  To prevent this, this object keeps track of progress objects created between
- *  it's constructor and destructor and cleans up the objects created but not
- *  destroyed.
+ *  The progress adaptors form a thread-local stack of receivers. New receivers can override the
+ *  previous receivers. It is important that receivers are always created in a nested fashion inside
+ *  a single thread.
  */
 
-class TL_PUBLIC ProgressGarbageCollector
+class TL_PUBLIC ProgressAdaptor
 {
-public:
-  ProgressGarbageCollector ();
-  ~ProgressGarbageCollector ();
+public:  
+  ProgressAdaptor ();
+  virtual ~ProgressAdaptor ();
+
+  virtual void register_object (Progress *progress) = 0;
+  virtual void unregister_object (Progress *progress) = 0;
+  virtual void trigger (Progress *progress) = 0;
+  virtual void yield (Progress *progress) = 0;
+
+  void prev (ProgressAdaptor *pa);
+  ProgressAdaptor *prev ();
 
 private:
-  std::set<tl::Progress *> mp_valid_objects;
+  ProgressAdaptor *mp_prev;
 };
 
 /**
@@ -76,6 +76,8 @@ class TL_PUBLIC BreakException
 public:
   BreakException () : tl::Exception ("Operation cancelled") { }
 };
+
+class Progress;
 
 /**
  *  @brief A "progress" reporter class 
@@ -115,9 +117,8 @@ public:
    * 
    *  @param desc The description and title string
    *  @param yield_interval See above.
-   *  @param can_cancel If set to true, the progress may be cancelled which results in a BreakException begin raised
    */
-  Progress (const std::string &desc, size_t yield_interval = 0, bool can_cancel = true);
+  Progress (const std::string &desc, size_t yield_interval = 1000);
 
   /**
    *  @brief The destructor
@@ -138,15 +139,6 @@ public:
   virtual double value () const = 0;
 
   /**
-   *  @brief Returns true if the progress is an abstract one
-   *
-   *  Abstract progress objcts don't have a value but mark a section begin executed as a top level progress.
-   *  Technically they will open a channel for the UI - e.g. leaving a progress dialog open while the
-   *  operation is running.
-   */
-  virtual bool is_abstract () const = 0;
-
-  /**
    *  @brief Creates a widget that renders the progress graphically
    *
    *  The widget is not the progress bar - the progress bar is always shown.
@@ -158,6 +150,17 @@ public:
    *  @brief Renders the progress on the widget that was created by progress_widget
    */
   virtual void render_progress (QWidget * /*widget*/) const { }
+
+  /**
+   *  @brief Set a value indicating whether the operation can be cancelled
+   *  
+   *  The progress object will throw a BreakException is cancelled and this
+   *  flag is set to true. The default is "true".
+   */
+  void can_cancel (bool f)
+  {
+    m_can_cancel = f;
+  }
 
   /**
    *  @brief Gets a value indicating whether the operation can be cancelled
@@ -181,25 +184,6 @@ public:
   }
 
   /**
-   *  @brief Sets a value indicating whether the progress is a "final" one
-   *
-   *  A final progress will prevent child progress objects from showing. It basically summarizes child operations.
-   *  By default, a progress object is not final.
-   */
-  void set_final (bool f)
-  {
-    m_final = f;
-  }
-
-  /**
-   *  @brief Gets a value indicating whether the progress is a "final" one
-   */
-  bool final () const
-  {
-    return m_final;
-  }
-
-  /**
    *  @brief Render the title string
    */
   const std::string &title () const
@@ -211,14 +195,6 @@ public:
    *  @brief Used by the adaptor to signal a break condition
    */
   void signal_break ();
-
-  /**
-   *  @brief Returns true, if a break is scheduled
-   */
-  bool break_scheduled () const
-  {
-    return m_cancelled;
-  }
 
 protected:
   /**
@@ -241,109 +217,18 @@ protected:
 
 private:
   friend class ProgressAdaptor;
-  friend class ProgressGarbageCollector;
 
-  std::string m_desc, m_last_desc;
+  std::string m_desc;
   std::string m_title;
-  bool m_final;
   size_t m_interval_count;
   size_t m_yield_interval;
   double m_last_value;
   bool m_can_cancel;
   bool m_cancelled;
-  bool m_registered;
   tl::Clock m_last_yield;
 
   static tl::ProgressAdaptor *adaptor ();
   static void register_adaptor (tl::ProgressAdaptor *pa);
-};
-
-/**
- *  @brief The receivers for progress reports
- *
- *  The progress adaptors form a thread-local stack of receivers. New receivers can override the
- *  previous receivers. It is important that receivers are always created in a nested fashion inside
- *  a single thread.
- */
-
-class TL_PUBLIC ProgressAdaptor
-{
-public:
-  typedef tl::list<tl::Progress>::iterator iterator;
-
-  ProgressAdaptor ();
-  virtual ~ProgressAdaptor ();
-
-  virtual void register_object (Progress *progress);
-  virtual void unregister_object (Progress *progress);
-  virtual void trigger (Progress *progress) = 0;
-  virtual void yield (Progress *progress) = 0;
-
-  void prev (ProgressAdaptor *pa);
-  ProgressAdaptor *prev ();
-
-  bool is_busy () const
-  {
-    return !mp_objects.empty ();
-  }
-
-  tl::Progress *first ();
-
-  void signal_break ();
-
-protected:
-  iterator begin ()
-  {
-    return mp_objects.begin ();
-  }
-
-  iterator end ()
-  {
-    return mp_objects.end ();
-  }
-
-private:
-  friend class ProgressGarbageCollector;
-
-  ProgressAdaptor *mp_prev;
-  tl::list<tl::Progress> mp_objects;
-};
-
-/**
- *  @brief The abstract progress
- *
- *  An abstract progress object can be used as a top-level progress object to mark a section
- *  in an operation flow. This will provide a hint for the UI to leave the progress dialog open
- *  for example.
- */
-class TL_PUBLIC AbstractProgress
-  : public Progress
-{
-public:
-  /**
-   *  @brief Constructor
-   */
-  AbstractProgress (const std::string &desc);
-
-  /**
-   *  @brief Destructor
-   */
-  ~AbstractProgress ();
-
-  /**
-   *  @brief Delivers the current progress as a string (empty for the abstract progress)
-   */
-  std::string formatted_value () const { return std::string (); }
-
-  /**
-   *  @brief Delivers the relative progress (0 for the abstract progress)
-   */
-  double value () const { return 0.0; }
-
-  /**
-   *  @brief Indicates this progress reporter is abstract
-   */
-  bool is_abstract() const { return true; }
 };
 
 /**
@@ -365,10 +250,12 @@ public:
    *  @param desc The description and title string
    *  @param max_count The limit "max" value. 0 for absolute display of values.
    *  @param yield_interval See above.
-   *  @param can_cancel If set to true, the progress may be cancelled which results in a BreakException begin raised
    */
-  RelativeProgress (const std::string &desc, size_t max_count = 0, size_t yield_interval = 0, bool can_cancel = true);
+  RelativeProgress (const std::string &desc, size_t max_count = 0, size_t yield_interval = 1000);
 
+  /**
+   *  @brief Destructor
+   */
   ~RelativeProgress ();
 
   /**
@@ -383,11 +270,6 @@ public:
    *  values >= 1.
    */
   double value () const;
-
-  /**
-   *  @brief Indicates this progress reporter isn't abstract
-   */
-  bool is_abstract() const { return false; }
 
   /** 
    *  @brief Set the format of the output.
@@ -443,7 +325,7 @@ public:
    *  @param desc The description and title string
    *  @param yield_interval See above.
    */
-  AbsoluteProgress (const std::string &desc, size_t yield_interval = 0, bool can_cancel = true);
+  AbsoluteProgress (const std::string &desc, size_t yield_interval = 1000);
 
   /**
    *  @brief Destructor
@@ -463,12 +345,7 @@ public:
    */
   double value () const;
 
-  /**
-   *  @brief Indicates this progress reporter isn't abstract
-   */
-  bool is_abstract() const { return false; }
-
-  /**
+  /** 
    *  @brief Set the format of the output.
    *
    *  This is a sprintf format string with the value being

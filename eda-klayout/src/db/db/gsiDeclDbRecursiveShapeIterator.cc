@@ -1,8 +1,8 @@
-#
+
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -27,91 +27,40 @@
 
 #include "tlGlobPattern.h"
 
-#include <iterator>
-
 namespace gsi
 {
 
 // ---------------------------------------------------------------
 //  db::RecursiveShapeIterator binding
 
-namespace {
-
-/**
- *  @brief A wrapper that allows using "each" on the iterator
- */
-class IteratorIterator
-{
-public:
-  typedef db::RecursiveShapeIterator value_type;
-  typedef db::RecursiveShapeIterator &reference;
-  typedef db::RecursiveShapeIterator *pointer;
-  typedef std::forward_iterator_tag iterator_category;
-  typedef void difference_type;
-
-  IteratorIterator (db::RecursiveShapeIterator *iter) : mp_iter (iter) { }
-  bool at_end () const { return mp_iter->at_end (); }
-  reference operator* () const { return *mp_iter; }
-  void operator++ () { ++*mp_iter; }
-
-private:
-  db::RecursiveShapeIterator *mp_iter;
-};
-
-}
-
-static void check_layer (const db::Layout &layout, unsigned int layer)
-{
-  if (! layout.is_valid_layer (layer) && ! layout.is_special_layer (layer)) {
-    throw tl::Exception (tl::to_string (tr ("Invalid layer index %d")), int (layer));
-  }
-}
-
 static db::RecursiveShapeIterator *new_si1 (const db::Layout &layout, const db::Cell &cell, unsigned int layer)
 {
-  check_layer (layout, layer);
   return new db::RecursiveShapeIterator (layout, cell, layer);
 }
 
 static db::RecursiveShapeIterator *new_si2 (const db::Layout &layout, const db::Cell &cell, const std::vector<unsigned int> &layers)
 {
-  for (auto l = layers.begin (); l != layers.end (); ++l) {
-    check_layer (layout, *l);
-  }
   return new db::RecursiveShapeIterator (layout, cell, layers);
 }
 
 static db::RecursiveShapeIterator *new_si3 (const db::Layout &layout, const db::Cell &cell, unsigned int layer, const db::Box &box, bool overlapping)
 {
-  check_layer (layout, layer);
   return new db::RecursiveShapeIterator (layout, cell, layer, box, overlapping);
 }
 
 static db::RecursiveShapeIterator *new_si3a (const db::Layout &layout, const db::Cell &cell, unsigned int layer, const db::Region &region, bool overlapping)
 {
-  check_layer (layout, layer);
   return new db::RecursiveShapeIterator (layout, cell, layer, region, overlapping);
 }
 
 static db::RecursiveShapeIterator *new_si4 (const db::Layout &layout, const db::Cell &cell, const std::vector<unsigned int> &layers, const db::Box &box, bool overlapping)
 {
-  for (auto l = layers.begin (); l != layers.end (); ++l) {
-    check_layer (layout, *l);
-  }
   return new db::RecursiveShapeIterator (layout, cell, layers, box, overlapping);
 }
 
 static db::RecursiveShapeIterator *new_si4a (const db::Layout &layout, const db::Cell &cell, const std::vector<unsigned int> &layers, const db::Region &region, bool overlapping)
 {
-  for (auto l = layers.begin (); l != layers.end (); ++l) {
-    check_layer (layout, *l);
-  }
   return new db::RecursiveShapeIterator (layout, cell, layers, region, overlapping);
-}
-
-static IteratorIterator each (db::RecursiveShapeIterator *r)
-{
-  return IteratorIterator (r);
 }
 
 static db::DCplxTrans si_dtrans (const db::RecursiveShapeIterator *r)
@@ -119,27 +68,6 @@ static db::DCplxTrans si_dtrans (const db::RecursiveShapeIterator *r)
   const db::Layout *ly = r->layout ();
   tl_assert (ly != 0);
   return db::CplxTrans (ly->dbu ()) * r->trans () * db::VCplxTrans (1.0 / ly->dbu ());
-}
-
-static db::DCplxTrans si_global_dtrans (const db::RecursiveShapeIterator *r)
-{
-  const db::Layout *ly = r->layout ();
-  tl_assert (ly != 0);
-  return db::CplxTrans (ly->dbu ()) * r->global_trans () * db::VCplxTrans (1.0 / ly->dbu ());
-}
-
-static db::DCplxTrans si_always_apply_dtrans (const db::RecursiveShapeIterator *r)
-{
-  const db::Layout *ly = r->layout ();
-  tl_assert (ly != 0);
-  return db::CplxTrans (ly->dbu ()) * r->always_apply () * db::VCplxTrans (1.0 / ly->dbu ());
-}
-
-static void si_set_global_dtrans (db::RecursiveShapeIterator *r, const db::DCplxTrans &gt)
-{
-  const db::Layout *ly = r->layout ();
-  tl_assert (ly != 0);
-  r->set_global_trans (db::VCplxTrans (1.0 / ly->dbu ()) * gt * db::CplxTrans (ly->dbu ()));
 }
 
 static void select_cells1 (db::RecursiveShapeIterator *r, const std::vector<db::cell_index_type> &cells)
@@ -191,135 +119,100 @@ static db::Region complex_region (const db::RecursiveShapeIterator *iter)
   }
 }
 
-static void enable_properties (db::RecursiveShapeIterator *c)
-{
-  c->apply_property_translator (db::PropertiesTranslator::make_pass_all ());
-}
-
-static void remove_properties (db::RecursiveShapeIterator *c)
-{
-  c->apply_property_translator (db::PropertiesTranslator::make_remove_all ());
-}
-
-static void filter_properties (db::RecursiveShapeIterator *c, const std::vector<tl::Variant> &keys)
-{
-  if (c->layout ()) {
-    std::set<tl::Variant> kf;
-    kf.insert (keys.begin (), keys.end ());
-    c->apply_property_translator (db::PropertiesTranslator::make_filter (kf));
-  }
-}
-
-static void map_properties (db::RecursiveShapeIterator *c, const std::map<tl::Variant, tl::Variant> &map)
-{
-  if (c->layout ()) {
-    c->apply_property_translator (db::PropertiesTranslator::make_key_mapper (map));
-  }
-}
-
-static tl::Variant get_property (const db::RecursiveShapeIterator *s, const tl::Variant &key)
-{
-  db::properties_id_type id = s->prop_id ();
-
-  const db::PropertiesSet &props = db::properties (id);
-  return props.value (key);
-}
-
-static tl::Variant get_properties (const db::RecursiveShapeIterator *s)
-{
-  db::properties_id_type id = s->prop_id ();
-
-  const db::PropertiesSet &props = db::properties (id);
-  return props.to_dict_var ();
-}
-
 Class<db::RecursiveShapeIterator> decl_RecursiveShapeIterator ("db", "RecursiveShapeIterator",
-  gsi::constructor ("new", &new_si1, gsi::arg ("layout"), gsi::arg ("cell"), gsi::arg ("layer"),
+  gsi::constructor ("new", &new_si1, 
     "@brief Creates a recursive, single-layer shape iterator.\n"
+    "@args layout, cell, layer\n"
     "@param layout The layout which shall be iterated\n"
-    "@param cell The initial cell which shall be iterated (including its children)\n"
+    "@param cell The initial cell which shall be iterated (including it's children)\n"
     "@param layer The layer (index) from which the shapes are taken\n"
     "\n"
     "This constructor creates a new recursive shape iterator which delivers the shapes of "
-    "the given cell plus its children from the layer given by the layer index in the \"layer\" parameter.\n"
+    "the given cell plus it's children from the layer given by the layer index in the \"layer\" parameter.\n"
     "\n"
     "This constructor has been introduced in version 0.23.\n"
   ) +
-  gsi::constructor ("new", &new_si2, gsi::arg ("layout"), gsi::arg ("cell"), gsi::arg ("layers"),
+  gsi::constructor ("new", &new_si2, 
     "@brief Creates a recursive, multi-layer shape iterator.\n"
+    "@args layout, cell, layer\n"
+    "@args layout, cell, layers\n"
     "@param layout The layout which shall be iterated\n"
-    "@param cell The initial cell which shall be iterated (including its children)\n"
+    "@param cell The initial cell which shall be iterated (including it's children)\n"
     "@param layers The layer indexes from which the shapes are taken\n"
     "\n"
     "This constructor creates a new recursive shape iterator which delivers the shapes of "
-    "the given cell plus its children from the layers given by the layer indexes in the \"layers\" parameter.\n"
+    "the given cell plus it's children from the layers given by the layer indexes in the \"layers\" parameter.\n"
     "While iterating use the \\layer method to retrieve the layer of the current shape.\n"
     "\n"
     "This constructor has been introduced in version 0.23.\n"
   ) +
-  gsi::constructor ("new", &new_si3, gsi::arg ("layout"), gsi::arg ("cell"), gsi::arg ("layer"), gsi::arg ("box"), gsi::arg ("overlapping", false),
+  gsi::constructor ("new", &new_si3, 
     "@brief Creates a recursive, single-layer shape iterator with a region.\n"
+    "@args layout, cell, layer, box, overlapping\n"
     "@param layout The layout which shall be iterated\n"
-    "@param cell The initial cell which shall be iterated (including its children)\n"
+    "@param cell The initial cell which shall be iterated (including it's children)\n"
     "@param layer The layer (index) from which the shapes are taken\n"
     "@param box The search region\n"
     "@param overlapping If set to true, shapes overlapping the search region are reported, otherwise touching is sufficient\n"
     "\n"
     "This constructor creates a new recursive shape iterator which delivers the shapes of "
-    "the given cell plus its children from the layer given by the layer index in the \"layer\" parameter.\n"
+    "the given cell plus it's children from the layer given by the layer index in the \"layer\" parameter.\n"
     "\n"
     "The search is confined to the region given by the \"box\" parameter. If \"overlapping\" is true, shapes whose "
     "bounding box is overlapping the search region are reported. If \"overlapping\" is false, shapes whose "
     "bounding box touches the search region are reported.\n"
     "\n"
-    "This constructor has been introduced in version 0.23. The 'overlapping' parameter has been made optional in version 0.27.\n"
+    "This constructor has been introduced in version 0.23.\n"
   ) +
-  gsi::constructor ("new", &new_si3a, gsi::arg ("layout"), gsi::arg ("cell"), gsi::arg ("layer"), gsi::arg ("region"), gsi::arg ("overlapping", false),
+  gsi::constructor ("new", &new_si3a,
     "@brief Creates a recursive, single-layer shape iterator with a region.\n"
+    "@args layout, cell, layer, region, overlapping\n"
     "@param layout The layout which shall be iterated\n"
-    "@param cell The initial cell which shall be iterated (including its children)\n"
+    "@param cell The initial cell which shall be iterated (including it's children)\n"
     "@param layer The layer (index) from which the shapes are taken\n"
     "@param region The search region\n"
     "@param overlapping If set to true, shapes overlapping the search region are reported, otherwise touching is sufficient\n"
     "\n"
     "This constructor creates a new recursive shape iterator which delivers the shapes of "
-    "the given cell plus its children from the layer given by the layer index in the \"layer\" parameter.\n"
+    "the given cell plus it's children from the layer given by the layer index in the \"layer\" parameter.\n"
     "\n"
     "The search is confined to the region given by the \"region\" parameter. The region needs to be a rectilinear region.\n"
     "If \"overlapping\" is true, shapes whose "
     "bounding box is overlapping the search region are reported. If \"overlapping\" is false, shapes whose "
     "bounding box touches the search region are reported.\n"
     "\n"
-    "This constructor has been introduced in version 0.25. The 'overlapping' parameter has been made optional in version 0.27.\n"
+    "This constructor has been introduced in version 0.25.\n"
   ) +
-  gsi::constructor ("new", &new_si4, gsi::arg ("layout"), gsi::arg ("cell"), gsi::arg ("layers"), gsi::arg ("box"), gsi::arg ("overlapping", false),
+  gsi::constructor ("new", &new_si4,
     "@brief Creates a recursive, multi-layer shape iterator with a region.\n"
+    "@args layout, cell, layers, box, overlapping\n"
     "@param layout The layout which shall be iterated\n"
-    "@param cell The initial cell which shall be iterated (including its children)\n"
+    "@param cell The initial cell which shall be iterated (including it's children)\n"
     "@param layers The layer indexes from which the shapes are taken\n"
     "@param box The search region\n"
     "@param overlapping If set to true, shapes overlapping the search region are reported, otherwise touching is sufficient\n"
     "\n"
     "This constructor creates a new recursive shape iterator which delivers the shapes of "
-    "the given cell plus its children from the layers given by the layer indexes in the \"layers\" parameter.\n"
+    "the given cell plus it's children from the layers given by the layer indexes in the \"layers\" parameter.\n"
     "While iterating use the \\layer method to retrieve the layer of the current shape.\n"
     "\n"
     "The search is confined to the region given by the \"box\" parameter. If \"overlapping\" is true, shapes whose "
     "bounding box is overlapping the search region are reported. If \"overlapping\" is false, shapes whose "
     "bounding box touches the search region are reported.\n"
     "\n"
-    "This constructor has been introduced in version 0.23. The 'overlapping' parameter has been made optional in version 0.27.\n"
+    "This constructor has been introduced in version 0.23.\n"
   ) +
-  gsi::constructor ("new", &new_si4a, gsi::arg ("layout"), gsi::arg ("cell"), gsi::arg ("layers"), gsi::arg ("region"), gsi::arg ("overlapping", false),
+  gsi::constructor ("new", &new_si4a,
     "@brief Creates a recursive, multi-layer shape iterator with a region.\n"
+    "@args layout, cell, layers, region, overlapping\n"
     "@param layout The layout which shall be iterated\n"
-    "@param cell The initial cell which shall be iterated (including its children)\n"
+    "@param cell The initial cell which shall be iterated (including it's children)\n"
     "@param layers The layer indexes from which the shapes are taken\n"
     "@param region The search region\n"
     "@param overlapping If set to true, shapes overlapping the search region are reported, otherwise touching is sufficient\n"
     "\n"
     "This constructor creates a new recursive shape iterator which delivers the shapes of "
-    "the given cell plus its children from the layers given by the layer indexes in the \"layers\" parameter.\n"
+    "the given cell plus it's children from the layers given by the layer indexes in the \"layers\" parameter.\n"
     "While iterating use the \\layer method to retrieve the layer of the current shape.\n"
     "\n"
     "The search is confined to the region given by the \"region\" parameter. The region needs to be a rectilinear region.\n"
@@ -327,25 +220,11 @@ Class<db::RecursiveShapeIterator> decl_RecursiveShapeIterator ("db", "RecursiveS
     "bounding box is overlapping the search region are reported. If \"overlapping\" is false, shapes whose "
     "bounding box touches the search region are reported.\n"
     "\n"
-    "This constructor has been introduced in version 0.23. The 'overlapping' parameter has been made optional in version 0.27.\n"
+    "This constructor has been introduced in version 0.23.\n"
   ) +
-  gsi::iterator_ext ("each", &each,
-    "@brief Native iteration\n"
-    "This method enables native iteration, e.g.\n"
-    "\n"
-    "@code\n"
-    "  iter = ... # RecursiveShapeIterator\n"
-    "  iter.each do |i|\n"
-    "     ... i is the iterator itself\n"
-    "  end\n"
-    "@/code\n"
-    "\n"
-    "This is slightly more convenient than the 'at_end' .. 'next' loop.\n"
-    "\n"
-    "This feature has been introduced in version 0.28.\n"
-  ) +
-  gsi::method ("max_depth=", (void (db::RecursiveShapeIterator::*) (int)) &db::RecursiveShapeIterator::max_depth, gsi::arg ("depth"),
-    "@brief Specifies the maximum hierarchy depth to look into\n"
+  gsi::method ("max_depth=", (void (db::RecursiveShapeIterator::*) (int)) &db::RecursiveShapeIterator::max_depth,
+    "@brief Specify the maximum hierarchy depth to look into\n"
+    "@args depth\n"
     "\n"
     "A depth of 0 instructs the iterator to deliver only shapes from the initial cell.\n"
     "The depth must be specified before the shapes are being retrieved.\n"
@@ -358,23 +237,7 @@ Class<db::RecursiveShapeIterator> decl_RecursiveShapeIterator ("db", "RecursiveS
     "\n"
     "This method has been introduced in version 0.23.\n"
   ) +
-  gsi::method ("min_depth=", (void (db::RecursiveShapeIterator::*) (int)) &db::RecursiveShapeIterator::min_depth, gsi::arg ("depth"),
-    "@brief Specifies the minimum hierarchy depth to look into\n"
-    "\n"
-    "A depth of 0 instructs the iterator to deliver shapes from the top level.\n"
-    "1 instructs to deliver shapes from the first child level.\n"
-    "The minimum depth must be specified before the shapes are being retrieved.\n"
-    "\n"
-    "This method has been introduced in version 0.27.\n"
-  ) +
-  gsi::method ("min_depth", (int (db::RecursiveShapeIterator::*) () const) &db::RecursiveShapeIterator::min_depth,
-    "@brief Gets the minimum hierarchy depth\n"
-    "\n"
-    "See \\min_depth= for a description of that attribute.\n"
-    "\n"
-    "This method has been introduced in version 0.27.\n"
-  ) +
-  gsi::method ("reset", &db::RecursiveShapeIterator::reset,
+  gsi::method ("reset", &db::RecursiveShapeIterator::reset, 
     "@brief Resets the iterator to the initial state\n"
     "\n"
     "This method has been introduced in version 0.23.\n"
@@ -382,7 +245,7 @@ Class<db::RecursiveShapeIterator> decl_RecursiveShapeIterator ("db", "RecursiveS
   gsi::method ("reset_selection", &db::RecursiveShapeIterator::reset_selection, 
     "@brief Resets the selection to the default state\n"
     "\n"
-    "In the initial state, the top cell and its children are selected. Child cells can be switched on and off "
+    "In the initial state, the top cell and it's children are selected. Child cells can be switched on and off "
     "together with their sub-hierarchy using \\select_cells and \\unselect_cells.\n"
     "\n"
     "This method will also reset the iterator.\n"
@@ -399,48 +262,8 @@ Class<db::RecursiveShapeIterator> decl_RecursiveShapeIterator ("db", "RecursiveS
     "\n"
     "This method has been introduced in version 0.23.\n"
   ) +
-  gsi::method ("global_trans=", &db::RecursiveShapeIterator::set_global_trans, gsi::arg ("t"),
-    "@brief Sets the global transformation to apply to all shapes delivered\n"
-    "The global transformation will be applied to all shapes delivered by biasing the \"trans\" attribute.\n"
-    "The search regions apply to the coordinate space after global transformation.\n"
-    "\n"
-    "This method has been introduced in version 0.27.\n"
-  ) +
-  gsi::method ("global_trans", &db::RecursiveShapeIterator::global_trans,
-    "@brief Gets the global transformation to apply to all shapes delivered\n"
-    "See also \\global_trans=.\n"
-    "\n"
-    "This method has been introduced in version 0.27.\n"
-  ) +
-  gsi::method_ext ("global_dtrans=", &si_set_global_dtrans, gsi::arg ("t"),
-    "@brief Sets the global transformation to apply to all shapes delivered (transformation in micrometer units)\n"
-    "The global transformation will be applied to all shapes delivered by biasing the \"trans\" attribute.\n"
-    "The search regions apply to the coordinate space after global transformation.\n"
-    "\n"
-    "This method has been introduced in version 0.27.\n"
-  ) +
-  gsi::method_ext ("global_dtrans", &si_global_dtrans,
-    "@brief Gets the global transformation to apply to all shapes delivered (in micrometer units)\n"
-    "See also \\global_dtrans=.\n"
-    "\n"
-    "This method has been introduced in version 0.27.\n"
-  ) +
-  gsi::method ("always_apply_trans", &db::RecursiveShapeIterator::always_apply,
-    "@brief Gets the global transformation if at top level, unity otherwise\n"
-    "As the global transformation is only applicable on top level, use this method to transform shapes and instances into their local (cell-level) version "
-    "while considering the global transformation properly.\n"
-    "\n"
-    "This method has been introduced in version 0.27.\n"
-  ) +
-  gsi::method_ext ("always_apply_dtrans", &si_always_apply_dtrans,
-    "@brief Gets the global transformation if at top level, unity otherwise (micrometer-unit version)\n"
-    "As the global transformation is only applicable on top level, use this method to transform shapes and instances into their local (cell-level) version "
-    "while considering the global transformation properly.\n"
-    "\n"
-    "This method has been introduced in version 0.27.\n"
-  ) +
-  gsi::method ("region", &db::RecursiveShapeIterator::region,
-    "@brief Gets the basic region that this iterator is using\n"
+  gsi::method ("region", &db::RecursiveShapeIterator::region, 
+    "@brief Gets the basic region that is iterator is using\n"
     "The basic region is the overall box the region iterator iterates over. "
     "There may be an additional complex region that confines the region iterator. "
     "See \\complex_region for this attribute.\n"
@@ -448,39 +271,43 @@ Class<db::RecursiveShapeIterator> decl_RecursiveShapeIterator ("db", "RecursiveS
     "This method has been introduced in version 0.23.\n"
   ) +
   gsi::method_ext ("complex_region", &complex_region,
-    "@brief Gets the complex region that this iterator is using\n"
+    "@brief Gets the complex region that is iterator is using\n"
     "The complex region is the effective region (a \\Region object) that the "
     "iterator is selecting from the layout layers. This region can be a single box "
     "or a complex region.\n"
     "\n"
     "This method has been introduced in version 0.25.\n"
   ) +
-  gsi::method ("region=", (void (db::RecursiveShapeIterator::*)(const db::RecursiveShapeIterator::box_type &)) &db::RecursiveShapeIterator::set_region, gsi::arg ("box_region"),
-    "@brief Sets the rectangular region that this iterator is iterating over\n"
+  gsi::method ("region=", (void (db::RecursiveShapeIterator::*)(const db::RecursiveShapeIterator::box_type &)) &db::RecursiveShapeIterator::set_region,
+    "@brief Sets the rectangular region that is iterator is iterating over\n"
+    "@args box_region\n"
     "See \\region for a description of this attribute.\n"
     "Setting a simple region will reset the complex region to a rectangle and reset the iterator to "
     "the beginning of the sequence."
     "\n"
     "This method has been introduced in version 0.23.\n"
   ) +
-  gsi::method ("region=", (void (db::RecursiveShapeIterator::*)(const db::RecursiveShapeIterator::region_type &)) &db::RecursiveShapeIterator::set_region, gsi::arg ("complex_region"),
-    "@brief Sets the complex region that this iterator is using\n"
+  gsi::method ("region=", (void (db::RecursiveShapeIterator::*)(const db::RecursiveShapeIterator::region_type &)) &db::RecursiveShapeIterator::set_region,
+    "@brief Sets the complex region that is iterator is using\n"
+    "@args complex_region\n"
     "See \\complex_region for a description of this attribute. Setting the complex region will "
     "reset the basic region (see \\region) to the bounding box of the complex region and "
     "reset the iterator to the beginning of the sequence.\n"
     "\n"
     "This method overload has been introduced in version 0.25.\n"
   ) +
-  gsi::method ("confine_region", (void (db::RecursiveShapeIterator::*)(const db::RecursiveShapeIterator::box_type &)) &db::RecursiveShapeIterator::confine_region, gsi::arg ("box_region"),
-    "@brief Confines the region that this iterator is iterating over\n"
+  gsi::method ("confine_region", (void (db::RecursiveShapeIterator::*)(const db::RecursiveShapeIterator::box_type &)) &db::RecursiveShapeIterator::confine_region,
+    "@brief Confines the region that is iterator is iterating over\n"
+    "@args box_region\n"
     "This method is similar to setting the region (see \\region=), but will confine any region (complex or simple) already set. "
     "Essentially it does a logical AND operation between the existing and given region. "
     "Hence this method can only reduce a region, not extend it.\n"
     "\n"
     "This method has been introduced in version 0.25.\n"
   ) +
-  gsi::method ("confine_region", (void (db::RecursiveShapeIterator::*)(const db::RecursiveShapeIterator::region_type &)) &db::RecursiveShapeIterator::confine_region, gsi::arg ("complex_region"),
-    "@brief Confines the region that this iterator is iterating over\n"
+  gsi::method ("confine_region", (void (db::RecursiveShapeIterator::*)(const db::RecursiveShapeIterator::region_type &)) &db::RecursiveShapeIterator::confine_region,
+    "@brief Confines the region that is iterator is iterating over\n"
+    "@args complex_region\n"
     "This method is similar to setting the region (see \\region=), but will confine any region (complex or simple) already set. "
     "Essentially it does a logical AND operation between the existing and given region. "
     "Hence this method can only reduce a region, not extend it.\n"
@@ -492,28 +319,13 @@ Class<db::RecursiveShapeIterator> decl_RecursiveShapeIterator ("db", "RecursiveS
     "\n"
     "This method has been introduced in version 0.23.\n"
   ) +
-  gsi::method ("overlapping=", &db::RecursiveShapeIterator::set_overlapping, gsi::arg ("flag"),
+  gsi::method ("overlapping=", &db::RecursiveShapeIterator::set_overlapping, 
     "@brief Sets a flag indicating whether overlapping shapes are selected when a region is used\n"
+    "@args region\n"
     "\n"
     "If this flag is false, shapes touching the search region are returned.\n"
     "\n"
     "This method has been introduced in version 0.23.\n"
-  ) +
-  gsi::method ("for_merged_input?", &db::RecursiveShapeIterator::for_merged_input,
-    "@brief Gets a flag indicating whether iterator optimizes for merged input\n"
-    "\n"
-    "see \\for_merged_input= for details of this attribute.\n"
-    "\n"
-    "This method has been introduced in version 0.29.\n"
-  ) +
-  gsi::method ("for_merged_input=", &db::RecursiveShapeIterator::set_for_merged_input, gsi::arg ("flag"),
-    "@brief Sets a flag indicating whether iterator optimizes for merged input\n"
-    "\n"
-    "If this flag is set to true, the iterator is allowed to skip shapes it deems irrelevant "
-    "because they are covered entirely by other shapes. This allows shortcutting hierarchy traversal in "
-    "some cases.\n"
-    "\n"
-    "This method has been introduced in version 0.29.\n"
   ) +
   gsi::method ("unselect_all_cells", &db::RecursiveShapeIterator::unselect_all_cells,
     "@brief Unselects all cells.\n"
@@ -537,8 +349,9 @@ Class<db::RecursiveShapeIterator> decl_RecursiveShapeIterator ("db", "RecursiveS
     "\n"
     "This method has been introduced in version 0.23.\n"
   ) +
-  gsi::method_ext ("unselect_cells", &unselect_cells1, gsi::arg ("cells"),
+  gsi::method_ext ("unselect_cells", &unselect_cells1,
     "@brief Unselects the given cells.\n"
+    "@args cells\n"
     "\n"
     "This method will sets the \"unselected\" mark on the given cells. "
     "That means that these cells or their child cells will not be visited, unless "
@@ -550,8 +363,9 @@ Class<db::RecursiveShapeIterator> decl_RecursiveShapeIterator ("db", "RecursiveS
     "\n"
     "This method has been introduced in version 0.23.\n"
   ) +
-  gsi::method_ext ("unselect_cells", &unselect_cells2, gsi::arg ("cells"),
+  gsi::method_ext ("unselect_cells", &unselect_cells2,
     "@brief Unselects the given cells.\n"
+    "@args cells\n"
     "\n"
     "This method will sets the \"unselected\" mark on the given cells. "
     "That means that these cells or their child cells will not be visited, unless "
@@ -565,8 +379,9 @@ Class<db::RecursiveShapeIterator> decl_RecursiveShapeIterator ("db", "RecursiveS
     "\n"
     "This method has been introduced in version 0.23.\n"
   ) +
-  gsi::method_ext ("select_cells", &select_cells1, gsi::arg ("cells"),
+  gsi::method_ext ("select_cells", &select_cells1,
     "@brief Unselects the given cells.\n"
+    "@args cells\n"
     "\n"
     "This method will sets the \"selected\" mark on the given cells. "
     "That means that these cells or their child cells are visited, unless "
@@ -578,8 +393,9 @@ Class<db::RecursiveShapeIterator> decl_RecursiveShapeIterator ("db", "RecursiveS
     "\n"
     "This method has been introduced in version 0.23.\n"
   ) +
-  gsi::method_ext ("select_cells", &select_cells2, gsi::arg ("cells"),
+  gsi::method_ext ("select_cells", &select_cells2,
     "@brief Unselects the given cells.\n"
+    "@args cells\n"
     "\n"
     "This method will sets the \"selected\" mark on the given cells. "
     "That means that these cells or their child cells are visited, unless "
@@ -593,19 +409,13 @@ Class<db::RecursiveShapeIterator> decl_RecursiveShapeIterator ("db", "RecursiveS
     "\n"
     "This method has been introduced in version 0.23.\n"
   ) +
-  gsi::method ("shape_flags=", (void (db::RecursiveShapeIterator::*)(unsigned int)) &db::RecursiveShapeIterator::shape_flags, gsi::arg ("flags"),
+  gsi::method ("shape_flags=", (void (db::RecursiveShapeIterator::*)(unsigned int)) &db::RecursiveShapeIterator::shape_flags,
     "@brief Specifies the shape selection flags\n"
+    "@args flags\n"
     "\n"
     "The flags are the same then being defined in \\Shapes (the default is RBA::Shapes::SAll).\n"
     "The flags must be specified before the shapes are being retrieved.\n"
     "Settings the shapes flags will reset the iterator.\n"
-  ) +
-  gsi::method ("shape_flags", (unsigned int (db::RecursiveShapeIterator::*)() const) &db::RecursiveShapeIterator::shape_flags,
-    "@brief Gets the shape selection flags\n"
-    "\n"
-    "See \\shape_flags= for a description of that property.\n"
-    "\n"
-    "This getter has been introduced in version 0.28.\n"
   ) +
   gsi::method ("trans|#itrans", &db::RecursiveShapeIterator::trans,
     "@brief Gets the current transformation by which the shapes must be transformed into the initial cell\n"
@@ -619,39 +429,10 @@ Class<db::RecursiveShapeIterator> decl_RecursiveShapeIterator ("db", "RecursiveS
   gsi::method_ext ("dtrans", &gsi::si_dtrans,
     "@brief Gets the transformation into the initial cell applicable for floating point types\n"
     "\n"
-    "This transformation corresponds to the one delivered by \\trans, but is applicable for "
+    "This transformation corresponds to the one deliverd by \\trans, but is applicable for "
     "the floating-point shape types in micron unit space.\n"
     "\n"
     "This method has been introduced in version 0.25.3."
-  ) +
-  gsi::method ("prop_id", &db::RecursiveShapeIterator::prop_id,
-    "@brief Gets the effective properties ID\n"
-    "The shape iterator supports property filtering and translation. This method will deliver "
-    "the effective property ID after translation. The original property ID can be obtained from "
-    "'shape.prop_id' and is not changed by installing filters or mappers.\n"
-    "\n"
-    "\\prop_id is evaluated by \\Region objects for example, when they are created "
-    "from a shape iterator.\n"
-    "\n"
-    "See \\enable_properties, \\filter_properties, \\remove_properties and \\map_properties for "
-    "details on this feature.\n"
-    "\n"
-    "This attribute has been introduced in version 0.28.4."
-  ) +
-  gsi::method_ext ("property", &get_property, gsi::arg ("key"),
-    "@brief Gets the effective user property with the given key\n"
-    "See \\prop_id for the definition of 'effective user property'.\n\n"
-    "This method is a convenience method that gets the effective property of the current shape with the given key. "
-    "If no property with that key exists, it will return nil.\n"
-    "\n"
-    "This method has been introduced in version 0.30."
-  ) +
-  gsi::method_ext ("properties", &get_properties,
-    "@brief Gets the effective user properties\n"
-    "See \\prop_id for the definition of 'effective user properties'.\n\n"
-    "This method is a convenience method that gets the effective properties of the current shape as a single hash.\n"
-    "\n"
-    "This method has been introduced in version 0.30."
   ) +
   gsi::method ("shape", &db::RecursiveShapeIterator::shape,
     "@brief Gets the current shape\n"
@@ -673,7 +454,7 @@ Class<db::RecursiveShapeIterator> decl_RecursiveShapeIterator ("db", "RecursiveS
     "@brief Gets the current cell's index \n"
   ) +
   gsi::method ("next", (void (db::RecursiveShapeIterator::*) ()) &db::RecursiveShapeIterator::next,
-    "@brief Increments the iterator\n"
+    "@brief Increment the iterator\n"
     "This moves the iterator to the next shape inside the search scope."
   ) +
   gsi::method ("layer", &db::RecursiveShapeIterator::layer,
@@ -682,74 +463,31 @@ Class<db::RecursiveShapeIterator> decl_RecursiveShapeIterator ("db", "RecursiveS
     "This method has been introduced in version 0.23."
   ) +
   gsi::method ("path", &db::RecursiveShapeIterator::path,
-    "@brief Gets the instantiation path of the shape addressed currently\n"
+    "@brief Gets the instantatiation path of the shape addressed currently\n"
     "\n"
     "This attribute is a sequence of \\InstElement objects describing the cell instance path from the initial "
     "cell to the current cell containing the current shape.\n"
     "\n"
     "This method has been introduced in version 0.25."
   ) +
-  gsi::method ("==", &db::RecursiveShapeIterator::operator==, gsi::arg ("other"),
+  gsi::method ("==", &db::RecursiveShapeIterator::operator==, 
     "@brief Comparison of iterators - equality\n"
+    "@args other\n"
     "\n"
     "Two iterators are equal if they point to the same shape.\n"
   ) +
-  gsi::method ("!=", &db::RecursiveShapeIterator::operator!=, gsi::arg ("other"),
+  gsi::method ("!=", &db::RecursiveShapeIterator::operator!=, 
     "@brief Comparison of iterators - inequality\n"
+    "@args other\n"
     "\n"
     "Two iterators are not equal if they do not point to the same shape.\n"
-  ) +
-  gsi::method_ext ("enable_properties", &enable_properties,
-    "@brief Enables properties for the given iterator.\n"
-    "Afer enabling properties, \\prop_id will deliver the effective properties ID for the current shape. "
-    "By default, properties are not enabled and \\prop_id will always return 0 (no properties attached). "
-    "Alternatively you can apply \\filter_properties "
-    "or \\map_properties to enable properties with a specific name key.\n"
-    "\n"
-    "Note that property filters/mappers are additive and act in addition (after) the currently installed filter.\n"
-    "\n"
-    "This feature has been introduced in version 0.28.4."
-  ) +
-  gsi::method_ext ("remove_properties", &remove_properties,
-    "@brief Removes properties for the given container.\n"
-    "This will remove all properties and \\prop_id will deliver 0 always (no properties attached).\n"
-    "Alternatively you can apply \\filter_properties "
-    "or \\map_properties to enable properties with a specific name key.\n"
-    "\n"
-    "Note that property filters/mappers are additive and act in addition (after) the currently installed filter.\n"
-    "So effectively after 'remove_properties' you cannot get them back.\n"
-    "\n"
-    "This feature has been introduced in version 0.28.4."
-  ) +
-  gsi::method_ext ("filter_properties", &filter_properties, gsi::arg ("keys"),
-    "@brief Filters properties by certain keys.\n"
-    "Calling this method will reduce the properties to values with name keys from the 'keys' list.\n"
-    "As a side effect, this method enables properties.\n"
-    "As with \\enable_properties or \\remove_properties, this filter has an effect on the value returned "
-    "by \\prop_id, not on the properties ID attached to the shape directly.\n"
-    "\n"
-    "Note that property filters/mappers are additive and act in addition (after) the currently installed filter.\n"
-    "\n"
-    "This feature has been introduced in version 0.28.4."
-  ) +
-  gsi::method_ext ("map_properties", &map_properties, gsi::arg ("key_map"),
-    "@brief Maps properties by name key.\n"
-    "Calling this method will reduce the properties to values with name keys from the 'keys' hash and "
-    "renames the properties. Property values with keys not listed in the key map will be removed.\n"
-    "As a side effect, this method enables properties.\n"
-    "As with \\enable_properties or \\remove_properties, this filter has an effect on the value returned "
-    "by \\prop_id, not on the properties ID attached to the shape directly.\n"
-    "\n"
-    "Note that property filters/mappers are additive and act in addition (after) the currently installed filter.\n"
-    "\n"
-    "This feature has been introduced in version 0.28.4."
   ),
-  "@brief An iterator delivering shapes recursively\n"
+  "@brief An iterator delivering shapes that touch or overlap the given region recursively\n"
   "\n"
-  "The iterator can be obtained from a cell, a layer and optionally a region.\n"
+  "The iterator can be obtained from a layout, specifying a starting cell, a layer and optionally a region.\n"
   "It simplifies retrieval of shapes from a geometrical region while considering\n"
   "subcells as well.\n"
-  "Some options can be specified in addition, i.e. the level to which to look into or\n"
+  "Some options can be specified, i.e. the level to which to look into or\n"
   "shape classes and shape properties. The shapes are retrieved by using the \\shape method,\n"
   "\\next moves to the next shape and \\at_end tells, if the iterator has move shapes to deliver.\n"
   "\n"
@@ -757,28 +495,20 @@ Class<db::RecursiveShapeIterator> decl_RecursiveShapeIterator ("db", "RecursiveS
   "\n"
   "@code\n"
   "# print the polygon-like objects as seen from the initial cell \"cell\"\n"
-  "iter = cell.begin_shapes_rec(layer)\n"
+  "iter = layout.begin_shapes(cell_index, layer)\n"
   "while !iter.at_end?\n"
   "  if iter.shape.renders_polygon?\n"
   "    polygon = iter.shape.polygon.transformed(iter.itrans)\n"
-  "    puts \"In cell #{iter.cell.name}: \" + polygon.to_s\n"
+  "    puts \"In cell #{iter.cell.name}: \" + polyon.to_s\n"
   "  end\n"
   "  iter.next\n"
   "end\n"
-  "\n"
-  "# or shorter:\n"
-  "cell.begin_shapes_rec(layer).each do |iter|\n"
-  "  if iter.shape.renders_polygon?\n"
-  "    polygon = iter.shape.polygon.transformed(iter.itrans)\n"
-  "    puts \"In cell #{iter.cell.name}: \" + polygon.to_s\n"
-  "  end\n"
-  "end\n"
   "@/code\n"
   "\n"
-  "\\Cell offers three methods to get these iterators: begin_shapes_rec, begin_shapes_rec_touching and begin_shapes_rec_overlapping.\n"
-  "\\Cell#begin_shapes_rec will deliver a standard recursive shape iterator which starts from the given cell and iterates "
-  "over all child cells. \\Cell#begin_shapes_rec_touching delivers a RecursiveShapeIterator which delivers the shapes "
-  "whose bounding boxed touch the given search box. \\Cell#begin_shapes_rec_overlapping delivers all shapes whose bounding box "
+  "\\Layout offers three methods to get these iterators: begin_shapes, begin_shapes_touching and begin_shapes_overlapping.\n"
+  "\\Layout#begin_shapes will deliver a standard recursive shape iterator which starts from the given cell and iterates "
+  "over all child cells. \\Layout#begin_shapes_touching delivers a RecursiveShapeIterator which delivers the shapes "
+  "whose bounding boxed touch the given search box. \\Layout#begin_shapes_overlapping delivers all shapes whose bounding box "
   "overlaps the search box.\n"
   "\n"
   "A RecursiveShapeIterator object can also be created explicitly. This allows some more options, i.e. using "
@@ -800,7 +530,7 @@ Class<db::RecursiveShapeIterator> decl_RecursiveShapeIterator ("db", "RecursiveS
   "sets the \"start delivery\" flag while \\unselect_cells sets the \"stop delivery\" flag. In effect, using "
   "\\unselect_cells will exclude that cell plus the subtree from delivery. Parts of that subtree can be "
   "turned on again using \\select_cells. For the cells selected that way, the shapes of these cells and their "
-  "child cells are delivered, even if their parent was unselected.\n"
+  "child cells are delivered, even if their parents was unselected.\n"
   "\n"
   "To get shapes from a specific cell, i.e. \"MACRO\" plus its child cells, unselect the top cell first "
   "and the select the desired cell again:\n"
@@ -835,11 +565,7 @@ Class<db::RecursiveShapeIterator> decl_RecursiveShapeIterator ("db", "RecursiveS
   "all cells not starting with one of that letters.\n"
   "\n"
   "The RecursiveShapeIterator class has been introduced in version 0.18 and has been extended substantially in 0.23.\n"
-  "Starting with version 0.29.9, the recursive shape iterator will lock the layout it acts on while in iterating mode. "
-  "While the iterator is active, the Layout object is maintained in 'under construction mode' (see \\Layout#under_construction). "
-  "This is to prevent layout modifications to interfere with the iterator's operation. Specifically when coding in Ruby, "
-  "pending iterators may block the Layout until the garbage collector cleans up these objects. To avoid this, call \\_destroy "
-  "on the iterator when you no longer need it. The Layout is automatically unlocked when the iterator reaches the end."
 );
 
 }
+

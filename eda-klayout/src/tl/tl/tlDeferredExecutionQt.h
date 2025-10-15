@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -65,7 +65,6 @@ private slots:
 
 private:
   QTimer m_timer, m_fallback_timer;
-  int m_event_type;
 
   virtual bool event (QEvent *event);
 };

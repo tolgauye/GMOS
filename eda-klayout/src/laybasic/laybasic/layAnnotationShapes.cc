@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -56,7 +56,7 @@ AnnotationLayerOp::erase (AnnotationShapes *shapes)
     std::vector<AnnotationShapes::layer_type::iterator> to_erase;
     to_erase.reserve (m_shapes.size ());
 
-    //  This is not quite effective but seems to be the simplest way
+    //  This is not quite effective but seems to be the simpliest way
     //  of implementing this: search for each element and erase these.
     for (AnnotationShapes::layer_type::iterator lsh = shapes->begin (); lsh != shapes->end (); ++lsh) {
       std::vector<shape_type>::const_iterator s = std::lower_bound (s_begin, s_end, *lsh);
@@ -89,12 +89,6 @@ AnnotationShapes::AnnotationShapes (const AnnotationShapes &d)
   operator= (d);
 }
 
-AnnotationShapes::AnnotationShapes (const AnnotationShapes &&d)
-  : db::LayoutStateModel (true /*busy*/), db::Object (d)
-{
-  operator= (d);
-}
-
 AnnotationShapes::~AnnotationShapes ()
 {
   clear ();
@@ -112,21 +106,7 @@ AnnotationShapes::operator= (const AnnotationShapes &d)
   }
   return *this;
 }
-
-AnnotationShapes &
-AnnotationShapes::operator= (const AnnotationShapes &&d)
-{
-  if (&d != this) {
-    clear ();
-    if (manager () && manager ()->transacting ()) {
-      manager ()->queue (this, new AnnotationLayerOp (true /*insert*/, d.m_layer.begin (), d.m_layer.end ()));
-    }
-    m_layer = d.m_layer;
-  }
-  return *this;
-}
-
-void
+void 
 AnnotationShapes::clear ()
 {
   if (manager () && manager ()->transacting ()) {
@@ -146,17 +126,7 @@ AnnotationShapes::insert (const shape_type &sh)
   return *m_layer.insert (sh);
 }
 
-const AnnotationShapes::shape_type &
-AnnotationShapes::insert (const shape_type &&sh)
-{
-  if (manager () && manager ()->transacting ()) {
-    manager ()->queue (this, new AnnotationLayerOp (true /*insert*/, sh));
-  }
-  invalidate_state ();  //  HINT: must come before the change is done!
-  return *m_layer.insert (sh);
-}
-
-void
+void 
 AnnotationShapes::reserve (size_t n)
 {
   m_layer.reserve (n);
@@ -186,21 +156,7 @@ AnnotationShapes::replace (iterator pos, const shape_type &sh)
   return *pos;
 }
 
-const AnnotationShapes::shape_type &
-AnnotationShapes::replace (iterator pos, const shape_type &&sh)
-{
-  if (&*pos != &sh && *pos != sh) {
-    if (manager () && manager ()->transacting ()) {
-      manager ()->queue (this, new AnnotationLayerOp (false /*not insert*/, *pos));
-      manager ()->queue (this, new AnnotationLayerOp (true /*insert*/, sh));
-    }
-    invalidate_state ();  //  HINT: must come before the change is done!
-    m_layer.replace (pos, std::move (sh));
-  }
-  return *pos;
-}
-
-void
+void 
 AnnotationShapes::redo (db::Op *op)
 {
   AnnotationLayerOp *layop = dynamic_cast<AnnotationLayerOp *> (op);

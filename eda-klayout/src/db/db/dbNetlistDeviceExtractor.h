@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -29,13 +29,126 @@
 #include "dbHierNetworkProcessor.h"
 #include "dbDeepShapeStore.h"
 #include "dbRegion.h"
-#include "dbNetShape.h"
-#include "dbLog.h"
 
 #include "gsiObject.h"
 
 namespace db
 {
+
+/**
+ *  @brief An error object for the netlist device extractor
+ *
+ *  The device extractor will keep errors using objects of this kind.
+ */
+class DB_PUBLIC NetlistDeviceExtractorError
+{
+public:
+  /**
+   *  @brief Creates an error
+   */
+  NetlistDeviceExtractorError ();
+
+  /**
+   *  @brief Creates an error with a cell name and a message (the minimum information)
+   */
+  NetlistDeviceExtractorError (const std::string &cell_name, const std::string &msg);
+
+  /**
+   *  @brief The category name of the error
+   *  Specifying the category name is optional. If a category is given, it will be used for
+   *  the report.
+   */
+  const std::string &category_name () const
+  {
+    return m_category_name;
+  }
+
+  /**
+   *  @brief Sets the category name
+   */
+  void set_category_name (const std::string &s)
+  {
+    m_category_name = s;
+  }
+
+  /**
+   *  @brief The category description of the error
+   *  Specifying the category description is optional. If a category is given, this attribute will
+   *  be used for the category description.
+   */
+  const std::string &category_description () const
+  {
+    return m_category_description;
+  }
+
+  /**
+   *  @brief Sets the category description
+   */
+  void set_category_description (const std::string &s)
+  {
+    m_category_description = s;
+  }
+
+  /**
+   *  @brief Gets the geometry for this error
+   *  Not all errors may specify a geometry. In this case, the polygon is empty.
+   */
+  const db::DPolygon &geometry () const
+  {
+    return m_geometry;
+  }
+
+  /**
+   *  @brief Sets the geometry
+   */
+  void set_geometry (const db::DPolygon &g)
+  {
+    m_geometry = g;
+  }
+
+  /**
+   *  @brief Gets the message for this error
+   */
+  const std::string &message () const
+  {
+    return m_message;
+  }
+
+  /**
+   *  @brief Sets the message
+   */
+  void set_message (const std::string &n)
+  {
+    m_message = n;
+  }
+
+  /**
+   *  @brief Gets the cell name the error occurred in
+   */
+  const std::string &cell_name () const
+  {
+    return m_cell_name;
+  }
+
+  /**
+   *  @brief Sets the cell name
+   */
+  void set_cell_name (const std::string &n)
+  {
+    m_cell_name = n;
+  }
+
+  /**
+   *  @brief Formats this message for printing
+   */
+  std::string to_string () const;
+
+private:
+  std::string m_cell_name;
+  std::string m_message;
+  db::DPolygon m_geometry;
+  std::string m_category_name, m_category_description;
+};
 
 /**
  *  @brief Specifies a single layer from the device extractor
@@ -87,12 +200,12 @@ class DB_PUBLIC NetlistDeviceExtractor
   : public gsi::ObjectBase, public tl::Object
 {
 public:
-  typedef std::list<db::LogEntryData> log_entry_list;
-  typedef log_entry_list::const_iterator log_entry_iterator;
+  typedef std::list<db::NetlistDeviceExtractorError> error_list;
+  typedef error_list::const_iterator error_iterator;
   typedef std::vector<db::NetlistDeviceExtractorLayerDefinition> layer_definitions;
   typedef layer_definitions::const_iterator layer_definitions_iterator;
-  typedef std::map<std::string, db::ShapeCollection *> input_layers;
-  typedef db::hier_clusters<db::NetShape> hier_clusters_type;
+  typedef std::map<std::string, db::Region *> input_layers;
+  typedef db::hier_clusters<db::PolygonRef> hier_clusters_type;
 
   /**
    *  @brief Constructor
@@ -105,6 +218,14 @@ public:
    *  @brief Destructor
    */
   ~NetlistDeviceExtractor ();
+
+  /**
+   *  @brief Gets the name of the extractor and the device class
+   */
+  const std::string &name ()
+  {
+    return m_name;
+  }
 
   /**
    *  @brief Gets the property name for the device terminal annotation
@@ -139,6 +260,8 @@ public:
    *  the nets later to associate nets with device terminals.
    *
    *  The definition of the input layers is device class specific.
+   *
+   *  NOTE: The extractor expects "PolygonRef" type layers.
    */
   void extract (Layout &layout, Cell &cell, const std::vector<unsigned int> &layers, Netlist *netlist, hier_clusters_type &clusters, double device_scaling = 1.0, const std::set<cell_index_type> *breakout_cells = 0);
 
@@ -152,27 +275,27 @@ public:
   void extract (DeepShapeStore &dss, unsigned int layout_index, const input_layers &layers, Netlist &netlist, hier_clusters_type &clusters, double device_scaling = 1.0);
 
   /**
-   *  @brief Clears the log entries
+   *  @brief Gets the error iterator, begin
    */
-  void clear_log_entries ()
+  error_iterator begin_errors ()
   {
-    m_log_entries.clear ();
+    return m_errors.begin ();
   }
 
   /**
-   *  @brief Gets the log entry iterator, begin
+   *  @brief Gets the error iterator, end
    */
-  log_entry_iterator begin_log_entries ()
+  error_iterator end_errors ()
   {
-    return m_log_entries.begin ();
+    return m_errors.end ();
   }
 
   /**
-   *  @brief Gets the log entry iterator, end
+   *  @brief Returns true, if there are errors
    */
-  log_entry_iterator end_log_entries ()
+  bool has_errors () const
   {
-    return m_log_entries.end ();
+    return ! m_errors.empty ();
   }
 
   /**
@@ -200,18 +323,10 @@ public:
   }
 
   /**
-   *  @brief Sets the name of the device class and the device extractor
-   */
-  const std::string &name () const
-  {
-    return m_name;
-  }
-
-  /**
    *  @brief Sets up the extractor
    *
    *  This method is supposed to set up the device extractor. This involves two basic steps:
-   *  defining the device classes and setting up the device layers.
+   *  defining the device classe and setting up the device layers.
    *
    *  Use "register_device_class" to register the device class you need.
    *
@@ -272,16 +387,6 @@ public:
    *  It will be owned by the netlist and must not be deleted by the caller.
    */
   Device *create_device ();
-
-  /**
-   *  @brief Gets the device class used during extraction
-   *
-   *  This member is set in 'extract_devices' and holds the device class object used during extraction.
-   */
-  DeviceClass *device_class ()
-  {
-    return mp_device_class.get ();
-  }
 
   /**
    *  @brief Defines a device terminal in the layout (a region)
@@ -385,52 +490,9 @@ public:
   }
 
   /**
-   *  @brief Issues a warning with the given message
-   */
-  void warn (const std::string &msg);
-
-  /**
-   *  @brief Issues a warning with the given message and warn shape
-   */
-  void warn (const std::string &msg, const db::DPolygon &poly);
-
-  /**
-   *  @brief Issues a warning with the given message and warn shape
-   */
-  void warn (const std::string &msg, const db::Polygon &poly)
-  {
-    warn (msg, poly.transformed (db::CplxTrans (dbu ())));
-  }
-
-  /**
-   *  @brief Issues a warning with the given category name, description and message
-   */
-  void warn (const std::string &category_name, const std::string &category_description, const std::string &msg);
-
-  /**
-   *  @brief Issues a warning with the given category name, description and message and warn shape
-   */
-  void warn (const std::string &category_name, const std::string &category_description, const std::string &msg, const db::DPolygon &poly);
-
-  /**
-   *  @brief Issues a warning with the given category name, description and message and warn shape
-   */
-  void warn (const std::string &category_name, const std::string &category_description, const std::string &msg, const db::Polygon &poly)
-  {
-    warn (category_name, category_description, msg, poly.transformed (db::CplxTrans (dbu ())));
-  }
-
-  /**
    *  @brief Gets the name of the current cell
    */
   std::string cell_name () const;
-
-  /**
-   *  @brief Initializes the extractor
-   *  This method will produce the device classes required for the device extraction.
-   *  It is mainly provided for test purposes. Don't call it directly.
-   */
-  void initialize (db::Netlist *nl);
 
 private:
   struct DeviceCellKey
@@ -459,11 +521,11 @@ private:
       return false;
     }
 
-    std::map<size_t, std::map<unsigned int, std::set<db::NetShape> > > geometry;
+    std::map<size_t, std::map<unsigned int, std::set<db::PolygonRef> > > geometry;
     std::map<size_t, double> parameters;
   };
 
-  typedef std::map<unsigned int, std::vector<db::NetShape> > geometry_per_layer_type;
+  typedef std::map<unsigned int, std::vector<db::PolygonRef> > geometry_per_layer_type;
   typedef std::map<size_t, geometry_per_layer_type> geometry_per_terminal_type;
 
   tl::weak_ptr<db::Netlist> m_netlist;
@@ -474,11 +536,11 @@ private:
   const std::set<db::cell_index_type> *mp_breakout_cells;
   double m_device_scaling;
   db::Circuit *mp_circuit;
-  tl::weak_ptr<db::DeviceClass> mp_device_class;
+  db::DeviceClass *mp_device_class;
   std::string m_name;
   layer_definitions m_layer_definitions;
   std::vector<unsigned int> m_layers;
-  log_entry_list m_log_entries;
+  error_list m_errors;
   std::map<size_t, std::pair<db::Device *, geometry_per_terminal_type> > m_new_devices;
   std::map<DeviceCellKey, std::pair<db::cell_index_type, db::DeviceAbstract *> > m_device_cells;
 
@@ -486,9 +548,27 @@ private:
   NetlistDeviceExtractor (const NetlistDeviceExtractor &);
   NetlistDeviceExtractor &operator= (const NetlistDeviceExtractor &);
 
+  /**
+   *  @brief Initializes the extractor
+   *  This method will produce the device classes required for the device extraction.
+   */
+  void initialize (db::Netlist *nl);
+
   void extract_without_initialize (db::Layout &layout, db::Cell &cell, hier_clusters_type &clusters, const std::vector<unsigned int> &layers, double device_scaling, const std::set<cell_index_type> *breakout_cells);
   void push_new_devices (const Vector &disp_cache);
   void push_cached_devices (const tl::vector<Device *> &cached_devices, const db::Vector &disp_cache, const db::Vector &new_disp);
+};
+
+}
+
+namespace tl
+{
+
+template<> struct type_traits<db::NetlistDeviceExtractor> : public tl::type_traits<void>
+{
+  //  mark "NetlistDeviceExtractor" as not having a default ctor and no copy ctor
+  typedef tl::false_tag has_copy_constructor;
+  typedef tl::false_tag has_default_constructor;
 };
 
 }

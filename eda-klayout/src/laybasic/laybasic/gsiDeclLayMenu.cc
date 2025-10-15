@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -20,56 +20,10 @@
 
 */
 
+
 #include "gsiDecl.h"
 #include "gsiSignals.h"
 #include "layAbstractMenu.h"
-
-namespace {
-
-//  The Action stub to allow reimplementation of the triggered method
-class ActionStub
-  : public lay::Action
-{
-public:
-  virtual void triggered ()
-  {
-    if (triggered_cb.can_issue ()) {
-      triggered_cb.issue<lay::Action> (&lay::Action::triggered);
-    }
-  }
-
-  virtual void menu_opening ()
-  {
-    if (menu_opening_cb.can_issue ()) {
-      menu_opening_cb.issue<lay::Action> (&lay::Action::menu_opening);
-    }
-  }
-
-  virtual bool wants_visible () const
-  {
-    if (wants_visible_cb.can_issue ()) {
-      return wants_visible_cb.issue<lay::Action, bool> (&lay::Action::wants_visible);
-    } else {
-      return true;
-    }
-  }
-
-  virtual bool wants_enabled () const
-  {
-    if (wants_enabled_cb.can_issue ()) {
-      return wants_enabled_cb.issue<lay::Action, bool> (&lay::Action::wants_enabled);
-    } else {
-      return true;
-    }
-  }
-
-  gsi::Callback triggered_cb;
-  gsi::Callback menu_opening_cb;
-  gsi::Callback wants_visible_cb;
-  gsi::Callback wants_enabled_cb;
-};
-
-}
 
 namespace gsi
 {
@@ -104,14 +58,7 @@ static std::map<std::string, bool> unpack_menu_items_hidden (const std::string &
   return kb;
 }
 
-static lay::AbstractMenu *new_menu ()
-{
-  return new lay::AbstractMenu (0);
-}
-
 Class<lay::AbstractMenu> decl_AbstractMenu ("lay", "AbstractMenu",
-  //  for test purposes mainly:
-  constructor ("new", &new_menu, "@hide") +
   method ("pack_key_binding", &pack_key_binding, gsi::arg ("path_to_keys"),
     "@brief Serializes a key binding definition into a single string\n"
     "The serialized format is used by the 'key-bindings' config key. "
@@ -140,40 +87,46 @@ Class<lay::AbstractMenu> decl_AbstractMenu ("lay", "AbstractMenu",
     "\n"
     "This method has been introduced in version 0.26."
   ) +
-  method ("action", (lay::Action *(lay::AbstractMenu::*) (const std::string &path)) &lay::AbstractMenu::action, gsi::arg ("path"),
-    "@brief Gets the reference to a Action object associated with the given path\n"
+  method ("action", &lay::AbstractMenu::action,
+    "@brief Get the reference to a Action object associated with the given path\n"
+    "@args path\n"
     "\n"
-    "@param path The path to the item.\n"
-    "@return A reference to a Action object associated with this path or nil if the path is not valid\n"
+    "@param path The path to the item. This must be a valid path.\n"
+    "@return A reference to a Action object associated with this path\n"
   ) + 
-  method ("items", &lay::AbstractMenu::items, gsi::arg ("path"),
-    "@brief Gets the subitems for a given submenu\n"
+  method ("items", &lay::AbstractMenu::items,
+    "@brief Get the subitems for a given submenu\n"
+    "@args path\n"
     "\n"
     "@param path The path to the submenu\n"
     "@return A vector or path strings for the child items or an empty vector if the path is not valid or the item does not have children\n"
   ) +
-  method ("is_menu?", &lay::AbstractMenu::is_menu, gsi::arg ("path"),
-    "@brief Returns true if the item is a menu\n"
+  method ("is_menu?", &lay::AbstractMenu::is_menu,
+    "@brief Query if an item is a menu\n"
+    "@args path\n"
     "\n"
     "@param path The path to the item\n"
     "@return false if the path is not valid or is not a menu\n"
   ) +
-  method ("is_separator?", &lay::AbstractMenu::is_separator, gsi::arg ("path"),
-    "@brief Returns true if the item is a separator\n"
+  method ("is_separator?", &lay::AbstractMenu::is_separator,
+    "@brief Query if an item is a separator\n"
+    "@args path\n"
     "\n"
     "@param path The path to the item\n"
     "@return false if the path is not valid or is not a separator\n"
     "\n"
     "This method has been introduced in version 0.19.\n"
   ) +
-  method ("is_valid?", &lay::AbstractMenu::is_valid, gsi::arg ("path"),
-    "@brief Returns true if the path is a valid one\n"
+  method ("is_valid?", &lay::AbstractMenu::is_valid,
+    "@brief Query if a path is a valid one\n"
+    "@args path\n"
     "\n"
     "@param path The path to check\n"
     "@return false if the path is not a valid path to an item\n"
   ) +
-  method ("insert_item", (void (lay::AbstractMenu::*) (const std::string &, const std::string &, const lay::Action *)) &lay::AbstractMenu::insert_item, gsi::arg ("path"), gsi::arg ("name"), gsi::arg ("action"),
-    "@brief Inserts a new item before the one given by the path\n"
+  method ("insert_item", (void (lay::AbstractMenu::*) (const std::string &, const std::string &, const lay::Action &)) &lay::AbstractMenu::insert_item,
+    "@brief Insert a new item before the one given by the path\n"
+    "@args path, name, action\n"
     "\n"
     "The Action object passed as the third parameter references the handler which both implements the "
     "action to perform and the menu item's appearance such as title, icon and keyboard shortcut.\n"
@@ -182,14 +135,16 @@ Class<lay::AbstractMenu> decl_AbstractMenu ("lay", "AbstractMenu",
     "@param name The name of the item to insert \n"
     "@param action The Action object to insert\n"
   ) +
-  method ("insert_separator", &lay::AbstractMenu::insert_separator, gsi::arg ("path"), gsi::arg ("name"),
-    "@brief Inserts a new separator before the item given by the path\n"
+  method ("insert_separator", &lay::AbstractMenu::insert_separator,
+    "@brief Insert a new separator before the item given by the path\n"
+    "@args path, name\n"
     "\n"
     "@param path The path to the item before which to insert the separator\n"
     "@param name The name of the separator to insert \n"
   ) +
-  method ("insert_menu", (void (lay::AbstractMenu::*) (const std::string &, const std::string &, const std::string &)) &lay::AbstractMenu::insert_menu, gsi::arg ("path"), gsi::arg ("name"), gsi::arg ("title"),
-    "@brief Inserts a new submenu before the item given by the path\n"
+  method ("insert_menu", (void (lay::AbstractMenu::*) (const std::string &, const std::string &, const std::string &)) &lay::AbstractMenu::insert_menu,
+    "@brief Insert a new submenu before the item given by the path\n"
+    "@args path, name, title\n"
     "\n"
     "The title string optionally encodes the key shortcut and icon resource\n"
     "in the form <text>[\"(\"<shortcut>\")\"][\"<\"<icon-resource>\">\"].\n"
@@ -198,37 +153,20 @@ Class<lay::AbstractMenu> decl_AbstractMenu ("lay", "AbstractMenu",
     "@param name The name of the submenu to insert \n"
     "@param title The title of the submenu to insert\n"
   ) +
-  method ("insert_menu", (void (lay::AbstractMenu::*) (const std::string &, const std::string &, lay::Action *)) &lay::AbstractMenu::insert_menu, gsi::arg ("path"), gsi::arg ("name"), gsi::arg ("action"),
-    "@brief Inserts a new submenu before the item given by the path\n"
-    "\n"
-    "@param path The path to the item before which to insert the submenu\n"
-    "@param name The name of the submenu to insert \n"
-    "@param action The action object of the submenu to insert\n"
-    "\n"
-    "This method variant has been added in version 0.28."
-  ) +
-  method ("clear_menu", &lay::AbstractMenu::clear_menu, gsi::arg ("path"),
-    "@brief Deletes the children of the item given by the path\n"
-    "\n"
-    "@param path The path to the item whose children to delete\n"
-    "\n"
-    "This method has been introduced in version 0.28.\n"
-  ) +
-  method ("delete_item", &lay::AbstractMenu::delete_item, gsi::arg ("path"),
-    "@brief Deletes the item given by the path\n"
+  method ("delete_item", &lay::AbstractMenu::delete_item,
+    "@brief Delete the item given by the path\n"
+    "@args path\n"
     "\n"
     "@param path The path to the item to delete\n"
-    "\n"
-    "This method will also delete all children of the given item. "
-    "To clear the children only, use \\clear_menu.\n"
   ) +
-  method ("group", &lay::AbstractMenu::group, gsi::arg ("group"),
-    "@brief Gets the group members\n"
+  method ("group", &lay::AbstractMenu::group,
+    "@brief Get the group members\n"
+    "@args group\n"
     "\n"
     "@param group The group name\n"
     "@param A vector of all members (by path) of the group\n"
   ),
-  "@brief An abstraction for the application menus\n"
+  "@brief The abstract menu class\n"
   "\n"
   "The abstract menu is a class that stores a main menu and several popup menus\n"
   "in a generic form such that they can be manipulated and converted into GUI objects.\n"
@@ -263,8 +201,9 @@ Class<lay::AbstractMenu> decl_AbstractMenu ("lay", "AbstractMenu",
 );
   
 Class<lay::Action> decl_ActionBase ("lay", "ActionBase",
-  method ("title=", &lay::Action::set_title, gsi::arg ("title"),
+  method ("title=", &lay::Action::set_title,
     "@brief Sets the title\n"
+    "@args title\n"
     "\n"
     "@param title The title string to set (just the title)\n"
   ) +
@@ -273,8 +212,9 @@ Class<lay::Action> decl_ActionBase ("lay", "ActionBase",
     "\n"
     "@return The current title string\n"
   ) +
-  method ("shortcut=", (void (lay::Action::*)(const std::string &)) &lay::Action::set_shortcut, gsi::arg ("shortcut"),
+  method ("shortcut=", (void (lay::Action::*)(const std::string &)) &lay::Action::set_shortcut,
     "@brief Sets the keyboard shortcut\n"
+    "@args shortcut\n"
     "If the shortcut string is empty, the default shortcut will be used. If the string "
     "is equal to \\Action#NoKeyBound, no keyboard shortcut will be assigned.\n"
     "\n"
@@ -290,8 +230,9 @@ Class<lay::Action> decl_ActionBase ("lay", "ActionBase",
     "@brief Gets the keyboard shortcut\n"
     "@return The keyboard shortcut as a string\n"
   ) +
-  method ("default_shortcut=", (void (lay::Action::*)(const std::string &)) &lay::Action::set_default_shortcut, gsi::arg ("shortcut"),
+  method ("default_shortcut=", (void (lay::Action::*)(const std::string &)) &lay::Action::set_default_shortcut,
     "@brief Sets the default keyboard shortcut\n"
+    "@args shortcut\n"
     "\n"
     "The default shortcut is used, if \\shortcut is empty.\n"
     "\n"
@@ -336,76 +277,70 @@ Class<lay::Action> decl_ActionBase ("lay", "ActionBase",
   ) +
   method ("is_effective_visible?", &lay::Action::is_effective_visible,
     "@brief Gets a value indicating whether the item is really visible\n"
-    "This is the combined visibility from \\is_visible? and \\is_hidden? and dynamic visibility (\\wants_visible)."
+    "This is the combined visibility from \\is_visible? and \\is_hidden?."
     "\n"
     "This attribute has been introduced in version 0.25.\n"
   ) +
-  method ("is_effective_enabled?", &lay::Action::is_effective_enabled,
-    "@brief Gets a value indicating whether the item is really enabled\n"
-    "This is the combined value from \\is_enabled? and dynamic value (\\wants_enabled)."
-    "\n"
-    "This attribute has been introduced in version 0.28.\n"
-  ) +
-  method ("separator=", &lay::Action::set_separator, gsi::arg ("separator"),
+  method ("separator=", &lay::Action::set_separator,
     "@brief Makes an item a separator or not\n"
+    "@args separator\n"
     "\n"
     "@param separator true to make the item a separator\n"
     "This method has been introduced in version 0.25.\n"
   ) +
-  method ("checkable=", &lay::Action::set_checkable, gsi::arg ("checkable"),
-    "@brief Makes the item(s) checkable or not\n"
+  method ("checkable=", &lay::Action::set_checkable,
+    "@brief Make the item(s) checkable or not\n"
+    "@args checkable\n"
     "\n"
     "@param checkable true to make the item checkable\n"
   ) +
-  method ("enabled=", &lay::Action::set_enabled, gsi::arg ("enabled"),
-    "@brief Enables or disables the action\n"
+  method ("enabled=", &lay::Action::set_enabled,
+    "@brief Enable or disable the action\n"
+    "@args enabled \n"
     "\n"
     "@param enabled true to enable the item\n"
   ) +
-  method ("visible=", &lay::Action::set_visible, gsi::arg ("visible"),
-    "@brief Sets the item's visibility\n"
+  method ("visible=", &lay::Action::set_visible,
+    "@brief Show or hide\n"
+    "@args visible \n"
     "\n"
     "@param visible true to make the item visible\n"
   ) +
-  method ("hidden=", &lay::Action::set_hidden, gsi::arg ("hidden"),
+  method ("hidden=", &lay::Action::set_hidden,
     "@brief Sets a value that makes the item hidden always\n"
+    "@args hidden\n"
     "See \\is_hidden? for details.\n"
     "\n"
     "This attribute has been introduced in version 0.25\n"
   ) +
-  method ("checked=", &lay::Action::set_checked, gsi::arg ("checked"),
-    "@brief Checks or unchecks the item\n"
+  method ("checked=", &lay::Action::set_checked,
+    "@brief Check or uncheck\n"
+    "@args checked \n"
     "\n"
     "@param checked true to make the item checked\n"
   ) +
-  method ("icon=", &lay::Action::set_icon, gsi::arg ("file"),
-    "@brief Sets the icon to the given image file\n"
+  method ("icon=", &lay::Action::set_icon, 
+    "@brief Set the icon to the given picture\n"
+    "@args file\n"
     "\n"
     "@param file The image file to load for the icon\n"
     "\n"
-    "Passing an empty string will reset the icon.\n"
+    "Passing an empty string will reset the icon\n"
   ) +
-#if defined(HAVE_QT) && defined(HAVE_QTBINDINGS)
-  method ("icon=", &lay::Action::set_qicon, gsi::arg ("qicon"),
-    "@brief Sets the icon to the given \\QIcon object\n"
-    "\n"
-    "@param qicon The QIcon object\n"
-    "\n"
-    "This variant has been added in version 0.28.\n"
-  ) +
-#endif
-  method ("icon_text=", &lay::Action::set_icon_text, gsi::arg ("icon_text"),
-    "@brief Sets the icon's text\n"
+  method ("icon_text=", &lay::Action::set_icon_text, 
+    "@brief Set the icon's text \n"
+    "@args icon_text\n"
     "\n"
     "If an icon text is set, this will be used for the text below the icon.\n"
     "If no icon text is set, the normal text will be used for the icon.\n"
     "Passing an empty string will reset the icon's text.\n"
   ) +
   method ("icon_text", &lay::Action::get_icon_text, 
-    "@brief Gets the icon's text\n"
+    "@brief Get the icon's text\n"
   ) +
-  method ("tool_tip=", &lay::Action::set_tool_tip, gsi::arg ("text"),
-    "@brief Sets the tool tip text\n"
+  method ("tool_tip=", &lay::Action::set_tool_tip, 
+    "@brief Set the tool tip text \n"
+    "@args text\n"
     "\n"
     "The tool tip text is displayed in the tool tip window of the menu entry.\n"
     "This is in particular useful for entries in the tool bar."
@@ -413,65 +348,46 @@ Class<lay::Action> decl_ActionBase ("lay", "ActionBase",
     "This method has been added in version 0.22.\n"
   ) +
   method ("tool_tip", &lay::Action::get_tool_tip, 
-    "@brief Gets the tool tip text.\n"
+    "@brief Get the tool tip text\n"
     "\n"
     "This method has been added in version 0.22.\n"
   ) +
   method ("trigger", &lay::Action::trigger,
-    "@brief Triggers the action programmatically"
-  ) +
-  gsi::event ("on_triggered", &ActionStub::on_triggered_event,
-    "@brief This event is called if the menu item is selected.\n"
-    "\n"
-    "This event has been introduced in version 0.21 and moved to the ActionBase class in 0.28.\n"
-  ) +
-  gsi::event ("on_menu_opening", &ActionStub::on_menu_opening_event,
-    "@brief This event is called if the menu item is a sub-menu and before the menu is opened.\n"
-    "\n"
-    "This event provides an opportunity to populate the menu before it is opened.\n"
-    "\n"
-    "This event has been introduced in version 0.28.\n"
+    "@brief Trigger the action programmatically"
   ),
   "@hide\n"
   "@alias Action\n"
 );
   
+//  The Action stub to allow reimplementation of the triggered method
+class ActionStub
+  : public lay::Action
+{
+public:
+  virtual void triggered ()
+  {
+    if (triggered_cb.can_issue ()) {
+      triggered_cb.issue<lay::Action> (&lay::Action::triggered);
+    }
+    on_triggered_event ();
+  }
+
+  gsi::Callback triggered_cb;
+  tl::Event on_triggered_event;
+};
+
 Class<ActionStub> decl_Action (decl_ActionBase, "lay", "Action",
   gsi::callback ("triggered", &ActionStub::triggered, &ActionStub::triggered_cb,
-    "@brief This method is called if the menu item is selected.\n"
-    "\n"
-    "Reimplement this method is a derived class to receive this event. "
-    "You can also use the \\on_triggered event instead."
+    "@brief This method is called if the menu item is selected"
   ) +
-  gsi::callback ("menu_opening", &ActionStub::menu_opening, &ActionStub::menu_opening_cb,
-    "@brief This method is called if the menu item is a sub-menu and before the menu is opened."
+  gsi::event ("on_triggered", &ActionStub::on_triggered_event,
+    "@brief This event is called if the menu item is selected\n"
     "\n"
-    "Reimplement this method is a derived class to receive this event. "
-    "You can also use the \\on_menu_opening event instead.\n"
-    "\n"
-    "This method has been added in version 0.28."
-  ) +
-  gsi::callback ("wants_visible", &ActionStub::wants_visible, &ActionStub::wants_visible_cb,
-    "@brief Returns a value whether the action wants to become visible\n"
-    "This is a dynamic query for visibility which the system uses to dynamically show or hide "
-    "menu items, for example in the MRU lists. This visibility information is evaluated in addition "
-    "to \\is_visible? and \\is_hidden? and contributes to the effective visibility status from "
-    "\\is_effective_visible?.\n"
-    "\n"
-    "This feature has been introduced in version 0.28.\n"
-  ) +
-  gsi::callback ("wants_enabled", &ActionStub::wants_enabled, &ActionStub::wants_enabled_cb,
-    "@brief Returns a value whether the action wants to become enabled.\n"
-    "This is a dynamic query for enabled state which the system uses to dynamically show or hide "
-    "menu items. This information is evaluated in addition "
-    "to \\is_enabled? and contributes to the effective enabled status from "
-    "\\is_effective_enabled?.\n"
-    "\n"
-    "This feature has been introduced in version 0.28.\n"
+    "This event has been introduced in version 0.21.\n"
   ),
   "@brief The abstraction for an action (i.e. used inside menus)\n"
   "\n"
-  "Actions act as a generalization of menu entries. The action provides the appearance of a menu "
+  "Actions act as a generalisation of menu entries. The action provides the appearance of a menu "
   "entry such as title, key shortcut etc. and dispatches the menu events. The action can be manipulated "
   "to change to appearance of a menu entry and can be attached an observer that receives the events "
   "when the menu item is selected.\n"
@@ -505,3 +421,4 @@ Class<ActionStub> decl_Action (decl_ActionBase, "lay", "Action",
 );
 
 }
+

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -37,7 +37,7 @@ namespace db
 namespace lay
 {
 
-class Dispatcher;
+class PluginRoot;
 
 /**
  *  @brief A base class for the search and replace properties widgets
@@ -50,8 +50,8 @@ public:
     : QWidget (parent)
   { }
 
-  virtual void restore_state (const std::string &pfx, lay::Dispatcher *config_root) const = 0;
-  virtual void save_state (const std::string &pfx, lay::Dispatcher *config_root) const = 0;
+  virtual void restore_state (const std::string &pfx, lay::PluginRoot *config_root) const = 0;
+  virtual void save_state (const std::string &pfx, lay::PluginRoot *config_root) const = 0;
 };
 
 /**
@@ -86,12 +86,12 @@ public:
 /**
  *  @brief Fill the given stack widget with pairs of items plus properties widget
  */
-void fill_find_pages (QStackedWidget *sw, lay::LayoutViewBase *view, int cv_index);
+void fill_find_pages (QStackedWidget *sw, lay::LayoutView *view, int cv_index);
 
 /**
  *  @brief Fill the given stack widget with pairs of items plus properties widget
  */
-void fill_replace_pages (QStackedWidget *sw, lay::LayoutViewBase *view, int cv_index);
+void fill_replace_pages (QStackedWidget *sw, lay::LayoutView *view, int cv_index);
 
 /**
  *  @brief Get an object id from a page index

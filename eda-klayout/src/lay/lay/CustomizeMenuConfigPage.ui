@@ -195,7 +195,7 @@ For special keys:
          <string/>
         </property>
         <property name="pixmap">
-         <pixmap resource="../../icons/icons.qrc">:/find_16px@2x.png</pixmap>
+         <pixmap resource="layResources.qrc">:/find.png</pixmap>
         </property>
        </widget>
       </item>
@@ -223,7 +223,7 @@ For special keys:
   </customwidget>
  </customwidgets>
  <resources>
-  <include location="../../icons/icons.qrc"/>
+  <include location="layResources.qrc"/>
  </resources>
  <connections/>
 </ui>

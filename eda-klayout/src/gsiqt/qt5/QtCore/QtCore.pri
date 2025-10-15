@@ -35,7 +35,6 @@ SOURCES += \
   $$PWD/gsiDeclQDataStream.cc \
   $$PWD/gsiDeclQDate.cc \
   $$PWD/gsiDeclQDateTime.cc \
-  $$PWD/gsiDeclQDeadlineTimer.cc \
   $$PWD/gsiDeclQDebug.cc \
   $$PWD/gsiDeclQDebugStateSaver.cc \
   $$PWD/gsiDeclQDeferredDeleteEvent.cc \
@@ -93,7 +92,6 @@ SOURCES += \
   $$PWD/gsiDeclQMetaObject.cc \
   $$PWD/gsiDeclQMetaObject_Connection.cc \
   $$PWD/gsiDeclQMetaProperty.cc \
-  $$PWD/gsiDeclQMetaType.cc \
   $$PWD/gsiDeclQMimeData.cc \
   $$PWD/gsiDeclQMimeDatabase.cc \
   $$PWD/gsiDeclQMimeType.cc \
@@ -101,7 +99,6 @@ SOURCES += \
   $$PWD/gsiDeclQMutex.cc \
   $$PWD/gsiDeclQNoDebug.cc \
   $$PWD/gsiDeclQObject.cc \
-  $$PWD/gsiDeclQOperatingSystemVersion.cc \
   $$PWD/gsiDeclQParallelAnimationGroup.cc \
   $$PWD/gsiDeclQPauseAnimation.cc \
   $$PWD/gsiDeclQPersistentModelIndex.cc \
@@ -111,8 +108,6 @@ SOURCES += \
   $$PWD/gsiDeclQProcess.cc \
   $$PWD/gsiDeclQProcessEnvironment.cc \
   $$PWD/gsiDeclQPropertyAnimation.cc \
-  $$PWD/gsiDeclQRandomGenerator.cc \
-  $$PWD/gsiDeclQRandomGenerator64.cc \
   $$PWD/gsiDeclQReadLocker.cc \
   $$PWD/gsiDeclQReadWriteLock.cc \
   $$PWD/gsiDeclQRect.cc \
@@ -125,7 +120,6 @@ SOURCES += \
   $$PWD/gsiDeclQRunnable.cc \
   $$PWD/gsiDeclQSaveFile.cc \
   $$PWD/gsiDeclQSemaphore.cc \
-  $$PWD/gsiDeclQSemaphoreReleaser.cc \
   $$PWD/gsiDeclQSequentialAnimationGroup.cc \
   $$PWD/gsiDeclQSequentialIterable.cc \
   $$PWD/gsiDeclQSettings.cc \
@@ -169,7 +163,6 @@ SOURCES += \
   $$PWD/gsiDeclQUrl.cc \
   $$PWD/gsiDeclQUrlQuery.cc \
   $$PWD/gsiDeclQVariantAnimation.cc \
-  $$PWD/gsiDeclQVersionNumber.cc \
   $$PWD/gsiDeclQWaitCondition.cc \
   $$PWD/gsiDeclQWriteLocker.cc \
   $$PWD/gsiDeclQXmlStreamAttribute.cc \

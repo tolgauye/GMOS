@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -25,11 +25,10 @@
 #include "dbNetlistExtractor.h"
 #include "dbNetlistDeviceClasses.h"
 #include "dbLayout.h"
+#include "dbDeepShapeStore.h"
 #include "dbRegion.h"
-#include "dbTexts.h"
 #include "dbStream.h"
 #include "dbDeepRegion.h"
-#include "dbDeepTexts.h"
 #include "dbDeepShapeStore.h"
 #include "dbReader.h"
 #include "dbWriter.h"
@@ -53,13 +52,6 @@ static unsigned int layer_of (const db::Region &region)
   return dr->deep_layer ().layer ();
 }
 
-static unsigned int layer_of (const db::Texts &region)
-{
-  const db::DeepTexts *dr = dynamic_cast<const db::DeepTexts *> (region.delegate ());
-  tl_assert (dr != 0);
-  return dr->deep_layer ().layer ();
-}
-
 static unsigned int define_layer (db::Layout &ly, db::LayerMap &lmap, int gds_layer, int gds_datatype = 0)
 {
   unsigned int lid = ly.insert_layer (db::LayerProperties (gds_layer, gds_datatype));
@@ -67,7 +59,7 @@ static unsigned int define_layer (db::Layout &ly, db::LayerMap &lmap, int gds_la
   return lid;
 }
 
-static void dump_nets_to_layout (const db::Netlist &nl, const db::hier_clusters<db::NetShape> &clusters, db::Layout &ly, const std::map<unsigned int, unsigned int> &lmap, const db::CellMapping &cmap, bool with_device_cells = false)
+static void dump_nets_to_layout (const db::Netlist &nl, const db::hier_clusters<db::PolygonRef> &clusters, db::Layout &ly, const std::map<unsigned int, unsigned int> &lmap, const db::CellMapping &cmap, bool with_device_cells = false)
 {
   std::set<db::cell_index_type> device_cells_seen;
 
@@ -77,8 +69,7 @@ static void dump_nets_to_layout (const db::Netlist &nl, const db::hier_clusters<
 
     for (db::Circuit::const_net_iterator n = c->begin_nets (); n != c->end_nets (); ++n) {
 
-      std::string nn = "NET_" + c->name () + "_" + n->expanded_name ();
-      const db::local_cluster<db::NetShape> &lc = clusters.clusters_per_cell (c->cell_index ()).cluster_by_id (n->cluster_id ());
+      const db::local_cluster<db::PolygonRef> &lc = clusters.clusters_per_cell (c->cell_index ()).cluster_by_id (n->cluster_id ());
 
       bool any_shapes = false;
       for (std::map<unsigned int, unsigned int>::const_iterator m = lmap.begin (); m != lmap.end () && !any_shapes; ++m) {
@@ -87,13 +78,14 @@ static void dump_nets_to_layout (const db::Netlist &nl, const db::hier_clusters<
 
       if (any_shapes || (with_device_cells && n->terminal_count() > 0)) {
 
+        std::string nn = "NET_" + c->name () + "_" + n->expanded_name ();
         db::Cell &net_cell = ly.cell (ly.add_cell (nn.c_str ()));
         cell.insert (db::CellInstArray (db::CellInst (net_cell.cell_index ()), db::Trans ()));
 
         for (std::map<unsigned int, unsigned int>::const_iterator m = lmap.begin (); m != lmap.end (); ++m) {
           db::Shapes &target = net_cell.shapes (m->second);
-          for (db::local_cluster<db::NetShape>::shape_iterator s = lc.begin (m->first); !s.at_end (); ++s) {
-            s->insert_into (target);
+          for (db::local_cluster<db::PolygonRef>::shape_iterator s = lc.begin (m->first); !s.at_end (); ++s) {
+            target.insert (*s);
           }
         }
 
@@ -101,11 +93,6 @@ static void dump_nets_to_layout (const db::Netlist &nl, const db::hier_clusters<
           for (db::Net::const_terminal_iterator t = n->begin_terminals (); t != n->end_terminals (); ++t) {
 
             const db::NetTerminalRef &tref = *t;
-
-            if (! tref.device ()->device_abstract ()) {
-              continue;
-            }
-
             db::cell_index_type dci = tref.device ()->device_abstract ()->cell_index ();
             db::DCplxTrans dtr = tref.device ()->trans ();
 
@@ -125,10 +112,6 @@ static void dump_nets_to_layout (const db::Netlist &nl, const db::hier_clusters<
     }
 
     for (db::Circuit::const_device_iterator d = c->begin_devices (); d != c->end_devices (); ++d) {
-
-      if (! d->device_abstract ()) {
-        continue;
-      }
 
       std::vector<db::cell_index_type> original_device_cells;
 
@@ -154,12 +137,12 @@ static void dump_nets_to_layout (const db::Netlist &nl, const db::hier_clusters<
         const std::vector<db::DeviceTerminalDefinition> &td = d->device_class ()->terminal_definitions ();
         for (std::vector<db::DeviceTerminalDefinition>::const_iterator t = td.begin (); t != td.end (); ++t) {
 
-          const db::local_cluster<db::NetShape> &dc = clusters.clusters_per_cell (dci).cluster_by_id (d->device_abstract ()->cluster_id_for_terminal (t->id ()));
+          const db::local_cluster<db::PolygonRef> &dc = clusters.clusters_per_cell (dci).cluster_by_id (d->device_abstract ()->cluster_id_for_terminal (t->id ()));
 
           for (std::map<unsigned int, unsigned int>::const_iterator m = lmap.begin (); m != lmap.end (); ++m) {
             db::Shapes &target = device_cell.shapes (m->second);
-            for (db::local_cluster<db::NetShape>::shape_iterator s = dc.begin (m->first); !s.at_end (); ++s) {
-              s->insert_into (target);
+            for (db::local_cluster<db::PolygonRef>::shape_iterator s = dc.begin (m->first); !s.at_end (); ++s) {
+              target.insert (*s);
             }
           }
 
@@ -194,7 +177,8 @@ TEST(1_DeviceAndNetExtraction)
     options.get_options<db::CommonReaderOptions> ().layer_map = lmap;
     options.get_options<db::CommonReaderOptions> ().create_other_layers = false;
 
-    std::string fn (tl::testdata ());
+    std::string fn (tl::testsrc ());
+    fn = tl::combine_path (fn, "testdata");
     fn = tl::combine_path (fn, "algo");
     fn = tl::combine_path (fn, "device_extract_l1.gds");
 
@@ -249,7 +233,7 @@ TEST(1_DeviceAndNetExtraction)
   //  perform the extraction
 
   db::Netlist nl;
-  db::hier_clusters<db::NetShape> cl;
+  db::hier_clusters<db::PolygonRef> cl;
 
   db::NetlistDeviceExtractorMOS3Transistor pmos_ex ("PMOS");
   db::NetlistDeviceExtractorMOS3Transistor nmos_ex ("NMOS");
@@ -296,14 +280,6 @@ TEST(1_DeviceAndNetExtraction)
 
   net_ex.extract_nets (dss, 0, conn, nl, cl);
 
-  //  check if net names are properly assigned
-  db::Circuit *top_circuit = nl.circuit_by_name ("RINGO");
-  EXPECT_EQ (top_circuit != 0, true);
-  if (top_circuit) {
-    db::Net *fb_net = top_circuit->net_by_name ("FB");
-    EXPECT_EQ (fb_net != 0, true);
-  }
-
   //  debug layers produced for nets
   //    202/0 -> Active
   //    203/0 -> Poly
@@ -315,17 +291,14 @@ TEST(1_DeviceAndNetExtraction)
   //    210/0 -> N source/drain
   //    211/0 -> P source/drain
   std::map<unsigned int, unsigned int> dump_map;
-  dump_map [layer_of (rpsd)        ] = ly.insert_layer (db::LayerProperties (210, 0));
-  dump_map [layer_of (rnsd)        ] = ly.insert_layer (db::LayerProperties (211, 0));
-  dump_map [layer_of (rpoly)       ] = ly.insert_layer (db::LayerProperties (203, 0));
-  dump_map [layer_of (rpoly_lbl)   ] = ly.insert_layer (db::LayerProperties (203, 1));
-  dump_map [layer_of (rdiff_cont)  ] = ly.insert_layer (db::LayerProperties (204, 0));
-  dump_map [layer_of (rpoly_cont)  ] = ly.insert_layer (db::LayerProperties (205, 0));
-  dump_map [layer_of (rmetal1)     ] = ly.insert_layer (db::LayerProperties (206, 0));
-  dump_map [layer_of (rmetal1_lbl) ] = ly.insert_layer (db::LayerProperties (206, 1));
-  dump_map [layer_of (rvia1)       ] = ly.insert_layer (db::LayerProperties (207, 0));
-  dump_map [layer_of (rmetal2)     ] = ly.insert_layer (db::LayerProperties (208, 0));
-  dump_map [layer_of (rmetal2_lbl) ] = ly.insert_layer (db::LayerProperties (208, 1));
+  dump_map [layer_of (rpsd)      ] = ly.insert_layer (db::LayerProperties (210, 0));
+  dump_map [layer_of (rnsd)      ] = ly.insert_layer (db::LayerProperties (211, 0));
+  dump_map [layer_of (rpoly)     ] = ly.insert_layer (db::LayerProperties (203, 0));
+  dump_map [layer_of (rdiff_cont)] = ly.insert_layer (db::LayerProperties (204, 0));
+  dump_map [layer_of (rpoly_cont)] = ly.insert_layer (db::LayerProperties (205, 0));
+  dump_map [layer_of (rmetal1)   ] = ly.insert_layer (db::LayerProperties (206, 0));
+  dump_map [layer_of (rvia1)     ] = ly.insert_layer (db::LayerProperties (207, 0));
+  dump_map [layer_of (rmetal2)   ] = ly.insert_layer (db::LayerProperties (208, 0));
 
   //  write nets to layout
   db::CellMapping cm = dss.cell_mapping_to_original (0, &ly, tc.cell_index ());
@@ -401,206 +374,10 @@ TEST(1_DeviceAndNetExtraction)
 
   //  compare the collected test data
 
-  std::string au = tl::testdata ();
+  std::string au = tl::testsrc ();
+  au = tl::combine_path (au, "testdata");
   au = tl::combine_path (au, "algo");
   au = tl::combine_path (au, "device_extract_au1.gds");
-
-  db::compare_layouts (_this, ly, au);
-}
-
-TEST(1a_DeviceAndNetExtractionWithTextsAsLabels)
-{
-  db::Layout ly;
-  db::LayerMap lmap;
-
-  unsigned int nwell      = define_layer (ly, lmap, 1);
-  unsigned int active     = define_layer (ly, lmap, 2);
-  unsigned int poly       = define_layer (ly, lmap, 3);
-  unsigned int poly_lbl   = define_layer (ly, lmap, 3, 1);
-  unsigned int diff_cont  = define_layer (ly, lmap, 4);
-  unsigned int poly_cont  = define_layer (ly, lmap, 5);
-  unsigned int metal1     = define_layer (ly, lmap, 6);
-  unsigned int metal1_lbl = define_layer (ly, lmap, 6, 1);
-  unsigned int via1       = define_layer (ly, lmap, 7);
-  unsigned int metal2     = define_layer (ly, lmap, 8);
-  unsigned int metal2_lbl = define_layer (ly, lmap, 8, 1);
-
-  {
-    db::LoadLayoutOptions options;
-    options.get_options<db::CommonReaderOptions> ().layer_map = lmap;
-    options.get_options<db::CommonReaderOptions> ().create_other_layers = false;
-
-    std::string fn (tl::testdata ());
-    fn = tl::combine_path (fn, "algo");
-    fn = tl::combine_path (fn, "device_extract_l1.gds");
-
-    tl::InputStream stream (fn);
-    db::Reader reader (stream);
-    reader.read (ly, options);
-  }
-
-  db::Cell &tc = ly.cell (*ly.begin_top_down ());
-
-  db::DeepShapeStore dss;
-  dss.set_text_enlargement (1);
-  dss.set_text_property_name (tl::Variant ("LABEL"));
-
-  //  original layers
-  db::Region rnwell (db::RecursiveShapeIterator (ly, tc, nwell), dss);
-  db::Region ractive (db::RecursiveShapeIterator (ly, tc, active), dss);
-  db::Region rpoly (db::RecursiveShapeIterator (ly, tc, poly), dss);
-  db::Texts rpoly_lbl (db::RecursiveShapeIterator (ly, tc, poly_lbl), dss);
-  db::Region rdiff_cont (db::RecursiveShapeIterator (ly, tc, diff_cont), dss);
-  db::Region rpoly_cont (db::RecursiveShapeIterator (ly, tc, poly_cont), dss);
-  db::Region rmetal1 (db::RecursiveShapeIterator (ly, tc, metal1), dss);
-  db::Texts rmetal1_lbl (db::RecursiveShapeIterator (ly, tc, metal1_lbl), dss);
-  db::Region rvia1 (db::RecursiveShapeIterator (ly, tc, via1), dss);
-  db::Region rmetal2 (db::RecursiveShapeIterator (ly, tc, metal2), dss);
-  db::Texts rmetal2_lbl (db::RecursiveShapeIterator (ly, tc, metal2_lbl), dss);
-
-  //  derived regions
-
-  db::Region rpactive = ractive & rnwell;
-  db::Region rpgate   = rpactive & rpoly;
-  db::Region rpsd     = rpactive - rpgate;
-
-  db::Region rnactive = ractive - rnwell;
-  db::Region rngate   = rnactive & rpoly;
-  db::Region rnsd     = rnactive - rngate;
-
-  //  return the computed layers into the original layout and write it for debugging purposes
-
-  unsigned int lgate  = ly.insert_layer (db::LayerProperties (10, 0));      // 10/0 -> Gate
-  unsigned int lsd    = ly.insert_layer (db::LayerProperties (11, 0));      // 11/0 -> Source/Drain
-  unsigned int lpdiff = ly.insert_layer (db::LayerProperties (12, 0));      // 12/0 -> P Diffusion
-  unsigned int lndiff = ly.insert_layer (db::LayerProperties (13, 0));      // 13/0 -> N Diffusion
-
-  rpgate.insert_into (&ly, tc.cell_index (), lgate);
-  rngate.insert_into (&ly, tc.cell_index (), lgate);
-  rpsd.insert_into (&ly, tc.cell_index (), lsd);
-  rnsd.insert_into (&ly, tc.cell_index (), lsd);
-  rpsd.insert_into (&ly, tc.cell_index (), lpdiff);
-  rnsd.insert_into (&ly, tc.cell_index (), lndiff);
-
-  //  perform the extraction
-
-  db::Netlist nl;
-  db::hier_clusters<db::NetShape> cl;
-
-  db::NetlistDeviceExtractorMOS3Transistor pmos_ex ("PMOS");
-  db::NetlistDeviceExtractorMOS3Transistor nmos_ex ("NMOS");
-
-  db::NetlistDeviceExtractor::input_layers dl;
-
-  dl["SD"] = &rpsd;
-  dl["G"] = &rpgate;
-  dl["P"] = &rpoly;  //  not needed for extraction but to return terminal shapes
-  pmos_ex.extract (dss, 0, dl, nl, cl);
-
-  dl["SD"] = &rnsd;
-  dl["G"] = &rngate;
-  dl["P"] = &rpoly;  //  not needed for extraction but to return terminal shapes
-  nmos_ex.extract (dss, 0, dl, nl, cl);
-
-  //  perform the net extraction
-
-  db::NetlistExtractor net_ex;
-
-  db::Connectivity conn;
-  //  Intra-layer
-  conn.connect (rpsd);
-  conn.connect (rnsd);
-  conn.connect (rpoly);
-  conn.connect (rdiff_cont);
-  conn.connect (rpoly_cont);
-  conn.connect (rmetal1);
-  conn.connect (rvia1);
-  conn.connect (rmetal2);
-  //  Inter-layer
-  conn.connect (rpsd,       rdiff_cont);
-  conn.connect (rnsd,       rdiff_cont);
-  conn.connect (rpoly,      rpoly_cont);
-  conn.connect (rpoly_cont, rmetal1);
-  conn.connect (rdiff_cont, rmetal1);
-  conn.connect (rmetal1,    rvia1);
-  conn.connect (rvia1,      rmetal2);
-  conn.connect (rpoly,      rpoly_lbl);     //  attaches labels
-  conn.connect (rmetal1,    rmetal1_lbl);   //  attaches labels
-  conn.connect (rmetal2,    rmetal2_lbl);   //  attaches labels
-
-  //  extract the nets
-
-  net_ex.extract_nets (dss, 0, conn, nl, cl);
-
-  //  check if net names are properly assigned
-  db::Circuit *top_circuit = nl.circuit_by_name ("RINGO");
-  EXPECT_EQ (top_circuit != 0, true);
-  if (top_circuit) {
-    db::Net *fb_net = top_circuit->net_by_name ("FB");
-    EXPECT_EQ (fb_net != 0, true);
-  }
-
-  //  debug layers produced for nets
-  //    202/0 -> Active
-  //    203/0 -> Poly
-  //    204/0 -> Diffusion contacts
-  //    205/0 -> Poly contacts
-  //    206/0 -> Metal1
-  //    207/0 -> Via1
-  //    208/0 -> Metal2
-  //    210/0 -> N source/drain
-  //    211/0 -> P source/drain
-  std::map<unsigned int, unsigned int> dump_map;
-  dump_map [layer_of (rpsd)        ] = ly.insert_layer (db::LayerProperties (210, 0));
-  dump_map [layer_of (rnsd)        ] = ly.insert_layer (db::LayerProperties (211, 0));
-  dump_map [layer_of (rpoly)       ] = ly.insert_layer (db::LayerProperties (203, 0));
-  dump_map [layer_of (rpoly_lbl)   ] = ly.insert_layer (db::LayerProperties (203, 1));
-  dump_map [layer_of (rdiff_cont)  ] = ly.insert_layer (db::LayerProperties (204, 0));
-  dump_map [layer_of (rpoly_cont)  ] = ly.insert_layer (db::LayerProperties (205, 0));
-  dump_map [layer_of (rmetal1)     ] = ly.insert_layer (db::LayerProperties (206, 0));
-  dump_map [layer_of (rmetal1_lbl) ] = ly.insert_layer (db::LayerProperties (206, 1));
-  dump_map [layer_of (rvia1)       ] = ly.insert_layer (db::LayerProperties (207, 0));
-  dump_map [layer_of (rmetal2)     ] = ly.insert_layer (db::LayerProperties (208, 0));
-  dump_map [layer_of (rmetal2_lbl) ] = ly.insert_layer (db::LayerProperties (208, 1));
-
-  //  write nets to layout
-  db::CellMapping cm = dss.cell_mapping_to_original (0, &ly, tc.cell_index ());
-  dump_nets_to_layout (nl, cl, ly, dump_map, cm);
-
-  //  compare netlist as string
-  CHECKPOINT ();
-  db::compare_netlist (_this, nl,
-    "circuit RINGO ();\n"
-    "  subcircuit INV2 $1 (IN=$I8,$2=FB,OUT=OSC,$4=VSS,$5=VDD);\n"
-    "  subcircuit INV2 $2 (IN=FB,$2=$I38,OUT=$I19,$4=VSS,$5=VDD);\n"
-    "  subcircuit INV2 $3 (IN=$I19,$2=$I39,OUT=$I1,$4=VSS,$5=VDD);\n"
-    "  subcircuit INV2 $4 (IN=$I1,$2=$I40,OUT=$I2,$4=VSS,$5=VDD);\n"
-    "  subcircuit INV2 $5 (IN=$I2,$2=$I41,OUT=$I3,$4=VSS,$5=VDD);\n"
-    "  subcircuit INV2 $6 (IN=$I3,$2=$I42,OUT=$I4,$4=VSS,$5=VDD);\n"
-    "  subcircuit INV2 $7 (IN=$I4,$2=$I43,OUT=$I5,$4=VSS,$5=VDD);\n"
-    "  subcircuit INV2 $8 (IN=$I5,$2=$I44,OUT=$I6,$4=VSS,$5=VDD);\n"
-    "  subcircuit INV2 $9 (IN=$I6,$2=$I45,OUT=$I7,$4=VSS,$5=VDD);\n"
-    "  subcircuit INV2 $10 (IN=$I7,$2=$I46,OUT=$I8,$4=VSS,$5=VDD);\n"
-    "end;\n"
-    "circuit INV2 (IN=IN,$2=$2,OUT=OUT,$4=$4,$5=$5);\n"
-    "  device PMOS $1 (S=$2,G=IN,D=$5) (L=0.25,W=0.95,AS=0.49875,AD=0.26125,PS=2.95,PD=1.5);\n"
-    "  device PMOS $2 (S=$5,G=$2,D=OUT) (L=0.25,W=0.95,AS=0.26125,AD=0.49875,PS=1.5,PD=2.95);\n"
-    "  device NMOS $3 (S=$2,G=IN,D=$4) (L=0.25,W=0.95,AS=0.49875,AD=0.26125,PS=2.95,PD=1.5);\n"
-    "  device NMOS $4 (S=$4,G=$2,D=OUT) (L=0.25,W=0.95,AS=0.26125,AD=0.49875,PS=1.5,PD=2.95);\n"
-    "  subcircuit TRANS $1 ($1=$2,$2=$4,$3=IN);\n"
-    "  subcircuit TRANS $2 ($1=$2,$2=$5,$3=IN);\n"
-    "  subcircuit TRANS $3 ($1=$5,$2=OUT,$3=$2);\n"
-    "  subcircuit TRANS $4 ($1=$4,$2=OUT,$3=$2);\n"
-    "end;\n"
-    "circuit TRANS ($1=$1,$2=$2,$3=$3);\n"
-    "end;\n"
-  );
-
-  //  compare the collected test data
-
-  std::string au = tl::testdata ();
-  au = tl::combine_path (au, "algo");
-  au = tl::combine_path (au, "device_extract_au1a.gds");
 
   db::compare_layouts (_this, ly, au);
 }
@@ -627,7 +404,8 @@ TEST(2_DeviceAndNetExtractionFlat)
     options.get_options<db::CommonReaderOptions> ().layer_map = lmap;
     options.get_options<db::CommonReaderOptions> ().create_other_layers = false;
 
-    std::string fn (tl::testdata ());
+    std::string fn (tl::testsrc ());
+    fn = tl::combine_path (fn, "testdata");
     fn = tl::combine_path (fn, "algo");
     fn = tl::combine_path (fn, "device_extract_l1.gds");
 
@@ -683,7 +461,7 @@ TEST(2_DeviceAndNetExtractionFlat)
   //  perform the extraction
 
   db::Netlist nl;
-  db::hier_clusters<db::NetShape> cl;
+  db::hier_clusters<db::PolygonRef> cl;
 
   db::NetlistDeviceExtractorMOS3Transistor pmos_ex ("PMOS");
   db::NetlistDeviceExtractorMOS3Transistor nmos_ex ("NMOS");
@@ -804,7 +582,8 @@ TEST(2_DeviceAndNetExtractionFlat)
 
   //  compare the collected test data
 
-  std::string au = tl::testdata ();
+  std::string au = tl::testsrc ();
+  au = tl::combine_path (au, "testdata");
   au = tl::combine_path (au, "algo");
   au = tl::combine_path (au, "device_extract_au1_flat.gds");
 
@@ -860,7 +639,8 @@ TEST(3_DeviceAndNetExtractionWithImplicitConnections)
     options.get_options<db::CommonReaderOptions> ().layer_map = lmap;
     options.get_options<db::CommonReaderOptions> ().create_other_layers = false;
 
-    std::string fn (tl::testdata ());
+    std::string fn (tl::testsrc ());
+    fn = tl::combine_path (fn, "testdata");
     fn = tl::combine_path (fn, "algo");
     fn = tl::combine_path (fn, "device_extract_l1_implicit_nets.gds");
 
@@ -915,7 +695,7 @@ TEST(3_DeviceAndNetExtractionWithImplicitConnections)
   //  perform the extraction
 
   db::Netlist nl;
-  db::hier_clusters<db::NetShape> cl;
+  db::hier_clusters<db::PolygonRef> cl;
 
   db::NetlistDeviceExtractorMOS3Transistor pmos_ex ("PMOS");
   db::NetlistDeviceExtractorMOS3Transistor nmos_ex ("NMOS");
@@ -960,38 +740,19 @@ TEST(3_DeviceAndNetExtractionWithImplicitConnections)
 
   //  extract the nets
 
-  std::list<tl::GlobPattern> gp;
-
   db::Netlist nl2 = nl;
-  gp.clear ();
-  gp.push_back (tl::GlobPattern ("{VDDZ,VSSZ,NEXT,FB}"));
-  net_ex.set_joined_net_names (gp);
+  net_ex.set_joined_net_names ("{VDDZ,VSSZ,NEXT,FB}");
   net_ex.extract_nets (dss, 0, conn, nl2, cl);
 
   EXPECT_EQ (all_net_names_unique (nl2), true);
 
   nl2 = nl;
-  gp.clear ();
-  gp.push_back (tl::GlobPattern ("VDDZ"));
-  gp.push_back (tl::GlobPattern ("VSSZ"));
-  gp.push_back (tl::GlobPattern ("NEXT"));
-  gp.push_back (tl::GlobPattern ("FB"));
-  net_ex.set_joined_net_names (gp);
-  net_ex.extract_nets (dss, 0, conn, nl2, cl);
-
-  EXPECT_EQ (all_net_names_unique (nl2), true);
-
-  nl2 = nl;
-  gp.clear ();
-  gp.push_back (tl::GlobPattern ("{VDDZ,VSSZ,NEXT}"));
-  net_ex.set_joined_net_names (gp);
+  net_ex.set_joined_net_names ("{VDDZ,VSSZ,NEXT}");
   net_ex.extract_nets (dss, 0, conn, nl2, cl);
 
   EXPECT_EQ (all_net_names_unique (nl2), false);
 
-  gp.clear ();
-  gp.push_back (tl::GlobPattern ("*"));
-  net_ex.set_joined_net_names (gp);
+  net_ex.set_joined_net_names ("*");
   net_ex.extract_nets (dss, 0, conn, nl, cl);
 
   EXPECT_EQ (all_net_names_unique (nl), true);
@@ -1081,7 +842,8 @@ TEST(3_DeviceAndNetExtractionWithImplicitConnections)
 
   //  compare the collected test data
 
-  std::string au = tl::testdata ();
+  std::string au = tl::testsrc ();
+  au = tl::combine_path (au, "testdata");
   au = tl::combine_path (au, "algo");
   au = tl::combine_path (au, "device_extract_au1_implicit_nets.gds");
 
@@ -1112,7 +874,8 @@ TEST(4_ResAndCapExtraction)
     options.get_options<db::CommonReaderOptions> ().layer_map = lmap;
     options.get_options<db::CommonReaderOptions> ().create_other_layers = false;
 
-    std::string fn (tl::testdata ());
+    std::string fn (tl::testsrc ());
+    fn = tl::combine_path (fn, "testdata");
     fn = tl::combine_path (fn, "algo");
     fn = tl::combine_path (fn, "devices_test.oas");
 
@@ -1181,7 +944,7 @@ TEST(4_ResAndCapExtraction)
   //  perform the extraction
 
   db::Netlist nl;
-  db::hier_clusters<db::NetShape> cl;
+  db::hier_clusters<db::PolygonRef> cl;
 
   db::NetlistDeviceExtractorMOS3Transistor pmos_ex ("PMOS");
   db::NetlistDeviceExtractorMOS3Transistor nmos_ex ("NMOS");
@@ -1252,9 +1015,7 @@ TEST(4_ResAndCapExtraction)
 
   //  extract the nets
 
-  std::list<tl::GlobPattern> gp;
-  gp.push_back (tl::GlobPattern ("*"));
-  net_ex.set_joined_net_names (gp);
+  net_ex.set_joined_net_names ("*");
   net_ex.extract_nets (dss, 0, conn, nl, cl);
 
   //  Flatten device circuits
@@ -1310,8 +1071,8 @@ TEST(4_ResAndCapExtraction)
     "  device PMOS $2 (S=VDD,G=IN,D=$3) (L=0.4,W=2.3,AS=1.38,AD=1.38,PS=5.8,PD=5.8);\n"
     "  device NMOS $3 (S=VSS,G=$4,D=OUT) (L=0.4,W=4.6,AS=2.185,AD=2.185,PS=8.8,PD=8.8);\n"
     "  device MIM_CAP $5 (A=$4,B=VSS) (C=2.622e-14,A=26.22,P=29.8);\n"
-    "  device POLY_RES $7 (A=$3,B=$4) (R=750,L=6,W=0.4,A=2.4,P=13.6);\n"
-    "  device POLY_RES $9 (A=$4,B=VSS) (R=1825,L=14.6,W=0.4,A=5.84,P=30);\n"
+    "  device POLY_RES $7 (A=$3,B=$4) (R=750,L=12,W=0.8,A=2.4,P=13.6);\n"
+    "  device POLY_RES $9 (A=$4,B=VSS) (R=1825,L=29.2,W=0.8,A=5.84,P=30);\n"
     "  device NMOS $10 (S=VSS,G=IN,D=$3) (L=0.4,W=3.1,AS=1.86,AD=1.86,PS=7.4,PD=7.4);\n"
     "end;\n",
     true /*exact parameter compare*/
@@ -1319,7 +1080,8 @@ TEST(4_ResAndCapExtraction)
 
   //  compare the collected test data
 
-  std::string au = tl::testdata ();
+  std::string au = tl::testsrc ();
+  au = tl::combine_path (au, "testdata");
   au = tl::combine_path (au, "algo");
   au = tl::combine_path (au, "device_extract_capres_nets.gds");
 
@@ -1350,7 +1112,8 @@ TEST(5_ResAndCapWithBulkExtraction)
     options.get_options<db::CommonReaderOptions> ().layer_map = lmap;
     options.get_options<db::CommonReaderOptions> ().create_other_layers = false;
 
-    std::string fn (tl::testdata ());
+    std::string fn (tl::testsrc ());
+    fn = tl::combine_path (fn, "testdata");
     fn = tl::combine_path (fn, "algo");
     fn = tl::combine_path (fn, "devices_with_bulk_test.oas");
 
@@ -1428,7 +1191,7 @@ TEST(5_ResAndCapWithBulkExtraction)
   //  perform the extraction
 
   db::Netlist nl;
-  db::hier_clusters<db::NetShape> cl;
+  db::hier_clusters<db::PolygonRef> cl;
 
   db::NetlistDeviceExtractorMOS4Transistor pmos_ex ("PMOS");
   db::NetlistDeviceExtractorMOS4Transistor nmos_ex ("NMOS");
@@ -1526,9 +1289,7 @@ TEST(5_ResAndCapWithBulkExtraction)
 
   //  extract the nets
 
-  std::list<tl::GlobPattern> gp;
-  gp.push_back (tl::GlobPattern ("*"));
-  net_ex.set_joined_net_names (gp);
+  net_ex.set_joined_net_names ("*");
   net_ex.extract_nets (dss, 0, conn, nl, cl);
 
   //  Flatten device circuits
@@ -1585,8 +1346,8 @@ TEST(5_ResAndCapWithBulkExtraction)
     "  device NMOS $3 (S=VSS,G=$4,D=OUT,B=BULK) (L=0.4,W=4.6,AS=2.185,AD=2.185,PS=8.8,PD=8.8);\n"
     "  device MIM_CAP_SUBSTRATE $5 (A=$4,B=VSS,W=BULK) (C=1.334e-14,A=13.34,P=15);\n"
     "  device MIM_CAP_NWELL $6 (A=$4,B=VSS,W=NWELL) (C=1.288e-14,A=12.88,P=14.8);\n"
-    "  device POLY_RES_NWELL $7 (A=$3,B=$4,W=NWELL) (R=750,L=6,W=0.4,A=2.4,P=13.6);\n"
-    "  device POLY_RES_SUBSTRATE $9 (A=$4,B=VSS,W=BULK) (R=1825,L=14.6,W=0.4,A=5.84,P=30);\n"
+    "  device POLY_RES_NWELL $7 (A=$3,B=$4,W=NWELL) (R=750,L=12,W=0.8,A=2.4,P=13.6);\n"
+    "  device POLY_RES_SUBSTRATE $9 (A=$4,B=VSS,W=BULK) (R=1825,L=29.2,W=0.8,A=5.84,P=30);\n"
     "  device NMOS $10 (S=VSS,G=IN,D=$3,B=BULK) (L=0.4,W=3.1,AS=1.86,AD=1.86,PS=7.4,PD=7.4);\n"
     "end;\n",
     true /*exact parameter compare*/
@@ -1594,7 +1355,8 @@ TEST(5_ResAndCapWithBulkExtraction)
 
   //  compare the collected test data
 
-  std::string au = tl::testdata ();
+  std::string au = tl::testsrc ();
+  au = tl::combine_path (au, "testdata");
   au = tl::combine_path (au, "algo");
   au = tl::combine_path (au, "device_extract_capres_with_bulk_nets.gds");
 
@@ -1625,7 +1387,8 @@ TEST(6_BJT3TransistorExtraction)
     options.get_options<db::CommonReaderOptions> ().layer_map = lmap;
     options.get_options<db::CommonReaderOptions> ().create_other_layers = false;
 
-    std::string fn (tl::testdata ());
+    std::string fn (tl::testsrc ());
+    fn = tl::combine_path (fn, "testdata");
     fn = tl::combine_path (fn, "algo");
     fn = tl::combine_path (fn, "bipolar_devices_test.oas");
 
@@ -1695,7 +1458,7 @@ TEST(6_BJT3TransistorExtraction)
   //  perform the extraction
 
   db::Netlist nl;
-  db::hier_clusters<db::NetShape> cl;
+  db::hier_clusters<db::PolygonRef> cl;
 
   db::NetlistDeviceExtractorMOS4Transistor pmos_ex ("PMOS");
   db::NetlistDeviceExtractorMOS4Transistor nmos_ex ("NMOS");
@@ -1768,9 +1531,7 @@ TEST(6_BJT3TransistorExtraction)
 
   //  extract the nets
 
-  std::list<tl::GlobPattern> gp;
-  gp.push_back (tl::GlobPattern ("*"));
-  net_ex.set_joined_net_names (gp);
+  net_ex.set_joined_net_names ("*");
   net_ex.extract_nets (dss, 0, conn, nl, cl);
 
   //  Flatten device circuits
@@ -1838,7 +1599,8 @@ TEST(6_BJT3TransistorExtraction)
 
   //  compare the collected test data
 
-  std::string au = tl::testdata ();
+  std::string au = tl::testsrc ();
+  au = tl::combine_path (au, "testdata");
   au = tl::combine_path (au, "algo");
   au = tl::combine_path (au, "bipolar_devices_nets.gds");
 
@@ -1863,7 +1625,8 @@ TEST(7_DiodeExtraction)
     options.get_options<db::CommonReaderOptions> ().layer_map = lmap;
     options.get_options<db::CommonReaderOptions> ().create_other_layers = false;
 
-    std::string fn (tl::testdata ());
+    std::string fn (tl::testsrc ());
+    fn = tl::combine_path (fn, "testdata");
     fn = tl::combine_path (fn, "algo");
     fn = tl::combine_path (fn, "diode_devices_test.oas");
 
@@ -1902,7 +1665,7 @@ TEST(7_DiodeExtraction)
   //  perform the extraction
 
   db::Netlist nl;
-  db::hier_clusters<db::NetShape> cl;
+  db::hier_clusters<db::PolygonRef> cl;
 
   db::NetlistDeviceExtractorDiode diode_ex ("DIODE");
 
@@ -1934,9 +1697,7 @@ TEST(7_DiodeExtraction)
 
   //  extract the nets
 
-  std::list<tl::GlobPattern> gp;
-  gp.push_back (tl::GlobPattern ("*"));
-  net_ex.set_joined_net_names (gp);
+  net_ex.set_joined_net_names ("*");
   net_ex.extract_nets (dss, 0, conn, nl, cl);
 
   //  cleanup + completion
@@ -1972,7 +1733,8 @@ TEST(7_DiodeExtraction)
 
   //  compare the collected test data
 
-  std::string au = tl::testdata ();
+  std::string au = tl::testsrc ();
+  au = tl::combine_path (au, "testdata");
   au = tl::combine_path (au, "algo");
   au = tl::combine_path (au, "diode_devices_nets.gds");
 
@@ -1997,7 +1759,8 @@ TEST(8_DiodeExtractionScaled)
     options.get_options<db::CommonReaderOptions> ().layer_map = lmap;
     options.get_options<db::CommonReaderOptions> ().create_other_layers = false;
 
-    std::string fn (tl::testdata ());
+    std::string fn (tl::testsrc ());
+    fn = tl::combine_path (fn, "testdata");
     fn = tl::combine_path (fn, "algo");
     fn = tl::combine_path (fn, "diode_devices_test.oas");
 
@@ -2036,7 +1799,7 @@ TEST(8_DiodeExtractionScaled)
   //  perform the extraction
 
   db::Netlist nl;
-  db::hier_clusters<db::NetShape> cl;
+  db::hier_clusters<db::PolygonRef> cl;
 
   db::NetlistDeviceExtractorDiode diode_ex ("DIODE");
 
@@ -2067,9 +1830,7 @@ TEST(8_DiodeExtractionScaled)
 
   //  extract the nets
 
-  std::list<tl::GlobPattern> gp;
-  gp.push_back (tl::GlobPattern ("*"));
-  net_ex.set_joined_net_names (gp);
+  net_ex.set_joined_net_names ("*");
   net_ex.extract_nets (dss, 0, conn, nl, cl);
 
   //  cleanup + completion
@@ -2105,7 +1866,8 @@ TEST(8_DiodeExtractionScaled)
 
   //  compare the collected test data
 
-  std::string au = tl::testdata ();
+  std::string au = tl::testsrc ();
+  au = tl::combine_path (au, "testdata");
   au = tl::combine_path (au, "algo");
   au = tl::combine_path (au, "diode_devices_nets.gds");
 
@@ -2135,7 +1897,8 @@ TEST(9_StrictDeviceExtraction)
     options.get_options<db::CommonReaderOptions> ().layer_map = lmap;
     options.get_options<db::CommonReaderOptions> ().create_other_layers = false;
 
-    std::string fn (tl::testdata ());
+    std::string fn (tl::testsrc ());
+    fn = tl::combine_path (fn, "testdata");
     fn = tl::combine_path (fn, "algo");
     fn = tl::combine_path (fn, "device_extract_l9.gds");
 
@@ -2197,7 +1960,7 @@ TEST(9_StrictDeviceExtraction)
   //  perform the extraction
 
   db::Netlist nl;
-  db::hier_clusters<db::NetShape> cl;
+  db::hier_clusters<db::PolygonRef> cl;
 
   db::NetlistDeviceExtractorMOS3Transistor pmos_ex ("PMOS", true /*strict*/);
   db::NetlistDeviceExtractorMOS3Transistor nmos_ex ("NMOS", true /*strict*/);
@@ -2346,7 +2109,8 @@ TEST(9_StrictDeviceExtraction)
 
   //  compare the collected test data
 
-  std::string au = tl::testdata ();
+  std::string au = tl::testsrc ();
+  au = tl::combine_path (au, "testdata");
   au = tl::combine_path (au, "algo");
   au = tl::combine_path (au, "device_extract_au9.gds");
 
@@ -2375,7 +2139,8 @@ TEST(10_DeviceExtractionWithBreakoutCells)
     options.get_options<db::CommonReaderOptions> ().layer_map = lmap;
     options.get_options<db::CommonReaderOptions> ().create_other_layers = false;
 
-    std::string fn (tl::testdata ());
+    std::string fn (tl::testsrc ());
+    fn = tl::combine_path (fn, "testdata");
     fn = tl::combine_path (fn, "algo");
     fn = tl::combine_path (fn, "device_extract_l10.gds");
 
@@ -2428,7 +2193,7 @@ TEST(10_DeviceExtractionWithBreakoutCells)
   //  perform the extraction
 
   db::Netlist nl;
-  db::hier_clusters<db::NetShape> cl;
+  db::hier_clusters<db::PolygonRef> cl;
 
   db::NetlistDeviceExtractorMOS3Transistor pmos_ex ("PMOS");
   db::NetlistDeviceExtractorMOS3Transistor nmos_ex ("NMOS");
@@ -2539,7 +2304,8 @@ TEST(10_DeviceExtractionWithBreakoutCells)
 
   //  compare the collected test data
 
-  std::string au = tl::testdata ();
+  std::string au = tl::testsrc ();
+  au = tl::combine_path (au, "testdata");
   au = tl::combine_path (au, "algo");
   au = tl::combine_path (au, "device_extract_au10.gds");
 
@@ -2562,7 +2328,8 @@ TEST(11_DeviceExtractionWithSameClass)
     options.get_options<db::CommonReaderOptions> ().layer_map = lmap;
     options.get_options<db::CommonReaderOptions> ().create_other_layers = false;
 
-    std::string fn (tl::testdata ());
+    std::string fn (tl::testsrc ());
+    fn = tl::combine_path (fn, "testdata");
     fn = tl::combine_path (fn, "algo");
     fn = tl::combine_path (fn, "device_extract_l11.gds");
 
@@ -2594,7 +2361,7 @@ TEST(11_DeviceExtractionWithSameClass)
   //  perform the extraction
 
   db::Netlist nl;
-  db::hier_clusters<db::NetShape> cl;
+  db::hier_clusters<db::PolygonRef> cl;
 
   db::NetlistDeviceExtractorResistor polyres_ex ("RES", 50.0);
   db::NetlistDeviceExtractorResistor diffres_ex ("RES", 150.0);
@@ -2674,7 +2441,8 @@ TEST(12_FloatingSubcircuitExtraction)
     options.get_options<db::CommonReaderOptions> ().layer_map = lmap;
     options.get_options<db::CommonReaderOptions> ().create_other_layers = false;
 
-    std::string fn (tl::testdata ());
+    std::string fn (tl::testsrc ());
+    fn = tl::combine_path (fn, "testdata");
     fn = tl::combine_path (fn, "algo");
     fn = tl::combine_path (fn, "device_extract_l1_floating_subcircuits.gds");
 
@@ -2715,7 +2483,7 @@ TEST(12_FloatingSubcircuitExtraction)
   //  perform the extraction
 
   db::Netlist nl;
-  db::hier_clusters<db::NetShape> cl;
+  db::hier_clusters<db::PolygonRef> cl;
 
   db::NetlistDeviceExtractorMOS3Transistor pmos_ex ("PMOS");
   db::NetlistDeviceExtractorMOS3Transistor nmos_ex ("NMOS");
@@ -2827,7 +2595,8 @@ TEST(13_RemoveDummyPins)
     options.get_options<db::CommonReaderOptions> ().layer_map = lmap;
     options.get_options<db::CommonReaderOptions> ().create_other_layers = false;
 
-    std::string fn (tl::testdata ());
+    std::string fn (tl::testsrc ());
+    fn = tl::combine_path (fn, "testdata");
     fn = tl::combine_path (fn, "algo");
     fn = tl::combine_path (fn, "issue-425.gds");
 
@@ -2868,7 +2637,7 @@ TEST(13_RemoveDummyPins)
   //  perform the extraction
 
   db::Netlist nl;
-  db::hier_clusters<db::NetShape> cl;
+  db::hier_clusters<db::PolygonRef> cl;
 
   db::NetlistDeviceExtractorMOS3Transistor pmos_ex ("PMOS");
   db::NetlistDeviceExtractorMOS3Transistor nmos_ex ("NMOS");
@@ -2933,708 +2702,5 @@ TEST(13_RemoveDummyPins)
     "  device NMOS $4 (S=$4,G=$2,D=OUT) (L=0.25,W=0.95,AS=0.26125,AD=0.49875,PS=1.5,PD=2.95);\n"
     "end;\n"
   );
-}
-
-TEST(14_JoinNets)
-{
-  db::Layout ly;
-  db::LayerMap lmap;
-
-  unsigned int nwell      = define_layer (ly, lmap, 1);
-  unsigned int active     = define_layer (ly, lmap, 2);
-  unsigned int poly       = define_layer (ly, lmap, 3);
-  unsigned int poly_lbl   = define_layer (ly, lmap, 3, 1);
-  unsigned int diff_cont  = define_layer (ly, lmap, 4);
-  unsigned int poly_cont  = define_layer (ly, lmap, 5);
-  unsigned int metal1     = define_layer (ly, lmap, 6);
-  unsigned int metal1_lbl = define_layer (ly, lmap, 6, 1);
-  unsigned int via1       = define_layer (ly, lmap, 7);
-  unsigned int metal2     = define_layer (ly, lmap, 8);
-  unsigned int metal2_lbl = define_layer (ly, lmap, 8, 1);
-
-  {
-    db::LoadLayoutOptions options;
-    options.get_options<db::CommonReaderOptions> ().layer_map = lmap;
-    options.get_options<db::CommonReaderOptions> ().create_other_layers = false;
-
-    std::string fn (tl::testdata ());
-    fn = tl::combine_path (fn, "algo");
-    fn = tl::combine_path (fn, "device_extract_l1_join_nets.gds");
-
-    tl::InputStream stream (fn);
-    db::Reader reader (stream);
-    reader.read (ly, options);
-  }
-
-  db::Cell &tc = ly.cell (*ly.begin_top_down ());
-
-  db::DeepShapeStore dss;
-  dss.set_text_enlargement (1);
-  dss.set_text_property_name (tl::Variant ("LABEL"));
-
-  //  original layers
-  db::Region rnwell (db::RecursiveShapeIterator (ly, tc, nwell), dss);
-  db::Region ractive (db::RecursiveShapeIterator (ly, tc, active), dss);
-  db::Region rpoly (db::RecursiveShapeIterator (ly, tc, poly), dss);
-  db::Region rpoly_lbl (db::RecursiveShapeIterator (ly, tc, poly_lbl), dss);
-  db::Region rdiff_cont (db::RecursiveShapeIterator (ly, tc, diff_cont), dss);
-  db::Region rpoly_cont (db::RecursiveShapeIterator (ly, tc, poly_cont), dss);
-  db::Region rmetal1 (db::RecursiveShapeIterator (ly, tc, metal1), dss);
-  db::Region rmetal1_lbl (db::RecursiveShapeIterator (ly, tc, metal1_lbl), dss);
-  db::Region rvia1 (db::RecursiveShapeIterator (ly, tc, via1), dss);
-  db::Region rmetal2 (db::RecursiveShapeIterator (ly, tc, metal2), dss);
-  db::Region rmetal2_lbl (db::RecursiveShapeIterator (ly, tc, metal2_lbl), dss);
-
-  //  derived regions
-
-  db::Region rpactive = ractive & rnwell;
-  db::Region rpgate   = rpactive & rpoly;
-  db::Region rpsd     = rpactive - rpgate;
-
-  db::Region rnactive = ractive - rnwell;
-  db::Region rngate   = rnactive & rpoly;
-  db::Region rnsd     = rnactive - rngate;
-
-  //  Global
-
-  db::Region bulk (dss);
-
-  //  return the computed layers into the original layout and write it for debugging purposes
-
-  unsigned int lgate  = ly.insert_layer (db::LayerProperties (10, 0));      // 10/0 -> Gate
-  unsigned int lsd    = ly.insert_layer (db::LayerProperties (11, 0));      // 11/0 -> Source/Drain
-  unsigned int lpdiff = ly.insert_layer (db::LayerProperties (12, 0));      // 12/0 -> P Diffusion
-  unsigned int lndiff = ly.insert_layer (db::LayerProperties (13, 0));      // 13/0 -> N Diffusion
-
-  rpgate.insert_into (&ly, tc.cell_index (), lgate);
-  rngate.insert_into (&ly, tc.cell_index (), lgate);
-  rpsd.insert_into (&ly, tc.cell_index (), lsd);
-  rnsd.insert_into (&ly, tc.cell_index (), lsd);
-  rpsd.insert_into (&ly, tc.cell_index (), lpdiff);
-  rnsd.insert_into (&ly, tc.cell_index (), lndiff);
-
-  //  perform the extraction
-
-  db::Netlist nl;
-  db::hier_clusters<db::NetShape> cl;
-
-  db::NetlistDeviceExtractorMOS4Transistor pmos_ex ("PMOS");
-  db::NetlistDeviceExtractorMOS4Transistor nmos_ex ("NMOS");
-
-  db::NetlistDeviceExtractor::input_layers dl;
-
-  dl["SD"] = &rpsd;
-  dl["G"] = &rpgate;
-  dl["W"] = &rnwell;
-  dl["P"] = &rpoly;  //  not needed for extraction but to return terminal shapes
-  pmos_ex.extract (dss, 0, dl, nl, cl);
-
-  dl["SD"] = &rnsd;
-  dl["G"] = &rngate;
-  dl["W"] = &bulk;
-  dl["P"] = &rpoly;  //  not needed for extraction but to return terminal shapes
-  nmos_ex.extract (dss, 0, dl, nl, cl);
-
-  //  perform the net extraction
-
-  db::NetlistExtractor net_ex;
-
-  db::Connectivity conn;
-
-  //  Global nets
-  conn.connect_global (bulk, "BULK");
-  conn.connect_global (rnwell, "NWELL");
-
-  //  Intra-layer
-  conn.connect (rpsd);
-  conn.connect (rnsd);
-  conn.connect (rpoly);
-  conn.connect (rdiff_cont);
-  conn.connect (rpoly_cont);
-  conn.connect (rmetal1);
-  conn.connect (rvia1);
-  conn.connect (rmetal2);
-  //  Inter-layer
-  conn.connect (rpsd,       rdiff_cont);
-  conn.connect (rnsd,       rdiff_cont);
-  conn.connect (rpoly,      rpoly_cont);
-  conn.connect (rpoly_cont, rmetal1);
-  conn.connect (rdiff_cont, rmetal1);
-  conn.connect (rmetal1,    rvia1);
-  conn.connect (rvia1,      rmetal2);
-  conn.connect (rpoly,      rpoly_lbl);     //  attaches labels
-  conn.connect (rmetal1,    rmetal1_lbl);   //  attaches labels
-  conn.connect (rmetal2,    rmetal2_lbl);   //  attaches labels
-
-  //  extract the nets
-
-  std::list<std::set<std::string> > jn;
-
-  jn.push_back (std::set<std::string> ());
-  jn.back ().insert ("BULK");
-  jn.back ().insert ("VSS");
-
-  jn.push_back (std::set<std::string> ());
-  jn.back ().insert ("NWELL");
-  jn.back ().insert ("VDD");
-
-  net_ex.set_joined_nets ("INV2", jn);
-
-  std::list<tl::GlobPattern> gp;
-  gp.push_back (tl::GlobPattern ("NEXT"));
-  gp.push_back (tl::GlobPattern ("FB"));
-  net_ex.set_joined_net_names (gp);
-
-  net_ex.extract_nets (dss, 0, conn, nl, cl);
-
-  EXPECT_EQ (all_net_names_unique (nl), true);
-
-  //  debug layers produced for nets
-  //    202/0 -> Active
-  //    203/0 -> Poly
-  //    204/0 -> Diffusion contacts
-  //    205/0 -> Poly contacts
-  //    206/0 -> Metal1
-  //    207/0 -> Via1
-  //    208/0 -> Metal2
-  //    210/0 -> N source/drain
-  //    211/0 -> P source/drain
-  //    212/0 -> Bulk
-  //    213/0 -> NWell
-  std::map<unsigned int, unsigned int> dump_map;
-  dump_map [layer_of (bulk)      ] = ly.insert_layer (db::LayerProperties (212, 0));
-  dump_map [layer_of (rnwell)    ] = ly.insert_layer (db::LayerProperties (213, 0));
-  dump_map [layer_of (rpsd)      ] = ly.insert_layer (db::LayerProperties (210, 0));
-  dump_map [layer_of (rnsd)      ] = ly.insert_layer (db::LayerProperties (211, 0));
-  dump_map [layer_of (rpoly)     ] = ly.insert_layer (db::LayerProperties (203, 0));
-  dump_map [layer_of (rdiff_cont)] = ly.insert_layer (db::LayerProperties (204, 0));
-  dump_map [layer_of (rpoly_cont)] = ly.insert_layer (db::LayerProperties (205, 0));
-  dump_map [layer_of (rmetal1)   ] = ly.insert_layer (db::LayerProperties (206, 0));
-  dump_map [layer_of (rvia1)     ] = ly.insert_layer (db::LayerProperties (207, 0));
-  dump_map [layer_of (rmetal2)   ] = ly.insert_layer (db::LayerProperties (208, 0));
-
-  //  write nets to layout
-  db::CellMapping cm = dss.cell_mapping_to_original (0, &ly, tc.cell_index ());
-  dump_nets_to_layout (nl, cl, ly, dump_map, cm, true);
-
-  //  compare netlist as string
-  CHECKPOINT ();
-  db::compare_netlist (_this, nl,
-    "circuit RINGO ();\n"
-    "  subcircuit INV2 $1 (IN=$I8,$2=FB,OUT=OSC,VDD='VDD,VDDZ',VSS='VSS,VSSZ');\n"
-    "  subcircuit INV2 $2 (IN=FB,$2=$I20,OUT=$I19,VDD='VDD,VDDZ',VSS='VSS,VSSZ');\n"
-    "  subcircuit INV2 $3 (IN=NEXT,$2=$I25,OUT=$I5,VDD='VDD,VDDZ',VSS='VSS,VSSZ');\n"
-    "  subcircuit INV2 $4 (IN=$I3,$2=$I24,OUT=NEXT,VDD='VDD,VDDZ',VSS='VSS,VSSZ');\n"
-    "  subcircuit INV2 $5 (IN=$I5,$2=$I26,OUT=$I6,VDD='VDD,VDDZ',VSS='VSS,VSSZ');\n"
-    "  subcircuit INV2 $6 (IN=$I6,$2=$I27,OUT=$I7,VDD='VDD,VDDZ',VSS='VSS,VSSZ');\n"
-    "  subcircuit INV2 $7 (IN=$I7,$2=$I28,OUT=$I8,VDD='VDD,VDDZ',VSS='VSS,VSSZ');\n"
-    "  subcircuit INV2 $8 (IN=$I19,$2=$I21,OUT=$I1,VDD='VDD,VDDZ',VSS='VSS,VSSZ');\n"
-    "  subcircuit INV2 $9 (IN=$I1,$2=$I22,OUT=$I2,VDD='VDD,VDDZ',VSS='VSS,VSSZ');\n"
-    "  subcircuit INV2 $10 (IN=$I2,$2=$I23,OUT=$I3,VDD='VDD,VDDZ',VSS='VSS,VSSZ');\n"
-    "end;\n"
-    "circuit INV2 (IN=IN,$2=$2,OUT=OUT,VDD=VDD,VSS=VSS);\n"
-    "  device PMOS $1 (S=$2,G=IN,D=VDD,B=VDD) (L=0.25,W=0.95,AS=0.49875,AD=0.26125,PS=2.95,PD=1.5);\n"
-    "  device PMOS $2 (S=VDD,G=$2,D=OUT,B=VDD) (L=0.25,W=0.95,AS=0.26125,AD=0.49875,PS=1.5,PD=2.95);\n"
-    "  device NMOS $3 (S=$2,G=IN,D=VSS,B=VSS) (L=0.25,W=0.95,AS=0.49875,AD=0.26125,PS=2.95,PD=1.5);\n"
-    "  device NMOS $4 (S=VSS,G=$2,D=OUT,B=VSS) (L=0.25,W=0.95,AS=0.26125,AD=0.49875,PS=1.5,PD=2.95);\n"
-    "  subcircuit TRANS $1 ($1=$2,$2=VSS,$3=IN);\n"
-    "  subcircuit TRANS $2 ($1=$2,$2=VDD,$3=IN);\n"
-    "  subcircuit TRANS $3 ($1=VDD,$2=OUT,$3=$2);\n"
-    "  subcircuit TRANS $4 ($1=VSS,$2=OUT,$3=$2);\n"
-    "end;\n"
-    "circuit TRANS ($1=$1,$2=$2,$3=$3);\n"
-    "end;\n"
-  );
-
-  // doesn't do anything here, but we test that this does not destroy anything:
-  nl.combine_devices ();
-
-  //  make pins for named nets of top-level circuits - this way they are not purged
-  nl.make_top_level_pins ();
-  nl.purge ();
-
-  //  compare netlist as string
-  CHECKPOINT ();
-  db::compare_netlist (_this, nl,
-    "circuit RINGO (FB=FB,OSC=OSC,NEXT=NEXT,'VDD,VDDZ'='VDD,VDDZ','VSS,VSSZ'='VSS,VSSZ');\n"
-    "  subcircuit INV2 $1 (IN=$I8,$2=FB,OUT=OSC,VDD='VDD,VDDZ',VSS='VSS,VSSZ');\n"
-    "  subcircuit INV2 $2 (IN=FB,$2=$I20,OUT=$I19,VDD='VDD,VDDZ',VSS='VSS,VSSZ');\n"
-    "  subcircuit INV2 $3 (IN=NEXT,$2=$I25,OUT=$I5,VDD='VDD,VDDZ',VSS='VSS,VSSZ');\n"
-    "  subcircuit INV2 $4 (IN=$I3,$2=$I24,OUT=NEXT,VDD='VDD,VDDZ',VSS='VSS,VSSZ');\n"
-    "  subcircuit INV2 $5 (IN=$I5,$2=$I26,OUT=$I6,VDD='VDD,VDDZ',VSS='VSS,VSSZ');\n"
-    "  subcircuit INV2 $6 (IN=$I6,$2=$I27,OUT=$I7,VDD='VDD,VDDZ',VSS='VSS,VSSZ');\n"
-    "  subcircuit INV2 $7 (IN=$I7,$2=$I28,OUT=$I8,VDD='VDD,VDDZ',VSS='VSS,VSSZ');\n"
-    "  subcircuit INV2 $8 (IN=$I19,$2=$I21,OUT=$I1,VDD='VDD,VDDZ',VSS='VSS,VSSZ');\n"
-    "  subcircuit INV2 $9 (IN=$I1,$2=$I22,OUT=$I2,VDD='VDD,VDDZ',VSS='VSS,VSSZ');\n"
-    "  subcircuit INV2 $10 (IN=$I2,$2=$I23,OUT=$I3,VDD='VDD,VDDZ',VSS='VSS,VSSZ');\n"
-    "end;\n"
-    "circuit INV2 (IN=IN,$2=$2,OUT=OUT,VDD=VDD,VSS=VSS);\n"
-    "  device PMOS $1 (S=$2,G=IN,D=VDD,B=VDD) (L=0.25,W=0.95,AS=0.49875,AD=0.26125,PS=2.95,PD=1.5);\n"
-    "  device PMOS $2 (S=VDD,G=$2,D=OUT,B=VDD) (L=0.25,W=0.95,AS=0.26125,AD=0.49875,PS=1.5,PD=2.95);\n"
-    "  device NMOS $3 (S=$2,G=IN,D=VSS,B=VSS) (L=0.25,W=0.95,AS=0.49875,AD=0.26125,PS=2.95,PD=1.5);\n"
-    "  device NMOS $4 (S=VSS,G=$2,D=OUT,B=VSS) (L=0.25,W=0.95,AS=0.26125,AD=0.49875,PS=1.5,PD=2.95);\n"
-    "end;\n"
-  );
-
-  //  compare the collected test data
-
-  std::string au = tl::testdata ();
-  au = tl::combine_path (au, "algo");
-  au = tl::combine_path (au, "device_extract_au1_join_nets.gds");
-
-  db::compare_layouts (_this, ly, au);
-}
-
-static
-void annotate_soft_connections (db::Netlist &netlist, const db::hier_clusters<db::NetShape> &net_clusters)
-{
-  db::DeviceClassDiode *soft_diode = new db::DeviceClassDiode ();
-  soft_diode->set_name ("SOFT");
-  netlist.add_device_class (soft_diode);
-
-  for (auto c = netlist.begin_bottom_up (); c != netlist.end_bottom_up (); ++c) {
-
-    auto clusters = net_clusters.clusters_per_cell (c->cell_index ());
-
-    for (auto n = c->begin_nets (); n != c->end_nets (); ++n) {
-
-      auto soft_connections = clusters.upward_soft_connections (n->cluster_id ());
-      for (auto sc = soft_connections.begin (); sc != soft_connections.end (); ++sc) {
-
-        db::Device *sc_device = new db::Device (soft_diode);
-        c->add_device (sc_device);
-
-        auto nn = c->net_by_cluster_id (*sc);
-        if (nn) {
-          sc_device->connect_terminal (db::DeviceClassDiode::terminal_id_C, n.operator-> ());
-          sc_device->connect_terminal (db::DeviceClassDiode::terminal_id_A, nn);
-        }
-
-      }
-
-    }
-
-  }
-}
-
-TEST(15_SoftConnections)
-{
-  db::Layout ly;
-  db::LayerMap lmap;
-
-  unsigned int nwell      = define_layer (ly, lmap, 1);
-  unsigned int diff       = define_layer (ly, lmap, 2);
-  unsigned int pplus      = define_layer (ly, lmap, 3);
-  unsigned int nplus      = define_layer (ly, lmap, 4);
-  unsigned int poly       = define_layer (ly, lmap, 5);
-  unsigned int contact    = define_layer (ly, lmap, 8);
-  unsigned int metal1     = define_layer (ly, lmap, 9);
-  unsigned int via1       = define_layer (ly, lmap, 10);
-  unsigned int metal2     = define_layer (ly, lmap, 11);
-
-  {
-    db::LoadLayoutOptions options;
-    options.get_options<db::CommonReaderOptions> ().layer_map = lmap;
-    options.get_options<db::CommonReaderOptions> ().create_other_layers = false;
-
-    std::string fn (tl::testdata ());
-    fn = tl::combine_path (fn, "algo");
-    fn = tl::combine_path (fn, "soft_connections.gds");
-
-    tl::InputStream stream (fn);
-    db::Reader reader (stream);
-    reader.read (ly, options);
-  }
-
-  db::Cell &tc = ly.cell (*ly.begin_top_down ());
-
-  db::DeepShapeStore dss;
-  dss.set_text_enlargement (1);
-  dss.set_text_property_name (tl::Variant ("LABEL"));
-
-  //  original layers
-  db::Region rnwell (db::RecursiveShapeIterator (ly, tc, nwell), dss);
-  db::Region rdiff (db::RecursiveShapeIterator (ly, tc, diff), dss);
-  db::Region rpplus (db::RecursiveShapeIterator (ly, tc, pplus), dss);
-  db::Region rnplus (db::RecursiveShapeIterator (ly, tc, nplus), dss);
-  db::Region rpoly (db::RecursiveShapeIterator (ly, tc, poly), dss);
-  db::Region rcontact (db::RecursiveShapeIterator (ly, tc, contact), dss);
-  db::Region rmetal1 (db::RecursiveShapeIterator (ly, tc, metal1), dss);
-  db::Region rvia1 (db::RecursiveShapeIterator (ly, tc, via1), dss);
-  db::Region rmetal2 (db::RecursiveShapeIterator (ly, tc, metal2), dss);
-
-  //  derived regions
-
-  db::Region rdiff_in_nwell = rdiff & rnwell;
-  db::Region rpdiff      = rdiff_in_nwell - rnplus;
-  db::Region rntie       = rdiff_in_nwell & rnplus;
-  db::Region rpgate      = rpdiff & rpoly;
-  db::Region rpsd        = rpdiff - rpgate;
-
-  db::Region rdiff_outside_nwell = rdiff - rnwell;
-  db::Region rndiff      = rdiff_outside_nwell - rpplus;
-  db::Region rptie       = rdiff_outside_nwell & rpplus;
-  db::Region rngate      = rndiff & rpoly;
-  db::Region rnsd        = rndiff - rngate;
-
-  //  Global
-
-  db::Region bulk (dss);
-
-  //  return the computed layers into the original layout and write it for debugging purposes
-
-  unsigned int lpgate = ly.insert_layer (db::LayerProperties (10, 0));      // 10/0 -> Gate (p)
-  unsigned int lngate = ly.insert_layer (db::LayerProperties (11, 0));      // 11/0 -> Gate (n)
-  unsigned int lpsd   = ly.insert_layer (db::LayerProperties (12, 0));      // 12/0 -> Source/Drain (p)
-  unsigned int lnsd   = ly.insert_layer (db::LayerProperties (13, 0));      // 13/0 -> Source/Drain (n)
-  unsigned int lpdiff = ly.insert_layer (db::LayerProperties (14, 0));      // 14/0 -> P Diffusion
-  unsigned int lndiff = ly.insert_layer (db::LayerProperties (15, 0));      // 15/0 -> N Diffusion
-  unsigned int lptie  = ly.insert_layer (db::LayerProperties (16, 0));      // 16/0 -> P Tie
-  unsigned int lntie  = ly.insert_layer (db::LayerProperties (17, 0));      // 17/0 -> N Tie
-
-  rpgate.insert_into (&ly, tc.cell_index (), lpgate);
-  rngate.insert_into (&ly, tc.cell_index (), lngate);
-  rpsd.insert_into (&ly, tc.cell_index (), lpsd);
-  rnsd.insert_into (&ly, tc.cell_index (), lnsd);
-  rpdiff.insert_into (&ly, tc.cell_index (), lpdiff);
-  rndiff.insert_into (&ly, tc.cell_index (), lndiff);
-  rptie.insert_into (&ly, tc.cell_index (), lptie);
-  rntie.insert_into (&ly, tc.cell_index (), lntie);
-
-  //  perform the extraction
-
-  db::Netlist nl;
-  db::hier_clusters<db::NetShape> cl;
-
-  db::NetlistDeviceExtractorMOS4Transistor pmos_ex ("PMOS");
-  db::NetlistDeviceExtractorMOS4Transistor nmos_ex ("NMOS");
-
-  db::NetlistDeviceExtractor::input_layers dl;
-
-  dl["SD"] = &rpsd;
-  dl["G"] = &rpgate;
-  dl["W"] = &rnwell;
-  dl["P"] = &rpoly;  //  not needed for extraction but to return terminal shapes
-  pmos_ex.extract (dss, 0, dl, nl, cl);
-
-  dl["SD"] = &rnsd;
-  dl["G"] = &rngate;
-  dl["W"] = &bulk;
-  dl["P"] = &rpoly;  //  not needed for extraction but to return terminal shapes
-  nmos_ex.extract (dss, 0, dl, nl, cl);
-
-  //  perform the net extraction
-
-  db::NetlistExtractor net_ex;
-
-  db::Connectivity conn;
-
-  //  Global nets
-  conn.connect_global (bulk, "BULK");
-  conn.soft_connect_global (rptie, "BULK");
-
-  //  Intra-layer
-  conn.connect (rpsd);
-  conn.connect (rnsd);
-  conn.connect (rptie);
-  conn.connect (rntie);
-  conn.connect (rnwell);
-  conn.connect (rpoly);
-  conn.connect (rcontact);
-  conn.connect (rmetal1);
-  conn.connect (rvia1);
-  conn.connect (rmetal2);
-  //  Inter-layer
-  conn.soft_connect (rcontact, rpsd);
-  conn.soft_connect (rcontact, rnsd);
-  conn.soft_connect (rntie, rnwell);
-  conn.soft_connect (rcontact, rptie);
-  conn.soft_connect (rcontact, rntie);
-  conn.soft_connect (rcontact, rpoly);
-  conn.connect (rcontact, rmetal1);
-  conn.connect (rvia1, rmetal1);
-  conn.connect (rvia1, rmetal2);
-
-  //  extract the nets
-  std::list<std::set<std::string> > jn;
-
-  jn.push_back (std::set<std::string> ());
-  jn.back ().insert ("BULK");
-  jn.back ().insert ("VSS");
-
-  jn.push_back (std::set<std::string> ());
-  jn.back ().insert ("NWELL");
-  jn.back ().insert ("VDD");
-
-  net_ex.set_joined_nets ("INV2", jn);
-
-  std::list<tl::GlobPattern> gp;
-  gp.push_back (tl::GlobPattern ("NEXT"));
-  gp.push_back (tl::GlobPattern ("FB"));
-  net_ex.set_joined_net_names (gp);
-
-  net_ex.extract_nets (dss, 0, conn, nl, cl);
-
-  annotate_soft_connections (nl, cl);
-
-  EXPECT_EQ (all_net_names_unique (nl), true);
-
-  //  debug layers produced for nets
-  std::map<unsigned int, unsigned int> dump_map;
-  dump_map [layer_of (bulk)      ] = ly.insert_layer (db::LayerProperties (200, 0));
-  dump_map [layer_of (rnwell)    ] = ly.insert_layer (db::LayerProperties (201, 0));
-  dump_map [layer_of (rpsd)      ] = ly.insert_layer (db::LayerProperties (202, 0));
-  dump_map [layer_of (rnsd)      ] = ly.insert_layer (db::LayerProperties (203, 0));
-  dump_map [layer_of (rpoly)     ] = ly.insert_layer (db::LayerProperties (204, 0));
-  dump_map [layer_of (rcontact)  ] = ly.insert_layer (db::LayerProperties (205, 0));
-  dump_map [layer_of (rmetal1)   ] = ly.insert_layer (db::LayerProperties (206, 0));
-  dump_map [layer_of (rvia1)     ] = ly.insert_layer (db::LayerProperties (207, 0));
-  dump_map [layer_of (rmetal2)   ] = ly.insert_layer (db::LayerProperties (208, 0));
-
-  //  write nets to layout
-  db::CellMapping cm = dss.cell_mapping_to_original (0, &ly, tc.cell_index ());
-  dump_nets_to_layout (nl, cl, ly, dump_map, cm, true);
-
-  //  compare netlist as string
-  CHECKPOINT ();
-  db::compare_netlist (_this, nl,
-    "circuit RINGO ();\n"
-    "  subcircuit ND2X1 $1 (NWELL=$4,B=FB,A=ENABLE,VDD=VDD,OUT=$5,VSS=VSS,BULK=BULK);\n"
-    "  subcircuit INVX1 $2 (NWELL=$4,IN=$14,VDD=VDD,OUT=FB,VSS=VSS,BULK=BULK);\n"
-    "  subcircuit INVX1 $3 (NWELL=$4,IN=FB,VDD=$I17,OUT=OUT,VSS=$I27,BULK=BULK);\n"
-    "  subcircuit TIE $4 (NWELL=$4,VSS=$I27,VDD=$I17,BULK=BULK);\n"
-    "  subcircuit EMPTY $5 ($1=$4,$2=$I27,$3=$I17);\n"
-    "  subcircuit TIE $6 (NWELL=$4,VSS=VSS,VDD=VDD,BULK=BULK);\n"
-    "  subcircuit INVX1 $7 (NWELL=$4,IN=$5,VDD=VDD,OUT=$6,VSS=VSS,BULK=BULK);\n"
-    "  subcircuit EMPTY $8 ($1=$4,$2=VSS,$3=VDD);\n"
-    "  subcircuit INVX1 $9 (NWELL=$4,IN=$6,VDD=VDD,OUT=$7,VSS=VSS,BULK=BULK);\n"
-    "  subcircuit INVX1 $10 (NWELL=$4,IN=$7,VDD=VDD,OUT=$8,VSS=VSS,BULK=BULK);\n"
-    "  subcircuit INVX1 $11 (NWELL=$4,IN=$8,VDD=VDD,OUT=$9,VSS=VSS,BULK=BULK);\n"
-    "  subcircuit INVX1 $12 (NWELL=$4,IN=$9,VDD=VDD,OUT=$10,VSS=VSS,BULK=BULK);\n"
-    "  subcircuit INVX1 $13 (NWELL=$4,IN=$10,VDD=VDD,OUT=$11,VSS=VSS,BULK=BULK);\n"
-    "  subcircuit INVX1 $14 (NWELL=$4,IN=$11,VDD=VDD,OUT=$12,VSS=VSS,BULK=BULK);\n"
-    "  subcircuit INVX1 $15 (NWELL=$4,IN=$12,VDD=VDD,OUT=$15,VSS=VSS,BULK=BULK);\n"
-    "  subcircuit INVX1 $16 (NWELL=$4,IN=$15,VDD=VDD,OUT=$14,VSS=VSS,BULK=BULK);\n"
-    "end;\n"
-    "circuit ND2X1 (NWELL=NWELL,B=B,A=A,VDD=VDD,OUT=OUT,VSS=VSS,BULK=BULK);\n"
-    "  device PMOS $1 (S=$7,G=$4,D=$9,B=NWELL) (L=0.25,W=1.5,AS=0.6375,AD=0.3375,PS=3.85,PD=1.95);\n"
-    "  device PMOS $2 (S=$9,G=$2,D=$6,B=NWELL) (L=0.25,W=1.5,AS=0.3375,AD=0.6375,PS=1.95,PD=3.85);\n"
-    "  device NMOS $3 (S=$13,G=$4,D=$14,B=BULK) (L=0.25,W=0.95,AS=0.40375,AD=0.21375,PS=2.75,PD=1.4);\n"
-    "  device NMOS $4 (S=$14,G=$2,D=$11,B=BULK) (L=0.25,W=0.95,AS=0.21375,AD=0.40375,PS=1.4,PD=2.75);\n"
-    "  device SOFT $5 (A=B,C=$2) (A=0,P=0);\n"
-    "  device SOFT $6 (A=A,C=$4) (A=0,P=0);\n"
-    "  device SOFT $7 (A=OUT,C=$6) (A=0,P=0);\n"
-    "  device SOFT $8 (A=OUT,C=$7) (A=0,P=0);\n"
-    "  device SOFT $9 (A=VDD,C=$9) (A=0,P=0);\n"
-    "  device SOFT $10 (A=OUT,C=$11) (A=0,P=0);\n"
-    "  device SOFT $11 (A=VSS,C=$13) (A=0,P=0);\n"
-    "end;\n"
-    "circuit TIE (NWELL=NWELL,VSS=VSS,VDD=VDD,BULK=BULK);\n"
-    "  device SOFT $1 (A=$2,C=NWELL) (A=0,P=0);\n"
-    "  device SOFT $2 (A=VDD,C=$2) (A=0,P=0);\n"
-    "  device SOFT $3 (A=VSS,C=$3) (A=0,P=0);\n"
-    "  device SOFT $4 (A=$3,C=BULK) (A=0,P=0);\n"
-    "end;\n"
-    "circuit EMPTY ($1=$1,$2=$2,$3=$3);\n"
-    "end;\n"
-    "circuit INVX1 (NWELL=NWELL,IN=IN,VDD=VDD,OUT=OUT,VSS=VSS,BULK=BULK);\n"
-    "  device PMOS $1 (S=$5,G=$2,D=$7,B=NWELL) (L=0.25,W=1.5,AS=0.6375,AD=0.6375,PS=3.85,PD=3.85);\n"
-    "  device NMOS $2 (S=$10,G=$2,D=$8,B=BULK) (L=0.25,W=0.95,AS=0.40375,AD=0.40375,PS=2.75,PD=2.75);\n"
-    "  device SOFT $3 (A=IN,C=$2) (A=0,P=0);\n"
-    "  device SOFT $4 (A=VDD,C=$5) (A=0,P=0);\n"
-    "  device SOFT $5 (A=OUT,C=$7) (A=0,P=0);\n"
-    "  device SOFT $6 (A=OUT,C=$8) (A=0,P=0);\n"
-    "  device SOFT $7 (A=VSS,C=$10) (A=0,P=0);\n"
-    "end;\n"
-  );
-
-  // doesn't do anything here, but we test that this does not destroy anything:
-  nl.combine_devices ();
-
-  //  make pins for named nets of top-level circuits - this way they are not purged
-  nl.make_top_level_pins ();
-  nl.purge ();
-
-  //  compare netlist as string
-  CHECKPOINT ();
-  db::compare_netlist (_this, nl,
-    "circuit RINGO (FB=FB,ENABLE=ENABLE,OUT=OUT,VDD=VDD,VSS=VSS,BULK=BULK);\n"
-    "  subcircuit ND2X1 $1 (NWELL=$4,B=FB,A=ENABLE,VDD=VDD,OUT=$5,VSS=VSS,BULK=BULK);\n"
-    "  subcircuit INVX1 $2 (NWELL=$4,IN=$14,VDD=VDD,OUT=FB,VSS=VSS,BULK=BULK);\n"
-    "  subcircuit INVX1 $3 (NWELL=$4,IN=FB,VDD=$I17,OUT=OUT,VSS=$I27,BULK=BULK);\n"
-    "  subcircuit TIE $4 (NWELL=$4,VSS=$I27,VDD=$I17,BULK=BULK);\n"
-    "  subcircuit TIE $5 (NWELL=$4,VSS=VSS,VDD=VDD,BULK=BULK);\n"
-    "  subcircuit INVX1 $6 (NWELL=$4,IN=$5,VDD=VDD,OUT=$6,VSS=VSS,BULK=BULK);\n"
-    "  subcircuit INVX1 $7 (NWELL=$4,IN=$6,VDD=VDD,OUT=$7,VSS=VSS,BULK=BULK);\n"
-    "  subcircuit INVX1 $8 (NWELL=$4,IN=$7,VDD=VDD,OUT=$8,VSS=VSS,BULK=BULK);\n"
-    "  subcircuit INVX1 $9 (NWELL=$4,IN=$8,VDD=VDD,OUT=$9,VSS=VSS,BULK=BULK);\n"
-    "  subcircuit INVX1 $10 (NWELL=$4,IN=$9,VDD=VDD,OUT=$10,VSS=VSS,BULK=BULK);\n"
-    "  subcircuit INVX1 $11 (NWELL=$4,IN=$10,VDD=VDD,OUT=$11,VSS=VSS,BULK=BULK);\n"
-    "  subcircuit INVX1 $12 (NWELL=$4,IN=$11,VDD=VDD,OUT=$12,VSS=VSS,BULK=BULK);\n"
-    "  subcircuit INVX1 $13 (NWELL=$4,IN=$12,VDD=VDD,OUT=$15,VSS=VSS,BULK=BULK);\n"
-    "  subcircuit INVX1 $14 (NWELL=$4,IN=$15,VDD=VDD,OUT=$14,VSS=VSS,BULK=BULK);\n"
-    "end;\n"
-    "circuit ND2X1 (NWELL=NWELL,B=B,A=A,VDD=VDD,OUT=OUT,VSS=VSS,BULK=BULK);\n"
-    "  device PMOS $1 (S=$7,G=$4,D=$9,B=NWELL) (L=0.25,W=1.5,AS=0.6375,AD=0.3375,PS=3.85,PD=1.95);\n"
-    "  device PMOS $2 (S=$9,G=$2,D=$6,B=NWELL) (L=0.25,W=1.5,AS=0.3375,AD=0.6375,PS=1.95,PD=3.85);\n"
-    "  device NMOS $3 (S=$13,G=$4,D=$14,B=BULK) (L=0.25,W=0.95,AS=0.40375,AD=0.21375,PS=2.75,PD=1.4);\n"
-    "  device NMOS $4 (S=$14,G=$2,D=$11,B=BULK) (L=0.25,W=0.95,AS=0.21375,AD=0.40375,PS=1.4,PD=2.75);\n"
-    "  device SOFT $5 (A=B,C=$2) (A=0,P=0);\n"
-    "  device SOFT $6 (A=A,C=$4) (A=0,P=0);\n"
-    "  device SOFT $7 (A=OUT,C=$6) (A=0,P=0);\n"
-    "  device SOFT $8 (A=OUT,C=$7) (A=0,P=0);\n"
-    "  device SOFT $9 (A=VDD,C=$9) (A=0,P=0);\n"
-    "  device SOFT $10 (A=OUT,C=$11) (A=0,P=0);\n"
-    "  device SOFT $11 (A=VSS,C=$13) (A=0,P=0);\n"
-    "end;\n"
-    "circuit TIE (NWELL=NWELL,VSS=VSS,VDD=VDD,BULK=BULK);\n"
-    "  device SOFT $1 (A=$2,C=NWELL) (A=0,P=0);\n"
-    "  device SOFT $2 (A=VDD,C=$2) (A=0,P=0);\n"
-    "  device SOFT $3 (A=VSS,C=$3) (A=0,P=0);\n"
-    "  device SOFT $4 (A=$3,C=BULK) (A=0,P=0);\n"
-    "end;\n"
-    "circuit INVX1 (NWELL=NWELL,IN=IN,VDD=VDD,OUT=OUT,VSS=VSS,BULK=BULK);\n"
-    "  device PMOS $1 (S=$5,G=$2,D=$7,B=NWELL) (L=0.25,W=1.5,AS=0.6375,AD=0.6375,PS=3.85,PD=3.85);\n"
-    "  device NMOS $2 (S=$10,G=$2,D=$8,B=BULK) (L=0.25,W=0.95,AS=0.40375,AD=0.40375,PS=2.75,PD=2.75);\n"
-    "  device SOFT $3 (A=IN,C=$2) (A=0,P=0);\n"
-    "  device SOFT $4 (A=VDD,C=$5) (A=0,P=0);\n"
-    "  device SOFT $5 (A=OUT,C=$7) (A=0,P=0);\n"
-    "  device SOFT $6 (A=OUT,C=$8) (A=0,P=0);\n"
-    "  device SOFT $7 (A=VSS,C=$10) (A=0,P=0);\n"
-    "end;\n"
-  );
-
-  //  compare the collected test data
-
-  std::string au = tl::testdata ();
-  au = tl::combine_path (au, "algo");
-  au = tl::combine_path (au, "soft_connections_au.gds");
-
-  db::compare_layouts (_this, ly, au);
-}
-
-
-TEST(100_issue954)
-{
-  db::Layout ly;
-  db::LayerMap lmap;
-
-  unsigned int active     = define_layer (ly, lmap, 1);
-  unsigned int poly       = define_layer (ly, lmap, 2);
-
-  {
-    db::LoadLayoutOptions options;
-    options.get_options<db::CommonReaderOptions> ().layer_map = lmap;
-    options.get_options<db::CommonReaderOptions> ().create_other_layers = false;
-
-    std::string fn (tl::testdata ());
-    fn = tl::combine_path (fn, "algo");
-    fn = tl::combine_path (fn, "device_extract_issue954.gds");
-
-    tl::InputStream stream (fn);
-    db::Reader reader (stream);
-    reader.read (ly, options);
-  }
-
-  db::Cell &tc = ly.cell (*ly.begin_top_down ());
-
-  db::DeepShapeStore dss;
-  dss.set_text_enlargement (1);
-  dss.set_text_property_name (tl::Variant ("LABEL"));
-
-  //  original layers
-  db::Region ractive (db::RecursiveShapeIterator (ly, tc, active), dss);
-  db::Region rpoly (db::RecursiveShapeIterator (ly, tc, poly), dss);
-
-  //  derived regions
-
-  db::Region rpgate   = ractive & rpoly;
-  db::Region rpsd     = ractive - rpgate;
-
-  //  Global
-
-  db::Region bulk (dss);
-
-  //  return the computed layers into the original layout and write it for debugging purposes
-
-  unsigned int lgate  = ly.insert_layer (db::LayerProperties (10, 0));      // 10/0 -> Gate
-  unsigned int lsd    = ly.insert_layer (db::LayerProperties (11, 0));      // 11/0 -> Source/Drain
-  unsigned int lpdiff = ly.insert_layer (db::LayerProperties (12, 0));      // 12/0 -> P Diffusion
-
-  rpgate.insert_into (&ly, tc.cell_index (), lgate);
-  rpsd.insert_into (&ly, tc.cell_index (), lsd);
-  rpsd.insert_into (&ly, tc.cell_index (), lpdiff);
-
-  //  perform the extraction
-
-  db::Netlist nl;
-  db::hier_clusters<db::NetShape> cl;
-
-  db::NetlistDeviceExtractorMOS4Transistor pmos_ex ("PMOS");
-
-  db::NetlistDeviceExtractor::input_layers dl;
-
-  dl["SD"] = &rpsd;
-  dl["G"] = &rpgate;
-  dl["W"] = &bulk;
-  dl["P"] = &rpoly;  //  not needed for extraction but to return terminal shapes
-  pmos_ex.extract (dss, 0, dl, nl, cl);
-
-  //  perform the net extraction
-
-  db::NetlistExtractor net_ex;
-
-  db::Connectivity conn;
-
-  //  Global nets
-  conn.connect_global (bulk, "BULK");
-
-  //  Intra-layer
-  conn.connect (rpsd);
-  conn.connect (rpoly);
-
-  //  extract the nets
-
-  std::list<std::set<std::string> > jn;
-
-  jn.push_back (std::set<std::string> ());
-  jn.back ().insert ("BULK");
-  jn.back ().insert ("VSS");
-
-  jn.push_back (std::set<std::string> ());
-  jn.back ().insert ("NWELL");
-  jn.back ().insert ("VDD");
-
-  net_ex.set_joined_nets ("INV2", jn);
-
-  std::list<tl::GlobPattern> gp;
-  gp.push_back (tl::GlobPattern ("NEXT"));
-  gp.push_back (tl::GlobPattern ("FB"));
-  net_ex.set_joined_net_names (gp);
-
-  net_ex.extract_nets (dss, 0, conn, nl, cl);
-
-  EXPECT_EQ (all_net_names_unique (nl), true);
-
-  //  debug layers produced for nets
-  //    200/0 -> Poly
-  //    201/0 -> N source/drain
-  //    202/0 -> Bulk
-  std::map<unsigned int, unsigned int> dump_map;
-  dump_map [layer_of (bulk)      ] = ly.insert_layer (db::LayerProperties (202, 0));
-  dump_map [layer_of (rpsd)      ] = ly.insert_layer (db::LayerProperties (201, 0));
-  dump_map [layer_of (rpoly)     ] = ly.insert_layer (db::LayerProperties (200, 0));
-
-  //  write nets to layout
-  db::CellMapping cm = dss.cell_mapping_to_original (0, &ly, tc.cell_index ());
-  dump_nets_to_layout (nl, cl, ly, dump_map, cm, true);
-
-  //  compare the collected test data
-
-  std::string au = tl::testdata ();
-  au = tl::combine_path (au, "algo");
-  au = tl::combine_path (au, "device_extract_issue954_au.gds");
-
-  db::compare_layouts (_this, ly, au);
 }
 

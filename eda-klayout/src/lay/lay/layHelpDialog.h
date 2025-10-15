@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -31,11 +31,6 @@
 #include <memory>
 #include <string>
 
-namespace Ui
-{
-  class HelpDialog;
-}
-
 namespace lay
 {
 
@@ -63,7 +58,7 @@ protected slots:
   void title_changed (const QString &t);
 
 private:
-  Ui::HelpDialog *mp_ui;
+  lay::BrowserPanel *mp_browser_panel;
   QRect m_geometry;
   static lay::HelpSource *mp_help_source;
   QString m_def_title;

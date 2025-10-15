@@ -6,107 +6,68 @@ include($$PWD/../../lib.pri)
 
 DEFINES += MAKE_EDT_LIBRARY
 
-!equals(HAVE_QT, "0") {
-
-  FORMS = \
-    AlignOptionsDialog.ui \
-    BoxPropertiesPage.ui \
-    CopyModeDialog.ui \
-    ChangeLayerOptionsDialog.ui \
-    EditablePathPropertiesPage.ui \
-    EditorOptionsGeneric.ui \
-    EditorOptionsInst.ui \
-    EditorOptionsPath.ui \
-    EditorOptionsText.ui \
-    InstantiationForm.ui \
-    InstPropertiesPage.ui \
-    MakeArrayOptionsDialog.ui \
-    MakeCellOptionsDialog.ui \
-    PathPropertiesPage.ui \
-    PolygonPropertiesPage.ui \
-    RoundCornerOptionsDialog.ui \
-    TextPropertiesPage.ui \
-    DistributeOptionsDialog.ui \
-    EditorOptionsInstPCellParam.ui \
-    AreaAndPerimeterDialog.ui
-
-}
-
-# Disabled without Qt:
-
 HEADERS = \
-    edtBoxService.h \
-    edtDialogs.h \
-    edtEditorHooks.h \
-    edtEditorOptionsPages.h \
-    edtInstPropertiesPage.h \
-    edtInstService.h \
-    edtMoveTrackerService.h \
-    edtPCellParametersPage.h \
-    edtPathService.h \
-    edtPointService.h \
-    edtPolygonService.h \
-    edtPropertiesPages.h \
-    edtPropertiesPageUtils.h \
-    edtRecentConfigurationPage.h \
-    edtShapeService.h \
-    edtTextService.h
-
-SOURCES = \
-    edtBoxService.cc \
-    edtDialogs.cc \
-    edtEditorHooks.cc \
-    edtEditorOptionsPages.cc \
-    edtInstPropertiesPage.cc \
-    edtInstService.cc \
-    edtMoveTrackerService.cc \
-    edtPCellParametersPage.cc \
-    edtPathService.cc \
-    edtPointService.cc \
-    edtPolygonService.cc \
-    edtPropertiesPages.cc \
-    edtPropertiesPageUtils.cc \
-    edtRecentConfigurationPage.cc \
-    edtShapeService.cc \
-    edtTextService.cc \
-    gsiDeclEdtEditorHooks.cc
-
-# Enabled without Qt:
-
-HEADERS += \
-  edtForceLink.h \
   edtConfig.h \
+  edtDialogs.h \
+  edtEditorOptionsPages.h \
+  edtInstPropertiesPage.h \
   edtMainService.h \
   edtPartialService.h \
+  edtPCellParametersPage.h \
   edtPlugin.h \
+  edtPropertiesPages.h \
+  edtPropertiesPageUtils.h \
   edtService.h \
-  edtCommon.h \
-  edtDistribute.h \
+  edtServiceImpl.h \
+  edtUtils.h \
+    edtCommon.h \
+    edtPCellParametersDialog.h
 
-SOURCES += \
-  edtForceLink.cc \
+FORMS = \
+  AlignOptionsDialog.ui \
+  BoxPropertiesPage.ui \
+  CopyModeDialog.ui \
+  ChangeLayerOptionsDialog.ui \
+  EditablePathPropertiesPage.ui \
+  EditorOptionsDialog.ui \
+  EditorOptionsGeneric.ui \
+  EditorOptionsInst.ui \
+  EditorOptionsPath.ui \
+  EditorOptionsText.ui \
+  InstantiationForm.ui \
+  InstPropertiesPage.ui \
+  MakeArrayOptionsDialog.ui \
+  MakeCellOptionsDialog.ui \
+  PathPropertiesPage.ui \
+  PolygonPropertiesPage.ui \
+  RoundCornerOptionsDialog.ui \
+  TextPropertiesPage.ui \
+    PCellParametersDialog.ui
+
+SOURCES = \
   edtConfig.cc \
+  edtDialogs.cc \
+  edtEditorOptionsPages.cc \
+  edtInstPropertiesPage.cc \
   edtMainService.cc \
   edtPartialService.cc \
+  edtPCellParametersPage.cc \
   edtPlugin.cc \
+  edtPropertiesPages.cc \
+  edtPropertiesPageUtils.cc \
   edtService.cc \
+  edtServiceImpl.cc \
+  edtUtils.cc \
   gsiDeclEdt.cc \
-  edtDistribute.cc \
+    edtPCellParametersDialog.cc
 
-INCLUDEPATH += $$TL_INC $$GSI_INC $$LAYBASIC_INC $$LAYVIEW_INC $$DB_INC
-DEPENDPATH += $$TL_INC $$GSI_INC $$LAYBASIC_INC $$LAYVIEW_INC $$DB_INC
+INCLUDEPATH += $$TL_INC $$GSI_INC $$LAYBASIC_INC $$DB_INC
+DEPENDPATH += $$TL_INC $$GSI_INC $$LAYBASIC_INC $$DB_INC
 
-LIBS += -L$$DESTDIR -lklayout_tl -lklayout_gsi -lklayout_laybasic -lklayout_layview -lklayout_db
+# Note: this accounts for UI-generated headers placed into the output folders in
+# shadow builds:
+INCLUDEPATH += $$DESTDIR/laybasic/laybasic
+DEPENDPATH += $$DESTDIR/laybasic/laybasic
 
-!equals(HAVE_QT, "0") {
-
-  INCLUDEPATH += $$LAYUI_INC
-  DEPENDPATH += $$LAYUI_INC
-
-  LIBS += -lklayout_layui
-
-}
-
-FORMS += \
-  PointPropertiesPage.ui
+LIBS += -L$$DESTDIR -lklayout_tl -lklayout_gsi -lklayout_laybasic -lklayout_db
 

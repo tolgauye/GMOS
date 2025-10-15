@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -22,5 +22,8 @@
 
 #include "../pymodHelper.h"
 
-#include "QtNetworkMain.h"
+//  To force linking of the QtNetwork module
+#include "../../gsiqt/qtbasic/gsiQtNetworkExternals.h"
+FORCE_LINK_GSI_QTNETWORK
+
 DEFINE_PYMOD(QtNetwork, "QtNetwork", "KLayout/Qt module 'QtNetwork'")

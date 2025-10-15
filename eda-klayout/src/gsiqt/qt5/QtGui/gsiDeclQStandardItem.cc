@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -37,6 +37,7 @@
 #include <QStandardItemModel>
 #include "gsiQt.h"
 #include "gsiQtGuiCommon.h"
+#include "gsiDeclQtGuiTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -201,22 +202,6 @@ static void _call_f_child_c1426 (const qt_gsi::GenericMethod * /*decl*/, void *c
   int arg1 = gsi::arg_reader<int >() (args, heap);
   int arg2 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (0, heap);
   ret.write<QStandardItem * > ((QStandardItem *)((QStandardItem *)cls)->child (arg1, arg2));
-}
-
-
-// void QStandardItem::clearData()
-
-
-static void _init_f_clearData_0 (qt_gsi::GenericMethod *decl)
-{
-  decl->set_return<void > ();
-}
-
-static void _call_f_clearData_0 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  __SUPPRESS_UNUSED_WARNING(ret);
-  ((QStandardItem *)cls)->clearData ();
 }
 
 
@@ -512,21 +497,6 @@ static void _call_f_insertRows_1426 (const qt_gsi::GenericMethod * /*decl*/, voi
 }
 
 
-// bool QStandardItem::isAutoTristate()
-
-
-static void _init_f_isAutoTristate_c0 (qt_gsi::GenericMethod *decl)
-{
-  decl->set_return<bool > ();
-}
-
-static void _call_f_isAutoTristate_c0 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  ret.write<bool > ((bool)((QStandardItem *)cls)->isAutoTristate ());
-}
-
-
 // bool QStandardItem::isCheckable()
 
 
@@ -629,21 +599,6 @@ static void _call_f_isTristate_c0 (const qt_gsi::GenericMethod * /*decl*/, void 
 {
   __SUPPRESS_UNUSED_WARNING(args);
   ret.write<bool > ((bool)((QStandardItem *)cls)->isTristate ());
-}
-
-
-// bool QStandardItem::isUserTristate()
-
-
-static void _init_f_isUserTristate_c0 (qt_gsi::GenericMethod *decl)
-{
-  decl->set_return<bool > ();
-}
-
-static void _call_f_isUserTristate_c0 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  ret.write<bool > ((bool)((QStandardItem *)cls)->isUserTristate ());
 }
 
 
@@ -869,26 +824,6 @@ static void _call_f_setAccessibleText_2025 (const qt_gsi::GenericMethod * /*decl
   const QString &arg1 = gsi::arg_reader<const QString & >() (args, heap);
   __SUPPRESS_UNUSED_WARNING(ret);
   ((QStandardItem *)cls)->setAccessibleText (arg1);
-}
-
-
-// void QStandardItem::setAutoTristate(bool tristate)
-
-
-static void _init_f_setAutoTristate_864 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("tristate");
-  decl->add_arg<bool > (argspec_0);
-  decl->set_return<void > ();
-}
-
-static void _call_f_setAutoTristate_864 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  bool arg1 = gsi::arg_reader<bool >() (args, heap);
-  __SUPPRESS_UNUSED_WARNING(ret);
-  ((QStandardItem *)cls)->setAutoTristate (arg1);
 }
 
 
@@ -1364,26 +1299,6 @@ static void _call_f_setTristate_864 (const qt_gsi::GenericMethod * /*decl*/, voi
 }
 
 
-// void QStandardItem::setUserTristate(bool tristate)
-
-
-static void _init_f_setUserTristate_864 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("tristate");
-  decl->add_arg<bool > (argspec_0);
-  decl->set_return<void > ();
-}
-
-static void _call_f_setUserTristate_864 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  bool arg1 = gsi::arg_reader<bool >() (args, heap);
-  __SUPPRESS_UNUSED_WARNING(ret);
-  ((QStandardItem *)cls)->setUserTristate (arg1);
-}
-
-
 // void QStandardItem::setWhatsThis(const QString &whatsThis)
 
 
@@ -1626,7 +1541,6 @@ static gsi::Methods methods_QStandardItem () {
   methods += new qt_gsi::GenericMethod (":background", "@brief Method QBrush QStandardItem::background()\n", true, &_init_f_background_c0, &_call_f_background_c0);
   methods += new qt_gsi::GenericMethod (":checkState", "@brief Method Qt::CheckState QStandardItem::checkState()\n", true, &_init_f_checkState_c0, &_call_f_checkState_c0);
   methods += new qt_gsi::GenericMethod ("child", "@brief Method QStandardItem *QStandardItem::child(int row, int column)\n", true, &_init_f_child_c1426, &_call_f_child_c1426);
-  methods += new qt_gsi::GenericMethod ("clearData", "@brief Method void QStandardItem::clearData()\n", false, &_init_f_clearData_0, &_call_f_clearData_0);
   methods += new qt_gsi::GenericMethod ("clone", "@brief Method QStandardItem *QStandardItem::clone()\n", true, &_init_f_clone_c0, &_call_f_clone_c0);
   methods += new qt_gsi::GenericMethod ("column", "@brief Method int QStandardItem::column()\n", true, &_init_f_column_c0, &_call_f_column_c0);
   methods += new qt_gsi::GenericMethod (":columnCount", "@brief Method int QStandardItem::columnCount()\n", true, &_init_f_columnCount_c0, &_call_f_columnCount_c0);
@@ -1643,7 +1557,6 @@ static gsi::Methods methods_QStandardItem () {
   methods += new qt_gsi::GenericMethod ("insertRow", "@brief Method void QStandardItem::insertRow(int row, QStandardItem *item)\n", false, &_init_f_insertRow_2578, &_call_f_insertRow_2578);
   methods += new qt_gsi::GenericMethod ("insertRows", "@brief Method void QStandardItem::insertRows(int row, const QList<QStandardItem*> &items)\n", false, &_init_f_insertRows_3926, &_call_f_insertRows_3926);
   methods += new qt_gsi::GenericMethod ("insertRows", "@brief Method void QStandardItem::insertRows(int row, int count)\n", false, &_init_f_insertRows_1426, &_call_f_insertRows_1426);
-  methods += new qt_gsi::GenericMethod ("isAutoTristate?|:autoTristate", "@brief Method bool QStandardItem::isAutoTristate()\n", true, &_init_f_isAutoTristate_c0, &_call_f_isAutoTristate_c0);
   methods += new qt_gsi::GenericMethod ("isCheckable?|:checkable", "@brief Method bool QStandardItem::isCheckable()\n", true, &_init_f_isCheckable_c0, &_call_f_isCheckable_c0);
   methods += new qt_gsi::GenericMethod ("isDragEnabled?|:dragEnabled", "@brief Method bool QStandardItem::isDragEnabled()\n", true, &_init_f_isDragEnabled_c0, &_call_f_isDragEnabled_c0);
   methods += new qt_gsi::GenericMethod ("isDropEnabled?|:dropEnabled", "@brief Method bool QStandardItem::isDropEnabled()\n", true, &_init_f_isDropEnabled_c0, &_call_f_isDropEnabled_c0);
@@ -1651,7 +1564,6 @@ static gsi::Methods methods_QStandardItem () {
   methods += new qt_gsi::GenericMethod ("isEnabled?|:enabled", "@brief Method bool QStandardItem::isEnabled()\n", true, &_init_f_isEnabled_c0, &_call_f_isEnabled_c0);
   methods += new qt_gsi::GenericMethod ("isSelectable?|:selectable", "@brief Method bool QStandardItem::isSelectable()\n", true, &_init_f_isSelectable_c0, &_call_f_isSelectable_c0);
   methods += new qt_gsi::GenericMethod ("isTristate?|:tristate", "@brief Method bool QStandardItem::isTristate()\n", true, &_init_f_isTristate_c0, &_call_f_isTristate_c0);
-  methods += new qt_gsi::GenericMethod ("isUserTristate?|:userTristate", "@brief Method bool QStandardItem::isUserTristate()\n", true, &_init_f_isUserTristate_c0, &_call_f_isUserTristate_c0);
   methods += new qt_gsi::GenericMethod ("model", "@brief Method QStandardItemModel *QStandardItem::model()\n", true, &_init_f_model_c0, &_call_f_model_c0);
   methods += new qt_gsi::GenericMethod ("<", "@brief Method bool QStandardItem::operator<(const QStandardItem &other)\n", true, &_init_f_operator_lt__c2610, &_call_f_operator_lt__c2610);
   methods += new qt_gsi::GenericMethod ("parent", "@brief Method QStandardItem *QStandardItem::parent()\n", true, &_init_f_parent_c0, &_call_f_parent_c0);
@@ -1664,7 +1576,6 @@ static gsi::Methods methods_QStandardItem () {
   methods += new qt_gsi::GenericMethod (":rowCount", "@brief Method int QStandardItem::rowCount()\n", true, &_init_f_rowCount_c0, &_call_f_rowCount_c0);
   methods += new qt_gsi::GenericMethod ("setAccessibleDescription|accessibleDescription=", "@brief Method void QStandardItem::setAccessibleDescription(const QString &accessibleDescription)\n", false, &_init_f_setAccessibleDescription_2025, &_call_f_setAccessibleDescription_2025);
   methods += new qt_gsi::GenericMethod ("setAccessibleText|accessibleText=", "@brief Method void QStandardItem::setAccessibleText(const QString &accessibleText)\n", false, &_init_f_setAccessibleText_2025, &_call_f_setAccessibleText_2025);
-  methods += new qt_gsi::GenericMethod ("setAutoTristate|autoTristate=", "@brief Method void QStandardItem::setAutoTristate(bool tristate)\n", false, &_init_f_setAutoTristate_864, &_call_f_setAutoTristate_864);
   methods += new qt_gsi::GenericMethod ("setBackground|background=", "@brief Method void QStandardItem::setBackground(const QBrush &brush)\n", false, &_init_f_setBackground_1910, &_call_f_setBackground_1910);
   methods += new qt_gsi::GenericMethod ("setCheckState|checkState=", "@brief Method void QStandardItem::setCheckState(Qt::CheckState checkState)\n", false, &_init_f_setCheckState_1740, &_call_f_setCheckState_1740);
   methods += new qt_gsi::GenericMethod ("setCheckable|checkable=", "@brief Method void QStandardItem::setCheckable(bool checkable)\n", false, &_init_f_setCheckable_864, &_call_f_setCheckable_864);
@@ -1688,7 +1599,6 @@ static gsi::Methods methods_QStandardItem () {
   methods += new qt_gsi::GenericMethod ("setTextAlignment|textAlignment=", "@brief Method void QStandardItem::setTextAlignment(QFlags<Qt::AlignmentFlag> textAlignment)\n", false, &_init_f_setTextAlignment_2750, &_call_f_setTextAlignment_2750);
   methods += new qt_gsi::GenericMethod ("setToolTip|toolTip=", "@brief Method void QStandardItem::setToolTip(const QString &toolTip)\n", false, &_init_f_setToolTip_2025, &_call_f_setToolTip_2025);
   methods += new qt_gsi::GenericMethod ("setTristate|tristate=", "@brief Method void QStandardItem::setTristate(bool tristate)\n", false, &_init_f_setTristate_864, &_call_f_setTristate_864);
-  methods += new qt_gsi::GenericMethod ("setUserTristate|userTristate=", "@brief Method void QStandardItem::setUserTristate(bool tristate)\n", false, &_init_f_setUserTristate_864, &_call_f_setUserTristate_864);
   methods += new qt_gsi::GenericMethod ("setWhatsThis|whatsThis=", "@brief Method void QStandardItem::setWhatsThis(const QString &whatsThis)\n", false, &_init_f_setWhatsThis_2025, &_call_f_setWhatsThis_2025);
   methods += new qt_gsi::GenericMethod (":sizeHint", "@brief Method QSize QStandardItem::sizeHint()\n", true, &_init_f_sizeHint_c0, &_call_f_sizeHint_c0);
   methods += new qt_gsi::GenericMethod ("sortChildren", "@brief Method void QStandardItem::sortChildren(int column, Qt::SortOrder order)\n", false, &_init_f_sortChildren_2340, &_call_f_sortChildren_2340);
@@ -1753,6 +1663,11 @@ public:
   //  [expose] void QStandardItem::emitDataChanged()
   void fp_QStandardItem_emitDataChanged_0 () {
     QStandardItem::emitDataChanged();
+  }
+
+  //  [expose] QStandardItem &QStandardItem::operator=(const QStandardItem &other)
+  QStandardItem & fp_QStandardItem_operator_eq__2610 (const QStandardItem &other) {
+    return QStandardItem::operator=(other);
   }
 
   //  [adaptor impl] QStandardItem *QStandardItem::clone()
@@ -2025,6 +1940,24 @@ static void _set_callback_cbs_operator_lt__c2610_0 (void *cls, const gsi::Callba
 }
 
 
+// exposed QStandardItem &QStandardItem::operator=(const QStandardItem &other)
+
+static void _init_fp_operator_eq__2610 (qt_gsi::GenericMethod *decl)
+{
+  static gsi::ArgSpecBase argspec_0 ("other");
+  decl->add_arg<const QStandardItem & > (argspec_0);
+  decl->set_return<QStandardItem & > ();
+}
+
+static void _call_fp_operator_eq__2610 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
+{
+  __SUPPRESS_UNUSED_WARNING(args);
+  tl::Heap heap;
+  const QStandardItem &arg1 = gsi::arg_reader<const QStandardItem & >() (args, heap);
+  ret.write<QStandardItem & > ((QStandardItem &)((QStandardItem_Adaptor *)cls)->fp_QStandardItem_operator_eq__2610 (arg1));
+}
+
+
 // void QStandardItem::read(QDataStream &in)
 
 static void _init_cbs_read_1697_0 (qt_gsi::GenericMethod *decl)
@@ -2130,21 +2063,22 @@ static gsi::Methods methods_QStandardItem_Adaptor () {
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QStandardItem::QStandardItem(const QString &text)\nThis method creates an object of class QStandardItem.", &_init_ctor_QStandardItem_Adaptor_2025, &_call_ctor_QStandardItem_Adaptor_2025);
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QStandardItem::QStandardItem(const QIcon &icon, const QString &text)\nThis method creates an object of class QStandardItem.", &_init_ctor_QStandardItem_Adaptor_3704, &_call_ctor_QStandardItem_Adaptor_3704);
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QStandardItem::QStandardItem(int rows, int columns)\nThis method creates an object of class QStandardItem.", &_init_ctor_QStandardItem_Adaptor_1426, &_call_ctor_QStandardItem_Adaptor_1426);
-  methods += new qt_gsi::GenericMethod ("clone", "@brief Virtual method QStandardItem *QStandardItem::clone()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_clone_c0_0, &_call_cbs_clone_c0_0);
-  methods += new qt_gsi::GenericMethod ("clone", "@hide", true, &_init_cbs_clone_c0_0, &_call_cbs_clone_c0_0, &_set_callback_cbs_clone_c0_0);
-  methods += new qt_gsi::GenericMethod ("data", "@brief Virtual method QVariant QStandardItem::data(int role)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_data_c767_1, &_call_cbs_data_c767_1);
-  methods += new qt_gsi::GenericMethod ("data", "@hide", true, &_init_cbs_data_c767_1, &_call_cbs_data_c767_1, &_set_callback_cbs_data_c767_1);
+  methods += new qt_gsi::GenericMethod ("clone", "@hide", true, &_init_cbs_clone_c0_0, &_call_cbs_clone_c0_0);
+  methods += new qt_gsi::GenericMethod ("clone", "@brief Virtual method QStandardItem *QStandardItem::clone()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_clone_c0_0, &_call_cbs_clone_c0_0, &_set_callback_cbs_clone_c0_0);
+  methods += new qt_gsi::GenericMethod ("data", "@hide", true, &_init_cbs_data_c767_1, &_call_cbs_data_c767_1);
+  methods += new qt_gsi::GenericMethod ("data", "@brief Virtual method QVariant QStandardItem::data(int role)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_data_c767_1, &_call_cbs_data_c767_1, &_set_callback_cbs_data_c767_1);
   methods += new qt_gsi::GenericMethod ("*emitDataChanged", "@brief Method void QStandardItem::emitDataChanged()\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_emitDataChanged_0, &_call_fp_emitDataChanged_0);
-  methods += new qt_gsi::GenericMethod ("<", "@brief Virtual method bool QStandardItem::operator<(const QStandardItem &other)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_operator_lt__c2610_0, &_call_cbs_operator_lt__c2610_0);
-  methods += new qt_gsi::GenericMethod ("<", "@hide", true, &_init_cbs_operator_lt__c2610_0, &_call_cbs_operator_lt__c2610_0, &_set_callback_cbs_operator_lt__c2610_0);
-  methods += new qt_gsi::GenericMethod ("read", "@brief Virtual method void QStandardItem::read(QDataStream &in)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_read_1697_0, &_call_cbs_read_1697_0);
-  methods += new qt_gsi::GenericMethod ("read", "@hide", false, &_init_cbs_read_1697_0, &_call_cbs_read_1697_0, &_set_callback_cbs_read_1697_0);
-  methods += new qt_gsi::GenericMethod ("setData", "@brief Virtual method void QStandardItem::setData(const QVariant &value, int role)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setData_2778_1, &_call_cbs_setData_2778_1);
-  methods += new qt_gsi::GenericMethod ("setData", "@hide", false, &_init_cbs_setData_2778_1, &_call_cbs_setData_2778_1, &_set_callback_cbs_setData_2778_1);
-  methods += new qt_gsi::GenericMethod ("type", "@brief Virtual method int QStandardItem::type()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_type_c0_0, &_call_cbs_type_c0_0);
-  methods += new qt_gsi::GenericMethod ("type", "@hide", true, &_init_cbs_type_c0_0, &_call_cbs_type_c0_0, &_set_callback_cbs_type_c0_0);
-  methods += new qt_gsi::GenericMethod ("write", "@brief Virtual method void QStandardItem::write(QDataStream &out)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_write_c1697_0, &_call_cbs_write_c1697_0);
-  methods += new qt_gsi::GenericMethod ("write", "@hide", true, &_init_cbs_write_c1697_0, &_call_cbs_write_c1697_0, &_set_callback_cbs_write_c1697_0);
+  methods += new qt_gsi::GenericMethod ("<", "@hide", true, &_init_cbs_operator_lt__c2610_0, &_call_cbs_operator_lt__c2610_0);
+  methods += new qt_gsi::GenericMethod ("<", "@brief Virtual method bool QStandardItem::operator<(const QStandardItem &other)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_operator_lt__c2610_0, &_call_cbs_operator_lt__c2610_0, &_set_callback_cbs_operator_lt__c2610_0);
+  methods += new qt_gsi::GenericMethod ("*assign", "@brief Method QStandardItem &QStandardItem::operator=(const QStandardItem &other)\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_operator_eq__2610, &_call_fp_operator_eq__2610);
+  methods += new qt_gsi::GenericMethod ("read", "@hide", false, &_init_cbs_read_1697_0, &_call_cbs_read_1697_0);
+  methods += new qt_gsi::GenericMethod ("read", "@brief Virtual method void QStandardItem::read(QDataStream &in)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_read_1697_0, &_call_cbs_read_1697_0, &_set_callback_cbs_read_1697_0);
+  methods += new qt_gsi::GenericMethod ("setData", "@hide", false, &_init_cbs_setData_2778_1, &_call_cbs_setData_2778_1);
+  methods += new qt_gsi::GenericMethod ("setData", "@brief Virtual method void QStandardItem::setData(const QVariant &value, int role)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setData_2778_1, &_call_cbs_setData_2778_1, &_set_callback_cbs_setData_2778_1);
+  methods += new qt_gsi::GenericMethod ("type", "@hide", true, &_init_cbs_type_c0_0, &_call_cbs_type_c0_0);
+  methods += new qt_gsi::GenericMethod ("type", "@brief Virtual method int QStandardItem::type()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_type_c0_0, &_call_cbs_type_c0_0, &_set_callback_cbs_type_c0_0);
+  methods += new qt_gsi::GenericMethod ("write", "@hide", true, &_init_cbs_write_c1697_0, &_call_cbs_write_c1697_0);
+  methods += new qt_gsi::GenericMethod ("write", "@brief Virtual method void QStandardItem::write(QDataStream &out)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_write_c1697_0, &_call_cbs_write_c1697_0, &_set_callback_cbs_write_c1697_0);
   return methods;
 }
 

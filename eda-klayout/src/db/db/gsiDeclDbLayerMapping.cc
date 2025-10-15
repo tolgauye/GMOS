@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -31,9 +31,10 @@ namespace gsi
 {
 
 Class<db::LayerMapping> decl_LayerMapping ("db", "LayerMapping",
-  gsi::method ("create", &db::LayerMapping::create, gsi::arg ("layout_a"), gsi::arg ("layout_b"),
+  gsi::method ("create", &db::LayerMapping::create, 
     "@brief Initialize the layer mapping from two layouts\n"
     "\n"
+    "@args layout_a, layout_b\n"
     "@param layout_a The target layout\n"
     "@param layout_b The source layout\n"
     "\n"
@@ -42,9 +43,10 @@ Class<db::LayerMapping> decl_LayerMapping ("db", "LayerMapping",
     "will not be mapped.\n"
     "\\create_full is a version of this method which creates new layers in layout_a if no corresponding layer is found.\n"
   ) +
-  gsi::method ("create_full", &db::LayerMapping::create_full, gsi::arg ("layout_a"), gsi::arg ("layout_b"),
+  gsi::method ("create_full", &db::LayerMapping::create_full, 
     "@brief Initialize the layer mapping from two layouts\n"
     "\n"
+    "@args layout_a, layout_b\n"
     "@param layout_a The target layout\n"
     "@param layout_b The source layout\n"
     "@return A list of layers created\n"
@@ -57,9 +59,10 @@ Class<db::LayerMapping> decl_LayerMapping ("db", "LayerMapping",
   gsi::method ("clear", &db::LayerMapping::clear, 
     "@brief Clears the mapping.\n"
   ) +
-  gsi::method ("map", &db::LayerMapping::map, gsi::arg ("layer_index_b"), gsi::arg ("layer_index_a"),
+  gsi::method ("map", &db::LayerMapping::map, 
     "@brief Explicitly specify a mapping.\n"
     "\n"
+    "@args layer_index_b, layer_index_a\n"
     "\n"
     "@param layer_index_b The index of the layer in layout B (the \"source\")\n"
     "@param layer_index_a The index of the layer in layout A (the \"target\")\n"
@@ -74,16 +77,18 @@ Class<db::LayerMapping> decl_LayerMapping ("db", "LayerMapping",
     "\n"
     "This method has been introduced in version 0.25."
   ) +
-  gsi::method ("has_mapping?", &db::LayerMapping::has_mapping, gsi::arg ("layer_index_b"),
+  gsi::method ("has_mapping?", &db::LayerMapping::has_mapping,
     "@brief Determine if a layer in layout_b has a mapping to a layout_a layer.\n"
     "\n"
+    "@args layer_index_b\n"
     "\n"
     "@param layer_index_b The index of the layer in layout_b whose mapping is requested.\n"
     "@return true, if the layer has a mapping\n"
   ) +
-  gsi::method ("layer_mapping", &db::LayerMapping::layer_mapping, gsi::arg ("layer_index_b"),
+  gsi::method ("layer_mapping", &db::LayerMapping::layer_mapping, 
     "@brief Determine layer mapping of a layout_b layer to the corresponding layout_a layer.\n"
     "\n"
+    "@args layer_index_b\n"
     "\n"
     "@param layer_index_b The index of the layer in layout_b whose mapping is requested.\n"
     "@return The corresponding layer in layout_a.\n"
@@ -119,4 +124,5 @@ Class<db::LayerMapping> decl_LayerMapping ("db", "LayerMapping",
 );
 
 }
+
 

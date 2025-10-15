@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -23,11 +23,9 @@
 #include "laySaltController.h"
 #include "laySaltManagerDialog.h"
 #include "laySaltDownloadManager.h"
-#include "laySaltParsedURL.h"
 #include "layConfig.h"
 #include "layMainWindow.h"
 #include "layQtTools.h"
-#include "layBusy.h"
 #include "tlLog.h"
 
 #include <QDir>
@@ -45,14 +43,14 @@ SaltController::SaltController ()
 }
 
 void
-SaltController::initialize (lay::Dispatcher *root)
+SaltController::initialize (lay::PluginRoot *root)
 {
   mp_mw = lay::MainWindow::instance ();
   mp_plugin_root = root;
 }
 
 void
-SaltController::initialized (lay::Dispatcher * /*root*/)
+SaltController::initialized (lay::PluginRoot * /*root*/)
 {
   if (! m_file_watcher) {
     m_file_watcher = new tl::FileSystemWatcher (this);
@@ -60,13 +58,13 @@ SaltController::initialized (lay::Dispatcher * /*root*/)
     connect (m_file_watcher, SIGNAL (fileRemoved (const QString &)), this, SLOT (file_watcher_triggered ()));
   }
 
-  connect (&m_salt, SIGNAL (collections_changed ()), this, SLOT (emit_salt_changed ()));
+  connect (&m_salt, SIGNAL (collections_changed ()), this, SIGNAL (salt_changed ()));
 }
 
 void
-SaltController::uninitialize (lay::Dispatcher * /*root*/)
+SaltController::uninitialize (lay::PluginRoot * /*root*/)
 {
-  disconnect (&m_salt, SIGNAL (collections_changed ()), this, SLOT (emit_salt_changed ()));
+  disconnect (&m_salt, SIGNAL (collections_changed ()), this, SIGNAL (salt_changed ()));
 
   if (m_file_watcher) {
     disconnect (m_file_watcher, SIGNAL (fileChanged (const QString &)), this, SLOT (file_watcher_triggered ()));
@@ -105,7 +103,7 @@ SaltController::config_finalize()
 }
 
 bool
-SaltController::can_exit (lay::Dispatcher * /*root*/) const
+SaltController::can_exit (lay::PluginRoot * /*root*/) const
 {
   //  .. nothing yet ..
   return true;
@@ -140,12 +138,11 @@ SaltController::show_editor ()
       lay::restore_dialog_state (mp_salt_dialog, s);
     }
 
-    {
-      //  while running the dialog, don't watch file events - that would interfere with
-      //  the changes applied by the dialog itself.
-      tl::FileSystemWatcherDisabled disable_file_watcher;  //  disable file watcher
-      mp_salt_dialog->exec ();
-    }
+    //  while running the dialog, don't watch file events - that would interfere with
+    //  the changes applied by the dialog itself.
+    m_file_watcher->enable (false);
+    mp_salt_dialog->exec ();
+    m_file_watcher->enable (true);
 
     mp_plugin_root->config_set (cfg_salt_manager_window_state, lay::save_dialog_state (mp_salt_dialog));
 
@@ -157,13 +154,13 @@ SaltController::show_editor ()
 void
 SaltController::sync_file_watcher ()
 {
-  tl::FileSystemWatcherDisabled disable_file_watcher;  //  disable file watcher
-
   if (m_file_watcher) {
     m_file_watcher->clear ();
+    m_file_watcher->enable (false);
     for (lay::Salt::flat_iterator g = m_salt.begin_flat (); g != m_salt.end_flat (); ++g) {
       m_file_watcher->add_file ((*g)->path ());
     }
+    m_file_watcher->enable (true);
   }
 }
 
@@ -171,17 +168,13 @@ void
 SaltController::sync_files ()
 {
   tl::log << tl::to_string (tr ("Detected file system change in packages - updating"));
-  emit_salt_changed ();
+  emit salt_changed ();
 }
 
 bool
 SaltController::install_packages (const std::vector<std::string> &packages, bool with_dep)
 {
   lay::SaltDownloadManager manager;
-
-  //  This method is used for command-line installation ignoring the package index.
-  //  Hence we have to download package information here:
-  manager.set_always_download_package_information (true);
 
   lay::Salt salt_mine;
   if (! m_salt_mine_url.empty ()) {
@@ -207,19 +200,12 @@ SaltController::install_packages (const std::vector<std::string> &packages, bool
       }
     }
 
-    lay::SaltParsedURL purl (n);
-    const std::string &url = purl.url ();
-
-    if (url.find ("http:") == 0 || url.find ("https:") == 0 || url.find ("file:") == 0 || url[0] == '/' || url[0] == '\\') {
-
-      //  its a URL
+    if (n.find ("http:") == 0 || n.find ("https:") == 0 || n.find ("file:") == 0 || n[0] == '/' || n[0] == '\\') {
+      //  it's a URL
       manager.register_download (std::string (), std::string (), n, v);
-
     } else {
-
-      //  its a plain name
+      //  it's a plain name
       manager.register_download (n, std::string (), std::string (), v);
-
     }
 
   }
@@ -230,18 +216,7 @@ SaltController::install_packages (const std::vector<std::string> &packages, bool
     manager.compute_packages (m_salt, salt_mine);
   }
 
-  bool result = false;
-
-  {
-    //  while running the dialog, don't watch file events - that would interfere with
-    //  the changes applied by the dialog itself.
-    tl::FileSystemWatcherDisabled disable_file_watcher;  //  disable file watcher
-    result = manager.execute (0, m_salt);
-  }
-
-  sync_file_watcher ();
-
-  return result;
+  return manager.execute (0, m_salt);
 }
 
 void
@@ -265,13 +240,6 @@ void
 SaltController::file_watcher_triggered ()
 {
   dm_sync_files ();
-}
-
-void
-SaltController::emit_salt_changed ()
-{
-  salt_changed_event ();
-  emit salt_changed ();
 }
 
 void

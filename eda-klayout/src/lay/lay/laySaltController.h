@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -29,7 +29,6 @@
 #include "laySalt.h"
 #include "tlFileSystemWatcher.h"
 #include "tlDeferredExecution.h"
-#include "tlEvents.h"
 
 #include <vector>
 #include <string>
@@ -70,17 +69,17 @@ public:
   /**
    *  @brief Reimplementation of the PluginDeclaration interface
    */
-  virtual void initialize (lay::Dispatcher *root);
+  virtual void initialize (lay::PluginRoot *root);
 
   /**
    *  @brief Reimplementation of the PluginDeclaration interface
    */
-  virtual void initialized (lay::Dispatcher *root);
+  virtual void initialized (lay::PluginRoot *root);
 
   /**
    *  @brief Reimplementation of the PluginDeclaration interface
    */
-  virtual void uninitialize (lay::Dispatcher *root);
+  virtual void uninitialize (lay::PluginRoot *root);
 
   /**
    *  @brief Reimplementation of the PluginDeclaration interface
@@ -105,7 +104,7 @@ public:
   /**
    *  @brief Reimplementation of the PluginDeclaration interface
    */
-  bool can_exit (lay::Dispatcher *root) const;
+  bool can_exit (lay::PluginRoot *root) const;
 
   /**
    *  @brief Reimplementation of the PluginDeclaration interface
@@ -173,11 +172,6 @@ public:
   }
 
   /**
-   *  @brief Event-style version of "salt_changed"
-   */
-  tl::Event salt_changed_event;
-
-  /**
    *  @brief Gets the singleton instance for this object
    */
   static SaltController *instance ();
@@ -188,11 +182,6 @@ private slots:
    */
   void file_watcher_triggered ();
 
-  /**
-   *  @brief Emits a salt_changed event + signal
-   */
-  void emit_salt_changed ();
-
 signals:
   /**
    *  @brief This signal is emitted if the salt changed
@@ -202,7 +191,7 @@ signals:
 private:
   lay::SaltManagerDialog *mp_salt_dialog;
   lay::MainWindow *mp_mw;
-  lay::Dispatcher * mp_plugin_root;
+  lay::PluginRoot * mp_plugin_root;
   std::string m_salt_mine_url;
   lay::Salt m_salt;
   tl::FileSystemWatcher *m_file_watcher;

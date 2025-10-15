@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -31,6 +31,7 @@
 #include <QDir>
 #include "gsiQt.h"
 #include "gsiQtCoreCommon.h"
+#include "gsiDeclQtCoreTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -105,21 +106,6 @@ static void _call_ctor_QStorageInfo_2515 (const qt_gsi::GenericStaticMethod * /*
   tl::Heap heap;
   const QStorageInfo &arg1 = gsi::arg_reader<const QStorageInfo & >() (args, heap);
   ret.write<QStorageInfo *> (new QStorageInfo (arg1));
-}
-
-
-// int QStorageInfo::blockSize()
-
-
-static void _init_f_blockSize_c0 (qt_gsi::GenericMethod *decl)
-{
-  decl->set_return<int > ();
-}
-
-static void _call_f_blockSize_c0 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  ret.write<int > ((int)((QStorageInfo *)cls)->blockSize ());
 }
 
 
@@ -358,21 +344,6 @@ static void _call_f_setPath_2025 (const qt_gsi::GenericMethod * /*decl*/, void *
 }
 
 
-// QByteArray QStorageInfo::subvolume()
-
-
-static void _init_f_subvolume_c0 (qt_gsi::GenericMethod *decl)
-{
-  decl->set_return<QByteArray > ();
-}
-
-static void _call_f_subvolume_c0 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  ret.write<QByteArray > ((QByteArray)((QStorageInfo *)cls)->subvolume ());
-}
-
-
 // void QStorageInfo::swap(QStorageInfo &other)
 
 
@@ -425,12 +396,12 @@ static void _call_f_root_0 (const qt_gsi::GenericStaticMethod * /*decl*/, gsi::S
 
 //  bool ::operator==(const QStorageInfo &first, const QStorageInfo &second)
 static bool op_QStorageInfo_operator_eq__eq__4922(const QStorageInfo *_self, const QStorageInfo &second) {
-  return operator==(*_self, second);
+  return ::operator==(*_self, second);
 }
 
 //  bool ::operator!=(const QStorageInfo &first, const QStorageInfo &second)
 static bool op_QStorageInfo_operator_excl__eq__4922(const QStorageInfo *_self, const QStorageInfo &second) {
-  return operator!=(*_self, second);
+  return ::operator!=(*_self, second);
 }
 
 
@@ -443,7 +414,6 @@ static gsi::Methods methods_QStorageInfo () {
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QStorageInfo::QStorageInfo(const QString &path)\nThis method creates an object of class QStorageInfo.", &_init_ctor_QStorageInfo_2025, &_call_ctor_QStorageInfo_2025);
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QStorageInfo::QStorageInfo(const QDir &dir)\nThis method creates an object of class QStorageInfo.", &_init_ctor_QStorageInfo_1681, &_call_ctor_QStorageInfo_1681);
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QStorageInfo::QStorageInfo(const QStorageInfo &other)\nThis method creates an object of class QStorageInfo.", &_init_ctor_QStorageInfo_2515, &_call_ctor_QStorageInfo_2515);
-  methods += new qt_gsi::GenericMethod ("blockSize", "@brief Method int QStorageInfo::blockSize()\n", true, &_init_f_blockSize_c0, &_call_f_blockSize_c0);
   methods += new qt_gsi::GenericMethod ("bytesAvailable", "@brief Method qint64 QStorageInfo::bytesAvailable()\n", true, &_init_f_bytesAvailable_c0, &_call_f_bytesAvailable_c0);
   methods += new qt_gsi::GenericMethod ("bytesFree", "@brief Method qint64 QStorageInfo::bytesFree()\n", true, &_init_f_bytesFree_c0, &_call_f_bytesFree_c0);
   methods += new qt_gsi::GenericMethod ("bytesTotal", "@brief Method qint64 QStorageInfo::bytesTotal()\n", true, &_init_f_bytesTotal_c0, &_call_f_bytesTotal_c0);
@@ -459,7 +429,6 @@ static gsi::Methods methods_QStorageInfo () {
   methods += new qt_gsi::GenericMethod ("refresh", "@brief Method void QStorageInfo::refresh()\n", false, &_init_f_refresh_0, &_call_f_refresh_0);
   methods += new qt_gsi::GenericMethod ("rootPath", "@brief Method QString QStorageInfo::rootPath()\n", true, &_init_f_rootPath_c0, &_call_f_rootPath_c0);
   methods += new qt_gsi::GenericMethod ("setPath", "@brief Method void QStorageInfo::setPath(const QString &path)\n", false, &_init_f_setPath_2025, &_call_f_setPath_2025);
-  methods += new qt_gsi::GenericMethod ("subvolume", "@brief Method QByteArray QStorageInfo::subvolume()\n", true, &_init_f_subvolume_c0, &_call_f_subvolume_c0);
   methods += new qt_gsi::GenericMethod ("swap", "@brief Method void QStorageInfo::swap(QStorageInfo &other)\n", false, &_init_f_swap_1820, &_call_f_swap_1820);
   methods += new qt_gsi::GenericStaticMethod ("mountedVolumes", "@brief Static method QList<QStorageInfo> QStorageInfo::mountedVolumes()\nThis method is static and can be called without an instance.", &_init_f_mountedVolumes_0, &_call_f_mountedVolumes_0);
   methods += new qt_gsi::GenericStaticMethod ("root", "@brief Static method QStorageInfo QStorageInfo::root()\nThis method is static and can be called without an instance.", &_init_f_root_0, &_call_f_root_0);

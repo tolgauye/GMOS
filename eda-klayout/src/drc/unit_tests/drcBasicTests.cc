@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -27,16 +27,15 @@
 
 TEST(1)
 {
-  std::string input = tl::testdata ();
-  input += "/drc/drctest.gds";
-  std::string au = tl::testdata ();
-  au += "/drc/drcBasicTests_au.gds";
+  std::string input = tl::testsrc ();
+  input += "/testdata/drc/drctest.gds";
+  std::string au = tl::testsrc ();
+  au += "/testdata/drc/drcBasicTests_au.gds";
 
   std::string output = this->tmp_file ("tmp.gds");
 
   lym::Macro drc;
   drc.set_text (tl::sprintf (
-      "force_gc true\n"
       "source('%s', \"TOP\")\n"
       "target('%s', \"TOP\")\n"
       "l1 = input(1, 0)\n"
@@ -71,7 +70,6 @@ TEST(2)
 {
   lym::Macro drc;
   drc.set_text (
-    "force_gc true\n"
     "dbu 0.001\n"
     "def compare(a, b, ex)\n"
     "  a = a.to_s\n"

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -24,8 +24,6 @@
 #include "dbDeepShapeStore.h"
 #include "dbRegion.h"
 #include "dbDeepRegion.h"
-#include "dbReader.h"
-#include "dbTestSupport.h"
 #include "tlUnitTest.h"
 #include "tlStream.h"
 
@@ -75,7 +73,6 @@ static size_t shapes_in_top (const db::Layout &layout, unsigned int layer)
 TEST(2_RefCounting)
 {
   db::DeepShapeStore store;
-  store.set_keep_layouts (false);
   db::Layout layout;
 
   unsigned int l1 = layout.insert_layer ();
@@ -181,7 +178,13 @@ TEST(3_TextTreatment)
   EXPECT_EQ (store.layouts (), (unsigned int) 1);
 
   EXPECT_EQ (dl1.initial_cell ().shapes (dl1.layer ()).size (), size_t (1));
-  EXPECT_EQ (dl1.initial_cell ().shapes (dl1.layer ()).begin (db::ShapeIterator::All)->to_string (), "polygon (999,1999;999,2001;1001,2001;1001,1999) props={text=>TEXT}");
+  EXPECT_EQ (dl1.initial_cell ().shapes (dl1.layer ()).begin (db::ShapeIterator::All)->to_string (), "polygon (999,1999;999,2001;1001,2001;1001,1999) prop_id=1");
+
+  const db::Layout *dss_layout = &store.const_layout (0);
+  db::PropertiesRepository::properties_set ps = dss_layout->properties_repository ().properties (1);
+  EXPECT_EQ (ps.size (), size_t (1));
+  EXPECT_EQ (dss_layout->properties_repository ().prop_name (ps.begin ()->first).to_string (), "text");
+  EXPECT_EQ (ps.begin ()->second.to_string (), "TEXT");
 }
 
 TEST(4_FlatAndEmptyInput)
@@ -262,117 +265,3 @@ TEST(5_State)
   EXPECT_EQ (store.breakout_cells (0)->find (5) != store.breakout_cells (0)->end (), true);
   EXPECT_EQ (store.breakout_cells (0)->find (3) != store.breakout_cells (0)->end (), true);
 }
-
-TEST(6_RestoreWithCellSelection)
-{
-  db::Layout ly;
-
-  {
-    std::string fn (tl::testdata ());
-    fn += "/algo/dss_bug.gds";
-    tl::InputStream stream (fn);
-    db::Reader reader (stream);
-    reader.read (ly);
-  }
-
-  unsigned int l1 = ly.get_layer (db::LayerProperties (1, 0));
-
-  db::Cell &top_cell = ly.cell (*ly.begin_top_down ());
-
-  db::RecursiveShapeIterator in_it (ly, top_cell, l1);
-
-  std::set<db::cell_index_type> us;
-  us.insert (ly.cell_by_name ("X").second);
-  in_it.unselect_cells (us);
-
-  db::DeepShapeStore dss;
-
-  db::Region in_region (in_it, dss);
-  ly.clear_layer (l1);
-
-  in_region.insert_into (&ly, top_cell.cell_index (), l1);
-
-  db::compare_layouts (_this, ly, tl::testdata () + "/algo/dss_bug_au.gds");
-}
-
-TEST(7_RestoreWithCellSelection2)
-{
-  db::Layout ly;
-
-  {
-    std::string fn (tl::testdata ());
-    fn += "/algo/dss_bug2.gds";
-    tl::InputStream stream (fn);
-    db::Reader reader (stream);
-    reader.read (ly);
-  }
-
-  unsigned int l2 = ly.get_layer (db::LayerProperties (2, 0));
-
-  db::Cell &top_cell = ly.cell (*ly.begin_top_down ());
-
-  db::RecursiveShapeIterator in_it (ly, top_cell, l2);
-  db::RecursiveShapeIterator other_it (ly, top_cell, l2);
-
-  std::set<db::cell_index_type> us;
-  us.insert (ly.cell_by_name ("X").second);
-  in_it.unselect_cells (us);
-
-  std::set<db::cell_index_type> us2;
-  us2.insert (top_cell.cell_index ());
-  other_it.unselect_cells (us2);
-  other_it.select_cells (us);
-
-  db::DeepShapeStore dss;
-
-  db::Region in_region (in_it, dss);
-  db::Region other_region (other_it, dss);
-  in_region += other_region;
-
-  ly.clear_layer (l2);
-  in_region.insert_into (&ly, top_cell.cell_index (), l2);
-
-  db::compare_layouts (_this, ly, tl::testdata () + "/algo/dss_bug2_au.gds");
-}
-
-TEST(8_RestoreWithCellSelection3)
-{
-  db::Layout ly;
-
-  {
-    std::string fn (tl::testdata ());
-    fn += "/algo/dss_bug3.gds";
-    tl::InputStream stream (fn);
-    db::Reader reader (stream);
-    reader.read (ly);
-  }
-
-  unsigned int l2 = ly.get_layer (db::LayerProperties (2, 0));
-
-  db::Cell &top_cell = ly.cell (*ly.begin_top_down ());
-
-  db::RecursiveShapeIterator in_it (ly, top_cell, l2);
-  db::RecursiveShapeIterator other_it (ly, top_cell, l2);
-
-  std::set<db::cell_index_type> us;
-  us.insert (ly.cell_by_name ("X").second);
-  us.insert (ly.cell_by_name ("C3").second);
-  in_it.unselect_cells (us);
-
-  std::set<db::cell_index_type> us2;
-  us2.insert (top_cell.cell_index ());
-  other_it.unselect_cells (us2);
-  other_it.select_cells (us);
-
-  db::DeepShapeStore dss;
-
-  db::Region in_region (in_it, dss);
-  db::Region other_region (other_it, dss);
-  in_region += other_region;
-
-  ly.clear_layer (l2);
-  in_region.insert_into (&ly, top_cell.cell_index (), l2);
-
-  db::compare_layouts (_this, ly, tl::testdata () + "/algo/dss_bug3_au.gds");
-}
-

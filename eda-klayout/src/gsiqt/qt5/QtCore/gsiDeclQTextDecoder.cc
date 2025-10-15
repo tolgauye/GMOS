@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -31,6 +31,7 @@
 #include <QTextCodec>
 #include "gsiQt.h"
 #include "gsiQtCoreCommon.h"
+#include "gsiDeclQtCoreTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -89,21 +90,6 @@ static void _call_f_hasFailure_c0 (const qt_gsi::GenericMethod * /*decl*/, void 
 {
   __SUPPRESS_UNUSED_WARNING(args);
   ret.write<bool > ((bool)((QTextDecoder *)cls)->hasFailure ());
-}
-
-
-// bool QTextDecoder::needsMoreData()
-
-
-static void _init_f_needsMoreData_c0 (qt_gsi::GenericMethod *decl)
-{
-  decl->set_return<bool > ();
-}
-
-static void _call_f_needsMoreData_c0 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs &ret) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  ret.write<bool > ((bool)((QTextDecoder *)cls)->needsMoreData ());
 }
 
 
@@ -183,7 +169,6 @@ static gsi::Methods methods_QTextDecoder () {
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QTextDecoder::QTextDecoder(const QTextCodec *codec)\nThis method creates an object of class QTextDecoder.", &_init_ctor_QTextDecoder_2297, &_call_ctor_QTextDecoder_2297);
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QTextDecoder::QTextDecoder(const QTextCodec *codec, QFlags<QTextCodec::ConversionFlag> flags)\nThis method creates an object of class QTextDecoder.", &_init_ctor_QTextDecoder_5857, &_call_ctor_QTextDecoder_5857);
   methods += new qt_gsi::GenericMethod ("hasFailure", "@brief Method bool QTextDecoder::hasFailure()\n", true, &_init_f_hasFailure_c0, &_call_f_hasFailure_c0);
-  methods += new qt_gsi::GenericMethod ("needsMoreData", "@brief Method bool QTextDecoder::needsMoreData()\n", true, &_init_f_needsMoreData_c0, &_call_f_needsMoreData_c0);
   methods += new qt_gsi::GenericMethod ("toUnicode", "@brief Method QString QTextDecoder::toUnicode(const char *chars, int len)\n", false, &_init_f_toUnicode_2390, &_call_f_toUnicode_2390);
   methods += new qt_gsi::GenericMethod ("toUnicode", "@brief Method QString QTextDecoder::toUnicode(const QByteArray &ba)\n", false, &_init_f_toUnicode_2309, &_call_f_toUnicode_2309);
   methods += new qt_gsi::GenericMethod ("toUnicode", "@brief Method void QTextDecoder::toUnicode(QString *target, const char *chars, int len)\n", false, &_init_f_toUnicode_3616, &_call_f_toUnicode_3616);

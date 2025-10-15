@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -72,16 +72,16 @@ private:
 
 
 /// @brief a helper class providing a linear-time iterator difference which is not necessarily 
-///        the actual difference but monotonous
+///        the actual difference but monotoneous
 
-template <class X, bool R>
-size_t box_tree_lt_difference (const tl::reuse_vector_const_iterator<X, R> &a, const tl::reuse_vector_const_iterator<X, R> &b)
+template <class X>
+size_t box_tree_lt_difference (const tl::reuse_vector_const_iterator<X> &a, const tl::reuse_vector_const_iterator<X> &b)
 {
   return a.index () - b.index ();
 }
 
-template <class X, bool R>
-size_t box_tree_lt_difference_ptr (const X *a, const tl::reuse_vector_const_iterator<X, R> &b)
+template <class X>
+size_t box_tree_lt_difference_ptr (const X *a, const tl::reuse_vector_const_iterator<X> &b)
 {
   return a - b.unsafe_target_addr ();
 }
@@ -168,43 +168,40 @@ public:
   typedef typename Tree::coord_type coord_type;
   typedef typename Tree::box_type box_type;
 
-  box_tree_node (box_tree_node *parent, const point_type &center, const box_type &qbox, unsigned int quad)
+  box_tree_node (box_tree_node *parent, const point_type &center, unsigned int quad) 
+    : m_center (center)
   {
-    point_type corner;
-    if (quad == 0) {
-      corner = qbox.upper_right ();
-    } else if (quad == 1) {
-      corner = qbox.upper_left ();
-    } else if (quad == 2) {
-      corner = qbox.lower_left ();
-    } else if (quad == 3) {
-      corner = qbox.lower_right ();
+    for (int i = 0; i < 5; ++i) {
+      m_lenq[i] = 0;
     }
-
-    init (parent, center, corner, quad);
+    for (int i = 0; i < 4; ++i) {
+      mp_children[i] = 0;
+    }
+    mp_parent = (box_tree_node *)((char *) parent + quad);
+    if (parent) {
+      parent->mp_children [quad] = this;
+    }
   }
 
   ~box_tree_node ()
   {
     for (int i = 0; i < 4; ++i) {
-      box_tree_node *c = child (i);
-      if (c) {
-        delete c;
+      if (mp_children [i]) {
+        delete mp_children [i];
+        mp_children [i] = 0;
       }
     }
   }
 
   box_tree_node *clone (box_tree_node *parent = 0, unsigned int quad = 0) const
   {
-    box_tree_node *n = new box_tree_node (parent, m_center, m_corner, quad);
-    n->m_lenq = m_lenq;
-    n->m_len = m_len;
+    box_tree_node *n = new box_tree_node (parent, m_center, quad);
+    for (unsigned int i = 0; i < 5; ++i) {
+      n->m_lenq[i] = m_lenq[i];
+    }
     for (unsigned int i = 0; i < 4; ++i) {
-      box_tree_node *c = child (i);
-      if (c) {
-        c->clone (n, i);
-      } else {
-        n->m_childrefs [i] = m_childrefs [i];
+      if (mp_children[i]) {
+        mp_children[i]->clone (n, i);
       }
     }
     return n;
@@ -212,39 +209,17 @@ public:
 
   box_tree_node *child (int i) const
   {
-    if ((m_childrefs [i] & 1) == 0) {
-      return reinterpret_cast<box_tree_node *> (m_childrefs [i]);
-    } else {
-      return 0;
-    }
+    return mp_children [i];
   }
 
   void lenq (int i, size_t l) 
   {
-    if (i < 0) {
-      m_lenq = l;
-    } else {
-      box_tree_node *c = child (i);
-      if (c) {
-        c->m_len = l;
-      } else {
-        m_childrefs [i] = l * 2 + 1;
-      }
-    }
+    m_lenq[i + 1] = l;
   }
 
   size_t lenq (int i) const
   {
-    if (i < 0) {
-      return m_lenq;
-    } else {
-      box_tree_node *c = child (i);
-      if (c) {
-        return c->m_len;
-      } else {
-        return m_childrefs [i] >> 1;
-      }
-    }
+    return m_lenq[i + 1];
   }
 
   box_tree_node *parent () const
@@ -263,8 +238,8 @@ public:
       stat->add (typeid (*this), (void *) this, sizeof (*this), sizeof (*this), parent, purpose, cat);
     }
     for (int i = 0; i < 4; ++i) {
-      if (child (i)) {
-        child (i)->mem_stat (stat, purpose, cat, no_self, parent);
+      if (mp_children [i]) {
+        mp_children [i]->mem_stat (stat, purpose, cat, no_self, parent);
       }
     }
   }
@@ -274,52 +249,14 @@ public:
     return m_center;
   }
 
-  box_type quad_box (int quad) const
-  {
-    box_type qb = box_type::world ();
-    if (parent ()) {
-      qb = box_type (m_corner, parent ()->center ());
-    }
-
-    switch (quad) {
-    case 0: return box_type (m_center, qb.upper_right ());
-    case 1: return box_type (m_center, qb.upper_left ());
-    case 2: return box_type (m_center, qb.lower_left ());
-    case 3: return box_type (m_center, qb.lower_right ());
-    default: return qb;
-    }
-  }
-
 private:
   box_tree_node *mp_parent;
-  size_t m_lenq, m_len;
-  size_t m_childrefs [4];
-  point_type m_center, m_corner;
+  size_t m_lenq [5];
+  box_tree_node *mp_children [4];
+  point_type m_center;
 
   box_tree_node (const box_tree_node &d);
   box_tree_node &operator= (const box_tree_node &d);
-
-  box_tree_node (box_tree_node *parent, const point_type &center, const point_type &corner, unsigned int quad)
-  {
-    init (parent, center, corner, quad);
-  }
-
-  void init (box_tree_node *parent, const point_type &center, const point_type &corner, unsigned int quad)
-  {
-    m_center = center;
-    m_corner = corner;
-
-    m_lenq = m_len = 0;
-    for (int i = 0; i < 4; ++i) {
-      m_childrefs [i] = 0;
-    }
-
-    mp_parent = (box_tree_node *)((char *) parent + quad);
-    if (parent) {
-      m_len = (parent->m_childrefs [quad] >> 1);
-      parent->m_childrefs [quad] = size_t (this);
-    }
-  }
 };
 
 /**
@@ -329,7 +266,7 @@ private:
  *  Unlike the primitive iterator, which is based on the container inside
  *  the box tree, this iterator iterates "registered" elements, i.e. such that
  *  are within the sorted list. Since this list is maintained even if elements 
- *  are inserted, this iterator is less susceptible to changes in the container, 
+ *  are insered, this iterator is less susceptible to changes in the container, 
  *  i.e. by inserting or deleting elements while iterating.
  *  This iterator is therefore recommended for being used in interleaved access/change
  *  operations.
@@ -522,9 +459,28 @@ public:
   box_type quad_box () const
   {
     if (! mp_node) {
+
       return box_type::world ();
+
     } else {
-      return mp_node->quad_box (m_quad);
+
+      point_type c = mp_node->center ();
+      box_type qb;
+      if (! mp_node->parent ()) {
+        qb = box_type::world ();
+      } else {
+        point_type pc = mp_node->parent ()->center ();
+        qb = box_type (c - (pc - c), pc);
+      }
+
+      switch (m_quad) {
+      case 0: return box_type (c, qb.upper_right ());
+      case 1: return box_type (c, qb.upper_left ());
+      case 2: return box_type (c, qb.lower_left ());
+      case 3: return box_type (c, qb.lower_right ());
+      default: return qb;
+      }
+
     }
   }
 
@@ -621,16 +577,12 @@ private:
     return m_quad < 4;
   }
 
-  //  down as many levels as required for the next non-empty quad
+  //  down one level
   //  returns true if this is possible
   bool down ()
   {
-    while (true) {
-
-      box_tree_node *c = mp_node->child (m_quad);
-      if (! c) {
-        return false;
-      }
+    box_tree_node *c = mp_node->child (m_quad);
+    if (c) {
 
       mp_node = c;
       m_quad = -1;
@@ -643,11 +595,12 @@ private:
         //  nothing to visit: up again
         up ();
         return false;
-      } else if (m_quad < 0) {
-        //  stay in main chunk
+      } else {
         return true;
       }
 
+    } else {
+      return false;
     }
   }
 
@@ -717,7 +670,7 @@ private:
  *  whose box overlaps or touches a specified test box.
  */
 
-template <class Box, class Obj, class BoxConv, size_t min_bin = 100, size_t min_quads = 100, unsigned int thin_aspect = 4>
+template <class Box, class Obj, class BoxConv, size_t min_bin = 100, size_t min_quads = 100>
 class box_tree 
 {
 public:
@@ -761,15 +714,6 @@ public:
   }
 
   /**
-   *  @brief Move constructor
-   */
-  box_tree (box_tree &&b)
-    : m_objects (b.m_objects), m_elements (b.m_elements), mp_root (b.mp_root)
-  {
-    b.mp_root = 0;
-  }
-
-  /**
    *  @brief Assignment 
    */
   box_tree &operator= (const box_tree &b)
@@ -779,21 +723,6 @@ public:
     m_elements = b.m_elements;
     if (b.mp_root) {
       mp_root = b.mp_root->clone ();
-    }
-    return *this;
-  }
-
-  /**
-   *  @brief Assignment (move)
-   */
-  box_tree &operator= (box_tree &&b)
-  {
-    clear ();
-    m_objects = b.m_objects;
-    m_elements = b.m_elements;
-    if (b.mp_root) {
-      mp_root = b.mp_root;
-      b.mp_root = 0;
     }
     return *this;
   }
@@ -842,7 +771,7 @@ public:
   /** 
    *  @brief Insert a range of objects
    *
-   *  Analogous to the other insert method, but accepting
+   *  Analogeous to the other insert method, but accepting
    *  and range of objects [start,end).
    */
   template <class I> 
@@ -1163,16 +1092,6 @@ public:
   }
 
   /**
-   *  @brief Swaps the box tree with another one
-   */
-  void swap (box_tree &other)
-  {
-    m_objects.swap (other.m_objects);
-    m_elements.swap (other.m_elements);
-    std::swap (mp_root, other.mp_root);
-  }
-
-  /**
    *  @brief Collect memory statistics
    */
   void mem_stat (MemStatistics *stat, MemStatistics::purpose_t purpose, int cat, bool no_self = false, void *parent = 0) const
@@ -1256,16 +1175,7 @@ private:
 
     //  the bins are: overall, ur, ul, ll, lr, empty
     element_iterator qloc [6] = { from, from, from, from, from, from };
-    point_type center;
-    if (bbox.width () < bbox.height () / thin_aspect) {
-      //  separate by height only
-      center = point_type (bbox.left (), bbox.bottom () + bbox.height () / 2);
-    } else if (bbox.height () < bbox.width () / thin_aspect) {
-      //  separate by width only
-      center = point_type (bbox.left () + bbox.width () / 2, bbox.bottom ());
-    } else {
-      center = bbox.center ();
-    }
+    point_type center (bbox.center ());
 
     for (element_iterator e = from; e != to; ++e) {
 
@@ -1314,7 +1224,7 @@ private:
     if (nn >= min_quads) {
 
       //  create a new node representing this tree
-      box_tree_node *node = new box_tree_node (parent, center, bbox, quad);
+      box_tree_node *node = new box_tree_node (parent, center, quad);
       if (parent == 0) {
         mp_root = node;
       }
@@ -1357,7 +1267,7 @@ inline void mem_stat (MemStatistics *stat, MemStatistics::purpose_t purpose, int
  *  Unlike the primitive iterator, which is based on the container inside
  *  the box tree, this iterator iterates "registered" elements, i.e. such that
  *  are within the sorted list. Since this list is maintained even if elements 
- *  are inserted, this iterator is less susceptible to changes in the container, 
+ *  are insered, this iterator is less susceptible to changes in the container, 
  *  i.e. by inserting or deleting elements while iterating.
  *  This iterator is therefore recommended for being used in interleaved access/change
  *  operations.
@@ -1550,9 +1460,28 @@ public:
   box_type quad_box () const
   {
     if (! mp_node) {
+
       return box_type::world ();
+
     } else {
-      return mp_node->quad_box (m_quad);
+
+      point_type c = mp_node->center ();
+      box_type qb;
+      if (! mp_node->parent ()) {
+        qb = box_type::world ();
+      } else {
+        point_type pc = mp_node->parent ()->center ();
+        qb = box_type (c - (pc - c), pc);
+      }
+
+      switch (m_quad) {
+      case 0: return box_type (c, qb.upper_right ());
+      case 1: return box_type (c, qb.upper_left ());
+      case 2: return box_type (c, qb.lower_left ());
+      case 3: return box_type (c, qb.lower_right ());
+      default: return qb;
+      }
+
     }
   }
 
@@ -1649,16 +1578,12 @@ private:
     return m_quad < 4;
   }
 
-  //  down as many levels as required for the next non-empty quad
+  //  down one level
   //  returns true if this is possible
   bool down ()
   {
-    while (true) {
-
-      box_tree_node *c = mp_node->child (m_quad);
-      if (! c) {
-        return false;
-      }
+    box_tree_node *c = mp_node->child (m_quad);
+    if (c) {
 
       mp_node = c;
       m_quad = -1;
@@ -1671,11 +1596,12 @@ private:
         //  nothing to visit: up again
         up ();
         return false;
-      } else if (m_quad < 0) {
-        //  stay in main chunk
+      } else {
         return true;
       }
 
+    } else {
+      return false;
     }
   }
 
@@ -1712,7 +1638,7 @@ private:
  *  is sorted.
  */
 
-template <class Box, class Obj, class BoxConv, size_t min_bin = 100, size_t min_quads = 100, unsigned int thin_aspect = 4>
+template <class Box, class Obj, class BoxConv, size_t min_bin = 100, size_t min_quads = 100>
 class unstable_box_tree 
 {
 public:
@@ -1754,15 +1680,6 @@ public:
   }
 
   /**
-   *  @brief Move constructor
-   */
-  unstable_box_tree (unstable_box_tree &&b)
-    : m_objects (b.m_objects), mp_root (b.mp_root)
-  {
-    b.mp_root = 0;
-  }
-
-  /**
    *  @brief Assignment 
    */
   unstable_box_tree &operator= (const unstable_box_tree &b)
@@ -1771,20 +1688,6 @@ public:
     m_objects = b.m_objects;
     if (b.mp_root) {
       mp_root = b.mp_root->clone ();
-    }
-    return *this;
-  }
-
-  /**
-   *  @brief Assignment (move)
-   */
-  unstable_box_tree &operator= (unstable_box_tree &&b)
-  {
-    clear ();
-    m_objects = b.m_objects;
-    if (b.mp_root) {
-      mp_root = b.mp_root;
-      b.mp_root = 0;
     }
     return *this;
   }
@@ -1834,7 +1737,7 @@ public:
   /** 
    *  @brief Insert a range of objects
    *
-   *  Analogous to the other insert method, but accepting
+   *  Analogeous to the other insert method, but accepting
    *  and range of objects [start,end).
    */
   template <class I> 
@@ -2134,15 +2037,6 @@ public:
   }
 
   /**
-   *  @brief Swaps the box tree with another one
-   */
-  void swap (unstable_box_tree &other)
-  {
-    m_objects.swap (other.m_objects);
-    std::swap (mp_root, other.mp_root);
-  }
-
-  /**
    *  @brief Collect memory statistics
    */
   void mem_stat (MemStatistics *stat, MemStatistics::purpose_t purpose, int cat, bool no_self = false, void *parent = 0) const
@@ -2209,16 +2103,7 @@ private:
     } 
 
     obj_iterator qloc [5] = { from, from, from, from, from };
-    point_type center;
-    if (bbox.width () < bbox.height () / thin_aspect) {
-      //  separate by height only
-      center = point_type (bbox.left (), bbox.bottom () + bbox.height () / 2);
-    } else if (bbox.height () < bbox.width () / thin_aspect) {
-      //  separate by width only
-      center = point_type (bbox.left () + bbox.width () / 2, bbox.bottom ());
-    } else {
-      center = bbox.center ();
-    }
+    point_type center (bbox.center ());
 
     for (obj_iterator e = from; e != to; ++e) {
 
@@ -2273,7 +2158,7 @@ private:
     if (nn >= min_quads) {
 
       //  create a new node representing this tree
-      box_tree_node *node = new box_tree_node (parent, center, bbox, quad);
+      box_tree_node *node = new box_tree_node (parent, center, quad);
       if (parent == 0) {
         mp_root = node;
       }

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -65,17 +65,17 @@ public:
   /**
    *  @brief Reimplementation of the PluginDeclaration interface
    */
-  virtual void initialize (lay::Dispatcher *root);
+  virtual void initialize (lay::PluginRoot *root);
 
   /**
    *  @brief Reimplementation of the PluginDeclaration interface
    */
-  virtual void initialized (lay::Dispatcher *root);
+  virtual void initialized (lay::PluginRoot *root);
 
   /**
    *  @brief Reimplementation of the PluginDeclaration interface
    */
-  virtual void uninitialize (lay::Dispatcher *root);
+  virtual void uninitialize (lay::PluginRoot *root);
 
   /**
    *  @brief Reimplementation of the PluginDeclaration interface
@@ -100,7 +100,7 @@ public:
   /**
    *  @brief Reimplementation of the PluginDeclaration interface
    */
-  bool can_exit (lay::Dispatcher *root) const;
+  bool can_exit (lay::PluginRoot *root) const;
 
   /**
    *  @brief Gets the singleton instance for this object
@@ -119,17 +119,9 @@ private slots:
   void sync_with_external_sources ();
 
 private:
-  struct LibInfo
-  {
-    LibInfo () : name (), time (), tech () { }
-    std::string name;
-    QDateTime time;
-    std::set<std::string> tech;
-  };
-
   tl::FileSystemWatcher *m_file_watcher;
   tl::DeferredMethod<LibraryController> dm_sync_files;
-  std::map<std::string, LibInfo> m_lib_files;
+  std::map<std::string, std::pair<std::string, QDateTime> > m_lib_files;
 
   void sync_files ();
 };

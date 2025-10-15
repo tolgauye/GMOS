@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -645,7 +645,6 @@ public:
   typedef tl::reuse_vector<db::array<path_ptr_type, disp_type> >::const_iterator path_ptr_array_iter_type;
   typedef tl::reuse_vector<db::edge<coord_type> >::const_iterator edge_iter_type;
   typedef tl::reuse_vector<db::edge_pair<coord_type> >::const_iterator edge_pair_iter_type;
-  typedef tl::reuse_vector<db::point<coord_type> >::const_iterator point_iter_type;
   typedef tl::reuse_vector<db::text<coord_type> >::const_iterator text_iter_type;
   typedef tl::reuse_vector<db::text_ref<text_type, disp_type> >::const_iterator text_ref_iter_type;
   typedef tl::reuse_vector<db::text_ref<text_type, unit_trans_type> >::const_iterator text_ptr_iter_type;
@@ -670,7 +669,6 @@ public:
   typedef tl::reuse_vector<db::object_with_properties<db::array<path_ptr_type, disp_type> > >::const_iterator ppath_ptr_array_iter_type;
   typedef tl::reuse_vector<db::object_with_properties<db::edge<coord_type> > >::const_iterator pedge_iter_type;
   typedef tl::reuse_vector<db::object_with_properties<db::edge_pair<coord_type> > >::const_iterator pedge_pair_iter_type;
-  typedef tl::reuse_vector<db::object_with_properties<db::point<coord_type> > >::const_iterator ppoint_iter_type;
   typedef tl::reuse_vector<db::object_with_properties<db::text<coord_type> > >::const_iterator ptext_iter_type;
   typedef tl::reuse_vector<db::object_with_properties<db::text_ref<text_type, disp_type> > >::const_iterator ptext_ref_iter_type;
   typedef tl::reuse_vector<db::object_with_properties<db::text_ref<text_type, unit_trans_type> > >::const_iterator ptext_ptr_iter_type;
@@ -711,7 +709,6 @@ public:
     TextRef,
     TextPtrArray,
     TextPtrArrayMember,
-    Point,
     UserObject
   };
     
@@ -789,8 +786,8 @@ public:
    *  we would probably create too much constness. Hence we use const_cast to convert it
    *  to a non-const one.
    */
-  template <class Obj, bool R>
-  Shape (const db::Shapes *shapes, const tl::reuse_vector_const_iterator<Obj, R> &tree_iter)
+  template <class Obj>
+  Shape (const db::Shapes *shapes, const tl::reuse_vector_const_iterator<Obj> &tree_iter)
     : mp_shapes (const_cast<db::Shapes *> (shapes)), m_with_props (false), m_stable (true)
   {
     typename Obj::tag tag = typename Obj::tag ();
@@ -803,8 +800,8 @@ public:
   /**
    *  @brief Construct as a proxy to a certain object given by an iterator
    */
-  template <class Obj, bool R>
-  Shape (db::Shapes *shapes, const tl::reuse_vector_const_iterator<Obj, R> &tree_iter)
+  template <class Obj>
+  Shape (db::Shapes *shapes, const tl::reuse_vector_const_iterator<Obj> &tree_iter)
     : mp_shapes (shapes), m_with_props (false), m_stable (true)
   {
     typename Obj::tag tag = typename Obj::tag ();
@@ -821,8 +818,8 @@ public:
    *  we would probably create too much constness. Hence we use const_cast to convert it
    *  to a non-const one.
    */
-  template <class Obj, bool R, class Trans>
-  Shape (const db::Shapes *shapes, const tl::reuse_vector_const_iterator<Obj, R> &tree_iter, const Trans &trans)
+  template <class Obj, class Trans>
+  Shape (const db::Shapes *shapes, const tl::reuse_vector_const_iterator<Obj> &tree_iter, const Trans &trans)
     : mp_shapes (const_cast<db::Shapes *> (shapes)), m_with_props (false), m_stable (true)
   {
     typename Obj::tag tag = typename Obj::tag ();
@@ -835,8 +832,8 @@ public:
   /**
    *  @brief Construct as a proxy to a certain object given by an iterator
    */
-  template <class Obj, bool R, class Trans>
-  Shape (db::Shapes *shapes, const tl::reuse_vector_const_iterator<Obj, R> &tree_iter, const Trans &trans)
+  template <class Obj, class Trans>
+  Shape (db::Shapes *shapes, const tl::reuse_vector_const_iterator<Obj> &tree_iter, const Trans &trans)
     : mp_shapes (shapes), m_with_props (false), m_stable (true)
   {
     typename Obj::tag tag = typename Obj::tag ();
@@ -918,7 +915,7 @@ public:
   }
 
   /** 
-   *  @brief Construct a shape proxy as a reference to a simple polygon
+   *  @brief Construct a shape proxy as a reference to a simple olygon
    */
   void init (simple_polygon_type::tag)
   {
@@ -1033,14 +1030,6 @@ public:
   }
 
   /**
-   *  @brief Construct a shape proxy as a reference to a point
-   */
-  void init (point_type::tag)
-  {
-    m_type = Point;
-  }
-
-  /**
    *  @brief Construct a shape proxy as a reference to a box
    */
   void init (box_type::tag)
@@ -1096,6 +1085,18 @@ public:
   void init (user_object_type::tag)
   {
     m_type = UserObject;
+  }
+
+  /**
+   *  @brief Determine, if the shape is of "object_with_properties" type.
+   *
+   *  Usually, the properties id (see prop_id()) should be used.
+   *
+   *  @return true, if the shape is of "object_with_properties<Sh> type".
+   */
+  bool with_props () const
+  {
+    return m_with_props;
   }
 
   /**
@@ -1198,7 +1199,7 @@ public:
   /** 
    *  @brief Return the actual object that this shape reference is pointing to
    *
-   *  This is a generalization of the polygon (), etc. methods using a tag to identify the
+   *  This is a generalisation of the polygon (), etc. methods using a tag to identify the
    *  target object.
    */
   const polygon_type *basic_ptr (polygon_type::tag) const
@@ -1214,7 +1215,7 @@ public:
   /** 
    *  @brief Return the actual object that this shape reference is pointing to
    *
-   *  This is a generalization of the polygon (), etc. methods using a tag to identify the
+   *  This is a generalisation of the polygon (), etc. methods using a tag to identify the
    *  target object.
    */
   const simple_polygon_type *basic_ptr (simple_polygon_type::tag) const
@@ -1230,7 +1231,7 @@ public:
   /** 
    *  @brief Return the actual object that this shape reference is pointing to
    *
-   *  This is a generalization of the polygon (), etc. methods using a tag to identify the
+   *  This is a generalisation of the polygon (), etc. methods using a tag to identify the
    *  target object.
    */
   const polygon_ref_type *basic_ptr (polygon_ref_type::tag) const
@@ -1246,7 +1247,7 @@ public:
   /** 
    *  @brief Return the actual object that this shape reference is pointing to
    *
-   *  This is a generalization of the polygon (), etc. methods using a tag to identify the
+   *  This is a generalisation of the polygon (), etc. methods using a tag to identify the
    *  target object.
    */
   const polygon_ptr_array_type *basic_ptr (polygon_ptr_array_type::tag) const
@@ -1262,7 +1263,7 @@ public:
   /** 
    *  @brief Return the actual object that this shape reference is pointing to
    *
-   *  This is a generalization of the polygon (), etc. methods using a tag to identify the
+   *  This is a generalisation of the polygon (), etc. methods using a tag to identify the
    *  target object.
    */
   const simple_polygon_ref_type *basic_ptr (simple_polygon_ref_type::tag) const
@@ -1278,7 +1279,7 @@ public:
   /** 
    *  @brief Return the actual object that this shape reference is pointing to
    *
-   *  This is a generalization of the polygon (), etc. methods using a tag to identify the
+   *  This is a generalisation of the polygon (), etc. methods using a tag to identify the
    *  target object.
    */
   const simple_polygon_ptr_array_type *basic_ptr (simple_polygon_ptr_array_type::tag) const
@@ -1294,7 +1295,7 @@ public:
   /** 
    *  @brief Return the actual object that this shape reference is pointing to
    *
-   *  This is a generalization of the polygon (), etc. methods using a tag to identify the
+   *  This is a generalisation of the polygon (), etc. methods using a tag to identify the
    *  target object.
    */
   const path_type *basic_ptr (path_type::tag) const
@@ -1310,7 +1311,7 @@ public:
   /** 
    *  @brief Return the actual object that this shape reference is pointing to
    *
-   *  This is a generalization of the polygon (), etc. methods using a tag to identify the
+   *  This is a generalisation of the polygon (), etc. methods using a tag to identify the
    *  target object.
    */
   const path_ref_type *basic_ptr (path_ref_type::tag) const
@@ -1327,7 +1328,7 @@ public:
   /** 
    *  @brief Return the actual object that this shape reference is pointing to
    *
-   *  This is a generalization of the polygon (), etc. methods using a tag to identify the
+   *  This is a generalisation of the polygon (), etc. methods using a tag to identify the
    *  target object.
    */
   const path_ptr_array_type *basic_ptr (path_ptr_array_type::tag) const
@@ -1343,7 +1344,7 @@ public:
   /** 
    *  @brief Return the actual object that this shape reference is pointing to
    *
-   *  This is a generalization of the polygon (), etc. methods using a tag to identify the
+   *  This is a generalisation of the polygon (), etc. methods using a tag to identify the
    *  target object.
    */
   const edge_type *basic_ptr (edge_type::tag) const
@@ -1359,7 +1360,7 @@ public:
   /**
    *  @brief Return the actual object that this shape reference is pointing to
    *
-   *  This is a generalization of the polygon (), etc. methods using a tag to identify the
+   *  This is a generalisation of the polygon (), etc. methods using a tag to identify the
    *  target object.
    */
   const edge_pair_type *basic_ptr (edge_pair_type::tag) const
@@ -1375,23 +1376,7 @@ public:
   /**
    *  @brief Return the actual object that this shape reference is pointing to
    *
-   *  This is a generalization of the polygon (), etc. methods using a tag to identify the
-   *  target object.
-   */
-  const point_type *basic_ptr (point_type::tag) const
-  {
-    tl_assert (m_type == Point);
-    if (m_stable) {
-      return m_with_props ? &**(((ppoint_iter_type *) m_generic.iter)) : &**(((point_iter_type *) m_generic.iter));
-    } else {
-      return m_with_props ? m_generic.ppoint : m_generic.point;
-    }
-  }
-
-  /**
-   *  @brief Return the actual object that this shape reference is pointing to
-   *
-   *  This is a generalization of the polygon (), etc. methods using a tag to identify the
+   *  This is a generalisation of the polygon (), etc. methods using a tag to identify the
    *  target object.
    */
   const text_type *basic_ptr (text_type::tag) const
@@ -1407,7 +1392,7 @@ public:
   /** 
    *  @brief Return the actual object that this shape reference is pointing to
    *
-   *  This is a generalization of the polygon (), etc. methods using a tag to identify the
+   *  This is a generalisation of the polygon (), etc. methods using a tag to identify the
    *  target object.
    */
   const text_ref_type *basic_ptr (text_ref_type::tag) const
@@ -1423,7 +1408,7 @@ public:
   /** 
    *  @brief Return the actual object that this shape reference is pointing to
    *
-   *  This is a generalization of the polygon (), etc. methods using a tag to identify the
+   *  This is a generalisation of the polygon (), etc. methods using a tag to identify the
    *  target object.
    */
   const text_ptr_array_type *basic_ptr (text_ptr_array_type::tag) const
@@ -1439,7 +1424,7 @@ public:
   /** 
    *  @brief Return the actual object that this shape reference is pointing to
    *
-   *  This is a generalization of the polygon (), etc. methods using a tag to identify the
+   *  This is a generalisation of the polygon (), etc. methods using a tag to identify the
    *  target object.
    */
   const user_object_type *basic_ptr (user_object_type::tag) const
@@ -1455,7 +1440,7 @@ public:
   /** 
    *  @brief Return the actual object that this shape reference is pointing to
    *
-   *  This is a generalization of the polygon (), etc. methods using a tag to identify the
+   *  This is a generalisation of the polygon (), etc. methods using a tag to identify the
    *  target object.
    */
   const box_type *basic_ptr (box_type::tag) const
@@ -1471,7 +1456,7 @@ public:
   /** 
    *  @brief Return the actual object that this shape reference is pointing to
    *
-   *  This is a generalization of the polygon (), etc. methods using a tag to identify the
+   *  This is a generalisation of the polygon (), etc. methods using a tag to identify the
    *  target object.
    */
   const box_array_type *basic_ptr (box_array_type::tag) const
@@ -1487,7 +1472,7 @@ public:
   /** 
    *  @brief Return the actual object that this shape reference is pointing to
    *
-   *  This is a generalization of the polygon (), etc. methods using a tag to identify the
+   *  This is a generalisation of the polygon (), etc. methods using a tag to identify the
    *  target object.
    */
   const short_box_type *basic_ptr (short_box_type::tag) const
@@ -1503,7 +1488,7 @@ public:
   /** 
    *  @brief Return the actual object that this shape reference is pointing to
    *
-   *  This is a generalization of the polygon (), etc. methods using a tag to identify the
+   *  This is a generalisation of the polygon (), etc. methods using a tag to identify the
    *  target object.
    */
   const short_box_array_type *basic_ptr (short_box_array_type::tag) const
@@ -1519,7 +1504,7 @@ public:
   /** 
    *  @brief Return the actual object that this shape reference is pointing to for objects with properties
    *
-   *  This is a generalization of the polygon (), etc. methods using a tag to identify the
+   *  This is a generalisation of the polygon (), etc. methods using a tag to identify the
    *  target object.
    */
   const db::object_with_properties<polygon_type> *basic_ptr (db::object_with_properties<polygon_type>::tag) const
@@ -1536,7 +1521,7 @@ public:
   /** 
    *  @brief Return the actual object that this shape reference is pointing to for objects with properties
    *
-   *  This is a generalization of the polygon (), etc. methods using a tag to identify the
+   *  This is a generalisation of the polygon (), etc. methods using a tag to identify the
    *  target object.
    */
   const db::object_with_properties<simple_polygon_type> *basic_ptr (db::object_with_properties<simple_polygon_type>::tag) const
@@ -1553,7 +1538,7 @@ public:
   /** 
    *  @brief Return the actual object that this shape reference is pointing to for objects with properties
    *
-   *  This is a generalization of the polygon (), etc. methods using a tag to identify the
+   *  This is a generalisation of the polygon (), etc. methods using a tag to identify the
    *  target object.
    */
   const db::object_with_properties<polygon_ref_type> *basic_ptr (db::object_with_properties<polygon_ref_type>::tag) const
@@ -1570,7 +1555,7 @@ public:
   /** 
    *  @brief Return the actual object that this shape reference is pointing to for objects with properties
    *
-   *  This is a generalization of the polygon (), etc. methods using a tag to identify the
+   *  This is a generalisation of the polygon (), etc. methods using a tag to identify the
    *  target object.
    */
   const db::object_with_properties<polygon_ptr_array_type> *basic_ptr (db::object_with_properties<polygon_ptr_array_type>::tag) const
@@ -1587,7 +1572,7 @@ public:
   /** 
    *  @brief Return the actual object that this shape reference is pointing to for objects with properties
    *
-   *  This is a generalization of the polygon (), etc. methods using a tag to identify the
+   *  This is a generalisation of the polygon (), etc. methods using a tag to identify the
    *  target object.
    */
   const db::object_with_properties<simple_polygon_ref_type> *basic_ptr (db::object_with_properties<simple_polygon_ref_type>::tag) const
@@ -1615,7 +1600,7 @@ public:
   /** 
    *  @brief Return the actual object that this shape reference is pointing to for objects with properties
    *
-   *  This is a generalization of the polygon (), etc. methods using a tag to identify the
+   *  This is a generalisation of the polygon (), etc. methods using a tag to identify the
    *  target object.
    */
   const db::object_with_properties<path_type> *basic_ptr (db::object_with_properties<path_type>::tag) const
@@ -1632,7 +1617,7 @@ public:
   /** 
    *  @brief Return the actual object that this shape reference is pointing to for objects with properties
    *
-   *  This is a generalization of the polygon (), etc. methods using a tag to identify the
+   *  This is a generalisation of the polygon (), etc. methods using a tag to identify the
    *  target object.
    */
   const db::object_with_properties<path_ref_type> *basic_ptr (db::object_with_properties<path_ref_type>::tag) const
@@ -1649,7 +1634,7 @@ public:
   /** 
    *  @brief Return the actual object that this shape reference is pointing to for objects with properties
    *
-   *  This is a generalization of the polygon (), etc. methods using a tag to identify the
+   *  This is a generalisation of the polygon (), etc. methods using a tag to identify the
    *  target object.
    */
   const db::object_with_properties<path_ptr_array_type> *basic_ptr (db::object_with_properties<path_ptr_array_type>::tag) const
@@ -1666,7 +1651,7 @@ public:
   /** 
    *  @brief Return the actual object that this shape reference is pointing to for objects with properties
    *
-   *  This is a generalization of the polygon (), etc. methods using a tag to identify the
+   *  This is a generalisation of the polygon (), etc. methods using a tag to identify the
    *  target object.
    */
   const db::object_with_properties<edge_type> *basic_ptr (db::object_with_properties<edge_type>::tag) const
@@ -1683,7 +1668,7 @@ public:
   /**
    *  @brief Return the actual object that this shape reference is pointing to for objects with properties
    *
-   *  This is a generalization of the polygon (), etc. methods using a tag to identify the
+   *  This is a generalisation of the polygon (), etc. methods using a tag to identify the
    *  target object.
    */
   const db::object_with_properties<edge_pair_type> *basic_ptr (db::object_with_properties<edge_pair_type>::tag) const
@@ -1700,24 +1685,7 @@ public:
   /**
    *  @brief Return the actual object that this shape reference is pointing to for objects with properties
    *
-   *  This is a generalization of the polygon (), etc. methods using a tag to identify the
-   *  target object.
-   */
-  const db::object_with_properties<point_type> *basic_ptr (db::object_with_properties<point_type>::tag) const
-  {
-    tl_assert (m_type == Point);
-    tl_assert (m_with_props);
-    if (m_stable) {
-      return &**(((ppoint_iter_type *) m_generic.iter));
-    } else {
-      return m_generic.ppoint;
-    }
-  }
-
-  /**
-   *  @brief Return the actual object that this shape reference is pointing to for objects with properties
-   *
-   *  This is a generalization of the polygon (), etc. methods using a tag to identify the
+   *  This is a generalisation of the polygon (), etc. methods using a tag to identify the
    *  target object.
    */
   const db::object_with_properties<text_type> *basic_ptr (db::object_with_properties<text_type>::tag) const
@@ -1734,7 +1702,7 @@ public:
   /** 
    *  @brief Return the actual object that this shape reference is pointing to for objects with properties
    *
-   *  This is a generalization of the polygon (), etc. methods using a tag to identify the
+   *  This is a generalisation of the polygon (), etc. methods using a tag to identify the
    *  target object.
    */
   const db::object_with_properties<text_ref_type> *basic_ptr (db::object_with_properties<text_ref_type>::tag) const
@@ -1751,7 +1719,7 @@ public:
   /** 
    *  @brief Return the actual object that this shape reference is pointing to for objects with properties
    *
-   *  This is a generalization of the polygon (), etc. methods using a tag to identify the
+   *  This is a generalisation of the polygon (), etc. methods using a tag to identify the
    *  target object.
    */
   const db::object_with_properties<text_ptr_array_type> *basic_ptr (db::object_with_properties<text_ptr_array_type>::tag) const
@@ -1768,7 +1736,7 @@ public:
   /** 
    *  @brief Return the actual object that this shape reference is pointing to for objects with properties
    *
-   *  This is a generalization of the polygon (), etc. methods using a tag to identify the
+   *  This is a generalisation of the polygon (), etc. methods using a tag to identify the
    *  target object.
    */
   const db::object_with_properties<user_object_type> *basic_ptr (db::object_with_properties<user_object_type>::tag) const
@@ -1785,7 +1753,7 @@ public:
   /** 
    *  @brief Return the actual object that this shape reference is pointing to for objects with properties
    *
-   *  This is a generalization of the polygon (), etc. methods using a tag to identify the
+   *  This is a generalisation of the polygon (), etc. methods using a tag to identify the
    *  target object.
    */
   const db::object_with_properties<box_type> *basic_ptr (db::object_with_properties<box_type>::tag) const
@@ -1802,7 +1770,7 @@ public:
   /** 
    *  @brief Return the actual object that this shape reference is pointing to for objects with properties
    *
-   *  This is a generalization of the polygon (), etc. methods using a tag to identify the
+   *  This is a generalisation of the polygon (), etc. methods using a tag to identify the
    *  target object.
    */
   const db::object_with_properties<box_array_type> *basic_ptr (db::object_with_properties<box_array_type>::tag) const
@@ -1819,7 +1787,7 @@ public:
   /** 
    *  @brief Return the actual object that this shape reference is pointing to for objects with properties
    *
-   *  This is a generalization of the polygon (), etc. methods using a tag to identify the
+   *  This is a generalisation of the polygon (), etc. methods using a tag to identify the
    *  target object.
    */
   const db::object_with_properties<short_box_type> *basic_ptr (db::object_with_properties<short_box_type>::tag) const
@@ -1836,7 +1804,7 @@ public:
   /** 
    *  @brief Return the actual object that this shape reference is pointing to for objects with properties
    *
-   *  This is a generalization of the polygon (), etc. methods using a tag to identify the
+   *  This is a generalisation of the polygon (), etc. methods using a tag to identify the
    *  target object.
    */
   const db::object_with_properties<short_box_array_type> *basic_ptr (db::object_with_properties<short_box_array_type>::tag) const
@@ -1947,15 +1915,6 @@ public:
   {
     tl_assert (m_type == EdgePair && ! m_with_props);
     return *(((edge_pair_iter_type *) m_generic.iter));
-  }
-
-  /**
-   *  @brief Return the iterator (in stable reference mode) by tag
-   */
-  point_iter_type basic_iter (point_type::tag) const
-  {
-    tl_assert (m_type == Point && ! m_with_props);
-    return *(((point_iter_type *) m_generic.iter));
   }
 
   /**
@@ -2127,15 +2086,6 @@ public:
   {
     tl_assert (m_type == EdgePair && m_with_props);
     return *(((pedge_pair_iter_type *) m_generic.iter));
-  }
-
-  /**
-   *  @brief Return the iterator (in stable reference mode) by tag for objects with properties
-   */
-  ppoint_iter_type basic_iter (db::object_with_properties<point_type>::tag) const
-  {
-    tl_assert (m_type == Point && m_with_props);
-    return *(((ppoint_iter_type *) m_generic.iter));
   }
 
   /**
@@ -2446,49 +2396,6 @@ public:
   }
 
   /**
-   *  @brief Return a reference to the point if one is referenced
-   */
-  const point_type &point () const
-  {
-    tl_assert (m_type == Point);
-    return *basic_ptr (point_type::tag ());
-  }
-
-  /**
-   *  @brief Test if the shape proxy points to a point
-   */
-  bool is_point () const
-  {
-    return (m_type == Point);
-  }
-
-  /**
-   *  @brief Instantiate the edge object
-   *
-   *  If a edge is referenced, this object is instantiated
-   *  by this method.
-   *  Returns true, if the conversion was successful.
-   */
-  bool point (point_type &p) const
-  {
-    if (is_point ()) {
-      p = point ();
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  /**
-   *  @brief Alias for polymorphic expansion
-   *  Returns true, if the conversion was successful.
-   */
-  bool instantiate (point_type &p) const
-  {
-    return point (p);
-  }
-
-  /**
    *  @brief Return a reference to the text if one is referenced
    */
   const text_type &text () const
@@ -2639,16 +2546,6 @@ public:
    */
   box_type bbox () const;
 
-  /**
-   *  @brief Returns the box if the object represents a rectangle or an empty box if not
-   *
-   *  This method returns the rectangle (aka box) the shape represents a polygon
-   *  that is a rectangle, a path with two points and no rounded ends or an actual box.
-   *
-   *  If not, an empty box is returned.
-   */
-  box_type rectangle () const;
-
   /** 
    *  @brief Compute the area of the shape
    */
@@ -2733,7 +2630,7 @@ public:
    *
    *  Ordering of shapes is not specified by the identity of the objects but by the
    *  order of the pointers.
-   *  Since pointers are volatile objects, the ordering is not strictly reproducible!
+   *  Since pointers are volatile objects, the ordering is not strictly reproducable!
    */
   bool operator< (const Shape &d) const
   {
@@ -2757,11 +2654,6 @@ public:
     return m_trans < d.m_trans;
   }
 
-  /**
-   *  @brief Hash value
-   */
-  size_t hash_value () const;
-
   /** 
    *  @brief Convert to a string
    */
@@ -2783,7 +2675,6 @@ public:
     const text_ptr_array_type *text_aref;
     const edge_type *edge;
     const edge_pair_type *edge_pair;
-    const point_type *point;
     const path_type *path;
     const path_ref_type *path_ref;
     const path_ptr_array_type *path_aref;
@@ -2804,7 +2695,6 @@ public:
     const db::object_with_properties<text_ptr_array_type> *ptext_aref;
     const db::object_with_properties<edge_type> *pedge;
     const db::object_with_properties<edge_pair_type> *pedge_pair;
-    const db::object_with_properties<point_type> *ppoint;
     const db::object_with_properties<path_type> *ppath;
     const db::object_with_properties<path_ref_type> *ppath_ref;
     const db::object_with_properties<path_ptr_array_type> *ppath_aref;
@@ -2830,21 +2720,6 @@ public:
 };
 
 }  // namespace db
-
-namespace std
-{
-
-  //  provide a template specialization for std::hash<T>
-  template <>
-  struct hash <db::Shape>
-  {
-    size_t operator() (const db::Shape &s) const
-    {
-      return s.hash_value ();
-    }
-  };
-
-}  // namespace std
   
 #endif
 

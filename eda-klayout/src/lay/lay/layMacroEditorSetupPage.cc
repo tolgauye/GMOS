@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -25,8 +25,6 @@
 #include "layMacroEditorPage.h"
 #include "layMacroEditorDialog.h"
 #include "layGenericSyntaxHighlighter.h"
-#include "layDispatcher.h"
-#include "layQtTools.h"
 
 #include "lymMacro.h"
 
@@ -58,7 +56,7 @@ struct MacroEditorSetupDialogData
   int font_size;
   std::set <std::string> ignore_exceptions_list;
 
-  void setup (lay::Dispatcher *root)
+  void setup (lay::PluginRoot *root)
   {
     lay::MacroEditorHighlighters highlighters (this);
     std::string styles;
@@ -93,7 +91,7 @@ struct MacroEditorSetupDialogData
     }
   }
 
-  void commit (lay::Dispatcher *root)
+  void commit (lay::PluginRoot *root)
   {
     lay::MacroEditorHighlighters highlighters (this);
 
@@ -203,7 +201,7 @@ MacroEditorSetupPage::update_font ()
 }
 
 void
-MacroEditorSetupPage::setup (Dispatcher *root)
+MacroEditorSetupPage::setup (PluginRoot *root)
 {
   delete mp_data;
   mp_data = new MacroEditorSetupDialogData (this);
@@ -219,7 +217,7 @@ MacroEditorSetupPage::setup (Dispatcher *root)
 
   if (mp_data->font_size <= 0) {
     mp_data->font_size = font ().pointSize ();
-    mp_data->font_family = tl::to_string (monospace_font ().family ());
+    mp_data->font_family = "Monospace";
   }
 
   QFont f;
@@ -270,7 +268,7 @@ MacroEditorSetupPage::setup (Dispatcher *root)
 }
 
 void
-MacroEditorSetupPage::commit (Dispatcher *root)
+MacroEditorSetupPage::commit (PluginRoot *root)
 {
   if (styles_list->currentItem ()) {
     commit_attributes (styles_list->currentItem ());
@@ -359,7 +357,7 @@ MacroEditorSetupPage::commit_attributes (QListWidgetItem *to_item)
 
   }
 
-  //  update all list styles (because we may modify a basic entry, we have to update dependent ones as well)
+  //  update all list styles (because we may modifiy a basic entry, we have to update dependent ones as well)
   for (int i = 0; i < styles_list->count (); ++i) {
 
     QListWidgetItem *item = styles_list->item (i);

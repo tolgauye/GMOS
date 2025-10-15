@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -24,8 +24,6 @@
 #include "tlUnitTest.h"
 #include "antObject.h"
 #include "antTemplate.h"
-
-//  NOTE: most tests are in ruby/antTest.rb
 
 TEST(1) 
 {
@@ -50,84 +48,3 @@ TEST(1)
   EXPECT_EQ (a.category (), "cat");
 }
 
-TEST(2)
-{
-  ant::Template tmp = ant::Template ("title", "fmt_x", "fmt_y", "fmt",
-                                     ant::Object::STY_arrow_both,
-                                     ant::Object::OL_diag_xy,
-                                     true,
-                                     lay::AC_Ortho,
-                                     "cat");
-
-  ant::Object obj;
-
-  EXPECT_EQ (obj.p1 ().to_string (), "0,0");
-  EXPECT_EQ (obj.p2 ().to_string (), "0,0");
-
-  EXPECT_EQ (int (obj.segments ()), 1);
-  EXPECT_EQ (int (obj.points ().size ()), 0);
-
-  obj.p1 (db::DPoint (1, 2));
-
-  EXPECT_EQ (obj.p1 ().to_string (), "1,2");
-  EXPECT_EQ (obj.p2 ().to_string (), "1,2");
-
-  EXPECT_EQ (int (obj.segments ()), 1);
-  EXPECT_EQ (int (obj.points ().size ()), 1);
-
-  obj.p2 (db::DPoint (2, 3));
-
-  EXPECT_EQ (obj.p1 ().to_string (), "1,2");
-  EXPECT_EQ (obj.p2 ().to_string (), "2,3");
-
-  EXPECT_EQ (int (obj.segments ()), 1);
-  EXPECT_EQ (int (obj.points ().size ()), 2);
-
-  obj = ant::Object ();
-
-  EXPECT_EQ (obj.p1 ().to_string (), "0,0");
-  EXPECT_EQ (obj.p2 ().to_string (), "0,0");
-
-  EXPECT_EQ (int (obj.segments ()), 1);
-  EXPECT_EQ (int (obj.points ().size ()), 0);
-
-  obj.p1 (db::DPoint ());
-
-  EXPECT_EQ (obj.p1 ().to_string (), "0,0");
-  EXPECT_EQ (obj.p2 ().to_string (), "0,0");
-
-  EXPECT_EQ (int (obj.segments ()), 1);
-  EXPECT_EQ (int (obj.points ().size ()), 1);
-
-  obj.p2 (db::DPoint ());
-
-  EXPECT_EQ (obj.p1 ().to_string (), "0,0");
-  EXPECT_EQ (obj.p2 ().to_string (), "0,0");
-
-  EXPECT_EQ (int (obj.segments ()), 1);
-  EXPECT_EQ (int (obj.points ().size ()), 1);
-
-  obj = ant::Object (db::DPoint (1, 2), db::DPoint (2, 3), 0, tmp);
-
-  EXPECT_EQ (obj.p1 ().to_string (), "1,2");
-  EXPECT_EQ (obj.p2 ().to_string (), "2,3");
-
-  EXPECT_EQ (int (obj.segments ()), 1);
-  EXPECT_EQ (int (obj.points ().size ()), 2);
-
-  obj = ant::Object (db::DPoint (1, 2), db::DPoint (1, 2), 0, tmp);
-
-  EXPECT_EQ (obj.p1 ().to_string (), "1,2");
-  EXPECT_EQ (obj.p2 ().to_string (), "1,2");
-
-  EXPECT_EQ (int (obj.segments ()), 1);
-  EXPECT_EQ (int (obj.points ().size ()), 1);
-
-  obj = ant::Object (db::DPoint (), db::DPoint (), 0, tmp);
-
-  EXPECT_EQ (obj.p1 ().to_string (), "0,0");
-  EXPECT_EQ (obj.p2 ().to_string (), "0,0");
-
-  EXPECT_EQ (int (obj.segments ()), 1);
-  EXPECT_EQ (int (obj.points ().size ()), 1);
-}

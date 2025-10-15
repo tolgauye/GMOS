@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -32,8 +32,6 @@
 namespace pya
 {
 
-void push_args (gsi::SerialArgs &arglist, const gsi::MethodBase *meth, PyObject *args, PyObject *kwargs, tl::Heap &heap);
-
 // -------------------------------------------------------------------
 //  Serialization adaptors for strings, variants, vectors and maps
 
@@ -45,26 +43,9 @@ class PythonBasedStringAdaptor
 {
 public:
   PythonBasedStringAdaptor (const PythonPtr &string)
-    : m_string (string)
+    : m_stdstr (python2c<std::string> (string.get ())), m_string (string)
   {
-#if PY_MAJOR_VERSION < 3
-    if (PyString_Check (string.get ())) {
-      m_stdstr = python2c<std::string> (string.get ());
-    } else
-#else
-    if (PyBytes_Check (string.get ())) {
-      m_stdstr = python2c<std::string> (string.get ());
-    } else
-#endif
-    if (PyUnicode_Check (string.get ()) || PyByteArray_Check (string.get ())) {
-      m_stdstr = python2c<std::string> (string.get ());
-    } else {
-      //  use object protocol to get the string through str(...)
-      PythonRef as_str (PyObject_Str (string.get ()));
-      if (as_str) {
-        m_stdstr = python2c<std::string> (as_str.get ());
-      }
-    }
+    //  .. nothing yet ..
   }
 
   virtual const char *c_str () const
@@ -80,46 +61,11 @@ public:
   virtual void set (const char * /*c_str*/, size_t /*s*/, tl::Heap & /*heap*/)
   {
     //  TODO: is there a setter for a string?
-    //  So far it's not possible to have string OUT parameter
   }
 
 private:
   std::string m_stdstr;
   PythonPtr m_string;
-};
-
-/**
- *  @brief An adaptor for a byte array from ruby objects
- */
-class PythonBasedByteArrayAdaptor
-  : public gsi::ByteArrayAdaptor
-{
-public:
-  PythonBasedByteArrayAdaptor (const PythonPtr &ba)
-    : m_bytearray (python2c<std::vector<char> > (ba.get ())), m_bytes (ba)
-  {
-    //  .. nothing yet ..
-  }
-
-  virtual const char *c_str () const
-  {
-    return &m_bytearray.front ();
-  }
-
-  virtual size_t size () const
-  {
-    return m_bytearray.size ();
-  }
-
-  virtual void set (const char * /*c_str*/, size_t /*s*/, tl::Heap & /*heap*/)
-  {
-    //  TODO: is there a setter for a byte array?
-    //  So far it's not possible to have bytes OUT parameter
-  }
-
-private:
-  std::vector<char> m_bytearray;
-  PythonPtr m_bytes;
 };
 
 /**
@@ -132,8 +78,7 @@ public:
   PythonBasedVariantAdaptor (const PythonPtr &var);
 
   virtual tl::Variant var () const;
-  virtual void set (const tl::Variant &v, tl::Heap & /*heap*/);
-  const PythonPtr &ptr () const { return m_var; }
+  virtual void set (const tl::Variant &v);
 
 private:
   PythonPtr m_var;
@@ -359,55 +304,6 @@ struct writer<gsi::StringType>
 };
 
 /**
- *  @brief Serialization for strings
- */
-template <>
-struct writer<gsi::ByteArrayType>
-{
-  void operator() (gsi::SerialArgs *aa, PyObject *arg, const gsi::ArgType &atype, tl::Heap *heap)
-  {
-    //  Cannot pass ownership currently
-    tl_assert (!atype.pass_obj ());
-
-    if (arg == Py_None || arg == NULL) {
-
-      if (! (atype.is_ptr () || atype.is_cptr ())) {
-        //  nil is treated as an empty string for references
-        aa->write<void *> ((void *)new gsi::ByteArrayAdaptorImpl<std::vector<char> > (std::vector<char> ()));
-      } else {
-        aa->write<void *> ((void *)0);
-      }
-
-    } else {
-
-      if (atype.is_ref () || atype.is_ptr ()) {
-
-        // references or pointers require a boxed object. Pointers also allow nil.
-        void *vc = 0;
-        get_boxed_value_func<std::vector<char> > () (&vc, arg, heap);
-        if (! vc && atype.is_ref ()) {
-          throw tl::Exception (tl::to_string (tr ("Arguments or return values of reference or direct type cannot be passed nil or an empty boxed value object")));
-        }
-
-        //  NOTE: by convention we pass the ownership to the receiver for adaptors.
-        if (! vc) {
-          aa->write<void *> (0);
-        } else {
-          aa->write<void *> ((void *)new gsi::ByteArrayAdaptorImpl<std::vector<char> > ((std::vector<char> *) vc));
-        }
-
-      } else {
-
-        //  NOTE: by convention we pass the ownership to the receiver for adaptors.
-        aa->write<void *> ((void *)new PythonBasedByteArrayAdaptor (arg));
-
-      }
-
-    }
-  }
-};
-
-/**
  *  @brief Specialization for Variant
  */
 template <>
@@ -466,15 +362,13 @@ struct writer<gsi::MapType>
 
 /**
  *  @brief A serialization wrapper (write mode)
- *  Specialization for objects
+ *  Specialisation for objects
  */
 template <>
 struct writer<gsi::ObjectType>
 {
   void operator() (gsi::SerialArgs *aa, PyObject *arg, const gsi::ArgType &atype, tl::Heap *heap)
   {
-    const gsi::ClassBase *acls = atype.cls ();
-
     if (arg == Py_None || arg == NULL) {
 
       if (! (atype.is_ptr () || atype.is_cptr ())) {
@@ -486,50 +380,14 @@ struct writer<gsi::ObjectType>
 
     }
 
-    if (PyTuple_Check (arg) || PyList_Check (arg)) {
-
-      //  we may implicitly convert a tuple into a constructor call of a target object -
-      //  for now we only check whether the number of arguments is compatible with the list given.
-
-      int n = PyTuple_Check (arg) ? int (PyTuple_Size (arg)) : int (PyList_Size (arg));
-      const gsi::MethodBase *meth = 0;
-      for (gsi::ClassBase::method_iterator c = acls->begin_constructors (); c != acls->end_constructors (); ++c) {
-        if ((*c)->compatible_with_num_args (n)) {
-          meth = *c;
-          break;
-        }
-      }
-
-      if (!meth) {
-        throw tl::Exception (tl::to_string (tr ("No constructor of %s available that takes %d arguments (implicit call from tuple)")), acls->name (), n);
-      }
-
-      //  implicit call of constructor
-      gsi::SerialArgs retlist (meth->retsize ());
-      gsi::SerialArgs arglist (meth->argsize ());
-
-      push_args (arglist, meth, arg, NULL, *heap);
-
-      meth->call (0, arglist, retlist);
-
-      void *new_obj = retlist.read<void *> (*heap);
-      if (new_obj && (atype.is_ptr () || atype.is_cptr () || atype.is_ref () || atype.is_cref ())) {
-        //  For pointers or refs, ownership over these objects is not transferred.
-        //  Hence we have to keep them on the heap.
-        //  TODO: what if the called method takes ownership using keep()?
-        heap->push (new gsi::ObjectHolder (acls, new_obj));
-      }
-
-      aa->write<void *> (new_obj);
-
-    } else if (atype.is_ptr () || atype.is_cptr () || atype.is_ref () || atype.is_cref ()) {
+    if (atype.is_ptr () || atype.is_cptr () || atype.is_ref () || atype.is_cref ()) {
 
       const gsi::ClassBase *cls_decl = PythonModule::cls_for_type (Py_TYPE (arg));
       if (! cls_decl) {
-        throw tl::TypeError (tl::sprintf (tl::to_string (tr ("Unexpected object type (expected argument of class %s, got %s)")), atype.cls ()->name (), Py_TYPE (arg)->tp_name));
+        throw tl::Exception (tl::sprintf (tl::to_string (tr ("Unexpected object type (expected argument of class %s, got %s)")), atype.cls ()->name (), Py_TYPE (arg)->tp_name));
       }
 
-      if (cls_decl->is_derived_from (acls)) {
+      if (cls_decl->is_derived_from (atype.cls ())) {
 
         PYAObjectBase *p = PYAObjectBase::from_pyobject (arg);
 
@@ -540,29 +398,28 @@ struct writer<gsi::ObjectType>
           aa->write<void *> (p->obj ());
         }
 
-      } else if (cls_decl->can_convert_to (acls)) {
+      } else if (cls_decl->can_convert_to (atype.cls ())) {
 
         PYAObjectBase *p = PYAObjectBase::from_pyobject (arg);
 
         //  We can convert objects for cref and cptr, but ownership over these objects is not transferred.
         //  Hence we have to keep them on the heap.
-        //  TODO: what if the called method takes ownership using keep()?
-        void *new_obj = acls->create_obj_from (p->cls_decl (), p->obj ());
-        heap->push (new gsi::ObjectHolder (acls, new_obj));
+        void *new_obj = atype.cls ()->create_obj_from (p->cls_decl (), p->obj ());
+        heap->push (new gsi::ObjectHolder (atype.cls (), new_obj));
         aa->write<void *> (new_obj);
 
       } else {
-        throw tl::TypeError (tl::sprintf (tl::to_string (tr ("Unexpected object type (expected argument of class %s, got %s)")), atype.cls ()->name (), cls_decl->name ()));
+        throw tl::Exception (tl::sprintf (tl::to_string (tr ("Unexpected object type (expected argument of class %s, got %s)")), atype.cls ()->name (), cls_decl->name ()));
       }
 
     } else {
 
       const gsi::ClassBase *cls_decl = PythonModule::cls_for_type (Py_TYPE (arg));
       if (! cls_decl) {
-        throw tl::TypeError (tl::sprintf (tl::to_string (tr ("Unexpected object type (expected argument of class %s, got %s)")), atype.cls ()->name (), Py_TYPE (arg)->tp_name));
+        throw tl::Exception (tl::sprintf (tl::to_string (tr ("Unexpected object type (expected argument of class %s, got %s)")), atype.cls ()->name (), Py_TYPE (arg)->tp_name));
       }
 
-      if (cls_decl->is_derived_from (acls)) {
+      if (cls_decl->is_derived_from (atype.cls ())) {
 
         PYAObjectBase *p = PYAObjectBase::from_pyobject (arg);
 
@@ -573,13 +430,13 @@ struct writer<gsi::ObjectType>
           aa->write<void *> (atype.cls ()->clone (p->obj ()));
         }
 
-      } else if (cls_decl->can_convert_to (acls)) {
+      } else if (cls_decl->can_convert_to (atype.cls ())) {
 
         PYAObjectBase *p = PYAObjectBase::from_pyobject (arg);
         aa->write<void *> (atype.cls ()->create_obj_from (cls_decl, p->obj ()));
 
       } else {
-        throw tl::TypeError (tl::sprintf (tl::to_string (tr ("Unexpected object type (expected argument of class %s, got %s)")), atype.cls ()->name (), cls_decl->name ()));
+        throw tl::Exception (tl::sprintf (tl::to_string (tr ("Unexpected object type (expected argument of class %s, got %s)")), atype.cls ()->name (), cls_decl->name ()));
       }
 
     }
@@ -589,7 +446,7 @@ struct writer<gsi::ObjectType>
 
 /**
  *  @brief A serialization wrapper (write mode)
- *  Specialization for void
+ *  Specialisation for void
  */
 template <>
 struct writer<gsi::VoidType>
@@ -607,7 +464,7 @@ push_arg (const gsi::ArgType &atype, gsi::SerialArgs &aserial, PyObject *arg, tl
 }
 
 /**
- *  @brief Deserialization wrapper
+ *  @brief Deseralisation wrapper
  *
  *  The default implementation is for POD types, strings and variants
  */
@@ -641,7 +498,7 @@ struct reader
 };
 
 /**
- *  @brief Deserialization wrapper: specialization for const char *
+ *  @brief Deseralisation wrapper: specialization for const char *
  *
  *  Without that would would have to handle void *&, void * const &, ...
  *  TODO: right now these types are not supported.
@@ -660,14 +517,14 @@ struct reader<void *>
 };
 
 /**
- *  @brief Deserialization wrapper: specialization for strings
+ *  @brief Deseralisation wrapper: specialization for strings
  */
 template <>
 struct reader<gsi::StringType>
 {
   void operator() (gsi::SerialArgs *rr, PythonRef *ret, PYAObjectBase * /*self*/, const gsi::ArgType &, tl::Heap *heap)
   {
-    std::unique_ptr<gsi::StringAdaptor> a ((gsi::StringAdaptor *) rr->read<void *>(*heap));
+    std::auto_ptr<gsi::StringAdaptor> a ((gsi::StringAdaptor *) rr->read<void *>(*heap));
     if (!a.get ()) {
       *ret = PythonRef (Py_None, false /*borrowed*/);
     } else {
@@ -676,36 +533,12 @@ struct reader<gsi::StringType>
   }
 };
 
-/**
- *  @brief Deserialization wrapper: specialization for byte arrays
- */
-template <>
-struct reader<gsi::ByteArrayType>
-{
-  void operator() (gsi::SerialArgs *rr, PythonRef *ret, PYAObjectBase * /*self*/, const gsi::ArgType &, tl::Heap *heap)
-  {
-    std::unique_ptr<gsi::ByteArrayAdaptor> a ((gsi::ByteArrayAdaptor *) rr->read<void *>(*heap));
-    if (!a.get ()) {
-      *ret = PythonRef (Py_None, false /*borrowed*/);
-    } else {
-      const char *cp = a->c_str ();
-      size_t sz = a->size ();
-#if PY_MAJOR_VERSION < 3
-      *ret = PyByteArray_FromStringAndSize (cp, sz);
-#else
-      *ret = PyBytes_FromStringAndSize (cp, sz);
-#endif
-    }
-  }
-};
-
 static
-PyObject *object_from_variant (tl::Variant &var, PYAObjectBase *self, const gsi::ArgType &atype, bool transfer = false)
+PyObject *object_from_variant (const tl::Variant &var, PYAObjectBase *self, const gsi::ArgType &atype)
 {
   if (var.is_user()) {
 
-    bool is_direct = (! atype.is_cptr() && ! atype.is_ptr () && ! atype.is_cref () && ! atype.is_ref ());
-    bool pass_obj = atype.pass_obj() || is_direct;
+    bool pass_obj = atype.pass_obj() || (! atype.is_cptr() && ! atype.is_ptr () && ! atype.is_cref () && ! atype.is_ref ());
     bool is_const = atype.is_cptr() || atype.is_cref();
     bool prefer_copy = false;
     bool can_destroy = false;
@@ -713,10 +546,7 @@ PyObject *object_from_variant (tl::Variant &var, PYAObjectBase *self, const gsi:
     //  TODO: ugly const_cast, but there is no "const shared reference" ...
     gsi::Proxy *holder = dynamic_cast<gsi::Proxy *>(const_cast<tl::Object *>(var.to_object ()));
 
-    void *obj = var.to_user ();
-    const gsi::ClassBase *cls = var.user_cls ()->gsi_cls ();
-
-    if (pass_obj || transfer) {
+    if (pass_obj) {
 
       if (holder) {
 
@@ -737,25 +567,19 @@ PyObject *object_from_variant (tl::Variant &var, PYAObjectBase *self, const gsi:
         //  If the object was not owned before, it is not owned after (bears risk of invalid
         //  pointers, but it's probably rarely the case. Non-managed objects are usually copied
         //  between the ownership spaces.
-        //  If the variant holds the user object, we can take it from it and claim ownership.
-        if (var.user_is_ref ()) {
+        if (var.user_is_ref()) {
           prefer_copy = false;   // unsafe
-          pass_obj = false;
         } else {
-          obj = var.user_take ();
-          can_destroy = true;
+          prefer_copy = true;   // safe
         }
+
+        pass_obj = false;
 
       }
 
-    } else {
-
-      //  This is the case for return values that prefer to be copied (e.g. from const &)
-      prefer_copy = atype.prefer_copy ();
-
     }
 
-    return object_to_python (obj, self, cls, pass_obj, is_const, prefer_copy, can_destroy);
+    return object_to_python ((void *) var.to_user (), self, var.user_cls ()->gsi_cls (), pass_obj, is_const, prefer_copy, can_destroy);
 
   } else {
     return c2python (var);
@@ -763,43 +587,37 @@ PyObject *object_from_variant (tl::Variant &var, PYAObjectBase *self, const gsi:
 }
 
 /**
- *  @brief Deserialization wrapper: specialization for variants
+ *  @brief Deseralisation wrapper: specialization for variants
  */
 template <>
 struct reader<gsi::VariantType>
 {
   void operator() (gsi::SerialArgs *rr, PythonRef *ret, PYAObjectBase *self, const gsi::ArgType &atype, tl::Heap *heap)
   {
-    std::unique_ptr<gsi::VariantAdaptor> a ((gsi::VariantAdaptor *) rr->read<void *>(*heap));
+    std::auto_ptr<gsi::VariantAdaptor> a ((gsi::VariantAdaptor *) rr->read<void *>(*heap));
     if (!a.get ()) {
       *ret = PythonRef (Py_None, false /*borrowed*/);
     } else {
       gsi::VariantAdaptorImpl<tl::Variant> *aa = dynamic_cast<gsi::VariantAdaptorImpl<tl::Variant> *> (a.get ());
-      PythonBasedVariantAdaptor *pa = dynamic_cast<PythonBasedVariantAdaptor *> (a.get ());
       if (aa) {
         //  A small optimization that saves one variant copy
-        *ret = object_from_variant (aa->var_ref_nc (), self, atype);
-      } else if (pa) {
-        //  Optimization for Python to Python transfer
-        *ret = pa->ptr ();
+        *ret = object_from_variant (aa->var_ref (), self, atype);
       } else {
-        tl::Variant v = a->var ();
-        //  NOTE: as v may hold the object, we need to transfer ownership
-        *ret = object_from_variant (v, self, atype, true);
+        *ret = object_from_variant (a->var (), self, atype);
       }
     }
   }
 };
 
 /**
- *  @brief Deserialization wrapper: specialization for vectors
+ *  @brief Deseralisation wrapper: specialization for vectors
  */
 template <>
 struct reader<gsi::VectorType>
 {
   void operator() (gsi::SerialArgs *rr, PythonRef *ret, PYAObjectBase * /*self*/, const gsi::ArgType &atype, tl::Heap *heap)
   {
-    std::unique_ptr<gsi::VectorAdaptor> a ((gsi::VectorAdaptor *) rr->read<void *>(*heap));
+    std::auto_ptr<gsi::VectorAdaptor> a ((gsi::VectorAdaptor *) rr->read<void *>(*heap));
     if (!a.get ()) {
       *ret = PythonRef (Py_None, false /*borrowed*/);
     } else {
@@ -812,14 +630,14 @@ struct reader<gsi::VectorType>
 };
 
 /**
- *  @brief Deserialization wrapper: specialization for maps
+ *  @brief Deseralisation wrapper: specialization for maps
  */
 template <>
 struct reader<gsi::MapType>
 {
   void operator() (gsi::SerialArgs *rr, PythonRef *ret, PYAObjectBase * /*self*/, const gsi::ArgType &atype, tl::Heap *heap)
   {
-    std::unique_ptr<gsi::MapAdaptor> a ((gsi::MapAdaptor *) rr->read<void *>(*heap));
+    std::auto_ptr<gsi::MapAdaptor> a ((gsi::MapAdaptor *) rr->read<void *>(*heap));
     if (!a.get ()) {
       *ret = PythonRef (Py_None, false /*borrowed*/);
     } else {
@@ -833,7 +651,7 @@ struct reader<gsi::MapType>
 };
 
 /**
- *  @brief Deserialization wrapper: specialization for object
+ *  @brief Deseralisation wrapper: specialization for object
  */
 template <>
 struct reader<gsi::ObjectType>
@@ -850,7 +668,7 @@ struct reader<gsi::ObjectType>
 };
 
 /**
- *  @brief Deserialization wrapper: specialization for void
+ *  @brief Deseralisation wrapper: specialization for void
  */
 template <>
 struct reader<gsi::VoidType>
@@ -862,7 +680,7 @@ struct reader<gsi::VoidType>
 };
 
 PythonRef
-pull_arg (const gsi::ArgType &atype, gsi::SerialArgs &aserial, PYAObjectBase *self, tl::Heap &heap)
+pop_arg (const gsi::ArgType &atype, gsi::SerialArgs &aserial, PYAObjectBase *self, tl::Heap &heap)
 {
   PythonRef ret;
   gsi::do_on_type<reader> () (atype.type (), &aserial, &ret, self, atype, &heap);
@@ -883,7 +701,7 @@ tl::Variant PythonBasedVariantAdaptor::var () const
   return python2c<tl::Variant> (m_var.get ());
 }
 
-void PythonBasedVariantAdaptor::set (const tl::Variant & /*v*/, tl::Heap & /*heap*/)
+void PythonBasedVariantAdaptor::set (const tl::Variant & /*v*/)
 {
   //  TODO: is there a setter for a string?
 }
@@ -945,10 +763,8 @@ void PythonBasedVectorAdaptor::push (gsi::SerialArgs &r, tl::Heap &heap)
 
 void PythonBasedVectorAdaptor::clear ()
 {
-  if (PyList_Check (m_array.get ())) {
-    PyList_SetSlice (m_array.get (), 0, PyList_Size (m_array.get ()), NULL);
-  } else if (PyTuple_Check (m_array.get ())) {
-    throw tl::Exception (tl::to_string (tr ("Tuples cannot be modified and cannot be used as out parameters")));
+  if (PySequence_Check (m_array.get ())) {
+    PySequence_DelSlice (m_array.get (), 0, PySequence_Length (m_array.get ()));
   }
 }
 
@@ -1046,7 +862,7 @@ size_t PythonBasedMapAdaptor::serial_size () const
 template <class R>
 struct test_arg_func
 {
-  void operator() (bool *ret, PyObject *arg, const gsi::ArgType &atype, bool loose, bool /*object_substitution*/)
+  void operator() (bool *ret, PyObject *arg, const gsi::ArgType &atype, bool loose)
   {
     if ((atype.is_cptr () || atype.is_ptr ()) && arg == Py_None) {
 
@@ -1083,7 +899,7 @@ struct test_arg_func
 template <>
 struct test_arg_func<gsi::VariantType>
 {
-  void operator() (bool *ret, PyObject *, const gsi::ArgType &, bool, bool)
+  void operator() (bool *ret, PyObject *, const gsi::ArgType &, bool)
   {
     //  we assume we can convert everything into a variant
     *ret = true;
@@ -1093,7 +909,7 @@ struct test_arg_func<gsi::VariantType>
 template <>
 struct test_arg_func<gsi::StringType>
 {
-  void operator() (bool *ret, PyObject *arg, const gsi::ArgType &, bool, bool)
+  void operator() (bool *ret, PyObject *arg, const gsi::ArgType &, bool)
   {
 #if PY_MAJOR_VERSION < 3
     if (PyString_Check (arg)) {
@@ -1117,14 +933,8 @@ struct test_arg_func<gsi::StringType>
 template <>
 struct test_arg_func<gsi::VectorType>
 {
-  void operator() (bool *ret, PyObject *arg, const gsi::ArgType &atype, bool loose, bool /*object_substitution*/)
+  void operator() (bool *ret, PyObject *arg, const gsi::ArgType &atype, bool loose)
   {
-    if ((atype.is_cptr () || atype.is_ptr ()) && arg == Py_None) {
-      //  for ptr or cptr, null is an allowed value
-      *ret = true;
-      return;
-    }
-
     if (! PyTuple_Check (arg) && ! PyList_Check (arg)) {
       *ret = false;
       return;
@@ -1138,7 +948,7 @@ struct test_arg_func<gsi::VectorType>
 
       size_t n = PyTuple_Size (arg);
       for (size_t i = 0; i < n && *ret; ++i) {
-        if (! test_arg (ainner, PyTuple_GetItem (arg, i), loose, true /*issue-1651*/)) {
+        if (! test_arg (ainner, PyTuple_GetItem (arg, i), loose)) {
           *ret = false;
         }
       }
@@ -1147,7 +957,7 @@ struct test_arg_func<gsi::VectorType>
 
       size_t n = PyList_Size (arg);
       for (size_t i = 0; i < n && *ret; ++i) {
-        if (! test_arg (ainner, PyList_GetItem (arg, i), loose, true /*issue-1651*/)) {
+        if (! test_arg (ainner, PyList_GetItem (arg, i), loose)) {
           *ret = false;
         }
       }
@@ -1159,14 +969,8 @@ struct test_arg_func<gsi::VectorType>
 template <>
 struct test_arg_func<gsi::MapType>
 {
-  void operator () (bool *ret, PyObject *arg, const gsi::ArgType &atype, bool loose, bool /*object_substitution*/)
+  void operator () (bool *ret, PyObject *arg, const gsi::ArgType &atype, bool loose)
   {
-    if ((atype.is_cptr () || atype.is_ptr ()) && arg == Py_None) {
-      //  for ptr or cptr, null is an allowed value
-      *ret = true;
-      return;
-    }
-
     if (! PyDict_Check (arg)) {
       *ret = false;
       return;
@@ -1184,46 +988,26 @@ struct test_arg_func<gsi::MapType>
     PyObject *key, *value;
     Py_ssize_t pos = 0;
     while (PyDict_Next(arg, &pos, &key, &value)) {
-      if (! test_arg (ainner_k, key, loose, true /*issue-1651*/)) {
+      if (! test_arg (ainner_k, key, loose)) {
         *ret = false;
         break;
       }
-      if (! test_arg (ainner, value, loose, true /*issue-1651*/)) {
+      if (! test_arg (ainner, value, loose)) {
         *ret = false;
         break;
       }
     }
   }
 };
-
 template <>
 struct test_arg_func<gsi::ObjectType>
 {
-  void operator() (bool *ret, PyObject *arg, const gsi::ArgType &atype, bool loose, bool object_substitution)
+  void operator() (bool *ret, PyObject *arg, const gsi::ArgType &atype, bool loose)
   {
-    const gsi::ClassBase *acls = atype.cls ();
-
     //  for const X * or X *, null is an allowed value
     if ((atype.is_cptr () || atype.is_ptr ()) && arg == Py_None) {
       *ret = true;
       return;
-    }
-
-    if (object_substitution && (PyTuple_Check (arg) || PyList_Check (arg))) {
-
-      //  we may implicitly convert a tuple into a constructor call of a target object -
-      //  for now we only check whether the number of arguments is compatible with the list given.
-
-      int n = PyTuple_Check (arg) ? int (PyTuple_Size (arg)) : int (PyList_Size (arg));
-      *ret = false;
-      for (gsi::ClassBase::method_iterator c = acls->begin_constructors (); c != acls->end_constructors (); ++c) {
-        if ((*c)->compatible_with_num_args (n)) {
-          *ret = true;
-          break;
-        }
-      }
-      return;
-
     }
 
     const gsi::ClassBase *cls_decl = PythonModule::cls_for_type (Py_TYPE (arg));
@@ -1232,7 +1016,7 @@ struct test_arg_func<gsi::ObjectType>
       return;
     }
 
-    if (! (cls_decl == acls || (loose && (cls_decl->is_derived_from (atype.cls ()) || (object_substitution && cls_decl->can_convert_to (atype.cls ())))))) {
+    if (! (cls_decl == atype.cls () || (loose && (cls_decl->is_derived_from (atype.cls ()) || cls_decl->can_convert_to(atype.cls ()))))) {
       *ret = false;
       return;
     }
@@ -1247,10 +1031,10 @@ struct test_arg_func<gsi::ObjectType>
 };
 
 bool
-test_arg (const gsi::ArgType &atype, PyObject *arg, bool loose, bool object_substitution)
+test_arg (const gsi::ArgType &atype, PyObject *arg, bool loose)
 {
   bool ret = false;
-  gsi::do_on_type<test_arg_func> () (atype.type (), &ret, arg, atype, loose, object_substitution);
+  gsi::do_on_type<test_arg_func> () (atype.type (), &ret, arg, atype, loose);
   return ret;
 }
 

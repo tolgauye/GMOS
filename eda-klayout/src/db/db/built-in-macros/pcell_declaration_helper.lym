@@ -119,15 +119,6 @@ Optional, named parameters are
     @b:unit@/b: the unit string
   @/li
   @li 
-    @btooltip@/b: the tool tip text displayed on the edit fields and labels
-  @/li
-  @li 
-    @b:min_value@/b: the minimum value (effective for numerical types and if no choices are present)
-  @/li
-  @li 
-    @b:max_value@/b: the maximum value (effective for numerical types and if no choices are present)
-  @/li
-  @li 
     @b:default@/b: the default value
   @/li
   @li 
@@ -165,53 +156,6 @@ This method can be reimplemented in a PCell class.
 It is supposed to adjust parameters to render a consistent parameter set and to fix 
 parameter range errors. This method is called for example inside the PCell user interface to 
 compute the actual parameters when "Apply" is pressed.
-
-@method callback_impl(name)
-
-@brief Provides a callback on a parameter change
-
-This method applies to user interface changes only. Whenever a parameter is changed
-on the parameter page, this method is called with the name of the parameter.
-
-On some occasions, this method called to establish a configuration unspecifically.
-In this case, the name is an empty string - indicating "all parameters may have changed".
-
-This method can change the state of this or any other parameter. For this, the 
-state objects are supplied instead of the parameter values. For example to enable 
-parameter "b" when a boolean parameter "a" is true, use the following code:
-
-@code
-def callback_impl(name)
-  if name == "a" || name == ""
-    b.enabled = a.value
-  end
-end
-@/code
-
-The "enabled" attribute of the \\PCellParameterState object indicates whether the
-parameter is enabled in the user interface. "a.value" delivers the value of the 
-(boolean type assumed) parameter "a".
-
-Note that the above code also checks for empty name to consider the case of a
-global refresh.
-
-Further useful attributes of the parameters are:
-
-@ul
-  @li 
-    @b enabled @/b: the parameter entry is grayed out if false
-  @/li
-  @li 
-    @b readonly @/b: the parameter cannot be edited (less strict than enabled)
-  @/li
-  @li 
-    @b visible @/b: the parameter entry is not visible if false
-  @/li
-  @li 
-    @b icon @/b: Sets an icon in front of the parameter indicating an error or a 
-      warning (use \\PCellParameterState#WarningIcon or \\PCellParameterState#ErrorIcon).
-  @/li
-@/ul
 
 @method can_create_from_shape_impl
 
@@ -272,11 +216,6 @@ module RBA
   # of a PCell
   class PCellDeclarationHelper &lt; PCellDeclaration
 
-    # makes PCellDeclaration's "layout" method available
-    if ! self.method_defined?(:_layout_base)
-      alias_method :_layout_base, :layout
-    end
-
     # import the Type... constants from PCellParameterDeclaration
     PCellParameterDeclaration.constants.each do |c|
       if !const_defined?(c)
@@ -288,98 +227,23 @@ module RBA
     def initialize
       @param_decls = []
       @param_values = nil
-      @param_states = nil
       @layout = nil
       @shape = nil
       @layer = nil
       @cell = nil
       @layer_param_index = []
-      @layers = nil
-      @state_stack = []
+      @layers = []
     end
     
     # provide accessors for the current layout and cell (for prod)
-    attr_reader :cell, :shape, :layer
-
-    def layout
-      @layout || _layout_base()
-    end
+    attr_reader :layout, :cell, :shape, :layer
 
     # provide fallback accessors in case of a name clash with a 
     # parameter
     def _layer; @layer; end
-    def _layout; @layout || _layout_base(); end
+    def _layout; @layout; end
     def _cell; @cell; end
     def _shape; @shape; end
-
-    # Starts an operation - pushes the state on the state stack
-
-    def _start
-      @state_stack &lt;&lt; [ @param_values, @param_states, @layers, @cell, @layout, @layer, @shape ]
-      self._reset_state
-    end
-
-    # Finishes an operation - pops the state from the state stack
-
-    def _finish
-      if ! @state_stack.empty?
-        @param_values, @param_states, @layers, @cell, @layout, @layer, @shape = @state_stack.pop
-      else
-        self._reset_state
-      end
-    end
-
-    # Resets the state to default values
-
-    def _reset_state
-
-      @param_values = nil
-      @param_states = nil
-      @layers = nil
-      @layout = nil
-
-      # This should be here:
-      #  @cell = nil
-      #  @layer = nil
-      #  @shape = nil
-      # but this would break backward compatibility of "display_text" (actually
-      # exploiting this bug) - fix this in the next major release.
-
-    end
-
-    # A helper method to access the nth parameter
-    
-    def _get_param(nth, name)
-      if @param_states
-        if ! @param_states.has_parameter?(name)
-          return RBA::PCellParameterState::new
-        else
-          return @param_states.parameter(name)
-        end
-      else
-        @param_values || raise("No parameters available.")
-        while @param_values.size &lt;= nth
-          @param_values &lt;&lt; nil
-        end
-        return @param_values[nth]
-      end
-    end
-    
-    # A helper method to set the nth parameter
-    
-    def _set_param(nth, value)
-      @param_values || raise("Cannot set parameter - inside 'callback_impl' use 'param_name.value = ...' to set the parameter's value.")
-      if @param_values.size &gt; nth
-        @param_values[nth] = value
-      end
-    end
-    
-    # A helper method to access the nth layer
-    
-    def _get_layer(nth)
-      @layers || raise("No layer index available - layers can be used only inside 'produce_impl'.")
-      @layers[nth]
-    end
     
     # define a parameter
     #   name         -&gt; the short name of the parameter
@@ -389,8 +253,6 @@ module RBA
     #   :hidden      -&gt; (boolean) true, if the parameter is not shown in the dialog
     #   :readonly    -&gt; (boolean) true, if the parameter cannot be edited
     #   :unit        -&gt; the unit string
-    #   :min_value   -&gt; the minimum value (only effective for numerical types and if no choices are present)
-    #   :max_value   -&gt; the maximum value (only effective for numerical types and if no choices are present)
     #   :default     -&gt; the default value
     #   :choices     -&gt; ([ [ d, v ], ...) choice descriptions/value for choice type
     # this method defines accessor methods for the parameters
@@ -405,22 +267,13 @@ module RBA
     #   param_{name}_layer
 
     def param(name, type, description, args = {})
-
-      if ! args.is_a?(Hash)
-        raise("Too many positional arguments for 'param' (3 expected) - use named arguments for default value etc.")
-      end
-
-      if name !~ /^[_A-Za-z]\w*$/
-        raise "Invalid parameter name #{name} (needs to be a word)"
-      end
     
       # create accessor methods for the parameters
       param_index = @param_decls.length
-      self.instance_eval("def #{name.to_s}; self._get_param(#{param_index}, '#{name}'); end")
-      self.instance_eval("def set_#{name.to_s}(v); self._set_param(#{param_index}, v); end")
-      self.instance_eval("def #{name.to_s}=(v); self._set_param(#{param_index}, v); end")
+      self.instance_eval("def #{name.to_s}; @param_values[#{param_index}]; end")
+      self.instance_eval("def set_#{name.to_s}(v); @param_values[#{param_index}] = v; end")
       if type == TypeLayer
-        self.instance_eval("def #{name.to_s}_layer; self._get_layer(#{@layer_param_index.length}); end")
+        self.instance_eval("def #{name.to_s}_layer; @layers[#{@layer_param_index.length}]; end")
         @layer_param_index.push(param_index)
       end
       
@@ -430,12 +283,9 @@ module RBA
       
       # set additional attributes of the parameters
       args[:default] &amp;&amp; pdecl.default = args[:default]
-      args[:tooltip] &amp;&amp; pdecl.tooltip = args[:tooltip]
       args[:hidden] &amp;&amp; pdecl.hidden = args[:hidden]
       args[:readonly] &amp;&amp; pdecl.readonly = args[:readonly]
       args[:unit] &amp;&amp; pdecl.unit = args[:unit]
-      args[:min_value] &amp;&amp; pdecl.min_value = args[:min_value]
-      args[:max_value] &amp;&amp; pdecl.max_value = args[:max_value]
       if args[:choices]
         if !args[:choices].is_a?(Array)
           raise ":choices value must be an array of two-element arrays (description, value)"
@@ -455,14 +305,9 @@ module RBA
     
     # implementation of display_text
     def display_text(parameters)
-      self._start
       @param_values = parameters
-      text = ""
-      begin
-        text = display_text_impl
-      ensure
-        self._finish
-      end
+      text = display_text_impl
+      @param_values = nil
       text
     end
     
@@ -473,94 +318,67 @@ module RBA
     
     # get the layer definitions
     def get_layers(parameters)
-      @layer_param_index.collect { |i| parameters[i] || RBA::LayerInfo::new }
+      @layer_param_index.collect { |i| parameters[i] }
     end
       
     # coerce parameters (make consistent)
     def coerce_parameters(layout, parameters)
-      self._start
       @param_values = parameters
       @layout = layout
-      begin
-        coerce_parameters_impl
-      ensure
-        ret = @param_values
-        self._finish
-      end
-      ret
-    end
-
-    # parameter change callback
-    def callback(layout, name, states)
-      self._start
-      @param_states = states
-      @layout = layout
-      begin
-        callback_impl(name)
-      ensure
-        self._finish
-      end
+      coerce_parameters_impl
+      @layout = nil
+      @param_values
     end
 
     # produce the layout    
     def produce(layout, layers, parameters, cell)
-      self._start
       @layers = layers
       @cell = cell
       @param_values = parameters
       @layout = layout
-      begin
-        produce_impl
-      ensure
-        self._finish
-      end
+      produce_impl
+      @layers = nil
+      @cell = nil
+      @param_values = nil
+      @layout = nil
     end
 
     # produce a helper for can_create_from_shape
     def can_create_from_shape(layout, shape, layer)
-      self._start
-      ret = false
       @layout = layout
       @shape = shape
       @layer = layer
-      begin
-        ret = can_create_from_shape_impl
-      ensure
-        self._finish
-      end
+      ret = can_create_from_shape_impl
+      @layout = nil
+      @shape = nil
+      @layer = nil
       ret
     end
     
-    # produce a helper for transformation_from_shape
+    # produce a helper for parameters_from_shape
     def transformation_from_shape(layout, shape, layer)
-      self._start
       @layout = layout
       @shape = shape
       @layer = layer
-      t = nil
-      begin
-        t = transformation_from_shape_impl
-      ensure
-        self._finish
-      end
+      t = transformation_from_shape_impl
+      @layout = nil
+      @shape = nil
+      @layer = nil
       t
     end
     
     # produce a helper for parameters_from_shape
     # with this helper, the implementation can use the parameter setters
     def parameters_from_shape(layout, shape, layer)
-      self._start
       @param_values = @param_decls.map { |pd| pd.default }
       @layout = layout
       @shape = shape
       @layer = layer
-      begin
-        parameters_from_shape_impl
-      ensure
-        ret = @param_values
-        self._finish
-      end
-      ret
+      parameters_from_shape_impl
+      @layout = nil
+      @shape = nil
+      @layer = nil
+      @param_values
     end
     
     # default implementation
@@ -570,10 +388,6 @@ module RBA
    
     # default implementation 
     def coerce_parameters_impl
-    end
-    
-    # default implementation 
-    def callback_impl(name)
     end
     
     # default implementation

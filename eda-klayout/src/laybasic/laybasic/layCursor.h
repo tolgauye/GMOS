@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -20,14 +20,13 @@
 
 */
 
+
 #ifndef HDR_layCursor
 #define HDR_layCursor
 
 #include "laybasicCommon.h"
 
-#if defined(HAVE_QT)
 class QCursor;
-#endif
 
 namespace lay
 {
@@ -65,15 +64,13 @@ struct LAYBASIC_PUBLIC Cursor
     closed_hand = 18
   };
 
-#if defined(HAVE_QT)
   /**
    *  @brief Get the QCursor from the lay::cursor_shape enum
    */
   static QCursor qcursor (cursor_shape cursor);
-#endif
-
 };
 
 }
 
 #endif
+

@@ -1,9 +1,7 @@
 
 @Library("osconfig") _
 
-properties([disableConcurrentBuilds()])
-
-node("linux") {
+node("master") {
 
   stage("Checkout sources") {
     checkout scm

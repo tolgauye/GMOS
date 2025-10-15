@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -63,6 +63,15 @@ public:
    */
   repository ()
     : m_set ()
+  {
+    //  .. nothing yet ..
+  }
+
+  /** 
+   *  @brief The copy constructor
+   */
+  repository (const repository<Sh> &d)
+    : m_set (d.m_set)
   {
     //  .. nothing yet ..
   }
@@ -167,15 +176,6 @@ public:
     return m_text_repository;
   }
 
-  /**
-   *  @brief Return the repository by tag
-   */
-  template <class Sh>
-  const db::repository<Sh> &repository (db::object_tag<Sh> tag) const
-  {
-    return const_cast<generic_repository<C> *> (this)->repository (tag);
-  }
-
   void mem_stat (MemStatistics *stat, MemStatistics::purpose_t purpose, int cat, bool no_self, void *parent) const
   {
     db::mem_stat (stat, purpose, cat, m_polygon_repository, no_self, parent);
@@ -217,7 +217,6 @@ struct shape_ref
 {
   typedef Sh shape_type;
   typedef typename Sh::coord_type coord_type;
-  typedef typename Sh::vector_type vector_type;
   typedef Trans trans_type;
   typedef db::generic_repository<coord_type> repository_type;
   typedef db::object_tag<shape_ref<Sh, Trans> > tag;

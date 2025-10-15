@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -36,15 +36,14 @@ namespace lay
 {
 
 SaltGrainDetailsTextWidget::SaltGrainDetailsTextWidget (QWidget *w)
-  : QTextBrowser (w), mp_grain (), m_detailed_view (false)
+  : QTextBrowser (w), mp_grain ()
 {
   setOpenLinks (false);
   setOpenExternalLinks (false);
   connect (this, SIGNAL (anchorClicked (const QUrl &)), this, SLOT (open_link (const QUrl &)));
 }
 
-void
-SaltGrainDetailsTextWidget::set_grain (const SaltGrain *g)
+void SaltGrainDetailsTextWidget::set_grain (const SaltGrain *g)
 {
   if (g) {
     mp_grain.reset (new SaltGrain (*g));
@@ -52,15 +51,6 @@ SaltGrainDetailsTextWidget::set_grain (const SaltGrain *g)
     mp_grain.reset (0);
   }
   setHtml (details_text ());
-}
-
-void
-SaltGrainDetailsTextWidget::show_detailed_view (bool f)
-{
-  if (m_detailed_view != f) {
-    m_detailed_view = f;
-    setHtml (details_text ());
-  }
 }
 
 void
@@ -152,9 +142,9 @@ SaltGrainDetailsTextWidget::loadResource (int type, const QUrl &url)
 static void produce_listing (QTextStream &stream, QDir dir, int level)
 {
   for (int i = 0; i < level + 1; ++i) {
-    stream << "<img src=\":/empty_12px.png\"/>&nbsp;&nbsp;";
+    stream << "<img src=\":/empty_12.png\"/>&nbsp;&nbsp;";
   }
-  stream << "<img src=\":/folder_12px.png\"/>&nbsp;&nbsp;<i>";
+  stream << "<img src=\":/folder_12.png\"/>&nbsp;&nbsp;<i>";
   if (level > 0) {
     stream << tl::escaped_to_html (tl::to_string (dir.dirName ())).c_str ();
   } else {
@@ -172,9 +162,9 @@ static void produce_listing (QTextStream &stream, QDir dir, int level)
       produce_listing (stream, QDir (fi.filePath ()), level);
     } else {
       for (int i = 0; i < level + 1; ++i) {
-        stream << "<img src=\":/empty_12px.png\"/>&nbsp;&nbsp;";
+        stream << "<img src=\":/empty_12.png\"/>&nbsp;&nbsp;";
       }
-      stream << "<img src=\":/file_12px.png\"/>&nbsp;&nbsp;" << tl::escaped_to_html (tl::to_string (*e)).c_str () << "<br/>\n";
+      stream << "<img src=\":/file_12.png\"/>&nbsp;&nbsp;" << tl::escaped_to_html (tl::to_string (*e)).c_str () << "<br/>\n";
     }
 
   }
@@ -191,11 +181,7 @@ SaltGrainDetailsTextWidget::details_text ()
   QBuffer buffer;
   buffer.open (QIODevice::WriteOnly);
   QTextStream stream (&buffer);
-#if QT_VERSION >= 0x60000
-  stream.setEncoding (QStringConverter::Utf8);
-#else
   stream.setCodec ("UTF-8");
-#endif
 
   stream << "<html><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"/></head><body>";
 
@@ -286,36 +272,32 @@ SaltGrainDetailsTextWidget::details_text ()
     stream << "<h3>" << QObject::tr ("Screenshot") << "</h3><p><img src=\":/screenshot\"/></p>";
   }
 
-  if (m_detailed_view) {
+  stream << "<br/>";
+  stream << "<h3>" << QObject::tr ("Installation") << "</h3>";
 
-    stream << "<br/>";
-    stream << "<h3>" << QObject::tr ("Installation") << "</h3>";
-
-    if (! g->url ().empty ()) {
-      stream << "<p><b>" << QObject::tr ("Download URL: ") << "</b>" << tl::to_qstring (tl::escaped_to_html (g->url ())) << "</p>";
-    }
-    if (! g->path ().empty () && ! g->installed_time ().isNull ()) {
-      stream << "<p><b>" << QObject::tr ("Installed: ") << "</b>" << g->installed_time ().toString () << "</p>";
-    }
-    if (! g->dependencies ().empty ()) {
-      stream << "<p><b>" << QObject::tr ("Depends on: ") << "</b><br/>";
-      for (std::vector<lay::SaltGrainDependency>::const_iterator d = g->dependencies ().begin (); d != g->dependencies ().end (); ++d) {
-        stream << "&nbsp;&nbsp;&nbsp;&nbsp;" << tl::to_qstring (tl::escaped_to_html (d->name)) << " ";
-        stream << tl::to_qstring (tl::escaped_to_html (d->version));
-        if (! d->url.empty ()) {
-          stream << " - ";
-          stream << "[" << tl::to_qstring (tl::escaped_to_html (d->url)) << "]<br/>";
-        }
+  if (! g->url ().empty ()) {
+    stream << "<p><b>" << QObject::tr ("Download URL: ") << "</b>" << tl::to_qstring (tl::escaped_to_html (g->url ())) << "</p>";
+  }
+  if (! g->path ().empty () && ! g->installed_time ().isNull ()) {
+    stream << "<p><b>" << QObject::tr ("Installed: ") << "</b>" << g->installed_time ().toString () << "</p>";
+  }
+  if (! g->dependencies ().empty ()) {
+    stream << "<p><b>" << QObject::tr ("Depends on: ") << "</b><br/>";
+    for (std::vector<lay::SaltGrainDependency>::const_iterator d = g->dependencies ().begin (); d != g->dependencies ().end (); ++d) {
+      stream << "&nbsp;&nbsp;&nbsp;&nbsp;" << tl::to_qstring (tl::escaped_to_html (d->name)) << " ";
+      stream << tl::to_qstring (tl::escaped_to_html (d->version));
+      if (! d->url.empty ()) {
+        stream << " - ";
+        stream << "[" << tl::to_qstring (tl::escaped_to_html (d->url)) << "]<br/>";
       }
-      stream << "</p>";
     }
+    stream << "</p>";
+  }
 
-    if (! g->path ().empty ()) {
-      stream << "<p><b>" << QObject::tr ("Installed files: ") << "</b></p><p>";
-      produce_listing (stream, QDir (tl::to_qstring (g->path ())), 0);
-      stream << "</p>";
-    }
-
+  if (! g->path ().empty ()) {
+    stream << "<p><b>" << QObject::tr ("Installed files: ") << "</b></p><p>";
+    produce_listing (stream, QDir (tl::to_qstring (g->path ())), 0);
+    stream << "</p>";
   }
 
   stream << "</td></tr></table>";

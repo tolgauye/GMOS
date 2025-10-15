@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -90,6 +90,7 @@
 #include <QWindow>
 #include "gsiQt.h"
 #include "gsiQtWidgetsCommon.h"
+#include "gsiDeclQtWidgetsTypeTraits.h"
 #include <memory>
 
 // -----------------------------------------------------------------------
@@ -372,7 +373,7 @@ static void _init_f_tr_4013 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("s");
   decl->add_arg<const char * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("c", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("c", true, "__null");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("n", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -384,7 +385,7 @@ static void _call_f_tr_4013 (const qt_gsi::GenericStaticMethod * /*decl*/, gsi::
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (__null, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QColumnView::tr (arg1, arg2, arg3));
 }
@@ -397,7 +398,7 @@ static void _init_f_trUtf8_4013 (qt_gsi::GenericStaticMethod *decl)
 {
   static gsi::ArgSpecBase argspec_0 ("s");
   decl->add_arg<const char * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("c", true, "nullptr");
+  static gsi::ArgSpecBase argspec_1 ("c", true, "__null");
   decl->add_arg<const char * > (argspec_1);
   static gsi::ArgSpecBase argspec_2 ("n", true, "-1");
   decl->add_arg<int > (argspec_2);
@@ -409,7 +410,7 @@ static void _call_f_trUtf8_4013 (const qt_gsi::GenericStaticMethod * /*decl*/, g
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
   const char *arg1 = gsi::arg_reader<const char * >() (args, heap);
-  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (nullptr, heap);
+  const char *arg2 = args ? gsi::arg_reader<const char * >() (args, heap) : gsi::arg_maker<const char * >() (__null, heap);
   int arg3 = args ? gsi::arg_reader<int >() (args, heap) : gsi::arg_maker<int >() (-1, heap);
   ret.write<QString > ((QString)QColumnView::trUtf8 (arg1, arg2, arg3));
 }
@@ -442,7 +443,6 @@ static gsi::Methods methods_QColumnView () {
   methods += gsi::qt_signal<const QModelIndex & > ("doubleClicked(const QModelIndex &)", "doubleClicked", gsi::arg("index"), "@brief Signal declaration for QColumnView::doubleClicked(const QModelIndex &index)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<const QModelIndex & > ("entered(const QModelIndex &)", "entered", gsi::arg("index"), "@brief Signal declaration for QColumnView::entered(const QModelIndex &index)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<const QSize & > ("iconSizeChanged(const QSize &)", "iconSizeChanged", gsi::arg("size"), "@brief Signal declaration for QColumnView::iconSizeChanged(const QSize &size)\nYou can bind a procedure to this signal.");
-  methods += gsi::qt_signal<const QString & > ("objectNameChanged(const QString &)", "objectNameChanged", gsi::arg("objectName"), "@brief Signal declaration for QColumnView::objectNameChanged(const QString &objectName)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<const QModelIndex & > ("pressed(const QModelIndex &)", "pressed", gsi::arg("index"), "@brief Signal declaration for QColumnView::pressed(const QModelIndex &index)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal<const QModelIndex & > ("updatePreviewWidget(const QModelIndex &)", "updatePreviewWidget", gsi::arg("index"), "@brief Signal declaration for QColumnView::updatePreviewWidget(const QModelIndex &index)\nYou can bind a procedure to this signal.");
   methods += gsi::qt_signal ("viewportEntered()", "viewportEntered", "@brief Signal declaration for QColumnView::viewportEntered()\nYou can bind a procedure to this signal.");
@@ -780,13 +780,6 @@ public:
     }
   }
 
-  //  [emitter impl] void QColumnView::objectNameChanged(const QString &objectName)
-  void emitter_QColumnView_objectNameChanged_4567(const QString &objectName)
-  {
-    __SUPPRESS_UNUSED_WARNING (objectName);
-    throw tl::Exception ("Can't emit private signal 'void QColumnView::objectNameChanged(const QString &objectName)'");
-  }
-
   //  [adaptor impl] QPaintEngine *QColumnView::paintEngine()
   QPaintEngine * cbs_paintEngine_c0_0() const
   {
@@ -1018,18 +1011,18 @@ public:
     emit QColumnView::windowTitleChanged(title);
   }
 
-  //  [adaptor impl] void QColumnView::actionEvent(QActionEvent *event)
-  void cbs_actionEvent_1823_0(QActionEvent *event)
+  //  [adaptor impl] void QColumnView::actionEvent(QActionEvent *)
+  void cbs_actionEvent_1823_0(QActionEvent *arg1)
   {
-    QColumnView::actionEvent(event);
+    QColumnView::actionEvent(arg1);
   }
 
-  virtual void actionEvent(QActionEvent *event)
+  virtual void actionEvent(QActionEvent *arg1)
   {
     if (cb_actionEvent_1823_0.can_issue()) {
-      cb_actionEvent_1823_0.issue<QColumnView_Adaptor, QActionEvent *>(&QColumnView_Adaptor::cbs_actionEvent_1823_0, event);
+      cb_actionEvent_1823_0.issue<QColumnView_Adaptor, QActionEvent *>(&QColumnView_Adaptor::cbs_actionEvent_1823_0, arg1);
     } else {
-      QColumnView::actionEvent(event);
+      QColumnView::actionEvent(arg1);
     }
   }
 
@@ -1048,18 +1041,18 @@ public:
     }
   }
 
-  //  [adaptor impl] void QColumnView::childEvent(QChildEvent *event)
-  void cbs_childEvent_1701_0(QChildEvent *event)
+  //  [adaptor impl] void QColumnView::childEvent(QChildEvent *)
+  void cbs_childEvent_1701_0(QChildEvent *arg1)
   {
-    QColumnView::childEvent(event);
+    QColumnView::childEvent(arg1);
   }
 
-  virtual void childEvent(QChildEvent *event)
+  virtual void childEvent(QChildEvent *arg1)
   {
     if (cb_childEvent_1701_0.can_issue()) {
-      cb_childEvent_1701_0.issue<QColumnView_Adaptor, QChildEvent *>(&QColumnView_Adaptor::cbs_childEvent_1701_0, event);
+      cb_childEvent_1701_0.issue<QColumnView_Adaptor, QChildEvent *>(&QColumnView_Adaptor::cbs_childEvent_1701_0, arg1);
     } else {
-      QColumnView::childEvent(event);
+      QColumnView::childEvent(arg1);
     }
   }
 
@@ -1078,18 +1071,18 @@ public:
     }
   }
 
-  //  [adaptor impl] void QColumnView::closeEvent(QCloseEvent *event)
-  void cbs_closeEvent_1719_0(QCloseEvent *event)
+  //  [adaptor impl] void QColumnView::closeEvent(QCloseEvent *)
+  void cbs_closeEvent_1719_0(QCloseEvent *arg1)
   {
-    QColumnView::closeEvent(event);
+    QColumnView::closeEvent(arg1);
   }
 
-  virtual void closeEvent(QCloseEvent *event)
+  virtual void closeEvent(QCloseEvent *arg1)
   {
     if (cb_closeEvent_1719_0.can_issue()) {
-      cb_closeEvent_1719_0.issue<QColumnView_Adaptor, QCloseEvent *>(&QColumnView_Adaptor::cbs_closeEvent_1719_0, event);
+      cb_closeEvent_1719_0.issue<QColumnView_Adaptor, QCloseEvent *>(&QColumnView_Adaptor::cbs_closeEvent_1719_0, arg1);
     } else {
-      QColumnView::closeEvent(event);
+      QColumnView::closeEvent(arg1);
     }
   }
 
@@ -1153,18 +1146,18 @@ public:
     }
   }
 
-  //  [adaptor impl] void QColumnView::customEvent(QEvent *event)
-  void cbs_customEvent_1217_0(QEvent *event)
+  //  [adaptor impl] void QColumnView::customEvent(QEvent *)
+  void cbs_customEvent_1217_0(QEvent *arg1)
   {
-    QColumnView::customEvent(event);
+    QColumnView::customEvent(arg1);
   }
 
-  virtual void customEvent(QEvent *event)
+  virtual void customEvent(QEvent *arg1)
   {
     if (cb_customEvent_1217_0.can_issue()) {
-      cb_customEvent_1217_0.issue<QColumnView_Adaptor, QEvent *>(&QColumnView_Adaptor::cbs_customEvent_1217_0, event);
+      cb_customEvent_1217_0.issue<QColumnView_Adaptor, QEvent *>(&QColumnView_Adaptor::cbs_customEvent_1217_0, arg1);
     } else {
-      QColumnView::customEvent(event);
+      QColumnView::customEvent(arg1);
     }
   }
 
@@ -1288,18 +1281,18 @@ public:
     }
   }
 
-  //  [adaptor impl] void QColumnView::enterEvent(QEvent *event)
-  void cbs_enterEvent_1217_0(QEvent *event)
+  //  [adaptor impl] void QColumnView::enterEvent(QEvent *)
+  void cbs_enterEvent_1217_0(QEvent *arg1)
   {
-    QColumnView::enterEvent(event);
+    QColumnView::enterEvent(arg1);
   }
 
-  virtual void enterEvent(QEvent *event)
+  virtual void enterEvent(QEvent *arg1)
   {
     if (cb_enterEvent_1217_0.can_issue()) {
-      cb_enterEvent_1217_0.issue<QColumnView_Adaptor, QEvent *>(&QColumnView_Adaptor::cbs_enterEvent_1217_0, event);
+      cb_enterEvent_1217_0.issue<QColumnView_Adaptor, QEvent *>(&QColumnView_Adaptor::cbs_enterEvent_1217_0, arg1);
     } else {
-      QColumnView::enterEvent(event);
+      QColumnView::enterEvent(arg1);
     }
   }
 
@@ -1318,18 +1311,18 @@ public:
     }
   }
 
-  //  [adaptor impl] bool QColumnView::eventFilter(QObject *object, QEvent *event)
-  bool cbs_eventFilter_2411_0(QObject *object, QEvent *event)
+  //  [adaptor impl] bool QColumnView::eventFilter(QObject *, QEvent *)
+  bool cbs_eventFilter_2411_0(QObject *arg1, QEvent *arg2)
   {
-    return QColumnView::eventFilter(object, event);
+    return QColumnView::eventFilter(arg1, arg2);
   }
 
-  virtual bool eventFilter(QObject *object, QEvent *event)
+  virtual bool eventFilter(QObject *arg1, QEvent *arg2)
   {
     if (cb_eventFilter_2411_0.can_issue()) {
-      return cb_eventFilter_2411_0.issue<QColumnView_Adaptor, bool, QObject *, QEvent *>(&QColumnView_Adaptor::cbs_eventFilter_2411_0, object, event);
+      return cb_eventFilter_2411_0.issue<QColumnView_Adaptor, bool, QObject *, QEvent *>(&QColumnView_Adaptor::cbs_eventFilter_2411_0, arg1, arg2);
     } else {
-      return QColumnView::eventFilter(object, event);
+      return QColumnView::eventFilter(arg1, arg2);
     }
   }
 
@@ -1378,18 +1371,18 @@ public:
     }
   }
 
-  //  [adaptor impl] void QColumnView::hideEvent(QHideEvent *event)
-  void cbs_hideEvent_1595_0(QHideEvent *event)
+  //  [adaptor impl] void QColumnView::hideEvent(QHideEvent *)
+  void cbs_hideEvent_1595_0(QHideEvent *arg1)
   {
-    QColumnView::hideEvent(event);
+    QColumnView::hideEvent(arg1);
   }
 
-  virtual void hideEvent(QHideEvent *event)
+  virtual void hideEvent(QHideEvent *arg1)
   {
     if (cb_hideEvent_1595_0.can_issue()) {
-      cb_hideEvent_1595_0.issue<QColumnView_Adaptor, QHideEvent *>(&QColumnView_Adaptor::cbs_hideEvent_1595_0, event);
+      cb_hideEvent_1595_0.issue<QColumnView_Adaptor, QHideEvent *>(&QColumnView_Adaptor::cbs_hideEvent_1595_0, arg1);
     } else {
-      QColumnView::hideEvent(event);
+      QColumnView::hideEvent(arg1);
     }
   }
 
@@ -1498,33 +1491,33 @@ public:
     }
   }
 
-  //  [adaptor impl] void QColumnView::keyReleaseEvent(QKeyEvent *event)
-  void cbs_keyReleaseEvent_1514_0(QKeyEvent *event)
+  //  [adaptor impl] void QColumnView::keyReleaseEvent(QKeyEvent *)
+  void cbs_keyReleaseEvent_1514_0(QKeyEvent *arg1)
   {
-    QColumnView::keyReleaseEvent(event);
+    QColumnView::keyReleaseEvent(arg1);
   }
 
-  virtual void keyReleaseEvent(QKeyEvent *event)
+  virtual void keyReleaseEvent(QKeyEvent *arg1)
   {
     if (cb_keyReleaseEvent_1514_0.can_issue()) {
-      cb_keyReleaseEvent_1514_0.issue<QColumnView_Adaptor, QKeyEvent *>(&QColumnView_Adaptor::cbs_keyReleaseEvent_1514_0, event);
+      cb_keyReleaseEvent_1514_0.issue<QColumnView_Adaptor, QKeyEvent *>(&QColumnView_Adaptor::cbs_keyReleaseEvent_1514_0, arg1);
     } else {
-      QColumnView::keyReleaseEvent(event);
+      QColumnView::keyReleaseEvent(arg1);
     }
   }
 
-  //  [adaptor impl] void QColumnView::leaveEvent(QEvent *event)
-  void cbs_leaveEvent_1217_0(QEvent *event)
+  //  [adaptor impl] void QColumnView::leaveEvent(QEvent *)
+  void cbs_leaveEvent_1217_0(QEvent *arg1)
   {
-    QColumnView::leaveEvent(event);
+    QColumnView::leaveEvent(arg1);
   }
 
-  virtual void leaveEvent(QEvent *event)
+  virtual void leaveEvent(QEvent *arg1)
   {
     if (cb_leaveEvent_1217_0.can_issue()) {
-      cb_leaveEvent_1217_0.issue<QColumnView_Adaptor, QEvent *>(&QColumnView_Adaptor::cbs_leaveEvent_1217_0, event);
+      cb_leaveEvent_1217_0.issue<QColumnView_Adaptor, QEvent *>(&QColumnView_Adaptor::cbs_leaveEvent_1217_0, arg1);
     } else {
-      QColumnView::leaveEvent(event);
+      QColumnView::leaveEvent(arg1);
     }
   }
 
@@ -1618,18 +1611,18 @@ public:
     }
   }
 
-  //  [adaptor impl] void QColumnView::moveEvent(QMoveEvent *event)
-  void cbs_moveEvent_1624_0(QMoveEvent *event)
+  //  [adaptor impl] void QColumnView::moveEvent(QMoveEvent *)
+  void cbs_moveEvent_1624_0(QMoveEvent *arg1)
   {
-    QColumnView::moveEvent(event);
+    QColumnView::moveEvent(arg1);
   }
 
-  virtual void moveEvent(QMoveEvent *event)
+  virtual void moveEvent(QMoveEvent *arg1)
   {
     if (cb_moveEvent_1624_0.can_issue()) {
-      cb_moveEvent_1624_0.issue<QColumnView_Adaptor, QMoveEvent *>(&QColumnView_Adaptor::cbs_moveEvent_1624_0, event);
+      cb_moveEvent_1624_0.issue<QColumnView_Adaptor, QMoveEvent *>(&QColumnView_Adaptor::cbs_moveEvent_1624_0, arg1);
     } else {
-      QColumnView::moveEvent(event);
+      QColumnView::moveEvent(arg1);
     }
   }
 
@@ -1813,18 +1806,18 @@ public:
     }
   }
 
-  //  [adaptor impl] void QColumnView::showEvent(QShowEvent *event)
-  void cbs_showEvent_1634_0(QShowEvent *event)
+  //  [adaptor impl] void QColumnView::showEvent(QShowEvent *)
+  void cbs_showEvent_1634_0(QShowEvent *arg1)
   {
-    QColumnView::showEvent(event);
+    QColumnView::showEvent(arg1);
   }
 
-  virtual void showEvent(QShowEvent *event)
+  virtual void showEvent(QShowEvent *arg1)
   {
     if (cb_showEvent_1634_0.can_issue()) {
-      cb_showEvent_1634_0.issue<QColumnView_Adaptor, QShowEvent *>(&QColumnView_Adaptor::cbs_showEvent_1634_0, event);
+      cb_showEvent_1634_0.issue<QColumnView_Adaptor, QShowEvent *>(&QColumnView_Adaptor::cbs_showEvent_1634_0, arg1);
     } else {
-      QColumnView::showEvent(event);
+      QColumnView::showEvent(arg1);
     }
   }
 
@@ -1843,18 +1836,18 @@ public:
     }
   }
 
-  //  [adaptor impl] void QColumnView::tabletEvent(QTabletEvent *event)
-  void cbs_tabletEvent_1821_0(QTabletEvent *event)
+  //  [adaptor impl] void QColumnView::tabletEvent(QTabletEvent *)
+  void cbs_tabletEvent_1821_0(QTabletEvent *arg1)
   {
-    QColumnView::tabletEvent(event);
+    QColumnView::tabletEvent(arg1);
   }
 
-  virtual void tabletEvent(QTabletEvent *event)
+  virtual void tabletEvent(QTabletEvent *arg1)
   {
     if (cb_tabletEvent_1821_0.can_issue()) {
-      cb_tabletEvent_1821_0.issue<QColumnView_Adaptor, QTabletEvent *>(&QColumnView_Adaptor::cbs_tabletEvent_1821_0, event);
+      cb_tabletEvent_1821_0.issue<QColumnView_Adaptor, QTabletEvent *>(&QColumnView_Adaptor::cbs_tabletEvent_1821_0, arg1);
     } else {
-      QColumnView::tabletEvent(event);
+      QColumnView::tabletEvent(arg1);
     }
   }
 
@@ -2134,7 +2127,7 @@ QColumnView_Adaptor::~QColumnView_Adaptor() { }
 
 static void _init_ctor_QColumnView_Adaptor_1315 (qt_gsi::GenericStaticMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("parent", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("parent", true, "0");
   decl->add_arg<QWidget * > (argspec_0);
   decl->set_return_new<QColumnView_Adaptor> ();
 }
@@ -2143,16 +2136,16 @@ static void _call_ctor_QColumnView_Adaptor_1315 (const qt_gsi::GenericStaticMeth
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  QWidget *arg1 = args ? gsi::arg_reader<QWidget * >() (args, heap) : gsi::arg_maker<QWidget * >() (nullptr, heap);
+  QWidget *arg1 = args ? gsi::arg_reader<QWidget * >() (args, heap) : gsi::arg_maker<QWidget * >() (0, heap);
   ret.write<QColumnView_Adaptor *> (new QColumnView_Adaptor (arg1));
 }
 
 
-// void QColumnView::actionEvent(QActionEvent *event)
+// void QColumnView::actionEvent(QActionEvent *)
 
 static void _init_cbs_actionEvent_1823_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QActionEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -2214,11 +2207,11 @@ static void _set_callback_cbs_changeEvent_1217_0 (void *cls, const gsi::Callback
 }
 
 
-// void QColumnView::childEvent(QChildEvent *event)
+// void QColumnView::childEvent(QChildEvent *)
 
 static void _init_cbs_childEvent_1701_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QChildEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -2283,11 +2276,11 @@ static void _set_callback_cbs_closeEditor_4926_0 (void *cls, const gsi::Callback
 }
 
 
-// void QColumnView::closeEvent(QCloseEvent *event)
+// void QColumnView::closeEvent(QCloseEvent *)
 
 static void _init_cbs_closeEvent_1719_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QCloseEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -2448,11 +2441,11 @@ static void _call_emitter_customContextMenuRequested_1916 (const qt_gsi::Generic
 }
 
 
-// void QColumnView::customEvent(QEvent *event)
+// void QColumnView::customEvent(QEvent *)
 
 static void _init_cbs_customEvent_1217_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -2528,7 +2521,7 @@ static void _call_fp_destroy_1620 (const qt_gsi::GenericMethod * /*decl*/, void 
 
 static void _init_emitter_destroyed_1302 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("arg1", true, "nullptr");
+  static gsi::ArgSpecBase argspec_0 ("arg1", true, "0");
   decl->add_arg<QObject * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -2537,7 +2530,7 @@ static void _call_emitter_destroyed_1302 (const qt_gsi::GenericMethod * /*decl*/
 {
   __SUPPRESS_UNUSED_WARNING(args);
   tl::Heap heap;
-  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (nullptr, heap);
+  QObject *arg1 = args ? gsi::arg_reader<QObject * >() (args, heap) : gsi::arg_maker<QObject * >() (0, heap);
   ((QColumnView_Adaptor *)cls)->emitter_QColumnView_destroyed_1302 (arg1);
 }
 
@@ -2815,11 +2808,11 @@ static void _set_callback_cbs_editorDestroyed_1302_0 (void *cls, const gsi::Call
 }
 
 
-// void QColumnView::enterEvent(QEvent *event)
+// void QColumnView::enterEvent(QEvent *)
 
 static void _init_cbs_enterEvent_1217_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -2880,13 +2873,13 @@ static void _set_callback_cbs_event_1217_0 (void *cls, const gsi::Callback &cb)
 }
 
 
-// bool QColumnView::eventFilter(QObject *object, QEvent *event)
+// bool QColumnView::eventFilter(QObject *, QEvent *)
 
 static void _init_cbs_eventFilter_2411_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("object");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QObject * > (argspec_0);
-  static gsi::ArgSpecBase argspec_1 ("event");
+  static gsi::ArgSpecBase argspec_1 ("arg2");
   decl->add_arg<QEvent * > (argspec_1);
   decl->set_return<bool > ();
 }
@@ -3062,11 +3055,11 @@ static void _set_callback_cbs_heightForWidth_c767_0 (void *cls, const gsi::Callb
 }
 
 
-// void QColumnView::hideEvent(QHideEvent *event)
+// void QColumnView::hideEvent(QHideEvent *)
 
 static void _init_cbs_hideEvent_1595_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QHideEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -3382,11 +3375,11 @@ static void _set_callback_cbs_keyPressEvent_1514_0 (void *cls, const gsi::Callba
 }
 
 
-// void QColumnView::keyReleaseEvent(QKeyEvent *event)
+// void QColumnView::keyReleaseEvent(QKeyEvent *)
 
 static void _init_cbs_keyReleaseEvent_1514_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QKeyEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -3430,11 +3423,11 @@ static void _set_callback_cbs_keyboardSearch_2025_0 (void *cls, const gsi::Callb
 }
 
 
-// void QColumnView::leaveEvent(QEvent *event)
+// void QColumnView::leaveEvent(QEvent *)
 
 static void _init_cbs_leaveEvent_1217_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -3618,11 +3611,11 @@ static void _set_callback_cbs_moveCursor_6476_0 (void *cls, const gsi::Callback 
 }
 
 
-// void QColumnView::moveEvent(QMoveEvent *event)
+// void QColumnView::moveEvent(QMoveEvent *)
 
 static void _init_cbs_moveEvent_1624_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QMoveEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -3668,24 +3661,6 @@ static void _call_cbs_nativeEvent_4678_0 (const qt_gsi::GenericMethod * /*decl*/
 static void _set_callback_cbs_nativeEvent_4678_0 (void *cls, const gsi::Callback &cb)
 {
   ((QColumnView_Adaptor *)cls)->cb_nativeEvent_4678_0 = cb;
-}
-
-
-// emitter void QColumnView::objectNameChanged(const QString &objectName)
-
-static void _init_emitter_objectNameChanged_4567 (qt_gsi::GenericMethod *decl)
-{
-  static gsi::ArgSpecBase argspec_0 ("objectName");
-  decl->add_arg<const QString & > (argspec_0);
-  decl->set_return<void > ();
-}
-
-static void _call_emitter_objectNameChanged_4567 (const qt_gsi::GenericMethod * /*decl*/, void *cls, gsi::SerialArgs &args, gsi::SerialArgs & /*ret*/) 
-{
-  __SUPPRESS_UNUSED_WARNING(args);
-  tl::Heap heap;
-  const QString &arg1 = gsi::arg_reader<const QString & >() (args, heap);
-  ((QColumnView_Adaptor *)cls)->emitter_QColumnView_objectNameChanged_4567 (arg1);
 }
 
 
@@ -4395,11 +4370,11 @@ static void _set_callback_cbs_sharedPainter_c0_0 (void *cls, const gsi::Callback
 }
 
 
-// void QColumnView::showEvent(QShowEvent *event)
+// void QColumnView::showEvent(QShowEvent *)
 
 static void _init_cbs_showEvent_1634_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QShowEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -4552,11 +4527,11 @@ static void _call_fp_stopAutoScroll_0 (const qt_gsi::GenericMethod * /*decl*/, v
 }
 
 
-// void QColumnView::tabletEvent(QTabletEvent *event)
+// void QColumnView::tabletEvent(QTabletEvent *)
 
 static void _init_cbs_tabletEvent_1821_0 (qt_gsi::GenericMethod *decl)
 {
-  static gsi::ArgSpecBase argspec_0 ("event");
+  static gsi::ArgSpecBase argspec_0 ("arg1");
   decl->add_arg<QTabletEvent * > (argspec_0);
   decl->set_return<void > ();
 }
@@ -4995,223 +4970,222 @@ gsi::Class<QColumnView> &qtdecl_QColumnView ();
 static gsi::Methods methods_QColumnView_Adaptor () {
   gsi::Methods methods;
   methods += new qt_gsi::GenericStaticMethod ("new", "@brief Constructor QColumnView::QColumnView(QWidget *parent)\nThis method creates an object of class QColumnView.", &_init_ctor_QColumnView_Adaptor_1315, &_call_ctor_QColumnView_Adaptor_1315);
-  methods += new qt_gsi::GenericMethod ("*actionEvent", "@brief Virtual method void QColumnView::actionEvent(QActionEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_actionEvent_1823_0, &_call_cbs_actionEvent_1823_0);
-  methods += new qt_gsi::GenericMethod ("*actionEvent", "@hide", false, &_init_cbs_actionEvent_1823_0, &_call_cbs_actionEvent_1823_0, &_set_callback_cbs_actionEvent_1823_0);
+  methods += new qt_gsi::GenericMethod ("*actionEvent", "@hide", false, &_init_cbs_actionEvent_1823_0, &_call_cbs_actionEvent_1823_0);
+  methods += new qt_gsi::GenericMethod ("*actionEvent", "@brief Virtual method void QColumnView::actionEvent(QActionEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_actionEvent_1823_0, &_call_cbs_actionEvent_1823_0, &_set_callback_cbs_actionEvent_1823_0);
   methods += new qt_gsi::GenericMethod ("emit_activated", "@brief Emitter for signal void QColumnView::activated(const QModelIndex &index)\nCall this method to emit this signal.", false, &_init_emitter_activated_2395, &_call_emitter_activated_2395);
-  methods += new qt_gsi::GenericMethod ("*changeEvent", "@brief Virtual method void QColumnView::changeEvent(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_changeEvent_1217_0, &_call_cbs_changeEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*changeEvent", "@hide", false, &_init_cbs_changeEvent_1217_0, &_call_cbs_changeEvent_1217_0, &_set_callback_cbs_changeEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*childEvent", "@brief Virtual method void QColumnView::childEvent(QChildEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0);
-  methods += new qt_gsi::GenericMethod ("*childEvent", "@hide", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0, &_set_callback_cbs_childEvent_1701_0);
+  methods += new qt_gsi::GenericMethod ("*changeEvent", "@hide", false, &_init_cbs_changeEvent_1217_0, &_call_cbs_changeEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*changeEvent", "@brief Virtual method void QColumnView::changeEvent(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_changeEvent_1217_0, &_call_cbs_changeEvent_1217_0, &_set_callback_cbs_changeEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*childEvent", "@hide", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0);
+  methods += new qt_gsi::GenericMethod ("*childEvent", "@brief Virtual method void QColumnView::childEvent(QChildEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_childEvent_1701_0, &_call_cbs_childEvent_1701_0, &_set_callback_cbs_childEvent_1701_0);
   methods += new qt_gsi::GenericMethod ("emit_clicked", "@brief Emitter for signal void QColumnView::clicked(const QModelIndex &index)\nCall this method to emit this signal.", false, &_init_emitter_clicked_2395, &_call_emitter_clicked_2395);
-  methods += new qt_gsi::GenericMethod ("*closeEditor", "@brief Virtual method void QColumnView::closeEditor(QWidget *editor, QAbstractItemDelegate::EndEditHint hint)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_closeEditor_4926_0, &_call_cbs_closeEditor_4926_0);
-  methods += new qt_gsi::GenericMethod ("*closeEditor", "@hide", false, &_init_cbs_closeEditor_4926_0, &_call_cbs_closeEditor_4926_0, &_set_callback_cbs_closeEditor_4926_0);
-  methods += new qt_gsi::GenericMethod ("*closeEvent", "@brief Virtual method void QColumnView::closeEvent(QCloseEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_closeEvent_1719_0, &_call_cbs_closeEvent_1719_0);
-  methods += new qt_gsi::GenericMethod ("*closeEvent", "@hide", false, &_init_cbs_closeEvent_1719_0, &_call_cbs_closeEvent_1719_0, &_set_callback_cbs_closeEvent_1719_0);
-  methods += new qt_gsi::GenericMethod ("*commitData", "@brief Virtual method void QColumnView::commitData(QWidget *editor)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_commitData_1315_0, &_call_cbs_commitData_1315_0);
-  methods += new qt_gsi::GenericMethod ("*commitData", "@hide", false, &_init_cbs_commitData_1315_0, &_call_cbs_commitData_1315_0, &_set_callback_cbs_commitData_1315_0);
-  methods += new qt_gsi::GenericMethod ("*contextMenuEvent", "@brief Virtual method void QColumnView::contextMenuEvent(QContextMenuEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_contextMenuEvent_2363_0, &_call_cbs_contextMenuEvent_2363_0);
-  methods += new qt_gsi::GenericMethod ("*contextMenuEvent", "@hide", false, &_init_cbs_contextMenuEvent_2363_0, &_call_cbs_contextMenuEvent_2363_0, &_set_callback_cbs_contextMenuEvent_2363_0);
-  methods += new qt_gsi::GenericMethod ("*create|qt_create", "@brief Method void QColumnView::create(WId, bool initializeWindow, bool destroyOldWindow)\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_create_2208, &_call_fp_create_2208);
-  methods += new qt_gsi::GenericMethod ("*createColumn", "@brief Virtual method QAbstractItemView *QColumnView::createColumn(const QModelIndex &rootIndex)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_createColumn_2395_0, &_call_cbs_createColumn_2395_0);
-  methods += new qt_gsi::GenericMethod ("*createColumn", "@hide", false, &_init_cbs_createColumn_2395_0, &_call_cbs_createColumn_2395_0, &_set_callback_cbs_createColumn_2395_0);
-  methods += new qt_gsi::GenericMethod ("*currentChanged", "@brief Virtual method void QColumnView::currentChanged(const QModelIndex &current, const QModelIndex &previous)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_currentChanged_4682_0, &_call_cbs_currentChanged_4682_0);
-  methods += new qt_gsi::GenericMethod ("*currentChanged", "@hide", false, &_init_cbs_currentChanged_4682_0, &_call_cbs_currentChanged_4682_0, &_set_callback_cbs_currentChanged_4682_0);
+  methods += new qt_gsi::GenericMethod ("*closeEditor", "@hide", false, &_init_cbs_closeEditor_4926_0, &_call_cbs_closeEditor_4926_0);
+  methods += new qt_gsi::GenericMethod ("*closeEditor", "@brief Virtual method void QColumnView::closeEditor(QWidget *editor, QAbstractItemDelegate::EndEditHint hint)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_closeEditor_4926_0, &_call_cbs_closeEditor_4926_0, &_set_callback_cbs_closeEditor_4926_0);
+  methods += new qt_gsi::GenericMethod ("*closeEvent", "@hide", false, &_init_cbs_closeEvent_1719_0, &_call_cbs_closeEvent_1719_0);
+  methods += new qt_gsi::GenericMethod ("*closeEvent", "@brief Virtual method void QColumnView::closeEvent(QCloseEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_closeEvent_1719_0, &_call_cbs_closeEvent_1719_0, &_set_callback_cbs_closeEvent_1719_0);
+  methods += new qt_gsi::GenericMethod ("*commitData", "@hide", false, &_init_cbs_commitData_1315_0, &_call_cbs_commitData_1315_0);
+  methods += new qt_gsi::GenericMethod ("*commitData", "@brief Virtual method void QColumnView::commitData(QWidget *editor)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_commitData_1315_0, &_call_cbs_commitData_1315_0, &_set_callback_cbs_commitData_1315_0);
+  methods += new qt_gsi::GenericMethod ("*contextMenuEvent", "@hide", false, &_init_cbs_contextMenuEvent_2363_0, &_call_cbs_contextMenuEvent_2363_0);
+  methods += new qt_gsi::GenericMethod ("*contextMenuEvent", "@brief Virtual method void QColumnView::contextMenuEvent(QContextMenuEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_contextMenuEvent_2363_0, &_call_cbs_contextMenuEvent_2363_0, &_set_callback_cbs_contextMenuEvent_2363_0);
+  methods += new qt_gsi::GenericMethod ("*qt_create", "@brief Method void QColumnView::create(WId, bool initializeWindow, bool destroyOldWindow)\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_create_2208, &_call_fp_create_2208);
+  methods += new qt_gsi::GenericMethod ("*createColumn", "@hide", false, &_init_cbs_createColumn_2395_0, &_call_cbs_createColumn_2395_0);
+  methods += new qt_gsi::GenericMethod ("*createColumn", "@brief Virtual method QAbstractItemView *QColumnView::createColumn(const QModelIndex &rootIndex)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_createColumn_2395_0, &_call_cbs_createColumn_2395_0, &_set_callback_cbs_createColumn_2395_0);
+  methods += new qt_gsi::GenericMethod ("*currentChanged", "@hide", false, &_init_cbs_currentChanged_4682_0, &_call_cbs_currentChanged_4682_0);
+  methods += new qt_gsi::GenericMethod ("*currentChanged", "@brief Virtual method void QColumnView::currentChanged(const QModelIndex &current, const QModelIndex &previous)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_currentChanged_4682_0, &_call_cbs_currentChanged_4682_0, &_set_callback_cbs_currentChanged_4682_0);
   methods += new qt_gsi::GenericMethod ("emit_customContextMenuRequested", "@brief Emitter for signal void QColumnView::customContextMenuRequested(const QPoint &pos)\nCall this method to emit this signal.", false, &_init_emitter_customContextMenuRequested_1916, &_call_emitter_customContextMenuRequested_1916);
-  methods += new qt_gsi::GenericMethod ("*customEvent", "@brief Virtual method void QColumnView::customEvent(QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*customEvent", "@hide", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0, &_set_callback_cbs_customEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*dataChanged", "@brief Virtual method void QColumnView::dataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_dataChanged_7048_1, &_call_cbs_dataChanged_7048_1);
-  methods += new qt_gsi::GenericMethod ("*dataChanged", "@hide", false, &_init_cbs_dataChanged_7048_1, &_call_cbs_dataChanged_7048_1, &_set_callback_cbs_dataChanged_7048_1);
-  methods += new qt_gsi::GenericMethod ("*destroy|qt_destroy", "@brief Method void QColumnView::destroy(bool destroyWindow, bool destroySubWindows)\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_destroy_1620, &_call_fp_destroy_1620);
+  methods += new qt_gsi::GenericMethod ("*customEvent", "@hide", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*customEvent", "@brief Virtual method void QColumnView::customEvent(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_customEvent_1217_0, &_call_cbs_customEvent_1217_0, &_set_callback_cbs_customEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*dataChanged", "@hide", false, &_init_cbs_dataChanged_7048_1, &_call_cbs_dataChanged_7048_1);
+  methods += new qt_gsi::GenericMethod ("*dataChanged", "@brief Virtual method void QColumnView::dataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_dataChanged_7048_1, &_call_cbs_dataChanged_7048_1, &_set_callback_cbs_dataChanged_7048_1);
+  methods += new qt_gsi::GenericMethod ("*qt_destroy", "@brief Method void QColumnView::destroy(bool destroyWindow, bool destroySubWindows)\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_destroy_1620, &_call_fp_destroy_1620);
   methods += new qt_gsi::GenericMethod ("emit_destroyed", "@brief Emitter for signal void QColumnView::destroyed(QObject *)\nCall this method to emit this signal.", false, &_init_emitter_destroyed_1302, &_call_emitter_destroyed_1302);
   methods += new qt_gsi::GenericMethod ("*dirtyRegionOffset", "@brief Method QPoint QColumnView::dirtyRegionOffset()\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_dirtyRegionOffset_c0, &_call_fp_dirtyRegionOffset_c0);
-  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@brief Virtual method void QColumnView::disconnectNotify(const QMetaMethod &signal)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0);
-  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@hide", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0, &_set_callback_cbs_disconnectNotify_2394_0);
+  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@hide", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0);
+  methods += new qt_gsi::GenericMethod ("*disconnectNotify", "@brief Virtual method void QColumnView::disconnectNotify(const QMetaMethod &signal)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_disconnectNotify_2394_0, &_call_cbs_disconnectNotify_2394_0, &_set_callback_cbs_disconnectNotify_2394_0);
   methods += new qt_gsi::GenericMethod ("*doAutoScroll", "@brief Method void QColumnView::doAutoScroll()\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_doAutoScroll_0, &_call_fp_doAutoScroll_0);
-  methods += new qt_gsi::GenericMethod ("doItemsLayout", "@brief Virtual method void QColumnView::doItemsLayout()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_doItemsLayout_0_0, &_call_cbs_doItemsLayout_0_0);
-  methods += new qt_gsi::GenericMethod ("doItemsLayout", "@hide", false, &_init_cbs_doItemsLayout_0_0, &_call_cbs_doItemsLayout_0_0, &_set_callback_cbs_doItemsLayout_0_0);
+  methods += new qt_gsi::GenericMethod ("doItemsLayout", "@hide", false, &_init_cbs_doItemsLayout_0_0, &_call_cbs_doItemsLayout_0_0);
+  methods += new qt_gsi::GenericMethod ("doItemsLayout", "@brief Virtual method void QColumnView::doItemsLayout()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_doItemsLayout_0_0, &_call_cbs_doItemsLayout_0_0, &_set_callback_cbs_doItemsLayout_0_0);
   methods += new qt_gsi::GenericMethod ("emit_doubleClicked", "@brief Emitter for signal void QColumnView::doubleClicked(const QModelIndex &index)\nCall this method to emit this signal.", false, &_init_emitter_doubleClicked_2395, &_call_emitter_doubleClicked_2395);
-  methods += new qt_gsi::GenericMethod ("*dragEnterEvent", "@brief Virtual method void QColumnView::dragEnterEvent(QDragEnterEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_dragEnterEvent_2109_0, &_call_cbs_dragEnterEvent_2109_0);
-  methods += new qt_gsi::GenericMethod ("*dragEnterEvent", "@hide", false, &_init_cbs_dragEnterEvent_2109_0, &_call_cbs_dragEnterEvent_2109_0, &_set_callback_cbs_dragEnterEvent_2109_0);
-  methods += new qt_gsi::GenericMethod ("*dragLeaveEvent", "@brief Virtual method void QColumnView::dragLeaveEvent(QDragLeaveEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_dragLeaveEvent_2092_0, &_call_cbs_dragLeaveEvent_2092_0);
-  methods += new qt_gsi::GenericMethod ("*dragLeaveEvent", "@hide", false, &_init_cbs_dragLeaveEvent_2092_0, &_call_cbs_dragLeaveEvent_2092_0, &_set_callback_cbs_dragLeaveEvent_2092_0);
-  methods += new qt_gsi::GenericMethod ("*dragMoveEvent", "@brief Virtual method void QColumnView::dragMoveEvent(QDragMoveEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_dragMoveEvent_2006_0, &_call_cbs_dragMoveEvent_2006_0);
-  methods += new qt_gsi::GenericMethod ("*dragMoveEvent", "@hide", false, &_init_cbs_dragMoveEvent_2006_0, &_call_cbs_dragMoveEvent_2006_0, &_set_callback_cbs_dragMoveEvent_2006_0);
+  methods += new qt_gsi::GenericMethod ("*dragEnterEvent", "@hide", false, &_init_cbs_dragEnterEvent_2109_0, &_call_cbs_dragEnterEvent_2109_0);
+  methods += new qt_gsi::GenericMethod ("*dragEnterEvent", "@brief Virtual method void QColumnView::dragEnterEvent(QDragEnterEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_dragEnterEvent_2109_0, &_call_cbs_dragEnterEvent_2109_0, &_set_callback_cbs_dragEnterEvent_2109_0);
+  methods += new qt_gsi::GenericMethod ("*dragLeaveEvent", "@hide", false, &_init_cbs_dragLeaveEvent_2092_0, &_call_cbs_dragLeaveEvent_2092_0);
+  methods += new qt_gsi::GenericMethod ("*dragLeaveEvent", "@brief Virtual method void QColumnView::dragLeaveEvent(QDragLeaveEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_dragLeaveEvent_2092_0, &_call_cbs_dragLeaveEvent_2092_0, &_set_callback_cbs_dragLeaveEvent_2092_0);
+  methods += new qt_gsi::GenericMethod ("*dragMoveEvent", "@hide", false, &_init_cbs_dragMoveEvent_2006_0, &_call_cbs_dragMoveEvent_2006_0);
+  methods += new qt_gsi::GenericMethod ("*dragMoveEvent", "@brief Virtual method void QColumnView::dragMoveEvent(QDragMoveEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_dragMoveEvent_2006_0, &_call_cbs_dragMoveEvent_2006_0, &_set_callback_cbs_dragMoveEvent_2006_0);
   methods += new qt_gsi::GenericMethod ("*drawFrame", "@brief Method void QColumnView::drawFrame(QPainter *)\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_drawFrame_1426, &_call_fp_drawFrame_1426);
-  methods += new qt_gsi::GenericMethod ("*dropEvent", "@brief Virtual method void QColumnView::dropEvent(QDropEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_dropEvent_1622_0, &_call_cbs_dropEvent_1622_0);
-  methods += new qt_gsi::GenericMethod ("*dropEvent", "@hide", false, &_init_cbs_dropEvent_1622_0, &_call_cbs_dropEvent_1622_0, &_set_callback_cbs_dropEvent_1622_0);
+  methods += new qt_gsi::GenericMethod ("*dropEvent", "@hide", false, &_init_cbs_dropEvent_1622_0, &_call_cbs_dropEvent_1622_0);
+  methods += new qt_gsi::GenericMethod ("*dropEvent", "@brief Virtual method void QColumnView::dropEvent(QDropEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_dropEvent_1622_0, &_call_cbs_dropEvent_1622_0, &_set_callback_cbs_dropEvent_1622_0);
   methods += new qt_gsi::GenericMethod ("*dropIndicatorPosition", "@brief Method QAbstractItemView::DropIndicatorPosition QColumnView::dropIndicatorPosition()\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_dropIndicatorPosition_c0, &_call_fp_dropIndicatorPosition_c0);
-  methods += new qt_gsi::GenericMethod ("*edit", "@brief Virtual method bool QColumnView::edit(const QModelIndex &index, QAbstractItemView::EditTrigger trigger, QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_edit_6773_0, &_call_cbs_edit_6773_0);
-  methods += new qt_gsi::GenericMethod ("*edit", "@hide", false, &_init_cbs_edit_6773_0, &_call_cbs_edit_6773_0, &_set_callback_cbs_edit_6773_0);
-  methods += new qt_gsi::GenericMethod ("*editorDestroyed", "@brief Virtual method void QColumnView::editorDestroyed(QObject *editor)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_editorDestroyed_1302_0, &_call_cbs_editorDestroyed_1302_0);
-  methods += new qt_gsi::GenericMethod ("*editorDestroyed", "@hide", false, &_init_cbs_editorDestroyed_1302_0, &_call_cbs_editorDestroyed_1302_0, &_set_callback_cbs_editorDestroyed_1302_0);
-  methods += new qt_gsi::GenericMethod ("*enterEvent", "@brief Virtual method void QColumnView::enterEvent(QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_enterEvent_1217_0, &_call_cbs_enterEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*enterEvent", "@hide", false, &_init_cbs_enterEvent_1217_0, &_call_cbs_enterEvent_1217_0, &_set_callback_cbs_enterEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*edit", "@hide", false, &_init_cbs_edit_6773_0, &_call_cbs_edit_6773_0);
+  methods += new qt_gsi::GenericMethod ("*edit", "@brief Virtual method bool QColumnView::edit(const QModelIndex &index, QAbstractItemView::EditTrigger trigger, QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_edit_6773_0, &_call_cbs_edit_6773_0, &_set_callback_cbs_edit_6773_0);
+  methods += new qt_gsi::GenericMethod ("*editorDestroyed", "@hide", false, &_init_cbs_editorDestroyed_1302_0, &_call_cbs_editorDestroyed_1302_0);
+  methods += new qt_gsi::GenericMethod ("*editorDestroyed", "@brief Virtual method void QColumnView::editorDestroyed(QObject *editor)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_editorDestroyed_1302_0, &_call_cbs_editorDestroyed_1302_0, &_set_callback_cbs_editorDestroyed_1302_0);
+  methods += new qt_gsi::GenericMethod ("*enterEvent", "@hide", false, &_init_cbs_enterEvent_1217_0, &_call_cbs_enterEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*enterEvent", "@brief Virtual method void QColumnView::enterEvent(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_enterEvent_1217_0, &_call_cbs_enterEvent_1217_0, &_set_callback_cbs_enterEvent_1217_0);
   methods += new qt_gsi::GenericMethod ("emit_entered", "@brief Emitter for signal void QColumnView::entered(const QModelIndex &index)\nCall this method to emit this signal.", false, &_init_emitter_entered_2395, &_call_emitter_entered_2395);
-  methods += new qt_gsi::GenericMethod ("*event", "@brief Virtual method bool QColumnView::event(QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0);
-  methods += new qt_gsi::GenericMethod ("*event", "@hide", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0, &_set_callback_cbs_event_1217_0);
-  methods += new qt_gsi::GenericMethod ("*eventFilter", "@brief Virtual method bool QColumnView::eventFilter(QObject *object, QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0);
-  methods += new qt_gsi::GenericMethod ("*eventFilter", "@hide", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0, &_set_callback_cbs_eventFilter_2411_0);
+  methods += new qt_gsi::GenericMethod ("*event", "@hide", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0);
+  methods += new qt_gsi::GenericMethod ("*event", "@brief Virtual method bool QColumnView::event(QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_event_1217_0, &_call_cbs_event_1217_0, &_set_callback_cbs_event_1217_0);
+  methods += new qt_gsi::GenericMethod ("*eventFilter", "@hide", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0);
+  methods += new qt_gsi::GenericMethod ("*eventFilter", "@brief Virtual method bool QColumnView::eventFilter(QObject *, QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_eventFilter_2411_0, &_call_cbs_eventFilter_2411_0, &_set_callback_cbs_eventFilter_2411_0);
   methods += new qt_gsi::GenericMethod ("*executeDelayedItemsLayout", "@brief Method void QColumnView::executeDelayedItemsLayout()\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_executeDelayedItemsLayout_0, &_call_fp_executeDelayedItemsLayout_0);
-  methods += new qt_gsi::GenericMethod ("*focusInEvent", "@brief Virtual method void QColumnView::focusInEvent(QFocusEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_focusInEvent_1729_0, &_call_cbs_focusInEvent_1729_0);
-  methods += new qt_gsi::GenericMethod ("*focusInEvent", "@hide", false, &_init_cbs_focusInEvent_1729_0, &_call_cbs_focusInEvent_1729_0, &_set_callback_cbs_focusInEvent_1729_0);
+  methods += new qt_gsi::GenericMethod ("*focusInEvent", "@hide", false, &_init_cbs_focusInEvent_1729_0, &_call_cbs_focusInEvent_1729_0);
+  methods += new qt_gsi::GenericMethod ("*focusInEvent", "@brief Virtual method void QColumnView::focusInEvent(QFocusEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_focusInEvent_1729_0, &_call_cbs_focusInEvent_1729_0, &_set_callback_cbs_focusInEvent_1729_0);
   methods += new qt_gsi::GenericMethod ("*focusNextChild", "@brief Method bool QColumnView::focusNextChild()\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_focusNextChild_0, &_call_fp_focusNextChild_0);
-  methods += new qt_gsi::GenericMethod ("*focusNextPrevChild", "@brief Virtual method bool QColumnView::focusNextPrevChild(bool next)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_focusNextPrevChild_864_0, &_call_cbs_focusNextPrevChild_864_0);
-  methods += new qt_gsi::GenericMethod ("*focusNextPrevChild", "@hide", false, &_init_cbs_focusNextPrevChild_864_0, &_call_cbs_focusNextPrevChild_864_0, &_set_callback_cbs_focusNextPrevChild_864_0);
-  methods += new qt_gsi::GenericMethod ("*focusOutEvent", "@brief Virtual method void QColumnView::focusOutEvent(QFocusEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_focusOutEvent_1729_0, &_call_cbs_focusOutEvent_1729_0);
-  methods += new qt_gsi::GenericMethod ("*focusOutEvent", "@hide", false, &_init_cbs_focusOutEvent_1729_0, &_call_cbs_focusOutEvent_1729_0, &_set_callback_cbs_focusOutEvent_1729_0);
+  methods += new qt_gsi::GenericMethod ("*focusNextPrevChild", "@hide", false, &_init_cbs_focusNextPrevChild_864_0, &_call_cbs_focusNextPrevChild_864_0);
+  methods += new qt_gsi::GenericMethod ("*focusNextPrevChild", "@brief Virtual method bool QColumnView::focusNextPrevChild(bool next)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_focusNextPrevChild_864_0, &_call_cbs_focusNextPrevChild_864_0, &_set_callback_cbs_focusNextPrevChild_864_0);
+  methods += new qt_gsi::GenericMethod ("*focusOutEvent", "@hide", false, &_init_cbs_focusOutEvent_1729_0, &_call_cbs_focusOutEvent_1729_0);
+  methods += new qt_gsi::GenericMethod ("*focusOutEvent", "@brief Virtual method void QColumnView::focusOutEvent(QFocusEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_focusOutEvent_1729_0, &_call_cbs_focusOutEvent_1729_0, &_set_callback_cbs_focusOutEvent_1729_0);
   methods += new qt_gsi::GenericMethod ("*focusPreviousChild", "@brief Method bool QColumnView::focusPreviousChild()\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_focusPreviousChild_0, &_call_fp_focusPreviousChild_0);
-  methods += new qt_gsi::GenericMethod ("hasHeightForWidth", "@brief Virtual method bool QColumnView::hasHeightForWidth()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_hasHeightForWidth_c0_0, &_call_cbs_hasHeightForWidth_c0_0);
-  methods += new qt_gsi::GenericMethod ("hasHeightForWidth", "@hide", true, &_init_cbs_hasHeightForWidth_c0_0, &_call_cbs_hasHeightForWidth_c0_0, &_set_callback_cbs_hasHeightForWidth_c0_0);
-  methods += new qt_gsi::GenericMethod ("heightForWidth", "@brief Virtual method int QColumnView::heightForWidth(int)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_heightForWidth_c767_0, &_call_cbs_heightForWidth_c767_0);
-  methods += new qt_gsi::GenericMethod ("heightForWidth", "@hide", true, &_init_cbs_heightForWidth_c767_0, &_call_cbs_heightForWidth_c767_0, &_set_callback_cbs_heightForWidth_c767_0);
-  methods += new qt_gsi::GenericMethod ("*hideEvent", "@brief Virtual method void QColumnView::hideEvent(QHideEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_hideEvent_1595_0, &_call_cbs_hideEvent_1595_0);
-  methods += new qt_gsi::GenericMethod ("*hideEvent", "@hide", false, &_init_cbs_hideEvent_1595_0, &_call_cbs_hideEvent_1595_0, &_set_callback_cbs_hideEvent_1595_0);
-  methods += new qt_gsi::GenericMethod ("*horizontalOffset", "@brief Virtual method int QColumnView::horizontalOffset()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_horizontalOffset_c0_0, &_call_cbs_horizontalOffset_c0_0);
-  methods += new qt_gsi::GenericMethod ("*horizontalOffset", "@hide", true, &_init_cbs_horizontalOffset_c0_0, &_call_cbs_horizontalOffset_c0_0, &_set_callback_cbs_horizontalOffset_c0_0);
-  methods += new qt_gsi::GenericMethod ("*horizontalScrollbarAction", "@brief Virtual method void QColumnView::horizontalScrollbarAction(int action)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_horizontalScrollbarAction_767_0, &_call_cbs_horizontalScrollbarAction_767_0);
-  methods += new qt_gsi::GenericMethod ("*horizontalScrollbarAction", "@hide", false, &_init_cbs_horizontalScrollbarAction_767_0, &_call_cbs_horizontalScrollbarAction_767_0, &_set_callback_cbs_horizontalScrollbarAction_767_0);
-  methods += new qt_gsi::GenericMethod ("*horizontalScrollbarValueChanged", "@brief Virtual method void QColumnView::horizontalScrollbarValueChanged(int value)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_horizontalScrollbarValueChanged_767_0, &_call_cbs_horizontalScrollbarValueChanged_767_0);
-  methods += new qt_gsi::GenericMethod ("*horizontalScrollbarValueChanged", "@hide", false, &_init_cbs_horizontalScrollbarValueChanged_767_0, &_call_cbs_horizontalScrollbarValueChanged_767_0, &_set_callback_cbs_horizontalScrollbarValueChanged_767_0);
+  methods += new qt_gsi::GenericMethod ("hasHeightForWidth", "@hide", true, &_init_cbs_hasHeightForWidth_c0_0, &_call_cbs_hasHeightForWidth_c0_0);
+  methods += new qt_gsi::GenericMethod ("hasHeightForWidth", "@brief Virtual method bool QColumnView::hasHeightForWidth()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_hasHeightForWidth_c0_0, &_call_cbs_hasHeightForWidth_c0_0, &_set_callback_cbs_hasHeightForWidth_c0_0);
+  methods += new qt_gsi::GenericMethod ("heightForWidth", "@hide", true, &_init_cbs_heightForWidth_c767_0, &_call_cbs_heightForWidth_c767_0);
+  methods += new qt_gsi::GenericMethod ("heightForWidth", "@brief Virtual method int QColumnView::heightForWidth(int)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_heightForWidth_c767_0, &_call_cbs_heightForWidth_c767_0, &_set_callback_cbs_heightForWidth_c767_0);
+  methods += new qt_gsi::GenericMethod ("*hideEvent", "@hide", false, &_init_cbs_hideEvent_1595_0, &_call_cbs_hideEvent_1595_0);
+  methods += new qt_gsi::GenericMethod ("*hideEvent", "@brief Virtual method void QColumnView::hideEvent(QHideEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_hideEvent_1595_0, &_call_cbs_hideEvent_1595_0, &_set_callback_cbs_hideEvent_1595_0);
+  methods += new qt_gsi::GenericMethod ("*horizontalOffset", "@hide", true, &_init_cbs_horizontalOffset_c0_0, &_call_cbs_horizontalOffset_c0_0);
+  methods += new qt_gsi::GenericMethod ("*horizontalOffset", "@brief Virtual method int QColumnView::horizontalOffset()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_horizontalOffset_c0_0, &_call_cbs_horizontalOffset_c0_0, &_set_callback_cbs_horizontalOffset_c0_0);
+  methods += new qt_gsi::GenericMethod ("*horizontalScrollbarAction", "@hide", false, &_init_cbs_horizontalScrollbarAction_767_0, &_call_cbs_horizontalScrollbarAction_767_0);
+  methods += new qt_gsi::GenericMethod ("*horizontalScrollbarAction", "@brief Virtual method void QColumnView::horizontalScrollbarAction(int action)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_horizontalScrollbarAction_767_0, &_call_cbs_horizontalScrollbarAction_767_0, &_set_callback_cbs_horizontalScrollbarAction_767_0);
+  methods += new qt_gsi::GenericMethod ("*horizontalScrollbarValueChanged", "@hide", false, &_init_cbs_horizontalScrollbarValueChanged_767_0, &_call_cbs_horizontalScrollbarValueChanged_767_0);
+  methods += new qt_gsi::GenericMethod ("*horizontalScrollbarValueChanged", "@brief Virtual method void QColumnView::horizontalScrollbarValueChanged(int value)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_horizontalScrollbarValueChanged_767_0, &_call_cbs_horizontalScrollbarValueChanged_767_0, &_set_callback_cbs_horizontalScrollbarValueChanged_767_0);
   methods += new qt_gsi::GenericMethod ("*horizontalStepsPerItem", "@brief Method int QColumnView::horizontalStepsPerItem()\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_horizontalStepsPerItem_c0, &_call_fp_horizontalStepsPerItem_c0);
   methods += new qt_gsi::GenericMethod ("emit_iconSizeChanged", "@brief Emitter for signal void QColumnView::iconSizeChanged(const QSize &size)\nCall this method to emit this signal.", false, &_init_emitter_iconSizeChanged_1805, &_call_emitter_iconSizeChanged_1805);
-  methods += new qt_gsi::GenericMethod ("indexAt", "@brief Virtual method QModelIndex QColumnView::indexAt(const QPoint &point)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_indexAt_c1916_0, &_call_cbs_indexAt_c1916_0);
-  methods += new qt_gsi::GenericMethod ("indexAt", "@hide", true, &_init_cbs_indexAt_c1916_0, &_call_cbs_indexAt_c1916_0, &_set_callback_cbs_indexAt_c1916_0);
-  methods += new qt_gsi::GenericMethod ("*initPainter", "@brief Virtual method void QColumnView::initPainter(QPainter *painter)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_initPainter_c1426_0, &_call_cbs_initPainter_c1426_0);
-  methods += new qt_gsi::GenericMethod ("*initPainter", "@hide", true, &_init_cbs_initPainter_c1426_0, &_call_cbs_initPainter_c1426_0, &_set_callback_cbs_initPainter_c1426_0);
+  methods += new qt_gsi::GenericMethod ("indexAt", "@hide", true, &_init_cbs_indexAt_c1916_0, &_call_cbs_indexAt_c1916_0);
+  methods += new qt_gsi::GenericMethod ("indexAt", "@brief Virtual method QModelIndex QColumnView::indexAt(const QPoint &point)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_indexAt_c1916_0, &_call_cbs_indexAt_c1916_0, &_set_callback_cbs_indexAt_c1916_0);
+  methods += new qt_gsi::GenericMethod ("*initPainter", "@hide", true, &_init_cbs_initPainter_c1426_0, &_call_cbs_initPainter_c1426_0);
+  methods += new qt_gsi::GenericMethod ("*initPainter", "@brief Virtual method void QColumnView::initPainter(QPainter *painter)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_initPainter_c1426_0, &_call_cbs_initPainter_c1426_0, &_set_callback_cbs_initPainter_c1426_0);
   methods += new qt_gsi::GenericMethod ("*initStyleOption", "@brief Method void QColumnView::initStyleOption(QStyleOptionFrame *option)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_initStyleOption_c2356, &_call_fp_initStyleOption_c2356);
   methods += new qt_gsi::GenericMethod ("*initializeColumn", "@brief Method void QColumnView::initializeColumn(QAbstractItemView *column)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_initializeColumn_c2333, &_call_fp_initializeColumn_c2333);
-  methods += new qt_gsi::GenericMethod ("*inputMethodEvent", "@brief Virtual method void QColumnView::inputMethodEvent(QInputMethodEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_inputMethodEvent_2354_0, &_call_cbs_inputMethodEvent_2354_0);
-  methods += new qt_gsi::GenericMethod ("*inputMethodEvent", "@hide", false, &_init_cbs_inputMethodEvent_2354_0, &_call_cbs_inputMethodEvent_2354_0, &_set_callback_cbs_inputMethodEvent_2354_0);
-  methods += new qt_gsi::GenericMethod ("inputMethodQuery", "@brief Virtual method QVariant QColumnView::inputMethodQuery(Qt::InputMethodQuery query)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_inputMethodQuery_c2420_0, &_call_cbs_inputMethodQuery_c2420_0);
-  methods += new qt_gsi::GenericMethod ("inputMethodQuery", "@hide", true, &_init_cbs_inputMethodQuery_c2420_0, &_call_cbs_inputMethodQuery_c2420_0, &_set_callback_cbs_inputMethodQuery_c2420_0);
-  methods += new qt_gsi::GenericMethod ("*isIndexHidden", "@brief Virtual method bool QColumnView::isIndexHidden(const QModelIndex &index)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_isIndexHidden_c2395_0, &_call_cbs_isIndexHidden_c2395_0);
-  methods += new qt_gsi::GenericMethod ("*isIndexHidden", "@hide", true, &_init_cbs_isIndexHidden_c2395_0, &_call_cbs_isIndexHidden_c2395_0, &_set_callback_cbs_isIndexHidden_c2395_0);
+  methods += new qt_gsi::GenericMethod ("*inputMethodEvent", "@hide", false, &_init_cbs_inputMethodEvent_2354_0, &_call_cbs_inputMethodEvent_2354_0);
+  methods += new qt_gsi::GenericMethod ("*inputMethodEvent", "@brief Virtual method void QColumnView::inputMethodEvent(QInputMethodEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_inputMethodEvent_2354_0, &_call_cbs_inputMethodEvent_2354_0, &_set_callback_cbs_inputMethodEvent_2354_0);
+  methods += new qt_gsi::GenericMethod ("inputMethodQuery", "@hide", true, &_init_cbs_inputMethodQuery_c2420_0, &_call_cbs_inputMethodQuery_c2420_0);
+  methods += new qt_gsi::GenericMethod ("inputMethodQuery", "@brief Virtual method QVariant QColumnView::inputMethodQuery(Qt::InputMethodQuery query)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_inputMethodQuery_c2420_0, &_call_cbs_inputMethodQuery_c2420_0, &_set_callback_cbs_inputMethodQuery_c2420_0);
+  methods += new qt_gsi::GenericMethod ("*isIndexHidden", "@hide", true, &_init_cbs_isIndexHidden_c2395_0, &_call_cbs_isIndexHidden_c2395_0);
+  methods += new qt_gsi::GenericMethod ("*isIndexHidden", "@brief Virtual method bool QColumnView::isIndexHidden(const QModelIndex &index)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_isIndexHidden_c2395_0, &_call_cbs_isIndexHidden_c2395_0, &_set_callback_cbs_isIndexHidden_c2395_0);
   methods += new qt_gsi::GenericMethod ("*isSignalConnected", "@brief Method bool QColumnView::isSignalConnected(const QMetaMethod &signal)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_isSignalConnected_c2394, &_call_fp_isSignalConnected_c2394);
-  methods += new qt_gsi::GenericMethod ("*keyPressEvent", "@brief Virtual method void QColumnView::keyPressEvent(QKeyEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_keyPressEvent_1514_0, &_call_cbs_keyPressEvent_1514_0);
-  methods += new qt_gsi::GenericMethod ("*keyPressEvent", "@hide", false, &_init_cbs_keyPressEvent_1514_0, &_call_cbs_keyPressEvent_1514_0, &_set_callback_cbs_keyPressEvent_1514_0);
-  methods += new qt_gsi::GenericMethod ("*keyReleaseEvent", "@brief Virtual method void QColumnView::keyReleaseEvent(QKeyEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_keyReleaseEvent_1514_0, &_call_cbs_keyReleaseEvent_1514_0);
-  methods += new qt_gsi::GenericMethod ("*keyReleaseEvent", "@hide", false, &_init_cbs_keyReleaseEvent_1514_0, &_call_cbs_keyReleaseEvent_1514_0, &_set_callback_cbs_keyReleaseEvent_1514_0);
-  methods += new qt_gsi::GenericMethod ("keyboardSearch", "@brief Virtual method void QColumnView::keyboardSearch(const QString &search)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_keyboardSearch_2025_0, &_call_cbs_keyboardSearch_2025_0);
-  methods += new qt_gsi::GenericMethod ("keyboardSearch", "@hide", false, &_init_cbs_keyboardSearch_2025_0, &_call_cbs_keyboardSearch_2025_0, &_set_callback_cbs_keyboardSearch_2025_0);
-  methods += new qt_gsi::GenericMethod ("*leaveEvent", "@brief Virtual method void QColumnView::leaveEvent(QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_leaveEvent_1217_0, &_call_cbs_leaveEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*leaveEvent", "@hide", false, &_init_cbs_leaveEvent_1217_0, &_call_cbs_leaveEvent_1217_0, &_set_callback_cbs_leaveEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*metric", "@brief Virtual method int QColumnView::metric(QPaintDevice::PaintDeviceMetric)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_metric_c3445_0, &_call_cbs_metric_c3445_0);
-  methods += new qt_gsi::GenericMethod ("*metric", "@hide", true, &_init_cbs_metric_c3445_0, &_call_cbs_metric_c3445_0, &_set_callback_cbs_metric_c3445_0);
-  methods += new qt_gsi::GenericMethod ("minimumSizeHint", "@brief Virtual method QSize QColumnView::minimumSizeHint()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_minimumSizeHint_c0_0, &_call_cbs_minimumSizeHint_c0_0);
-  methods += new qt_gsi::GenericMethod ("minimumSizeHint", "@hide", true, &_init_cbs_minimumSizeHint_c0_0, &_call_cbs_minimumSizeHint_c0_0, &_set_callback_cbs_minimumSizeHint_c0_0);
-  methods += new qt_gsi::GenericMethod ("*mouseDoubleClickEvent", "@brief Virtual method void QColumnView::mouseDoubleClickEvent(QMouseEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_mouseDoubleClickEvent_1738_0, &_call_cbs_mouseDoubleClickEvent_1738_0);
-  methods += new qt_gsi::GenericMethod ("*mouseDoubleClickEvent", "@hide", false, &_init_cbs_mouseDoubleClickEvent_1738_0, &_call_cbs_mouseDoubleClickEvent_1738_0, &_set_callback_cbs_mouseDoubleClickEvent_1738_0);
-  methods += new qt_gsi::GenericMethod ("*mouseMoveEvent", "@brief Virtual method void QColumnView::mouseMoveEvent(QMouseEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_mouseMoveEvent_1738_0, &_call_cbs_mouseMoveEvent_1738_0);
-  methods += new qt_gsi::GenericMethod ("*mouseMoveEvent", "@hide", false, &_init_cbs_mouseMoveEvent_1738_0, &_call_cbs_mouseMoveEvent_1738_0, &_set_callback_cbs_mouseMoveEvent_1738_0);
-  methods += new qt_gsi::GenericMethod ("*mousePressEvent", "@brief Virtual method void QColumnView::mousePressEvent(QMouseEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_mousePressEvent_1738_0, &_call_cbs_mousePressEvent_1738_0);
-  methods += new qt_gsi::GenericMethod ("*mousePressEvent", "@hide", false, &_init_cbs_mousePressEvent_1738_0, &_call_cbs_mousePressEvent_1738_0, &_set_callback_cbs_mousePressEvent_1738_0);
-  methods += new qt_gsi::GenericMethod ("*mouseReleaseEvent", "@brief Virtual method void QColumnView::mouseReleaseEvent(QMouseEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_mouseReleaseEvent_1738_0, &_call_cbs_mouseReleaseEvent_1738_0);
-  methods += new qt_gsi::GenericMethod ("*mouseReleaseEvent", "@hide", false, &_init_cbs_mouseReleaseEvent_1738_0, &_call_cbs_mouseReleaseEvent_1738_0, &_set_callback_cbs_mouseReleaseEvent_1738_0);
-  methods += new qt_gsi::GenericMethod ("*moveCursor", "@brief Virtual method QModelIndex QColumnView::moveCursor(QAbstractItemView::CursorAction cursorAction, QFlags<Qt::KeyboardModifier> modifiers)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_moveCursor_6476_0, &_call_cbs_moveCursor_6476_0);
-  methods += new qt_gsi::GenericMethod ("*moveCursor", "@hide", false, &_init_cbs_moveCursor_6476_0, &_call_cbs_moveCursor_6476_0, &_set_callback_cbs_moveCursor_6476_0);
-  methods += new qt_gsi::GenericMethod ("*moveEvent", "@brief Virtual method void QColumnView::moveEvent(QMoveEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_moveEvent_1624_0, &_call_cbs_moveEvent_1624_0);
-  methods += new qt_gsi::GenericMethod ("*moveEvent", "@hide", false, &_init_cbs_moveEvent_1624_0, &_call_cbs_moveEvent_1624_0, &_set_callback_cbs_moveEvent_1624_0);
-  methods += new qt_gsi::GenericMethod ("*nativeEvent", "@brief Virtual method bool QColumnView::nativeEvent(const QByteArray &eventType, void *message, long int *result)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_nativeEvent_4678_0, &_call_cbs_nativeEvent_4678_0);
-  methods += new qt_gsi::GenericMethod ("*nativeEvent", "@hide", false, &_init_cbs_nativeEvent_4678_0, &_call_cbs_nativeEvent_4678_0, &_set_callback_cbs_nativeEvent_4678_0);
-  methods += new qt_gsi::GenericMethod ("emit_objectNameChanged", "@brief Emitter for signal void QColumnView::objectNameChanged(const QString &objectName)\nCall this method to emit this signal.", false, &_init_emitter_objectNameChanged_4567, &_call_emitter_objectNameChanged_4567);
-  methods += new qt_gsi::GenericMethod ("paintEngine", "@brief Virtual method QPaintEngine *QColumnView::paintEngine()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_paintEngine_c0_0, &_call_cbs_paintEngine_c0_0);
-  methods += new qt_gsi::GenericMethod ("paintEngine", "@hide", true, &_init_cbs_paintEngine_c0_0, &_call_cbs_paintEngine_c0_0, &_set_callback_cbs_paintEngine_c0_0);
-  methods += new qt_gsi::GenericMethod ("*paintEvent", "@brief Virtual method void QColumnView::paintEvent(QPaintEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_paintEvent_1725_0, &_call_cbs_paintEvent_1725_0);
-  methods += new qt_gsi::GenericMethod ("*paintEvent", "@hide", false, &_init_cbs_paintEvent_1725_0, &_call_cbs_paintEvent_1725_0, &_set_callback_cbs_paintEvent_1725_0);
+  methods += new qt_gsi::GenericMethod ("*keyPressEvent", "@hide", false, &_init_cbs_keyPressEvent_1514_0, &_call_cbs_keyPressEvent_1514_0);
+  methods += new qt_gsi::GenericMethod ("*keyPressEvent", "@brief Virtual method void QColumnView::keyPressEvent(QKeyEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_keyPressEvent_1514_0, &_call_cbs_keyPressEvent_1514_0, &_set_callback_cbs_keyPressEvent_1514_0);
+  methods += new qt_gsi::GenericMethod ("*keyReleaseEvent", "@hide", false, &_init_cbs_keyReleaseEvent_1514_0, &_call_cbs_keyReleaseEvent_1514_0);
+  methods += new qt_gsi::GenericMethod ("*keyReleaseEvent", "@brief Virtual method void QColumnView::keyReleaseEvent(QKeyEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_keyReleaseEvent_1514_0, &_call_cbs_keyReleaseEvent_1514_0, &_set_callback_cbs_keyReleaseEvent_1514_0);
+  methods += new qt_gsi::GenericMethod ("keyboardSearch", "@hide", false, &_init_cbs_keyboardSearch_2025_0, &_call_cbs_keyboardSearch_2025_0);
+  methods += new qt_gsi::GenericMethod ("keyboardSearch", "@brief Virtual method void QColumnView::keyboardSearch(const QString &search)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_keyboardSearch_2025_0, &_call_cbs_keyboardSearch_2025_0, &_set_callback_cbs_keyboardSearch_2025_0);
+  methods += new qt_gsi::GenericMethod ("*leaveEvent", "@hide", false, &_init_cbs_leaveEvent_1217_0, &_call_cbs_leaveEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*leaveEvent", "@brief Virtual method void QColumnView::leaveEvent(QEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_leaveEvent_1217_0, &_call_cbs_leaveEvent_1217_0, &_set_callback_cbs_leaveEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*metric", "@hide", true, &_init_cbs_metric_c3445_0, &_call_cbs_metric_c3445_0);
+  methods += new qt_gsi::GenericMethod ("*metric", "@brief Virtual method int QColumnView::metric(QPaintDevice::PaintDeviceMetric)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_metric_c3445_0, &_call_cbs_metric_c3445_0, &_set_callback_cbs_metric_c3445_0);
+  methods += new qt_gsi::GenericMethod ("minimumSizeHint", "@hide", true, &_init_cbs_minimumSizeHint_c0_0, &_call_cbs_minimumSizeHint_c0_0);
+  methods += new qt_gsi::GenericMethod ("minimumSizeHint", "@brief Virtual method QSize QColumnView::minimumSizeHint()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_minimumSizeHint_c0_0, &_call_cbs_minimumSizeHint_c0_0, &_set_callback_cbs_minimumSizeHint_c0_0);
+  methods += new qt_gsi::GenericMethod ("*mouseDoubleClickEvent", "@hide", false, &_init_cbs_mouseDoubleClickEvent_1738_0, &_call_cbs_mouseDoubleClickEvent_1738_0);
+  methods += new qt_gsi::GenericMethod ("*mouseDoubleClickEvent", "@brief Virtual method void QColumnView::mouseDoubleClickEvent(QMouseEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_mouseDoubleClickEvent_1738_0, &_call_cbs_mouseDoubleClickEvent_1738_0, &_set_callback_cbs_mouseDoubleClickEvent_1738_0);
+  methods += new qt_gsi::GenericMethod ("*mouseMoveEvent", "@hide", false, &_init_cbs_mouseMoveEvent_1738_0, &_call_cbs_mouseMoveEvent_1738_0);
+  methods += new qt_gsi::GenericMethod ("*mouseMoveEvent", "@brief Virtual method void QColumnView::mouseMoveEvent(QMouseEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_mouseMoveEvent_1738_0, &_call_cbs_mouseMoveEvent_1738_0, &_set_callback_cbs_mouseMoveEvent_1738_0);
+  methods += new qt_gsi::GenericMethod ("*mousePressEvent", "@hide", false, &_init_cbs_mousePressEvent_1738_0, &_call_cbs_mousePressEvent_1738_0);
+  methods += new qt_gsi::GenericMethod ("*mousePressEvent", "@brief Virtual method void QColumnView::mousePressEvent(QMouseEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_mousePressEvent_1738_0, &_call_cbs_mousePressEvent_1738_0, &_set_callback_cbs_mousePressEvent_1738_0);
+  methods += new qt_gsi::GenericMethod ("*mouseReleaseEvent", "@hide", false, &_init_cbs_mouseReleaseEvent_1738_0, &_call_cbs_mouseReleaseEvent_1738_0);
+  methods += new qt_gsi::GenericMethod ("*mouseReleaseEvent", "@brief Virtual method void QColumnView::mouseReleaseEvent(QMouseEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_mouseReleaseEvent_1738_0, &_call_cbs_mouseReleaseEvent_1738_0, &_set_callback_cbs_mouseReleaseEvent_1738_0);
+  methods += new qt_gsi::GenericMethod ("*moveCursor", "@hide", false, &_init_cbs_moveCursor_6476_0, &_call_cbs_moveCursor_6476_0);
+  methods += new qt_gsi::GenericMethod ("*moveCursor", "@brief Virtual method QModelIndex QColumnView::moveCursor(QAbstractItemView::CursorAction cursorAction, QFlags<Qt::KeyboardModifier> modifiers)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_moveCursor_6476_0, &_call_cbs_moveCursor_6476_0, &_set_callback_cbs_moveCursor_6476_0);
+  methods += new qt_gsi::GenericMethod ("*moveEvent", "@hide", false, &_init_cbs_moveEvent_1624_0, &_call_cbs_moveEvent_1624_0);
+  methods += new qt_gsi::GenericMethod ("*moveEvent", "@brief Virtual method void QColumnView::moveEvent(QMoveEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_moveEvent_1624_0, &_call_cbs_moveEvent_1624_0, &_set_callback_cbs_moveEvent_1624_0);
+  methods += new qt_gsi::GenericMethod ("*nativeEvent", "@hide", false, &_init_cbs_nativeEvent_4678_0, &_call_cbs_nativeEvent_4678_0);
+  methods += new qt_gsi::GenericMethod ("*nativeEvent", "@brief Virtual method bool QColumnView::nativeEvent(const QByteArray &eventType, void *message, long int *result)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_nativeEvent_4678_0, &_call_cbs_nativeEvent_4678_0, &_set_callback_cbs_nativeEvent_4678_0);
+  methods += new qt_gsi::GenericMethod ("paintEngine", "@hide", true, &_init_cbs_paintEngine_c0_0, &_call_cbs_paintEngine_c0_0);
+  methods += new qt_gsi::GenericMethod ("paintEngine", "@brief Virtual method QPaintEngine *QColumnView::paintEngine()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_paintEngine_c0_0, &_call_cbs_paintEngine_c0_0, &_set_callback_cbs_paintEngine_c0_0);
+  methods += new qt_gsi::GenericMethod ("*paintEvent", "@hide", false, &_init_cbs_paintEvent_1725_0, &_call_cbs_paintEvent_1725_0);
+  methods += new qt_gsi::GenericMethod ("*paintEvent", "@brief Virtual method void QColumnView::paintEvent(QPaintEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_paintEvent_1725_0, &_call_cbs_paintEvent_1725_0, &_set_callback_cbs_paintEvent_1725_0);
   methods += new qt_gsi::GenericMethod ("emit_pressed", "@brief Emitter for signal void QColumnView::pressed(const QModelIndex &index)\nCall this method to emit this signal.", false, &_init_emitter_pressed_2395, &_call_emitter_pressed_2395);
   methods += new qt_gsi::GenericMethod ("*receivers", "@brief Method int QColumnView::receivers(const char *signal)\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_receivers_c1731, &_call_fp_receivers_c1731);
-  methods += new qt_gsi::GenericMethod ("*redirected", "@brief Virtual method QPaintDevice *QColumnView::redirected(QPoint *offset)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_redirected_c1225_0, &_call_cbs_redirected_c1225_0);
-  methods += new qt_gsi::GenericMethod ("*redirected", "@hide", true, &_init_cbs_redirected_c1225_0, &_call_cbs_redirected_c1225_0, &_set_callback_cbs_redirected_c1225_0);
-  methods += new qt_gsi::GenericMethod ("reset", "@brief Virtual method void QColumnView::reset()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_reset_0_0, &_call_cbs_reset_0_0);
-  methods += new qt_gsi::GenericMethod ("reset", "@hide", false, &_init_cbs_reset_0_0, &_call_cbs_reset_0_0, &_set_callback_cbs_reset_0_0);
-  methods += new qt_gsi::GenericMethod ("*resizeEvent", "@brief Virtual method void QColumnView::resizeEvent(QResizeEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_resizeEvent_1843_0, &_call_cbs_resizeEvent_1843_0);
-  methods += new qt_gsi::GenericMethod ("*resizeEvent", "@hide", false, &_init_cbs_resizeEvent_1843_0, &_call_cbs_resizeEvent_1843_0, &_set_callback_cbs_resizeEvent_1843_0);
-  methods += new qt_gsi::GenericMethod ("*rowsAboutToBeRemoved", "@brief Virtual method void QColumnView::rowsAboutToBeRemoved(const QModelIndex &parent, int start, int end)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_rowsAboutToBeRemoved_3713_0, &_call_cbs_rowsAboutToBeRemoved_3713_0);
-  methods += new qt_gsi::GenericMethod ("*rowsAboutToBeRemoved", "@hide", false, &_init_cbs_rowsAboutToBeRemoved_3713_0, &_call_cbs_rowsAboutToBeRemoved_3713_0, &_set_callback_cbs_rowsAboutToBeRemoved_3713_0);
-  methods += new qt_gsi::GenericMethod ("*rowsInserted", "@brief Virtual method void QColumnView::rowsInserted(const QModelIndex &parent, int start, int end)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_rowsInserted_3713_0, &_call_cbs_rowsInserted_3713_0);
-  methods += new qt_gsi::GenericMethod ("*rowsInserted", "@hide", false, &_init_cbs_rowsInserted_3713_0, &_call_cbs_rowsInserted_3713_0, &_set_callback_cbs_rowsInserted_3713_0);
+  methods += new qt_gsi::GenericMethod ("*redirected", "@hide", true, &_init_cbs_redirected_c1225_0, &_call_cbs_redirected_c1225_0);
+  methods += new qt_gsi::GenericMethod ("*redirected", "@brief Virtual method QPaintDevice *QColumnView::redirected(QPoint *offset)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_redirected_c1225_0, &_call_cbs_redirected_c1225_0, &_set_callback_cbs_redirected_c1225_0);
+  methods += new qt_gsi::GenericMethod ("reset", "@hide", false, &_init_cbs_reset_0_0, &_call_cbs_reset_0_0);
+  methods += new qt_gsi::GenericMethod ("reset", "@brief Virtual method void QColumnView::reset()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_reset_0_0, &_call_cbs_reset_0_0, &_set_callback_cbs_reset_0_0);
+  methods += new qt_gsi::GenericMethod ("*resizeEvent", "@hide", false, &_init_cbs_resizeEvent_1843_0, &_call_cbs_resizeEvent_1843_0);
+  methods += new qt_gsi::GenericMethod ("*resizeEvent", "@brief Virtual method void QColumnView::resizeEvent(QResizeEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_resizeEvent_1843_0, &_call_cbs_resizeEvent_1843_0, &_set_callback_cbs_resizeEvent_1843_0);
+  methods += new qt_gsi::GenericMethod ("*rowsAboutToBeRemoved", "@hide", false, &_init_cbs_rowsAboutToBeRemoved_3713_0, &_call_cbs_rowsAboutToBeRemoved_3713_0);
+  methods += new qt_gsi::GenericMethod ("*rowsAboutToBeRemoved", "@brief Virtual method void QColumnView::rowsAboutToBeRemoved(const QModelIndex &parent, int start, int end)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_rowsAboutToBeRemoved_3713_0, &_call_cbs_rowsAboutToBeRemoved_3713_0, &_set_callback_cbs_rowsAboutToBeRemoved_3713_0);
+  methods += new qt_gsi::GenericMethod ("*rowsInserted", "@hide", false, &_init_cbs_rowsInserted_3713_0, &_call_cbs_rowsInserted_3713_0);
+  methods += new qt_gsi::GenericMethod ("*rowsInserted", "@brief Virtual method void QColumnView::rowsInserted(const QModelIndex &parent, int start, int end)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_rowsInserted_3713_0, &_call_cbs_rowsInserted_3713_0, &_set_callback_cbs_rowsInserted_3713_0);
   methods += new qt_gsi::GenericMethod ("*scheduleDelayedItemsLayout", "@brief Method void QColumnView::scheduleDelayedItemsLayout()\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_scheduleDelayedItemsLayout_0, &_call_fp_scheduleDelayedItemsLayout_0);
-  methods += new qt_gsi::GenericMethod ("*scrollContentsBy", "@brief Virtual method void QColumnView::scrollContentsBy(int dx, int dy)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_scrollContentsBy_1426_0, &_call_cbs_scrollContentsBy_1426_0);
-  methods += new qt_gsi::GenericMethod ("*scrollContentsBy", "@hide", false, &_init_cbs_scrollContentsBy_1426_0, &_call_cbs_scrollContentsBy_1426_0, &_set_callback_cbs_scrollContentsBy_1426_0);
+  methods += new qt_gsi::GenericMethod ("*scrollContentsBy", "@hide", false, &_init_cbs_scrollContentsBy_1426_0, &_call_cbs_scrollContentsBy_1426_0);
+  methods += new qt_gsi::GenericMethod ("*scrollContentsBy", "@brief Virtual method void QColumnView::scrollContentsBy(int dx, int dy)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_scrollContentsBy_1426_0, &_call_cbs_scrollContentsBy_1426_0, &_set_callback_cbs_scrollContentsBy_1426_0);
   methods += new qt_gsi::GenericMethod ("*scrollDirtyRegion", "@brief Method void QColumnView::scrollDirtyRegion(int dx, int dy)\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_scrollDirtyRegion_1426, &_call_fp_scrollDirtyRegion_1426);
-  methods += new qt_gsi::GenericMethod ("scrollTo", "@brief Virtual method void QColumnView::scrollTo(const QModelIndex &index, QAbstractItemView::ScrollHint hint)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_scrollTo_5576_1, &_call_cbs_scrollTo_5576_1);
-  methods += new qt_gsi::GenericMethod ("scrollTo", "@hide", false, &_init_cbs_scrollTo_5576_1, &_call_cbs_scrollTo_5576_1, &_set_callback_cbs_scrollTo_5576_1);
-  methods += new qt_gsi::GenericMethod ("selectAll", "@brief Virtual method void QColumnView::selectAll()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_selectAll_0_0, &_call_cbs_selectAll_0_0);
-  methods += new qt_gsi::GenericMethod ("selectAll", "@hide", false, &_init_cbs_selectAll_0_0, &_call_cbs_selectAll_0_0, &_set_callback_cbs_selectAll_0_0);
-  methods += new qt_gsi::GenericMethod ("*selectedIndexes", "@brief Virtual method QList<QModelIndex> QColumnView::selectedIndexes()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_selectedIndexes_c0_0, &_call_cbs_selectedIndexes_c0_0);
-  methods += new qt_gsi::GenericMethod ("*selectedIndexes", "@hide", true, &_init_cbs_selectedIndexes_c0_0, &_call_cbs_selectedIndexes_c0_0, &_set_callback_cbs_selectedIndexes_c0_0);
-  methods += new qt_gsi::GenericMethod ("*selectionChanged", "@brief Virtual method void QColumnView::selectionChanged(const QItemSelection &selected, const QItemSelection &deselected)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_selectionChanged_5346_0, &_call_cbs_selectionChanged_5346_0);
-  methods += new qt_gsi::GenericMethod ("*selectionChanged", "@hide", false, &_init_cbs_selectionChanged_5346_0, &_call_cbs_selectionChanged_5346_0, &_set_callback_cbs_selectionChanged_5346_0);
-  methods += new qt_gsi::GenericMethod ("*selectionCommand", "@brief Virtual method QFlags<QItemSelectionModel::SelectionFlag> QColumnView::selectionCommand(const QModelIndex &index, const QEvent *event)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_selectionCommand_c4199_1, &_call_cbs_selectionCommand_c4199_1);
-  methods += new qt_gsi::GenericMethod ("*selectionCommand", "@hide", true, &_init_cbs_selectionCommand_c4199_1, &_call_cbs_selectionCommand_c4199_1, &_set_callback_cbs_selectionCommand_c4199_1);
+  methods += new qt_gsi::GenericMethod ("scrollTo", "@hide", false, &_init_cbs_scrollTo_5576_1, &_call_cbs_scrollTo_5576_1);
+  methods += new qt_gsi::GenericMethod ("scrollTo", "@brief Virtual method void QColumnView::scrollTo(const QModelIndex &index, QAbstractItemView::ScrollHint hint)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_scrollTo_5576_1, &_call_cbs_scrollTo_5576_1, &_set_callback_cbs_scrollTo_5576_1);
+  methods += new qt_gsi::GenericMethod ("selectAll", "@hide", false, &_init_cbs_selectAll_0_0, &_call_cbs_selectAll_0_0);
+  methods += new qt_gsi::GenericMethod ("selectAll", "@brief Virtual method void QColumnView::selectAll()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_selectAll_0_0, &_call_cbs_selectAll_0_0, &_set_callback_cbs_selectAll_0_0);
+  methods += new qt_gsi::GenericMethod ("*selectedIndexes", "@hide", true, &_init_cbs_selectedIndexes_c0_0, &_call_cbs_selectedIndexes_c0_0);
+  methods += new qt_gsi::GenericMethod ("*selectedIndexes", "@brief Virtual method QList<QModelIndex> QColumnView::selectedIndexes()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_selectedIndexes_c0_0, &_call_cbs_selectedIndexes_c0_0, &_set_callback_cbs_selectedIndexes_c0_0);
+  methods += new qt_gsi::GenericMethod ("*selectionChanged", "@hide", false, &_init_cbs_selectionChanged_5346_0, &_call_cbs_selectionChanged_5346_0);
+  methods += new qt_gsi::GenericMethod ("*selectionChanged", "@brief Virtual method void QColumnView::selectionChanged(const QItemSelection &selected, const QItemSelection &deselected)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_selectionChanged_5346_0, &_call_cbs_selectionChanged_5346_0, &_set_callback_cbs_selectionChanged_5346_0);
+  methods += new qt_gsi::GenericMethod ("*selectionCommand", "@hide", true, &_init_cbs_selectionCommand_c4199_1, &_call_cbs_selectionCommand_c4199_1);
+  methods += new qt_gsi::GenericMethod ("*selectionCommand", "@brief Virtual method QFlags<QItemSelectionModel::SelectionFlag> QColumnView::selectionCommand(const QModelIndex &index, const QEvent *event)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_selectionCommand_c4199_1, &_call_cbs_selectionCommand_c4199_1, &_set_callback_cbs_selectionCommand_c4199_1);
   methods += new qt_gsi::GenericMethod ("*sender", "@brief Method QObject *QColumnView::sender()\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_sender_c0, &_call_fp_sender_c0);
   methods += new qt_gsi::GenericMethod ("*senderSignalIndex", "@brief Method int QColumnView::senderSignalIndex()\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_senderSignalIndex_c0, &_call_fp_senderSignalIndex_c0);
   methods += new qt_gsi::GenericMethod ("*setDirtyRegion", "@brief Method void QColumnView::setDirtyRegion(const QRegion &region)\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_setDirtyRegion_2006, &_call_fp_setDirtyRegion_2006);
   methods += new qt_gsi::GenericMethod ("*setHorizontalStepsPerItem", "@brief Method void QColumnView::setHorizontalStepsPerItem(int steps)\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_setHorizontalStepsPerItem_767, &_call_fp_setHorizontalStepsPerItem_767);
-  methods += new qt_gsi::GenericMethod ("setModel", "@brief Virtual method void QColumnView::setModel(QAbstractItemModel *model)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setModel_2419_0, &_call_cbs_setModel_2419_0);
-  methods += new qt_gsi::GenericMethod ("setModel", "@hide", false, &_init_cbs_setModel_2419_0, &_call_cbs_setModel_2419_0, &_set_callback_cbs_setModel_2419_0);
-  methods += new qt_gsi::GenericMethod ("setRootIndex", "@brief Virtual method void QColumnView::setRootIndex(const QModelIndex &index)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setRootIndex_2395_0, &_call_cbs_setRootIndex_2395_0);
-  methods += new qt_gsi::GenericMethod ("setRootIndex", "@hide", false, &_init_cbs_setRootIndex_2395_0, &_call_cbs_setRootIndex_2395_0, &_set_callback_cbs_setRootIndex_2395_0);
-  methods += new qt_gsi::GenericMethod ("*setSelection", "@brief Virtual method void QColumnView::setSelection(const QRect &rect, QFlags<QItemSelectionModel::SelectionFlag> command)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setSelection_6155_0, &_call_cbs_setSelection_6155_0);
-  methods += new qt_gsi::GenericMethod ("*setSelection", "@hide", false, &_init_cbs_setSelection_6155_0, &_call_cbs_setSelection_6155_0, &_set_callback_cbs_setSelection_6155_0);
-  methods += new qt_gsi::GenericMethod ("setSelectionModel", "@brief Virtual method void QColumnView::setSelectionModel(QItemSelectionModel *selectionModel)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setSelectionModel_2533_0, &_call_cbs_setSelectionModel_2533_0);
-  methods += new qt_gsi::GenericMethod ("setSelectionModel", "@hide", false, &_init_cbs_setSelectionModel_2533_0, &_call_cbs_setSelectionModel_2533_0, &_set_callback_cbs_setSelectionModel_2533_0);
+  methods += new qt_gsi::GenericMethod ("setModel", "@hide", false, &_init_cbs_setModel_2419_0, &_call_cbs_setModel_2419_0);
+  methods += new qt_gsi::GenericMethod ("setModel", "@brief Virtual method void QColumnView::setModel(QAbstractItemModel *model)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setModel_2419_0, &_call_cbs_setModel_2419_0, &_set_callback_cbs_setModel_2419_0);
+  methods += new qt_gsi::GenericMethod ("setRootIndex", "@hide", false, &_init_cbs_setRootIndex_2395_0, &_call_cbs_setRootIndex_2395_0);
+  methods += new qt_gsi::GenericMethod ("setRootIndex", "@brief Virtual method void QColumnView::setRootIndex(const QModelIndex &index)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setRootIndex_2395_0, &_call_cbs_setRootIndex_2395_0, &_set_callback_cbs_setRootIndex_2395_0);
+  methods += new qt_gsi::GenericMethod ("*setSelection", "@hide", false, &_init_cbs_setSelection_6155_0, &_call_cbs_setSelection_6155_0);
+  methods += new qt_gsi::GenericMethod ("*setSelection", "@brief Virtual method void QColumnView::setSelection(const QRect &rect, QFlags<QItemSelectionModel::SelectionFlag> command)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setSelection_6155_0, &_call_cbs_setSelection_6155_0, &_set_callback_cbs_setSelection_6155_0);
+  methods += new qt_gsi::GenericMethod ("setSelectionModel", "@hide", false, &_init_cbs_setSelectionModel_2533_0, &_call_cbs_setSelectionModel_2533_0);
+  methods += new qt_gsi::GenericMethod ("setSelectionModel", "@brief Virtual method void QColumnView::setSelectionModel(QItemSelectionModel *selectionModel)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setSelectionModel_2533_0, &_call_cbs_setSelectionModel_2533_0, &_set_callback_cbs_setSelectionModel_2533_0);
   methods += new qt_gsi::GenericMethod ("*setState", "@brief Method void QColumnView::setState(QAbstractItemView::State state)\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_setState_2776, &_call_fp_setState_2776);
   methods += new qt_gsi::GenericMethod ("*setVerticalStepsPerItem", "@brief Method void QColumnView::setVerticalStepsPerItem(int steps)\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_setVerticalStepsPerItem_767, &_call_fp_setVerticalStepsPerItem_767);
   methods += new qt_gsi::GenericMethod ("*setViewportMargins", "@brief Method void QColumnView::setViewportMargins(int left, int top, int right, int bottom)\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_setViewportMargins_2744, &_call_fp_setViewportMargins_2744);
   methods += new qt_gsi::GenericMethod ("*setViewportMargins", "@brief Method void QColumnView::setViewportMargins(const QMargins &margins)\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_setViewportMargins_2115, &_call_fp_setViewportMargins_2115);
-  methods += new qt_gsi::GenericMethod ("setVisible", "@brief Virtual method void QColumnView::setVisible(bool visible)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setVisible_864_0, &_call_cbs_setVisible_864_0);
-  methods += new qt_gsi::GenericMethod ("setVisible", "@hide", false, &_init_cbs_setVisible_864_0, &_call_cbs_setVisible_864_0, &_set_callback_cbs_setVisible_864_0);
-  methods += new qt_gsi::GenericMethod ("setupViewport", "@brief Virtual method void QColumnView::setupViewport(QWidget *viewport)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setupViewport_1315_0, &_call_cbs_setupViewport_1315_0);
-  methods += new qt_gsi::GenericMethod ("setupViewport", "@hide", false, &_init_cbs_setupViewport_1315_0, &_call_cbs_setupViewport_1315_0, &_set_callback_cbs_setupViewport_1315_0);
-  methods += new qt_gsi::GenericMethod ("*sharedPainter", "@brief Virtual method QPainter *QColumnView::sharedPainter()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_sharedPainter_c0_0, &_call_cbs_sharedPainter_c0_0);
-  methods += new qt_gsi::GenericMethod ("*sharedPainter", "@hide", true, &_init_cbs_sharedPainter_c0_0, &_call_cbs_sharedPainter_c0_0, &_set_callback_cbs_sharedPainter_c0_0);
-  methods += new qt_gsi::GenericMethod ("*showEvent", "@brief Virtual method void QColumnView::showEvent(QShowEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_showEvent_1634_0, &_call_cbs_showEvent_1634_0);
-  methods += new qt_gsi::GenericMethod ("*showEvent", "@hide", false, &_init_cbs_showEvent_1634_0, &_call_cbs_showEvent_1634_0, &_set_callback_cbs_showEvent_1634_0);
-  methods += new qt_gsi::GenericMethod ("sizeHint", "@brief Virtual method QSize QColumnView::sizeHint()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_sizeHint_c0_0, &_call_cbs_sizeHint_c0_0);
-  methods += new qt_gsi::GenericMethod ("sizeHint", "@hide", true, &_init_cbs_sizeHint_c0_0, &_call_cbs_sizeHint_c0_0, &_set_callback_cbs_sizeHint_c0_0);
-  methods += new qt_gsi::GenericMethod ("sizeHintForColumn", "@brief Virtual method int QColumnView::sizeHintForColumn(int column)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_sizeHintForColumn_c767_0, &_call_cbs_sizeHintForColumn_c767_0);
-  methods += new qt_gsi::GenericMethod ("sizeHintForColumn", "@hide", true, &_init_cbs_sizeHintForColumn_c767_0, &_call_cbs_sizeHintForColumn_c767_0, &_set_callback_cbs_sizeHintForColumn_c767_0);
-  methods += new qt_gsi::GenericMethod ("sizeHintForRow", "@brief Virtual method int QColumnView::sizeHintForRow(int row)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_sizeHintForRow_c767_0, &_call_cbs_sizeHintForRow_c767_0);
-  methods += new qt_gsi::GenericMethod ("sizeHintForRow", "@hide", true, &_init_cbs_sizeHintForRow_c767_0, &_call_cbs_sizeHintForRow_c767_0, &_set_callback_cbs_sizeHintForRow_c767_0);
+  methods += new qt_gsi::GenericMethod ("setVisible", "@hide", false, &_init_cbs_setVisible_864_0, &_call_cbs_setVisible_864_0);
+  methods += new qt_gsi::GenericMethod ("setVisible", "@brief Virtual method void QColumnView::setVisible(bool visible)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setVisible_864_0, &_call_cbs_setVisible_864_0, &_set_callback_cbs_setVisible_864_0);
+  methods += new qt_gsi::GenericMethod ("setupViewport", "@hide", false, &_init_cbs_setupViewport_1315_0, &_call_cbs_setupViewport_1315_0);
+  methods += new qt_gsi::GenericMethod ("setupViewport", "@brief Virtual method void QColumnView::setupViewport(QWidget *viewport)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_setupViewport_1315_0, &_call_cbs_setupViewport_1315_0, &_set_callback_cbs_setupViewport_1315_0);
+  methods += new qt_gsi::GenericMethod ("*sharedPainter", "@hide", true, &_init_cbs_sharedPainter_c0_0, &_call_cbs_sharedPainter_c0_0);
+  methods += new qt_gsi::GenericMethod ("*sharedPainter", "@brief Virtual method QPainter *QColumnView::sharedPainter()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_sharedPainter_c0_0, &_call_cbs_sharedPainter_c0_0, &_set_callback_cbs_sharedPainter_c0_0);
+  methods += new qt_gsi::GenericMethod ("*showEvent", "@hide", false, &_init_cbs_showEvent_1634_0, &_call_cbs_showEvent_1634_0);
+  methods += new qt_gsi::GenericMethod ("*showEvent", "@brief Virtual method void QColumnView::showEvent(QShowEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_showEvent_1634_0, &_call_cbs_showEvent_1634_0, &_set_callback_cbs_showEvent_1634_0);
+  methods += new qt_gsi::GenericMethod ("sizeHint", "@hide", true, &_init_cbs_sizeHint_c0_0, &_call_cbs_sizeHint_c0_0);
+  methods += new qt_gsi::GenericMethod ("sizeHint", "@brief Virtual method QSize QColumnView::sizeHint()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_sizeHint_c0_0, &_call_cbs_sizeHint_c0_0, &_set_callback_cbs_sizeHint_c0_0);
+  methods += new qt_gsi::GenericMethod ("sizeHintForColumn", "@hide", true, &_init_cbs_sizeHintForColumn_c767_0, &_call_cbs_sizeHintForColumn_c767_0);
+  methods += new qt_gsi::GenericMethod ("sizeHintForColumn", "@brief Virtual method int QColumnView::sizeHintForColumn(int column)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_sizeHintForColumn_c767_0, &_call_cbs_sizeHintForColumn_c767_0, &_set_callback_cbs_sizeHintForColumn_c767_0);
+  methods += new qt_gsi::GenericMethod ("sizeHintForRow", "@hide", true, &_init_cbs_sizeHintForRow_c767_0, &_call_cbs_sizeHintForRow_c767_0);
+  methods += new qt_gsi::GenericMethod ("sizeHintForRow", "@brief Virtual method int QColumnView::sizeHintForRow(int row)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_sizeHintForRow_c767_0, &_call_cbs_sizeHintForRow_c767_0, &_set_callback_cbs_sizeHintForRow_c767_0);
   methods += new qt_gsi::GenericMethod ("*startAutoScroll", "@brief Method void QColumnView::startAutoScroll()\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_startAutoScroll_0, &_call_fp_startAutoScroll_0);
-  methods += new qt_gsi::GenericMethod ("*startDrag", "@brief Virtual method void QColumnView::startDrag(QFlags<Qt::DropAction> supportedActions)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_startDrag_2456_0, &_call_cbs_startDrag_2456_0);
-  methods += new qt_gsi::GenericMethod ("*startDrag", "@hide", false, &_init_cbs_startDrag_2456_0, &_call_cbs_startDrag_2456_0, &_set_callback_cbs_startDrag_2456_0);
+  methods += new qt_gsi::GenericMethod ("*startDrag", "@hide", false, &_init_cbs_startDrag_2456_0, &_call_cbs_startDrag_2456_0);
+  methods += new qt_gsi::GenericMethod ("*startDrag", "@brief Virtual method void QColumnView::startDrag(QFlags<Qt::DropAction> supportedActions)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_startDrag_2456_0, &_call_cbs_startDrag_2456_0, &_set_callback_cbs_startDrag_2456_0);
   methods += new qt_gsi::GenericMethod ("*state", "@brief Method QAbstractItemView::State QColumnView::state()\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_state_c0, &_call_fp_state_c0);
   methods += new qt_gsi::GenericMethod ("*stopAutoScroll", "@brief Method void QColumnView::stopAutoScroll()\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_stopAutoScroll_0, &_call_fp_stopAutoScroll_0);
-  methods += new qt_gsi::GenericMethod ("*tabletEvent", "@brief Virtual method void QColumnView::tabletEvent(QTabletEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_tabletEvent_1821_0, &_call_cbs_tabletEvent_1821_0);
-  methods += new qt_gsi::GenericMethod ("*tabletEvent", "@hide", false, &_init_cbs_tabletEvent_1821_0, &_call_cbs_tabletEvent_1821_0, &_set_callback_cbs_tabletEvent_1821_0);
-  methods += new qt_gsi::GenericMethod ("*timerEvent", "@brief Virtual method void QColumnView::timerEvent(QTimerEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0);
-  methods += new qt_gsi::GenericMethod ("*timerEvent", "@hide", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0, &_set_callback_cbs_timerEvent_1730_0);
-  methods += new qt_gsi::GenericMethod ("*updateEditorData", "@brief Virtual method void QColumnView::updateEditorData()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_updateEditorData_0_0, &_call_cbs_updateEditorData_0_0);
-  methods += new qt_gsi::GenericMethod ("*updateEditorData", "@hide", false, &_init_cbs_updateEditorData_0_0, &_call_cbs_updateEditorData_0_0, &_set_callback_cbs_updateEditorData_0_0);
-  methods += new qt_gsi::GenericMethod ("*updateEditorGeometries", "@brief Virtual method void QColumnView::updateEditorGeometries()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_updateEditorGeometries_0_0, &_call_cbs_updateEditorGeometries_0_0);
-  methods += new qt_gsi::GenericMethod ("*updateEditorGeometries", "@hide", false, &_init_cbs_updateEditorGeometries_0_0, &_call_cbs_updateEditorGeometries_0_0, &_set_callback_cbs_updateEditorGeometries_0_0);
-  methods += new qt_gsi::GenericMethod ("*updateGeometries", "@brief Virtual method void QColumnView::updateGeometries()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_updateGeometries_0_0, &_call_cbs_updateGeometries_0_0);
-  methods += new qt_gsi::GenericMethod ("*updateGeometries", "@hide", false, &_init_cbs_updateGeometries_0_0, &_call_cbs_updateGeometries_0_0, &_set_callback_cbs_updateGeometries_0_0);
+  methods += new qt_gsi::GenericMethod ("*tabletEvent", "@hide", false, &_init_cbs_tabletEvent_1821_0, &_call_cbs_tabletEvent_1821_0);
+  methods += new qt_gsi::GenericMethod ("*tabletEvent", "@brief Virtual method void QColumnView::tabletEvent(QTabletEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_tabletEvent_1821_0, &_call_cbs_tabletEvent_1821_0, &_set_callback_cbs_tabletEvent_1821_0);
+  methods += new qt_gsi::GenericMethod ("*timerEvent", "@hide", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0);
+  methods += new qt_gsi::GenericMethod ("*timerEvent", "@brief Virtual method void QColumnView::timerEvent(QTimerEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_timerEvent_1730_0, &_call_cbs_timerEvent_1730_0, &_set_callback_cbs_timerEvent_1730_0);
+  methods += new qt_gsi::GenericMethod ("*updateEditorData", "@hide", false, &_init_cbs_updateEditorData_0_0, &_call_cbs_updateEditorData_0_0);
+  methods += new qt_gsi::GenericMethod ("*updateEditorData", "@brief Virtual method void QColumnView::updateEditorData()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_updateEditorData_0_0, &_call_cbs_updateEditorData_0_0, &_set_callback_cbs_updateEditorData_0_0);
+  methods += new qt_gsi::GenericMethod ("*updateEditorGeometries", "@hide", false, &_init_cbs_updateEditorGeometries_0_0, &_call_cbs_updateEditorGeometries_0_0);
+  methods += new qt_gsi::GenericMethod ("*updateEditorGeometries", "@brief Virtual method void QColumnView::updateEditorGeometries()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_updateEditorGeometries_0_0, &_call_cbs_updateEditorGeometries_0_0, &_set_callback_cbs_updateEditorGeometries_0_0);
+  methods += new qt_gsi::GenericMethod ("*updateGeometries", "@hide", false, &_init_cbs_updateGeometries_0_0, &_call_cbs_updateGeometries_0_0);
+  methods += new qt_gsi::GenericMethod ("*updateGeometries", "@brief Virtual method void QColumnView::updateGeometries()\nThis method can be reimplemented in a derived class.", false, &_init_cbs_updateGeometries_0_0, &_call_cbs_updateGeometries_0_0, &_set_callback_cbs_updateGeometries_0_0);
   methods += new qt_gsi::GenericMethod ("*updateMicroFocus", "@brief Method void QColumnView::updateMicroFocus()\nThis method is protected and can only be called from inside a derived class.", false, &_init_fp_updateMicroFocus_0, &_call_fp_updateMicroFocus_0);
   methods += new qt_gsi::GenericMethod ("emit_updatePreviewWidget", "@brief Emitter for signal void QColumnView::updatePreviewWidget(const QModelIndex &index)\nCall this method to emit this signal.", false, &_init_emitter_updatePreviewWidget_2395, &_call_emitter_updatePreviewWidget_2395);
-  methods += new qt_gsi::GenericMethod ("*verticalOffset", "@brief Virtual method int QColumnView::verticalOffset()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_verticalOffset_c0_0, &_call_cbs_verticalOffset_c0_0);
-  methods += new qt_gsi::GenericMethod ("*verticalOffset", "@hide", true, &_init_cbs_verticalOffset_c0_0, &_call_cbs_verticalOffset_c0_0, &_set_callback_cbs_verticalOffset_c0_0);
-  methods += new qt_gsi::GenericMethod ("*verticalScrollbarAction", "@brief Virtual method void QColumnView::verticalScrollbarAction(int action)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_verticalScrollbarAction_767_0, &_call_cbs_verticalScrollbarAction_767_0);
-  methods += new qt_gsi::GenericMethod ("*verticalScrollbarAction", "@hide", false, &_init_cbs_verticalScrollbarAction_767_0, &_call_cbs_verticalScrollbarAction_767_0, &_set_callback_cbs_verticalScrollbarAction_767_0);
-  methods += new qt_gsi::GenericMethod ("*verticalScrollbarValueChanged", "@brief Virtual method void QColumnView::verticalScrollbarValueChanged(int value)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_verticalScrollbarValueChanged_767_0, &_call_cbs_verticalScrollbarValueChanged_767_0);
-  methods += new qt_gsi::GenericMethod ("*verticalScrollbarValueChanged", "@hide", false, &_init_cbs_verticalScrollbarValueChanged_767_0, &_call_cbs_verticalScrollbarValueChanged_767_0, &_set_callback_cbs_verticalScrollbarValueChanged_767_0);
+  methods += new qt_gsi::GenericMethod ("*verticalOffset", "@hide", true, &_init_cbs_verticalOffset_c0_0, &_call_cbs_verticalOffset_c0_0);
+  methods += new qt_gsi::GenericMethod ("*verticalOffset", "@brief Virtual method int QColumnView::verticalOffset()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_verticalOffset_c0_0, &_call_cbs_verticalOffset_c0_0, &_set_callback_cbs_verticalOffset_c0_0);
+  methods += new qt_gsi::GenericMethod ("*verticalScrollbarAction", "@hide", false, &_init_cbs_verticalScrollbarAction_767_0, &_call_cbs_verticalScrollbarAction_767_0);
+  methods += new qt_gsi::GenericMethod ("*verticalScrollbarAction", "@brief Virtual method void QColumnView::verticalScrollbarAction(int action)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_verticalScrollbarAction_767_0, &_call_cbs_verticalScrollbarAction_767_0, &_set_callback_cbs_verticalScrollbarAction_767_0);
+  methods += new qt_gsi::GenericMethod ("*verticalScrollbarValueChanged", "@hide", false, &_init_cbs_verticalScrollbarValueChanged_767_0, &_call_cbs_verticalScrollbarValueChanged_767_0);
+  methods += new qt_gsi::GenericMethod ("*verticalScrollbarValueChanged", "@brief Virtual method void QColumnView::verticalScrollbarValueChanged(int value)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_verticalScrollbarValueChanged_767_0, &_call_cbs_verticalScrollbarValueChanged_767_0, &_set_callback_cbs_verticalScrollbarValueChanged_767_0);
   methods += new qt_gsi::GenericMethod ("*verticalStepsPerItem", "@brief Method int QColumnView::verticalStepsPerItem()\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_verticalStepsPerItem_c0, &_call_fp_verticalStepsPerItem_c0);
-  methods += new qt_gsi::GenericMethod ("*viewOptions", "@brief Virtual method QStyleOptionViewItem QColumnView::viewOptions()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_viewOptions_c0_0, &_call_cbs_viewOptions_c0_0);
-  methods += new qt_gsi::GenericMethod ("*viewOptions", "@hide", true, &_init_cbs_viewOptions_c0_0, &_call_cbs_viewOptions_c0_0, &_set_callback_cbs_viewOptions_c0_0);
+  methods += new qt_gsi::GenericMethod ("*viewOptions", "@hide", true, &_init_cbs_viewOptions_c0_0, &_call_cbs_viewOptions_c0_0);
+  methods += new qt_gsi::GenericMethod ("*viewOptions", "@brief Virtual method QStyleOptionViewItem QColumnView::viewOptions()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_viewOptions_c0_0, &_call_cbs_viewOptions_c0_0, &_set_callback_cbs_viewOptions_c0_0);
   methods += new qt_gsi::GenericMethod ("emit_viewportEntered", "@brief Emitter for signal void QColumnView::viewportEntered()\nCall this method to emit this signal.", false, &_init_emitter_viewportEntered_0, &_call_emitter_viewportEntered_0);
-  methods += new qt_gsi::GenericMethod ("*viewportEvent", "@brief Virtual method bool QColumnView::viewportEvent(QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_viewportEvent_1217_0, &_call_cbs_viewportEvent_1217_0);
-  methods += new qt_gsi::GenericMethod ("*viewportEvent", "@hide", false, &_init_cbs_viewportEvent_1217_0, &_call_cbs_viewportEvent_1217_0, &_set_callback_cbs_viewportEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*viewportEvent", "@hide", false, &_init_cbs_viewportEvent_1217_0, &_call_cbs_viewportEvent_1217_0);
+  methods += new qt_gsi::GenericMethod ("*viewportEvent", "@brief Virtual method bool QColumnView::viewportEvent(QEvent *event)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_viewportEvent_1217_0, &_call_cbs_viewportEvent_1217_0, &_set_callback_cbs_viewportEvent_1217_0);
   methods += new qt_gsi::GenericMethod ("*viewportMargins", "@brief Method QMargins QColumnView::viewportMargins()\nThis method is protected and can only be called from inside a derived class.", true, &_init_fp_viewportMargins_c0, &_call_fp_viewportMargins_c0);
-  methods += new qt_gsi::GenericMethod ("*viewportSizeHint", "@brief Virtual method QSize QColumnView::viewportSizeHint()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_viewportSizeHint_c0_0, &_call_cbs_viewportSizeHint_c0_0);
-  methods += new qt_gsi::GenericMethod ("*viewportSizeHint", "@hide", true, &_init_cbs_viewportSizeHint_c0_0, &_call_cbs_viewportSizeHint_c0_0, &_set_callback_cbs_viewportSizeHint_c0_0);
-  methods += new qt_gsi::GenericMethod ("visualRect", "@brief Virtual method QRect QColumnView::visualRect(const QModelIndex &index)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_visualRect_c2395_0, &_call_cbs_visualRect_c2395_0);
-  methods += new qt_gsi::GenericMethod ("visualRect", "@hide", true, &_init_cbs_visualRect_c2395_0, &_call_cbs_visualRect_c2395_0, &_set_callback_cbs_visualRect_c2395_0);
-  methods += new qt_gsi::GenericMethod ("*visualRegionForSelection", "@brief Virtual method QRegion QColumnView::visualRegionForSelection(const QItemSelection &selection)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_visualRegionForSelection_c2727_0, &_call_cbs_visualRegionForSelection_c2727_0);
-  methods += new qt_gsi::GenericMethod ("*visualRegionForSelection", "@hide", true, &_init_cbs_visualRegionForSelection_c2727_0, &_call_cbs_visualRegionForSelection_c2727_0, &_set_callback_cbs_visualRegionForSelection_c2727_0);
-  methods += new qt_gsi::GenericMethod ("*wheelEvent", "@brief Virtual method void QColumnView::wheelEvent(QWheelEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_wheelEvent_1718_0, &_call_cbs_wheelEvent_1718_0);
-  methods += new qt_gsi::GenericMethod ("*wheelEvent", "@hide", false, &_init_cbs_wheelEvent_1718_0, &_call_cbs_wheelEvent_1718_0, &_set_callback_cbs_wheelEvent_1718_0);
+  methods += new qt_gsi::GenericMethod ("*viewportSizeHint", "@hide", true, &_init_cbs_viewportSizeHint_c0_0, &_call_cbs_viewportSizeHint_c0_0);
+  methods += new qt_gsi::GenericMethod ("*viewportSizeHint", "@brief Virtual method QSize QColumnView::viewportSizeHint()\nThis method can be reimplemented in a derived class.", true, &_init_cbs_viewportSizeHint_c0_0, &_call_cbs_viewportSizeHint_c0_0, &_set_callback_cbs_viewportSizeHint_c0_0);
+  methods += new qt_gsi::GenericMethod ("visualRect", "@hide", true, &_init_cbs_visualRect_c2395_0, &_call_cbs_visualRect_c2395_0);
+  methods += new qt_gsi::GenericMethod ("visualRect", "@brief Virtual method QRect QColumnView::visualRect(const QModelIndex &index)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_visualRect_c2395_0, &_call_cbs_visualRect_c2395_0, &_set_callback_cbs_visualRect_c2395_0);
+  methods += new qt_gsi::GenericMethod ("*visualRegionForSelection", "@hide", true, &_init_cbs_visualRegionForSelection_c2727_0, &_call_cbs_visualRegionForSelection_c2727_0);
+  methods += new qt_gsi::GenericMethod ("*visualRegionForSelection", "@brief Virtual method QRegion QColumnView::visualRegionForSelection(const QItemSelection &selection)\nThis method can be reimplemented in a derived class.", true, &_init_cbs_visualRegionForSelection_c2727_0, &_call_cbs_visualRegionForSelection_c2727_0, &_set_callback_cbs_visualRegionForSelection_c2727_0);
+  methods += new qt_gsi::GenericMethod ("*wheelEvent", "@hide", false, &_init_cbs_wheelEvent_1718_0, &_call_cbs_wheelEvent_1718_0);
+  methods += new qt_gsi::GenericMethod ("*wheelEvent", "@brief Virtual method void QColumnView::wheelEvent(QWheelEvent *)\nThis method can be reimplemented in a derived class.", false, &_init_cbs_wheelEvent_1718_0, &_call_cbs_wheelEvent_1718_0, &_set_callback_cbs_wheelEvent_1718_0);
   methods += new qt_gsi::GenericMethod ("emit_windowIconChanged", "@brief Emitter for signal void QColumnView::windowIconChanged(const QIcon &icon)\nCall this method to emit this signal.", false, &_init_emitter_windowIconChanged_1787, &_call_emitter_windowIconChanged_1787);
   methods += new qt_gsi::GenericMethod ("emit_windowIconTextChanged", "@brief Emitter for signal void QColumnView::windowIconTextChanged(const QString &iconText)\nCall this method to emit this signal.", false, &_init_emitter_windowIconTextChanged_2025, &_call_emitter_windowIconTextChanged_2025);
   methods += new qt_gsi::GenericMethod ("emit_windowTitleChanged", "@brief Emitter for signal void QColumnView::windowTitleChanged(const QString &title)\nCall this method to emit this signal.", false, &_init_emitter_windowTitleChanged_2025, &_call_emitter_windowTitleChanged_2025);

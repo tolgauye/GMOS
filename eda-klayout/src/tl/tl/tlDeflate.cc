@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -166,7 +166,6 @@ public:
       if (*l > 0) {
         unsigned int code = next_code [*l]++;
         code <<= (max_bits - *l);
-        tl_assert (code < (unsigned int) (1 << max_bits));
         mp_codes [code] = symbol;
         mp_bitmasks [code] = bitmasks [*l];
       } 

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -43,7 +43,6 @@ GDS2Reader::GDS2Reader (tl::InputStream &s)
     m_recptr (0),
     mp_rec_buf (0),
     m_stored_rec (0),
-    m_allow_big_records (true),
     m_progress (tl::to_string (tr ("Reading GDS2 file")), 10000)
 {
   m_progress.set_format (tl::to_string (tr ("%.0f MB")));
@@ -55,16 +54,23 @@ GDS2Reader::~GDS2Reader ()
   //  .. nothing yet ..
 }
 
-void
-GDS2Reader::init (const db::LoadLayoutOptions &options)
+const LayerMap &
+GDS2Reader::read (db::Layout &layout, const db::LoadLayoutOptions &options)
 {
-  GDS2ReaderBase::init (options);
-
-  m_allow_big_records = options.get_options<db::GDS2ReaderOptions> ().allow_big_records;
+  m_options = options.get_options<db::GDS2ReaderOptions> ();
+  m_common_options = options.get_options<db::CommonReaderOptions> ();
 
   m_recnum = 0;
   --m_recnum;
   m_reclen = 0;
+
+  return basic_read (layout, m_common_options.layer_map, m_common_options.create_other_layers, m_common_options.enable_text_objects, m_common_options.enable_properties, m_options.allow_multi_xy_records, m_options.box_mode);
+}
+
+const LayerMap &
+GDS2Reader::read (db::Layout &layout)
+{
+  return read (layout, db::LoadLayoutOptions ());
 }
 
 void 
@@ -102,7 +108,7 @@ GDS2Reader::get_record ()
     error (tl::to_string (tr ("Invalid record length (less than 4)")));
   }
   if (m_reclen >= 0x8000) {
-    if (m_allow_big_records) {
+    if (m_options.allow_big_records) {
       warn (tl::to_string (tr ("Record length larger than 0x8000 encountered: interpreting as unsigned")));
     } else {
       error (tl::to_string (tr ("Record length larger than 0x8000 encountered (reader is configured not to allow such records)")));
@@ -127,19 +133,11 @@ GDS2Reader::get_record ()
   return rec_id;
 }
 
-void
-GDS2Reader::record_underflow_error ()
-{
-  error (tl::to_string (tr ("Record too short")));
-}
-
 inline int 
 GDS2Reader::get_int ()
 {
   unsigned char *b = mp_rec_buf + m_recptr;
-  if ((m_recptr += 4) > m_reclen) {
-    record_underflow_error ();
-  }
+  m_recptr += 4;
 
   int32_t l = *((int32_t *)b);
   gds2h (l);
@@ -150,9 +148,7 @@ inline short
 GDS2Reader::get_short ()
 {
   unsigned char *b = mp_rec_buf + m_recptr;
-  if ((m_recptr += 2) > m_reclen) {
-    record_underflow_error ();
-  }
+  m_recptr += 2;
 
   int16_t s = *((int16_t *)b);
   gds2h (s);
@@ -163,9 +159,7 @@ inline unsigned short
 GDS2Reader::get_ushort ()
 {
   unsigned char *b = mp_rec_buf + m_recptr;
-  if ((m_recptr += 2) > m_reclen) {
-    record_underflow_error ();
-  }
+  m_recptr += 2;
 
   uint16_t s = *((uint16_t *)b);
   gds2h ((int16_t &) s);
@@ -176,9 +170,7 @@ inline double
 GDS2Reader::get_double ()
 {
   unsigned char *b = mp_rec_buf + m_recptr;
-  if ((m_recptr += 8) > m_reclen) {
-    record_underflow_error ();
-  }
+  m_recptr += 8;
 
   uint32_t l0 = ((uint32_t *)b) [0];
   gds2h ((int32_t &) l0);
@@ -218,18 +210,9 @@ GDS2Reader::get_string ()
 }
 
 void
-GDS2Reader::get_string (std::string &s) const
+GDS2Reader::get_string (tl::string &s) const
 {
-  if (m_reclen == 0) {
-    s.clear ();
-  } else {
-    //  strip padding 0 characters
-    unsigned long n = m_reclen;
-    while (n > 0 && mp_rec_buf [n - 1] == 0) {
-      --n;
-    }
-    s.assign ((const char *) mp_rec_buf, n);
-  }
+  s.assign ((const char *) mp_rec_buf, 0, m_reclen);
 }
 
 void
@@ -273,39 +256,21 @@ GDS2Reader::progress_checkpoint ()
   m_progress.set (m_stream.pos ());
 }
 
-std::string
-GDS2Reader::path () const
-{
-  return m_stream.source ();
-}
-
 void 
 GDS2Reader::error (const std::string &msg)
 {
-  throw GDS2ReaderException (msg, m_stream.pos (), m_recnum, cellname ().c_str (), m_stream.source ());
+  throw GDS2ReaderException (msg, m_stream.pos (), m_recnum, cellname ().c_str ());
 }
 
 void 
-GDS2Reader::warn (const std::string &msg, int wl)
+GDS2Reader::warn (const std::string &msg) 
 {
-  if (warn_level () < wl) {
-    return;
-  }
-
-  if (first_warning ()) {
-    tl::warn << tl::sprintf (tl::to_string (tr ("In file %s:")), m_stream.source ());
-  }
-
-  int ws = compress_warning (msg);
-  if (ws < 0) {
-    tl::warn << msg
-             << tl::to_string (tr (" (position=")) << m_stream.pos ()
-             << tl::to_string (tr (", record number=")) << m_recnum
-             << tl::to_string (tr (", cell=")) << cellname ().c_str ()
-             << ")";
-  } else if (ws == 0) {
-    tl::warn << tl::to_string (tr ("... further warnings of this kind are not shown"));
-  }
+  // TODO: compress
+  tl::warn << msg 
+           << tl::to_string (tr (" (position=")) << m_stream.pos ()
+           << tl::to_string (tr (", record number=")) << m_recnum
+           << tl::to_string (tr (", cell=")) << cellname ().c_str ()
+           << ")";
 }
 
 }

@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -85,20 +85,12 @@ public:
   /**
    *  @brief Default constructor
    */
-  Manager (bool enabled = true);
+  Manager ();
   
   /**
    *  @brief Destructor
    */
   ~Manager ();
-
-  /**
-   *  @brief Gets a value indicating whether the manager is enabled
-   */
-  bool is_enabled () const
-  {
-    return m_enabled;
-  }
 
   /**
    *  @brief Release an object with the given id.
@@ -142,16 +134,6 @@ public:
    *  This method can be used to identify the current transaction by id.
    */
   transaction_id_t last_transaction_id () const;
-
-  /**
-   *  @brief Gets the id of the next transaction to undo
-   */
-  transaction_id_t transaction_id_for_undo () const;
-
-  /**
-   *  @brief Gets the id of the next transaction to redo
-   */
-  transaction_id_t transaction_id_for_redo () const;
 
   /**
    *  @brief Close a transaction successfully.
@@ -201,29 +183,6 @@ public:
    *          if there is one available.
    */
   std::pair<bool, std::string> available_redo () const;
-
-  /**
-   *  @brief Gets the number of available undo items
-   */
-  int available_undo_items ();
-
-  /**
-   *  @brief Gets the number of available redo items
-   */
-  int available_redo_items ();
-
-  /**
-   *  @brief Gets an item from the list
-   *
-   *  @param delta A positive value or 0 for the nth redo item, A negative value for the nth undo item
-   *
-   *  A delta of "0" will give you the next redo item, a delta of "1" the second next one.
-   *  A delta of "-1" will give you the first undo item.
-   *  delta must be less than "available_redo_items" and larger or equal than "-available_undo_items".
-   *
-   *  @return The description of the transaction
-   */
-  std::string undo_or_redo_item (int delta) const;
 
   /**
    *  @brief Queue a operation for undo
@@ -296,7 +255,6 @@ private:
   transactions_t::iterator m_current;
   bool m_opened;
   bool m_replay;
-  bool m_enabled;
 
   void erase_transactions (transactions_t::iterator from, transactions_t::iterator to);
 };
@@ -362,14 +320,9 @@ public:
 
   void open ()
   {
-    if (mp_manager && ! mp_manager->transacting ()) {
+    if (! mp_manager->transacting ()) {
       mp_manager->transaction (m_description, m_transaction_id);
     }
-  }
-
-  bool is_empty () const
-  {
-    return ! mp_manager || mp_manager->last_queued (0) == 0;
   }
 
   db::Manager::transaction_id_t id () const
@@ -388,6 +341,16 @@ private:
 };
 
 } // namespace db
+
+namespace tl
+{
+  template <>
+  struct type_traits <db::Manager> : public type_traits<void> 
+  {
+    typedef tl::false_tag has_copy_constructor;
+    typedef tl::true_tag has_default_constructor;
+  };
+}
 
 #endif
 

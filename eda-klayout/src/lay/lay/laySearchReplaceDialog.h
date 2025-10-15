@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -27,13 +27,10 @@
 #include "ui_SearchReplaceDialog.h"
 
 #include "layBrowser.h"
-#include "layMargin.h"
 #include "rdb.h"
 #include "dbLayout.h"
 #include "dbShape.h"
 #include "dbInstances.h"
-#include "dbInstElement.h"
-#include "tlOptional.h"
 
 #include <QAbstractItemModel>
 
@@ -69,7 +66,6 @@ public:
     db::ICplxTrans trans;
     db::cell_index_type cell_index;
     db::cell_index_type initial_cell_index;
-    tl::optional<std::vector<db::InstElement> > inst_elements;
   };
 
   struct QueryInstResult
@@ -82,7 +78,6 @@ public:
     db::ICplxTrans trans;
     db::cell_index_type cell_index;
     db::cell_index_type initial_cell_index;
-    tl::optional<std::vector<db::InstElement> > inst_elements;
   };
 
   struct QueryCellResult
@@ -98,7 +93,6 @@ public:
   SearchReplaceResults ();
 
   void clear ();
-  void set_data_column_headers (const tl::Variant &v);
   void push_back (const tl::Variant &v);
   void push_back (const QueryShapeResult &v);
   void push_back (const QueryInstResult &v);
@@ -111,17 +105,7 @@ public:
     return m_data_result;
   }
 
-  std::vector<tl::Variant> &data ()
-  {
-    return m_data_result;
-  }
-
   const std::vector<QueryShapeResult> &shapes () const
-  {
-    return m_shape_result;
-  }
-
-  std::vector<QueryShapeResult> &shapes ()
   {
     return m_shape_result;
   }
@@ -131,38 +115,25 @@ public:
     return m_inst_result;
   }
 
-  std::vector<QueryInstResult> &instances ()
-  {
-    return m_inst_result;
-  }
-
   const std::vector<QueryCellResult> &cells () const
   {
     return m_cell_result;
   }
 
-  std::vector<QueryCellResult> &cells ()
-  {
-    return m_cell_result;
-  }
-
-  int columnCount (const QModelIndex &parent) const;
+  int	columnCount (const QModelIndex &parent) const;
   QVariant data (const QModelIndex &index, int role) const;
-  Qt::ItemFlags flags (const QModelIndex &index) const;
+  Qt::ItemFlags	flags (const QModelIndex &index) const;
   bool hasChildren (const QModelIndex &parent) const;
   bool hasIndex (int row, int column, const QModelIndex &parent) const;
   QVariant headerData (int section, Qt::Orientation orientation, int role) const;
-  QModelIndex index (int row, int column, const QModelIndex &parent) const;
-  QModelIndex parent (const QModelIndex &index) const;
-  int rowCount (const QModelIndex &parent) const;
+  QModelIndex	index (int row, int column, const QModelIndex &parent) const;
+  QModelIndex	parent (const QModelIndex &index) const;
+  int	rowCount (const QModelIndex &parent) const;
   void has_more (bool hm);
 
-  void export_csv (const std::string &file, const std::set<int> *rows = 0);
-  void export_csv_to_clipboard (const std::set<int> *rows = 0);
-  void export_csv (tl::OutputStream &os, const std::set<int> *rows = 0);
-  void export_layout (db::Layout &layout, const std::set<int> *rows = 0);
-  void export_rdb (rdb::Database &rdb, double dbu, const std::set<int> *rows = 0);
-  void select_items (LayoutViewBase *view, int cv_index, const std::set<int> *rows = 0);
+  void export_csv (const std::string &file);
+  void export_layout (db::Layout &layout);
+  void export_rdb (rdb::Database &rdb, double dbu);
 
 private:
   std::vector<tl::Variant> m_data_result;
@@ -170,7 +141,6 @@ private:
   std::vector<QueryInstResult> m_inst_result;
   std::vector<QueryCellResult> m_cell_result;
   size_t m_data_columns;
-  tl::Variant m_data_column_headers;
   mutable int m_last_column_count;
   std::map<db::cell_index_type, std::string> m_cellname_map;
   std::map<unsigned int, db::LayerProperties> m_lp_map;
@@ -194,7 +164,7 @@ public:
     std::string text;
   };
 
-  SearchReplaceDialog (lay::Dispatcher *root, lay::LayoutViewBase *view);
+  SearchReplaceDialog (lay::PluginRoot *root, lay::LayoutView *view);
   ~SearchReplaceDialog ();
 
 private:
@@ -204,13 +174,13 @@ private:
   //  implementation of the lay::Plugin interface
   void menu_activated (const std::string &symbol);
 
-  lay::LayoutViewBase *mp_view;
+  lay::LayoutView *mp_view;
   std::vector<std::string> m_mru;
   std::vector<SavedQuery> m_saved;
   int m_current_mode;
 
   window_type m_window;
-  lay::Margin m_window_dim;
+  double m_window_dim;
   unsigned int m_max_item_count;
   std::vector<lay::MarkerBase *> mp_markers;
 
@@ -241,16 +211,9 @@ private slots:
   void header_columns_changed (int from, int to);
   void cancel ();
   void cancel_exec ();
-  void select_items ();
   void export_csv ();
-  void export_csv_to_clipboard ();
   void export_rdb ();
   void export_layout ();
-  void sel_select_items ();
-  void sel_export_csv ();
-  void sel_export_csv_to_clipboard ();
-  void sel_export_rdb ();
-  void sel_export_layout ();
 
 private:
   std::string build_find_expression (QStackedWidget *prop_page, QComboBox *context);
@@ -263,8 +226,8 @@ private:
   void issue_query (const std::string &q, const std::set<size_t> *selected_items, bool with_results);
   void update_results (const std::string &q);
   void remove_markers ();
-  bool fill_model (const db::LayoutQuery &lq, db::LayoutQueryIterator &iq, const db::Layout *layout, bool all, bool with_paths);
-  bool query_to_model (SearchReplaceResults &model, const db::LayoutQuery &lq, db::LayoutQueryIterator &iq, size_t max_item_count, bool all, bool with_path = false);
+  bool fill_model (const db::LayoutQuery &lq, db::LayoutQueryIterator &iq, const db::Layout *layout, bool all);
+  bool query_to_model (SearchReplaceResults &model, const db::LayoutQuery &lq, db::LayoutQueryIterator &iq, size_t max_item_count, bool all);
   void attach_layout (db::Layout *layout);
   void layout_changed ();
 

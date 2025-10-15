@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -20,7 +20,6 @@
 
 */
 
-#if defined(HAVE_QT)
 
 #include "imgLandmarksDialog.h"
 #include "imgService.h"
@@ -40,7 +39,7 @@ public:
    *  @brief Constructor attaching to a certain object
    */
   LandmarkMarker (lay::ViewService *service, const db::DPoint &pos, bool selected)
-    : lay::ViewObject (service->ui ()),
+    : lay::ViewObject (service->widget ()),
       mp_service (service), m_pos (pos), m_selected (selected), m_position_set (true)
   {
     //  .. nothing yet ..
@@ -50,7 +49,7 @@ public:
    *  @brief Constructor attaching to a certain object
    */
   LandmarkMarker (lay::ViewService *service, bool selected)
-    : lay::ViewObject (service->ui ()),
+    : lay::ViewObject (service->widget ()),
       mp_service (service), m_pos (), m_selected (selected), m_position_set (false)
   {
     //  .. nothing yet ..
@@ -145,8 +144,8 @@ class LandmarkEditorService
   : public lay::ViewService
 {
 public:
-  LandmarkEditorService (lay::LayoutViewBase *view, img::Object *img)
-    : lay::ViewService (view->canvas ()), 
+  LandmarkEditorService (lay::LayoutView *view, img::Object *img)
+    : lay::ViewService (view->view_object_widget ()), 
       mp_image (img), m_selected (-1), m_dragging (false),
       m_mode (LandmarksDialog::None)
   {
@@ -182,7 +181,7 @@ public:
 
         update ();
         
-        ui ()->grab_mouse (this, false);
+        widget ()->grab_mouse (this, false);
         m_dragging = true;
 
       } else if (m_mode == LandmarksDialog::Delete) {
@@ -227,7 +226,7 @@ public:
 
           update ();
 
-          ui ()->grab_mouse (this, false);
+          widget ()->grab_mouse (this, false);
           m_dragging = false;
 
         }
@@ -235,10 +234,9 @@ public:
       } else {
 
         int search_range = 5; // TODO: make_variable?
-        double l = double (search_range) / ui ()->mouse_event_trans ().mag ();
+        double l = double (search_range) / widget ()->mouse_event_trans ().mag ();
         db::DBox search_box = db::DBox (p, p).enlarged (db::DVector (l, l));
 
-        m_selected = -1;
         int li = 0;
         for (std::vector<db::DPoint>::const_iterator l = mp_image->landmarks ().begin (); l != mp_image->landmarks ().end (); ++l, ++li) {
           if (search_box.contains (*l)) {
@@ -308,7 +306,7 @@ public:
       } else if (! m_dragging) {
 
         int search_range = 5; // TODO: make_variable?
-        double l = double (search_range) / ui ()->mouse_event_trans ().mag ();
+        double l = double (search_range) / widget ()->mouse_event_trans ().mag ();
         db::DBox search_box = db::DBox (p, p).enlarged (db::DVector (l, l));
 
         int li = 0;
@@ -344,10 +342,10 @@ public:
       m_dragging = false;
     }
 
-    ui ()->ungrab_mouse (this);
+    widget ()->ungrab_mouse (this);
   }
 
-  void set_colors (tl::Color /*background*/, tl::Color /*color*/)
+  void set_colors (QColor /*background*/, QColor /*color*/)
   {
     // ...
   }
@@ -408,7 +406,7 @@ LandmarksDialog::LandmarksDialog (QWidget *parent, img::Object &img)
 
   setupUi (this);
 
-  mp_image = navigator->setup (lay::Dispatcher::instance (), &img);
+  mp_image = navigator->setup (lay::PluginRoot::instance (), &img);
 
   connect (new_pb, SIGNAL (clicked ()), this, SLOT (update_mode ()));
   connect (delete_pb, SIGNAL (clicked ()), this, SLOT (update_mode ()));
@@ -420,7 +418,7 @@ LandmarksDialog::LandmarksDialog (QWidget *parent, img::Object &img)
   mp_service->updated_event.add (this, &LandmarksDialog::landmarks_updated);
 
   new_pb->setChecked (true);
-  mp_service->set_mode (Add);
+  update_mode ();
   landmarks_updated ();
 }
 
@@ -437,11 +435,11 @@ LandmarksDialog::update_mode ()
 {
   mode_t new_mode = None;
 
-  if (sender () == new_pb) {
+  if (new_pb->isChecked ()) {
     new_mode = Add;
-  } else if (sender () == move_pb) {
+  } else if (move_pb->isChecked ()) {
     new_mode = Move;
-  } else if (sender () == delete_pb) {
+  } else if (delete_pb->isChecked ()) {
     new_mode = Delete;
   }
 
@@ -501,4 +499,3 @@ LandmarksDialog::landmarks_updated ()
 
 }
 
-#endif

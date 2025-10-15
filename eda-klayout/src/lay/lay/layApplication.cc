@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -31,7 +31,6 @@
 #include "layVersion.h"
 #include "laySignalHandler.h"
 #include "layRuntimeErrorForm.h"
-#include "layReaderErrorForm.h"
 #include "layProgress.h"
 #include "layTextProgress.h"
 #include "layBackgroundAwareTreeStyle.h"
@@ -64,7 +63,6 @@
 #include "tlHttpStream.h"
 #include "tlArch.h"
 #include "tlFileUtils.h"
-#include "tlEnv.h"
 
 #include <QIcon>
 #include <QDir>
@@ -94,28 +92,20 @@ namespace lay
 // --------------------------------------------------------------------------------
 //  Exception handlers
 
-static void close_transaction ()
-{
-  //  if any transaction is pending (this may happen when an operation threw an exception)
-  //  close transactions.
-  //  NOTE: don't do this in breakpoint mode as we do not want to interfere with things happening outside
-  if (lay::MainWindow::instance () && lay::MainWindow::instance ()->manager ().transacting () &&
-      !(lay::MacroEditorDialog::instance () && lay::MacroEditorDialog::instance ()->in_breakpoint ())) {
-    lay::MainWindow::instance ()->manager ().commit ();
-  }
-}
-
 static void ui_exception_handler_tl (const tl::Exception &ex, QWidget *parent)
 {
   //  Prevents severe side effects if there are pending deferred methods
   tl::NoDeferredMethods silent;
 
-  close_transaction ();
+  //  if any transaction is pending (this may happen when an operation threw an exception)
+  //  close transactions.
+  if (lay::MainWindow::instance () && lay::MainWindow::instance ()->manager ().transacting ()) {
+    lay::MainWindow::instance ()->manager ().commit ();
+  }
 
   const tl::ExitException *gsi_exit = dynamic_cast <const tl::ExitException *> (&ex);
   const tl::BreakException *gsi_break = dynamic_cast <const tl::BreakException *> (&ex);
   const tl::ScriptError *gsi_excpt = dynamic_cast <const tl::ScriptError *> (&ex);
-  const db::ReaderUnknownFormatException *reader_excpt = dynamic_cast <const db::ReaderUnknownFormatException *> (&ex);
 
   if (gsi_exit || gsi_break) {
     //  exit and break exceptions are not shown - they are issued when a script is aborted or
@@ -132,28 +122,20 @@ static void ui_exception_handler_tl (const tl::Exception &ex, QWidget *parent)
 
     if (gsi_excpt->line () > 0) {
       tl::error << gsi_excpt->sourcefile () << ":" << gsi_excpt->line () << ": " 
-                << gsi_excpt->msg ();
+                << gsi_excpt->msg () << tl::to_string (QObject::tr (" (class ")) << gsi_excpt->cls () << ")";
     } else {
-      tl::error << gsi_excpt->msg ();
+      tl::error << gsi_excpt->msg () << tl::to_string (QObject::tr (" (class ")) << gsi_excpt->cls () << ")";
     }
 
     lay::RuntimeErrorForm error_dialog (parent, "ruby_error_form", gsi_excpt);
     error_dialog.exec ();
 
   } else {
-
     tl::error << ex.msg (); 
     if (! parent) {
       parent = QApplication::activeWindow () ? QApplication::activeWindow () : lay::MainWindow::instance ();
     }
-
-    if (reader_excpt) {
-      lay::ReaderErrorForm error_dialog (parent, "reader_error_form", reader_excpt);
-      error_dialog.exec ();
-    } else {
-      QMessageBox::critical (parent, QObject::tr ("Error"), tl::to_qstring (ex.msg ()));
-    }
-
+    QMessageBox::critical (parent, QObject::tr ("Error"), tl::to_qstring (ex.msg ())); 
   }
 }
 
@@ -162,9 +144,13 @@ static void ui_exception_handler_std (const std::exception &ex, QWidget *parent)
   //  Prevents severe side effects if there are pending deferred methods
   tl::NoDeferredMethods silent;
 
-  close_transaction ();
+  //  if any transaction is pending (this may happen when an operation threw an exception)
+  //  close transactions.
+  if (lay::MainWindow::instance () && lay::MainWindow::instance ()->manager ().transacting ()) {
+    lay::MainWindow::instance ()->manager ().commit ();
+  }
 
-  tl::error << ex.what ();
+  tl::error << ex.what (); 
   if (! parent) {
     parent = QApplication::activeWindow () ? QApplication::activeWindow () : lay::MainWindow::instance ();
   }
@@ -176,7 +162,11 @@ static void ui_exception_handler_def (QWidget *parent)
   //  Prevents severe side effects if there are pending deferred methods
   tl::NoDeferredMethods silent;
 
-  close_transaction ();
+  //  if any transaction is pending (this may happen when an operation threw an exception)
+  //  close transactions.
+  if (lay::MainWindow::instance () && lay::MainWindow::instance ()->manager ().transacting ()) {
+    lay::MainWindow::instance ()->manager ().commit ();
+  }
 
   if (! parent) {
     parent = QApplication::activeWindow () ? QApplication::activeWindow () : lay::MainWindow::instance ();
@@ -195,7 +185,6 @@ ApplicationBase::ApplicationBase (bool non_ui_mode)
   : gsi::ObjectBase (),
     m_lyp_map_all_cvs (true), 
     m_lyp_add_default (false),
-    m_run_macro_and_exit (true),
     m_packages_with_dep (false),
     m_write_config_file (false),
     m_gtf_replay_rate (0),
@@ -258,10 +247,7 @@ ApplicationBase::parse_cmd (int &argc, char **argv)
       }
     }
 
-    m_config_file_to_write.clear ();
-    if (! m_appdata_path.empty ()) {
-      m_config_file_to_write = tl::to_string (QDir (tl::to_qstring (m_appdata_path)).absoluteFilePath (QString::fromUtf8 ("klayoutrc")));
-    }
+    m_config_file_to_write = tl::to_string (QDir (tl::to_qstring (m_appdata_path)).absoluteFilePath (QString::fromUtf8 ("klayoutrc")));
 
     //  Hint: the order is reverse in the sense that the first one wins ...
     for (std::vector <std::string>::const_iterator p = m_klayout_path.end (); p != m_klayout_path.begin (); ) {
@@ -312,12 +298,10 @@ ApplicationBase::parse_cmd (int &argc, char **argv)
 
       int v = 0;
       tl::from_string (args [++i], v);
+      if (v < 0) {
+        v = 0;
+      }
       tl::verbosity (v);
-
-    } else if (a == "-k" && (i + 1) < argc) {
-
-      //  ignored (handled earlier)
-      ++i;
 
     } else if (a == "-l" && (i + 1) < argc) {
 
@@ -369,18 +353,7 @@ ApplicationBase::parse_cmd (int &argc, char **argv)
 
     } else if (a == "-r" && (i + 1) < argc) {
 
-      if (! m_run_macro.empty ()) {
-        throw tl::Exception (tl::to_string (QObject::tr ("Option -r or -rr can only be used once")));
-      }
       m_run_macro = args [++i];
-
-    } else if (a == "-rr" && (i + 1) < argc) {
-
-      if (! m_run_macro.empty ()) {
-        throw tl::Exception (tl::to_string (QObject::tr ("Option -r or -rr can only be used once")));
-      }
-      m_run_macro = args [++i];
-      m_run_macro_and_exit = false;
 
     } else if (a == "-rx") {
 
@@ -510,6 +483,16 @@ ApplicationBase::parse_cmd (int &argc, char **argv)
 
       m_packages_with_dep = true;
 
+    } else if (a == "-v") {
+
+      tl::info << lay::Version::name () << " " << lay::Version::version ();
+      exit (0);
+
+    } else if (a == "-h") {
+
+      tl::info << usage () << tl::noendl;
+      exit (0);
+
     } else if (a == "-m" && (i + 1) < argc) {
 
       m_files.push_back (std::make_pair (rdb_file, std::make_pair (std::string (args [++i]), std::string ())));
@@ -565,19 +548,6 @@ ApplicationBase::init_app ()
   }
   std::string short_arch_string = tl::join (as, "-");
 
-#if defined(_WIN32)
-  //  Set SSL_CERT_FILE for Windows installation and libcrypto.
-
-  std::string cert_file = "cert.pem";
-  std::string cert_env_var = "SSL_CERT_FILE";
-  if (! tl::has_env (cert_env_var)) {
-    std::string cert_path = tl::combine_path (m_inst_path, cert_file);
-    if (tl::file_exists (cert_path)) {
-      tl::set_env (cert_env_var, cert_path);
-    }
-  }
-#endif
-
   std::vector<std::string> klp_paths;
 
   for (std::vector <std::string>::const_iterator p = m_klayout_path.begin (); p != m_klayout_path.end (); ++p) {
@@ -631,14 +601,11 @@ ApplicationBase::init_app ()
   mp_ruby_interpreter = new rba::RubyInterpreter ();
   mp_python_interpreter = new pya::PythonInterpreter ();
 
-  //  initialize the Python interpreter - load the pya module
-  pya::PythonInterpreter::initialize ();
-
   //  Read some configuration values that we need early
   bool editable_from_config = false;
 
   {
-    lay::Dispatcher cfg;
+    lay::PluginRoot cfg;
 
     for (std::vector <std::string>::const_iterator c = m_config_files.begin (); c != m_config_files.end (); ++c) {
       try {
@@ -693,8 +660,6 @@ ApplicationBase::init_app ()
       }
     }
 
-    sc->salt_changed_event.add (this, &ApplicationBase::salt_changed);
-
   }
 
   if (tc) {
@@ -704,79 +669,32 @@ ApplicationBase::init_app ()
       tc->add_path (*p);
     }
 
-    tc->load ();
-
-    bool needs_reload = false;
-
-    //  disambiguator for tech name
-    std::map<std::string, int> tech_disambiguator;
-    std::map<std::string, std::string> tech_name_for_file;
-
-    for (auto t = db::Technologies::instance ()->begin (); t != db::Technologies::instance ()->end (); ++t) {
-      tech_disambiguator.insert (std::make_pair (t->name (), 0));
-    }
-
     //  import technologies from the command line
     for (std::vector <std::pair<file_type, std::pair<std::string, std::string> > >::iterator f = m_files.begin (); f != m_files.end (); ++f) {
 
       if (f->first == layout_file_with_tech_file) {
-
-        const std::string &tech_file = f->second.second;
 
         if (tl::verbosity () >= 20) {
           tl::info << "Importing technology from " << f->second.second;
         }
 
         db::Technology t;
-        t.load (tech_file);
-
-        //  disambiguate the name, so we do not overwrite technologies with the same name from the config
-        if (tech_name_for_file.find (tech_file) != tech_name_for_file.end ()) {
-          t.set_name (tech_name_for_file [tech_file]);
-        } else if (tech_disambiguator.find (t.name ()) != tech_disambiguator.end ()) {
-          int &index = tech_disambiguator [t.name ()];
-          index += 1;
-          t.set_name (t.name () + tl::sprintf ("[%d]", index));
-          tech_name_for_file.insert (std::make_pair (tech_file, t.name ()));
-        } else {
-          tech_disambiguator.insert (std::make_pair (t.name (), 0));
-          tech_name_for_file.insert (std::make_pair (tech_file, t.name ()));
-        }
+        t.load (f->second.second);
 
         tc->add_temp_tech (t);
 
         f->first = layout_file_with_tech;
         f->second.second = t.name ();
 
-        needs_reload = true;
-
       }
 
     }
 
-    if (needs_reload) {
-      tc->load ();
-    }
+    tc->load ();
 
   }
 
   if (mc) {
-
-    //  create the basic macro categories
-
-    if (ruby_interpreter ().available ()) {
-      std::vector<std::string> folders;
-      folders.push_back ("macros");
-      folders.push_back ("ruby");
-      mc->add_macro_category ("macros", "Ruby", folders);
-    }
-
-    if (python_interpreter ().available ()) {
-      std::vector<std::string> folders;
-      folders.push_back ("pymacros");
-      folders.push_back ("python");
-      mc->add_macro_category ("pymacros", "Python", folders);
-    }
 
     mc->enable_implicit_macros (! m_no_macros);
 
@@ -785,12 +703,10 @@ ApplicationBase::init_app ()
     std::vector<std::string> global_modules = scan_global_modules ();
     m_load_macros.insert (m_load_macros.begin (), global_modules.begin (), global_modules.end ());
 
-    size_t local_folders = (lay::get_appdata_path ().empty () ? 0 : 1);
-
     for (std::vector <std::string>::const_iterator p = m_klayout_path.begin (); p != m_klayout_path.end (); ++p) {
-      if (size_t (p - m_klayout_path.begin ()) < local_folders) {
+      if (p == m_klayout_path.begin ()) {
         mc->add_path (*p, tl::to_string (QObject::tr ("Local")), std::string (), false);
-      } else if (m_klayout_path.size () == 1 + local_folders) {
+      } else if (m_klayout_path.size () == 2) {
         mc->add_path (*p, tl::to_string (QObject::tr ("Global")), std::string (), true);
       } else {
         mc->add_path (*p, tl::to_string (QObject::tr ("Global")) + " - " + *p, std::string (), true);
@@ -815,6 +731,7 @@ ApplicationBase::init_app ()
   }
 
   db::set_default_editable_mode (m_editable);
+  db::enable_transactions (m_enable_undo);
 
   if (! m_gtf_record.empty ()) {
     //  since the recorder tracks QAction connections etc., it must be instantiated before every other
@@ -838,27 +755,9 @@ ApplicationBase::init_app ()
   //  run all early autorun macros
   lym::MacroCollection::root ().autorun_early ();
 
-  //  redo gsi::initialize as the macros may have registered new external classes
-  //  through the "doc to external class" mechanism.
-  gsi::initialize ();
-
-  //  autorun_early may have added macro categories, so we need to call finish() again
-  if (mc) {
-
-    mc->finish ();
-
-    //  as this regenerates the macro collection, autorun_early is required again
-    //  note: this does not re-execute macros that have been executed already
-    lym::MacroCollection::root ().autorun_early ();
-
-  }
-
   //  rescan the folders because early autorun macros might have added 
   //  suffixes through the MacroInterpreter interface.
   lym::MacroCollection::root ().rescan ();
-
-  //  and yet another autorun_early pass ..
-  lym::MacroCollection::root ().autorun_early ();
 
   //  creates the main window or plugin root as required
   setup ();
@@ -872,16 +771,13 @@ ApplicationBase::init_app ()
     if (tl::verbosity () >= 20) {
       tl::info << "  " << cls.current_name () << " [" << cls.current_position () << "]";
     }
-    pd->initialize (dispatcher ());
+    pd->initialize (plugin_root ());
   }
 
   //  establish the configuration
-  dispatcher ()->config_setup ();
+  plugin_root ()->config_setup ();
 
-  //  deferred method processing for those plugins which need this
-  process_events ();
-
-  //  some info output
+  //  Some info output 
   if (tl::verbosity () >= 20) {
 
     tl::info << "KLayout path:";
@@ -895,23 +791,6 @@ ApplicationBase::init_app ()
     }
 
   }
-}
-
-void
-ApplicationBase::add_macro_category (const std::string &name, const std::string &description, const std::vector<std::string> &folders)
-{
-  lay::MacroController *mc = lay::MacroController::instance ();
-  if (mc) {
-    mc->add_macro_category (name, description, folders);
-  }
-}
-
-void
-ApplicationBase::salt_changed ()
-{
-BEGIN_PROTECTED_SILENT
-  salt_changed_event ();
-END_PROTECTED_SILENT
 }
 
 ApplicationBase::~ApplicationBase ()
@@ -984,7 +863,7 @@ ApplicationBase::exit (int result)
   //  uninitialize the plugins
   for (tl::Registrar<lay::PluginDeclaration>::iterator cls = tl::Registrar<lay::PluginDeclaration>::begin (); cls != tl::Registrar<lay::PluginDeclaration>::end (); ++cls) {
     lay::PluginDeclaration *pd = const_cast<lay::PluginDeclaration *> (&*cls);
-    pd->uninitialize (dispatcher ());
+    pd->uninitialize (plugin_root ());
   }
 
   shutdown ();
@@ -995,13 +874,13 @@ ApplicationBase::exit (int result)
 void 
 ApplicationBase::finish ()
 {
-  if (dispatcher () && m_write_config_file) {
+  if (plugin_root () && m_write_config_file) {
 
     if (! m_config_file_to_write.empty ()) {
       if (tl::verbosity () >= 20) {
         tl::info << tl::to_string (QObject::tr ("Updating configuration file ")) << m_config_file_to_write;
       }
-      dispatcher ()->write_config (m_config_file_to_write);
+      plugin_root ()->write_config (m_config_file_to_write);
     }
     if (! m_config_file_to_delete.empty () && m_config_file_to_delete != m_config_file_to_write) {
       if (tl::verbosity () >= 20) {
@@ -1048,7 +927,7 @@ ApplicationBase::instance ()
 }
 
 std::string
-ApplicationBase::version ()
+ApplicationBase::version () const
 {
   return std::string (lay::Version::name ()) + " " + lay::Version::version ();
 }
@@ -1062,7 +941,7 @@ ApplicationBase::usage ()
   r += tl::to_string (QObject::tr ("  -b                  Batch mode (same as -zz -nc -rx)")) + "\n";
   r += tl::to_string (QObject::tr ("  -c <config file>    Use this configuration file")) + "\n";
   r += tl::to_string (QObject::tr ("  -nc                 Don't use a configuration file (implies -t)")) + "\n";
-  r += tl::to_string (QObject::tr ("  -d <log level>      Set log level")) + "\n";
+  r += tl::to_string (QObject::tr ("  -d <debug level>    Set debug level")) + "\n";
   r += tl::to_string (QObject::tr ("  -e                  Editable mode (allow editing of files)")) + "\n";
   r += tl::to_string (QObject::tr ("  -ne                 Readonly mode (editing of files is disabled)")) + "\n";
   r += tl::to_string (QObject::tr ("  -gr <file name>     Record GUI test file")) + "\n";
@@ -1073,7 +952,6 @@ ApplicationBase::usage ()
   r += tl::to_string (QObject::tr ("  -i                  Disable undo buffering (less memory requirements)")) + "\n";
   r += tl::to_string (QObject::tr ("  -ni                 Enable undo buffering (default, overrides previous -i option)")) + "\n";
   r += tl::to_string (QObject::tr ("  -j <path>           Add the given path to the macro project paths")) + "\n"; 
-  r += tl::to_string (QObject::tr ("  -k <log file>       Write log to the given file plus stdout/stderr")) + "\n";
   r += tl::to_string (QObject::tr ("  -l <lyp file>       Use layer properties file")) + "\n";
   r += tl::to_string (QObject::tr ("  -lx                 With -l: add other layers as well")) + "\n";
   r += tl::to_string (QObject::tr ("  -lf                 With -l: use the lyp file as it is (no expansion to multiple layouts)")) + "\n";
@@ -1083,9 +961,8 @@ ApplicationBase::usage ()
   r += tl::to_string (QObject::tr ("  -nn <tech file>     Technology file (.lyt) to use for next layout(s) on command line")) + "\n";
   r += tl::to_string (QObject::tr ("  -p <plugin>         Load the plugin (can be used multiple times)")) + "\n";
   r += tl::to_string (QObject::tr ("  -r <script>         Execute main script on startup (after having loaded files etc.)")) + "\n";
-  r += tl::to_string (QObject::tr ("  -rr <script>        Like -r, but does not exit after executing the script")) + "\n";
-  r += tl::to_string (QObject::tr ("  -rm <script>        Execute script on startup before loading files (can be used multiple times)")) + "\n";
-  r += tl::to_string (QObject::tr ("  -rd <name>=<value>  Specify script variable")) + "\n";
+  r += tl::to_string (QObject::tr ("  -rm <script>        Execute module on startup (can be used multiple times)")) + "\n";
+  r += tl::to_string (QObject::tr ("  -rd <name>=<value>  Specify skript variable")) + "\n";
   r += tl::to_string (QObject::tr ("  -rx                 Ignore all implicit macros (*.rbm, rbainit, *.lym)")) + "\n";
   r += tl::to_string (QObject::tr ("  -s                  Load files into same view")) + "\n";
   r += tl::to_string (QObject::tr ("  -t                  Don't update the configuration file on exit")) + "\n";
@@ -1132,7 +1009,7 @@ ApplicationBase::run ()
 
   for (std::vector <std::string>::const_iterator c = m_config_files.begin (); c != m_config_files.end (); ++c) {
     BEGIN_PROTECTED_CLEANUP
-      dispatcher ()->read_config (*c);
+      plugin_root ()->read_config (*c);
       //  if the last config was read successfully no reset will happen:
       config_failed = false;
     END_PROTECTED_CLEANUP {
@@ -1154,7 +1031,7 @@ ApplicationBase::run ()
 
     BEGIN_PROTECTED 
 
-      std::unique_ptr<lym::Macro> macro (new lym::Macro ());
+      std::auto_ptr<lym::Macro> macro (new lym::Macro ());
       macro->load_from (*m);
       macro->set_file_path (*m);
       if (macro->show_in_menu ()) {
@@ -1176,10 +1053,6 @@ ApplicationBase::run ()
 
   //  Run plugin and macro specific initializations
   autorun ();
-
-  //  Some objects we need during batch mode view generation
-  db::Manager batch_mode_manager;
-  tl::shared_ptr<LayoutView> batch_mode_view;
 
   if (mw) {
 
@@ -1209,7 +1082,7 @@ ApplicationBase::run ()
         }
 
         if (mw->current_view () != 0) {
-          std::unique_ptr <rdb::Database> db (new rdb::Database ());
+          std::auto_ptr <rdb::Database> db (new rdb::Database ());
           db->load (f->second.first);
           int rdb_index = mw->current_view ()->add_rdb (db.release ());
           mw->current_view ()->open_rdb_browser (rdb_index, mw->current_view ()->active_cellview_index ());
@@ -1231,7 +1104,11 @@ ApplicationBase::run ()
 
     if (! m_layer_props_file.empty ()) {
 
-      mw->load_layer_properties (m_layer_props_file, true /*all views*/, m_lyp_add_default);
+      if (m_lyp_map_all_cvs && mw->is_single_cv_layer_properties_file (m_layer_props_file)) {
+        mw->load_layer_properties (m_layer_props_file, -1, true /*all views*/, m_lyp_add_default);
+      } else {
+        mw->load_layer_properties (m_layer_props_file, true /*all views*/, m_lyp_add_default);
+      }
 
       tl::log << "Layer properties loaded '" << m_layer_props_file << "'";
 
@@ -1251,79 +1128,25 @@ ApplicationBase::run ()
       player.replay (m_gtf_replay_rate, m_gtf_replay_stop);
     }
 
-  } else {
-
-    //  in batch mode create at least one
-
-    for (std::vector <std::pair<file_type, std::pair<std::string, std::string> > >::const_iterator f = m_files.begin (); f != m_files.end (); ++f) {
-
-      if (f->first == layout_file || f->first == layout_file_with_tech) {
-
-        std::string filename = f->second.first;
-
-        if (batch_mode_view.get () != 0 && ! m_same_view) {
-          tl::warn << tl::sprintf (tl::to_string (tr ("Ignoring additional views in batch mode (file %s)")), filename);
-          continue;
-        }
-
-        if (! batch_mode_view) {
-          batch_mode_view.reset (create_view (batch_mode_manager));
-        }
-
-        if (f->first != layout_file_with_tech) {
-          batch_mode_view->load_layout (f->second.first, true);
-        } else {
-          batch_mode_view->load_layout (f->second.first, f->second.second, true);
-        }
-
-        //  Make the first one loaded the active one.
-        batch_mode_view->set_active_cellview_index (0);
-
-      } else if (f->first == rdb_file) {
-
-        if (! batch_mode_view) {
-          batch_mode_view.reset (create_view (batch_mode_manager));
-        }
-
-        std::unique_ptr <rdb::Database> db (new rdb::Database ());
-        db->load (f->second.first);
-        batch_mode_view->add_rdb (db.release ());
-
-      } else if (f->first == l2ndb_file) {
-
-        if (! batch_mode_view) {
-          batch_mode_view.reset (create_view (batch_mode_manager));
-        }
-
-        batch_mode_view->add_l2ndb (db::LayoutToNetlist::create_from_file (f->second.first));
-
-      }
-    }
-
-    if (! m_layer_props_file.empty () && batch_mode_view.get ()) {
-
-      batch_mode_view->load_layer_props (m_layer_props_file, m_lyp_add_default);
-
-      tl::log << "Layer properties loaded '" << m_layer_props_file << "'";
-
-      //  because the layer may carry transformations, we need to refit the cellviews.
-      batch_mode_view->zoom_fit ();
-
-    }
-
-  }
-
-  //  Give the plugins a change to do some last-minute initialisation and checks
-  if (dispatcher ()) {
+    //  Give the plugins a change to do some last-minute initialisation and checks
     for (tl::Registrar<lay::PluginDeclaration>::iterator cls = tl::Registrar<lay::PluginDeclaration>::begin (); cls != tl::Registrar<lay::PluginDeclaration>::end (); ++cls) {
       lay::PluginDeclaration *pd = const_cast<lay::PluginDeclaration *> (&*cls);
-      pd->initialized (dispatcher ());
+      pd->initialized (plugin_root ());
     }
-  }
 
-  if (mw && ! m_no_gui && m_gtf_replay.empty () && m_gtf_record.empty ()) {
-    //  Show initial tip window if required
-    mw->about_to_exec ();
+    if (! m_no_gui && m_gtf_replay.empty () && m_gtf_record.empty ()) {
+      //  Show initial tip window if required
+      mw->about_to_exec ();
+    }
+
+  } else if (plugin_root ()) {
+
+    //  Give the plugins a change to do some last-minute initialisation and checks
+    for (tl::Registrar<lay::PluginDeclaration>::iterator cls = tl::Registrar<lay::PluginDeclaration>::begin (); cls != tl::Registrar<lay::PluginDeclaration>::end (); ++cls) {
+      lay::PluginDeclaration *pd = const_cast<lay::PluginDeclaration *> (&*cls);
+      pd->initialized (plugin_root ());
+    }
+
   }
 
   if (! m_run_macro.empty ()) {
@@ -1334,37 +1157,13 @@ ApplicationBase::run ()
     macro.set_file_path (m_run_macro);
     result = macro.run ();
 
-    if (result == 0 && ! m_run_macro_and_exit) {
-      result = exec ();
-    }
-
   } else {
     result = exec ();
   }
 
   finish ();
 
-  batch_mode_view.reset (0);
-
   return result;
-}
-
-lay::LayoutView *
-ApplicationBase::create_view (db::Manager &manager)
-{
-  //  create a new view
-  lay::LayoutView *view = new lay::LayoutView (&manager, lay::ApplicationBase::instance ()->is_editable (), dispatcher ());
-
-  //  set initial attributes
-  view->set_synchronous (m_sync_mode);
-
-  int tl = 0;
-  dispatcher ()->config_get (cfg_initial_hier_depth, tl);
-  view->set_hier_levels (std::make_pair (0, tl));
-
-  view->set_current ();
-
-  return view;
 }
 
 void
@@ -1414,14 +1213,13 @@ dump_children (QObject *obj, int level = 0)
 void
 ApplicationBase::process_events_impl (QEventLoop::ProcessEventsFlags /*flags*/, bool /*silent*/)
 {
-  //  in the non-UI case there are no events, but we can at least schedule deferred method calls.
-  tl::DeferredMethodScheduler::execute ();
+  //  The base class implementation does nothing ..
 }
 
 bool 
 ApplicationBase::write_config (const std::string &config_file)
 {
-  return dispatcher () ? dispatcher ()->write_config (config_file) : 0;
+  return plugin_root () ? plugin_root ()->write_config (config_file) : 0;
 }
 
 void 
@@ -1438,38 +1236,38 @@ ApplicationBase::reset_config ()
 void 
 ApplicationBase::clear_config ()
 {
-  if (dispatcher ()) {
-    dispatcher ()->clear_config ();
+  if (plugin_root ()) {
+    plugin_root ()->clear_config ();
   }
 }
 
 bool 
 ApplicationBase::read_config (const std::string &config_file)
 {
-  return dispatcher () ? dispatcher ()->read_config (config_file) : true;
+  return plugin_root () ? plugin_root ()->read_config (config_file) : true;
 }
 
 void 
 ApplicationBase::set_config (const std::string &name, const std::string &value)
 {
-  if (dispatcher ()) {
-    dispatcher ()->config_set (name, value);
+  if (plugin_root ()) {
+    plugin_root ()->config_set (name, value);
   }
 }
 
 void 
 ApplicationBase::config_end ()
 {
-  if (dispatcher ()) {
-    dispatcher ()->config_end ();
+  if (plugin_root ()) {
+    plugin_root ()->config_end ();
   }
 }
 
 std::string 
 ApplicationBase::get_config (const std::string &name) const
 {
-  if (dispatcher ()) {
-    return dispatcher ()->config_get (name);
+  if (plugin_root ()) {
+    return plugin_root ()->config_get (name);
   } else {
     return std::string ();
   }
@@ -1479,10 +1277,18 @@ std::vector<std::string>
 ApplicationBase::get_config_names () const
 {
   std::vector<std::string> names;
-  if (dispatcher ()) {
-    dispatcher ()->get_config_names (names);
+  if (plugin_root ()) {
+    plugin_root ()->get_config_names (names);
   }
   return names;
+}
+
+bool
+ApplicationBase::special_app_flag (const std::string &name)
+{
+  // TODO: some more elaborate scheme?
+  const char *env = getenv (("KLAYOUT_" + name).c_str ());
+  return (env && *env);
 }
 
 // --------------------------------------------------------------------------------
@@ -1491,13 +1297,16 @@ ApplicationBase::get_config_names () const
 GuiApplication::GuiApplication (int &argc, char **argv)
   : QApplication (argc, argv), ApplicationBase (false),
     mp_mw (0),
-    mp_recorder (0),
-    m_in_notify (0)
+    mp_plugin_root (0),
+    mp_recorder (0)
 {
   //  install a special style proxy to overcome the issue of black-on-black tree expanders
   setStyle (new lay::BackgroundAwareTreeStyle (0));
 
   setWindowIcon (QIcon (QString::fromUtf8 (":/logo.png")));
+#if QT_VERSION >= 0x040500
+  setAttribute (Qt::AA_DontShowIconsInMenus, false);
+#endif
 }
 
 GuiApplication::~GuiApplication ()
@@ -1505,91 +1314,27 @@ GuiApplication::~GuiApplication ()
   //  uninitialize the plugins
   for (tl::Registrar<lay::PluginDeclaration>::iterator cls = tl::Registrar<lay::PluginDeclaration>::begin (); cls != tl::Registrar<lay::PluginDeclaration>::end (); ++cls) {
     lay::PluginDeclaration *pd = const_cast<lay::PluginDeclaration *> (&*cls);
-    pd->uninitialize (dispatcher ());
+    pd->uninitialize (plugin_root ());
   }
 
   shutdown ();
-}
 
-void
-GuiApplication::initialize ()
-{
-#if QT_VERSION >= 0x040500
-  QCoreApplication::setAttribute (Qt::AA_DontShowIconsInMenus, false);
-#endif
-#if QT_VERSION >= 0x050000
-  QCoreApplication::setAttribute (Qt::AA_UseHighDpiPixmaps, true);
-#endif
-#if QT_VERSION >= 0x050600
-  QCoreApplication::setAttribute (Qt::AA_EnableHighDpiScaling, true);
-#endif
+  delete mp_plugin_root;
+  mp_plugin_root = 0;
 }
 
 bool
 GuiApplication::notify (QObject *receiver, QEvent *e)
 {
-  QWheelEvent *wheel_event = dynamic_cast<QWheelEvent *>(e);
-  if (wheel_event) {
-    //  intercept wheel events targeting QComboBox objects to avoid
-    //  changing them through wheel actions.
-    for (auto r = receiver; r != 0; r = r->parent ()) {
-      if (dynamic_cast<QComboBox *>(r)) {
-        //  stop further processing
-        return true;
-      }
-    }
-  }
-
-  if (dynamic_cast<QPaintEvent *> (e)) {
-    //  NOTE: we don't want recursive paint events - the painters are not reentrant.
-    //  Hence we disable process_events_impl (specifically for progress reporters).
-    lay::BusySection busy;
-    return do_notify (receiver, e);
-  } else {
-    return do_notify (receiver, e);
-  }
-}
-
-bool
-GuiApplication::do_notify (QObject *receiver, QEvent *e)
-{
-  bool in_notify = (m_in_notify > 0);
-
-  bool ret = true;
-  ++m_in_notify;
-
   //  Note: due to a bug in some Qt versions (i.e. 4.8.3) throwing exceptions across
   //  signals may not be safe. Hence the local BEGIN_PROTECTED .. END_PROTECTED approach
-  //  is still preferred over the global solution through "notify".
-  //  Because END_PROTECTED may raise other events (message box) and this may cause other
-  //  exceptions, we use silent mode inside notify to avoid recursion.
+  //  is still preferred over the global solution through "notify"
 
-  if (in_notify) {
-    BEGIN_PROTECTED_SILENT
-      ret = QApplication::notify (receiver, e);
-    END_PROTECTED_SILENT
-  } else {
-    BEGIN_PROTECTED
-      ret = QApplication::notify (receiver, e);
-    END_PROTECTED
-  }
-
-  --m_in_notify;
+  bool ret = true;
+  BEGIN_PROTECTED
+    ret = QApplication::notify (receiver, e);
+  END_PROTECTED
   return ret;
-}
-
-void
-GuiApplication::enter_busy_mode (bool bm)
-{
-  if (mp_mw) {
-    mp_mw->enter_busy_mode (bm);
-  }
-}
-
-bool
-GuiApplication::is_busy () const
-{
-  return mp_mw && mp_mw->is_busy ();
 }
 
 void
@@ -1603,18 +1348,18 @@ GuiApplication::force_update_app_menu ()
 #endif
 }
 
+#if defined(__APPLE__)
+// By Thomas Lima (March 7, 2018)
+// 
+// This event interceptor catches MacOS "Open With" event, and KLayout should respond 
+// similarly to the Drop event in MainWindow::dropEvent.
+// 
+// This particular implementation always creates a new window.
+//
+// This was implemented with the inspiration of http://doc.qt.io/qt-5/qfileopenevent.html
 bool
 GuiApplication::event (QEvent *event)
 {
-#if defined(__APPLE__)
-  // By Thomas Lima (March 7, 2018)
-  //
-  // This event interceptor catches MacOS "Open With" event, and KLayout should respond
-  // similarly to the Drop event in MainWindow::dropEvent.
-  //
-  // This particular implementation always creates a new window.
-  //
-  // This was implemented with the inspiration of http://doc.qt.io/qt-5/qfileopenevent.html
   if (event->type() == QEvent::FileOpen) {
       QFileOpenEvent *openEvent = static_cast<QFileOpenEvent *>(event);
       if (mp_mw)
@@ -1626,10 +1371,10 @@ GuiApplication::event (QEvent *event)
         mp_mw->add_mru (file, tech);
       }
   }
-#endif
 
   return QApplication::event(event);
 }
+#endif
 
 
 int
@@ -1672,14 +1417,6 @@ GuiApplication::exec ()
 void
 GuiApplication::shutdown ()
 {
-  //  avoid deferred execution later on where there isn't a valid main window anymore
-  //  (problem case: showing a dialog inside main windows's destroyed signal - this will
-  //  process events and trigger execution if not disabled)
-  if (! tl::DeferredMethodScheduler::instance ()->is_disabled ()) {
-    tl::DeferredMethodScheduler::instance ()->execute ();
-  }
-  tl::DeferredMethodScheduler::instance ()->enable (false);
-
   if (mp_mw) {
     delete mp_mw;
     mp_mw = 0;
@@ -1695,10 +1432,6 @@ GuiApplication::shutdown ()
     if (gsi_obj) {
       gsi_obj->keep ();
     }
-  }
-
-  while (! (tl_widgets = topLevelWidgets ()).empty ()) {
-    delete tl_widgets [0];
   }
 
   if (mp_recorder) {
@@ -1740,18 +1473,20 @@ GuiApplication::start_recording ()
   }
 }
 
-lay::Dispatcher *
-GuiApplication::dispatcher () const
+lay::PluginRoot *
+GuiApplication::plugin_root () const
 {
-  return mp_mw ? mp_mw->dispatcher () : 0;
+  return mp_plugin_root;
 }
 
 void
 GuiApplication::setup ()
 {
-  tl_assert (mp_mw == 0);
+  tl_assert (mp_mw == 0 && mp_plugin_root == 0);
 
-  mp_mw = new lay::MainWindow (this, "main_window", is_undo_enabled ());
+  mp_plugin_root = new lay::PluginRootToMainWindow ();
+  mp_mw = new lay::MainWindow (this, mp_plugin_root, "main_window");
+  mp_plugin_root->attach_to (mp_mw);
 
   QObject::connect (mp_mw, SIGNAL (closed ()), this, SLOT (quit ()));
 
@@ -1763,33 +1498,26 @@ GuiApplication::setup ()
 void
 GuiApplication::process_events_impl (QEventLoop::ProcessEventsFlags flags, bool silent)
 {
-  //  prevent recursive process_events
-  if (is_busy ()) {
-    return;
-  }
-
   if (mp_mw) {
 
-    lay::BusySection busy;
-
-    if (silent) {
-      tl::DeferredMethodScheduler::enable (false);
+    if (silent && tl::DeferredMethodScheduler::instance ()) {
+      tl::DeferredMethodScheduler::instance ()->enable (false);
     }
 
-    try {
 #if QT_VERSION < 0x050000
-      QApplication::syncX ();
+    QApplication::syncX ();
 #endif
+
+    mp_mw->enter_busy_mode (true);
+    try {
       QApplication::processEvents (flags);
-      //  Qt seems not to send posted UserEvents in some cases (e.g. in the unit test application with GLib?
-      //  Glib not doing this without a main window visible?). Hence we do this explicitly here.
-      QApplication::sendPostedEvents ();
     } catch (...) {
       //  ignore exceptions
     }
+    mp_mw->enter_busy_mode (false);
 
-    if (silent) {
-      tl::DeferredMethodScheduler::enable (true);
+    if (silent && tl::DeferredMethodScheduler::instance ()) {
+      tl::DeferredMethodScheduler::instance ()->enable (true);
     }
 
   }
@@ -1802,7 +1530,7 @@ NonGuiApplication::NonGuiApplication (int &argc, char **argv)
   : QCoreApplication (argc, argv), ApplicationBase (true),
     mp_pr (0),
     mp_pb (0),
-    mp_dispatcher (0)
+    mp_plugin_root (0)
 {
   //  .. nothing yet ..
 }
@@ -1812,7 +1540,7 @@ NonGuiApplication::~NonGuiApplication ()
   //  uninitialize the plugins
   for (tl::Registrar<lay::PluginDeclaration>::iterator cls = tl::Registrar<lay::PluginDeclaration>::begin (); cls != tl::Registrar<lay::PluginDeclaration>::end (); ++cls) {
     lay::PluginDeclaration *pd = const_cast<lay::PluginDeclaration *> (&*cls);
-    pd->uninitialize (dispatcher ());
+    pd->uninitialize (plugin_root ());
   }
 
   shutdown ();
@@ -1828,9 +1556,9 @@ NonGuiApplication::exec ()
 void
 NonGuiApplication::shutdown ()
 {
-  if (mp_dispatcher) {
-    delete mp_dispatcher;
-    mp_dispatcher = 0;
+  if (mp_plugin_root) {
+    delete mp_plugin_root;
+    mp_plugin_root = 0;
   }
 
   if (mp_pr) {
@@ -1852,7 +1580,7 @@ NonGuiApplication::setup ()
   mp_pr = new lay::ProgressReporter ();
   mp_pb = new TextProgress (10 /*verbosity level*/);
   mp_pr->set_progress_bar (mp_pb);
-  mp_dispatcher = new lay::Dispatcher ();
+  mp_plugin_root = new lay::PluginRoot ();
 }
 
 }

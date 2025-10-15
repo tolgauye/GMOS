@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -130,7 +130,7 @@ void SignalHandler::call (const gsi::MethodBase *meth, gsi::SerialArgs &args, gs
     int args_avail = int (std::distance (meth->begin_arguments (), meth->end_arguments ()));
     PythonRef argv (PyTuple_New (args_avail));
     for (gsi::MethodBase::argument_iterator a = meth->begin_arguments (); args && a != meth->end_arguments (); ++a) {
-      PyTuple_SetItem (argv.get (), int (a - meth->begin_arguments ()), pull_arg (*a, args, 0, heap).release ());
+      PyTuple_SetItem (argv.get (), int (a - meth->begin_arguments ()), pop_arg (*a, args, 0, heap).release ());
     }
 
     //  NOTE: in case one event handler deletes the object, it's safer to first collect the handlers and
@@ -138,10 +138,7 @@ void SignalHandler::call (const gsi::MethodBase *meth, gsi::SerialArgs &args, gs
     std::vector<PythonRef> callables;
     callables.reserve (m_cbfuncs.size ());
     for (std::vector<CallbackFunction>::const_iterator c = m_cbfuncs.begin (); c != m_cbfuncs.end (); ++c) {
-      PythonRef callable = c->callable ();
-      if (callable) {
-        callables.push_back (c->callable ());
-      }
+      callables.push_back (c->callable ());
     }
 
     PythonRef result;

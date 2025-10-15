@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -40,21 +40,6 @@ namespace db {
 template <class Coord> class generic_repository;
 class ArrayRepository;
 
-template <class C>
-inline  C box_world_min () { return std::numeric_limits<C>::min (); }
-
-template <class C>
-inline  C box_world_max () { return std::numeric_limits<C>::max (); }
-
-//  NOTE: for 64bit coordinates the world coordinates do not fully exploit the coordinate
-//  range but only as much as can represented exactly by double (64bit) values.
-
-template <>
-inline int64_t box_world_min<int64_t> () { return -(int64_t (1) << 53); }
-
-template <>
-inline int64_t box_world_max<int64_t> () { return (int64_t (1) << 53); }
-
 /**
  *  @brief A box class
  *
@@ -71,7 +56,7 @@ inline int64_t box_world_max<int64_t> () { return (int64_t (1) << 53); }
  *  coordinates box).
  */
 
-template <class C, class R>
+template <class C, class R = C>
 struct DB_PUBLIC_TEMPLATE box
 {
   typedef C coord_type;
@@ -116,7 +101,7 @@ struct DB_PUBLIC_TEMPLATE box
    *
    *  As the four coordinate constructor but accepting two
    *  point objects. The coordinates are sorted so the points
-   *  do not necessarily need to be lower/left or upper/right.
+   *  do not neccessarily need to be lower/left or upper/right.
    *
    *  @param p1 The first point
    *  @param p2 The second point
@@ -149,7 +134,7 @@ struct DB_PUBLIC_TEMPLATE box
    */
   static box world () 
   {
-    return box (box_world_min<C> (), box_world_min<C> (), box_world_max<C> (), box_world_max<C> ());
+    return box (std::numeric_limits<C>::min (), std::numeric_limits<C>::min (), std::numeric_limits<C>::max (), std::numeric_limits<C>::max ());
   }
 
   /**
@@ -255,27 +240,6 @@ struct DB_PUBLIC_TEMPLATE box
   box<C, R> &operator+= (const point<C> &p);
 
   /**
-   *  @brief Subtraction of boxes.
-   *
-   *  The -= operator subtracts the argument box from *this.
-   *  Subtraction leaves the bounding box of the region resulting
-   *  from the geometrical NOT of *this and the argument box.
-   *  Subtracting a box from itself gives an empty box.
-   *  Subtracting a box that does not cover a full side of
-   *  *this will not modify the box.
-   *
-   *  @param b The box to subtract from *this.
-   *
-   *  @return The result box.
-   */
-  box<C, R> &operator-= (const box<C, R> &b);
-
-  /**
-   *  @brief A method version for operator- (mainly for automation purposes)
-   */
-  box<C, R> subtracted (const box<C, R> &b) const;
-
-  /**
    *  @brief Intersection of boxes.
    *
    *  The intersection of two boxes is the largest
@@ -373,7 +337,7 @@ struct DB_PUBLIC_TEMPLATE box
   /**
    *  @brief Reduce the box
    *
-   *  This method is mainly provided for template argument substitution
+   *  This method is mainly provided for template argument substituition
    *  of path and polygon objects by boxes. It basically moves the box.
    *
    *  @param tr Receives the transformation that must be applied to render the original box
@@ -388,7 +352,7 @@ struct DB_PUBLIC_TEMPLATE box
   /**
    *  @brief Reduce the box
    *
-   *  This method is mainly provided for template argument substitution
+   *  This method is mainly provided for template argument substituition
    *  of path and polygon objects by boxes. It basically moves the box.
    *
    *  @param tr Receives the transformation that must be applied to render the original box
@@ -403,7 +367,7 @@ struct DB_PUBLIC_TEMPLATE box
   /**
    *  @brief Reduce the box
    *
-   *  This method is mainly provided for template argument substitution
+   *  This method is mainly provided for template argument substituition
    *  of path and polygon objects by boxes. It basically does nothing (like the same methods in path etc.)
    */
   void reduce (unit_trans<coord_type> &)
@@ -648,13 +612,21 @@ struct DB_PUBLIC_TEMPLATE box
    */
   double double_area () const;
   
+  /**
+   *  @brief Default conversion to string
+   */
+  std::string to_string () const
+  {
+    return to_string (0.0);
+  }
+
   /** 
    *  @brief Conversion to string
    *
    *  If dbu is set, it determines the factor by which the coordinates are multiplied to render
    *  micron units. In addition, a micron format is chosen for output of these coordinates.
    */
-  std::string to_string (double dbu = 0.0) const
+  std::string to_string (double dbu) const
   {
     if (empty ()) {
       return "()";
@@ -802,50 +774,6 @@ box<C, R>::operator+= (const point<C> &p)
     m_p1 = p1;
     m_p2 = p2;
   }
-  return *this;
-}
-
-template <class C, class R>
-inline box<C, R>
-box<C, R>::subtracted (const box<C, R> &b) const
-{
-  box<C, R> r (*this);
-  r -= b;
-  return r;
-}
-
-template <class C, class R>
-inline box<C, R> &
-box<C, R>::operator-= (const box<C, R> &bx)
-{
-  if (bx.empty () || empty ()) {
-    return *this;
-  }
-
-  coord_type l = m_p1.x (), r = m_p2.x ();
-  coord_type b = m_p1.y (), t = m_p2.y ();
-
-  if (bx.bottom () <= bottom () && bx.top () >= top ()) {
-    if (bx.left () <= left ()) {
-      l = std::max (bx.right (), left ());
-    }
-    if (bx.right () >= right ()) {
-      r = std::min (bx.left (), right ());
-    }
-  }
-
-  if (bx.left () <= left () && bx.right () >= right ()) {
-    if (bx.bottom () <= bottom ()) {
-      b = std::max (bx.top (), bottom ());
-    }
-    if (bx.top () >= top ()) {
-      t = std::min (bx.bottom (), top ());
-    }
-  }
-
-  m_p1 = point_type (l, b);
-  m_p2 = point_type (r, t);
-
   return *this;
 }
 
@@ -1199,9 +1127,7 @@ box<C, R>::double_area () const
  */
 template <class Box>
 struct box_left 
-#if __cplusplus < 201703L
   : public std::unary_function<Box, typename Box::coord_type>
-#endif
 {
   typename Box::coord_type operator() (const Box &b) const
   {
@@ -1214,9 +1140,7 @@ struct box_left
  */
 template <class Box>
 struct box_right 
-#if __cplusplus < 201703L
   : public std::unary_function<Box, typename Box::coord_type>
-#endif
 {
   typename Box::coord_type operator() (const Box &b) const
   {
@@ -1229,9 +1153,7 @@ struct box_right
  */
 template <class Box>
 struct box_bottom 
-#if __cplusplus < 201703L
   : public std::unary_function<Box, typename Box::coord_type>
-#endif
 {
   typename Box::coord_type operator() (const Box &b) const
   {
@@ -1244,9 +1166,7 @@ struct box_bottom
  */
 template <class Box>
 struct box_top 
-#if __cplusplus < 201703L
   : public std::unary_function<Box, typename Box::coord_type>
-#endif
 {
   typename Box::coord_type operator() (const Box &b) const
   {
@@ -1259,9 +1179,7 @@ struct box_top
  */
 template <class Box>
 struct boxes_overlap
-#if __cplusplus < 201703L
   : public std::binary_function<Box, Box, bool>
-#endif
 {
   bool operator() (const Box &b1, const Box &b2) const
   {
@@ -1274,9 +1192,7 @@ struct boxes_overlap
  */
 template <class Box>
 struct boxes_touch
-#if __cplusplus < 201703L
   : public std::binary_function<Box, Box, bool>
-#endif
 {
   bool operator() (const Box &b1, const Box &b2) const
   {
@@ -1429,23 +1345,6 @@ operator+ (const box<C> &b1, const box<C> &b2)
 }
 
 /**
- *  @brief Box subtraction mapped on the - operator
- *
- *  @param b1 The first box
- *  @param b2 The second box to subtract from the first
- *
- *  @return The bounding box of the region formed but subtracting b2 from b1
- */
-template <class C>
-inline box<C>
-operator- (const box<C> &b1, const box<C> &b2)
-{
-  box<C> bb (b1);
-  bb -= b2;
-  return bb;
-}
-
-/**
  *  @brief "Folding" of two boxes
  *
  *  @param b1 The first box.
@@ -1524,6 +1423,19 @@ typedef box<db::DCoord> DBox;
 
 namespace tl 
 {
+  /**
+   *  @brief The type traits for the box type
+   */
+  template <class C, class R>
+  struct type_traits <db::box<C, R> > : public type_traits<void> 
+  {
+    typedef trivial_relocate_required relocate_requirements;
+    typedef true_tag supports_extractor;
+    typedef true_tag supports_to_string;
+    typedef true_tag has_less_operator;
+    typedef true_tag has_equal_operator;
+  };
+
   template<> DB_PUBLIC void extractor_impl (tl::Extractor &ex, db::Box &b);
   template<> DB_PUBLIC void extractor_impl (tl::Extractor &ex, db::DBox &b);
 

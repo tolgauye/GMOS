@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -50,7 +50,7 @@ GerberImportDialogFileColumnEditorWidget::GerberImportDialogFileColumnEditorWidg
 {
   QHBoxLayout *layout = new QHBoxLayout (this);
   layout->setSpacing (0);
-  layout->setContentsMargins (0, 0, 0, 0);
+  layout->setMargin (0);
   setLayout (layout);
   setFocusPolicy (Qt::ClickFocus);
 
@@ -97,7 +97,7 @@ GerberImportDialogFileColumnEditorWidget::browse_clicked ()
   } 
 
   std::string new_file (tl::to_string (file.absoluteFilePath ()));
-  lay::FileDialog open_dialog (this, tl::to_string (QObject::tr ("Load PCB data file")), tl::to_string (QObject::tr ("All files (*)")));
+  lay::FileDialog open_dialog (this, tl::to_string (QObject::tr ("PCB data file")), tl::to_string (QObject::tr ("All files (*)")));
   if (open_dialog.get_open (new_file)) {
     set_filename (new_file);
   }
@@ -370,7 +370,7 @@ BEGIN_PROTECTED
   commit_page ();
 
   //  Get the name of the file to save
-  lay::FileDialog save_dialog (this, tl::to_string (QObject::tr ("Load Gerber Import Project File")), tl::to_string (QObject::tr ("PCB project file (*.pcb);;All files (*)")));
+  lay::FileDialog save_dialog (this, tl::to_string (QObject::tr ("Gerber Import Project File")), tl::to_string (QObject::tr ("PCB project file (*.pcb);;All files (*)")));
   std::string fn = mp_data->current_file;
   if (save_dialog.get_save (fn)) {
     mp_data->save (fn);
@@ -392,7 +392,7 @@ GerberImportDialog::open_clicked ()
   BEGIN_PROTECTED
 
   //  Get the name of the file to open
-  lay::FileDialog open_dialog (this, tl::to_string (QObject::tr ("Load Gerber Import Project File")), tl::to_string (QObject::tr ("PCB project file (*.pcb);;All files (*)")));
+  lay::FileDialog open_dialog (this, tl::to_string (QObject::tr ("Gerber Import Project File")), tl::to_string (QObject::tr ("PCB project file (*.pcb);;All files (*)")));
   std::string fn = mp_data->current_file;
   if (open_dialog.get_open (fn)) {
 
@@ -412,7 +412,7 @@ void
 GerberImportDialog::browse_layer_properties_file ()
 {
   std::string file = tl::to_string (mp_ui->layer_properties_file_le->text ());
-  lay::FileDialog open_dialog (this, tl::to_string (QObject::tr ("Load Layer Properties File")), tl::to_string (QObject::tr ("Layer properties files (*.lyp);;All files (*)")));
+  lay::FileDialog open_dialog (this, tl::to_string (QObject::tr ("Layer Properties File")), tl::to_string (QObject::tr ("Layer properties files (*.lyp);;All files (*)")));
   if (open_dialog.get_open (file)) {
     QDir base_dir (tl::to_qstring (mp_data->base_dir));
     mp_ui->layer_properties_file_le->setText (base_dir.relativeFilePath (tl::to_qstring (file)));
@@ -665,7 +665,7 @@ GerberImportDialog::add_free_file ()
 
   std::vector <std::string> new_files;
 
-  lay::FileDialog open_dialog (this, tl::to_string (QObject::tr ("Load PCB data file")), tl::to_string (QObject::tr ("All files (*)")));
+  lay::FileDialog open_dialog (this, tl::to_string (QObject::tr ("PCB data file")), tl::to_string (QObject::tr ("All files (*)")));
   if (open_dialog.get_open (new_files, mp_data->base_dir)) {
 
     std::sort (new_files.begin (), new_files.end ());
@@ -815,7 +815,7 @@ GerberImportDialog::free_layer_mapping_item_clicked (QTreeWidgetItem *item, int 
   if (column > 0) {
     bool value = ! item->data (column, Qt::UserRole).toBool ();
     item->setData (column, Qt::UserRole, value);
-    item->setData (column, Qt::DecorationRole, QVariant (QIcon (QString::fromUtf8 (value ? ":checked_16px.png" : ":unchecked_16px.png"))));
+    item->setData (column, Qt::DecorationRole, QVariant (QIcon (QString::fromUtf8 (value ? ":checked.png" : ":unchecked.png"))));
   }
 }
 
@@ -828,7 +828,7 @@ GerberImportDialog::reset_free_mapping ()
   for (QList<QTreeWidgetItem *>::const_iterator s = selected.begin (); s != selected.end (); ++s) {
     for (int column = 1; column <= int (mp_data->layout_layers.size ()); ++column) {
       (*s)->setData (column, Qt::UserRole, false);
-      (*s)->setData (column, Qt::DecorationRole, QVariant (QIcon (QString::fromUtf8 (":unchecked_16px.png"))));
+      (*s)->setData (column, Qt::DecorationRole, QVariant (QIcon (QString::fromUtf8 (":unchecked.png"))));
     }
   }
 }
@@ -1024,8 +1024,8 @@ GerberImportDialog::commit_page ()
     mp_data->num_metal_layers = -1;
     mp_data->num_via_types = -1;
 
-    tl::from_string_ext (tl::to_string (mp_ui->num_metal_le->text ()), mp_data->num_metal_layers);
-    tl::from_string_ext (tl::to_string (mp_ui->num_via_le->text ()), mp_data->num_via_types);
+    tl::from_string (tl::to_string (mp_ui->num_metal_le->text ()), mp_data->num_metal_layers);
+    tl::from_string (tl::to_string (mp_ui->num_via_le->text ()), mp_data->num_via_types);
 
     if (mp_data->num_metal_layers < 0) {
       throw tl::Exception (tl::to_string (QObject::tr ("Invalid number of metal layers")));
@@ -1297,12 +1297,12 @@ GerberImportDialog::commit_page ()
 
     mp_data->merge_flag = mp_ui->merge_cb->isChecked ();
     mp_data->invert_negative_layers = mp_ui->invert_cb->isChecked ();
-    tl::from_string_ext (tl::to_string (mp_ui->border_le->text ()), mp_data->border);
+    tl::from_string (tl::to_string (mp_ui->border_le->text ()), mp_data->border);
 
     bool import_into = (mp_data->mode == db::GerberImportData::ModeIntoLayout);
     if (! import_into) {
 
-      tl::from_string_ext (tl::to_string (mp_ui->dbu_le->text ()), mp_data->dbu);
+      tl::from_string (tl::to_string (mp_ui->dbu_le->text ()), mp_data->dbu);
       if (mp_data->dbu < 1e-6) {
         throw tl::Exception (tl::to_string (QObject::tr ("Database unit must not be negative or zero")));
       }
@@ -1607,7 +1607,7 @@ GerberImportDialog::update ()
       }
 
       item->setData (layer + 1, Qt::UserRole, QVariant (is_present));
-      item->setData (layer + 1, Qt::DecorationRole, QVariant (QIcon (QString::fromUtf8 (is_present ? ":checked_16px.png" : ":unchecked_16px.png"))));
+      item->setData (layer + 1, Qt::DecorationRole, QVariant (QIcon (QString::fromUtf8 (is_present ? ":checked.png" : ":unchecked.png"))));
 
     }
 

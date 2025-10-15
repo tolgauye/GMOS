@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -32,11 +32,10 @@
 #include <vector>
 #include <map>
 
-#if defined(HAVE_QT)
-#  include <QPoint>
-#  include <QByteArray>
-#  include <QColor>
-#endif
+#include <QPoint>
+#include <QByteArray>
+#include <QColor>
+#include <QWidget>
 
 #include "tlObjectCollection.h"
 #include "tlVariant.h"
@@ -46,8 +45,6 @@
 #include "layCursor.h"
 #include "layBitmapRenderer.h"
 
-#if defined(HAVE_QT)
-class QWidget;
 class QMouseEvent;
 class QImage;
 class QDragEnterEvent;
@@ -55,7 +52,6 @@ class QDragMoveEvent;
 class QDragLeaveEvent;
 class QDropEvent;
 class QMimeData;
-#endif
 
 namespace db
 {
@@ -63,25 +59,133 @@ namespace db
   class Layout;
 }
 
-namespace tl
-{
-  class PixelBuffer;
-  class BitmapBuffer;
-}
-
 namespace lay {
 
 class Viewport;
-class ViewObjectUI;
+class ViewObjectWidget;
 class ViewObjectCanvas;
 class CanvasPlane;
 class Bitmap;
 
-#if defined(HAVE_QT)
-class DragDropDataBase;
-#endif
+LAYBASIC_PUBLIC const char *drag_drop_mime_type ();
 
-class ViewObjectQWidget;
+/**
+ *  @brief A helper class required to store the drag/drop data
+ *
+ *  Drag/drop data is basically a collection of key/value pairs. 
+ *  A category string is provided to identify the kind of data.
+ */
+
+class LAYBASIC_PUBLIC DragDropDataBase
+{
+public:
+  /**
+   *  @brief Default constructor
+   */
+  DragDropDataBase () { }
+
+  /**
+   *  @brief Dtor
+   */
+  virtual ~DragDropDataBase () { } 
+
+  /**
+   *  @brief Serializes itself to an QByteArray
+   */
+  virtual QByteArray serialized () const = 0;
+
+  /**
+   *  @brief Try deserialization from an QByteArray
+   *
+   *  Returns false, if deserialization failed.
+   */
+  virtual bool deserialize (const QByteArray &ba) = 0;
+
+  /**
+   *  @brief Create a QMimeData object from the object
+   */
+  QMimeData *to_mime_data () const;
+};
+
+/**
+ *  @brief Drag/drop data for a cell
+ */
+
+class LAYBASIC_PUBLIC CellDragDropData
+  : public DragDropDataBase
+{
+public:
+  /**
+   *  @brief Default ctor
+   */
+  CellDragDropData ()
+    : mp_layout (0), mp_library (0), m_cell_index (0), m_is_pcell (false)
+  {
+    //  .. nothing yet ..
+  }
+
+  /**
+   *  @brief Specifies drag & drop of a cell
+   *
+   *  @param layout the layout where the cell lives in 
+   *  @param cell_index The index of the cell
+   */
+  CellDragDropData (const db::Layout *layout, const db::Library *library, db::cell_index_type cell_or_pcell_index, bool is_pcell)
+    : mp_layout (layout), mp_library (library), m_cell_index (cell_or_pcell_index), m_is_pcell (is_pcell)
+  {
+    //  .. nothing yet ..
+  }
+
+  /**
+   *  @brief Gets the layout object where the cell lives in
+   */
+  const db::Layout *layout () const
+  {
+    return mp_layout;
+  }
+
+  /**
+   *  @brief Gets the layout object where the cell lives in
+   */
+  const db::Library *library () const
+  {
+    return mp_library;
+  }
+
+  /**
+   *  @brief Gets the index of the cell
+   */
+  db::cell_index_type cell_index () const
+  {
+    return m_cell_index;
+  }
+
+  /**
+   *  @brief Gets a value indicating whether the cell is a pcell
+   */
+  bool is_pcell () const
+  {
+    return m_is_pcell;
+  }
+
+  /**
+   *  @brief Serializes itself to an QByteArray
+   */
+  virtual QByteArray serialized () const;
+
+  /**
+   *  @brief Try deserialization from an QByteArray
+   *
+   *  Returns false, if deserialization failed.
+   */
+  bool deserialize (const QByteArray &ba);
+
+private:
+  const db::Layout *mp_layout;
+  const db::Library *mp_library;
+  db::cell_index_type m_cell_index;
+  bool m_is_pcell;
+};
 
 /**
  *  @brief A view service 
@@ -102,12 +206,7 @@ public:
   /**
    *  @brief Constructor
    */
-  ViewService (ViewObjectUI *widget = 0);
-
-  /**
-   *  @brief Initialization, can follow default constructor
-   */
-  void init (ViewObjectUI *widget);
+  ViewService (ViewObjectWidget *widget = 0);
 
   /**
    *  @brief Destructor
@@ -125,7 +224,6 @@ public:
    */
   virtual bool key_event (unsigned int /*key*/, unsigned int /*buttons*/) { return false; }
 
-#if defined(HAVE_QT)
   /**
    *  @brief The drag enter event
    *
@@ -150,18 +248,6 @@ public:
    *  @brief The drop event
    */
   virtual bool drop_event (const db::DPoint & /*p*/, const DragDropDataBase * /*data*/) { return false; }
-#endif
-
-  /**
-   *  @brief Hover reset request
-   *
-   *  This event is issued for services providing some "hover" mode - i.e. capture
-   *  mouse move events and start a timer on them.
-   *
-   *  The implementation of this event should cancel this timer and
-   *  not raise a hover condition.
-   */
-  virtual void hover_reset () { }
 
   /**
    *  @brief Mouse press event handler
@@ -191,7 +277,7 @@ public:
   /** 
    *  @brief Mouse single-click event handler
    *
-   *  Analogous to mouse_press_event (see above), but sent if the mouse was not moved.
+   *  Analogeous to mouse_press_event (see above), but sent if the mouse was not moved.
    *  The click event is coincident with the release of the mouse button.
    */
   virtual bool mouse_click_event (const db::DPoint & /*p*/, unsigned int /*buttons*/, bool /*prio*/) { return false; }
@@ -199,7 +285,7 @@ public:
   /** 
    *  @brief Mouse double-click event handler
    *
-   *  Analogous to mouse_press_event (see above), but sent if a double-click was detected.
+   *  Analogeous to mouse_press_event (see above), but sent if a double-click was detected.
    */
   virtual bool mouse_double_click_event (const db::DPoint & /*p*/, unsigned int /*buttons*/, bool /*prio*/) { return false; }
 
@@ -216,24 +302,24 @@ public:
   /** 
    *  @brief Mouse move event handler
    *
-   *  Analogous to mouse_press_event (see above).
+   *  Analogeous to mouse_press_event (see above).
    */
   virtual bool mouse_move_event (const db::DPoint & /*p*/, unsigned int /*buttons*/, bool /*prio*/) { return false; }
 
   /** 
    *  @brief Mouse release event handler
    *
-   *  Analogous to mouse_press_event (see above).
+   *  Analogeous to mouse_press_event (see above).
    */
   virtual bool mouse_release_event (const db::DPoint & /*p*/, unsigned int /*buttons*/, bool /*prio*/) { return false; }
 
   /** 
    *  @brief Wheel event handler
    *
-   *  Analogous to mouse_press_event (see above).
+   *  Analogeous to mouse_press_event (see above).
    *
-   *  @param delta The rotation angle in eights of a degree
-   *  @param horizontal True, if the horizontal wheel was turned
+   *  @param delta The rotation angle in eigths of a degree
+   *  @param horizonal True, if the horizontal wheel was turned
    *  @param p The position where the mouse currently is at (in micron units)
    */
   virtual bool wheel_event (int /*delta*/, bool /*horizontal*/, const db::DPoint & /*p*/, unsigned int /*buttons*/, bool /*prio*/) { return false; }
@@ -260,7 +346,7 @@ public:
   /**
    *  @brief Accessor to the widget pointer
    */
-  ViewObjectUI *ui () const
+  ViewObjectWidget *widget () const 
   {  
     return mp_widget;
   }
@@ -278,25 +364,15 @@ public:
   /**
    *  @brief This method is called to set the background and text (foreground) color
    */
-  virtual void set_colors (tl::Color /*background*/, tl::Color /*text*/) { }
+  virtual void set_colors (QColor /*background*/, QColor /*text*/) { }
 
   /**
-   *  @brief This method is called when a mouse tracking operation should be cancelled
+   *  @brief This method is called when a drag operation should be cancelled
    */
   virtual void drag_cancel () { }
 
   /**
-   *  @brief Gets a value indicating whether a cursor position it set
-   */
-  virtual bool has_tracking_position () const { return false; }
-
-  /**
-   *  @brief Gets the cursor position if one is set
-   */
-  virtual db::DPoint tracking_position () const { return db::DPoint (); }
-
-  /**
-   *  @brief Enable or disable a service 
+   *  @brief Enable or disable a sevice 
    *
    *  If a service is disabled, it will not receive mouse events 
    */
@@ -311,9 +387,9 @@ public:
   }
 
 private:
-  friend class ViewObjectUI;
+  friend class ViewObjectWidget;
 
-  ViewObjectUI *mp_widget;
+  ViewObjectWidget *mp_widget;
   bool m_abs_grab;
   bool m_enabled;
 };
@@ -337,7 +413,7 @@ public:
    *  @param widget The widget object that the object is shown on.
    *  @param _static True, if the object is in frozen mode initially
    */
-  BackgroundViewObject (ViewObjectUI *widget = 0);
+  BackgroundViewObject (ViewObjectWidget *widget = 0);
 
   /**
    *  @brief The destructor
@@ -355,9 +431,9 @@ public:
   /**
    *  @brief Accessor to the widget object pointer
    */
-  ViewObjectUI *widget () const
+  ViewObjectWidget *widget () const 
   {  
-    return const_cast<ViewObjectUI *> (mp_widget.get());
+    return const_cast<ViewObjectWidget *> (mp_widget.get());
   }
 
   /**
@@ -403,12 +479,12 @@ public:
   void z_order (int z);
 
 private:
-  friend class ViewObjectUI;
+  friend class ViewObjectWidget;
 
   BackgroundViewObject (const BackgroundViewObject &d);
   BackgroundViewObject &operator= (const BackgroundViewObject &d);
 
-  tl::weak_ptr<ViewObjectUI> mp_widget;
+  tl::weak_ptr<ViewObjectWidget> mp_widget;
   bool m_visible;
   int m_z_order;
 };
@@ -437,19 +513,12 @@ public:
    *  @param widget The widget object that the object is shown on.
    *  @param _static True, if the object is in frozen mode initially
    */
-  ViewObject (ViewObjectUI *widget = 0, bool _static = true);
+  ViewObject (ViewObjectWidget *widget = 0, bool _static = true);
 
   /**
    *  @brief The destructor
    */
   virtual ~ViewObject ();
-
-  /**
-   *  @brief Attaches a view object to a widget
-   *
-   *  This will register the object at the widget, but not transfer ownership.
-   */
-  void set_widget (ViewObjectUI *widget);
 
   /**
    *  @brief Render the object on the planes provided by the canvas.
@@ -463,9 +532,9 @@ public:
   /**
    *  @brief Accessor to the widget object pointer
    */
-  ViewObjectUI *widget () const
+  ViewObjectWidget *widget () const 
   {  
-    return const_cast<ViewObjectUI *> (mp_widget.get());
+    return const_cast<ViewObjectWidget *> (mp_widget.get());
   }
 
   /**
@@ -525,12 +594,12 @@ public:
   void freeze ();
 
 private:
-  friend class ViewObjectUI;
+  friend class ViewObjectWidget;
 
   ViewObject (const ViewObject &d);
   ViewObject &operator= (const ViewObject &d);
 
-  tl::weak_ptr<ViewObjectUI> mp_widget;
+  tl::weak_ptr<ViewObjectWidget> mp_widget;
   bool m_static;
   bool m_visible;
   bool m_dismissable;
@@ -540,53 +609,12 @@ private:
  *  @brief Describes the button state (supposed to be ored)
  */
 enum ButtonState {
-  ShiftButton   = 1,
+  ShiftButton = 1,
   ControlButton = 2,
-  AltButton     = 4,
-  LeftButton    = 8,
-  MidButton     = 16,
-  RightButton   = 32
-};
-
-/**
- *  @brief Key codes for keys understood by the standard components
- */
-enum KeyCodes {
-#if defined(HAVE_QT)
-  KeyEscape    = int(Qt::Key_Escape),
-  KeyTab       = int(Qt::Key_Tab),
-  KeyBacktab   = int(Qt::Key_Backtab),
-  KeyBackspace = int(Qt::Key_Backspace),
-  KeyReturn    = int(Qt::Key_Return),
-  KeyEnter     = int(Qt::Key_Enter),
-  KeyInsert    = int(Qt::Key_Insert),
-  KeyDelete    = int(Qt::Key_Delete),
-  KeyHome      = int(Qt::Key_Home),
-  KeyEnd       = int(Qt::Key_End),
-  KeyDown      = int(Qt::Key_Down),
-  KeyUp        = int(Qt::Key_Up),
-  KeyLeft      = int(Qt::Key_Left),
-  KeyRight     = int(Qt::Key_Right),
-  KeyPageUp    = int(Qt::Key_PageUp),
-  KeyPageDown  = int(Qt::Key_PageDown)
-#else
-  KeyEscape    = 0x01000000,
-  KeyTab       = 0x01000001,
-  KeyBacktab   = 0x01000002,
-  KeyBackspace = 0x01000003,
-  KeyReturn    = 0x01000004,
-  KeyEnter     = 0x01000005,
-  KeyInsert    = 0x01000006,
-  KeyDelete    = 0x01000007,
-  KeyHome      = 0x01000010,
-  KeyEnd       = 0x01000011,
-  KeyLeft      = 0x01000012,
-  KeyUp        = 0x01000013,
-  KeyRight     = 0x01000014,
-  KeyDown      = 0x01000015,
-  KeyPageUp    = 0x01000016,
-  KeyPageDown  = 0x01000017
-#endif
+  AltButton = 4,
+  LeftButton = 8,
+  MidButton = 16,
+  RightButton = 32
 };
 
 /**
@@ -597,7 +625,8 @@ enum KeyCodes {
  *  painting.
  */
 
-class LAYBASIC_PUBLIC ViewObjectUI :
+class LAYBASIC_PUBLIC ViewObjectWidget 
+  : public QWidget,
     public tl::Object
 {
 public:
@@ -609,29 +638,17 @@ public:
   /**
    *  @brief ctor
    */
-  ViewObjectUI ();
+  ViewObjectWidget (QWidget *view, const char *name);
 
   /**
    *  @brief dtor
    */
-  ~ViewObjectUI ();
-
-#if defined(HAVE_QT)
-  /**
-   *  @brief Initializes the UI components
-   */
-  virtual void init_ui (QWidget *parent);
-#endif
+  ~ViewObjectWidget ();
 
   /**
    *  @brief Cancel all drag operations
    */
   void drag_cancel ();
-
-  /**
-   *  @brief Calls hover_reset on all services
-   */
-  void hover_reset ();
 
   /**
    *  @brief CanvasPlane rendering 
@@ -797,16 +814,6 @@ public:
     return m_objects.end ();
   }
 
-  /**
-   *  @brief Adds an object, transferring ownership to the view
-   */
-  void add_object (lay::ViewObject *object);
-
-  /**
-   *  @brief Clears all objects owned by the view
-   */
-  void clear_objects ();
-
   /** 
    *  @brief Remaining leave event handler
    *
@@ -831,7 +838,6 @@ public:
    */
   virtual void key_event (unsigned int /*key*/, unsigned int /*buttons*/) { }
 
-#if defined(HAVE_QT)
   /**
    *  @brief The drag enter event
    *
@@ -856,7 +862,6 @@ public:
    *  @brief The drop event
    */
   virtual bool drop_event (const db::DPoint & /*p*/, const DragDropDataBase * /*data*/) { return false; }
-#endif
 
   /** 
    *  @brief Remaining mouse double click event handler
@@ -957,145 +962,83 @@ public:
     return m_view_objects_dismissed;
   }
 
-  /**
-   *  @brief Gets the current mouse position
-   */
-  db::DPoint mouse_position () const
-  {
-    return m_mouse_pos;
-  }
-
-  /**
-   *  @brief Gets the current mouse position in micrometer units
-   */
-  db::DPoint mouse_position_um () const
-  {
-    return pixel_to_um (m_mouse_pos);
-  }
-
-  /**
-   *  @brief Translates a screen coordinate in micrometer coordinates
-   */
-  db::DPoint pixel_to_um (const db::Point &pt) const;
-
-  /**
-   *  @brief Translates a screen coordinate in micrometer coordinates
-   */
-  db::DPoint pixel_to_um (const db::DPoint &pt) const;
-
-  /**
-   *  @brief Gets a flag indicating whether the mouse is inside the window
-   */
-  bool mouse_in_window () const
-  {
-    return m_mouse_inside;
-  }
-
-#if !defined(HAVE_QT)
-  /**
-   *  @brief Gets a value indicating that the image data has been updated
-   *
-   *  This method will return true once after "update" was called.
-   */
-  bool image_updated ();
-#endif
-
-#if defined(HAVE_QT)
-  /**
-   *  @brief Gets the QWidget representing this canvas visually in Qt
-   */
-  QWidget *widget () const
-  {
-    return mp_widget;
-  }
-#endif
-
-  /**
-   *  @brief External entry point for key press event generation
-   */
-  void send_key_press_event (unsigned int key, unsigned int buttons);
-
-  /**
-   *  @brief External entry point for mouse move event generation
-   */
-  void send_mouse_move_event (const db::DPoint &pt, unsigned int buttons);
-
-  /**
-   *  @brief External entry point for leave event generation
-   */
-  void send_leave_event ();
-
-  /**
-   *  @brief External entry point for enter event generation
-   */
-  void send_enter_event ();
-
-  /**
-   *  @brief External entry point for mouse button press event generation
-   */
-  void send_mouse_press_event (const db::DPoint &pt, unsigned int buttons);
-
-  /**
-   *  @brief External entry point for mouse button double-click event generation
-   */
-  void send_mouse_double_clicked_event (const db::DPoint &pt, unsigned int buttons);
-
-  /**
-   *  @brief External entry point for mouse button release event generation
-   */
-  void send_mouse_release_event (const db::DPoint &pt, unsigned int buttons);
-
-  /**
-   *  @brief External entry point for mouse wheel event generation
-   */
-  void send_wheel_event (int delta, bool horizontal, const db::DPoint &pt, unsigned int buttons);
-
-  /**
-   *  @brief Resizes the widget
-   */
-  void resize (unsigned int w, unsigned int h);
-
 protected:
-  friend class ViewObjectQWidget;
+  /**
+   *  @brief Qt focus event handler
+   */
+  bool focusNextPrevChild (bool next);
 
   /**
-   *  @brief Emulates the update() method in the non-Qt case
-   *
-   *  After calling this method, the next image_updated() call will return true while also resetting the
-   *  update needed flag.
+   *  @brief Qt keyboard event handler
    */
-  void update ();
+  void keyPressEvent (QKeyEvent *e);
+
+  /**
+   *  @brief Qt mouse move event handler
+   */
+  void mouseMoveEvent (QMouseEvent *e);
+
+  /**
+   *  @brief Qt mouse leave event handler
+   */
+  void leaveEvent (QEvent *e);
+
+  /**
+   *  @brief Qt mouse enter event handler
+   */
+  void enterEvent (QEvent *e);
+
+  /**
+   *  @brief Qt mouse button press event handler
+   */
+  void mousePressEvent (QMouseEvent *e);
+
+  /**
+   *  @brief Qt mouse button double-click event handler
+   */
+  void mouseDoubleClickEvent (QMouseEvent *e);
+
+  /**
+   *  @brief Qt mouse button release event handler
+   */
+  void mouseReleaseEvent (QMouseEvent *e);
+
+  /**
+   *  @brief Qt drag enter event handler
+   */
+  void dragEnterEvent (QDragEnterEvent *event);
+
+  /**
+   *  @brief Qt drag leave event handler
+   */
+  void dragLeaveEvent (QDragLeaveEvent *event);
+
+  /**
+   *  @brief Qt drag enter event handler
+   */
+  void dragMoveEvent (QDragMoveEvent *event);
+
+  /**
+   *  @brief Qt drop event handler
+   */
+  void dropEvent (QDropEvent *event);
+
+  /**
+   *  @brief Qt mouse wheel event handler
+   */
+  void wheelEvent (QWheelEvent *e);
 
   /**
    *  @brief Set the transformation for mouse events
    */
   void mouse_event_trans (const db::DCplxTrans &trans);
 
-  /**
-   *  @brief Gets called when the view is resized
-   */
-  virtual void resize_event (unsigned int w, unsigned int h);
-
-  /**
-   *  @brief Receives the paint event from Qt
-   */
-  virtual void paint_event ();
-
-  /**
-   *  @brief GTF probe event
-   */
-  virtual void gtf_probe ();
-
 private:
   friend class lay::ViewObject;
   friend class lay::ViewService;
   friend class lay::BackgroundViewObject;
 
-#if defined(HAVE_QT)
-  QWidget *mp_widget;
-#endif
   tl::weak_collection<lay::ViewObject> m_objects;
-  tl::shared_collection<lay::ViewObject> m_owned_objects;
   tl::weak_collection<lay::BackgroundViewObject> m_background_objects;
   std::list<lay::ViewService *> m_services;
   std::list<ViewService *> m_grabbed;
@@ -1104,23 +1047,17 @@ private:
   bool m_needs_update_bg;
   lay::ViewService *mp_active_service;
   db::DCplxTrans m_trans;
-  db::DPoint m_mouse_pos;
-  db::DPoint m_mouse_pressed;
+  QPoint m_mouse_pos;
+  QPoint m_mouse_pressed;
   bool m_mouse_pressed_state;
   unsigned int m_mouse_buttons;
   bool m_in_mouse_move;
-  bool m_mouse_inside;
   lay::Cursor::cursor_shape m_cursor, m_default_cursor;
-  unsigned int m_widget_width, m_widget_height;
-  bool m_image_updated;
 
-  void ensure_entered ();
   void do_mouse_move ();
   void begin_mouse_event (lay::Cursor::cursor_shape cursor = lay::Cursor::keep);
   void end_mouse_event ();
   void objects_changed ();
-  int widget_height () const;
-  int widget_width () const;
 
   /**
    *  @brief Register a service
@@ -1156,17 +1093,17 @@ public:
   /**
    *  @brief Background color property: background color of the canvas
    */
-  virtual tl::Color background_color () const = 0;
+  virtual QColor background_color () const = 0;
 
   /**
    *  @brief Foreground color property: foreground color of the canvas (some "contrast" color to background)
    */
-  virtual tl::Color foreground_color () const = 0;
+  virtual QColor foreground_color () const = 0;
 
   /**
    *  @brief Active color property: color of active elements on the canvas (some "contrast" color to background and different from foreground)
    */
-  virtual tl::Color active_color () const = 0;
+  virtual QColor active_color () const = 0;
 
   /**
    *  @brief Get the resolution
@@ -1176,13 +1113,6 @@ public:
    *  of a "one unit" line's width in pixels.
    */
   virtual double resolution () const = 0;
-
-  /**
-   *  @brief Get the font resolution
-   *
-   *  The resolution describes the size of one pixel for the rendering of the "Default" font.
-   */
-  virtual double font_resolution () const = 0;
 
   /**
    *  @brief CanvasPlane provider
@@ -1237,7 +1167,7 @@ public:
   /**
    *  @brief Constructor
    */
-  BitmapViewObjectCanvas (unsigned int width, unsigned int height, double resolution, double font_resolution);
+  BitmapViewObjectCanvas (unsigned int width, unsigned int height, double resolution);
 
   /**
    *  @brief The destructor 
@@ -1286,14 +1216,6 @@ public:
   virtual double resolution () const 
   {
     return m_resolution;
-  }
-
-  /**
-   *  @brief Get the font resolution
-   */
-  virtual double font_resolution () const
-  {
-    return m_font_resolution;
   }
 
   /**
@@ -1348,9 +1270,14 @@ public:
   void clear_fg_bitmaps ();
 
   /**
+   *  @brief Return the background image
+   */
+  virtual QImage &bg_image () = 0;
+
+  /**
    *  @brief Set the width and height and resolution
    */
-  void set_size (unsigned int width, unsigned int height, double resolution, double font_resolution);
+  void set_size (unsigned int width, unsigned int height, double resolution);
 
   /**
    *  @brief Set the width and height
@@ -1360,7 +1287,7 @@ public:
   /**
    *  @brief Set the resolution
    */
-  void set_size (double resolution, double font_resolution);
+  void set_size (double resolution);
 
   /**
    *  @brief Get the width
@@ -1378,16 +1305,6 @@ public:
     return m_height;
   }
 
-  /**
-   *  @brief Gets the pixel buffer that background objects render to
-   */
-  virtual tl::PixelBuffer *bg_image ();
-
-  /**
-   *  @brief Gets the monochrome pixel buffer that background objects render to
-   */
-  virtual tl::BitmapBuffer *bg_bitmap ();
-
 private:
   std::map <lay::ViewOp, unsigned int> m_fg_bitmap_table;
   std::map <std::vector <lay::ViewOp>, unsigned int> m_fgv_bitmap_table;
@@ -1397,7 +1314,6 @@ private:
   lay::BitmapRenderer m_renderer;
   unsigned int m_width, m_height;
   double m_resolution;
-  double m_font_resolution;
 };
 
 } // namespace lay

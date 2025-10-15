@@ -2,7 +2,7 @@
 /*
 
   KLayout Layout Viewer
-  Copyright (C) 2006-2025 Matthias Koefferlein
+  Copyright (C) 2006-2019 Matthias Koefferlein
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -20,7 +20,6 @@
 
 */
 
-#if defined(HAVE_QT)
 
 #include "antConfigPage.h"
 #include "ui_RulerConfigPage.h"
@@ -29,7 +28,6 @@
 #include "ui_RulerConfigPage4.h"
 #include "antConfig.h"
 #include "layConverters.h"
-#include "layDispatcher.h"
 #include "layQtTools.h"
 #include "tlExceptions.h"
 
@@ -55,7 +53,7 @@ ConfigPage::~ConfigPage ()
 }
 
 void 
-ConfigPage::setup (lay::Dispatcher *root)
+ConfigPage::setup (lay::PluginRoot *root)
 {
   //  Snap range
   int snap_range = 0;
@@ -71,13 +69,13 @@ ConfigPage::setup (lay::Dispatcher *root)
 }
 
 void 
-ConfigPage::commit (lay::Dispatcher *root)
+ConfigPage::commit (lay::PluginRoot *root)
 {
   root->config_set (cfg_ruler_obj_snap, mp_ui->ruler_obj_snap_cbx->isChecked ());
   root->config_set (cfg_ruler_grid_snap, mp_ui->ruler_grid_snap_cbx->isChecked ());
 
   int sr = 0;
-  tl::from_string_ext (tl::to_string (mp_ui->ruler_snap_range_edit->text ()), sr);
+  tl::from_string (tl::to_string (mp_ui->ruler_snap_range_edit->text ()), sr);
   if (sr < 1 || sr > 1000) {
     throw tl::Exception (tl::to_string (QObject::tr ("Not a valid pixel value (must be non-zero positive and not too large): %s")), tl::to_string (mp_ui->ruler_snap_range_edit->text ()));
   }
@@ -101,7 +99,7 @@ ConfigPage2::~ConfigPage2 ()
 }
 
 void 
-ConfigPage2::setup (lay::Dispatcher *root)
+ConfigPage2::setup (lay::PluginRoot *root)
 {
   //  Max. number of rulers
   int max_number_of_rulers = -1;
@@ -124,11 +122,11 @@ ConfigPage2::setup (lay::Dispatcher *root)
 }
 
 void 
-ConfigPage2::commit (lay::Dispatcher *root)
+ConfigPage2::commit (lay::PluginRoot *root)
 {
   int mr;
   try {
-    tl::from_string_ext (tl::to_string (mp_ui->num_rulers_edit->text ()), mr);
+    tl::from_string (tl::to_string (mp_ui->num_rulers_edit->text ()), mr);
   } catch (...) {
     mr = -1;
   }
@@ -155,7 +153,7 @@ ConfigPage3::~ConfigPage3 ()
 }
 
 void 
-ConfigPage3::setup (lay::Dispatcher *root)
+ConfigPage3::setup (lay::PluginRoot *root)
 {
   //  snap mode
   lay::angle_constraint_type rm = lay::AC_Any;
@@ -168,7 +166,7 @@ ConfigPage3::setup (lay::Dispatcher *root)
 }
 
 void 
-ConfigPage3::commit (lay::Dispatcher *root)
+ConfigPage3::commit (lay::PluginRoot *root)
 {
   lay::angle_constraint_type rm = lay::AC_Any;
   if (mp_ui->ruler_any_angle_rb->isChecked ()) {
@@ -217,7 +215,7 @@ ConfigPage4::~ConfigPage4 ()
 }
 
 void 
-ConfigPage4::setup (lay::Dispatcher *root)
+ConfigPage4::setup (lay::PluginRoot *root)
 {
   //  templates
   root->config_get (cfg_ruler_templates, m_ruler_templates, TemplatesConverter ());
@@ -238,7 +236,7 @@ ConfigPage4::setup (lay::Dispatcher *root)
 }
 
 void 
-ConfigPage4::commit (lay::Dispatcher *root)
+ConfigPage4::commit (lay::PluginRoot *root)
 {
   commit ();
   
@@ -418,5 +416,3 @@ ConfigPage4::commit ()
 }
 
 } // namespace ant
-
-#endif
