@@ -1,0 +1,8 @@
+#!/bin/sh
+cmd=$1
+shift
+
+for i in "$@"; do
+    echo "cat $i | $cmd"
+    cat $i | $cmd
+done

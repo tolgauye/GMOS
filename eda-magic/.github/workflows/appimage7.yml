@@ -1,0 +1,170 @@
+on:
+  push:
+    tags:
+      - "*"
+  workflow_dispatch:
+
+name: CI-appimage7
+
+env:
+  APPIMAGETOOL_DOWNLOAD_URL: https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
+
+jobs:
+  build_appimage7:
+    name: Build AppImage EL7
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # action-gh-release
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 149 # enough to cover between tags
+          #fetch-tags: true # this should work see actions/checkout~issue#1471
+
+      - name: Get the version
+        id: get_version
+        run: |
+          git show -s
+          version=$(cat VERSION) # 8.9.999
+          version_tstamp=$(git show -s "--format=%cs" | tr -d '-') # YYYYMMDD
+          version_hash=$(git show -s "--format=%h") # abcdefg
+          version_num=$(ruby -e "print '$GITHUB_REF'.split('/')[2]") # legacy version method: master
+          echo "version=${version}"
+          echo "version_tstamp=${version_tstamp}"
+          echo "version_hash=${version_hash}"
+          echo "version_num=${version_num}"
+          VERSION_NUM="${version}~${version_tstamp}~${version_hash}"
+          echo "VERSION_NUM=${VERSION_NUM}" >> $GITHUB_ENV
+          echo "MAGIC_APPIMAGE_OUTPUT_FILENAME=Magic-${VERSION_NUM}-x86_64-EL7.AppImage" >> $GITHUB_ENV
+          # Is this GHA being run due to a push-on-tag ?  if so we make a GitHub release, otherwise we just publish artifact
+          github_tag=$(echo -n "$GITHUB_REF" | sed -e 's#refs/tags/##') # 8.9.999
+          echo "github_tag=$github_tag"
+          if echo -n "$GITHUB_REF" | egrep -q "^refs/tags/" # check prefix
+          then
+            if [ -n "$github_tag" ]
+            then
+              echo "MY_GITHUB_TAG=${github_tag}" >> $GITHUB_ENV
+            fi
+          fi
+
+      - name: Build project
+        run: |
+          cd appimage/7
+          make
+
+          ln -v Magic-x86_64.AppImage "${MAGIC_APPIMAGE_OUTPUT_FILENAME}"
+          ls -l *.AppImage
+          sha256sum *.AppImage
+          pwd
+
+      - name: Create RELEASE-NOTES.txt
+        run: |
+          cd appimage/7
+          # Find the last tag (that does not match the current GITHUB_REF)
+          echo GITHUB_REF=$GITHUB_REF
+          echo GITHUB_SHA=$GITHUB_SHA
+          # GitHub CI is a shallow checkout by default (just the files needed to build)
+          # but we also want history back to next tag, see fetch-tags/fetch-depth actions/checkout~issue#1471
+          if [[ "$GITHUB_REF" =~ ^refs/tags/ ]]
+          then
+            # remove only if ref of tag (to avoid conflict during fetch)
+            git update-ref -d $GITHUB_REF
+            echo git_update_ref_exitstatus=$?
+          fi
+          set +e
+          git fetch --tags --prune --no-recurse-submodules --depth=149 origin +$GITHUB_SHA # fetch-tags: true # is broken
+          echo git_fetch_exitstatus=$?
+          git_show_ref=$(git show-ref --hash $GITHUB_REF) # get tagcommit hash
+          git_show_ref_exitstatus=$?
+          echo git_show_ref_exitstatus=$git_show_ref_exitstatus
+          echo git_show_ref=$git_show_ref
+          git_rev_list=$(git rev-list -n1 $GITHUB_REF) # get commit hash
+          git_rev_list_exitstatus=$?
+          echo git_rev_list_exitstatus=$git_rev_list_exitstatus
+          echo git_rev_list=$git_rev_list
+          set -e
+          test "$git_show_ref" = "$GITHUB_SHA" || test "$git_rev_list" = "$GITHUB_SHA" # check we got the ref back (or fail CI)
+          git_describe=$(git describe --tags $GITHUB_SHA | sed -e 's#\-\([0-9]\+\-g\)#\+\1#') # /-\d+-g/
+          echo git_describe=$git_describe
+
+          # RELEASE-NOTES-EL7.txt
+          echo "### ${MAGIC_APPIMAGE_OUTPUT_FILENAME} commit ${git_describe}" | sed -e 's#~#\\~#g' > RELEASE-NOTES-EL7.txt
+          echo "" >> RELEASE-NOTES-EL7.txt
+          echo "This release is based on EL7 (CentOS7), the AppImage format is designed to run on a wide range of Linux distributions." >> RELEASE-NOTES-EL7.txt
+          echo "" >> RELEASE-NOTES-EL7.txt
+          echo "See documentation at https://github.com/${GITHUB_REPOSITORY}/blob/${GITHUB_SHA:0:8}/appimage/7/README.md" >> RELEASE-NOTES-EL7.txt
+          echo "" >> RELEASE-NOTES-EL7.txt
+          length_info=$(stat "--format=%s bytes" "${MAGIC_APPIMAGE_OUTPUT_FILENAME}")
+          sha256_info=$(sha256sum "${MAGIC_APPIMAGE_OUTPUT_FILENAME}" | cut -d ' ' -f1)
+          echo "|   |   |" >> RELEASE-NOTES-EL7.txt
+          echo "| :-------- | :------ |" >> RELEASE-NOTES-EL7.txt
+          echo "| File Name | ${MAGIC_APPIMAGE_OUTPUT_FILENAME} |" | sed -e 's#~#\\~#g' >> RELEASE-NOTES-EL7.txt
+          echo "| File Length | ${length_info} |" >> RELEASE-NOTES-EL7.txt
+          echo "| File SHA256 | ${sha256_info} |" >> RELEASE-NOTES-EL7.txt
+          echo "" >> RELEASE-NOTES-EL7.txt
+
+          # RELEASE-NOTES-CL.txt
+          set +e # allow this to fail to empty string
+          git_previous_tag=$(git describe --tags --abbrev=0 $(git rev-list --tags --skip=1 --max-count=1))
+          echo git_previous_tag=$git_previous_tag
+          set -e
+          if [ -n "${git_previous_tag}" ]
+          then
+              echo "### Change Log (since previous tag):" > RELEASE-NOTES-CL.txt
+              echo "\`\`\`" >> RELEASE-NOTES-CL.txt
+              git log --oneline --no-color --no-decorate "refs/tags/${git_previous_tag}..${GITHUB_REF}" >> RELEASE-NOTES-CL.txt
+              echo "\`\`\`" >> RELEASE-NOTES-CL.txt
+          else
+              echo "### Change Log (last commit only):" > RELEASE-NOTES-CL.txt
+              echo "\`\`\`" >> RELEASE-NOTES-CL.txt
+              git log --oneline -n1 --no-color --no-decorate "${GITHUB_REF}" >> RELEASE-NOTES-CL.txt
+              echo "\`\`\`" >> RELEASE-NOTES-CL.txt
+          fi
+          echo "" >> RELEASE-NOTES-CL.txt
+
+          #echo "### Build Info:" > RELEASE-NOTES-BI.txt
+          # FIXME extract package version info and DSO symvers into RELEASE-NOTES.txt
+          #echo "" >> RELEASE-NOTES-BI.txt
+
+          cat RELEASE-NOTES-CL.txt >> RELEASE-NOTES-EL7.txt
+          cat RELEASE-NOTES-EL7.txt
+
+          # RELEASE-NOTES-DOCS.txt
+          echo "See documentation at https://github.com/${GITHUB_REPOSITORY}/blob/${GITHUB_SHA:0:8}/appimage/7/README.md" >> RELEASE-NOTES-DOCS.txt
+          echo "See documentation at https://github.com/${GITHUB_REPOSITORY}/blob/${GITHUB_SHA:0:8}/appimage/8/README.md" >> RELEASE-NOTES-DOCS.txt
+          echo "See documentation at https://github.com/${GITHUB_REPOSITORY}/blob/${GITHUB_SHA:0:8}/appimage/9/README.md" >> RELEASE-NOTES-DOCS.txt
+          echo "See documentation at https://github.com/${GITHUB_REPOSITORY}/blob/${GITHUB_SHA:0:8}/appimage/10/README.md" >> RELEASE-NOTES-DOCS.txt
+
+          # RELEASE-NOTES-GH.txt (this is shared for all AppImage for one tag)
+          echo "### commit ${git_describe}" | sed -e 's#~#\\~#g' > RELEASE-NOTES-GH.txt
+          if [[ "$GITHUB_REF" =~ ^refs/tags/ ]]
+          then
+            # show tag annotation with tags like before
+            git tag  --cleanup=strip "--format=%(contents)" -n "${GITHUB_REF:10}" | sed -e 's#\([~|]\)#\\\1#g' >> RELEASE-NOTES-GH.txt
+          fi
+          echo "" >> RELEASE-NOTES-GH.txt
+          cat RELEASE-NOTES-DOCS.txt >> RELEASE-NOTES-GH.txt
+          cat RELEASE-NOTES-CL.txt >> RELEASE-NOTES-GH.txt
+
+          # Show in action/artifact output
+          echo "## RELEASE NOTES" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          cat RELEASE-NOTES-EL7.txt >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload Release Asset
+        if: ${{ env.MY_GITHUB_TAG != '' }} # if: ${{ github.ref_type == 'tag' }}
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: ${{ github.workspace }}/appimage/7/RELEASE-NOTES-GH.txt
+          files: |
+            ${{ github.workspace }}/appimage/7/${{env.MAGIC_APPIMAGE_OUTPUT_FILENAME}}
+            ${{ github.workspace }}/appimage/7/RELEASE-NOTES-EL7.txt
+
+      - name: Upload Artifact
+        #if: ${{ env.MY_GITHUB_TAG == '' }} # commented out to always upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{env.MAGIC_APPIMAGE_OUTPUT_FILENAME}}
+          path: |
+            ${{ github.workspace }}/appimage/7/${{env.MAGIC_APPIMAGE_OUTPUT_FILENAME}}

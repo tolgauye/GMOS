@@ -1,0 +1,22 @@
+#!/bin/sh
+
+path=`dirname $0`
+path=`${path}/../license/af_get_library_path.sh`
+
+if [ "X${path}" = "X" ]; then
+    echo "Sorry, your architecture is not supported."
+    exit 1
+fi
+
+if [ "$LD_LIBRARY_PATH" = "" ]
+then
+    LD_LIBRARY_PATH="${path}"
+else
+    LD_LIBRARY_PATH="${path}:${LD_LIBRARY_PATH}"
+fi
+export LD_LIBRARY_PATH
+
+exe_path=${path}af_license_server_status
+
+${exe_path} "$@" 
+
