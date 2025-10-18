@@ -4,7 +4,8 @@ import pandas as pd
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QPushButton, QFileDialog, QDockWidget, QTabWidget, QLabel,
-    QLineEdit, QTextEdit, QComboBox, QColorDialog, QSpinBox, QMessageBox
+    QLineEdit, QTextEdit, QComboBox, QColorDialog, QSpinBox,
+    QMessageBox, QListWidget, QListWidgetItem
 )
 from PyQt6.QtCore import Qt
 import pyqtgraph as pg
@@ -24,13 +25,12 @@ class WaveformViewer(QMainWindow):
         self.setWindowTitle("Advanced Waveform Viewer")
         self.resize(1600, 900)
 
-        # Central widget
+        # ---------- Central Plot ----------
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
         self.main_layout = QVBoxLayout()
         self.central_widget.setLayout(self.main_layout)
 
-        # Plot widget
         pg.setConfigOptions(antialias=True)
         self.plot_widget = pg.PlotWidget()
         self.plot_widget.showGrid(x=True, y=True)
@@ -40,33 +40,36 @@ class WaveformViewer(QMainWindow):
         toolbar_layout = QHBoxLayout()
         self.main_layout.addLayout(toolbar_layout)
 
-        load_btn = QPushButton("Load CSV/RAW")
-        load_btn.clicked.connect(self.load_file)
-        toolbar_layout.addWidget(load_btn)
+        self.load_btn = QPushButton("Load CSV/RAW")
+        self.load_btn.clicked.connect(self.load_file)
+        toolbar_layout.addWidget(self.load_btn)
 
-        reset_btn = QPushButton("Reset View")
-        reset_btn.clicked.connect(self.reset_view)
-        toolbar_layout.addWidget(reset_btn)
+        self.reset_btn = QPushButton("Reset View")
+        self.reset_btn.clicked.connect(self.reset_view)
+        toolbar_layout.addWidget(self.reset_btn)
 
-        add_v_cursor_btn = QPushButton("Add Vertical Cursor")
-        add_v_cursor_btn.clicked.connect(self.add_vertical_cursor)
-        toolbar_layout.addWidget(add_v_cursor_btn)
+        self.add_v_cursor_btn = QPushButton("Add Vertical Cursor")
+        self.add_v_cursor_btn.clicked.connect(self.add_vertical_cursor)
+        toolbar_layout.addWidget(self.add_v_cursor_btn)
 
-        add_h_cursor_btn = QPushButton("Add Horizontal Cursor")
-        add_h_cursor_btn.clicked.connect(self.add_horizontal_cursor)
-        toolbar_layout.addWidget(add_h_cursor_btn)
+        self.add_h_cursor_btn = QPushButton("Add Horizontal Cursor")
+        self.add_h_cursor_btn.clicked.connect(self.add_horizontal_cursor)
+        toolbar_layout.addWidget(self.add_h_cursor_btn)
 
-        delete_cursor_btn = QPushButton("Delete Cursor")
-        delete_cursor_btn.clicked.connect(self.delete_selected_cursor)
-        toolbar_layout.addWidget(delete_cursor_btn)
+        self.delete_cursor_btn = QPushButton("Delete Cursor")
+        self.delete_cursor_btn.clicked.connect(self.delete_selected_cursor)
+        toolbar_layout.addWidget(self.delete_cursor_btn)
 
-        # Data
-        self.loaded_waveforms = []
-        self.plot_data_items = []
+        # ---------- Data ----------
+        self.loaded_waveforms = []  # All loaded waveforms
+        self.plot_data_items = []   # Currently plotted waveforms
         self.v_cursors = []
         self.h_cursors = []
 
-        # Cursor text
+        self.line_colors = {}
+        self.selected_color = 'r'
+
+        # ---------- Cursor text ----------
         self.dx_text = pg.TextItem(anchor=(0.5, 1.5), color='r')
         self.dy_text = pg.TextItem(anchor=(0,0), color='g')
         self.cursor_text = pg.TextItem(anchor=(0,1), color='b')
@@ -77,13 +80,34 @@ class WaveformViewer(QMainWindow):
         self.dy_text.hide()
         self.cursor_text.hide()
 
-        # Dockable panels
+        # ---------- Waveform Manager Dock ----------
+        self.waveform_manager_dock = QDockWidget("Waveform Manager", self)
+        self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self.waveform_manager_dock)
+
+        self.waveform_list = QListWidget()
+        self.waveform_list.setSelectionMode(QListWidget.SelectionMode.MultiSelection)
+        self.waveform_manager_dock.setWidget(self.waveform_list)
+
+        # Plot & Delete buttons in manager dock
+        self.plot_selected_btn = QPushButton("Plot Selected")
+        self.plot_selected_btn.clicked.connect(self.plot_selected_waveforms)
+        self.delete_selected_btn = QPushButton("Delete Selected")
+        self.delete_selected_btn.clicked.connect(self.delete_selected_waveforms)
+        manager_layout = QVBoxLayout()
+        manager_layout.addWidget(self.plot_selected_btn)
+        manager_layout.addWidget(self.delete_selected_btn)
+        manager_layout.addStretch()
+        manager_btn_widget = QWidget()
+        manager_btn_widget.setLayout(manager_layout)
+        self.waveform_manager_dock.setTitleBarWidget(manager_btn_widget)
+
+        # ---------- Control Dock (Expressions, Analysis, Settings) ----------
         self.dock = QDockWidget("Controls", self)
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.dock)
         self.tabs = QTabWidget()
         self.dock.setWidget(self.tabs)
 
-        # Expressions tab
+        # Expressions Tab
         self.expr_tab = QWidget()
         self.tabs.addTab(self.expr_tab, "Expressions")
         expr_layout = QVBoxLayout()
@@ -101,7 +125,7 @@ class WaveformViewer(QMainWindow):
         add_as_waveform_btn.clicked.connect(self.add_expression_waveform)
         expr_layout.addWidget(add_as_waveform_btn)
 
-        # Analysis tab
+        # Analysis Tab
         self.analysis_tab = QWidget()
         self.tabs.addTab(self.analysis_tab, "Analysis")
         analysis_layout = QVBoxLayout()
@@ -119,7 +143,7 @@ class WaveformViewer(QMainWindow):
         ptp_btn.clicked.connect(self.calculate_peak_to_peak)
         analysis_layout.addWidget(ptp_btn)
 
-        # Plot settings tab
+        # Plot Settings Tab
         self.settings_tab = QWidget()
         self.tabs.addTab(self.settings_tab, "Plot Settings")
         settings_layout = QVBoxLayout()
@@ -138,34 +162,21 @@ class WaveformViewer(QMainWindow):
         apply_style_btn = QPushButton("Apply Style")
         apply_style_btn.clicked.connect(self.apply_style)
         settings_layout.addWidget(apply_style_btn)
-
-        # Axis renaming
         self.xaxis_input = QLineEdit()
         self.xaxis_input.setPlaceholderText("Enter X-axis label")
         settings_layout.addWidget(QLabel("X-axis label:"))
         settings_layout.addWidget(self.xaxis_input)
-
         self.yaxis_input = QLineEdit()
         self.yaxis_input.setPlaceholderText("Enter Y-axis label")
         settings_layout.addWidget(QLabel("Y-axis label:"))
         settings_layout.addWidget(self.yaxis_input)
-
         axis_apply_btn = QPushButton("Apply Axis Labels")
         axis_apply_btn.clicked.connect(self.apply_axis_labels)
         settings_layout.addWidget(axis_apply_btn)
 
-        self.line_colors = {}
-        self.selected_color = 'r'
-
         # Keyboard shortcuts
         self.plot_widget.keyPressEvent = self.keyPressEvent
-
-        # Mouse move for cursor value
         self.plot_widget.scene().sigMouseMoved.connect(self.mouse_moved)
-
-    # ---------- Reset View ----------
-    def reset_view(self):
-        self.plot_widget.enableAutoRange()
 
     # ---------- File Loading ----------
     def load_file(self):
@@ -182,12 +193,13 @@ class WaveformViewer(QMainWindow):
         else:
             return
         self.loaded_waveforms.append((time, data, labels))
-        self.plot_waveforms()
+        # Add items to waveform list
+        for label in labels:
+            self.waveform_list.addItem(QListWidgetItem(label))
+        QMessageBox.information(self, "Loaded", f"File loaded: {file_path}\nWaveforms: {', '.join(labels)}")
 
     def parse_raw(self, filepath):
-        time = []
-        values = []
-        labels = []
+        time, values = [], []
         with open(filepath, 'r') as f:
             for line in f:
                 if line.startswith('*') or line.startswith('Title') or line.startswith('Variables'):
@@ -200,74 +212,66 @@ class WaveformViewer(QMainWindow):
         labels = [f'V{i}' for i in range(data.shape[1])]
         return np.array(time), data, labels
 
-    # ---------- Plotting ----------
-    def plot_waveforms(self):
-        self.plot_widget.clear()
+    # ---------- Plot Selected Waveforms ----------
+    def plot_selected_waveforms(self):
+        selected_items = self.waveform_list.selectedItems()
+        if not selected_items:
+            return
+        selected_labels = [item.text() for item in selected_items]
+
+        # Clear previous plot but keep cursors
+        for _, item, _, _ in self.plot_data_items:
+            self.plot_widget.removeItem(item)
         self.plot_data_items.clear()
         self.waveform_select.clear()
         self.analysis_combo.clear()
 
-        # Add legend
         legend = pg.LegendItem((100,60), offset=(70,30))
         legend.setParentItem(self.plot_widget.graphicsItem())
 
+        # Plot only selected waveforms
         for time, data, labels in self.loaded_waveforms:
             for i, label in enumerate(labels):
-                color = self.line_colors.get(label, 'r')
-                pen = pg.mkPen(color=color, width=self.thickness_spin.value())
-                item = self.plot_widget.plot(time, data[:,i], pen=pen, name=label)
-                self.plot_data_items.append((label, item, time, data[:,i]))
-                legend.addItem(item, label)
-                self.waveform_select.addItem(label)
-                self.analysis_combo.addItem(label)
-
-        # Set axis labels
-        if self.loaded_waveforms:
-            self.plot_widget.setLabel('bottom', 'Time (s)')
-            self.plot_widget.setLabel('left', 'Voltage (V)')
-
+                if label in selected_labels:
+                    color = self.line_colors.get(label, 'r')
+                    pen = pg.mkPen(color=color, width=self.thickness_spin.value())
+                    item = self.plot_widget.plot(time, data[:,i], pen=pen, name=label)
+                    self.plot_data_items.append((label, item, time, data[:,i]))
+                    legend.addItem(item, label)
+                    self.waveform_select.addItem(label)
+                    self.analysis_combo.addItem(label)
         self.update_cursor_measurements()
 
-    # ---------- Axis Labels ----------
-    def apply_axis_labels(self):
-        x_label = self.xaxis_input.text()
-        y_label = self.yaxis_input.text()
-        if x_label:
-            self.plot_widget.setLabel('bottom', x_label)
-        if y_label:
-            self.plot_widget.setLabel('left', y_label)
-
-    # ---------- Expression Evaluation ----------
-    def evaluate_expression(self):
-        expr = self.expr_input.text()
-        if not expr:
+    # ---------- Delete Selected Waveforms ----------
+    def delete_selected_waveforms(self):
+        selected_items = self.waveform_list.selectedItems()
+        if not selected_items:
             return
-        try:
-            local_dict = {}
-            for time, data, labels in self.loaded_waveforms:
-                for i, l in enumerate(labels):
-                    local_dict[l] = data[:,i]
-            result = eval(expr, {}, local_dict)
-            self.expr_output.setPlainText(str(result))
-        except Exception as e:
-            QMessageBox.critical(self, "Error", str(e))
+        selected_labels = [item.text() for item in selected_items]
 
-    def add_expression_waveform(self):
-        expr = self.expr_input.text()
-        if not expr:
-            return
-        try:
-            local_dict = {}
-            for time, data, labels in self.loaded_waveforms:
-                for i, l in enumerate(labels):
-                    local_dict[l] = data[:,i]
-            result = eval(expr, {}, local_dict)
-            time = self.loaded_waveforms[0][0]
-            new_label = f'Expr_{expr}'
-            self.loaded_waveforms.append((time, result.reshape(-1,1), [new_label]))
-            self.plot_waveforms()
-        except Exception as e:
-            QMessageBox.critical(self, "Error", str(e))
+        # Remove from plot
+        self.plot_data_items = [(l,item,t,d) for l,item,t,d in self.plot_data_items if l not in selected_labels]
+        for l, item, _, _ in self.plot_data_items:
+            if l in selected_labels:
+                self.plot_widget.removeItem(item)
+
+        # Remove from loaded_waveforms
+        new_loaded = []
+        for time, data, labels in self.loaded_waveforms:
+            keep_indices = [i for i,l in enumerate(labels) if l not in selected_labels]
+            if keep_indices:
+                new_data = data[:, keep_indices]
+                new_labels = [labels[i] for i in keep_indices]
+                new_loaded.append((time, new_data, new_labels))
+        self.loaded_waveforms = new_loaded
+
+        # Remove from list widget
+        for item in selected_items:
+            self.waveform_list.takeItem(self.waveform_list.row(item))
+
+    # ---------- Reset View ----------
+    def reset_view(self):
+        self.plot_widget.enableAutoRange()
 
     # ---------- Cursor Management ----------
     def add_vertical_cursor(self):
@@ -294,7 +298,6 @@ class WaveformViewer(QMainWindow):
         self.update_cursor_measurements()
 
     def update_cursor_measurements(self):
-        # Only show X/Y text if at least one cursor exists
         if self.v_cursors or self.h_cursors:
             if len(self.v_cursors) >= 2:
                 x1 = self.v_cursors[0].value()
@@ -320,7 +323,7 @@ class WaveformViewer(QMainWindow):
 
     # ---------- Mouse Move ----------
     def mouse_moved(self, pos):
-        if self.v_cursors or self.h_cursors:  # Only show cursor values if a cursor exists
+        if self.v_cursors or self.h_cursors:
             vb = self.plot_widget.getViewBox()
             if self.plot_widget.sceneBoundingRect().contains(pos):
                 mouse_point = vb.mapSceneToView(pos)
@@ -356,12 +359,52 @@ class WaveformViewer(QMainWindow):
                 item.setPen(pg.mkPen(self.selected_color, width=self.thickness_spin.value()))
                 self.line_colors[label] = self.selected_color
 
+    # ---------- Axis Labels ----------
+    def apply_axis_labels(self):
+        x_label = self.xaxis_input.text()
+        y_label = self.yaxis_input.text()
+        if x_label:
+            self.plot_widget.setLabel('bottom', x_label)
+        if y_label:
+            self.plot_widget.setLabel('left', y_label)
+
+    # ---------- Expression Evaluation ----------
+    def evaluate_expression(self):
+        expr = self.expr_input.text()
+        if not expr:
+            return
+        try:
+            local_dict = {}
+            for _, data, labels in self.loaded_waveforms:
+                for i, l in enumerate(labels):
+                    local_dict[l] = data[:,i]
+            result = eval(expr, {}, local_dict)
+            self.expr_output.setPlainText(str(result))
+        except Exception as e:
+            QMessageBox.critical(self, "Error", str(e))
+
+    def add_expression_waveform(self):
+        expr = self.expr_input.text()
+        if not expr:
+            return
+        try:
+            local_dict = {}
+            for _, data, labels in self.loaded_waveforms:
+                for i, l in enumerate(labels):
+                    local_dict[l] = data[:,i]
+            result = eval(expr, {}, local_dict)
+            time = self.loaded_waveforms[0][0]
+            new_label = f'Expr_{expr}'
+            self.loaded_waveforms.append((time, result.reshape(-1,1), [new_label]))
+            self.waveform_list.addItem(QListWidgetItem(new_label))
+        except Exception as e:
+            QMessageBox.critical(self, "Error", str(e))
+
     # ---------- Analysis ----------
     def calculate_frequency(self):
         label = self.analysis_combo.currentText()
-        for l, item, time, data in self.plot_data_items:
+        for l, _, time, data in self.plot_data_items:
             if l == label:
-                dt = np.mean(np.diff(time))
                 zero_crossings = np.where(np.diff(np.sign(data)))[0]
                 if len(zero_crossings) > 1:
                     period = np.mean(np.diff(time[zero_crossings]))
@@ -373,7 +416,7 @@ class WaveformViewer(QMainWindow):
 
     def calculate_rms(self):
         label = self.analysis_combo.currentText()
-        for l, item, _, data in self.plot_data_items:
+        for l, _, _, data in self.plot_data_items:
             if l == label:
                 rms = np.sqrt(np.mean(data**2))
                 QMessageBox.information(self, "RMS", f"RMS = {rms:.6f}")
@@ -381,7 +424,7 @@ class WaveformViewer(QMainWindow):
 
     def calculate_peak_to_peak(self):
         label = self.analysis_combo.currentText()
-        for l, item, _, data in self.plot_data_items:
+        for l, _, _, data in self.plot_data_items:
             if l == label:
                 ptp = np.ptp(data)
                 QMessageBox.information(self, "Peak-to-Peak", f"Peak-to-Peak = {ptp:.6f}")
