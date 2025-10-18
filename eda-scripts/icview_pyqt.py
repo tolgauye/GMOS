@@ -5,7 +5,7 @@ from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QPushButton, QFileDialog, QDockWidget, QTabWidget, QLabel,
     QLineEdit, QTextEdit, QComboBox, QColorDialog, QSpinBox,
-    QMessageBox, QListWidget, QListWidgetItem
+    QMessageBox
 )
 from PyQt6.QtCore import Qt
 import pyqtgraph as pg
@@ -22,7 +22,7 @@ def generate_sample_csv(filename="sample_waveform.csv", points=1000):
 class WaveformViewer(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Advanced Waveform Viewer")
+        self.setWindowTitle("Waveform Viewer")
         self.resize(1600, 900)
 
         # ---------- Central Plot ----------
@@ -36,40 +36,34 @@ class WaveformViewer(QMainWindow):
         self.plot_widget.showGrid(x=True, y=True)
         self.main_layout.addWidget(self.plot_widget)
 
-        # Toolbar buttons
+        # Toolbar
         toolbar_layout = QHBoxLayout()
         self.main_layout.addLayout(toolbar_layout)
-
-        self.load_btn = QPushButton("Load CSV/RAW")
-        self.load_btn.clicked.connect(self.load_file)
-        toolbar_layout.addWidget(self.load_btn)
-
-        self.reset_btn = QPushButton("Reset View")
-        self.reset_btn.clicked.connect(self.reset_view)
-        toolbar_layout.addWidget(self.reset_btn)
-
-        self.add_v_cursor_btn = QPushButton("Add Vertical Cursor")
-        self.add_v_cursor_btn.clicked.connect(self.add_vertical_cursor)
-        toolbar_layout.addWidget(self.add_v_cursor_btn)
-
-        self.add_h_cursor_btn = QPushButton("Add Horizontal Cursor")
-        self.add_h_cursor_btn.clicked.connect(self.add_horizontal_cursor)
-        toolbar_layout.addWidget(self.add_h_cursor_btn)
-
-        self.delete_cursor_btn = QPushButton("Delete Cursor")
-        self.delete_cursor_btn.clicked.connect(self.delete_selected_cursor)
-        toolbar_layout.addWidget(self.delete_cursor_btn)
+        load_btn = QPushButton("Load CSV/RAW")
+        load_btn.clicked.connect(self.load_file)
+        toolbar_layout.addWidget(load_btn)
+        reset_btn = QPushButton("Reset View")
+        reset_btn.clicked.connect(self.reset_view)
+        toolbar_layout.addWidget(reset_btn)
+        add_v_cursor_btn = QPushButton("Add Vertical Cursor")
+        add_v_cursor_btn.clicked.connect(self.add_vertical_cursor)
+        toolbar_layout.addWidget(add_v_cursor_btn)
+        add_h_cursor_btn = QPushButton("Add Horizontal Cursor")
+        add_h_cursor_btn.clicked.connect(self.add_horizontal_cursor)
+        toolbar_layout.addWidget(add_h_cursor_btn)
+        delete_cursor_btn = QPushButton("Delete Cursor")
+        delete_cursor_btn.clicked.connect(self.delete_selected_cursor)
+        toolbar_layout.addWidget(delete_cursor_btn)
 
         # ---------- Data ----------
-        self.loaded_waveforms = []  # All loaded waveforms
+        self.loaded_waveforms = []  # All imported waveforms
         self.plot_data_items = []   # Currently plotted waveforms
         self.v_cursors = []
         self.h_cursors = []
-
         self.line_colors = {}
         self.selected_color = 'r'
 
-        # ---------- Cursor text ----------
+        # ---------- Cursor Text ----------
         self.dx_text = pg.TextItem(anchor=(0.5, 1.5), color='r')
         self.dy_text = pg.TextItem(anchor=(0,0), color='g')
         self.cursor_text = pg.TextItem(anchor=(0,1), color='b')
@@ -84,22 +78,27 @@ class WaveformViewer(QMainWindow):
         self.waveform_manager_dock = QDockWidget("Waveform Manager", self)
         self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self.waveform_manager_dock)
 
-        self.waveform_list = QListWidget()
-        self.waveform_list.setSelectionMode(QListWidget.SelectionMode.MultiSelection)
-        self.waveform_manager_dock.setWidget(self.waveform_list)
-
-        # Plot & Delete buttons in manager dock
-        self.plot_selected_btn = QPushButton("Plot Selected")
-        self.plot_selected_btn.clicked.connect(self.plot_selected_waveforms)
-        self.delete_selected_btn = QPushButton("Delete Selected")
-        self.delete_selected_btn.clicked.connect(self.delete_selected_waveforms)
+        manager_widget = QWidget()
         manager_layout = QVBoxLayout()
-        manager_layout.addWidget(self.plot_selected_btn)
-        manager_layout.addWidget(self.delete_selected_btn)
-        manager_layout.addStretch()
-        manager_btn_widget = QWidget()
-        manager_btn_widget.setLayout(manager_layout)
-        self.waveform_manager_dock.setTitleBarWidget(manager_btn_widget)
+        manager_widget.setLayout(manager_layout)
+
+        # Loaded waveform selection
+        self.loaded_waveform_combo = QComboBox()
+        manager_layout.addWidget(QLabel("Select waveform to plot:"))
+        manager_layout.addWidget(self.loaded_waveform_combo)
+        self.plot_btn = QPushButton("Plot Selected")
+        self.plot_btn.clicked.connect(self.plot_selected_waveform)
+        manager_layout.addWidget(self.plot_btn)
+
+        # Plotted waveform selection for deletion
+        self.plotted_waveform_combo = QComboBox()
+        manager_layout.addWidget(QLabel("Select plotted waveform to delete:"))
+        manager_layout.addWidget(self.plotted_waveform_combo)
+        self.delete_plot_btn = QPushButton("Delete from Plot")
+        self.delete_plot_btn.clicked.connect(self.delete_waveform_from_plot)
+        manager_layout.addWidget(self.delete_plot_btn)
+
+        self.waveform_manager_dock.setWidget(manager_widget)
 
         # ---------- Control Dock (Expressions, Analysis, Settings) ----------
         self.dock = QDockWidget("Controls", self)
@@ -121,9 +120,9 @@ class WaveformViewer(QMainWindow):
         eval_btn = QPushButton("Evaluate Expression")
         eval_btn.clicked.connect(self.evaluate_expression)
         expr_layout.addWidget(eval_btn)
-        add_as_waveform_btn = QPushButton("Add Expression as Waveform")
-        add_as_waveform_btn.clicked.connect(self.add_expression_waveform)
-        expr_layout.addWidget(add_as_waveform_btn)
+        add_expr_btn = QPushButton("Add Expression as Waveform")
+        add_expr_btn.clicked.connect(self.add_expression_waveform)
+        expr_layout.addWidget(add_expr_btn)
 
         # Analysis Tab
         self.analysis_tab = QWidget()
@@ -174,7 +173,7 @@ class WaveformViewer(QMainWindow):
         axis_apply_btn.clicked.connect(self.apply_axis_labels)
         settings_layout.addWidget(axis_apply_btn)
 
-        # Keyboard shortcuts
+        # Keyboard shortcuts and mouse
         self.plot_widget.keyPressEvent = self.keyPressEvent
         self.plot_widget.scene().sigMouseMoved.connect(self.mouse_moved)
 
@@ -193,9 +192,8 @@ class WaveformViewer(QMainWindow):
         else:
             return
         self.loaded_waveforms.append((time, data, labels))
-        # Add items to waveform list
         for label in labels:
-            self.waveform_list.addItem(QListWidgetItem(label))
+            self.loaded_waveform_combo.addItem(label)
         QMessageBox.information(self, "Loaded", f"File loaded: {file_path}\nWaveforms: {', '.join(labels)}")
 
     def parse_raw(self, filepath):
@@ -212,62 +210,42 @@ class WaveformViewer(QMainWindow):
         labels = [f'V{i}' for i in range(data.shape[1])]
         return np.array(time), data, labels
 
-    # ---------- Plot Selected Waveforms ----------
-    def plot_selected_waveforms(self):
-        selected_items = self.waveform_list.selectedItems()
-        if not selected_items:
+    # ---------- Plot Selected ----------
+    def plot_selected_waveform(self):
+        label = self.loaded_waveform_combo.currentText()
+        if not label:
             return
-        selected_labels = [item.text() for item in selected_items]
-
-        # Clear previous plot but keep cursors
-        for _, item, _, _ in self.plot_data_items:
-            self.plot_widget.removeItem(item)
-        self.plot_data_items.clear()
-        self.waveform_select.clear()
-        self.analysis_combo.clear()
-
-        legend = pg.LegendItem((100,60), offset=(70,30))
-        legend.setParentItem(self.plot_widget.graphicsItem())
-
-        # Plot only selected waveforms
         for time, data, labels in self.loaded_waveforms:
-            for i, label in enumerate(labels):
-                if label in selected_labels:
-                    color = self.line_colors.get(label, 'r')
-                    pen = pg.mkPen(color=color, width=self.thickness_spin.value())
-                    item = self.plot_widget.plot(time, data[:,i], pen=pen, name=label)
-                    self.plot_data_items.append((label, item, time, data[:,i]))
-                    legend.addItem(item, label)
-                    self.waveform_select.addItem(label)
-                    self.analysis_combo.addItem(label)
-        self.update_cursor_measurements()
+            if label in labels:
+                i = labels.index(label)
+                color = self.line_colors.get(label, 'r')
+                pen = pg.mkPen(color=color, width=self.thickness_spin.value())
+                item = self.plot_widget.plot(time, data[:,i], pen=pen, name=label)
+                self.plot_data_items.append((label, item, time, data[:,i]))
+                self.plotted_waveform_combo.addItem(label)
+                self.waveform_select.addItem(label)
+                self.analysis_combo.addItem(label)
+                break
 
-    # ---------- Delete Selected Waveforms ----------
-    def delete_selected_waveforms(self):
-        selected_items = self.waveform_list.selectedItems()
-        if not selected_items:
+    # ---------- Delete from Plot ----------
+    def delete_waveform_from_plot(self):
+        label = self.plotted_waveform_combo.currentText()
+        if not label:
             return
-        selected_labels = [item.text() for item in selected_items]
-
-        # Remove from plot
-        self.plot_data_items = [(l,item,t,d) for l,item,t,d in self.plot_data_items if l not in selected_labels]
-        for l, item, _, _ in self.plot_data_items:
-            if l in selected_labels:
+        new_plot_items = []
+        for l, item, t, d in self.plot_data_items:
+            if l == label:
                 self.plot_widget.removeItem(item)
-
-        # Remove from loaded_waveforms
-        new_loaded = []
-        for time, data, labels in self.loaded_waveforms:
-            keep_indices = [i for i,l in enumerate(labels) if l not in selected_labels]
-            if keep_indices:
-                new_data = data[:, keep_indices]
-                new_labels = [labels[i] for i in keep_indices]
-                new_loaded.append((time, new_data, new_labels))
-        self.loaded_waveforms = new_loaded
-
-        # Remove from list widget
-        for item in selected_items:
-            self.waveform_list.takeItem(self.waveform_list.row(item))
+            else:
+                new_plot_items.append((l, item, t, d))
+        self.plot_data_items = new_plot_items
+        index = self.plotted_waveform_combo.currentIndex()
+        self.plotted_waveform_combo.removeItem(index)
+        # Also remove from waveform_select and analysis combo
+        for combo in [self.waveform_select, self.analysis_combo]:
+            idx = combo.findText(label)
+            if idx >= 0:
+                combo.removeItem(idx)
 
     # ---------- Reset View ----------
     def reset_view(self):
@@ -396,7 +374,7 @@ class WaveformViewer(QMainWindow):
             time = self.loaded_waveforms[0][0]
             new_label = f'Expr_{expr}'
             self.loaded_waveforms.append((time, result.reshape(-1,1), [new_label]))
-            self.waveform_list.addItem(QListWidgetItem(new_label))
+            self.loaded_waveform_combo.addItem(new_label)
         except Exception as e:
             QMessageBox.critical(self, "Error", str(e))
 
