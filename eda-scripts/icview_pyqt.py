@@ -1,5 +1,7 @@
+# ...existing code...
 import sys
 import os
+import math
 import numpy as np
 import pandas as pd
 import pyqtgraph as pg
@@ -11,6 +13,64 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont, QColor
+# ...existing code...
+
+# SI-prefix AxisItem and formatter
+class SIPrefixAxis(pg.AxisItem):
+    """
+    Axis that formats tick labels using SI prefixes (p, n, u, m, k, M, G).
+    """
+    PREFIX_MAP = {
+        -12: 'p',
+        -9:  'n',
+        -6:  'u',
+        -3:  'm',
+         0:  '',
+         3:  'k',
+         6:  'M',
+         9:  'G',
+    }
+
+    def __init__(self, orientation='bottom', **kwargs):
+        super().__init__(orientation=orientation, **kwargs)
+
+    def tickStrings(self, values, scale, spacing):
+        strs = []
+        for val in values:
+            try:
+                if val == 0 or not math.isfinite(val):
+                    strs.append("0")
+                    continue
+                exp = int(math.floor(math.log10(abs(val))))
+                exp3 = int(math.floor(exp / 3.0) * 3)
+                if exp3 not in self.PREFIX_MAP:
+                    strs.append(f"{val:.3e}")
+                    continue
+                factor = 10.0 ** exp3
+                scaled = val / factor
+                prefix = self.PREFIX_MAP[exp3]
+                s = f"{scaled:.3g}"
+                strs.append(f"{s}{prefix}")
+            except Exception:
+                strs.append(str(val))
+        return strs
+
+def format_si(val):
+    """Format a single float with SI prefix (p, n, u, m, k, M, G) or scientific if outside range."""
+    try:
+        if val == 0 or not math.isfinite(val):
+            return "0"
+        exp = int(math.floor(math.log10(abs(val))))
+        exp3 = int(math.floor(exp / 3.0) * 3)
+        mapping = SIPrefixAxis.PREFIX_MAP
+        if exp3 not in mapping:
+            return f"{val:.3e}"
+        factor = 10.0 ** exp3
+        scaled = val / factor
+        s = f"{scaled:.3g}"
+        return f"{s}{mapping[exp3]}"
+    except Exception:
+        return str(val)
 
 # ---------- Sample CSV Generator ----------
 def generate_sample_csv(filename="sample_waveform.csv", points=1000):
@@ -47,7 +107,10 @@ class WaveformViewer(QMainWindow):
         self.central_widget.setLayout(self.main_layout)
 
         pg.setConfigOptions(antialias=True)
-        self.plot_widget = pg.PlotWidget(background='w')
+        # Use SI-prefixed axes so tick labels display with p, n, u, m, k, M, ...
+        xaxis = SIPrefixAxis(orientation='bottom')
+        yaxis = SIPrefixAxis(orientation='left')
+        self.plot_widget = pg.PlotWidget(axisItems={'bottom': xaxis, 'left': yaxis}, background='w')
         self.plot_widget.showGrid(x=True, y=True)
         self.main_layout.addWidget(self.plot_widget)
 
@@ -453,9 +516,9 @@ class WaveformViewer(QMainWindow):
             x0 = float(self.v_cursors[0].value())
             vals = y_values_at_x(x0)
             if vals:
-                text = f"X={x0:.6f}\n" + "\n".join([f"{l}: {y:.6g}" for l, y in vals])
+                text = f"X={format_si(x0)}\n" + "\n".join([f"{l}: {format_si(y)}" for l, y in vals])
             else:
-                text = f"X={x0:.6f}"
+                text = f"X={format_si(x0)}"
             vr = self.plot_widget.viewRange()
             y_top = vr[1][1] if vr and len(vr) > 1 else 0
             self.cursor_text.setText(text)
@@ -467,7 +530,7 @@ class WaveformViewer(QMainWindow):
             dx = abs(x2 - x1)
             vr = self.plot_widget.viewRange()
             y_top = vr[1][1] if vr and len(vr) > 1 else 0
-            self.dx_text.setText(f'ΔX = {dx:.6f}')
+            self.dx_text.setText(f'ΔX = {format_si(dx)}')
             self.dx_text.setPos((x1 + x2) / 2, y_top * 0.95)
             self.dx_text.show()
 
@@ -476,8 +539,9 @@ class WaveformViewer(QMainWindow):
             y0 = float(self.h_cursors[0].value())
             vr = self.plot_widget.viewRange()
             x_left = vr[0][0] if vr and len(vr) > 0 else 0
-            self.dy_text.setText(f"Y={y0:.6f}")
-            self.dy_text.setPos(x_left, y0)
+            self.dy_text.setText(f"Y={format_si(y0)}")
+            # Position label slightly to the right so it does not overlap the axis
+            self.dy_text.setPos(x_left + (vr[0][1] - vr[0][0]) * 0.005 if vr else x_left, y0)
             self.dy_text.show()
         if len(self.h_cursors) >= 2:
             y1 = float(self.h_cursors[0].value())
@@ -485,8 +549,8 @@ class WaveformViewer(QMainWindow):
             dy = abs(y2 - y1)
             vr = self.plot_widget.viewRange()
             x_left = vr[0][0] if vr and len(vr) > 0 else 0
-            self.dy_text.setText(f'ΔY = {dy:.6f}')
-            self.dy_text.setPos(x_left, (y1 + y2) / 2)
+            self.dy_text.setText(f'ΔY = {format_si(dy)}')
+            self.dy_text.setPos(x_left + (vr[0][1] - vr[0][0]) * 0.005 if vr else x_left, (y1 + y2) / 2)
             self.dy_text.show()
 
         # If both vertical and horizontal exist, show intersection comparisons
@@ -494,9 +558,9 @@ class WaveformViewer(QMainWindow):
             x = float(self.v_cursors[0].value())
             y = float(self.h_cursors[0].value())
             vals = y_values_at_x(x)
-            inter_text = f"X={x:.6f}, Y={y:.6f}\n"
+            inter_text = f"X={format_si(x)}, Y={format_si(y)}\n"
             if vals:
-                inter_text += "\n".join([f"{l}: Y_at_X={yval:.6g}, Δ={yval - y:.6g}" for l, yval in vals])
+                inter_text += "\n".join([f"{l}: Y_at_X={format_si(yval)}, Δ={format_si(yval - y)}" for l, yval in vals])
             self.cursor_text.setText(inter_text)
             vr = self.plot_widget.viewRange()
             self.cursor_text.setPos(x, vr[1][1] if vr and len(vr) > 1 else y)
@@ -511,12 +575,12 @@ class WaveformViewer(QMainWindow):
         x = mouse_point.x()
         y = mouse_point.y()
         # show mouse coordinates and nearest values for a few plotted waveforms
-        info = [f"x={x:.6f}, y={y:.6f}"]
+        info = [f"x={format_si(x)}, y={format_si(y)}"]
         for l, item, t, d in self.plot_data_items[:6]:
             try:
                 if len(t) > 1:
                     yv = np.interp(float(x), np.asarray(t).astype(float), np.asarray(d).astype(float))
-                    info.append(f"{l}: {yv:.6g}")
+                    info.append(f"{l}: {format_si(yv)}")
             except Exception:
                 continue
         self.cursor_text.setText("\n".join(info))
@@ -647,7 +711,10 @@ class WaveformViewer(QMainWindow):
                     except Exception:
                         pen = pg.mkPen(self.selected_color)
                     dock = QDockWidget(f"Wave: {label}", self)
-                    pw = pg.PlotWidget(background='w')
+                    # use SI prefixed axes for split window too
+                    xaxis = SIPrefixAxis(orientation='bottom')
+                    yaxis = SIPrefixAxis(orientation='left')
+                    pw = pg.PlotWidget(axisItems={'bottom': xaxis, 'left': yaxis}, background='w')
                     pw.plot(t, d, pen=pen, name=label)
                     dock.setWidget(pw)
                     self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, dock)
